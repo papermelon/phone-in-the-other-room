@@ -1,0 +1,37 @@
+.DS_Store
+
+# Xcode user state and generated local data
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+
+# Build output
+build/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+
+# Dependency managers, if added later
+Pods/
+Carthage/Build/
+
+# Fastlane output, if added later
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output/
+
+# Local configuration and secrets
+.env
+.env.*
+*.env
+*.xcconfig.local

@@ -1,0 +1,82 @@
+import Foundation
+import WatchConnectivity
+
+final class WatchConnectivityManager: NSObject, ObservableObject {
+    static let shared = WatchConnectivityManager()
+
+    @Published private(set) var isReachable = false
+    var onMessage: ((WatchMessage) -> Void)?
+    var currentStateProvider: (() -> WatchMessage?)?
+    private var latestStateMessage: WatchMessage?
+
+    override private init() {
+        super.init()
+        guard WCSession.isSupported() else { return }
+        WCSession.default.delegate = self
+        WCSession.default.activate()
+    }
+
+    func send(_ message: WatchMessage) {
+        guard WCSession.isSupported() else { return }
+        if message.run != nil || message.proximity != nil || message.reward != nil {
+            latestStateMessage = message
+        }
+        let dictionary = WatchMessageCodec.dictionary(from: message)
+        try? WCSession.default.updateApplicationContext(dictionary)
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage(dictionary, replyHandler: nil) { _ in
+                WCSession.default.transferUserInfo(dictionary)
+            }
+        } else if message.type == .startFocusRun || message.type == .pingPhone || message.type == .pingWatch || message.type == .endFocusRunEarly {
+            WCSession.default.transferUserInfo(dictionary)
+        }
+    }
+}
+
+extension WatchConnectivityManager: WCSessionDelegate {
+    func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        DispatchQueue.main.async { self.isReachable = session.isReachable }
+    }
+
+    func sessionReachabilityDidChange(_ session: WCSession) {
+        DispatchQueue.main.async { self.isReachable = session.isReachable }
+    }
+
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        guard let decoded = WatchMessageCodec.message(from: message) else { return }
+        DispatchQueue.main.async { self.onMessage?(decoded) }
+    }
+
+    func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
+        guard let decoded = WatchMessageCodec.message(from: message) else {
+            replyHandler([:])
+            return
+        }
+        DispatchQueue.main.async {
+            self.onMessage?(decoded)
+            switch decoded.type {
+            case .pingWatch:
+                let response = self.currentStateProvider?() ?? self.latestStateMessage
+                replyHandler(response.map(WatchMessageCodec.dictionary(from:)) ?? [:])
+            case .pingPhone:
+                let response = WatchMessage(type: .pingPhone)
+                replyHandler(WatchMessageCodec.dictionary(from: response))
+            default:
+                replyHandler([:])
+            }
+        }
+    }
+
+    func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        guard let decoded = WatchMessageCodec.message(from: applicationContext) else { return }
+        DispatchQueue.main.async { self.onMessage?(decoded) }
+    }
+
+    func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any] = [:]) {
+        guard let decoded = WatchMessageCodec.message(from: userInfo) else { return }
+        DispatchQueue.main.async { self.onMessage?(decoded) }
+    }
+
+    func sessionDidBecomeInactive(_ session: WCSession) {}
+    func sessionDidDeactivate(_ session: WCSession) { session.activate() }
+}
