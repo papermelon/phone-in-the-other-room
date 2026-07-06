@@ -12,15 +12,17 @@ The screen production spec file is a reviewed prompt/spec scaffold rather than a
 
 ## Navigation
 
-The iPhone app now uses the blueprint tab order:
+The iPhone app's current tab list (see `MainAppTab` in `PhoneInTheOtherRoomApp/Design/PixelComponents.swift`) is:
 
 ```text
 Home
-Farm
-Missions
-Friends
 Stats
+Farm
+Friends
+Shop
 ```
+
+There is no Missions tab. Note: release builds are being reduced to Home + Stats only, per `docs/PROJECT_BRIEF.md` and ADR-0003 (Farm/Friends/Shop are DEBUG-gated).
 
 Dog is not a bottom tab because the product blueprint explicitly recommends Doghouse as a global destination. Doghouse is reachable from Home. Settings and onboarding placeholders are also reachable from Home/top bar.
 
@@ -85,7 +87,7 @@ It covers:
 - farm unlocks/decorations
 - simple friend feed
 
-The mock layer is app-only and does not affect the deferred Watch source, shared proximity models, or deferred Screen Time report source.
+The mock layer is app-only and does not affect the Watch app sources, shared proximity models, or Screen Time report extension sources.
 
 ## Existing Integration Safety
 
@@ -95,14 +97,12 @@ The existing Focus Run, Watch proximity, Screen Time authorization, FamilyContro
 
 The default `PhoneInTheOtherRoom` app target is currently configured for no-sign local build testing:
 
-- The generated Xcode project currently includes only the iPhone app target and test target.
-- The Watch app target source remains on disk, but the target is omitted from `project.yml`.
-- The Screen Time report extension source remains on disk, but the target is omitted from `project.yml`.
-- The app target does not use the Family Controls entitlement.
-- FamilyControls and DeviceActivity code is behind the explicit `SCREEN_TIME_REPORTS` compilation flag.
-- `CODE_SIGNING_ALLOWED` is set to `NO` for the app target.
+- `project.yml` defines four targets: the iPhone app, the Watch app (embedded in the iPhone app), the Screen Time report extension (not yet embedded), and the unit test target.
+- The app target does not use the Family Controls entitlement; all three `.entitlements` files are empty placeholders.
+- FamilyControls and DeviceActivity code is behind the explicit `SCREEN_TIME_REPORTS` compilation flag, which is set only on the report extension target.
+- Automatic code signing is enabled with an empty `DEVELOPMENT_TEAM` (simulator builds work; device/archive builds need the real team ID).
 
-This is intentional until a paid Apple developer account and the required Family Controls capability are available. To re-enable the full production surface later, add the Watch app and Screen Time report extension targets back to `project.yml`, restore the Family Controls entitlement, add `SCREEN_TIME_REPORTS` to the relevant Swift active compilation conditions, set a real development team, and run `xcodegen generate`.
+This is intentional until a paid Apple developer account and the required Family Controls capability are available. To re-enable the full production surface later, embed the Screen Time report extension in the iOS app, populate the entitlement files and portal capabilities (Family Controls, HealthKit), set a real development team, and run `xcodegen generate`.
 
 Known entitlement/signing risk for the deferred targets:
 

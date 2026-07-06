@@ -14,7 +14,7 @@ Document precedence (highest first):
 2. `docs/PROJECT_BRIEF.md`, `docs/PRODUCT_PRINCIPLES.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS/`
 3. `docs/PLAYBOOKS/` and `skills/`
 4. `PROJECT_AUDIT.md`, `IMPLEMENTATION_PLAN.md` (accurate July 2026 audits, treat as historical reference)
-5. `README.md`, `docs/PRD.md`, `docs/IMPLEMENTATION_NOTES.md`, `docs/CHARLIE_AUDIT_ROADMAP.md` — **known to contain drift** (see "Known documentation drift" below)
+5. `README.md`, `docs/PRD.md`, `docs/IMPLEMENTATION_NOTES.md`, `docs/CHARLIE_AUDIT_ROADMAP.md` — drift-prone; verify against code when in doubt (see "Known documentation drift" below)
 
 ---
 
@@ -245,9 +245,6 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 
 ## 16. Known documentation drift (do not propagate)
 
-- `README.md` claims entitlement files are populated — **all three `.entitlements` files are empty**.
-- `docs/IMPLEMENTATION_NOTES.md` describes a Missions tab and claims Watch/Screen Time targets are omitted from `project.yml` — both wrong.
-- `docs/PRD.md` uses "Phone in the Other Room" as the in-app identity — the shipping display name is "Counting Sheep" — and describes Screen Time/HealthKit as implemented; they are scaffolded but not entitlement-wired.
-- `docs/CHARLIE_AUDIT_ROADMAP.md` says Screen Time integration is absent — scaffolding exists.
+The previously listed drift items (README entitlement claims, IMPLEMENTATION_NOTES tab list and target claims, PRD in-app identity and Screen Time/HealthKit status, CHARLIE_AUDIT_ROADMAP Screen Time status) were fixed on 2026-07-07. No documentation drift is currently known.
 
-A doc-alignment task exists in `docs/FUTURE_AGENT_TASKS.md`. Until it is done, verify claims against code and `project.yml`.
+When in doubt, still verify doc claims against code and `project.yml` — docs can drift again as the code moves.

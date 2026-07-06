@@ -1,5 +1,7 @@
 # Phone in the Other Room
 
+> AI agents and contributors: start with [AGENTS.md](AGENTS.md) (canonical). Product scope: [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md).
+
 **Phone in the Other Room** is a hackathon-quality iOS plus Apple Watch prototype where you send Ollie the Border Collie on a Focus Run by leaving your iPhone in another room. The Watch becomes the active companion and the iPhone stays open on a leave-me-here screen.
 
 Key line: Instead of fighting your phone, you send it to the other room and let Ollie guard your focus.
@@ -47,21 +49,23 @@ Required user-facing purpose string:
 
 `NSNearbyInteractionUsageDescription`: "Ollie uses nearby-device distance to check whether your iPhone is away from your Apple Watch during a Focus Run."
 
-`NSHealthShareUsageDescription`: "Phone in the Other Room reads sleep duration to show how bedtime phone-away habits relate to rest."
+`NSHealthShareUsageDescription`: "Counting Sheep reads sleep duration to show how bedtime phone-away habits relate to rest."
 
-Nearby Interaction is not gated by a foreground app entitlement. The checked-in entitlement files now cover the system integrations used by the prototype:
+Nearby Interaction is not gated by a foreground app entitlement. Three entitlement files are checked in, but all three are currently **empty placeholders** (`<dict/>`):
 
 - `PhoneInTheOtherRoomApp/PhoneInTheOtherRoom.entitlements`
 - `PhoneInTheOtherRoomWatchApp/PhoneInTheOtherRoomWatchApp.entitlements`
 - `PhoneInTheOtherRoomScreenTimeReport/PhoneInTheOtherRoomScreenTimeReport.entitlements`
 
-The iPhone app requests HealthKit and Family Controls entitlements so the Stats screen can start system setup flows for sleep and Screen Time. The Screen Time report extension also requests Family Controls and is embedded in the iOS app as `com.apple.deviceactivityui.report-extension`. Family Controls may require enabling the capability for both app identifiers in the Apple Developer portal and matching provisioning profiles.
+HealthKit and Screen Time (Family Controls) are scaffolded in code but are **not functional yet**: no entitlement keys are declared, the corresponding capabilities must be enabled in the Apple Developer portal, and Family Controls distribution additionally requires Apple's approval. The Screen Time report extension exists as a target but is not yet embedded in the iOS app.
 
 Screen Time setup in the app has three steps:
 
 1. Tap **Connect Screen Time** in Stats to request `AuthorizationCenter` access.
 2. Choose app/category sources for **Screen Time**, **Productivity**, and **Late Screen Time** with Apple's `FamilyActivityPicker`.
 3. The Stats cards embed `DeviceActivityReport` views, which ask the report extension to render today's selected screen time, 7-day selected screen time, and late-night selected screen time inside Apple's privacy sandbox.
+
+Note: this flow is code scaffolding only. With empty entitlement files and no Family Controls capability, none of these steps work on a device today.
 
 After running `xcodegen generate`, confirm Xcode still has a valid signing team selected for the iPhone target, Watch target, and Screen Time report extension target. If the app never shows the Nearby Interaction permission prompt, verify the generated Info.plist contains `NSNearbyInteractionUsageDescription` for both targets and reinstall the iPhone and Watch apps to reset permission state.
 
@@ -125,7 +129,7 @@ Completed runs earn Ollie-themed rewards, sheep, coins, and other-room minutes. 
 - Light pixel-style Home/Farm shell with sheep and coin balances
 - Daily focus stars, three-view stats, recent focus history, and Ollie daily status
 - Apple Health sleep authorization and last-night sleep summary plumbing
-- Screen Time authorization, FamilyActivityPicker source selection, and embedded DeviceActivity report extension plumbing
+- Screen Time authorization, FamilyActivityPicker source selection, and DeviceActivity report extension plumbing (extension target exists but is not yet embedded, and entitlements are not wired)
 - Local iPhone reminder notification and reachable-Watch run-start notification
 - Phone ping haptic/sound and Watch haptics
 

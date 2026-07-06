@@ -37,7 +37,7 @@ Feature gaps relative to Charlie:
 - Progress is cumulative but not day-shaped, so "what should I do today?" is unclear.
 - Stats are sparse: completed runs, minutes, streak, and shelf count only.
 - Ollie does not reflect recent focus behavior outside the active run state.
-- Social and Screen Time integrations are not present.
+- Social integrations are not present. Screen Time scaffolding now exists (authorization/selection services plus a report extension target) but is non-functional without entitlements and portal capabilities.
 - Rewards are collected but cannot yet be arranged, equipped, or used for gentle personalization.
 
 ## Prioritised Roadmap
