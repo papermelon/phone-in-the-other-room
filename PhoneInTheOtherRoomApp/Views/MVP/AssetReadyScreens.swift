@@ -1,5 +1,9 @@
 import SwiftUI
 
+// Entire MVP mock-screen layer is DEBUG-only until the reintroduction gates in
+// docs/DECISIONS/ADR-0003-gated-features.md are met. Do not wire these into release paths.
+#if DEBUG
+
 struct FarmOverviewScreen: View {
     @State private var selectedSheepSlot = 27
 
@@ -1411,3 +1415,5 @@ private struct OnboardingStep: View {
         .assetReadyCard()
     }
 }
+
+#endif

@@ -44,14 +44,6 @@ execute without human sign-off mid-task (final merge review still applies per
   (stay empty for build 1)
 - **Accept:** playbook §2 items all pass; `xcodebuild archive` succeeds once team ID is in.
 
-### A4. Fix hardcoded dashboard values
-- **Why:** `PixelHomeDashboard` shows Watch "Connected" and "1 / 3" sheep progress as
-  hardcoded strings — visibly fake in testers' hands.
-- **Mode:** Codex · **Size:** S · **Autonomous:** yes
-- **Files:** `PixelHomeDashboard.swift`, reading `WatchConnectivityManager.isReachable`
-  and `UserProgress`
-- **Accept:** both values reflect live state; `#Preview` covers disconnected state.
-
 ### A5. Backgrounding-mid-run honesty
 - **Why:** runs are foreground-only with no `scenePhase` handling; backgrounding silently
   degrades the session — a top crash/confusion risk in the QA script.
@@ -109,6 +101,16 @@ execute without human sign-off mid-task (final merge review still applies per
 - **Files:** `Services/HealthSleepService.swift`
 - **Accept:** real `authorizationStatus` consulted post-request; denied path returns
   honest state; unit-testable logic extracted to `Shared/` where feasible.
+
+### B4a. Sheep-reward cycle celebration moment
+- **Why:** `PixelHomeDashboard` computes next-sheep progress as `totalCompletedRuns % 3`,
+  so immediately after earning a sheep the row shows "0 / 3" with no acknowledgment of the
+  completed cycle (found by Bugbot, 2026-07-07). Minor, but the celebration moment is the
+  product's whole reward philosophy.
+- **Mode:** Codex · **Size:** S · **Autonomous:** yes
+- **Files:** `PhoneInTheOtherRoomApp/Views/PixelHomeDashboard.swift`
+- **Accept:** just-earned state shows warm acknowledgment (e.g. "A new sheep joined the
+  flock!") before rolling to the next cycle; copy passes the copy skill.
 
 ### B4. Analytics export privacy fix or gate
 - **Why:** `relativeDays` mode doesn't redact ISO dates — a privacy bug if export ships.
@@ -190,4 +192,7 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Done
 
-*(nothing yet)*
+- **2026-07-07 · Codex:** A4. Fixed hardcoded dashboard values. `PixelHomeDashboard`
+  now reads Watch reachability from `WatchConnectivityManager.isReachable`, derives next
+  sheep reward progress from `UserProgress.totalCompletedRuns`, and includes a
+  disconnected-Watch preview.

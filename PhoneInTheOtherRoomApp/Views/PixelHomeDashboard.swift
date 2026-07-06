@@ -2,13 +2,60 @@ import SwiftUI
 
 struct PixelHomeDashboard: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    @ObservedObject private var watch: WatchConnectivityManager
     @State private var showRunSetup = false
 
-    private var progress: UserProgress { viewModel.coordinator.progress }
+    init(watch: WatchConnectivityManager = .shared) {
+        self._watch = ObservedObject(initialValue: watch)
+    }
+
+    var body: some View {
+        PixelHomeDashboardContent(
+            progress: viewModel.coordinator.progress,
+            analyticsRecords: viewModel.analyticsRecords,
+            watchReachable: watch.isReachable
+        ) {
+            showRunSetup = true
+        }
+        .navigationDestination(isPresented: $showRunSetup) {
+            FocusRunSetupView()
+                .environmentObject(viewModel)
+        }
+    }
+}
+
+private struct PixelHomeDashboardContent: View {
+    var progress: UserProgress
+    var analyticsRecords: [AnalyticsDayRecord]
+    var watchReachable: Bool
+    var onStartRun: () -> Void
+
+    private let sheepRewardRunGoal = 3
+
     private var today: DailyFocusRecord { progress.todayRecord }
     private var dailyGoalMinutes: Int { AppGoals.dailyFocusMinutes }
     private var goalProgress: Double {
         min(1, Double(today.completedFocusMinutes) / Double(max(1, dailyGoalMinutes)))
+    }
+    private var sheepRewardRunCount: Int {
+        max(0, progress.totalCompletedRuns % sheepRewardRunGoal)
+    }
+    private var nextSheepRewardProgress: Double {
+        Double(sheepRewardRunCount) / Double(sheepRewardRunGoal)
+    }
+    private var nextSheepRewardLabel: String {
+        "\(sheepRewardRunCount) / \(sheepRewardRunGoal)"
+    }
+    private var nextSheepRewardDetail: String {
+        let remaining = sheepRewardRunGoal - sheepRewardRunCount
+        let runLabel = remaining == 1 ? "Focus Run" : "Focus Runs"
+        return "Complete \(remaining) more \(runLabel) to discover a new sheep!"
+    }
+    private var watchStatusValue: String {
+        watchReachable ? "Ready" : "Offline"
+    }
+    private var watchStatusDetail: String {
+        watchReachable ? "Connected" : "Open Watch app"
     }
 
     var body: some View {
@@ -26,9 +73,7 @@ struct PixelHomeDashboard: View {
                 subtitle: "Leave your phone in another room",
                 icon: "door.left.hand.open",
                 assetName: AssetSlot.Home.door
-            ) {
-                showRunSetup = true
-            }
+            ) { onStartRun() }
 
             homeMetricRow
 
@@ -50,19 +95,18 @@ struct PixelHomeDashboard: View {
 
             AchievementRow(
                 title: "Next Sheep Reward",
-                detail: "Complete 2 more Focus Runs to discover a new sheep!",
+                detail: nextSheepRewardDetail,
                 icon: "cloud.fill",
                 assetName: AssetSlot.Sheep.cream,
-                progress: 1.0 / 3.0,
-                progressLabel: "1 / 3"
+                progress: nextSheepRewardProgress,
+                progressLabel: nextSheepRewardLabel
             )
 
             OllieTipRow()
+#if DEBUG
+            // Wind-down scheduling is not built yet; hidden from release (no "coming soon").
             BedtimeProtectionRow()
-        }
-        .navigationDestination(isPresented: $showRunSetup) {
-            FocusRunSetupView()
-                .environmentObject(viewModel)
+#endif
         }
     }
 
@@ -88,8 +132,8 @@ struct PixelHomeDashboard: View {
                 title: "Apple Watch",
                 icon: "applewatch",
                 assetName: AssetSlot.Stats.watch,
-                value: " ",
-                detail: "Connected",
+                value: watchStatusValue,
+                detail: watchStatusDetail,
                 accent: AppColors.grass
             )
         }
@@ -131,11 +175,11 @@ struct PixelHomeDashboard: View {
     }
 
     private var lastSevenAnalytics: [AnalyticsDayRecord] {
-        Array(viewModel.analyticsRecords.suffix(7))
+        Array(analyticsRecords.suffix(7))
     }
 
     private var todayAnalytics: AnalyticsDayRecord {
-        viewModel.analyticsRecords.last ?? AnalyticsDayRecord(day: Date())
+        analyticsRecords.last ?? AnalyticsDayRecord(day: Date())
     }
 
     private func formatMinutes(_ minutes: Int) -> String {
@@ -203,163 +247,6 @@ private struct DogRoomScene: View {
     }
 }
 
-private struct HomeDogFigure: View {
-    var mood: OllieMood
-
-    var body: some View {
-        GeometryReader { proxy in
-            let w = proxy.size.width
-            let h = proxy.size.height
-            ZStack {
-                Ellipse()
-                    .fill(AppColors.stroke.opacity(0.13))
-                    .frame(width: w * 0.72, height: h * 0.12)
-                    .offset(y: h * 0.41)
-
-                Capsule()
-                    .fill(Color(red: 0.10, green: 0.11, blue: 0.10))
-                    .frame(width: w * 0.52, height: h * 0.58)
-                    .offset(y: h * 0.16)
-                Capsule()
-                    .fill(.white)
-                    .frame(width: w * 0.27, height: h * 0.52)
-                    .offset(y: h * 0.18)
-
-                Circle()
-                    .fill(Color(red: 0.10, green: 0.11, blue: 0.10))
-                    .frame(width: w * 0.58, height: w * 0.58)
-                    .offset(y: -h * 0.18)
-                Capsule()
-                    .fill(.white)
-                    .frame(width: w * 0.20, height: h * 0.30)
-                    .offset(y: -h * 0.18)
-
-                ear(x: -w * 0.25, rotation: -24, width: w, height: h)
-                ear(x: w * 0.25, rotation: 24, width: w, height: h)
-
-                eye(x: -w * 0.12, width: w, height: h)
-                eye(x: w * 0.12, width: w, height: h)
-                Capsule()
-                    .fill(AppColors.ink)
-                    .frame(width: w * 0.14, height: h * 0.045)
-                    .offset(y: -h * 0.08)
-                Capsule()
-                    .fill(Color(red: 0.92, green: 0.32, blue: 0.30))
-                    .frame(width: w * 0.10, height: mood == .sad ? h * 0.018 : h * 0.08)
-                    .offset(y: h * 0.005)
-
-                bandana(width: w, height: h)
-                tail(width: w, height: h)
-            }
-        }
-    }
-
-    private func ear(x: CGFloat, rotation: Double, width: CGFloat, height: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: width * 0.07, style: .continuous)
-            .fill(Color(red: 0.08, green: 0.09, blue: 0.08))
-            .frame(width: width * 0.24, height: height * 0.26)
-            .rotationEffect(.degrees(rotation))
-            .offset(x: x, y: -height * 0.29)
-    }
-
-    private func eye(x: CGFloat, width: CGFloat, height: CGFloat) -> some View {
-        Circle()
-            .fill(AppColors.ink)
-            .frame(width: width * 0.06, height: width * 0.06)
-            .overlay(Circle().fill(.white).frame(width: width * 0.018, height: width * 0.018).offset(x: -2, y: -2))
-            .offset(x: x, y: -height * 0.15)
-    }
-
-    private func bandana(width: CGFloat, height: CGFloat) -> some View {
-        Triangle()
-            .fill(AppColors.grass)
-            .frame(width: width * 0.52, height: height * 0.26)
-            .rotationEffect(.degrees(180))
-            .offset(y: height * 0.03)
-            .overlay {
-                Image(systemName: "cloud.fill")
-                    .font(.system(size: width * 0.12, weight: .black))
-                    .foregroundStyle(.white)
-                    .offset(y: height * 0.04)
-            }
-    }
-
-    private func tail(width: CGFloat, height: CGFloat) -> some View {
-        Capsule()
-            .fill(Color(red: 0.09, green: 0.10, blue: 0.09))
-            .frame(width: width * 0.14, height: height * 0.34)
-            .rotationEffect(.degrees(-28))
-            .offset(x: -width * 0.38, y: height * 0.18)
-    }
-}
-
-private struct PixelPlantView: View {
-    var body: some View {
-        ZStack(alignment: .bottom) {
-            RoundedRectangle(cornerRadius: 4, style: .continuous)
-                .fill(Color(red: 0.58, green: 0.60, blue: 0.56))
-                .frame(width: 48, height: 42)
-                .overlay(RoundedRectangle(cornerRadius: 4).stroke(AppColors.stroke, lineWidth: 2))
-            stem(angle: -28, x: -14, y: -42)
-            stem(angle: 14, x: 0, y: -58)
-            stem(angle: 34, x: 15, y: -44)
-        }
-    }
-
-    private func stem(angle: Double, x: CGFloat, y: CGFloat) -> some View {
-        Capsule()
-            .fill(AppColors.grass)
-            .frame(width: 16, height: 50)
-            .rotationEffect(.degrees(angle))
-            .offset(x: x, y: y)
-    }
-}
-
-private struct PixelDoorView: View {
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 2, style: .continuous)
-                .fill(AppColors.wood)
-                .overlay(RoundedRectangle(cornerRadius: 2).stroke(AppColors.stroke, lineWidth: 2.5))
-            Rectangle()
-                .fill(Color(red: 0.40, green: 0.23, blue: 0.12))
-                .frame(width: 58, height: 118)
-                .overlay(Rectangle().stroke(AppColors.stroke.opacity(0.35), lineWidth: 1))
-            Circle()
-                .fill(AppColors.coin)
-                .overlay(Circle().stroke(AppColors.stroke, lineWidth: 1.5))
-                .frame(width: 12, height: 12)
-                .offset(x: 22, y: 14)
-            Rectangle()
-                .fill(AppColors.grassLight.opacity(0.55))
-                .frame(width: 74, height: 16)
-                .offset(y: 78)
-                .overlay(Rectangle().stroke(AppColors.grass, lineWidth: 1.5).offset(y: 78))
-        }
-    }
-}
-
-private struct PixelPictureView: View {
-    var body: some View {
-        ZStack {
-            Rectangle()
-                .fill(AppColors.wood)
-            Rectangle()
-                .fill(AppColors.sky)
-                .padding(6)
-            Image(systemName: "mountain.2.fill")
-                .font(.title2.weight(.black))
-                .foregroundStyle(AppColors.grass)
-                .offset(y: 9)
-            Image(systemName: "cloud.fill")
-                .font(.caption.weight(.black))
-                .foregroundStyle(.white)
-                .offset(x: 12, y: -10)
-        }
-        .overlay(Rectangle().stroke(AppColors.stroke, lineWidth: 2.5))
-    }
-}
-
 private struct OllieTipRow: View {
     var body: some View {
         HStack(spacing: 14) {
@@ -381,15 +268,6 @@ private struct OllieTipRow: View {
                     .lineSpacing(3)
             }
             Spacer()
-            VStack(spacing: 4) {
-                PixelAssetImage(name: AssetSlot.Stats.phone)
-                    .frame(width: 42, height: 46)
-                Text("45m")
-                    .font(.system(size: 25, weight: .black, design: .monospaced))
-                Text("Lower")
-                    .font(pixelFont(.caption2))
-                    .foregroundStyle(AppColors.grass)
-            }
         }
         .padding(14)
         .background(AppColors.panel.opacity(0.88), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -432,13 +310,51 @@ private struct BedtimeProtectionRow: View {
     }
 }
 
-private struct Triangle: Shape {
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.move(to: CGPoint(x: rect.midX, y: rect.minY))
-        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
+#Preview("Watch disconnected") {
+    NavigationStack {
+        ScrollView {
+            PixelHomeDashboardContent(
+                progress: PixelHomeDashboardPreviewData.progress,
+                analyticsRecords: PixelHomeDashboardPreviewData.analyticsRecords,
+                watchReachable: false,
+                onStartRun: {}
+            )
+            .padding(.horizontal, 16)
+            .padding(.vertical, 20)
+        }
+        .background(AppColors.paper)
+    }
+}
+
+private enum PixelHomeDashboardPreviewData {
+    static var progress: UserProgress {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let yesterday = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        return UserProgress(
+            totalCompletedRuns: 4,
+            totalFocusMinutes: 135,
+            currentStreak: 2,
+            longestStreak: 5,
+            rewardsCollected: 4,
+            ollieLevel: 2,
+            dailyFocusRecords: [
+                DailyFocusRecord(day: today, completedFocusMinutes: 45, successfulRuns: 1, rewardsEarned: 1),
+                DailyFocusRecord(day: yesterday, completedFocusMinutes: 90, successfulRuns: 2, rewardsEarned: 2)
+            ],
+            sheepBalance: 9,
+            coinBalance: 45,
+            totalSheepEarned: 9,
+            totalCoinsEarned: 45
+        )
+    }
+
+    static var analyticsRecords: [AnalyticsDayRecord] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return (0..<7).reversed().compactMap { offset in
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+            return AnalyticsDayRecord(day: day, screenTimeMinutes: 180 + offset * 12)
+        }
     }
 }

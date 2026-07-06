@@ -324,11 +324,9 @@ private enum FocusRunPurpose: String, CaseIterable, Identifiable {
 private struct SetupBottomBar: View {
     var body: some View {
         HStack(spacing: 0) {
-            setupTab("Home", icon: "house.fill", selected: true)
-            setupTab("Stats", icon: "chart.bar.fill")
-            setupTab("Rooms", icon: "door.left.hand.closed")
-            setupTab("Friends", icon: "person.2.fill")
-            setupTab("Shop", icon: "storefront.fill")
+            ForEach(MainAppTab.visibleTabs) { tab in
+                setupTab(tab.title, icon: tab.icon, selected: tab == .home)
+            }
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)

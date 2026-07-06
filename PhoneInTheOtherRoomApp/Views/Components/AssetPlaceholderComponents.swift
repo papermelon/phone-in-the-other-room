@@ -43,6 +43,10 @@ struct AssetPlaceholderView: View {
     }
 }
 
+// Mock-data-backed sprite/card components below are DEBUG-only with the gated
+// MVP screens (ADR-0003). Release code uses PixelAssetImage + real models instead.
+#if DEBUG
+
 struct DogSpriteView: View {
     var state: MockDogState = MVPMockData.dog
     var mood: OllieMood? = nil
@@ -241,6 +245,8 @@ struct RewardCard: View {
     }
 }
 
+#endif
+
 struct ProgressRing: View {
     var progress: Double
     var lineWidth: CGFloat = 12
@@ -281,6 +287,8 @@ struct ProgressBar: View {
         .frame(height: 12)
     }
 }
+
+#if DEBUG
 
 struct FarmTileView: View {
     var unlock: MockFarmUnlock
@@ -356,6 +364,8 @@ struct FocusSessionCard: View {
         .assetReadyCard()
     }
 }
+
+#endif
 
 extension View {
     func assetReadyCard() -> some View {
