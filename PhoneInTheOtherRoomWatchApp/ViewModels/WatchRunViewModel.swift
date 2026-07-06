@@ -14,6 +14,10 @@ final class WatchRunViewModel: ObservableObject {
     private let nearby = WatchNearbyInteractionSession()
     private var pairedPhoneTokenData: Data?
     private var sentNearbyTokenData: Data?
+    private var sentNearbyTokenAcknowledged = false
+    private var nearbyTokenRetryTask: Task<Void, Never>?
+    private let nearbyTokenRetrySeconds: TimeInterval = 2
+    private let nearbyTokenRetryLimit = 6
 
     init() {
         watch.onMessage = { [weak self] message in
@@ -62,6 +66,27 @@ final class WatchRunViewModel: ObservableObject {
     func endRun() {
         WKInterfaceDevice.current().play(.failure)
         watch.send(WatchMessage(type: .endFocusRunEarly))
+        guard var run else { return }
+        run.state = .endedEarly
+        run.endedAt = Date()
+        run.actualDurationSeconds = run.endedAt?.timeIntervalSince(run.startedAt) ?? 0
+        run.endedEarlyReason = .userEnded
+        self.run = run
+        stopNearbyInteraction()
+    }
+
+    func clearRunSummary() {
+        run = nil
+        reward = nil
+        proximity = .initial
+        connectionText = "Open the iPhone app to start another run"
+    }
+
+    func requestDistanceCheck() {
+        WKInterfaceDevice.current().play(.click)
+        connectionText = "Checking distance..."
+        watch.send(WatchMessage(type: .distanceCheckRequest, run: run, proximity: proximity))
+        startNearbyInteraction(with: nil)
     }
 
     private func handle(_ message: WatchMessage) {
@@ -77,6 +102,14 @@ final class WatchRunViewModel: ObservableObject {
             startNearbyInteraction(with: message.tokenData)
         case .nearbyDiscoveryToken:
             startNearbyInteraction(with: message.tokenData)
+        case .nearbyDiscoveryTokenAcknowledged:
+            handleNearbyTokenAcknowledged(message.tokenData)
+        case .distanceCheckRequest:
+            startNearbyInteraction(with: message.tokenData)
+            connectionText = "Distance check active"
+        case .distanceCheckEnded:
+            stopNearbyInteraction()
+            connectionText = "Distance resting"
         case .proximityStateUpdate, .demoDistanceUpdate:
             if message.run?.state == .warningPhoneTooClose {
                 WKInterfaceDevice.current().play(.notification)
@@ -102,7 +135,8 @@ final class WatchRunViewModel: ObservableObject {
 
         nearby.start()
         if let peerTokenData {
-            if pairedPhoneTokenData != peerTokenData {
+            acknowledgeNearbyToken(peerTokenData)
+            if pairedPhoneTokenData.map({ $0 != peerTokenData }) ?? true {
                 pairedPhoneTokenData = peerTokenData
                 nearby.run(withTokenData: peerTokenData)
             }
@@ -111,16 +145,52 @@ final class WatchRunViewModel: ObservableObject {
             connectionText = "Waiting for distance token"
         }
 
-        guard let tokenData = nearby.discoveryTokenData() else { return }
-        guard sentNearbyTokenData != tokenData else { return }
-        sentNearbyTokenData = tokenData
-        watch.send(WatchMessage(type: .nearbyDiscoveryToken, run: run, proximity: proximity, tokenData: tokenData))
+        sendNearbyToken()
     }
 
     private func stopNearbyInteraction() {
+        nearbyTokenRetryTask?.cancel()
+        nearbyTokenRetryTask = nil
         nearby.stop()
         pairedPhoneTokenData = nil
         sentNearbyTokenData = nil
+        sentNearbyTokenAcknowledged = false
+    }
+
+    private func sendNearbyToken() {
+        guard let tokenData = nearby.discoveryTokenData() else { return }
+        if sentNearbyTokenData.map({ $0 != tokenData }) ?? true {
+            sentNearbyTokenData = tokenData
+            sentNearbyTokenAcknowledged = false
+        }
+        let message = WatchMessage(type: .nearbyDiscoveryToken, run: run, proximity: proximity, tokenData: tokenData)
+        watch.send(message)
+        startNearbyTokenRetry(tokenData: tokenData, message: message)
+    }
+
+    private func startNearbyTokenRetry(tokenData: Data, message: WatchMessage) {
+        nearbyTokenRetryTask?.cancel()
+        nearbyTokenRetryTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for _ in 1...self.nearbyTokenRetryLimit {
+                try? await Task.sleep(for: .seconds(self.nearbyTokenRetrySeconds))
+                guard !Task.isCancelled else { return }
+                guard let sentNearbyTokenData = self.sentNearbyTokenData else { return }
+                guard sentNearbyTokenData == tokenData, !self.sentNearbyTokenAcknowledged else { return }
+                self.watch.send(message)
+            }
+        }
+    }
+
+    private func acknowledgeNearbyToken(_ tokenData: Data) {
+        watch.send(WatchMessage(type: .nearbyDiscoveryTokenAcknowledged, run: run, proximity: proximity, tokenData: tokenData))
+    }
+
+    private func handleNearbyTokenAcknowledged(_ tokenData: Data?) {
+        guard let tokenData, let sentNearbyTokenData, tokenData == sentNearbyTokenData else { return }
+        sentNearbyTokenAcknowledged = true
+        nearbyTokenRetryTask?.cancel()
+        nearbyTokenRetryTask = nil
     }
 
     private func handleNearbyDistance(_ distance: Double?) {
@@ -142,8 +212,8 @@ final class WatchRunViewModel: ObservableObject {
             status = bucket.label
             detail = "Measured from NINearbyObject.distance on Apple Watch."
         } else {
-            bucket = .signalLost
-            status = ProximityBucket.signalLost.label
+            bucket = .waitingForDistance
+            status = ProximityBucket.waitingForDistance.label
             detail = "Waiting for NINearbyObject.distance."
         }
 
@@ -157,6 +227,7 @@ final class WatchRunViewModel: ObservableObject {
             detailText: detail
         )
         connectionText = distance == nil ? "Waiting for distance" : "Distance active"
+        watch.send(WatchMessage(type: .watchDistanceReading, run: run, proximity: proximity, distanceMeters: distance))
     }
 }
 

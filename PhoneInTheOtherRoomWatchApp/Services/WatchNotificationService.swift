@@ -18,7 +18,7 @@ final class WatchNotificationService: NSObject, UNUserNotificationCenterDelegate
 
             let content = UNMutableNotificationContent()
             content.title = "Focus Run started"
-            content.body = "Phone in the Other Room is running. Ollie is on your Watch."
+            content.body = "Counting Sheep is running. Ollie is on your Watch."
             content.sound = .default
 
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)

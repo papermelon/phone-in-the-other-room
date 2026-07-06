@@ -11,7 +11,8 @@ struct WatchEarlyEndView: View {
                 .multilineTextAlignment(.center)
             Text("\(Int((viewModel.run?.actualDurationSeconds ?? 0) / 60)) / \(Int((viewModel.run?.plannedDurationSeconds ?? 0) / 60)) min")
                 .font(.caption)
+            Button("Back to Setup") { viewModel.clearRunSummary() }
+            Button("Ping Phone") { viewModel.pingPhone() }
         }
     }
 }
-

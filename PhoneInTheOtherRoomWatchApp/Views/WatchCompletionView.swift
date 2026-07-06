@@ -13,7 +13,8 @@ struct WatchCompletionView: View {
             Text(viewModel.reward?.title ?? "Focus Letter")
                 .font(.caption)
                 .multilineTextAlignment(.center)
+            Button("Back to Setup") { viewModel.clearRunSummary() }
+            Button("Ping Phone") { viewModel.pingPhone() }
         }
     }
 }
-

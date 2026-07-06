@@ -19,7 +19,7 @@ struct WatchSetupView: View {
             ScrollView {
                 VStack(spacing: 8) {
                     WatchOllieIconView(mood: .waiting)
-                    Text("Phone in the Other Room")
+                    Text("Counting Sheep")
                         .font(.headline)
                         .multilineTextAlignment(.center)
                     Text(viewModel.connectionText)
