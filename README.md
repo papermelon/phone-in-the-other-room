@@ -41,18 +41,29 @@ Before running on your own devices, replace the placeholder bundle identifiers i
 
 If you are installing on real devices, select the same Apple Development Team for both the iPhone target and the Watch target in Xcode. If XcodeGen is run again, recheck signing because generated project settings may overwrite manual Xcode signing choices.
 
-## Capabilities And Plist
+## Plist, Permission, And Signing
 
 Required user-facing purpose string:
 
 `NSNearbyInteractionUsageDescription`: "Ollie uses nearby-device distance to check whether your iPhone is away from your Apple Watch during a Focus Run."
 
-Both generated targets include the `com.apple.developer.nearby-interaction` entitlement:
+`NSHealthShareUsageDescription`: "Phone in the Other Room reads sleep duration to show how bedtime phone-away habits relate to rest."
+
+Nearby Interaction is not gated by a foreground app entitlement. The checked-in entitlement files now cover the system integrations used by the prototype:
 
 - `PhoneInTheOtherRoomApp/PhoneInTheOtherRoom.entitlements`
 - `PhoneInTheOtherRoomWatchApp/PhoneInTheOtherRoomWatchApp.entitlements`
+- `PhoneInTheOtherRoomScreenTimeReport/PhoneInTheOtherRoomScreenTimeReport.entitlements`
 
-After running `xcodegen generate`, confirm Xcode still has a valid signing team selected for both the iPhone target and Watch target. If Xcode reports that Nearby Interaction is unavailable for the selected team/profile, fix signing before debugging distance readings.
+The iPhone app requests HealthKit and Family Controls entitlements so the Stats screen can start system setup flows for sleep and Screen Time. The Screen Time report extension also requests Family Controls and is embedded in the iOS app as `com.apple.deviceactivityui.report-extension`. Family Controls may require enabling the capability for both app identifiers in the Apple Developer portal and matching provisioning profiles.
+
+Screen Time setup in the app has three steps:
+
+1. Tap **Connect Screen Time** in Stats to request `AuthorizationCenter` access.
+2. Choose app/category sources for **Screen Time**, **Productivity**, and **Late Screen Time** with Apple's `FamilyActivityPicker`.
+3. The Stats cards embed `DeviceActivityReport` views, which ask the report extension to render today's selected screen time, 7-day selected screen time, and late-night selected screen time inside Apple's privacy sandbox.
+
+After running `xcodegen generate`, confirm Xcode still has a valid signing team selected for the iPhone target, Watch target, and Screen Time report extension target. If the app never shows the Nearby Interaction permission prompt, verify the generated Info.plist contains `NSNearbyInteractionUsageDescription` for both targets and reinstall the iPhone and Watch apps to reset permission state.
 
 No GPS location permission is requested. No backend, analytics, Firebase, Supabase, OpenAI key, or cloud database is used.
 
@@ -70,15 +81,17 @@ The App Intent prepares the selected run duration locally. When the app opens, t
 
 ## Nearby Interaction Limitation
 
-Nearby Interaction estimates device distance when supported by the hardware and session pairing. It does not identify exact rooms and should be treated as a fuzzy "near, drifting away, probably away" signal. The app uses smoothing, sustained samples, confidence labels, and friendly unsupported states.
+Nearby Interaction estimates device distance when supported by the hardware and session pairing. It does not identify exact rooms and should be treated as a fuzzy "near, drifting away, probably away" signal. The app uses smoothing, sustained samples, confidence labels, short check windows, and friendly waiting/unsupported states.
 
-The active run screens show the live `NINearbyObject.distance` value when the iPhone and Apple Watch have exchanged Nearby Interaction discovery tokens and the hardware/profile supports precise distance measurement. If the UI says "Waiting for distance" or "Phone distance unsupported", the app is not receiving usable UWB readings yet; check real devices, both apps open, signing, Nearby Interaction permission, and the entitlements above.
+The active run screens show the live `NINearbyObject.distance` value when the iPhone and Apple Watch have exchanged Nearby Interaction discovery tokens and the hardware supports precise distance measurement. Either side can receive a useful distance sample; Watch-side readings are forwarded back to the iPhone during active check windows. If the UI says "Waiting for distance", the app is waiting for a short UWB check to produce a reading. If it says "Phone distance unsupported", the current device/setup cannot produce precise Nearby Interaction distance.
 
-For the current prototype rule, the app ignores close-distance failure checks for the first 20 seconds of a Focus Run. After that, a fresh `NINearbyObject.distance` reading below `0.3m` ends the run early. If the planned timer completes first, the run succeeds.
+For the current prototype rule, the app keeps a startup distance window open for the first 30 seconds of a Focus Run and ignores close-return failures during the first 20 seconds. After that, it rests the Nearby Interaction session and wakes short randomized check windows roughly every 45-120 seconds. During those post-grace checks, fresh `NINearbyObject.distance` samples below `2.0m` warn the user on iPhone and Apple Watch. The run ends only after repeated close-phone warnings and sustained close samples. The user can also tap **Check Distance** on iPhone or Apple Watch to wake a 20-second check window on demand.
 
 ## WatchConnectivity Limitation
 
 WatchConnectivity messages are best-effort. Reachable devices use `sendMessage`; low-priority state falls back to application context. The iPhone app cannot force-open the Watch app; the Watch app must be installed and running or reachable through the paired simulator/device.
+
+Nearby Interaction discovery tokens are treated as high-priority messages: both apps queue them when the counterpart is temporarily unreachable, acknowledge received tokens, and retry unacknowledged tokens during an active distance check window.
 
 The iPhone setup screen reminds the user to open Phone in the Other Room on Apple Watch before starting. When a run starts, the iPhone schedules a local reminder notification; if the Watch app is reachable and receives the run-start message, it also schedules a local Watch notification.
 
@@ -90,7 +103,7 @@ During an active iPhone run, the app disables the idle timer and resets it when 
 
 ## Rewards And Streaks
 
-Completed runs earn Ollie-themed rewards. Early-ended runs do not grant a main reward, but may grant a consolation Muddy Paw Print. Streaks advance only on successful completed runs; early runs are encouraging and do not use harsh resets.
+Completed runs earn Ollie-themed rewards, sheep, coins, and other-room minutes. Sheep are the focus-resource inspired by the farm loop; coins are the spendable cosmetic currency for future Ollie and room upgrades. Daily focus stars unlock at 15, 30, 60, and 120 completed minutes, giving the home screen a lightweight daily mission and the stats screen a recent history. Early-ended runs do not grant a main reward, but may grant a consolation Muddy Paw Print. Streaks advance only on successful completed runs; early runs are encouraging and do not use harsh resets.
 
 ## Implemented
 
@@ -109,11 +122,16 @@ Completed runs earn Ollie-themed rewards. Early-ended runs do not grant a main r
 - WatchConnectivity ping/state plumbing with visible iPhone ping feedback
 - NearbyInteraction provider with discovery token support points and distance readouts
 - Local persistence for thresholds, progress, rewards, and last run
+- Light pixel-style Home/Farm shell with sheep and coin balances
+- Daily focus stars, three-view stats, recent focus history, and Ollie daily status
+- Apple Health sleep authorization and last-night sleep summary plumbing
+- Screen Time authorization, FamilyActivityPicker source selection, and embedded DeviceActivity report extension plumbing
 - Local iPhone reminder notification and reachable-Watch run-start notification
 - Phone ping haptic/sound and Watch haptics
 
 ## Stubbed Or Hardware Dependent
 
+- Real Screen Time totals require Family Controls approval, real-device testing, and selected app/category sources. The report extension is wired, but Apple only supplies report data on supported iOS devices with valid entitlements/provisioning.
 - Full iPhone-to-Watch app embedding/signing may need project settings adjusted in Xcode for a production archive.
 - Nearby Interaction real-device validation still needs paired-device testing on supported hardware.
 - Focus activation still uses Apple Shortcuts' native Focus action; the app can prepare a run, but it cannot silently turn Focus on by itself.
