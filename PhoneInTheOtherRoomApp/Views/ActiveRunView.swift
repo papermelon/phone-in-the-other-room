@@ -11,11 +11,14 @@ struct ActiveRunView: View {
         ScrollView {
             VStack(spacing: 16) {
                 timerHero
+                // Decorative pixel scene; the proximity card below carries the same
+                // information as text for VoiceOver.
                 IsometricFocusYardView(
                     state: runState,
                     bucket: proximity.bucket,
                     distanceMeters: proximity.distanceMeters
                 )
+                .accessibilityHidden(true)
                 proximityCard
                 if viewModel.activeRun?.state == .warningPhoneTooClose {
                     warningBanner
@@ -51,6 +54,8 @@ struct ActiveRunView: View {
                     .foregroundStyle(.white)
                     .monospacedDigit()
                     .contentTransition(.numericText())
+                    .accessibilityLabel(timerAccessibilityLabel)
+                    .accessibilityAddTraits(.updatesFrequently)
                 Text(runState.label)
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.62))
@@ -96,7 +101,8 @@ struct ActiveRunView: View {
         HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(OlliePalette.amber)
-            Text("\(remainingWarnings) warnings left before the run ends.")
+                .accessibilityHidden(true)
+            Text(warningBannerText)
                 .font(.caption.weight(.bold))
                 .foregroundStyle(.white)
         }
@@ -104,6 +110,18 @@ struct ActiveRunView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(OlliePalette.amber.opacity(0.18), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(OlliePalette.amber.opacity(0.5), lineWidth: 1))
+        .accessibilityElement(children: .combine)
+    }
+
+    private var warningBannerText: String {
+        switch remainingWarnings {
+        case 0:
+            return "Your phone wandered back. Walk it out to keep the run going."
+        case 1:
+            return "Your phone wandered back. Ollie can let it slide once more."
+        default:
+            return "Your phone wandered back. Ollie can let it slide \(remainingWarnings) more times."
+        }
     }
 
     @ViewBuilder
@@ -122,16 +140,19 @@ struct ActiveRunView: View {
         } label: {
             Label("Check Distance", systemImage: "dot.radiowaves.left.and.right")
         }
+        .accessibilityHint("Asks your Watch for a fresh distance reading")
         Button {
             viewModel.coordinator.pingPhone()
         } label: {
             Label("Whistle at Phone", systemImage: "speaker.wave.2")
         }
+        .accessibilityHint("Plays a sound on your phone so you can find it")
         Button {
             viewModel.coordinator.endEarly()
         } label: {
             Label("End Run", systemImage: "xmark")
         }
+        .accessibilityHint("Ends this run early")
     }
 
     private var headline: String {
@@ -165,6 +186,15 @@ struct ActiveRunView: View {
 
     private var remainingWarnings: Int {
         max(0, FocusRunRules.allowedCloseWarnings - (viewModel.activeRun?.warningCount ?? 0))
+    }
+
+    private var timerAccessibilityLabel: String {
+        let remainingMinutes = OllieFormat.minutes(viewModel.coordinator.remainingSeconds)
+        let plannedMinutes = OllieFormat.minutes(viewModel.activeRun?.plannedDurationSeconds ?? 0)
+        guard remainingMinutes > 0 else {
+            return "Less than a minute remaining of \(plannedMinutes)"
+        }
+        return "\(remainingMinutes) minutes remaining of \(plannedMinutes)"
     }
 }
 
@@ -200,6 +230,9 @@ private struct ProximityMeter: View {
             .offset(y: 18)
         }
         .padding(.bottom, 20)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Phone distance")
+        .accessibilityValue(bucket.label)
     }
 
     private func meterColor(for index: Int) -> Color {

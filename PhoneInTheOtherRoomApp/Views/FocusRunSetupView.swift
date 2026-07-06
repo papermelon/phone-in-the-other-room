@@ -6,9 +6,9 @@ struct FocusRunSetupView: View {
 
     private let durationOptions: [DurationOption] = [
         .init(minutes: 15, title: "15 min", subtitle: "Quick reset"),
-        .init(minutes: 25, title: "25 min", subtitle: "Focus sprint"),
-        .init(minutes: 45, title: "45 min", subtitle: "Deep work"),
-        .init(minutes: 60, title: "60 min", subtitle: "Long run")
+        .init(minutes: 25, title: "25 min", subtitle: "Short stretch"),
+        .init(minutes: 45, title: "45 min", subtitle: "Settle in"),
+        .init(minutes: 60, title: "60 min", subtitle: "Long stretch")
     ]
 
     var body: some View {
@@ -49,7 +49,9 @@ struct FocusRunSetupView: View {
             Text("Start Focus Run")
                 .font(.system(size: 34, weight: .black, design: .monospaced))
                 .foregroundStyle(AppColors.ink)
-            Text("Choose your run and let's get started.")
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+            Text("Pick a run and Ollie will take it from here.")
                 .font(pixelFont(.subheadline))
                 .foregroundStyle(AppColors.muted)
                 .multilineTextAlignment(.center)
@@ -89,26 +91,32 @@ struct FocusRunSetupView: View {
                     .overlay(customStroke)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Custom duration")
+                .accessibilityHint("Set your own run length")
+                .accessibilityAddTraits(viewModel.customDurationSelected ? .isSelected : [])
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Set custom duration")
                         .font(pixelFont(.caption))
                     HStack {
-                        customStepperButton(systemImage: "minus") {
+                        customStepperButton(systemImage: "minus", accessibilityLabel: "Shorter") {
                             updateCustomDuration(by: -5)
                         }
+                        .accessibilityHint("Removes 5 minutes")
                         Spacer()
                         Text("\(max(25, viewModel.durationMinutes)) min")
                             .font(.system(size: 24, weight: .black, design: .monospaced))
+                            .accessibilityLabel("\(max(25, viewModel.durationMinutes)) minutes")
                         Spacer()
-                        customStepperButton(systemImage: "plus") {
+                        customStepperButton(systemImage: "plus", accessibilityLabel: "Longer") {
                             updateCustomDuration(by: 5)
                         }
+                        .accessibilityHint("Adds 5 minutes")
                     }
                     .padding(10)
                     .background(AppColors.panel.opacity(0.70), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppColors.stroke.opacity(0.12), lineWidth: 1))
-                    Text("Min 25 min  -  Max 180 min")
+                    Text("25 to 180 minutes")
                         .font(pixelFont(.caption2))
                         .frame(maxWidth: .infinity, alignment: .center)
                 }
@@ -145,38 +153,47 @@ struct FocusRunSetupView: View {
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(selectedPurpose == purpose ? AppColors.grass : AppColors.stroke.opacity(0.14), lineWidth: selectedPurpose == purpose ? 2 : 1))
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(purpose.title)
+                    .accessibilityAddTraits(selectedPurpose == purpose ? .isSelected : [])
                 }
             }
         }
     }
 
     private var rewardSection: some View {
-        SetupSection(number: 3, title: "Possible Reward", icon: "gift", subtitle: "Stay focused and earn rewards!") {
+        SetupSection(number: 3, title: "Possible Reward", icon: "gift", subtitle: "Finish the run and Ollie brings a little something back.") {
             HStack(spacing: 18) {
                 CountingSheepMiniSheep(style: .cream)
                     .frame(width: 78, height: 64)
+                    .accessibilityHidden(true)
                 VStack(spacing: 3) {
                     Text("+10%")
                         .font(.system(size: 25, weight: .black, design: .monospaced))
                     Text("Sheep Progress")
                         .font(pixelFont(.caption2))
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Plus 10 percent sheep progress")
                 Rectangle()
                     .fill(AppColors.stroke.opacity(0.15))
                     .frame(width: 1, height: 60)
                 Image(systemName: "diamond.fill")
                     .font(.system(size: 36, weight: .black))
                     .foregroundStyle(AppColors.grassLight)
+                    .accessibilityHidden(true)
                 VStack(spacing: 3) {
                     Text("+1")
                         .font(.system(size: 25, weight: .black, design: .monospaced))
                     Text("Collectible")
                         .font(pixelFont(.caption2))
                 }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Plus 1 collectible")
                 Spacer()
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: "info.circle")
-                    Text("Rewards are granted when you complete your run.")
+                        .accessibilityHidden(true)
+                    Text("Ollie hands out rewards when the run finishes.")
                         .font(pixelFont(.caption2))
                         .lineSpacing(4)
                 }
@@ -198,7 +215,7 @@ struct FocusRunSetupView: View {
             .stroke(viewModel.customDurationSelected ? AppColors.grass : AppColors.stroke.opacity(0.14), lineWidth: viewModel.customDurationSelected ? 2 : 1)
     }
 
-    private func customStepperButton(systemImage: String, action: @escaping () -> Void) -> some View {
+    private func customStepperButton(systemImage: String, accessibilityLabel: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemImage)
                 .font(.system(size: 18, weight: .black))
@@ -206,8 +223,10 @@ struct FocusRunSetupView: View {
                 .frame(width: 44, height: 44)
                 .background(AppColors.panel, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 9).stroke(AppColors.stroke.opacity(0.12), lineWidth: 1))
+                .contentShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
     }
 
     private func updateCustomDuration(by delta: Int) {
@@ -275,6 +294,8 @@ private struct DurationChoiceCard: View {
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(isSelected ? AppColors.grass : AppColors.stroke.opacity(0.14), lineWidth: isSelected ? 2 : 1))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(option.minutes) minutes, \(option.subtitle)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -332,6 +353,9 @@ private struct SetupBottomBar: View {
         .padding(.vertical, 8)
         .background(AppColors.panel.opacity(0.96), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(AppColors.stroke.opacity(0.10), lineWidth: 1))
+        // The setup screen's bottom bar is a visual echo of the main tab bar and is not
+        // interactive, so it should stay out of the VoiceOver order.
+        .accessibilityHidden(true)
     }
 
     private func setupTab(_ title: String, icon: String, selected: Bool = false) -> some View {
