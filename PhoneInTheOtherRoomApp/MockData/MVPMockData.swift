@@ -1,6 +1,10 @@
 import Foundation
 import SwiftUI
 
+// DEBUG-only mock data for the gated MVP screens (ADR-0003).
+// Nothing here may be referenced from a release code path.
+#if DEBUG
+
 enum MockRarity: String, CaseIterable, Identifiable {
     case common = "Common"
     case uncommon = "Uncommon"
@@ -167,4 +171,6 @@ enum MVPMockData {
         MockFriendActivity(name: "Ari", detail: "kept a 4-day streak.", icon: "flame.fill", reaction: "Celebrate")
     ]
 }
+
+#endif
 

@@ -75,15 +75,22 @@ struct HomeView: View {
             case .home:
                 PixelHomeDashboard()
                     .environmentObject(viewModel)
+            case .stats:
+                FocusStatsView()
+                    .environmentObject(viewModel)
+#if DEBUG
             case .farm:
                 FarmOverviewScreen()
             case .friends:
                 FriendsOverviewScreen()
-            case .stats:
-                FocusStatsView()
-                    .environmentObject(viewModel)
             case .shop:
                 ShopPlaceholderScreen()
+#else
+            case .farm, .friends, .shop:
+                // Gated tabs (ADR-0003) are not selectable in Release; fall back safely.
+                PixelHomeDashboard()
+                    .environmentObject(viewModel)
+#endif
             }
         }
     }

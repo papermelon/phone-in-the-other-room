@@ -144,6 +144,16 @@ struct PixelProgressRail: View {
 enum MainAppTab: String, CaseIterable, Identifiable {
     case home, stats, farm, friends, shop
 
+    /// Tabs visible in the shipping UI. Farm/Friends/Shop are DEBUG-only until the
+    /// reintroduction gates in docs/DECISIONS/ADR-0003-gated-features.md are met.
+    static var visibleTabs: [MainAppTab] {
+#if DEBUG
+        allCases
+#else
+        [.home, .stats]
+#endif
+    }
+
     var id: String { rawValue }
 
     var title: String {
@@ -187,11 +197,13 @@ struct PixelTopBar: View {
             HStack(spacing: 14) {
                 CurrencyPill(icon: "cloud.fill", value: progress.sheepBalance, tint: AppColors.sheep)
                 CurrencyPill(icon: "circle.hexagongrid.fill", value: progress.coinBalance, tint: AppColors.coin)
+#if DEBUG
                 NavigationLink(destination: SettingsPlaceholderScreen()) {
                     Image(systemName: "gearshape")
                         .font(.title3.weight(.black))
                 }
                 .buttonStyle(.plain)
+#endif
             }
         }
         .foregroundStyle(AppColors.ink)
@@ -227,7 +239,7 @@ struct PixelBottomBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(MainAppTab.allCases) { tab in
+            ForEach(MainAppTab.visibleTabs) { tab in
                 Button {
                     withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
                         selectedTab = tab
@@ -276,7 +288,7 @@ struct CountingSheepTopBar: View {
     var progress: UserProgress
     var showCapacity = false
 
-    private var sheepCount: Int { max(28, progress.sheepBalance) }
+    private var sheepCount: Int { max(0, progress.sheepBalance) }
     private var coinCount: Int { max(0, progress.coinBalance) }
 
     var body: some View {
@@ -303,22 +315,27 @@ struct CountingSheepTopBar: View {
                 HStack(alignment: .firstTextBaseline, spacing: 5) {
                     Text("\(sheepCount)")
                         .font(.system(size: showCapacity ? 30 : 25, weight: .black, design: .monospaced))
+#if DEBUG
+                    // Farm capacity display ships with the gated Farm tab (ADR-0003).
                     if showCapacity {
                         Text("/ 60")
                             .font(.system(size: 26, weight: .black, design: .monospaced))
                     }
+#endif
                 }
                 .foregroundStyle(AppColors.ink)
             }
 
             Spacer(minLength: 16)
 
+#if DEBUG
             NavigationLink(destination: SettingsPlaceholderScreen()) {
                 Image(systemName: "gearshape")
                     .font(.system(size: 36, weight: .black))
                     .foregroundStyle(AppColors.ink)
             }
             .buttonStyle(.plain)
+#endif
         }
     }
 }
@@ -342,7 +359,7 @@ struct CountingSheepBottomBar: View {
 
     var body: some View {
         HStack(spacing: 0) {
-            ForEach(MainAppTab.allCases) { tab in
+            ForEach(MainAppTab.visibleTabs) { tab in
                 Button {
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
                         selectedTab = tab
@@ -714,11 +731,12 @@ struct SpeechBubble: View {
 struct PixelSegmentedPicker<T: Hashable & Identifiable>: View where T: CaseIterable, T.AllCases: RandomAccessCollection {
     let title: String
     @Binding var selection: T
+    var items: [T]? = nil
     let label: (T) -> String
 
     var body: some View {
         HStack(spacing: 6) {
-            ForEach(Array(T.allCases)) { item in
+            ForEach(items ?? Array(T.allCases)) { item in
                 Button {
                     withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
                         selection = item

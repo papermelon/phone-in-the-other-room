@@ -9,6 +9,16 @@ import FamilyControls
 enum FocusStatsTab: String, CaseIterable, Identifiable {
     case today, trends, sleep, insights
 
+    /// Sleep (HealthKit) is deferred to TestFlight build 2; Screen Time surfaces are
+    /// gated until Family Controls distribution approval (ADR-0004, docs/PROJECT_BRIEF.md).
+    static var visibleTabs: [FocusStatsTab] {
+#if DEBUG
+        allCases
+#else
+        [.today, .trends, .insights]
+#endif
+    }
+
     var id: String { rawValue }
 
     var title: String {
@@ -76,7 +86,7 @@ struct FocusStatsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                PixelSegmentedPicker(title: "Stats", selection: $selectedTab) { $0.title }
+                PixelSegmentedPicker(title: "Stats", selection: $selectedTab, items: FocusStatsTab.visibleTabs) { $0.title }
 
                 switch selectedTab {
                 case .today:
@@ -125,13 +135,15 @@ struct FocusStatsView: View {
 
     private var todayView: some View {
         VStack(spacing: 16) {
-            screenTimeSetupCard
 #if DEBUG
+            // Screen Time surfaces are gated until Family Controls approval (ADR-0004).
+            screenTimeSetupCard
             mockFallbackStats
 #endif
-            statsCard(title: "Today") {
-                PixelStatsMetricRow(icon: "iphone.slash", title: "Other-room minutes", value: "\(today.completedFocusMinutes) min", detail: "Completed Focus Run time")
-                PixelStatsMetricRow(icon: "star.fill", title: "Current daily star", value: today.bestStar?.title ?? "None yet", detail: nextStarCaption)
+            statsCard(title: "Tonight") {
+                PixelStatsMetricRow(icon: "iphone.slash", title: "Phone-away minutes", value: "\(today.completedFocusMinutes) min", detail: "Time your phone rested in the other room")
+                PixelStatsMetricRow(icon: "star.fill", title: "Tonight's star", value: today.bestStar?.title ?? "None yet", detail: nextStarCaption)
+#if DEBUG
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
                 if canShowScreenTimeReport(.distracting) {
                     ScreenTimeReportRow(
@@ -147,8 +159,9 @@ struct FocusStatsView: View {
 #else
                 PixelStatsMetricRow(icon: "hourglass", title: "Screen time so far", value: viewModel.screenTimeAuthorization.label, detail: "Requires FamilyControls and DeviceActivity on iOS")
 #endif
+#endif
                 if isEvening {
-                    PixelStatsMetricRow(icon: "moon.stars.fill", title: "Evening phone-away goal", value: eveningGoalValue, detail: "After 6pm, protect the wind-down window")
+                    PixelStatsMetricRow(icon: "moon.stars.fill", title: "Evening wind-down", value: eveningGoalValue, detail: "After 6pm, protect the wind-down window")
                 }
             }
             starSummary
@@ -159,6 +172,7 @@ struct FocusStatsView: View {
         VStack(spacing: 16) {
             weeklyBars
             statsCard(title: "Trend markers") {
+#if DEBUG
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
                 if canShowScreenTimeReport(.distracting) {
                     ScreenTimeReportRow(
@@ -174,12 +188,13 @@ struct FocusStatsView: View {
 #else
                 PixelStatsMetricRow(icon: "chart.line.uptrend.xyaxis", title: "Screen time trend", value: "Unavailable", detail: "Requires FamilyControls and DeviceActivity on iOS")
 #endif
+#endif
                 PixelStatsMetricRow(icon: "checkmark.seal.fill", title: "Completion rate", value: completionRate.map { "\($0)%" } ?? "No runs yet", detail: "\(progress.totalCompletedRuns) completed, \(earlyReturnCount) ended early")
-                PixelStatsMetricRow(icon: "clock.fill", title: "Best focus time", value: bestFocusTimeLabel, detail: "Based on completed reward times")
+                PixelStatsMetricRow(icon: "clock.fill", title: "Best wind-down time", value: bestFocusTimeLabel, detail: "Based on completed reward times")
             }
             analyticsHistoryCard
-            screenTimeCategorySetup
 #if DEBUG
+            screenTimeCategorySetup
             mockSessionHistory
 #endif
             recentHistory
