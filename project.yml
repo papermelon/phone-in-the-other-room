@@ -12,32 +12,38 @@ targets:
   PhoneInTheOtherRoom:
     type: application
     platform: iOS
-    entitlements:
-      path: PhoneInTheOtherRoomApp/PhoneInTheOtherRoom.entitlements
     sources:
       - path: Shared
       - path: PhoneInTheOtherRoomApp
       - path: Assets.xcassets
         buildPhase: resources
-    dependencies:
-      - target: PhoneInTheOtherRoomWatchApp
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.PhoneInTheOtherRoom
-        PRODUCT_NAME: Phone in the Other Room
+        PRODUCT_NAME: Counting Sheep
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Phone in the Other Room
+        INFOPLIST_KEY_CFBundleDisplayName: Counting Sheep
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
         INFOPLIST_KEY_UIRequiresFullScreen: YES
         INFOPLIST_KEY_NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance to check whether your iPhone is away from your Apple Watch during a Focus Run.
+        INFOPLIST_KEY_NSHealthShareUsageDescription: Counting Sheep reads sleep duration to show how bedtime phone-away habits relate to rest.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
         TARGETED_DEVICE_FAMILY: 1
+    dependencies:
+      - target: PhoneInTheOtherRoomWatchApp
+        embed: true
+    postCompileScripts:
+      - script: |
+          echo "Screen Time reports require Apple-managed FamilyControls/DeviceActivity entitlements before device validation."
+        name: Screen Time Entitlement Note
+        basedOnDependencyAnalysis: false
   PhoneInTheOtherRoomWatchApp:
     type: application
     platform: watchOS
-    entitlements:
-      path: PhoneInTheOtherRoomWatchApp/PhoneInTheOtherRoomWatchApp.entitlements
     sources:
       - path: Shared
       - path: PhoneInTheOtherRoomWatchApp
@@ -46,12 +52,30 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.example.PhoneInTheOtherRoom.watchkitapp
-        PRODUCT_NAME: Phone in the Other Room
+        PRODUCT_NAME: Counting Sheep Watch
         GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Phone in the Other Room
+        INFOPLIST_KEY_CFBundleDisplayName: Counting Sheep
         INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.example.PhoneInTheOtherRoom
-        INFOPLIST_KEY_NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance to check whether your Watch is away from your iPhone during a Focus Run.
+        INFOPLIST_KEY_NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance to check whether your iPhone is away during a Focus Run.
         ASSETCATALOG_COMPILER_APPICON_NAME: WatchAppIcon
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+  PhoneInTheOtherRoomScreenTimeReport:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Shared
+      - path: PhoneInTheOtherRoomScreenTimeReport
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.PhoneInTheOtherRoom.ScreenTimeReport
+        PRODUCT_NAME: Counting Sheep Screen Time Report
+        INFOPLIST_FILE: PhoneInTheOtherRoomScreenTimeReport/Info.plist
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGN_IDENTITY: ""
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SCREEN_TIME_REPORTS"
   PhoneInTheOtherRoomTests:
     type: bundle.unit-test
     platform: iOS
@@ -67,11 +91,12 @@ schemes:
     build:
       targets:
         PhoneInTheOtherRoom: all
+        PhoneInTheOtherRoomWatchApp: all
         PhoneInTheOtherRoomTests: [test]
     test:
       targets:
         - name: PhoneInTheOtherRoomTests
-  PhoneInTheOtherRoomWatchApp:
+  PhoneInTheOtherRoomScreenTimeReport:
     build:
       targets:
-        PhoneInTheOtherRoomWatchApp: all
+        PhoneInTheOtherRoomScreenTimeReport: all
