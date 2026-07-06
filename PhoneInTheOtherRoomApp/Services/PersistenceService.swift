@@ -8,6 +8,7 @@ final class PersistenceService {
     private let rewardsKey = "ollie.rewards"
     private let thresholdKey = "ollie.thresholds"
     private let lastRunKey = "ollie.lastRun"
+    private let manualAnalyticsKey = "ollie.analytics.manualEntries"
 
     var progress: UserProgress {
         get { load(UserProgress.self, key: progressKey) ?? .empty }
@@ -29,6 +30,11 @@ final class PersistenceService {
         set { save(newValue, key: lastRunKey) }
     }
 
+    var manualAnalyticsEntries: [ManualAnalyticsEntry] {
+        get { load([ManualAnalyticsEntry].self, key: manualAnalyticsKey) ?? [] }
+        set { save(newValue, key: manualAnalyticsKey) }
+    }
+
     private func load<T: Decodable>(_ type: T.Type, key: String) -> T? {
         guard let data = defaults.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(type, from: data)
@@ -42,4 +48,3 @@ final class PersistenceService {
         defaults.set(data, forKey: key)
     }
 }
-

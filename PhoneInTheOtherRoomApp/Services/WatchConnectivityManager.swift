@@ -27,8 +27,17 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
             WCSession.default.sendMessage(dictionary, replyHandler: nil) { _ in
                 WCSession.default.transferUserInfo(dictionary)
             }
-        } else if message.type == .startFocusRun || message.type == .pingPhone || message.type == .pingWatch || message.type == .endFocusRunEarly {
+        } else if shouldQueueWhenUnreachable(message.type) {
             WCSession.default.transferUserInfo(dictionary)
+        }
+    }
+
+    private func shouldQueueWhenUnreachable(_ type: WatchMessageType) -> Bool {
+        switch type {
+        case .startFocusRun, .pingPhone, .pingWatch, .endFocusRunEarly:
+            return true
+        default:
+            return false
         }
     }
 }
