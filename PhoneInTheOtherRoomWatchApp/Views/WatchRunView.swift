@@ -28,6 +28,12 @@ struct WatchRunView: View {
                 Text("\(viewModel.proximity.confidence.rawValue.capitalized) confidence")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
+                Text(viewModel.proximity.detailText)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                    .multilineTextAlignment(.center)
+                Button("Check Distance") { viewModel.requestDistanceCheck() }
                 Button("Ping Phone") { viewModel.pingPhone() }
                 Button("End Run") { viewModel.endRun() }
                     .tint(.orange)
