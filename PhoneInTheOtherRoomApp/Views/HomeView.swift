@@ -3,38 +3,37 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var pingBannerVisible = false
+    @State private var selectedTab: MainAppTab = .home
 
     var body: some View {
         NavigationStack {
             ZStack {
-                OlliePalette.appBackground.ignoresSafeArea()
-                ScrollView {
-                    VStack(spacing: 22) {
-                        header
-                        IsometricFocusYardView(
-                            state: viewModel.activeRun?.state ?? .setup,
-                            bucket: viewModel.coordinator.proximityState.bucket,
-                            distanceMeters: viewModel.coordinator.proximityState.distanceMeters
-                        )
-
-                        if let run = viewModel.activeRun, run.state == .completed {
-                            CompletionView()
-                        } else if let run = viewModel.activeRun, run.state == .endedEarly {
-                            EarlyEndView()
-                        } else if viewModel.isRunning {
-                            ActiveRunView()
-                        } else {
-                            FocusRunSetupView()
-                        }
-
-                        HStack(alignment: .top, spacing: 12) {
-                            progressPanel
-                            rewardPreview
-                        }
-                        EventTickerView(events: viewModel.coordinator.events)
+                AppColors.paper.ignoresSafeArea()
+                VStack(spacing: 0) {
+                    if showChrome, selectedTab != .farm {
+                        CountingSheepTopBar(progress: viewModel.coordinator.progress, showCapacity: selectedTab == .home)
+                            .padding(.horizontal, 18)
+                            .padding(.top, 10)
                     }
-                    .padding(.horizontal, 22)
-                    .padding(.bottom, 28)
+
+                    if contentUsesOwnScroll {
+                        content
+                    } else {
+                        ScrollView {
+                            VStack(spacing: 18) {
+                                content
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.top, showChrome ? 20 : 12)
+                            .padding(.bottom, 18)
+                        }
+                    }
+
+                    if showChrome {
+                        CountingSheepBottomBar(selectedTab: $selectedTab)
+                            .padding(.horizontal, 12)
+                            .padding(.bottom, 6)
+                    }
                 }
                 if pingBannerVisible {
                     PingPulseOverlay()
@@ -50,7 +49,7 @@ struct HomeView: View {
                     viewModel.startRun(focusAccepted: true)
                 }
             } message: {
-                Text("Phone in the Other Room cannot silently toggle Focus. Turn it on from Control Center or run your Shortcut first, then continue.")
+                Text("Counting Sheep cannot silently toggle Focus. Turn it on from Control Center or run your Shortcut first, then continue.")
             }
             .onAppear {
                 viewModel.applyShortcutPreparationIfNeeded()
@@ -63,6 +62,41 @@ struct HomeView: View {
         }
     }
 
+    @ViewBuilder
+    private var content: some View {
+        if let run = viewModel.activeRun, run.state == .completed {
+            CompletionView()
+        } else if let run = viewModel.activeRun, run.state == .endedEarly {
+            EarlyEndView()
+        } else if viewModel.isRunning {
+            ActiveRunView()
+        } else {
+            switch selectedTab {
+            case .home:
+                PixelHomeDashboard()
+                    .environmentObject(viewModel)
+            case .farm:
+                FarmOverviewScreen()
+            case .friends:
+                FriendsOverviewScreen()
+            case .stats:
+                FocusStatsView()
+                    .environmentObject(viewModel)
+            case .shop:
+                ShopPlaceholderScreen()
+            }
+        }
+    }
+
+    private var showChrome: Bool {
+        viewModel.activeRun == nil && !viewModel.isRunning
+    }
+
+    private var contentUsesOwnScroll: Bool {
+        guard showChrome else { return false }
+        return selectedTab != .home
+    }
+
     private func showPingBanner() {
         withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
             pingBannerVisible = true
@@ -73,88 +107,5 @@ struct HomeView: View {
                 pingBannerVisible = false
             }
         }
-    }
-
-    private var header: some View {
-        HStack(alignment: .center, spacing: 14) {
-            OllieSpriteView(mood: viewModel.activeRun?.state.ollieMood ?? .waiting, size: 66)
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Phone in the Other Room")
-                    .font(.largeTitle.weight(.black))
-                    .foregroundStyle(.white)
-                    .lineLimit(2)
-                Text("Send Ollie on a Focus Run.")
-                    .font(.headline.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.62))
-            }
-            Spacer()
-        }
-        .padding(.top, 10)
-    }
-
-    private var progressPanel: some View {
-        GamePanelView(title: "Progress") {
-            let progress = viewModel.coordinator.progress
-            VStack(alignment: .leading, spacing: 6) {
-                Text(progress.levelTitle)
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
-                Text("\(progress.totalCompletedRuns) runs")
-                Text("\(progress.totalFocusMinutes) focus min")
-                Text("Streak \(progress.currentStreak)")
-            }
-            .font(.caption)
-            .foregroundStyle(.white.opacity(0.72))
-        }
-    }
-
-    private var rewardPreview: some View {
-        NavigationLink {
-            RewardShelfView()
-        } label: {
-            GamePanelView(title: "Shelf") {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("\(viewModel.coordinator.rewards.count)")
-                        .font(.largeTitle.weight(.black))
-                        .foregroundStyle(.white)
-                    Text("collectibles")
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.68))
-                }
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct PingPulseOverlay: View {
-    var body: some View {
-        VStack {
-            HStack(spacing: 12) {
-                Image(systemName: "speaker.wave.2.fill")
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(.black)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Phone heard the whistle")
-                        .font(.headline.weight(.black))
-                    Text("Ping sound and haptic sent.")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.black.opacity(0.64))
-                }
-                Spacer(minLength: 0)
-            }
-            .foregroundStyle(.black)
-            .padding(16)
-            .background(OlliePalette.amber, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 24, style: .continuous)
-                    .stroke(.white.opacity(0.35), lineWidth: 1)
-            )
-            .shadow(color: .black.opacity(0.35), radius: 18, x: 0, y: 10)
-            .padding(.horizontal, 22)
-            .padding(.top, 10)
-            Spacer()
-        }
-        .allowsHitTesting(false)
     }
 }
