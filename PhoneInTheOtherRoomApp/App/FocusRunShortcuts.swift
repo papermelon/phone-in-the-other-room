@@ -3,7 +3,7 @@ import Foundation
 
 struct PrepareFocusRunIntent: AppIntent {
     static var title: LocalizedStringResource = "Start Focus Run"
-    static var description = IntentDescription("Prepares Phone in the Other Room with a Focus Run duration. Add Apple's Focus action and Open App action in Shortcuts to complete the flow.")
+    static var description = IntentDescription("Prepares Counting Sheep with a Focus Run duration. Add Apple's Focus action and Open App action in Shortcuts to complete the flow.")
 
     @Parameter(title: "Minutes", default: 25)
     var minutes: Int
@@ -14,7 +14,7 @@ struct PrepareFocusRunIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         FocusRunShortcutStore.savePendingDuration(minutes: minutes, seconds: seconds)
         let label = durationLabel(minutes: minutes, seconds: seconds)
-        return .result(dialog: "Prepared a \(label) Focus Run. Turn on Focus in this Shortcut, then open Phone in the Other Room.")
+        return .result(dialog: "Prepared a \(label) Focus Run. Turn on Focus in this Shortcut, then open Counting Sheep.")
     }
 
     private func durationLabel(minutes: Int, seconds: Int) -> String {

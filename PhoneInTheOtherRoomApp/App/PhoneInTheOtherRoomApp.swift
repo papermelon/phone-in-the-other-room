@@ -12,7 +12,7 @@ struct PhoneInTheOtherRoomApp: App {
         WindowGroup {
             HomeView()
                 .environmentObject(runViewModel)
-                .preferredColorScheme(.dark)
+                .preferredColorScheme(.light)
         }
     }
 }

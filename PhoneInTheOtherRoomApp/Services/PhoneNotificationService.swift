@@ -17,7 +17,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
             guard await requestAuthorizationIfNeeded() else { return }
 
             let content = UNMutableNotificationContent()
-            content.title = "Open Phone in the Other Room on Watch"
+            content.title = "Open Counting Sheep on Watch"
             content.body = "Your Focus Run is starting. Open the Watch app so Ollie can stay with you."
             content.sound = .default
 
