@@ -4,11 +4,12 @@ struct EarlyEndView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
 
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 16) {
             GamePanelView(title: "Back early", prominence: .hero) {
-                HStack {
-                    OllieSpriteView(mood: .sad, size: 90)
-                    VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 14) {
+                    OllieSpriteView(mood: .sad, size: 96)
+                        .idleBob()
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("Ollie came back early.")
                             .font(.title2.weight(.black))
                             .foregroundStyle(.white)
@@ -19,6 +20,7 @@ struct EarlyEndView: View {
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.62))
                     }
+                    Spacer(minLength: 0)
                 }
             }
             RewardRevealView(reward: viewModel.coordinator.latestReward)
