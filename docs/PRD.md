@@ -2,9 +2,9 @@
 
 ## Product Identity
 
-Public project name: **Phone in the Other Room**.
+Repo / code name: **Phone in the Other Room** (folder names and target names still use this).
 
-In-app identity: **Phone in the Other Room**.
+In-app identity / shipping display name: **Counting Sheep** (`CFBundleDisplayName` in `project.yml`).
 
 Mascot: Ollie, an original stylized brown-and-white Border Collie with upright ears, a white face blaze, brown eye patches, round expressive eyes, energetic posture, and a happy tongue-out personality.
 
@@ -81,9 +81,9 @@ The stats surface is organized into three views:
 - Trends: 7-day other-room minutes, screen time trend, completion rate, and best focus time.
 - Sleep & Recovery: last night sleep, bedtime phone-away minutes, and late screen time.
 
-Screen Time requires the Family Controls capability and Screen Time API extensions. The app now requests Family Controls authorization, lets users choose private app/category/domain tokens with Apple's FamilyActivityPicker, and embeds DeviceActivityReport views for today, 7-day trends, and late-night use. Actual totals are produced by the Device Activity report extension inside Apple's privacy sandbox, so real values require supported iOS hardware, valid entitlements, and selected sources.
+Screen Time requires the Family Controls capability and Screen Time API extensions. The code scaffolding exists (authorization request, FamilyActivityPicker source selection, DeviceActivityReport views, and a report extension target), and actual totals would be produced by the Device Activity report extension inside Apple's privacy sandbox. Status: scaffolded in code but **not entitlement-wired** — the entitlement files are empty, the Family Controls capability is not set up, and the feature is deferred per the `docs/PROJECT_BRIEF.md` MVP scope.
 
-Health sleep requires the HealthKit capability and user permission to read `sleepAnalysis` samples. After permission, the app can query last-night sleep directly from the main iOS app.
+Health sleep requires the HealthKit capability and user permission to read `sleepAnalysis` samples. After permission, the app can query last-night sleep directly from the main iOS app. Status: scaffolded in code but **not entitlement-wired** — deferred per the `docs/PROJECT_BRIEF.md` MVP scope.
 
 ## Privacy
 
