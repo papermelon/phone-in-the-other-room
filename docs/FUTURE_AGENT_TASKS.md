@@ -13,36 +13,15 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## A. Immediate TestFlight blockers (in order)
 
-### A1. Commit the working tree in logical commits
-- **Why:** the entire MVP is uncommitted on top of a single-commit history — data-loss
-  risk, and no parallel agent work is safe until the tree is clean.
-- **Mode:** Cursor Build (or Codex) · **Size:** M · **Autonomous:** yes (commit only —
-  never push; human decides canonical repo + visibility first, see git playbook)
-- **Files:** everything; slice per `docs/PLAYBOOKS/git-workflow.md` §consolidation
-- **Accept:** `git status` clean; each commit builds conceptually (shared → services →
-  iOS UI → watch → extension → assets → docs); nothing pushed.
-
-### A2. MVP simplification pass (two-tab release scope)
-- **Why:** the app ships five tabs, three mock-driven — the #1 "app tries to do too much"
-  fix and a hard ADR-0003 requirement.
-- **Mode:** Cursor Plan→Build (cross-cutting, needs judgment); Bugbot review before merge
-- **Size:** L · **Autonomous:** no — human reviews the diff
-- **Files:** `HomeView.swift`, `PixelComponents.swift` (`MainAppTab`),
-  `FocusStatsView.swift`, `Views/MVP/AssetReadyScreens.swift` (gating),
-  `MockData/MVPMockData.swift` (quarantine)
-- **Accept:** Release build shows Home + Stats only; Farm/Friends/Shop + Screen Time UI
-  DEBUG-gated (not "coming soon"); no `MVPMockData` reference reachable in Release;
-  tests + build green.
-
-### A3. Signing and identity pass in project.yml
-- **Why:** signing is disabled, bundle IDs are `com.example.*`, no versions — archive is
-  impossible.
-- **Mode:** Cursor Build or Codex, single agent (never parallel with anything touching
-  `project.yml`) · **Size:** M · **Autonomous:** partially — prepare everything; human
-  supplies `DEVELOPMENT_TEAM` and confirms the permanent bundle ID
-- **Files:** `project.yml`, regenerated `project.pbxproj`, three `.entitlements` files
-  (stay empty for build 1)
-- **Accept:** playbook §2 items all pass; `xcodebuild archive` succeeds once team ID is in.
+### A3-remainder. Finish signing (human inputs needed)
+- **Why:** A3 prep landed 2026-07-07 (bundle IDs `com.papermelon.countingsheep`,
+  automatic signing, entitlements wired, version 0.1.0/1) but two human inputs remain.
+- **Mode:** Human + Codex · **Size:** S
+- **Steps:** (1) human confirms or changes the permanent bundle ID root in `project.yml`
+  (permanent after first App Store Connect upload); (2) human supplies the Apple
+  Developer Team ID for `DEVELOPMENT_TEAM`; (3) run `xcodegen generate`; (4) verify
+  `xcodebuild archive` succeeds.
+- **Accept:** archive succeeds with real team ID.
 
 ### A5. Backgrounding-mid-run honesty
 - **Why:** runs are foreground-only with no `scenePhase` handling; backgrounding silently
@@ -62,15 +41,13 @@ execute without human sign-off mid-task (final merge review still applies per
 - **Accept:** stats tab shows only native `UserProgress` data with bedtime framing; no
   HealthKit/Screen Time/manual-entry/QA surfaces in Release; copy passes the skill.
 
-### A7. Accessibility pass on the core run flow
-- **Why:** timer, proximity state, and Watch views lack labels — App Review risk and a
-  real usability gap.
-- **Mode:** Cursor Multitask or Codex (disjoint from A2/A3 files after they land)
-- **Size:** M · **Autonomous:** yes
-- **Files:** `ActiveRunView.swift`, `CompletionView.swift`, `EarlyEndView.swift`,
-  `FocusRunSetupView.swift`, Watch views
-- **Accept:** playbook §8 VoiceOver/Dynamic Type items pass; a run can be completed with
-  VoiceOver alone.
+### A7b. Accessibility pass on the Watch views
+- **Why:** the iOS run flow got its accessibility pass on 2026-07-07 (see Done), but
+  Watch views were out of that session's scope and still lack labels.
+- **Mode:** Codex · **Size:** S · **Autonomous:** yes
+- **Files:** `PhoneInTheOtherRoomWatchApp/Views/*.swift`
+- **Accept:** playbook §8 VoiceOver items pass on Watch; a run can be completed with
+  VoiceOver alone end to end.
 
 ### Human-only (parallel, start now)
 - Apple Developer enrollment; reserve app name; **submit Family Controls distribution
@@ -78,20 +55,14 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## B. MVP polish (before or shortly after first upload)
 
-### B1. Doc drift alignment
-- **Why:** README/PRD/IMPLEMENTATION_NOTES contradict code (AGENTS.md §16) and will
-  mislead agents and App Review alike.
-- **Mode:** Cursor Multitask or Codex · **Size:** S · **Autonomous:** yes
-- **Files:** `README.md`, `docs/PRD.md`, `docs/IMPLEMENTATION_NOTES.md`,
-  `docs/CHARLIE_AUDIT_ROADMAP.md`
-- **Accept:** every drift item in AGENTS.md §16 fixed; §16 emptied to "none known".
-
-### B2. Copy pass over the core flow
-- **Why:** tone is the product; every string should pass the copy skill before testers
-  see it.
+### B2b. Copy pass on notifications and Watch strings
+- **Why:** the iOS run-flow copy pass landed 2026-07-07, but notification strings
+  (`PhoneNotificationService`, `WatchNotificationService`) and Watch view strings were
+  out of scope.
 - **Mode:** Codex with `skills/product-copy-review/SKILL.md` · **Size:** S ·
-  **Autonomous:** yes (drop-in revisions; human skims the table)
-- **Files:** run-flow views, notifications, alerts
+  **Autonomous:** yes
+- **Files:** `Services/PhoneNotificationService.swift`,
+  `PhoneInTheOtherRoomWatchApp/Services/WatchNotificationService.swift`, Watch views
 - **Accept:** review table produced; zero hard-rule violations remain.
 
 ### B3. Fix HealthSleepService authorization check
@@ -196,3 +167,19 @@ execute without human sign-off mid-task (final merge review still applies per
   now reads Watch reachability from `WatchConnectivityManager.isReachable`, derives next
   sheep reward progress from `UserProgress.totalCompletedRuns`, and includes a
   disconnected-Watch preview.
+- **2026-07-07 · Cursor/Fable:** A1. Working tree committed in 10 logical commits
+  (shared → services → iOS UI → Watch → extension → assets → docs → agent OS).
+  Nothing pushed; canonical-repo decision still with the human.
+- **2026-07-07 · Cursor/Fable:** A2. Two-tab release scope. `MainAppTab.visibleTabs`
+  and `FocusStatsTab.visibleTabs` gate Farm/Friends/Shop, the sleep tab, all MVP mock
+  screens, `MVPMockData`, mock-backed components, and Screen Time UI behind DEBUG.
+  Removed fake values (45m claim, 28-sheep floor, "/ 60" capacity). Bugbot reviewed
+  (finding filed as B4a). 18/18 tests; Debug + Release builds green.
+- **2026-07-07 · Cursor/Fable:** A3 (prep). Bundle IDs → `com.papermelon.countingsheep`
+  (pending human confirmation), automatic signing, entitlement files wired (empty),
+  MARKETING_VERSION 0.1.0 / build 1. Team ID still needed — see A3-remainder.
+- **2026-07-07 · Cursor/Fable:** B1. Doc drift fixed across README/PRD/
+  IMPLEMENTATION_NOTES/CHARLIE_AUDIT_ROADMAP; AGENTS.md §16 register cleared.
+- **2026-07-07 · Cursor/Fable:** A7 (iOS) + B2 (run flow). VoiceOver labels/hints on
+  the run flow, decorative scenes hidden, 44pt stepper targets; early-end screen made
+  shame-free (happy Ollie), jargon removed. Watch views remain — see A7b/B2b.
