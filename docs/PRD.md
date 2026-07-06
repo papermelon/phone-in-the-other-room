@@ -38,7 +38,7 @@ The app is not a lost-phone product, a generic Pomodoro timer, a GPS tracker, an
 
 Focus run states: setup, placementGrace, waitingForPhoneAway, running, warningPhoneTooClose, completed, endedEarly, signalLost, unsupported, demo.
 
-Proximity buckets: withYou, sameRoom, doorway, probablyOtherRoom, signalLost, unsupported, demo.
+Proximity buckets: waitingForDistance, withYou, sameRoom, doorway, probablyOtherRoom, signalLost, unsupported, demo.
 
 Ollie moods: waiting, excited, running, guarding, alert, proud, happy, sad, sleepy.
 
@@ -63,11 +63,27 @@ Default thresholds:
 
 The classifier uses recent readings, freshness, source, support state, smoothing, confidence, and run context. It avoids flicker and never fails from one noisy sample.
 
+Battery-aware checking: the start of a Focus Run keeps a short startup distance window open while the user puts the phone down and accepts any permission prompts. After that, the app rests Nearby Interaction and wakes short randomized check windows. A user can also request a check from iPhone or Apple Watch to see a fresh distance reading during the run. Close-phone checks warn the user on both devices before repeated warnings can end the run.
+
 ## Rewards and Progress
 
 Completed runs earn Ollie-themed rewards such as Ollie Mail, First Run Ribbon, Tiny Tennis Ball, Field Map, Sheep Badge, and Focus Trophy. Early-ended runs do not earn a main reward but may earn a consolation Muddy Paw Print.
 
-Progress is local only: completed runs, focus minutes, streak, longest streak, rewards collected, and Ollie level.
+Progress is local only: completed runs, focus minutes, streak, longest streak, rewards collected, Ollie level, daily focus records, focus stars, sheep balance, and coin balance.
+
+Daily focus stars are awarded from completed other-room minutes: silver at 15 minutes, gold at 30 minutes, diamond at 60 minutes, and rainbow at 120 minutes. These thresholds provide a friendly daily mission without requiring continuous background monitoring. Ollie's idle daily status reflects today's focus rhythm instead of using body-shape or shame-based language.
+
+Sheep are earned from completed Focus Run minutes and represent the farm resource. Coins are also earned locally for now and are intended to buy future cosmetics for Ollie and the room. A later economy pass can add sheep selling, conversion rates, caps, upgrades, and item pricing.
+
+The stats surface is organized into three views:
+
+- Today: other-room minutes, current daily star, screen time so far, and an evening phone-away goal after 6pm.
+- Trends: 7-day other-room minutes, screen time trend, completion rate, and best focus time.
+- Sleep & Recovery: last night sleep, bedtime phone-away minutes, and late screen time.
+
+Screen Time requires the Family Controls capability and Screen Time API extensions. The app now requests Family Controls authorization, lets users choose private app/category/domain tokens with Apple's FamilyActivityPicker, and embeds DeviceActivityReport views for today, 7-day trends, and late-night use. Actual totals are produced by the Device Activity report extension inside Apple's privacy sandbox, so real values require supported iOS hardware, valid entitlements, and selected sources.
+
+Health sleep requires the HealthKit capability and user permission to read `sleepAnalysis` samples. After permission, the app can query last-night sleep directly from the main iOS app.
 
 ## Privacy
 
