@@ -5,10 +5,11 @@ enum OllieMood: String, Codable, CaseIterable {
 }
 
 enum ProximityBucket: String, Codable, CaseIterable {
-    case withYou, sameRoom, doorway, probablyOtherRoom, signalLost, unsupported, demo
+    case waitingForDistance, withYou, sameRoom, doorway, probablyOtherRoom, signalLost, unsupported, demo
 
     var label: String {
         switch self {
+        case .waitingForDistance: return "Waiting for distance"
         case .withYou: return "Phone is with you"
         case .sameRoom: return "Phone is nearby"
         case .doorway: return "Phone is drifting away"
@@ -86,7 +87,7 @@ struct ProximityState: Codable, Equatable {
     var statusText: String
     var detailText: String
 
-    static let initial = ProximityState(bucket: .unsupported, distanceMeters: nil, confidence: .low, source: .fallback, lastUpdated: Date(), statusText: ProximityBucket.unsupported.label, detailText: "Phone distance appears after a Focus Run starts and a supported iPhone/Watch pair is available.")
+    static let initial = ProximityState(bucket: .waitingForDistance, distanceMeters: nil, confidence: .low, source: .fallback, lastUpdated: Date(), statusText: ProximityBucket.waitingForDistance.label, detailText: "Phone distance appears after a Focus Run starts and the iPhone and Watch exchange distance tokens.")
 }
 
 struct ThresholdProfile: Codable, Equatable {
@@ -177,6 +178,78 @@ struct RewardItem: Codable, Identifiable, Equatable {
     let isDemoReward: Bool
 }
 
+enum FocusStarTier: String, Codable, CaseIterable, Identifiable {
+    case silver, gold, diamond, rainbow
+
+    var id: String { rawValue }
+
+    var thresholdMinutes: Int {
+        switch self {
+        case .silver: return 15
+        case .gold: return 30
+        case .diamond: return 60
+        case .rainbow: return 120
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .silver: return "Silver"
+        case .gold: return "Gold"
+        case .diamond: return "Diamond"
+        case .rainbow: return "Rainbow"
+        }
+    }
+}
+
+struct DailyFocusRecord: Codable, Identifiable, Equatable {
+    var day: Date
+    var completedFocusMinutes: Int
+    var successfulRuns: Int
+    var warnings: Int
+    var rewardsEarned: Int
+
+    var id: Date { day }
+
+    init(day: Date, completedFocusMinutes: Int = 0, successfulRuns: Int = 0, warnings: Int = 0, rewardsEarned: Int = 0, calendar: Calendar = .current) {
+        self.day = calendar.startOfDay(for: day)
+        self.completedFocusMinutes = completedFocusMinutes
+        self.successfulRuns = successfulRuns
+        self.warnings = warnings
+        self.rewardsEarned = rewardsEarned
+    }
+
+    var earnedStars: [FocusStarTier] {
+        FocusStarTier.allCases.filter { completedFocusMinutes >= $0.thresholdMinutes }
+    }
+
+    var bestStar: FocusStarTier? {
+        earnedStars.last
+    }
+}
+
+enum OllieDailyStatus: String, Codable, CaseIterable {
+    case waiting, warmedUp, steady, bright
+
+    var mood: OllieMood {
+        switch self {
+        case .waiting: return .waiting
+        case .warmedUp: return .happy
+        case .steady: return .proud
+        case .bright: return .excited
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .waiting: return "Ollie is waiting for today's first other-room minutes."
+        case .warmedUp: return "Ollie is warmed up by today's focus."
+        case .steady: return "Ollie is steady from a good focus rhythm."
+        case .bright: return "Ollie is bright from a deep focus day."
+        }
+    }
+}
+
 struct UserProgress: Codable, Equatable {
     var totalCompletedRuns: Int
     var totalFocusMinutes: Int
@@ -184,8 +257,123 @@ struct UserProgress: Codable, Equatable {
     var longestStreak: Int
     var rewardsCollected: Int
     var ollieLevel: Int
+    var dailyFocusRecords: [DailyFocusRecord]
+    var sheepBalance: Int
+    var coinBalance: Int
+    var totalSheepEarned: Int
+    var totalCoinsEarned: Int
 
-    static let empty = UserProgress(totalCompletedRuns: 0, totalFocusMinutes: 0, currentStreak: 0, longestStreak: 0, rewardsCollected: 0, ollieLevel: 1)
+    static let empty = UserProgress(totalCompletedRuns: 0, totalFocusMinutes: 0, currentStreak: 0, longestStreak: 0, rewardsCollected: 0, ollieLevel: 1, dailyFocusRecords: [], sheepBalance: 0, coinBalance: 0, totalSheepEarned: 0, totalCoinsEarned: 0)
+
+    init(totalCompletedRuns: Int, totalFocusMinutes: Int, currentStreak: Int, longestStreak: Int, rewardsCollected: Int, ollieLevel: Int, dailyFocusRecords: [DailyFocusRecord] = [], sheepBalance: Int = 0, coinBalance: Int = 0, totalSheepEarned: Int = 0, totalCoinsEarned: Int = 0) {
+        self.totalCompletedRuns = totalCompletedRuns
+        self.totalFocusMinutes = totalFocusMinutes
+        self.currentStreak = currentStreak
+        self.longestStreak = longestStreak
+        self.rewardsCollected = rewardsCollected
+        self.ollieLevel = ollieLevel
+        self.dailyFocusRecords = dailyFocusRecords.sorted { $0.day > $1.day }
+        self.sheepBalance = sheepBalance
+        self.coinBalance = coinBalance
+        self.totalSheepEarned = totalSheepEarned
+        self.totalCoinsEarned = totalCoinsEarned
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case totalCompletedRuns, totalFocusMinutes, currentStreak, longestStreak, rewardsCollected, ollieLevel, dailyFocusRecords, sheepBalance, coinBalance, totalSheepEarned, totalCoinsEarned
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        totalCompletedRuns = try container.decodeIfPresent(Int.self, forKey: .totalCompletedRuns) ?? 0
+        totalFocusMinutes = try container.decodeIfPresent(Int.self, forKey: .totalFocusMinutes) ?? 0
+        currentStreak = try container.decodeIfPresent(Int.self, forKey: .currentStreak) ?? 0
+        longestStreak = try container.decodeIfPresent(Int.self, forKey: .longestStreak) ?? 0
+        rewardsCollected = try container.decodeIfPresent(Int.self, forKey: .rewardsCollected) ?? 0
+        ollieLevel = try container.decodeIfPresent(Int.self, forKey: .ollieLevel) ?? 1
+        dailyFocusRecords = try container.decodeIfPresent([DailyFocusRecord].self, forKey: .dailyFocusRecords) ?? []
+        dailyFocusRecords.sort { $0.day > $1.day }
+        sheepBalance = try container.decodeIfPresent(Int.self, forKey: .sheepBalance) ?? 0
+        coinBalance = try container.decodeIfPresent(Int.self, forKey: .coinBalance) ?? 0
+        totalSheepEarned = try container.decodeIfPresent(Int.self, forKey: .totalSheepEarned) ?? sheepBalance
+        totalCoinsEarned = try container.decodeIfPresent(Int.self, forKey: .totalCoinsEarned) ?? coinBalance
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(totalCompletedRuns, forKey: .totalCompletedRuns)
+        try container.encode(totalFocusMinutes, forKey: .totalFocusMinutes)
+        try container.encode(currentStreak, forKey: .currentStreak)
+        try container.encode(longestStreak, forKey: .longestStreak)
+        try container.encode(rewardsCollected, forKey: .rewardsCollected)
+        try container.encode(ollieLevel, forKey: .ollieLevel)
+        try container.encode(dailyFocusRecords, forKey: .dailyFocusRecords)
+        try container.encode(sheepBalance, forKey: .sheepBalance)
+        try container.encode(coinBalance, forKey: .coinBalance)
+        try container.encode(totalSheepEarned, forKey: .totalSheepEarned)
+        try container.encode(totalCoinsEarned, forKey: .totalCoinsEarned)
+    }
+
+    var todayRecord: DailyFocusRecord {
+        record(for: Date()) ?? DailyFocusRecord(day: Date())
+    }
+
+    var recentFocusRecords: [DailyFocusRecord] {
+        Array(dailyFocusRecords.prefix(14))
+    }
+
+    var totalFocusStars: Int {
+        dailyFocusRecords.reduce(0) { $0 + $1.earnedStars.count }
+    }
+
+    var ollieDailyStatus: OllieDailyStatus {
+        let todayMinutes = todayRecord.completedFocusMinutes
+        if todayMinutes >= FocusStarTier.rainbow.thresholdMinutes { return .bright }
+        if todayMinutes >= FocusStarTier.gold.thresholdMinutes || currentStreak >= 3 { return .steady }
+        if todayMinutes >= FocusStarTier.silver.thresholdMinutes { return .warmedUp }
+        return .waiting
+    }
+
+    func record(for date: Date, calendar: Calendar = .current) -> DailyFocusRecord? {
+        let day = calendar.startOfDay(for: date)
+        return dailyFocusRecords.first { calendar.isDate($0.day, inSameDayAs: day) }
+    }
+
+    func starCount(for tier: FocusStarTier) -> Int {
+        dailyFocusRecords.filter { $0.completedFocusMinutes >= tier.thresholdMinutes }.count
+    }
+
+    mutating func recordCompletedRun(minutes: Int, warnings: Int, rewardEarned: Bool, at date: Date, calendar: Calendar = .current) {
+        let day = calendar.startOfDay(for: date)
+        if let index = dailyFocusRecords.firstIndex(where: { calendar.isDate($0.day, inSameDayAs: day) }) {
+            dailyFocusRecords[index].completedFocusMinutes += minutes
+            dailyFocusRecords[index].successfulRuns += 1
+            dailyFocusRecords[index].warnings += warnings
+            if rewardEarned { dailyFocusRecords[index].rewardsEarned += 1 }
+        } else {
+            dailyFocusRecords.append(
+                DailyFocusRecord(
+                    day: day,
+                    completedFocusMinutes: minutes,
+                    successfulRuns: 1,
+                    warnings: warnings,
+                    rewardsEarned: rewardEarned ? 1 : 0,
+                    calendar: calendar
+                )
+            )
+        }
+        dailyFocusRecords.sort { $0.day > $1.day }
+        dailyFocusRecords = Array(dailyFocusRecords.prefix(45))
+    }
+
+    mutating func addFocusEconomy(forCompletedMinutes minutes: Int) {
+        let sheepEarned = max(1, minutes / 15)
+        let coinsEarned = max(5, sheepEarned * 5)
+        sheepBalance += sheepEarned
+        coinBalance += coinsEarned
+        totalSheepEarned += sheepEarned
+        totalCoinsEarned += coinsEarned
+    }
 
     var levelTitle: String {
         switch ollieLevel {

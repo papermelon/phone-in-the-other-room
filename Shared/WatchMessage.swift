@@ -1,7 +1,11 @@
 import Foundation
 
 enum WatchMessageType: String, Codable {
-    case startFocusRun, stopFocusRun, endFocusRunEarly, pingPhone, pingWatch, nearbyDiscoveryToken, proximityStateUpdate, focusRunStateUpdate, rewardEarned, calibrationUpdate, demoDistanceUpdate
+    case startFocusRun, stopFocusRun, endFocusRunEarly, pingPhone, pingWatch
+    case nearbyDiscoveryToken, nearbyDiscoveryTokenAcknowledged
+    case distanceCheckRequest, distanceCheckEnded
+    case watchDistanceReading
+    case proximityStateUpdate, focusRunStateUpdate, rewardEarned, calibrationUpdate, demoDistanceUpdate
 }
 
 struct WatchMessage: Codable {
@@ -10,17 +14,27 @@ struct WatchMessage: Codable {
     var proximity: ProximityState?
     var reward: RewardItem?
     var tokenData: Data?
+    var distanceMeters: Double?
     var demoDistance: Double?
     var sentAt: Date
 
-    init(type: WatchMessageType, run: FocusRun? = nil, proximity: ProximityState? = nil, reward: RewardItem? = nil, tokenData: Data? = nil, demoDistance: Double? = nil, sentAt: Date = Date()) {
+    init(type: WatchMessageType, run: FocusRun? = nil, proximity: ProximityState? = nil, reward: RewardItem? = nil, tokenData: Data? = nil, distanceMeters: Double? = nil, demoDistance: Double? = nil, sentAt: Date = Date()) {
         self.type = type
         self.run = run
         self.proximity = proximity
         self.reward = reward
         self.tokenData = tokenData
+        self.distanceMeters = distanceMeters
         self.demoDistance = demoDistance
         self.sentAt = sentAt
+    }
+}
+
+extension WatchMessage {
+    func isFreshRealtimeMessage(for currentRun: FocusRun?, now: Date = Date()) -> Bool {
+        guard let currentRun, run?.id == currentRun.id else { return false }
+        guard sentAt <= now.addingTimeInterval(5) else { return false }
+        return now.timeIntervalSince(sentAt) <= FocusRunRules.realtimeWatchMessageFreshnessSeconds
     }
 }
 
@@ -35,4 +49,3 @@ enum WatchMessageCodec {
         return try? JSONDecoder().decode(WatchMessage.self, from: data)
     }
 }
-
