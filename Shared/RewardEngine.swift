@@ -42,10 +42,13 @@ struct RewardEngine {
     func updatedProgress(after run: FocusRun, current: UserProgress, reward: RewardItem?) -> UserProgress {
         var progress = current
         if run.completedSuccessfully {
+            let minutes = max(1, Int(run.plannedDurationSeconds / 60))
             progress.totalCompletedRuns += 1
-            progress.totalFocusMinutes += max(1, Int(run.plannedDurationSeconds / 60))
+            progress.totalFocusMinutes += minutes
             progress.currentStreak += 1
             progress.longestStreak = max(progress.longestStreak, progress.currentStreak)
+            progress.recordCompletedRun(minutes: minutes, warnings: run.warningCount, rewardEarned: reward != nil, at: run.endedAt ?? Date())
+            progress.addFocusEconomy(forCompletedMinutes: minutes)
         }
         if reward != nil { progress.rewardsCollected += 1 }
         progress.ollieLevel = min(5, 1 + progress.totalCompletedRuns / 3)
