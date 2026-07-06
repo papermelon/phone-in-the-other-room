@@ -49,7 +49,7 @@ struct HomeView: View {
                     viewModel.startRun(focusAccepted: true)
                 }
             } message: {
-                Text("Counting Sheep cannot silently toggle Focus. Turn it on from Control Center or run your Shortcut first, then continue.")
+                Text("Counting Sheep can't turn on Focus for you. Flip it on in Control Center or run your Shortcut, then continue.")
             }
             .onAppear {
                 viewModel.applyShortcutPreparationIfNeeded()

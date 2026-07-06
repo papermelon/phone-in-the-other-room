@@ -7,16 +7,19 @@ struct EarlyEndView: View {
         VStack(spacing: 16) {
             GamePanelView(title: "Back early", prominence: .hero) {
                 HStack(alignment: .top, spacing: 14) {
-                    OllieSpriteView(mood: .sad, size: 96)
+                    // A sad Ollie reads as punishment; early ends get a warm welcome
+                    // (product principle: no shame states).
+                    OllieSpriteView(mood: .happy, size: 96)
                         .idleBob()
+                        .accessibilityLabel("Ollie, happy to see you")
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Ollie came back early.")
+                        Text("Welcome back. Ollie kept your spot warm.")
                             .font(.title2.weight(.black))
                             .foregroundStyle(.white)
-                        Text("You focused for \(actual) of \(planned) minutes.")
+                        Text(minutesAwayText)
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.72))
-                        Text("That still counts as practice. Try a shorter run next time.")
+                        Text("Coming back early is okay. Every minute away counts.")
                             .font(.caption)
                             .foregroundStyle(.white.opacity(0.62))
                     }
@@ -24,8 +27,9 @@ struct EarlyEndView: View {
                 }
             }
             RewardRevealView(reward: viewModel.coordinator.latestReward)
-            Button("Set up another run") { viewModel.resetSetup() }
+            Button("Start fresh when you're ready") { viewModel.resetSetup() }
                 .buttonStyle(PixelButtonStyle(tint: OlliePalette.sadBlue))
+                .accessibilityHint("Sets up a new run")
         }
     }
 
@@ -33,7 +37,11 @@ struct EarlyEndView: View {
         Int((viewModel.activeRun?.actualDurationSeconds ?? 0) / 60)
     }
 
-    private var planned: Int {
-        Int((viewModel.activeRun?.plannedDurationSeconds ?? 0) / 60)
+    private var minutesAwayText: String {
+        switch actual {
+        case 0: return "Your phone got a little time away."
+        case 1: return "Your phone was away for a minute."
+        default: return "Your phone was away for \(actual) minutes."
+        }
     }
 }

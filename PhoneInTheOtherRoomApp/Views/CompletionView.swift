@@ -20,26 +20,30 @@ struct CompletionView: View {
                         OllieSpriteView(mood: .proud, size: 96)
                             .scaleEffect(celebrate ? 1.06 : 1)
                             .idleBob()
+                            .accessibilityLabel("Ollie, looking proud")
                         VStack(alignment: .leading, spacing: 8) {
-                            Text("Ollie completed the run!")
+                            Text("You did it. Ollie's tail is wagging.")
                                 .font(.title2.weight(.black))
                                 .foregroundStyle(.white)
-                            Text("You stayed away for \(minutes) minutes.")
+                            Text("Your phone stayed away for \(minutes) minutes.")
                                 .font(.caption)
                                 .foregroundStyle(.white.opacity(0.70))
                             if let earnedStar {
                                 HStack(spacing: 6) {
                                     Image(systemName: "star.fill")
                                         .foregroundStyle(focusStarColor(for: earnedStar))
+                                        .accessibilityHidden(true)
                                     Text("\(earnedStar.title) focus star today")
                                         .font(.caption.weight(.bold))
                                         .foregroundStyle(.white.opacity(0.82))
                                 }
+                                .accessibilityElement(children: .combine)
                             }
                         }
                         Spacer(minLength: 0)
                     }
                     celebrationStars
+                        .accessibilityHidden(true)
                 }
             }
             RewardRevealView(reward: viewModel.coordinator.latestReward)
