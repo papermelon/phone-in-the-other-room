@@ -6,15 +6,19 @@ struct WatchCompletionView: View {
     var body: some View {
         VStack(spacing: 8) {
             WatchOllieIconView(mood: .proud)
-            Text("Run complete!")
+            Text("You woke up before your phone did")
                 .font(.headline)
-            Text("Ollie found:")
+                .multilineTextAlignment(.center)
+            Text("Ollie found")
                 .font(.caption2)
-            Text(viewModel.reward?.title ?? "Focus Letter")
+            Text(viewModel.reward?.title ?? "Night Watch Letter")
                 .font(.caption)
                 .multilineTextAlignment(.center)
-            Button("Back to Setup") { viewModel.clearRunSummary() }
+                .accessibilityLabel("Reward: \(viewModel.reward?.title ?? "Night Watch Letter")")
+            Button("Done") { viewModel.clearRunSummary() }
+                .accessibilityHint("Returns to the Watch start screen")
             Button("Ping Phone") { viewModel.pingPhone() }
+                .accessibilityHint("Plays a sound on your iPhone")
         }
     }
 }

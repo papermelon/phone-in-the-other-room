@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import WatchConnectivity
 
 final class WatchConnectivityManagerWatch: NSObject, ObservableObject {
@@ -6,6 +7,14 @@ final class WatchConnectivityManagerWatch: NSObject, ObservableObject {
 
     @Published private(set) var isReachable = false
     var onMessage: ((WatchMessage) -> Void)?
+#if DEBUG
+    private let energyLogger = Logger(
+        subsystem: "com.ngawangchime.countingsheep",
+        category: "Energy.WatchConnectivity.Watch"
+    )
+    private var debugSendCount = 0
+    private var debugLastSendAt: Date?
+#endif
 
     override private init() {
         super.init()
@@ -17,6 +26,9 @@ final class WatchConnectivityManagerWatch: NSObject, ObservableObject {
     func send(_ message: WatchMessage) {
         guard WCSession.isSupported() else { return }
         let dictionary = WatchMessageCodec.dictionary(from: message)
+#if DEBUG
+        logSend(message)
+#endif
         try? WCSession.default.updateApplicationContext(dictionary)
         if WCSession.default.isReachable {
             WCSession.default.sendMessage(dictionary, replyHandler: nil) { _ in
@@ -33,6 +45,9 @@ final class WatchConnectivityManagerWatch: NSObject, ObservableObject {
             return
         }
         let dictionary = WatchMessageCodec.dictionary(from: message)
+#if DEBUG
+        logSend(message)
+#endif
         if WCSession.default.isReachable {
             WCSession.default.sendMessage(dictionary) { reply in
                 DispatchQueue.main.async {
@@ -56,6 +71,22 @@ final class WatchConnectivityManagerWatch: NSObject, ObservableObject {
             return false
         }
     }
+
+#if DEBUG
+    private func logSend(_ message: WatchMessage) {
+        debugSendCount += 1
+        let now = Date()
+        let interval = debugLastSendAt.map { now.timeIntervalSince($0) } ?? 0
+        debugLastSendAt = now
+        let shouldLog = message.type != .watchDistanceReading
+            || debugSendCount <= 3
+            || debugSendCount.isMultiple(of: 10)
+        guard shouldLog else { return }
+        energyLogger.debug(
+            "send count=\(self.debugSendCount) type=\(message.type.rawValue, privacy: .public) secondsSincePrevious=\(interval, format: .fixed(precision: 3)) reachable=\(WCSession.default.isReachable)"
+        )
+    }
+#endif
 }
 
 extension WatchConnectivityManagerWatch: WCSessionDelegate {

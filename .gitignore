@@ -35,3 +35,5 @@ fastlane/test_output/
 .env.*
 *.env
 *.xcconfig.local
+Config/Supabase.local.xcconfig
+Config/Supabase.release.local.xcconfig

@@ -12,15 +12,16 @@ checklist findings that matter, and a risk rating.
 - [ ] Passes the belonging test (`docs/PRODUCT_PRINCIPLES.md`): ritual, bedtime,
       kindness, subtraction, cost.
 - [ ] Does not touch gated features without their gates met (ADR-0003, ADR-0004).
-- [ ] No anti-addiction violations: no loss-aversion streaks, engagement bait,
-      variable-ratio teasing, guilt/shame states, urgency pressure.
+- [ ] No coercive-engagement violations: no loss-aversion streaks, rewards for app opens,
+      paid chance mechanics, guilt/shame states, or urgency pressure. Completion-only
+      intermittent reward variety follows `docs/PRODUCT_PRINCIPLES.md`.
 - [ ] Stays in scope: a bug fix is a bug fix — no bundled features or refactors.
 
 ## 2. Architecture fit
 
 - [ ] Logic is in the right layer: pure/domain → `Shared/` (+ tests); side effects →
       `Services/`; UI state → view models; presentation → `Views/`.
-- [ ] Run state flows through `ProximitySessionCoordinator` — no duplicate run state.
+- [ ] Run state flows through `FocusSessionCoordinator` — no duplicate run state.
 - [ ] No new singletons, no new architecture patterns, no new dependencies without
       explicit human approval.
 - [ ] `project.yml` edited (never `project.pbxproj`); `xcodegen generate` run if files

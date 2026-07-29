@@ -26,9 +26,11 @@ struct WatchSetupView: View {
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
-                    Button("Join Run") { viewModel.requestCurrentRun() }
+                    Button("Join Night Watch") { viewModel.requestCurrentRun() }
+                        .accessibilityHint("Checks the iPhone for an active Night Watch")
                     Button("Ping Phone") { viewModel.pingPhone() }
-                    Text("Start a Focus Run on iPhone, then keep both apps open.")
+                        .accessibilityHint("Plays a sound on your iPhone")
+                    Text("Begin Night Watch on iPhone. The iPhone keeps time, so the Watch can rest too.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)

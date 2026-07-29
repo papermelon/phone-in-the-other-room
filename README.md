@@ -1,175 +1,140 @@
-# Phone in the Other Room
+# Counting Sheep
 
-> AI agents and contributors: start with [AGENTS.md](AGENTS.md) (canonical). Product scope: [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md).
+> Contributors and agents: read [AGENTS.md](AGENTS.md) first. It is the canonical guide.
+> Product scope lives in [docs/PROJECT_BRIEF.md](docs/PROJECT_BRIEF.md).
 
-**Phone in the Other Room** is a hackathon-quality iOS plus Apple Watch prototype where you send Ollie the Border Collie on a Focus Run by leaving your iPhone in another room. The Watch becomes the active companion and the iPhone stays open on a leave-me-here screen.
+**Counting Sheep** is an iPhone and Apple Watch bedtime-ritual app built around one idea:
 
-Key line: Instead of fighting your phone, you send it to the other room and let Ollie guard your focus.
+> Put your phone to bed. Wake up before it does.
 
-## Repository Status
+Ollie, a border collie, keeps Night Watch while the phone rests in another room. One
+phone-away session spans a quiet wind-down, the overnight interval, and a short
+morning-quiet bookend. Counting Sheep records the quiet minutes at the two edges of sleep;
+it never counts overnight hours as focus, scores sleep quality, or promises a sleep outcome.
 
-This repository is an open-source iOS plus watchOS prototype. It is not an App Store-ready release, and it is not a hosted web deployment.
+The repository folder and target names still use the code name **Phone in the Other Room**.
 
-The code is available under the [MIT License](LICENSE). The checked-in artwork is intentionally redacted placeholder art; see [ASSET_NOTICE.md](ASSET_NOTICE.md).
+## Current product loop
 
-## Platforms
+1. Save an intended bedtime and wake time.
+2. Choose a modest quiet window before bed and after waking.
+3. Pick one gentle offline cue for each bookend, such as reading, stretching, breakfast,
+   or opening the curtains.
+4. At wind-down, tuck the phone away and begin Night Watch.
+5. Use the default honor timer, an optional Apple Watch placement assist, or a QR phone bed.
+6. Let the phone remain tucked away through morning quiet.
+7. Return to one calm completion receipt, a collectible, and the quiet minutes from the
+   two bookends.
 
-- iOS 17+
-- watchOS 10+
-- SwiftUI
-- WatchConnectivity
-- NearbyInteraction where supported
-- Local UserDefaults persistence
+The iPhone owns the wall-clock state and restoration path. The Watch is optional. Nearby
+Interaction is a one-time, time-boxed tuck-in assist; it never monitors the whole night,
+warns later, or ends Night Watch because distance changed.
 
-The project is generated with XcodeGen from `project.yml`.
+## What ships in the first release
 
-Before running on your own devices, replace the placeholder bundle identifiers in `project.yml` with identifiers under your Apple Developer account.
+- Home and Stats tabs only
+- Saved Night Watch schedule and requested wind-down reminder
+- Wind-down, overnight, and morning-quiet phases
+- Honor timer, optional Watch placement, and QR phone-bed starts
+- Local completion notification and phase-aware Live Activity
+- Watch companion for status, tuck-in placement, early end, and phone ping
+- Local progress, rewards, streaks, sheep, coins, and quiet-bookend history
+- Backwards-compatible decoding of earlier `FocusRun` and `UserProgress` data
 
-## Run The iOS App
+Farm, Friends, Shop, mock data, HealthKit cards, and Screen Time UI remain gated from
+Release. See [ADR-0003](docs/DECISIONS/ADR-0003-gated-features.md),
+[ADR-0004](docs/DECISIONS/ADR-0004-watch-independent-sessions.md), and
+[ADR-0006](docs/DECISIONS/ADR-0006-sleep-bookends-positioning.md).
 
-1. Install XcodeGen if needed.
-2. Run `xcodegen generate`.
-3. Open `PhoneInTheOtherRoom.xcodeproj` in Xcode.
-4. Select the `PhoneInTheOtherRoom` scheme.
-5. Run on an iPhone simulator or device.
+## Screen Time and sleep data status
 
-## Run The Watch App
+Screen Time is part of the product direction, but not a pretend integration:
 
-1. Open the generated Xcode project.
-2. Select the `PhoneInTheOtherRoom` iPhone scheme first.
-3. Choose the paired iPhone plus Apple Watch run destination.
-4. Run the iPhone app; Xcode embeds and installs the Watch app from the iPhone target's **Embed Watch Content** phase.
-5. Open Phone in the Other Room on Apple Watch, or select `PhoneInTheOtherRoomWatchApp` after the companion app has installed if you want to debug the Watch UI directly.
+- A DeviceActivity report extension and Debug-only selection/report scaffolding exist.
+- The extension is not embedded in the release app.
+- The app and extension do not yet share an App Group.
+- Family Controls distribution approval and matching portal capabilities are required.
+- The intended future boundary is the two quiet bookends, using one consented selection.
+  App shielding must not cover the entire overnight interval by default.
 
-If you are installing on real devices, select the same Apple Development Team for both the iPhone target and the Watch target in Xcode. If XcodeGen is run again, recheck signing because generated project settings may overwrite manual Xcode signing choices.
+HealthKit sleep context is also deferred. It may provide optional comparison data later,
+but Counting Sheep will not grade sleep or claim that Night Watch caused better sleep.
 
-## Plist, Permission, And Signing
+## Platforms and architecture
 
-Required user-facing purpose string:
+- Swift 5.9 and SwiftUI
+- iOS 17.0+ and watchOS 10.0+
+- XcodeGen (`project.yml` is the project source of truth)
+- MVVM plus one iPhone-authoritative session coordinator
+- WatchConnectivity, NearbyInteraction, ActivityKit, WidgetKit, and local notifications
+- Codable JSON in `UserDefaults` using the `ollie.*` key prefix
+- No CoreData or SwiftData
 
-`NSNearbyInteractionUsageDescription`: "Ollie uses nearby-device distance to check whether your iPhone is away from your Apple Watch during a Focus Run."
+Five targets are generated:
 
-`NSHealthShareUsageDescription`: "Counting Sheep reads sleep duration to show how bedtime phone-away habits relate to rest."
+- `PhoneInTheOtherRoom` — iOS app
+- `PhoneInTheOtherRoomWatchApp` — optional watchOS companion
+- `PhoneInTheOtherRoomLiveActivity` — Lock Screen, Dynamic Island, and Smart Stack status
+- `PhoneInTheOtherRoomScreenTimeReport` — deferred DeviceActivity report extension
+- `PhoneInTheOtherRoomTests` — shared-domain tests
 
-Nearby Interaction is not gated by a foreground app entitlement. Three entitlement files are checked in, but all three are currently **empty placeholders** (`<dict/>`):
+An optional Supabase-backed Live Activity push sink is present in the current worktree. It
+is disabled unless explicitly configured. Local timing, notification, restore, and reward
+behavior remain authoritative when the backend is absent or unavailable.
 
-- `PhoneInTheOtherRoomApp/PhoneInTheOtherRoom.entitlements`
-- `PhoneInTheOtherRoomWatchApp/PhoneInTheOtherRoomWatchApp.entitlements`
-- `PhoneInTheOtherRoomScreenTimeReport/PhoneInTheOtherRoomScreenTimeReport.entitlements`
+## Build and test
 
-HealthKit and Screen Time (Family Controls) are scaffolded in code but are **not functional yet**: no entitlement keys are declared, the corresponding capabilities must be enabled in the Apple Developer portal, and Family Controls distribution additionally requires Apple's approval. The Screen Time report extension exists as a target but is not yet embedded in the iOS app.
+Install XcodeGen, then run:
 
-Screen Time setup in the app has three steps:
+```bash
+xcodegen generate
+xcodebuild build \
+  -project PhoneInTheOtherRoom.xcodeproj \
+  -scheme PhoneInTheOtherRoom \
+  -destination 'generic/platform=iOS Simulator'
+```
 
-1. Tap **Connect Screen Time** in Stats to request `AuthorizationCenter` access.
-2. Choose app/category sources for **Screen Time**, **Productivity**, and **Late Screen Time** with Apple's `FamilyActivityPicker`.
-3. The Stats cards embed `DeviceActivityReport` views, which ask the report extension to render today's selected screen time, 7-day selected screen time, and late-night selected screen time inside Apple's privacy sandbox.
+List available simulators with `xcrun simctl list devices available`, then run tests with
+one installed device name:
 
-Note: this flow is code scaffolding only. With empty entitlement files and no Family Controls capability, none of these steps work on a device today.
+```bash
+xcodebuild test \
+  -project PhoneInTheOtherRoom.xcodeproj \
+  -scheme PhoneInTheOtherRoom \
+  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+```
 
-After running `xcodegen generate`, confirm Xcode still has a valid signing team selected for the iPhone target, Watch target, and Screen Time report extension target. If the app never shows the Nearby Interaction permission prompt, verify the generated Info.plist contains `NSNearbyInteractionUsageDescription` for both targets and reinstall the iPhone and Watch apps to reset permission state.
+The shared scheme builds the iPhone app, embedded Watch app, and Live Activity extension.
+Do not hand-edit `PhoneInTheOtherRoom.xcodeproj/project.pbxproj`; regenerate it from
+`project.yml`.
 
-No GPS location permission is requested. No backend, analytics, Firebase, Supabase, OpenAI key, or cloud database is used.
+## Permissions and hardware behavior
 
-## Focus Mode Limitation
+- Notifications are requested in context when saving or starting Night Watch.
+- Camera access is used only for the optional QR phone-bed scan.
+- Nearby Interaction is used only for the optional Watch tuck-in assist and degrades to
+  the honor timer on unsupported or unreachable setups.
+- No GPS location permission is requested.
+- HealthKit and Family Controls entitlements must not be added until the matching product
+  gate and Apple portal setup are complete.
 
-Every run asks, "Turn on Focus Mode for this run?" in a pop-up after the user taps Send Ollie Out. The app does not silently toggle Focus, because iOS requires Focus changes to be user-approved.
+Use the same Apple Development Team for the iPhone, Watch, and embedded extensions on
+physical hardware. Real-device validation is still required for Nearby Interaction,
+overnight restoration, notifications, and ActivityKit transitions.
 
-The app includes a Shortcuts/App Intent action named **Start Focus Run**. A recommended user-created Shortcut is:
+## Shortcuts
 
-1. **Start Focus Run** from Phone in the Other Room
-2. **Set Focus** to Do Not Disturb
-3. **Open App**: Phone in the Other Room
+The App Shortcut is named **Night Watch**. It opens Counting Sheep at the saved bedtime
+ritual; it does not silently enable a system Focus or start an unseen timer.
 
-The App Intent prepares the selected run duration locally. When the app opens, the user still confirms the run with **Send Ollie Out**.
+## Privacy
 
-## Nearby Interaction Limitation
+Night Watch schedules, progress, rewards, and run snapshots are local by default. No GPS
+room identity or raw distance history is uploaded. Review optional backend configuration
+and App Store privacy disclosures before enabling any network feature.
 
-Nearby Interaction estimates device distance when supported by the hardware and session pairing. It does not identify exact rooms and should be treated as a fuzzy "near, drifting away, probably away" signal. The app uses smoothing, sustained samples, confidence labels, short check windows, and friendly waiting/unsupported states.
+## Repository status
 
-The active run screens show the live `NINearbyObject.distance` value when the iPhone and Apple Watch have exchanged Nearby Interaction discovery tokens and the hardware supports precise distance measurement. Either side can receive a useful distance sample; Watch-side readings are forwarded back to the iPhone during active check windows. If the UI says "Waiting for distance", the app is waiting for a short UWB check to produce a reading. If it says "Phone distance unsupported", the current device/setup cannot produce precise Nearby Interaction distance.
-
-For the current prototype rule, the app keeps a startup distance window open for the first 30 seconds of a Focus Run and ignores close-return failures during the first 20 seconds. After that, it rests the Nearby Interaction session and wakes short randomized check windows roughly every 45-120 seconds. During those post-grace checks, fresh `NINearbyObject.distance` samples below `2.0m` warn the user on iPhone and Apple Watch. The run ends only after repeated close-phone warnings and sustained close samples. The user can also tap **Check Distance** on iPhone or Apple Watch to wake a 20-second check window on demand.
-
-## WatchConnectivity Limitation
-
-WatchConnectivity messages are best-effort. Reachable devices use `sendMessage`; low-priority state falls back to application context. The iPhone app cannot force-open the Watch app; the Watch app must be installed and running or reachable through the paired simulator/device.
-
-Nearby Interaction discovery tokens are treated as high-priority messages: both apps queue them when the counterpart is temporarily unreachable, acknowledge received tokens, and retry unacknowledged tokens during an active distance check window.
-
-The iPhone setup screen reminds the user to open Phone in the Other Room on Apple Watch before starting. When a run starts, the iPhone schedules a local reminder notification; if the Watch app is reachable and receives the run-start message, it also schedules a local Watch notification.
-
-## Active Foreground MVP
-
-This prototype is an active foreground focus-session game. It estimates whether a paired iPhone is near the Apple Watch, drifting away, or probably in another room. It does not identify exact rooms, does not track GPS location, does not run as an always-on monitoring system, and does not replace Find My.
-
-During an active iPhone run, the app disables the idle timer and resets it when the run ends.
-
-## Rewards And Streaks
-
-Completed runs earn Ollie-themed rewards, sheep, coins, and other-room minutes. Sheep are the focus-resource inspired by the farm loop; coins are the spendable cosmetic currency for future Ollie and room upgrades. Daily focus stars unlock at 15, 30, 60, and 120 completed minutes, giving the home screen a lightweight daily mission and the stats screen a recent history. Early-ended runs do not grant a main reward, but may grant a consolation Muddy Paw Print. Streaks advance only on successful completed runs; early runs are encouraging and do not use harsh resets.
-
-## Implemented
-
-- PRD in `docs/PRD.md`
-- iOS SwiftUI app target
-- watchOS SwiftUI app target
-- Shared models for runs, proximity, rewards, progress, events, and Watch messages
-- Proximity classifier with smoothing, sustained samples, stale handling, and confidence
-- Unit tests for key classifier rules
-- Apple-style minute/second Focus Run duration picker
-- Focus Mode pop-up prompt shown when starting each run
-- Shortcuts/App Intent support for preparing a Focus Run before a user-approved Focus action
-- Foreground run coordinator with placement, validation, running, warning, completion, and early-end states
-- Isometric/pixel-inspired iPhone UI
-- Watch glance UI with timer, status, Ping Phone, End Run, completion, and early-end screens
-- WatchConnectivity ping/state plumbing with visible iPhone ping feedback
-- NearbyInteraction provider with discovery token support points and distance readouts
-- Local persistence for thresholds, progress, rewards, and last run
-- Light pixel-style Home/Farm shell with sheep and coin balances
-- Daily focus stars, three-view stats, recent focus history, and Ollie daily status
-- Apple Health sleep authorization and last-night sleep summary plumbing
-- Screen Time authorization, FamilyActivityPicker source selection, and DeviceActivity report extension plumbing (extension target exists but is not yet embedded, and entitlements are not wired)
-- Local iPhone reminder notification and reachable-Watch run-start notification
-- Phone ping haptic/sound and Watch haptics
-
-## Stubbed Or Hardware Dependent
-
-- Real Screen Time totals require Family Controls approval, real-device testing, and selected app/category sources. The report extension is wired, but Apple only supplies report data on supported iOS devices with valid entitlements/provisioning.
-- Full iPhone-to-Watch app embedding/signing may need project settings adjusted in Xcode for a production archive.
-- Nearby Interaction real-device validation still needs paired-device testing on supported hardware.
-- Focus activation still uses Apple Shortcuts' native Focus action; the app can prepare a run, but it cannot silently turn Focus on by itself.
-- Completion/too-close notifications, Live Activities, widgets, and complications are not implemented.
-
-## 3-Minute Demo Script
-
-1. Open the iPhone app.
-2. Show **Phone in the Other Room**.
-3. Say: "This is a tiny focus game where you send your phone to the other room."
-4. Choose a Focus Run duration.
-5. Tap **Send Ollie Out**.
-6. Answer the Focus Mode prompt.
-7. Show "Put your phone in the other room."
-8. Show the Watch UI: "Ollie Running" and phone-away confidence.
-9. Move back toward the phone early to trigger warning on supported hardware.
-10. Move away before grace expires.
-11. Complete the run.
-12. Show happy Ollie and the reward reveal.
-13. Open Reward Shelf.
-14. Optional: run again and tap End Run to show sad Ollie and gentle encouragement.
-
-Alternative line: Find My helps when your phone is lost. Ollie helps when your phone is too close.
-
-## Future Improvements
-
-- Real-device Nearby Interaction polish and token exchange hardening
-- In-app Shortcut setup education and richer App Intent parameter summaries
-- Local completion/too-close notifications
-- Live Activity and Lock Screen widget
-- More Ollie animations and collar accessories
-- Watch complication-style summary
-- Multiple calibration profiles
-
-## License
-
-MIT. See [LICENSE](LICENSE). Redacted visual placeholders are documented in [ASSET_NOTICE.md](ASSET_NOTICE.md).
+This is an active iOS/watchOS prototype, not a hosted web app. The code is available under
+the [MIT License](LICENSE). Review [ASSET_NOTICE.md](ASSET_NOTICE.md) before distributing
+the checked-in artwork.

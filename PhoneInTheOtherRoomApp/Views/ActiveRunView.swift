@@ -1,245 +1,345 @@
 import SwiftUI
 
+/// The phone owns the clock. Watch and UWB are deliberately only a gentle
+/// placement assist at the beginning of a run, never an ongoing requirement.
 struct ActiveRunView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
-    @State private var showTechnicalDetails = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var proximity: ProximityState { viewModel.coordinator.proximityState }
-    private var runState: FocusRunState { viewModel.activeRun?.state ?? .running }
+    private var run: FocusRun? { viewModel.activeRun }
+    private var guardKind: SessionGuardKind { run?.guardKind ?? .honorTimer }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
-                timerHero
-                // Decorative pixel scene; the proximity card below carries the same
-                // information as text for VoiceOver.
-                IsometricFocusYardView(
-                    state: runState,
-                    bucket: proximity.bucket,
-                    distanceMeters: proximity.distanceMeters
-                )
-                .accessibilityHidden(true)
-                proximityCard
-                if viewModel.activeRun?.state == .warningPhoneTooClose {
-                    warningBanner
+                hero
+                ritualStatus
+                phoneFreeCue
+                if let message = viewModel.coordinator.backgroundReturnMessage {
+                    returnBanner(message)
                 }
-                actionButtons
+                actions
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(16)
         }
-        .background(
-            LinearGradient(
-                colors: [OlliePalette.appBackground, Color(red: 0.06, green: 0.10, blue: 0.06)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        )
+        .background(AppColors.paper.ignoresSafeArea())
+        .navigationTitle(run?.isNightWatch == true ? "Quiet Time" : "Phone-away time")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
-    private var timerHero: some View {
-        GamePanelView(title: "Leave me here", prominence: .hero) {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(headline)
-                    .font(.system(size: 32, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.78)
-                Text("Your Watch has the run.")
-                    .font(.title3.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.72))
-                Text(OllieFormat.timer(viewModel.coordinator.remainingSeconds))
-                    .font(.system(size: 64, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
+    private var hero: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top, spacing: 14) {
+                    OllieRitualView(state: ollieState, size: 76)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text(phase?.title.uppercased() ?? "OLLIE IS ON WATCH")
+                            .font(pixelFont(.caption))
+                            .foregroundStyle(AppColors.secondaryText)
+                        Text(headline)
+                            .font(pixelFont(.title2))
+                        Text(subheadline)
+                            .font(pixelFont(.body))
+                            .foregroundStyle(AppColors.secondaryText)
+                    }
+                }
+
+                Text(
+                    timerInterval: countdownInterval,
+                    countsDown: true,
+                    showsHours: true
+                )
+                    .font(.system(size: 58, weight: .black, design: .monospaced))
+                    .foregroundStyle(AppColors.ink)
                     .monospacedDigit()
-                    .contentTransition(.numericText())
+                    .contentTransition(reduceMotion ? .identity : .numericText())
                     .accessibilityLabel(timerAccessibilityLabel)
                     .accessibilityAddTraits(.updatesFrequently)
-                Text(runState.label)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+
+                ProgressView(timerInterval: progressInterval, countsDown: false)
+                    .progressViewStyle(.linear)
+                    .tint(AppColors.grass)
+                    .scaleEffect(y: 2, anchor: .center)
+                    .frame(height: 18)
+                    .background(AppColors.panel)
+                    .overlay(Rectangle().stroke(AppColors.stroke, lineWidth: 2))
+                Text(transitionCaption)
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.secondaryText)
             }
         }
     }
 
-    private var proximityCard: some View {
-        GamePanelView(title: "Ollie's patrol") {
-            VStack(alignment: .leading, spacing: 14) {
-                Text(friendlyProximityTitle)
-                    .font(.system(size: 28, weight: .black, design: .rounded))
-                    .foregroundStyle(.white)
-                ProximityMeter(bucket: proximity.bucket)
-                Text(proximity.statusText)
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
-                Text(proximity.detailText)
-                    .font(.caption)
-                    .foregroundStyle(.white.opacity(0.68))
-                if !viewModel.coordinator.ollieMessage.isEmpty {
-                    Text(viewModel.coordinator.ollieMessage)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(OlliePalette.amber)
-                }
-                DisclosureGroup("Technical details", isExpanded: $showTechnicalDetails) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(technicalDistanceLine)
-                        Text("Confidence: \(proximity.confidence.rawValue)")
-                        Text("Source: \(proximity.source.rawValue)")
+    private var ollieState: OllieRitualState {
+        if run?.placementStatus == .awaitingConfirmation {
+            return .tuckingIn
+        }
+        switch phase {
+        case .windDown: return .guarding
+        case .overnight: return .overnight
+        case .morningQuiet: return .morningQuiet
+        case .complete: return .completed
+        case nil: return .guarding
+        }
+    }
+
+    @ViewBuilder
+    private var ritualStatus: some View {
+        switch run?.placementStatus ?? .notRequired {
+        case .notRequired, .confirmed:
+            PixelCard {
+                Label(phaseStatusText, systemImage: phase == .morningQuiet ? "sun.max.fill" : "moon.stars.fill")
+                    .font(pixelFont(.body))
+                    .foregroundStyle(AppColors.secondaryText)
+            }
+        case .awaitingConfirmation:
+            PixelCard {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(placementEyebrow)
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    Text(placementInstructions)
+                        .font(pixelFont(.body))
+                    Button(placementButtonTitle) {
+                        if guardKind == .qrCode {
+                            viewModel.showQRCodeScanner = true
+                        } else if guardKind == .nfcTag {
+                            viewModel.scanNFCTag()
+                        } else {
+                            viewModel.coordinator.requestDistanceCheck()
+                        }
                     }
-                    .font(.caption2.monospaced())
-                    .foregroundStyle(.white.opacity(0.55))
-                    .padding(.top, 6)
+                    .buttonStyle(PixelPrimaryButtonStyle())
+                    if !viewModel.nfcStatus.isEmpty {
+                        Text(viewModel.nfcStatus)
+                            .font(pixelFont(.caption))
+                            .foregroundStyle(AppColors.secondaryText)
+                    }
+                    Button("Continue without a placement check") {
+                        viewModel.coordinator.continueWithoutWatch()
+                    }
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.secondaryText)
                 }
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white.opacity(0.45))
+            }
+        case .unavailable:
+            PixelCard {
+                VStack(alignment: .leading, spacing: 9) {
+                    Text("WATCH CHECK RESTING")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.secondaryText)
+                    Text("Your timer keeps going. No action needed.")
+                        .font(pixelFont(.body))
+                }
             }
         }
     }
 
-    private var warningBanner: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(OlliePalette.amber)
-                .accessibilityHidden(true)
-            Text(warningBannerText)
-                .font(.caption.weight(.bold))
-                .foregroundStyle(.white)
+    private var placementEyebrow: String {
+        switch guardKind {
+        case .qrCode: return "TUCK-IN SCAN"
+        case .nfcTag: return "TUCK-IN TAP"
+        default: return "WATCH TUCK-IN"
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(OlliePalette.amber.opacity(0.18), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(OlliePalette.amber.opacity(0.5), lineWidth: 1))
-        .accessibilityElement(children: .combine)
     }
 
-    private var warningBannerText: String {
-        switch remainingWarnings {
-        case 0:
-            return "Your phone wandered back. Walk it out to keep the run going."
-        case 1:
-            return "Your phone wandered back. Ollie can let it slide once more."
-        default:
-            return "Your phone wandered back. Ollie can let it slide \(remainingWarnings) more times."
+    private var placementInstructions: String {
+        switch guardKind {
+        case .qrCode: return "Scan the little code where your phone will sleep."
+        case .nfcTag: return "Tap the little tag where your phone will sleep."
+        default: return "Walk your phone away. Ollie only needs one quick tuck-in check."
+        }
+    }
+
+    private var placementButtonTitle: String {
+        switch guardKind {
+        case .qrCode: return "Scan phone bed"
+        case .nfcTag: return "Tap phone bed"
+        default: return "Check Watch placement"
         }
     }
 
     @ViewBuilder
-    private var actionButtons: some View {
-        ViewThatFits {
-            HStack(spacing: 12) { buttons }
-            VStack(spacing: 12) { buttons }
+    private var phoneFreeCue: some View {
+        if let plan = run?.nightWatchPlan, let phase {
+            switch phase {
+            case .windDown:
+                activityCue(
+                    eyebrow: "PHONE-FREE WIND-DOWN",
+                    activity: plan.eveningActivity,
+                    detail: guidanceTip ?? "Let the evening get a little quieter."
+                )
+            case .morningQuiet:
+                activityCue(
+                    eyebrow: "PHONE-FREE MORNING",
+                    activity: plan.morningActivity,
+                    detail: guidanceTip ?? "Let the phone wake after you do."
+                )
+            case .overnight, .complete:
+                EmptyView()
+            }
         }
-        .buttonStyle(PixelButtonStyle(tint: OlliePalette.amber))
     }
 
-    @ViewBuilder
-    private var buttons: some View {
-        Button {
-            viewModel.coordinator.requestDistanceCheck()
-        } label: {
-            Label("Check Distance", systemImage: "dot.radiowaves.left.and.right")
+    private func activityCue(eyebrow: String, activity: PhoneFreeActivity, detail: String) -> some View {
+        PixelCard {
+            HStack(spacing: 12) {
+                Image(systemName: activity.systemImage)
+                    .font(.title2.weight(.black))
+                    .foregroundStyle(AppColors.grass)
+                    .frame(width: 34)
+                VStack(alignment: .leading, spacing: 5) {
+                    Text(eyebrow)
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    Text(activity.title)
+                        .font(pixelFont(.headline))
+                    Text(detail)
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.secondaryText)
+                }
+                Spacer(minLength: 0)
+            }
         }
-        .accessibilityHint("Asks your Watch for a fresh distance reading")
-        Button {
-            viewModel.coordinator.pingPhone()
-        } label: {
-            Label("Whistle at Phone", systemImage: "speaker.wave.2")
+    }
+
+    private var actions: some View {
+        VStack(spacing: 10) {
+            if guardKind == .watchPlacement {
+                Button {
+                    viewModel.coordinator.pingPhone()
+                } label: {
+                    Label("Help me find my phone", systemImage: "speaker.wave.2.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PixelChipButtonStyle(isSelected: false))
+            }
+
+            Button(run?.isNightWatch == true ? "End quiet time early" : "End early") {
+                viewModel.coordinator.endEarly()
+            }
+            .font(pixelFont(.caption))
+            .foregroundStyle(AppColors.secondaryText)
         }
-        .accessibilityHint("Plays a sound on your phone so you can find it")
-        Button {
-            viewModel.coordinator.endEarly()
-        } label: {
-            Label("End Run", systemImage: "xmark")
-        }
-        .accessibilityHint("Ends this run early")
+    }
+
+    private func returnBanner(_ message: String) -> some View {
+        Text(message)
+            .font(pixelFont(.caption))
+            .foregroundStyle(AppColors.secondaryText)
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColors.sky.opacity(0.18), in: RoundedRectangle(cornerRadius: AppRadius.md))
     }
 
     private var headline: String {
-        switch runState {
-        case .placementGrace, .demo:
-            return "Put your phone in the other room."
-        case .warningPhoneTooClose:
-            return "Phone is getting too close."
-        default:
-            return "Ollie is guarding your focus."
+        if run?.placementStatus == .awaitingConfirmation {
+            return "A calm start"
+        }
+        switch phase {
+        case .windDown: return "The evening can get quieter now."
+        case .overnight: return "Phone resting. You can too."
+        case .morningQuiet: return "Wake up before your phone does."
+        case .complete: return "A protected night."
+        case nil: return "Phone resting. You can too."
         }
     }
 
-    private var friendlyProximityTitle: String {
-        switch proximity.bucket {
-        case .waitingForDistance: return "Ollie is sniffing…"
-        case .withYou, .sameRoom: return "Still too close"
-        case .doorway: return "Heading out"
-        case .probablyOtherRoom, .demo: return "Phone is away!"
-        case .signalLost: return "Trail went cold"
-        case .unsupported: return "Distance unavailable"
+    private var subheadline: String {
+        if run?.placementStatus != .awaitingConfirmation {
+            switch phase {
+            case .windDown: return "Phone-free time until bedtime."
+            case .overnight: return "Sleep time. Your phone stays tucked away."
+            case .morningQuiet: return "Phone-free time after waking."
+            case .complete: return "Your phone-free night is ready."
+            case nil: break
+            }
+        }
+        switch guardKind {
+        case .honorTimer: return "No Watch check needed. Take your phone to its bed."
+        case .watchPlacement: return "The Watch helps only with tuck-in, then it can rest too."
+        case .qrCode: return "A small scan marks the place your phone is resting."
+        case .nfcTag: return "A small tap marked the place your phone is resting."
         }
     }
 
-    private var technicalDistanceLine: String {
-        guard let distance = proximity.distanceMeters else {
-            return "Distance: waiting for UWB reading"
+    private var progressInterval: ClosedRange<Date> {
+        guard let run else {
+            let now = Date()
+            return now...now
         }
-        return "Distance: \(String(format: "%.1f", distance)) m"
+        guard let plan = run.nightWatchPlan, let phase else {
+            return run.startedAt...max(run.startedAt, run.plannedEndAt)
+        }
+        switch phase {
+        case .windDown:
+            let plannedStart = plan.intendedBedtime.addingTimeInterval(TimeInterval(-plan.windDownMinutes * 60))
+            let start = max(run.startedAt, plannedStart)
+            return start...max(start, plan.intendedBedtime)
+        case .overnight:
+            let start = max(run.startedAt, plan.intendedBedtime)
+            return start...max(start, plan.wakeTime)
+        case .morningQuiet:
+            let start = max(run.startedAt, plan.wakeTime)
+            return start...max(start, plan.protectedUntil)
+        case .complete:
+            return plan.protectedUntil...plan.protectedUntil
+        }
     }
 
-    private var remainingWarnings: Int {
-        max(0, FocusRunRules.allowedCloseWarnings - (viewModel.activeRun?.warningCount ?? 0))
+    private var phase: NightWatchPhase? {
+        run?.nightWatchPhase()
+    }
+
+    private var transitionRemainingSeconds: TimeInterval {
+        guard let transition = viewModel.coordinator.nextNightWatchTransition else {
+            return viewModel.coordinator.remainingSeconds
+        }
+        return max(0, transition.timeIntervalSince(Date()))
+    }
+
+    private var countdownInterval: ClosedRange<Date> {
+        let now = Date()
+        let transition = viewModel.coordinator.nextNightWatchTransition
+            ?? run?.plannedEndAt
+            ?? now
+        return now...max(now, transition)
+    }
+
+    private var transitionCaption: String {
+        guard let transition = viewModel.coordinator.nextNightWatchTransition, let phase else {
+            return "Ollie will check in when the phone-away time is done."
+        }
+        let time = transition.formatted(date: .omitted, time: .shortened)
+        switch phase {
+        case .windDown: return "Bedtime at \(time)"
+        case .overnight: return "Phone-free morning begins at \(time)"
+        case .morningQuiet: return "Your phone wakes at \(time)"
+        case .complete: return "Quiet time is complete"
+        }
+    }
+
+    private var phaseStatusText: String {
+        switch phase {
+        case .windDown: return "Your phone is tucked away until sleep time."
+        case .overnight: return "Sleep time is keeping. There is nothing else to do here."
+        case .morningQuiet: return "This phone-free morning is yours until the countdown ends."
+        case .complete: return "Both phone-free windows are protected."
+        case nil: return "Your phone-away time is yours now. Ollie will check in when it is done."
+        }
+    }
+
+    private var guidanceTip: String? {
+        guard let run, let phase else { return nil }
+        let phaseTip = NightWatchGuidance.tip(for: phase, seed: run.id)
+        guard phase == .windDown || phase == .morningQuiet else { return phaseTip }
+        return [viewModel.offlinePurpose.inAppDisplayPhrase + ".", phaseTip]
+            .compactMap { $0 }
+            .joined(separator: " ")
     }
 
     private var timerAccessibilityLabel: String {
-        let remainingMinutes = OllieFormat.minutes(viewModel.coordinator.remainingSeconds)
-        let plannedMinutes = OllieFormat.minutes(viewModel.activeRun?.plannedDurationSeconds ?? 0)
-        guard remainingMinutes > 0 else {
-            return "Less than a minute remaining of \(plannedMinutes)"
-        }
-        return "\(remainingMinutes) minutes remaining of \(plannedMinutes)"
-    }
-}
-
-private struct ProximityMeter: View {
-    var bucket: ProximityBucket
-
-    private var fillIndex: Int {
-        switch bucket {
-        case .withYou: return 0
-        case .sameRoom, .waitingForDistance: return 1
-        case .doorway: return 2
-        case .probablyOtherRoom, .demo: return 3
-        case .signalLost, .unsupported: return 1
-        }
-    }
-
-    var body: some View {
-        HStack(spacing: 6) {
-            ForEach(0..<4, id: \.self) { index in
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(index <= fillIndex ? meterColor(for: index) : Color.white.opacity(0.12))
-                    .frame(height: 10)
-            }
-        }
-        .overlay(alignment: .bottom) {
-            HStack {
-                Text("Near")
-                Spacer()
-                Text("Away")
-            }
-            .font(.caption2.weight(.bold))
-            .foregroundStyle(.white.opacity(0.45))
-            .offset(y: 18)
-        }
-        .padding(.bottom, 20)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Phone distance")
-        .accessibilityValue(bucket.label)
-    }
-
-    private func meterColor(for index: Int) -> Color {
-        switch index {
-        case 0, 1: return OlliePalette.amber
-        case 2: return OlliePalette.sky
-        default: return OlliePalette.success
-        }
+        let remaining = OllieFormat.minutes(transitionRemainingSeconds)
+        return remaining > 0 ? "\(remaining) minutes until the next quiet-time step" : "Less than a minute remaining"
     }
 }

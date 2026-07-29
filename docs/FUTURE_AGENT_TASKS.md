@@ -13,124 +13,67 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## A. Immediate TestFlight blockers (in order)
 
-### A3-remainder. Finish signing (human inputs needed)
-- **Why:** A3 prep landed 2026-07-07 (bundle IDs `com.papermelon.countingsheep`,
-  automatic signing, entitlements wired, version 0.1.0/1) but two human inputs remain.
-- **Mode:** Human + Codex · **Size:** S
-- **Steps:** (1) human confirms or changes the permanent bundle ID root in `project.yml`
-  (permanent after first App Store Connect upload); (2) human supplies the Apple
-  Developer Team ID for `DEVELOPMENT_TEAM`; (3) run `xcodegen generate`; (4) verify
-  `xcodebuild archive` succeeds.
-- **Accept:** archive succeeds with real team ID.
-
-### A5. Backgrounding-mid-run honesty
-- **Why:** runs are foreground-only with no `scenePhase` handling; backgrounding silently
-  degrades the session — a top crash/confusion risk in the QA script.
-- **Mode:** Cursor Plan→Build (needs a design decision: pause vs. warn vs. tolerate)
-- **Size:** M · **Autonomous:** no — behavior decision needs the human
-- **Files:** `PhoneInTheOtherRoomApp.swift` (scenePhase), `ProximitySessionCoordinator.swift`,
-  copy in run views
-- **Accept:** playbook §7 backgrounding checks pass with honest, warm copy; no crash;
-  behavior documented in ARCHITECTURE.md.
-
-### A6. Bedtime-framed Stats tab (minimal, native data)
-- **Why:** build-1 stats must be the pared-down, bedtime-framed surface (brief §MVP):
-  nights phone slept away, bedtime streak, wind-down minutes, stars — nothing else.
-- **Mode:** Codex (after A2 lands) · **Size:** M · **Autonomous:** yes
-- **Files:** `FocusStatsView.swift` (reduce), copy per `skills/product-copy-review`
-- **Accept:** stats tab shows only native `UserProgress` data with bedtime framing; no
-  HealthKit/Screen Time/manual-entry/QA surfaces in Release; copy passes the skill.
-
-### A7b. Accessibility pass on the Watch views
-- **Why:** the iOS run flow got its accessibility pass on 2026-07-07 (see Done), but
-  Watch views were out of that session's scope and still lack labels.
-- **Mode:** Codex · **Size:** S · **Autonomous:** yes
-- **Files:** `PhoneInTheOtherRoomWatchApp/Views/*.swift`
-- **Accept:** playbook §8 VoiceOver items pass on Watch; a run can be completed with
-  VoiceOver alone end to end.
-
 ### Human-only (parallel, start now)
 - Apple Developer enrollment; reserve app name; **submit Family Controls distribution
   request**; decide permanent bundle ID; pick canonical GitHub repo and make it private.
 
 ## B. MVP polish (before or shortly after first upload)
 
-### B2b. Copy pass on notifications and Watch strings
-- **Why:** the iOS run-flow copy pass landed 2026-07-07, but notification strings
-  (`PhoneNotificationService`, `WatchNotificationService`) and Watch view strings were
-  out of scope.
-- **Mode:** Codex with `skills/product-copy-review/SKILL.md` · **Size:** S ·
-  **Autonomous:** yes
-- **Files:** `Services/PhoneNotificationService.swift`,
-  `PhoneInTheOtherRoomWatchApp/Services/WatchNotificationService.swift`, Watch views
-- **Accept:** review table produced; zero hard-rule violations remain.
+### B1. Validate a full Night Watch on physical hardware
+- **Why:** the session deliberately crosses midnight and depends on restoration, local
+  notifications, ActivityKit, and optional Watch placement behavior that unit tests and a
+  short simulator run cannot fully reproduce.
+- **Mode:** Human + Codex · **Size:** S · **Autonomous:** no
+- **Accept:** run from wind-down through morning quiet on a physical iPhone; cover locked
+  screen, termination/relaunch, notification delivery, Live Activity phase changes, early
+  end, and one Watch/QR fallback; record results in the TestFlight QA playbook. Repeat one
+  schedule across a DST or timezone boundary before broader rollout.
 
-### B3. Fix HealthSleepService authorization check
-- **Why:** it optimistically returns `.authorized` without checking status — wrong the
-  moment HealthKit ships (build 2), cheap to fix now.
-- **Mode:** Codex · **Size:** S · **Autonomous:** yes
-- **Files:** `Services/HealthSleepService.swift`
-- **Accept:** real `authorizationStatus` consulted post-request; denied path returns
-  honest state; unit-testable logic extracted to `Shared/` where feasible.
+### B2. Establish physical-device overnight energy baselines
+- **Why:** the code is event-driven after the 2026-07-27 energy audit, but Live Activity
+  display cost, UWB burst cost, optional Supabase transport, and real suspension behavior
+  require device measurements rather than inference.
+- **Mode:** Human + Codex · **Size:** S · **Autonomous:** no
+- **Files:** `docs/ENERGY_AUDIT.md`
+- **Accept:** capture at least three comparable Power Profiler traces for idle, honor-timer
+  without Live Activity, honor-timer with Live Activity, and Watch placement; capture one
+  full overnight on-device Performance Trace; record selected-range CPU, display, network,
+  and per-app power impact plus DEBUG event counts. Confirm there is no one-second
+  persistence/Watch stream and that NI ends within the placement window.
 
-### B4a. Sheep-reward cycle celebration moment
-- **Why:** `PixelHomeDashboard` computes next-sheep progress as `totalCompletedRuns % 3`,
-  so immediately after earning a sheep the row shows "0 / 3" with no acknowledgment of the
-  completed cycle (found by Bugbot, 2026-07-07). Minor, but the celebration moment is the
-  product's whole reward philosophy.
-- **Mode:** Codex · **Size:** S · **Autonomous:** yes
-- **Files:** `PhoneInTheOtherRoomApp/Views/PixelHomeDashboard.swift`
-- **Accept:** just-earned state shows warm acknowledgment (e.g. "A new sheep joined the
-  flock!") before rolling to the next cycle; copy passes the copy skill.
-
-### B4. Analytics export privacy fix or gate
-- **Why:** `relativeDays` mode doesn't redact ISO dates — a privacy bug if export ships.
-- **Mode:** Codex · **Size:** S · **Autonomous:** yes
-- **Files:** `Shared/FocusAnalytics.swift`, `Services/AnalyticsExportService.swift`, tests
-- **Accept:** either redaction works (with test) or export is DEBUG-gated for build 1.
+### B3. Design honest HealthKit read-access states — completed 2026-07-26
+- **Why:** HealthKit intentionally does not disclose whether read access was denied;
+  `authorizationStatus(for:)` only reports share/write authorization and cannot satisfy
+  the old read-only acceptance criterion.
+- **Mode:** Human decision + Codex · **Size:** S · **Autonomous:** no
+- **Files:** `Services/HealthSleepService.swift`, build-2 Health UI copy
+- **Accept:** completed with requested/no-data/error states; an empty result never claims
+  access was denied. Nights explains that Apple's Sleep Score is not exposed through
+  HealthKit.
 
 ## C. Architecture cleanup (post-first-upload, opportunistic)
 
-### C1. Split FocusStatsView.swift (1,232 lines)
-- **Mode:** Codex · **Size:** M · **Autonomous:** yes — mechanical extraction, no behavior
-  change; easier after A6 shrinks it
-- **Accept:** no file over ~400 lines; build/tests green; no functional diff.
-
-### C2. Split AssetReadyScreens.swift (1,413 lines, gated code)
+### C2. Split AssetReadyScreens.swift (gated code)
 - **Mode:** Codex · **Size:** M · **Autonomous:** yes
 - **Accept:** one screen per file under `Views/MVP/`; still DEBUG-gated; builds.
 
-### C3. Remove unused RewardShelfViewModel; finish-or-delete demo mode
-- **Why:** dead and half-wired code misleads agents with limited context.
-- **Mode:** Codex · **Size:** S · **Autonomous:** yes (deletion default; reviving demo
-  mode needs a human yes)
-- **Files:** `ViewModels/`, `Proximity/DemoDistanceProvider.swift`, `FocusRunViewModel`
-- **Accept:** no unreferenced types; demo mode either reachable or gone.
-
-### C4. Inject services into ProximitySessionCoordinator
+### C3. Inject services into FocusSessionCoordinator
 - **Why:** `.shared` coupling makes the core state machine untestable.
 - **Mode:** Cursor Plan→Build · **Size:** M · **Autonomous:** no — core-loop refactor,
   human reviews
 - **Accept:** coordinator constructible with test doubles; first coordinator unit tests
   exist; behavior unchanged.
 
-### C5. App Group + Screen Time extension embedding
-- **Why:** prerequisite for shipping any Screen Time feature (extension can't read app
-  selections today; extension isn't embedded).
-- **Mode:** Cursor Plan→Build · **Size:** L · **Autonomous:** no — entitlements + build
-  config; blocked on Family Controls approval
-- **Accept:** extension embedded, `SCREEN_TIME_REPORTS` on main target, selections shared
-  via App Group, archive still signs.
-
 ## D. Product experiments (gated — check the ADR before starting)
 
-### D1. QR/NFC bedtime sessions (ADR-0004) — top post-build-1 bet
-- **Gate:** Family Controls approval AND build 1 stable. QR first, then NFC.
+### D1. NFC + optional app shielding after the QR phone-bed guard (ADR-0004)
+- **Gate:** Family Controls approval AND build 1 stable. QR placement is already
+  available without blocking; NFC and shielding remain deferred.
 - **Mode:** Cursor Plan→Build for the strategy-seam design; Codex for increments
 - **Size:** L · **Autonomous:** no — new entitlements, new interaction model
-- **Accept:** ADR-0004 architecture direction followed (session-guard strategies);
-  anti-addiction constraints implemented (consent, gentle shield, emergency exit);
-  workshop demo flow works end-to-end on a non-Watch iPhone.
+- **Accept:** NFC and ManagedSettings extend the existing session-guard seam; consent,
+  gentle shield copy, and an emergency exit are implemented; workshop demo works on an
+  iPhone without a Watch.
 
 ### D2. HealthKit sleep card (TestFlight build 2)
 - **Gate:** signing settled; B3 fixed; privacy label prepared.
@@ -139,11 +82,12 @@ execute without human sign-off mid-task (final merge review still applies per
 - **Accept:** optional sleep card on Stats; graceful denied/no-data states; no
   sleep-quality claims in copy.
 
-### D3. Late-night Screen Time report (flagship differentiator)
-- **Gate:** C5 done; Family Controls approved.
+### D3. Optional sleep-bookend Screen Time shielding (flagship differentiator)
+- **Gate:** Read-only bookend reports are complete; shielding remains separately gated.
 - **Mode:** Cursor Plan→Build · **Size:** L · **Autonomous:** no
-- **Accept:** `phone-other.late-night` scene surfaces bedtime screen time inside Stats;
-  copy bedtime-framed and kind.
+- **Accept:** the existing consented app selection supports optional shields only during
+  the configured quiet windows, always offers an emergency exit, and never claims to
+  measure sleep. Preserve the read-only `phone-other.*` report contexts.
 
 ## E. Later / explicitly postponed (do not start; citable refusals)
 
@@ -163,6 +107,120 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Done
 
+- **2026-07-27 · Codex + human direction:** Added an ADR-gated development preview for
+  NDEF phone-bed registration/confirmation and ManagedSettings shielding. The shared
+  policy applies only to wind-down and morning quiet and clears overnight or whenever a
+  run ends/resets. Release controls remain hidden until the first TestFlight gate passes.
+  Reliable suspended/terminated transitions still require a separately registered and
+  approved DeviceActivityMonitor extension.
+
+- **2026-07-27 · Codex:** Removed Home CTA truncation by giving its title and schedule room
+  to wrap, reducing fixed icon chrome, and shortening the schedule to the bed and phone-wake
+  times. Before-bed and after-waking settings now share the same duration choices—15, 30,
+  45, 60, 90, 120, or 180 minutes—through readable menus that preserve independent values.
+
+- **2026-07-27 · Codex:** Made Nights data provenance explicit. The latest quiet-time card
+  now shows an early-ended attempt when it is newer than the last protected night, and all
+  key records show their date. Apple Health summaries retain their night-ending date, so an
+  older sample is labelled as older instead of appearing as last night. Screen Time reports
+  now use iPhone-only data, combine matching hourly streams, keep quiet hours visible, show
+  selected-app time against the full report window, and allow each hour to be tapped for its
+  exact duration. Removed the ambiguous unattributed-pickup count.
+
+- **2026-07-27 · Codex:** Added a deliberately small CBT-I-informed context layer to Nights:
+  an optional, collapsed three-question morning note with no score or rewards; a seven-night
+  Apple Health wake-time range; and Screen Time report timing for Apple's exact first pickup
+  plus the latest active reporting hour. Morning reflections stay in local UserDefaults and
+  retain at most 45 days. Physical-device HealthKit and DeviceActivity QA remains required.
+
+- **2026-07-26 · Codex:** Decoupled the Nights Screen Time report ranges from Quiet Time.
+  People can now choose separate start and end times for late-evening and after-waking
+  reports, see every selected app or category through Apple's privacy-preserving labels,
+  and add, remove, or replace the shared selection. Added persisted preferences and interval
+  coverage, including a report window that crosses midnight.
+
+- **2026-07-26 · Codex:** Reworked the shipping reward loop into rotating keepsake
+  families plus cumulative, never-losable protected-night milestones. New rewards retain
+  a factual snapshot of the two credited bookends and selected offline cues; duration,
+  warnings, streaks, placement method, and optional health/report data do not improve the
+  keepsake tier. Completion now reconnects the reveal to the person's offline purpose, and
+  the finite shelf explains each keepsake without rarity pressure or locked-slot teasing.
+  Added legacy-decode and reward-selection coverage plus `docs/REWARDS.md`.
+
+- **2026-07-26 · Codex + human decision:** Renamed the shipping Stats tab to Nights and
+  replaced its Nights/Trends/Sleep/Insights segmentation with one finite scroll. Simplified
+  Home to tonight's plan, an optional offline purpose, and one primary action; removed the
+  manual Screen Time prompt and economy-heavy dashboard row. New plans retain 30/30 quiet
+  defaults with selectable durations. Custom purpose text is local and in-app by default,
+  with a separate opt-in before it can appear in reminders. Added read-only Screen Time
+  report contexts for the configured before-bed and after-waking windows; physical-device
+  report QA remains required.
+
+- **2026-07-25 · Codex + human portal confirmation:** Completed C5 after Family Controls
+  Distribution and `group.com.ngawangchime.countingsheep` were assigned to the containing
+  app and report extension. The DeviceActivity report is embedded, both targets carry the
+  approved entitlements, the main app compiles the reporting UI, and scoped selections
+  migrate into App Group defaults without moving unrelated local progress. This enables
+  read-only reporting only; shielding, NFC, and all-night blocking remain gated by ADR-0004.
+
+- **2026-07-18 · Codex + human approval:** Enabled the existing read-only HealthKit sleep
+  integration for Release, restored its prior authorization state, and refreshes last-night
+  sleep on launch. Added a Debug-only immediate Night Watch start for backend/device QA and
+  made the gated Farm preview derive its sheep count and occupied slots from authoritative
+  `UserProgress` instead of the hardcoded 28-sheep mock.
+
+- **2026-07-18 · Codex:** Decoupled Supabase Night Watch identity/history from ActivityKit
+  token delivery. Starting a local run now restores or creates anonymous auth and syncs the
+  device/run independently; terminal status follows completion or early end. Fixed XcodeGen
+  xcconfig attachment, added the development push entitlement, extended the hosted schema
+  for overnight end times, hid phone-finding UI outside Watch placement, and relabelled the
+  reward shelf affordance.
+
+- **2026-07-18 · Codex + human confirmation:** Aligned project-level Night Watch
+  presentation. Both Nearby Interaction prompts now describe the optional tuck-in check,
+  and the iPhone launch screen uses an adaptive warm neutral color asset instead of the
+  generated empty launch dictionary. Regenerated the project and verified Debug, Release,
+  packaged plist/assets, simulator presentation, and all 33 tests.
+- **2026-07-18 · Codex:** Repositioned the active product around one phase-aware Night
+  Watch spanning wind-down, overnight, and morning quiet. Added persisted bedtime/wake
+  preferences, configurable quiet bookends, gentle offline cues, wind-down reminders,
+  phase-aware iPhone/Watch/Live Activity surfaces, morning completion, and quiet-minute
+  reward accounting that excludes overnight hours. Legacy runs still decode and retain
+  their prior behavior. Added schedule/reward/compatibility tests and ADR-0006. Family
+  Controls reports and shielding remain behind C5/D3 and human entitlement approval. Added
+  an adaptive night palette and reconciled README, PRD, architecture, implementation notes,
+  asset map, and TestFlight QA with the implemented product and ADR-0005 dependency.
+- **2026-07-11 · Codex + human decision:** Added the embedded WidgetKit/ActivityKit
+  Live Activity. A Focus Run now starts a glanceable Lock Screen/Dynamic Island status
+  (also available to the paired Watch Smart Stack) using the system timer; it ends when
+  the run is finished in-app. `NSSupportsLiveActivities` is enabled and a signed archive
+  confirms the extension bundle is embedded. Completion-only intermittent reward variety
+  is now the documented habit-formation direction.
+- **2026-07-11 · Codex:** Focus Run feedback fixes. Starting from setup now returns
+  directly to the active run, an unavailable Watch placement check automatically falls
+  back to the timer, and completed Watch/timer runs now reach the reward + one gentle progress note.
+  The return-to-phone copy explicitly welcomes a progress check without claiming to infer
+  physical distance. Watch Ollie now uses the same pixel-art assets as iPhone.
+- **2026-07-11 · Codex + human decision:** Focus Run architecture reset (steps 1–10).
+  The iPhone now owns timing, restore, completion, and local notification scheduling.
+  The default phone-away timer does not require the Watch or either app to stay open.
+  Watch/UWB is a short optional placement assist; its old continuous warning, sampled
+  check, demo, and fallback-coordinator paths were removed. A non-blocking QR phone-bed
+  guard with manual fallback is available; NFC and Family Controls shielding remain gated.
+- **2026-07-11 · Codex + human:** A3-remainder. Confirmed permanent bundle root
+  `com.ngawangchime.countingsheep`, configured Team ID `4KZQPZR47B`, generated Xcode-managed
+  iPhone/Watch provisioning profiles, and completed a signed Release archive.
+- **2026-07-11 · Codex:** A6. Release Stats now exposes only Today and Trends backed by
+  native `UserProgress` and reward data, with bedtime-framed nights, streak, minutes,
+  stars, and recent history. HealthKit, Screen Time, manual logs, QA, analytics history,
+  and export remain Debug-only. Removed the remaining Screen Time cards from Release Home.
+- **2026-07-11 · Codex:** A7b + B2b. Added Watch VoiceOver labels/hints across setup,
+  running, warning, completion, and early-end flows. Replaced framework jargon, warning
+  pressure, productivity framing, and punitive early-end presentation with gentle copy.
+- **2026-07-11 · Codex:** B4a. The third-run sheep cycle now holds a `3 / 3` celebration
+  state with “A new sheep joined the flock!” before progress rolls forward.
+- **2026-07-11 · Codex:** B4. Analytics export is unreachable in Release because the
+  Insights surface is Debug-only; the known relative-date issue cannot ship in build 1.
 - **2026-07-07 · Codex:** A4. Fixed hardcoded dashboard values. `PixelHomeDashboard`
   now reads Watch reachability from `WatchConnectivityManager.isReachable`, derives next
   sheep reward progress from `UserProgress.totalCompletedRuns`, and includes a

@@ -1,0 +1,69 @@
+import Foundation
+
+/// The ritual used to begin a phone-away session. A guard confirms the start of the
+/// ritual; the iPhone remains authoritative for time and completion.
+enum SessionGuardKind: String, Codable, CaseIterable, Identifiable {
+    case honorTimer
+    case watchPlacement
+    case qrCode
+    case nfcTag
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .honorTimer: return "Phone-away timer"
+        case .watchPlacement: return "Apple Watch assist"
+        case .qrCode: return "Scan phone bed"
+        case .nfcTag: return "Tap phone bed"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .honorTimer: return "A simple timer for the walk to another room."
+        case .watchPlacement: return "Ollie watches the phone head away, then rests."
+        case .qrCode: return "Scan a code where your phone sleeps."
+        case .nfcTag: return "Tap a tag where your phone sleeps."
+        }
+    }
+
+    var needsPlacementConfirmation: Bool {
+        self == .watchPlacement || self == .qrCode || self == .nfcTag
+    }
+}
+
+enum PlacementStatus: String, Codable, Equatable {
+    case notRequired
+    case awaitingConfirmation
+    case confirmed
+    case unavailable
+}
+
+struct PlacementEvidence: Codable, Equatable {
+    var guardKind: SessionGuardKind
+    var confirmedAt: Date?
+    var note: String
+
+    static func notRequired(for kind: SessionGuardKind) -> PlacementEvidence {
+        PlacementEvidence(guardKind: kind, confirmedAt: nil, note: "")
+    }
+}
+
+struct FocusRunConfiguration: Equatable {
+    var duration: TimeInterval
+    var guardKind: SessionGuardKind
+    var nightWatchPlan: NightWatchPlan?
+
+    init(duration: TimeInterval, guardKind: SessionGuardKind) {
+        self.duration = max(60, duration)
+        self.guardKind = guardKind
+        self.nightWatchPlan = nil
+    }
+
+    init(nightWatchPlan: NightWatchPlan, guardKind: SessionGuardKind) {
+        self.duration = 0
+        self.guardKind = guardKind
+        self.nightWatchPlan = nightWatchPlan
+    }
+}

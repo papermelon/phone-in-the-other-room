@@ -1,6 +1,6 @@
 # ADR-0001: Product Positioning — Bedtime Phone Separation
 
-- Status: Accepted
+- Status: Superseded in part by ADR-0006 (physical separation and anti-productivity boundaries remain accepted)
 - Date: 2026-07-07
 - Deciders: Founder
 - Related: `docs/PROJECT_BRIEF.md`, `docs/PRODUCT_PRINCIPLES.md`, ADR-0003, ADR-0004
@@ -29,11 +29,11 @@ ritual is proven on TestFlight.**
 3. **It must not become a medical sleep app.** We count nights and minutes; we never score
    sleep quality or make health claims. This avoids regulatory/App Review risk and, more
    importantly, keeps the tone warm rather than clinical.
-4. **Gamification must be restrained.** Ollie, sheep, stars, and collectible rewards exist
-   to make the ritual warm — celebration, not compulsion. Anti-addiction boundaries in
-   `docs/PRODUCT_PRINCIPLES.md` are hard constraints: no variable-ratio bait, no
-   loss-aversion streaks, no engagement notifications. A sleep-adjacent app that
-   manufactures compulsion would be self-defeating and testers would smell it.
+4. **Gamification must build the ritual.** Ollie, sheep, stars, and collectible rewards
+   make the phone-away choice worth repeating. `docs/PRODUCT_PRINCIPLES.md` permits
+   completion-only intermittent variety while prohibiting rewards for app opens, paid
+   chance mechanics, loss-aversion streaks, and engagement notifications. A
+   sleep-adjacent app that pulls people into unnecessary browsing would be self-defeating.
 
 ## Consequences and tradeoffs
 
@@ -61,3 +61,8 @@ ritual is proven on TestFlight.**
 Revisit this positioning only if TestFlight evidence shows the bedtime ritual itself does
 not retain (criteria in `docs/PROJECT_BRIEF.md` §Success), or if a materially different
 user segment adopts the app organically for another time-of-day ritual.
+
+## 2026-07-18 update
+
+ADR-0006 deliberately extends the ritual through a short morning-quiet bookend. It does not
+authorize independent morning focus sessions or generic daytime productivity features.

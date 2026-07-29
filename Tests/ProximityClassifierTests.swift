@@ -1,6 +1,91 @@
 import XCTest
 
 final class ProximityClassifierTests: XCTestCase {
+    func testShieldingOnlyAppliesToQuietBookends() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(30 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .stretch
+        )
+        var run = FocusRun(
+            plannedDurationSeconds: 8.5 * 60 * 60,
+            startedAt: start,
+            state: .running,
+            guardKind: .honorTimer,
+            nightWatchPlan: plan
+        )
+        XCTAssertTrue(QuietTimeShieldingPolicy.shouldShield(
+            run: run, at: start.addingTimeInterval(5 * 60), isEnabled: true
+        ))
+        XCTAssertFalse(QuietTimeShieldingPolicy.shouldShield(
+            run: run, at: start.addingTimeInterval(4 * 60 * 60), isEnabled: true
+        ))
+        XCTAssertTrue(QuietTimeShieldingPolicy.shouldShield(
+            run: run, at: start.addingTimeInterval(8.25 * 60 * 60), isEnabled: true
+        ))
+        run.state = .endedEarly
+        XCTAssertFalse(QuietTimeShieldingPolicy.shouldShield(
+            run: run, at: start.addingTimeInterval(5 * 60), isEnabled: true
+        ))
+    }
+    func testScreenTimeSharedStorageUsesStableAppGroupAndOllieKeys() {
+        XCTAssertEqual(
+            ScreenTimeSharedStorage.appGroupIdentifier,
+            "group.com.ngawangchime.countingsheep"
+        )
+        XCTAssertEqual(
+            ScreenTimeSharedStorage.selectionKey(for: .bedtime),
+            "ollie.screenTime.selection.bedtime"
+        )
+        XCTAssertEqual(
+            ScreenTimeSharedStorage.legacySelectionKey(for: .bedtime),
+            "phoneOther.screenTime.selection.bedtime"
+        )
+    }
+
+    func testScreenTimeReportDefaultsAreIndependentValuesDerivedFromQuietTime() {
+        var quietTime = NightWatchPreferences.defaults
+        quietTime.bedtimeHour = 23
+        quietTime.bedtimeMinute = 0
+        quietTime.wakeHour = 7
+        quietTime.wakeMinute = 15
+        quietTime.morningQuietMinutes = 30
+
+        var report = ScreenTimeReportPreferences.defaults(for: quietTime)
+        report.setMinute(18 * 60, for: .evening, isStart: true)
+        quietTime.windDownMinutes = 90
+
+        XCTAssertEqual(report.eveningStartMinute, 18 * 60)
+        XCTAssertEqual(report.eveningEndMinute, 23 * 60)
+        XCTAssertEqual(report.morningStartMinute, 7 * 60 + 15)
+        XCTAssertEqual(report.morningEndMinute, 7 * 60 + 45)
+    }
+
+    func testScreenTimeReportIntervalCanCrossMidnight() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let now = calendar.date(
+            from: DateComponents(year: 2026, month: 7, day: 26, hour: 7)
+        )!
+        let report = ScreenTimeReportPreferences(
+            eveningStartMinute: 22 * 60,
+            eveningEndMinute: 1 * 60,
+            morningStartMinute: 7 * 60,
+            morningEndMinute: 9 * 60
+        )
+
+        let interval = report.latestInterval(for: .evening, now: now, calendar: calendar)
+
+        XCTAssertEqual(calendar.component(.hour, from: interval.start), 22)
+        XCTAssertEqual(calendar.component(.hour, from: interval.end), 1)
+        XCTAssertEqual(interval.duration, 3 * 60 * 60)
+    }
+
     func testSustainedOtherRoomValidatesOnlyAfterRequiredSamples() {
         let classifier = ProximityClassifier()
         let now = Date()
@@ -88,14 +173,57 @@ final class ProximityClassifierTests: XCTestCase {
 
     func testRunCannotCompleteWithoutPhoneAwayValidationOutsideDemoMode() {
         let startedAt = Date()
-        var run = FocusRun(plannedDurationSeconds: 25 * 60, startedAt: startedAt)
+        var run = FocusRun(plannedDurationSeconds: 25 * 60, startedAt: startedAt, guardKind: .watchPlacement)
         run.endedAt = startedAt.addingTimeInterval(run.plannedDurationSeconds)
 
         XCTAssertFalse(FocusRunRules.canCompleteSuccessfully(run, demoMode: false))
         XCTAssertTrue(FocusRunRules.canCompleteSuccessfully(run, demoMode: true))
 
         run.phoneAwayValidatedAt = startedAt.addingTimeInterval(30)
+        run.placementStatus = .confirmed
         XCTAssertTrue(FocusRunRules.canCompleteSuccessfully(run, demoMode: false))
+    }
+
+    func testPhoneAwayTimerCompletesWithoutWatchEvidence() {
+        let run = FocusRun(plannedDurationSeconds: 25 * 60, guardKind: .honorTimer)
+
+        XCTAssertTrue(FocusRunRules.canCompleteSuccessfully(run, demoMode: false))
+    }
+
+    func testQRCodeGuardNeedsPlacementConfirmation() {
+        var run = FocusRun(plannedDurationSeconds: 25 * 60, guardKind: .qrCode)
+        XCTAssertFalse(FocusRunRules.canCompleteSuccessfully(run, demoMode: false))
+
+        run.placementStatus = .confirmed
+        run.placementEvidence = PlacementEvidence(guardKind: .qrCode, confirmedAt: Date(), note: "Test phone bed")
+        XCTAssertTrue(FocusRunRules.canCompleteSuccessfully(run, demoMode: false))
+    }
+
+    func testUnavailableWatchPlacementStillCompletesAsATimer() {
+        var run = FocusRun(plannedDurationSeconds: 25 * 60, guardKind: .watchPlacement)
+        run.placementStatus = .unavailable
+
+        XCTAssertTrue(FocusRunRules.canCompleteSuccessfully(run, demoMode: false))
+    }
+
+    func testLegacyFocusRunDecodesAsWatchPlacement() throws {
+        let data = """
+        {
+          "id": "00000000-0000-0000-0000-000000000001",
+          "plannedDurationSeconds": 1500,
+          "startedAt": 1000,
+          "state": "running",
+          "proximityHistory": [],
+          "warningCount": 0,
+          "completedSuccessfully": false,
+          "earnedRewardIDs": []
+        }
+        """.data(using: .utf8)!
+
+        let run = try JSONDecoder().decode(FocusRun.self, from: data)
+        XCTAssertEqual(run.guardKind, .watchPlacement)
+        XCTAssertEqual(run.placementStatus, .awaitingConfirmation)
+        XCTAssertNil(run.nightWatchPlan)
     }
 
     func testRealtimeWatchMessageRequiresMatchingRunAndFreshSentAt() {
@@ -125,6 +253,99 @@ final class ProximityClassifierTests: XCTestCase {
         XCTAssertEqual(summary?.durationSeconds, 120 * 60)
         XCTAssertEqual(summary?.startDate, start)
         XCTAssertEqual(summary?.endDate, start.addingTimeInterval(150 * 60))
+    }
+
+    func testScreenTimeBucketsAggregateMatchingHoursAndUseHourCapacity() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let end = start.addingTimeInterval(60 * 60)
+        let buckets = ScreenTimeReportMath.aggregate([
+            ScreenTimeActivityBucket(
+                startDate: start,
+                endDate: end,
+                selectedAppDuration: 10 * 60
+            ),
+            ScreenTimeActivityBucket(
+                startDate: start,
+                endDate: end,
+                selectedAppDuration: 20 * 60
+            )
+        ])
+
+        XCTAssertEqual(buckets.count, 1)
+        XCTAssertEqual(buckets.first?.selectedAppDuration, 30 * 60)
+        XCTAssertEqual(buckets[0].fillFraction, 0.5, accuracy: 0.001)
+        XCTAssertEqual(ScreenTimeReportMath.selectedAppPercentage(for: buckets), 50)
+    }
+
+    func testScreenTimeHourlyBucketsKeepQuietHoursVisible() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let interval = DateInterval(
+            start: start,
+            end: start.addingTimeInterval(3 * 60 * 60)
+        )
+        let samples = [
+            ScreenTimeActivityBucket(
+                startDate: start.addingTimeInterval(60 * 60),
+                endDate: start.addingTimeInterval(2 * 60 * 60),
+                selectedAppDuration: 15 * 60
+            )
+        ]
+
+        let buckets = ScreenTimeReportMath.hourlyBuckets(
+            in: interval,
+            from: samples
+        )
+
+        XCTAssertEqual(buckets.count, 3)
+        XCTAssertEqual(buckets[0].selectedAppDuration, 0)
+        XCTAssertEqual(buckets[1].selectedAppDuration, 15 * 60)
+        XCTAssertEqual(buckets[2].selectedAppDuration, 0)
+        XCTAssertEqual(ScreenTimeReportMath.selectedAppPercentage(for: buckets), 8)
+    }
+
+    func testSleepSummaryKeepsItsNightEndingDate() {
+        let nightEndingDate = Date(timeIntervalSince1970: 1_800_000_000)
+        let sleepStart = nightEndingDate.addingTimeInterval(-7 * 60 * 60)
+        let summary = SleepIntervalMath.summary(
+            for: [
+                DateInterval(
+                    start: sleepStart,
+                    end: nightEndingDate
+                )
+            ],
+            nightEndingDate: nightEndingDate
+        )
+
+        XCTAssertEqual(summary?.nightEndingDate, nightEndingDate)
+    }
+
+    func testWakeTimeRangeHandlesTimesAcrossMidnight() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let day = calendar.date(
+            from: DateComponents(year: 2026, month: 7, day: 27)
+        )!
+        let summaries = [
+            SleepSummary(
+                durationSeconds: 7 * 60 * 60,
+                startDate: nil,
+                endDate: calendar.date(byAdding: .minute, value: 23 * 60 + 50, to: day)
+            ),
+            SleepSummary(
+                durationSeconds: 7 * 60 * 60,
+                startDate: nil,
+                endDate: calendar.date(byAdding: .day, value: 1, to: day)
+            ),
+            SleepSummary(
+                durationSeconds: 7 * 60 * 60,
+                startDate: nil,
+                endDate: calendar.date(byAdding: .minute, value: 10, to: day)
+            )
+        ]
+
+        let range = SleepIntervalMath.wakeTimeRange(for: summaries, calendar: calendar)
+
+        XCTAssertEqual(range, WakeTimeRange(sampleCount: 3, minutes: 20))
     }
 
     func testAnalyticsRecordsMergeFocusHistoryWithPlaceholders() {
@@ -209,7 +430,7 @@ final class ProximityClassifierTests: XCTestCase {
             AnalyticsDayRecord(day: day.addingTimeInterval(86_400), focusMinutes: 20, screenTimeMinutes: 240)
         ]
 
-        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Focus vs Screen Time" }
+        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Quiet Bookends vs Screen Time" }
         XCTAssertNil(correlation?.coefficient)
         XCTAssertEqual(correlation?.sampleSize, 2)
     }
@@ -223,7 +444,7 @@ final class ProximityClassifierTests: XCTestCase {
             AnalyticsDayRecord(day: day.addingTimeInterval(86_400 * 3), focusMinutes: 40, screenTimeMinutes: 120)
         ]
 
-        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Focus vs Screen Time" }
+        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Quiet Bookends vs Screen Time" }
         XCTAssertEqual(correlation?.sampleSize, 4)
         XCTAssertEqual(correlation?.coefficient ?? 0, -1, accuracy: 0.0001)
     }
@@ -236,7 +457,7 @@ final class ProximityClassifierTests: XCTestCase {
             AnalyticsDayRecord(day: day.addingTimeInterval(86_400 * 2), focusMinutes: 20, screenTimeMinutes: 240)
         ]
 
-        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Focus vs Screen Time" }
+        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Quiet Bookends vs Screen Time" }
         XCTAssertNil(correlation?.coefficient)
         XCTAssertEqual(correlation?.strengthLabel, "Needs data")
     }

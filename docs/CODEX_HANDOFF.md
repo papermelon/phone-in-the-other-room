@@ -8,6 +8,55 @@ Codex session, then work from `docs/FUTURE_AGENT_TASKS.md` for scoped tasks.
 **Work queue:** `docs/FUTURE_AGENT_TASKS.md`  
 **Last Cursor/Fable session:** 2026-07-07
 
+## Live Codex update — 2026-07-25 (uncommitted)
+
+- Family Controls Distribution and `group.com.ngawangchime.countingsheep` are assigned in
+  the Apple portal to the containing app and Screen Time report extension.
+- C5 is implemented in the working tree: the DeviceActivity report extension is embedded,
+  the main app compiles the reporting UI, both targets carry matching entitlements, and
+  scoped selections migrate into App Group storage.
+- This is a read-only reporting foundation. Physical-device authorization/report QA and a
+  signed distribution archive remain the release checks. ManagedSettings shielding, NFC,
+  and all-night blocking are not part of C5 and remain gated by ADR-0004.
+
+## Live Codex update — 2026-07-18 (uncommitted)
+
+- The active product now centers on one **Night Watch** across wind-down, overnight, and a
+  short morning-quiet bookend. Users save bedtime/wake times, bookend lengths, two gentle
+  offline cues, and the existing honor/Watch/QR phone-bed guard.
+- `Shared/NightWatch.swift` supplies the schedule, phase, and quiet-credit domain. Existing
+  `FocusRun` names remain internal for persisted-data and connectivity compatibility.
+- iPhone, Watch, Live Activity, completion, rewards, Home, Stats, notifications, and the
+  App Shortcut now use sleep-bookend language. Only wind-down and morning-quiet minutes
+  affect progress or reward value; overnight hours do not.
+- ADR-0006 records the positioning decision. The C5 App Group/reporting foundation is now
+  implemented; bookend shielding still requires D3 and ADR-0004's remaining gates.
+- The canonical palette now adapts to a warm dark-room presentation, requested automatically
+  while Night Watch is active or its bedtime start window is open.
+- The July 11 notes below are retained as history and may describe the pre-Night-Watch UI.
+
+## Live Codex update — 2026-07-11 (uncommitted)
+
+- Apple Developer signing is configured for Team `4KZQPZR47B` with bundle root
+  `com.ngawangchime.countingsheep`; an iPhone/Watch signed archive succeeded before the
+  UI polish below. Later CLI re-archives wait on interactive Keychain permission.
+- A6, A7b, B2b, B4a, and B4 are complete in the working tree; see the Done section of
+  `docs/FUTURE_AGENT_TASKS.md` for details. Debug and Release simulator builds succeed;
+  18/18 unit tests pass.
+- Focus Runs are phone-authoritative: wall-clock time continues, returning explicitly
+  welcomes a progress check, and an unavailable Watch placement check automatically falls
+  back to the timer. The completion screen reveals a reward plus one calm progress note.
+- `PhoneInTheOtherRoomLiveActivity` is embedded and presents the run on the Lock Screen,
+  Dynamic Island, and paired-Watch Smart Stack. It uses the system timer; without server
+  push the local notification remains the reliable completion signal while backgrounded.
+- The product direction permits completion-only intermittent reward variety to help form
+  the phone-away habit; it still rejects rewards for app opens, paid chance mechanics,
+  guilt, and loss-aversion streaks.
+- Remaining human release work: authorize `codesign` in Keychain and re-archive; run the
+  physical iPhone/Watch QA script; confirm distribution rights for the placeholder/redacted
+  art described in `ASSET_NOTICE.md`; submit/check Family Controls distribution approval.
+- Nothing from this update has been committed or pushed.
+
 ---
 
 ## What landed in the Cursor/Fable window
@@ -86,9 +135,11 @@ Before any edit, read AGENTS.md fully, then docs/CODEX_HANDOFF.md and
 docs/FUTURE_AGENT_TASKS.md. Follow docs/PRODUCT_PRINCIPLES.md — no guilt copy, no medical
 claims, no dark-pattern gamification.
 
-Current state (2026-07-07): main branch has the agent OS, two-tab Release MVP (Home +
-Stats), DEBUG-gated mock screens, signing prep with com.papermelon.countingsheep bundle
-IDs (team ID still empty). 18/18 tests pass. Nothing pushed to GitHub.
+Current state (2026-07-11): main has a two-tab Release MVP (Home + Stats), DEBUG-gated
+mock screens, configured `com.ngawangchime.countingsheep` signing, and a signed archive.
+Focus Runs are now phone-authoritative: the default is an honor timer, Watch/UWB is a
+one-time optional placement assist, and QR can mark a phone bed without Family Controls.
+All changes remain uncommitted unless the human explicitly asks otherwise.
 
 Your task this session: [PICK ONE FROM FUTURE_AGENT_TASKS — e.g. A6]
 
@@ -171,7 +222,7 @@ When the user backgrounds mid-run, should we: (a) pause and resume, (b) show a w
 warning on return, or (c) tolerate silently with honest copy?
 
 After I pick one, implement in PhoneInTheOtherRoomApp.swift (scenePhase) +
-ProximitySessionCoordinator + run views. Document behavior in docs/ARCHITECTURE.md.
+FocusSessionCoordinator + run views. Document behavior in docs/ARCHITECTURE.md.
 Run tests.
 ```
 

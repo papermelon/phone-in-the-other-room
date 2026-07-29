@@ -58,6 +58,8 @@ struct PixelCard<Content: View>: View {
 // MARK: - Buttons
 
 struct PixelPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(.white)
@@ -65,8 +67,8 @@ struct PixelPrimaryButtonStyle: ButtonStyle {
             .background(AppColors.grass.opacity(configuration.isPressed ? 0.88 : 1))
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).stroke(AppColors.stroke.opacity(0.9), lineWidth: 2))
-            .scaleEffect(configuration.isPressed ? 0.99 : 1)
-            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .scaleEffect(!reduceMotion && configuration.isPressed ? 0.99 : 1)
+            .animation(reduceMotion ? nil : AppMotion.press, value: configuration.isPressed)
     }
 }
 
@@ -100,6 +102,7 @@ struct PixelProgressRail: View {
     var animated = true
 
     @State private var displayedProgress: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { proxy in
@@ -123,16 +126,16 @@ struct PixelProgressRail: View {
         }
         .frame(height: 18)
         .onAppear {
-            guard animated else {
+            guard animated, !reduceMotion else {
                 displayedProgress = progress
                 return
             }
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
+            withAnimation(AppMotion.progress) {
                 displayedProgress = progress
             }
         }
         .onChange(of: progress) { _, newValue in
-            withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) {
+            withAnimation(reduceMotion ? nil : AppMotion.progress) {
                 displayedProgress = newValue
             }
         }
@@ -159,7 +162,7 @@ enum MainAppTab: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .home: return "Home"
-        case .stats: return "Stats"
+        case .stats: return "Nights"
         case .farm: return "Farm"
         case .friends: return "Friends"
         case .shop: return "Shop"
@@ -169,8 +172,8 @@ enum MainAppTab: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .home: return "house.fill"
-        case .stats: return "chart.bar.fill"
-        case .farm: return "barn.fill"
+        case .stats: return "moon.stars.fill"
+        case .farm: return "house.lodge.fill"
         case .friends: return "person.2.fill"
         case .shop: return "storefront.fill"
         }
@@ -236,12 +239,13 @@ struct CurrencyPill: View {
 struct PixelBottomBar: View {
     @Binding var selectedTab: MainAppTab
     @Namespace private var selection
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 0) {
             ForEach(MainAppTab.visibleTabs) { tab in
                 Button {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                    withAnimation(reduceMotion ? nil : AppMotion.navigation) {
                         selectedTab = tab
                     }
                 } label: {
@@ -285,57 +289,22 @@ struct PixelBottomBar: View {
 // MARK: - Counting Sheep mockup chrome
 
 struct CountingSheepTopBar: View {
-    var progress: UserProgress
-    var showCapacity = false
-
-    private var sheepCount: Int { max(0, progress.sheepBalance) }
-    private var coinCount: Int { max(0, progress.coinBalance) }
-
     var body: some View {
-        HStack(alignment: .center) {
-            HStack(spacing: 10) {
-                NavigationLink(destination: RewardShelfView()) {
-                    PixelIconButton(systemImage: "envelope", size: 48)
-                }
-                .buttonStyle(.plain)
-
-                Text("\(coinCount)")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(.white)
-                    .frame(width: 28, height: 28)
-                    .background(AppColors.grass, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 7).stroke(AppColors.stroke, lineWidth: 1.5))
-            }
-
-            Spacer(minLength: 16)
-
-            HStack(spacing: 8) {
-                PixelAssetImage(name: AssetSlot.Sheep.cream)
-                    .frame(width: 48, height: 42)
-                HStack(alignment: .firstTextBaseline, spacing: 5) {
-                    Text("\(sheepCount)")
-                        .font(.system(size: showCapacity ? 30 : 25, weight: .black, design: .monospaced))
-#if DEBUG
-                    // Farm capacity display ships with the gated Farm tab (ADR-0003).
-                    if showCapacity {
-                        Text("/ 60")
-                            .font(.system(size: 26, weight: .black, design: .monospaced))
-                    }
-#endif
-                }
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: "moon.stars.fill")
+                .foregroundStyle(AppColors.lavender)
+            Text("Counting Sheep")
+                .font(pixelFont(.headline))
                 .foregroundStyle(AppColors.ink)
-            }
-
-            Spacer(minLength: 16)
-
-#if DEBUG
-            NavigationLink(destination: SettingsPlaceholderScreen()) {
-                Image(systemName: "gearshape")
-                    .font(.system(size: 36, weight: .black))
-                    .foregroundStyle(AppColors.ink)
+            Spacer()
+            NavigationLink(destination: RewardShelfView()) {
+                Image(systemName: "shippingbox")
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(AppColors.muted)
+                    .frame(width: 42, height: 42)
             }
             .buttonStyle(.plain)
-#endif
+            .accessibilityLabel("Ollie's finds")
         }
     }
 }
@@ -356,12 +325,13 @@ struct PixelIconButton: View {
 
 struct CountingSheepBottomBar: View {
     @Binding var selectedTab: MainAppTab
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 0) {
             ForEach(MainAppTab.visibleTabs) { tab in
                 Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
+                    withAnimation(reduceMotion ? nil : AppMotion.selection) {
                         selectedTab = tab
                     }
                 } label: {
@@ -427,34 +397,35 @@ struct PrimaryGreenCTA: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 16) {
+            HStack(spacing: AppSpacing.sm) {
                 if let assetName {
                     PixelAssetImage(name: assetName)
-                        .frame(width: 64, height: 58)
+                        .frame(width: 54, height: 54)
                 } else {
                     Image(systemName: icon)
-                        .font(.system(size: 34, weight: .black))
+                        .font(.system(size: 30, weight: .black))
                         .foregroundStyle(AppColors.wood)
-                        .frame(width: 62, height: 54)
+                        .frame(width: 54, height: 54)
                 }
                 VStack(alignment: .leading, spacing: 5) {
                     Text(title)
-                        .font(.system(size: 26, weight: .black, design: .monospaced))
+                        .font(AppTypography.title)
                         .foregroundStyle(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
                     Text(subtitle)
                         .font(pixelFont(.caption))
                         .foregroundStyle(.white.opacity(0.92))
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 34, weight: .black))
+                    .font(.system(size: 28, weight: .black))
                     .foregroundStyle(.white)
             }
-            .padding(.horizontal, 18)
+            .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, 14)
             .frame(maxWidth: .infinity, minHeight: 86)
             .background(
@@ -464,6 +435,7 @@ struct PrimaryGreenCTA: View {
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppColors.stroke, lineWidth: 2))
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -530,7 +502,7 @@ struct WeeklyComparisonCard: View {
             Text("This Week")
                 .font(pixelFont(.headline))
             HStack(alignment: .top, spacing: 14) {
-                chartBlock(icon: "leaf.fill", title: "Focus Time (avg.)", value: focusAverage, tint: AppColors.grass, values: focusValues)
+                chartBlock(icon: "moon.stars.fill", title: "Quiet Bookends (avg.)", value: focusAverage, tint: AppColors.grass, values: focusValues)
                 Rectangle()
                     .fill(AppColors.stroke.opacity(0.12))
                     .frame(width: 1, height: 130)
@@ -733,12 +705,13 @@ struct PixelSegmentedPicker<T: Hashable & Identifiable>: View where T: CaseItera
     @Binding var selection: T
     var items: [T]? = nil
     let label: (T) -> String
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         HStack(spacing: 6) {
             ForEach(items ?? Array(T.allCases)) { item in
                 Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                    withAnimation(reduceMotion ? nil : AppMotion.selection) {
                         selection = item
                     }
                 } label: {
@@ -769,14 +742,18 @@ struct PixelStatsMetricRow: View {
                 .background(AppColors.grass, in: RoundedRectangle(cornerRadius: AppRadius.md))
                 .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.stroke, lineWidth: 2))
             VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(title)
                         .font(PixelTypography.title(.subheadline))
-                    Spacer(minLength: 8)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 4)
                     Text(value)
                         .font(pixelFont(.subheadline))
                         .multilineTextAlignment(.trailing)
+                        .lineLimit(2)
                         .minimumScaleFactor(0.78)
+                        .frame(maxWidth: 122, alignment: .trailing)
                 }
                 Text(detail)
                     .font(PixelTypography.title(.caption2))
@@ -853,12 +830,21 @@ struct PingPulseOverlay: View {
 
 struct IdleBobModifier: ViewModifier {
     @State private var bobbing = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
         content
-            .offset(y: bobbing ? -4 : 2)
-            .animation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true), value: bobbing)
-            .onAppear { bobbing = true }
+            .offset(y: reduceMotion ? 0 : (bobbing ? -4 : 2))
+            .animation(
+                reduceMotion ? nil : AppMotion.ambient,
+                value: bobbing
+            )
+            .onAppear {
+                if !reduceMotion { bobbing = true }
+            }
+            .onChange(of: reduceMotion) { _, shouldReduce in
+                bobbing = !shouldReduce
+            }
     }
 }
 
@@ -875,9 +861,9 @@ struct FocusSessionStartBar: View {
         Button(action: action) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Start Focus Session")
+                    Text("Start Quiet Time")
                         .font(PixelTypography.title(.title3))
-                    Text("Leave your phone in another room")
+                    Text("Tuck your phone in for the night")
                         .font(PixelTypography.title(.caption))
                         .opacity(0.9)
                 }

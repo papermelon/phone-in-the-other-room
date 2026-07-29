@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pingBannerVisible = false
     @State private var selectedTab: MainAppTab = .home
 
@@ -11,7 +12,7 @@ struct HomeView: View {
                 AppColors.paper.ignoresSafeArea()
                 VStack(spacing: 0) {
                     if showChrome, selectedTab != .farm {
-                        CountingSheepTopBar(progress: viewModel.coordinator.progress, showCapacity: selectedTab == .home)
+                        CountingSheepTopBar()
                             .padding(.horizontal, 18)
                             .padding(.top, 10)
                     }
@@ -37,11 +38,15 @@ struct HomeView: View {
                 }
                 if pingBannerVisible {
                     PingPulseOverlay()
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
+                        .transition(
+                            reduceMotion
+                                ? .opacity
+                                : .opacity.combined(with: .scale(scale: 0.96))
+                        )
                         .zIndex(10)
                 }
             }
-            .alert("Turn on Focus Mode for this run?", isPresented: $viewModel.showFocusModePrompt) {
+            .alert("Turn on Sleep Focus?", isPresented: $viewModel.showFocusModePrompt) {
                 Button("Skip", role: .cancel) {
                     viewModel.startRun(focusAccepted: false)
                 }
@@ -49,7 +54,7 @@ struct HomeView: View {
                     viewModel.startRun(focusAccepted: true)
                 }
             } message: {
-                Text("Counting Sheep can't turn on Focus for you. Flip it on in Control Center or run your Shortcut, then continue.")
+                Text("Counting Sheep can't turn on Sleep Focus for you. You can switch it on in Control Center, then continue.")
             }
             .onAppear {
                 viewModel.applyShortcutPreparationIfNeeded()
@@ -57,6 +62,13 @@ struct HomeView: View {
             .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
                 guard count > 0 else { return }
                 showPingBanner()
+            }
+            .sheet(isPresented: $viewModel.showQRCodeScanner) {
+                PhoneBedScannerSheet(
+                    isPresented: $viewModel.showQRCodeScanner,
+                    status: viewModel.qrCodeStatus,
+                    onCode: viewModel.acceptQRCode
+                )
             }
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -80,7 +92,7 @@ struct HomeView: View {
                     .environmentObject(viewModel)
 #if DEBUG
             case .farm:
-                FarmOverviewScreen()
+                FarmOverviewScreen(progress: viewModel.coordinator.progress)
             case .friends:
                 FriendsOverviewScreen()
             case .shop:
@@ -105,12 +117,12 @@ struct HomeView: View {
     }
 
     private func showPingBanner() {
-        withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+        withAnimation(reduceMotion ? AppMotion.reducedFade : AppMotion.notice) {
             pingBannerVisible = true
         }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.8))
-            withAnimation(.easeOut(duration: 0.22)) {
+            withAnimation(reduceMotion ? AppMotion.reducedFade : AppMotion.exit) {
                 pingBannerVisible = false
             }
         }
