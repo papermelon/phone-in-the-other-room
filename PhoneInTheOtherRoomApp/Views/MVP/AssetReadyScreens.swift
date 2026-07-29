@@ -5,10 +5,15 @@ import SwiftUI
 #if DEBUG
 
 struct FarmOverviewScreen: View {
-    @State private var selectedSheepSlot = 27
+    var progress: UserProgress
+    @State private var selectedSheepSlot = 0
 
-    private var sheepSlots: [FarmSheepDisplay] { FarmSheepDisplay.mockCapacitySlots }
-    private var ownedSheepCount: Int { sheepSlots.filter { !$0.isEmpty }.count }
+    private var ownedSheepCount: Int { min(60, max(0, progress.sheepBalance)) }
+    private var sheepSlots: [FarmSheepDisplay] {
+        FarmSheepDisplay.mockCapacitySlots.enumerated().map { index, sheep in
+            index < ownedSheepCount ? sheep : .empty(slot: sheep.slot)
+        }
+    }
 
     private var selectedSheep: FarmSheepDisplay {
         sheepSlots.first { $0.slot == selectedSheepSlot && !$0.isEmpty }
@@ -23,7 +28,7 @@ struct FarmOverviewScreen: View {
 
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 14) {
-                    FarmTopResourceBar(selectedSheep: selectedSheep)
+                    FarmTopResourceBar(selectedSheep: selectedSheep, sheepCount: ownedSheepCount)
                     FarmHeroScene(sheep: selectedSheep)
                     SheepCapacityPanel(sheep: sheepSlots, selectedSlot: $selectedSheepSlot, ownedCount: ownedSheepCount)
                     farmMissions
@@ -58,6 +63,7 @@ struct FarmOverviewScreen: View {
 
 private struct FarmTopResourceBar: View {
     var selectedSheep: FarmSheepDisplay
+    var sheepCount: Int
 
     var body: some View {
         HStack(alignment: .center) {
@@ -80,7 +86,7 @@ private struct FarmTopResourceBar: View {
                 FarmSheepFigure(style: selectedSheep.style, size: 40)
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("28")
+                        Text("\(sheepCount)")
                             .foregroundStyle(AppColors.ink)
                         Text("/ 60")
                             .foregroundStyle(AppColors.ink)

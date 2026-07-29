@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import WatchConnectivity
 
 final class WatchConnectivityManager: NSObject, ObservableObject {
@@ -8,6 +9,14 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
     var onMessage: ((WatchMessage) -> Void)?
     var currentStateProvider: (() -> WatchMessage?)?
     private var latestStateMessage: WatchMessage?
+#if DEBUG
+    private let energyLogger = Logger(
+        subsystem: "com.ngawangchime.countingsheep",
+        category: "Energy.WatchConnectivity.Phone"
+    )
+    private var debugSendCount = 0
+    private var debugLastSendAt: Date?
+#endif
 
     override private init() {
         super.init()
@@ -22,6 +31,15 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
             latestStateMessage = message
         }
         let dictionary = WatchMessageCodec.dictionary(from: message)
+#if DEBUG
+        debugSendCount += 1
+        let now = Date()
+        let interval = debugLastSendAt.map { now.timeIntervalSince($0) } ?? 0
+        debugLastSendAt = now
+        energyLogger.debug(
+            "send count=\(self.debugSendCount) type=\(message.type.rawValue, privacy: .public) secondsSincePrevious=\(interval, format: .fixed(precision: 3)) reachable=\(WCSession.default.isReachable)"
+        )
+#endif
         try? WCSession.default.updateApplicationContext(dictionary)
         if WCSession.default.isReachable {
             WCSession.default.sendMessage(dictionary, replyHandler: nil) { _ in

@@ -1,0 +1,320 @@
+import Foundation
+
+#if canImport(ActivityKit)
+import ActivityKit
+#if DEBUG
+import CryptoKit
+#endif
+import OSLog
+
+@available(iOS 16.1, *)
+@MainActor
+protocol FocusRunLiveActivityRemoteSink: AnyObject {
+    func sync(_ run: FocusRunCloudSync) async
+    func upsert(_ registration: FocusRunLiveActivityPushRegistration) async
+    func cancel(_ cancellation: FocusRunLiveActivityCancellation) async
+}
+
+@available(iOS 16.1, *)
+@MainActor
+final class DisabledFocusRunLiveActivityRemoteSink: FocusRunLiveActivityRemoteSink {
+    func sync(_ run: FocusRunCloudSync) async {}
+    func upsert(_ registration: FocusRunLiveActivityPushRegistration) async {}
+    func cancel(_ cancellation: FocusRunLiveActivityCancellation) async {}
+}
+
+@available(iOS 16.1, *)
+@MainActor
+final class FocusRunLiveActivityService {
+    private let remoteSink: FocusRunLiveActivityRemoteSink
+    private var tokenObservationTasks: [String: Task<Void, Never>] = [:]
+    private var latestTokens: [String: Data] = [:]
+    private var tokenGenerations: [String: Int] = [:]
+    private let installationID: UUID
+    private let logger = Logger(subsystem: "com.ngawangchime.countingsheep", category: "LiveActivity")
+#if DEBUG
+    private var debugStartCount = 0
+    private var debugUpdateCount = 0
+    private var debugEndCount = 0
+    private var debugLastUpdateAt: Date?
+#endif
+
+    init(
+        remoteSink: FocusRunLiveActivityRemoteSink? = nil,
+        installationID: UUID = PersistenceService.shared.installationID
+    ) {
+        self.remoteSink = remoteSink ?? DisabledFocusRunLiveActivityRemoteSink()
+        self.installationID = installationID
+    }
+
+    deinit {
+        for task in tokenObservationTasks.values {
+            task.cancel()
+        }
+    }
+
+    func start(for run: FocusRun) {
+#if DEBUG
+        debugStartCount += 1
+        logger.debug("start requested count=\(self.debugStartCount) run=\(run.id.uuidString, privacy: .public)")
+        if liveActivitiesDisabledForEnergyProfiling {
+            logger.notice("Live Activity disabled by ollie.debug.disableLiveActivity")
+            endAll(reason: .reset)
+            return
+        }
+#endif
+        syncRun(run, status: .active)
+        guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        if let activity = activeActivity(for: run.id) {
+            observePushTokens(for: activity, run: run)
+            synchronize(activity, with: run)
+            return
+        }
+
+        let attributes = FocusRunLiveActivityAttributes(
+            runID: run.id,
+            plannedDurationSeconds: run.plannedDurationSeconds
+        )
+        let content = contentState(for: run, isComplete: false)
+        do {
+            let activity = try Activity.request(
+                attributes: attributes,
+                content: ActivityContent(state: content, staleDate: run.plannedEndAt),
+                pushType: .token
+            )
+#if DEBUG
+            logger.debug("Live Activity created activity=\(activity.id, privacy: .public)")
+#endif
+            observePushTokens(for: activity, run: run)
+        } catch {
+            logger.error("Live Activity request failed: \(error.localizedDescription, privacy: .public)")
+            // A Live Activity is a glanceable extra; a denied or unavailable system state
+            // must never prevent the phone-away ritual from starting.
+        }
+    }
+
+    func finish(for run: FocusRun) {
+#if DEBUG
+        if liveActivitiesDisabledForEnergyProfiling {
+            endAll(reason: run.completedSuccessfully ? .completed : .endedEarly)
+            return
+        }
+#endif
+        syncRun(run, status: run.completedSuccessfully ? .completed : .endedEarly)
+        let finalContent = contentState(for: run, isComplete: true)
+        let content = ActivityContent(state: finalContent, staleDate: nil)
+        let activities = Activity<FocusRunLiveActivityAttributes>.activities
+            .filter { $0.attributes.runID == run.id }
+        let reason: FocusRunLiveActivityCancellationReason = run.completedSuccessfully ? .completed : .endedEarly
+
+        Task {
+            for activity in activities {
+                await activity.end(content, dismissalPolicy: .immediate)
+#if DEBUG
+                self.debugEndCount += 1
+                self.logger.debug(
+                    "Live Activity ended count=\(self.debugEndCount) activity=\(activity.id, privacy: .public) reason=\(reason.rawValue, privacy: .public)"
+                )
+#endif
+                stopObserving(activityID: activity.id)
+                await cancelRemoteSchedule(for: activity, reason: reason)
+            }
+        }
+    }
+
+    func update(for run: FocusRun) {
+#if DEBUG
+        guard !liveActivitiesDisabledForEnergyProfiling else { return }
+#endif
+        syncRun(run, status: .active)
+        guard let activity = activeActivity(for: run.id) else { return }
+        let state = contentState(for: run, isComplete: false)
+#if DEBUG
+        logActivityUpdate(reason: "phase transition")
+#endif
+        Task {
+            await activity.update(ActivityContent(state: state, staleDate: run.plannedEndAt))
+        }
+    }
+
+    func endAll(reason: FocusRunLiveActivityCancellationReason = .reset) {
+        let activities = Activity<FocusRunLiveActivityAttributes>.activities
+        Task {
+            for activity in activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+#if DEBUG
+                self.debugEndCount += 1
+                self.logger.debug(
+                    "Live Activity ended count=\(self.debugEndCount) activity=\(activity.id, privacy: .public) reason=\(reason.rawValue, privacy: .public)"
+                )
+#endif
+                stopObserving(activityID: activity.id)
+                await cancelRemoteSchedule(for: activity, reason: reason)
+            }
+        }
+    }
+
+    private func synchronize(
+        _ activity: Activity<FocusRunLiveActivityAttributes>,
+        with run: FocusRun
+    ) {
+        let state = contentState(for: run, isComplete: false)
+#if DEBUG
+        logActivityUpdate(reason: "reconciliation")
+#endif
+        Task {
+            await activity.update(ActivityContent(state: state, staleDate: run.plannedEndAt))
+            if let token = latestTokens[activity.id] {
+                await sendRegistration(token: token, activity: activity, run: run)
+            }
+        }
+    }
+
+    private func observePushTokens(
+        for activity: Activity<FocusRunLiveActivityAttributes>,
+        run: FocusRun
+    ) {
+        guard tokenObservationTasks[activity.id] == nil else { return }
+#if DEBUG
+        logger.debug("Push-token observer created activity=\(activity.id, privacy: .public)")
+#endif
+        tokenObservationTasks[activity.id] = Task { [weak self] in
+            for await token in activity.pushTokenUpdates {
+                guard !Task.isCancelled, let self else { return }
+                self.latestTokens[activity.id] = token
+                self.tokenGenerations[activity.id, default: 0] += 1
+#if DEBUG
+                let fingerprint = SHA256.hash(data: token).prefix(6)
+                    .map { String(format: "%02x", $0) }
+                    .joined()
+                self.logger.info(
+                    "Observed Live Activity token activity=\(activity.id, privacy: .public) run=\(run.id.uuidString, privacy: .public) fingerprint=\(fingerprint, privacy: .public)"
+                )
+#endif
+                await self.sendRegistration(token: token, activity: activity, run: run)
+            }
+        }
+    }
+
+    private func sendRegistration(
+        token: Data,
+        activity: Activity<FocusRunLiveActivityAttributes>,
+        run: FocusRun
+    ) async {
+        let registration = FocusRunLiveActivityPushRegistration(
+            runID: run.id,
+            activityID: activity.id,
+            pushToken: token.map { String(format: "%02x", $0) }.joined(),
+            plannedEndAt: run.plannedEndAt,
+            observedAt: Date(),
+            environment: Self.apnsEnvironment,
+            installationID: installationID,
+            runRevision: 1,
+            tokenGeneration: tokenGenerations[activity.id, default: 1],
+            idempotencyKey: "\(run.id.uuidString):\(activity.id):schedule:\(tokenGenerations[activity.id, default: 1])",
+            phase: run.nightWatchPhase(at: Date()),
+            bedtimeAt: run.nightWatchPlan?.intendedBedtime,
+            wakeAt: run.nightWatchPlan?.wakeTime,
+            morningQuietEndsAt: run.nightWatchPlan?.protectedUntil,
+            eveningActivityTitle: run.nightWatchPlan?.eveningActivity.shortTitle,
+            morningActivityTitle: run.nightWatchPlan?.morningActivity.shortTitle
+        )
+        await remoteSink.upsert(registration)
+    }
+
+    private func syncRun(_ run: FocusRun, status: FocusRunCloudStatus) {
+        let revision = status == .active ? 1 : 2
+        let sync = FocusRunCloudSync(
+            runID: run.id,
+            installationID: installationID,
+            plannedEndAt: run.plannedEndAt,
+            observedAt: Date(),
+            status: status,
+            runRevision: revision,
+            appVersion: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+            idempotencyKey: "\(run.id.uuidString):run:\(revision):\(status.rawValue)"
+        )
+#if DEBUG
+        logger.debug(
+            "Remote run sync enqueued run=\(run.id.uuidString, privacy: .public) status=\(status.rawValue, privacy: .public)"
+        )
+#endif
+        Task { await remoteSink.sync(sync) }
+    }
+
+    private func cancelRemoteSchedule(
+        for activity: Activity<FocusRunLiveActivityAttributes>,
+        reason: FocusRunLiveActivityCancellationReason
+    ) async {
+        await remoteSink.cancel(
+            FocusRunLiveActivityCancellation(
+                runID: activity.attributes.runID,
+                activityID: activity.id,
+                reason: reason,
+                occurredAt: Date(),
+                installationID: installationID,
+                runRevision: 1,
+                idempotencyKey: "\(activity.attributes.runID.uuidString):\(activity.id):cancel:\(reason.rawValue)"
+            )
+        )
+    }
+
+    private func stopObserving(activityID: String) {
+        tokenObservationTasks.removeValue(forKey: activityID)?.cancel()
+        latestTokens.removeValue(forKey: activityID)
+        tokenGenerations.removeValue(forKey: activityID)
+#if DEBUG
+        logger.debug("Push-token observer cancelled activity=\(activityID, privacy: .public)")
+#endif
+    }
+
+#if DEBUG
+    private var liveActivitiesDisabledForEnergyProfiling: Bool {
+        UserDefaults.standard.bool(forKey: "ollie.debug.disableLiveActivity")
+    }
+
+    private func logActivityUpdate(reason: String) {
+        debugUpdateCount += 1
+        let now = Date()
+        let interval = debugLastUpdateAt.map { now.timeIntervalSince($0) } ?? 0
+        debugLastUpdateAt = now
+        logger.debug(
+            "activity.update count=\(self.debugUpdateCount) reason=\(reason, privacy: .public) secondsSincePrevious=\(interval, format: .fixed(precision: 3))"
+        )
+    }
+#endif
+
+    private static var apnsEnvironment: LiveActivityAPNSEnvironment {
+#if DEBUG
+        .sandbox
+#else
+        .production
+#endif
+    }
+
+    private func activeActivity(for runID: UUID) -> Activity<FocusRunLiveActivityAttributes>? {
+        Activity<FocusRunLiveActivityAttributes>.activities.first { $0.attributes.runID == runID }
+    }
+
+    private func contentState(for run: FocusRun, isComplete: Bool) -> FocusRunLiveActivityAttributes.ContentState {
+        FocusRunLiveActivityAttributes.ContentState(
+            plannedEndAt: run.plannedEndAt,
+            isComplete: isComplete,
+            phase: isComplete ? .complete : run.nightWatchPhase(at: Date()),
+            bedtimeAt: run.nightWatchPlan?.intendedBedtime,
+            wakeAt: run.nightWatchPlan?.wakeTime,
+            morningQuietEndsAt: run.nightWatchPlan?.protectedUntil,
+            eveningActivityTitle: run.nightWatchPlan?.eveningActivity.shortTitle,
+            morningActivityTitle: run.nightWatchPlan?.morningActivity.shortTitle
+        )
+    }
+}
+#else
+@MainActor
+final class FocusRunLiveActivityService {
+    func start(for run: FocusRun) {}
+    func update(for run: FocusRun) {}
+    func finish(for run: FocusRun) {}
+    func endAll(reason: FocusRunLiveActivityCancellationReason = .reset) {}
+}
+#endif

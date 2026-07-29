@@ -1,119 +1,105 @@
 # Implementation Notes
 
-## Source Documents
+This is a practical supplement to `AGENTS.md` and `docs/ARCHITECTURE.md`. It records the
+current UI and integration boundaries; those canonical files win if this note drifts.
 
-The MVP skeleton was implemented from:
+## Active release navigation
 
-- `phone_in_the_other_room_product_blueprint.md`
-- `phone_in_the_other_room_screen_production_spec.md`
-- `phone_in_the_other_room_asset_inventory.md`
-
-The screen production spec file is a reviewed prompt/spec scaffold rather than a completed screen-by-screen deliverable, so the implemented MVP screen list follows its listed MVP candidates plus the product blueprint's final recommended IA.
-
-## Navigation
-
-The iPhone app's current tab list (see `MainAppTab` in `PhoneInTheOtherRoomApp/Design/PixelComponents.swift`) is:
+`MainAppTab.visibleTabs` exposes only:
 
 ```text
 Home
 Stats
-Farm
-Friends
-Shop
 ```
 
-There is no Missions tab. Note: release builds are being reduced to Home + Stats only, per `docs/PROJECT_BRIEF.md` and ADR-0003 (Farm/Friends/Shop are DEBUG-gated).
+Farm, Friends, and Shop remain compiled only for Debug exploration and are backed by
+`MVPMockData`. They must not enter a Release path before ADR-0003's milestones. There is no
+Missions tab. Do not add new code to `Views/MVP/` or `MockData/` as part of Night Watch work.
 
-Dog is not a bottom tab because the product blueprint explicitly recommends Doghouse as a global destination. Doghouse is reachable from Home. Settings and onboarding placeholders are also reachable from Home/top bar.
+## Night Watch implementation
 
-## Reusable Placeholders
+The active product is one phone-authoritative Night Watch rather than an arbitrary-duration
+focus timer.
 
-Reusable components live in:
+- `Shared/NightWatch.swift` owns saved schedule semantics, phase boundaries, offline cues,
+  reminder start calculation, and quiet-minute accounting.
+- `FocusRun` carries an optional `NightWatchPlan`. Keeping the existing type and storage
+  names preserves earlier JSON and Watch message compatibility.
+- `FocusRunViewModel` persists `NightWatchPreferences`, prepares tonight's plan, schedules
+  notifications, and sends the start intent to `FocusSessionCoordinator`.
+- `FocusSessionCoordinator` remains the only iPhone run state machine. It moves through
+  phases by wall clock and restores the same persisted run after backgrounding or relaunch.
+- iPhone, Watch, and Live Activity derive their phase and next transition from the plan.
+- `RewardEngine` credits only elapsed wind-down and morning-quiet minutes; overnight time is
+  deliberately excluded from economy and progress.
 
-```text
-PhoneInTheOtherRoomApp/Views/Components/AssetPlaceholderComponents.swift
-```
+The default guard is the honor timer. Watch/UWB and QR confirm only the initial phone-bed
+ritual and can fall back to the timer. Continuous distance warnings are legacy-only states
+retained for decoding compatibility, not active product behavior.
 
-Key components:
+## Design and reusable components
 
-- `DogSpriteView`
-- `SheepSpriteView`
-- `MissionCard`
-- `RewardCard`
-- `ProgressRing`
-- `ProgressBar`
-- `FarmTileView`
-- `StatsCard`
-- `FocusSessionCard`
-- `AssetPlaceholderView`
-
-These are deliberately SwiftUI shape/icon placeholders. Final artwork should be integrated by replacing component internals with `Image(assetName)` calls or by creating image-backed variants while keeping call sites stable.
-
-## Theme
-
-Design tokens live in:
+Canonical tokens and components live in:
 
 ```text
 PhoneInTheOtherRoomApp/Design/Theme.swift
+PhoneInTheOtherRoomApp/Design/PixelComponents.swift
+PhoneInTheOtherRoomApp/Views/Components/AssetPlaceholderComponents.swift
 ```
 
-The theme defines:
+New Night Watch UI uses the pixel/paper design layer. `GameComponents.swift` is a legacy
+layer and should not receive new features. `AssetSlot` remains the central registry for
+catalog names and all missing artwork must keep its placeholder fallback.
 
-- `AppColors`
-- `AppSpacing`
-- `AppRadius`
-- `AppTypography`
-- `AppShadows`
-- `AssetSlot`
+`AppColors` supplies adaptive warm-light and night palettes. The app respects system
+appearance during the day and requests the night palette while a Night Watch is active or
+its bedtime start window is open. Morning completion may return to the system appearance.
 
-`AssetSlot` is the central place to keep predictable asset names in code.
+## Targets and build generation
 
-## Mock Data
+`project.yml` generates five targets:
 
-Mock data lives in:
+1. iPhone app
+2. embedded Watch app
+3. embedded Live Activity extension
+4. unembedded Screen Time report extension
+5. shared-domain unit tests
 
-```text
-PhoneInTheOtherRoomApp/MockData/MVPMockData.swift
-```
+New files under existing source globs are discovered by XcodeGen. Run `xcodegen generate`
+after adding, deleting, or moving files. Never edit `project.pbxproj` by hand.
 
-It covers:
+Signing uses the repository's current bundle IDs and team configuration. Any future edit to
+`project.yml`, bundle identity, capabilities, entitlements, targets, or tab structure needs
+explicit human confirmation under `AGENTS.md`.
 
-- focus sessions
-- sheep collection
-- Ollie dog state
-- missions
-- rewards
-- screen-time/statistics fallback
-- farm unlocks/decorations
-- simple friend feed
+## Gated integrations
 
-The mock layer is app-only and does not affect the Watch app sources, shared proximity models, or Screen Time report extension sources.
+### Screen Time
 
-## Existing Integration Safety
+Debug-only authorization, selection, and DeviceActivity report scaffolding exists, but the
+report extension is not embedded and cannot share selections with the app. Family Controls
+is not an available Release feature until Apple distribution approval, signed capabilities,
+an App Group, extension embedding, and ADR-0004 review are complete.
 
-The existing Focus Run, Watch proximity, Screen Time authorization, FamilyControls selection, DeviceActivity report, and Health sleep scaffolding were left in place. The new Stats surface adds populated mock cards as a fallback while keeping the existing Screen Time setup and report rows in `FocusStatsView`.
+The intended future behavior is one consented selection across the wind-down and
+morning-quiet bookends. Do not implement an all-night default shield or a separate morning
+session coordinator.
 
-## Temporary Local Build Mode
+### HealthKit
 
-The default `PhoneInTheOtherRoom` app target is currently configured for no-sign local build testing:
+Sleep reads remain deferred from Release. Before enabling them, design honest
+requested/no-data/error states; HealthKit does not disclose denial of read access in the way
+the old UI assumed.
 
-- `project.yml` defines four targets: the iPhone app, the Watch app (embedded in the iPhone app), the Screen Time report extension (not yet embedded), and the unit test target.
-- The app target does not use the Family Controls entitlement; all three `.entitlements` files are empty placeholders.
-- FamilyControls and DeviceActivity code is behind the explicit `SCREEN_TIME_REPORTS` compilation flag, which is set only on the report extension target.
-- Automatic code signing is enabled with an empty `DEVELOPMENT_TEAM` (simulator builds work; device/archive builds need the real team ID).
+### Hosted Live Activity delivery
 
-This is intentional until a paid Apple developer account and the required Family Controls capability are available. To re-enable the full production surface later, embed the Screen Time report extension in the iOS app, populate the entitlement files and portal capabilities (Family Controls, HealthKit), set a real development team, and run `xcodegen generate`.
+Local ActivityKit status and completion notifications are authoritative. The optional
+Supabase sink is disabled unless configuration explicitly enables it. Backend or network
+failure must never change local run completion, restore, or rewards.
 
-Known entitlement/signing risk for the deferred targets:
+## Validation focus
 
-- FamilyControls and DeviceActivity require Apple entitlements and a properly signed iOS target.
-- The project currently has `DEVELOPMENT_TEAM` blank in `project.yml`, so device builds will need local signing configuration when no-sign mode is removed.
-
-## Replacing Placeholders Later
-
-Recommended replacement flow:
-
-1. Add final assets to the matching `Assets.xcassets` namespace group.
-2. Add or confirm the asset name in `AssetSlot`.
-3. Replace the relevant SwiftUI shape inside `DogSpriteView`, `SheepSpriteView`, `FarmTileView`, or `AssetPlaceholderView`.
-4. Keep screen call sites unchanged unless the asset needs new state-specific behavior.
+Shared Night Watch changes require tests for schedule anchoring, cross-midnight phases,
+late starts, DST behavior, quiet-minute accounting, and legacy decoding. Physical-device QA
+must still cover a full overnight run, termination/relaunch, locked-screen notifications,
+Live Activity phase changes, Watch/QR fallback, and timezone changes.

@@ -13,6 +13,9 @@ enum FocusRunRules {
     static let realtimeWatchMessageFreshnessSeconds: TimeInterval = 15
 
     static func canCompleteSuccessfully(_ run: FocusRun, demoMode: Bool) -> Bool {
-        demoMode || run.phoneAwayValidatedAt != nil
+        if demoMode { return true }
+        guard run.guardKind.needsPlacementConfirmation else { return true }
+        // Watch placement is a convenience, never a gate that can strand a timer at zero.
+        return run.placementStatus == .confirmed || run.placementStatus == .unavailable
     }
 }

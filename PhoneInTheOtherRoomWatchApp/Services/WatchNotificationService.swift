@@ -17,8 +17,8 @@ final class WatchNotificationService: NSObject, UNUserNotificationCenterDelegate
             guard await requestAuthorizationIfNeeded() else { return }
 
             let content = UNMutableNotificationContent()
-            content.title = "Focus Run started"
-            content.body = "Counting Sheep is running. Ollie is on your Watch."
+            content.title = "Ollie is on Night Watch"
+            content.body = "Your phone is tucked in for the night."
             content.sound = .default
 
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)

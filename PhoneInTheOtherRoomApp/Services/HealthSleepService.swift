@@ -6,18 +6,19 @@ import HealthKit
 
 @MainActor
 final class HealthSleepService {
+    private let requestedAccessKey = "ollie.health.sleep.requested"
     enum AuthorizationState: Equatable {
         case unavailable
         case notRequested
-        case authorized
-        case denied(String)
+        case requested
+        case error(String)
 
         var label: String {
             switch self {
             case .unavailable: return "Unavailable"
             case .notRequested: return "Not connected"
-            case .authorized: return "Connected"
-            case .denied: return "Needs permission"
+            case .requested: return "Requested"
+            case .error: return "Try again"
             }
         }
     }
@@ -34,14 +35,19 @@ final class HealthSleepService {
 #endif
     }
 
+    var hasRequestedAccess: Bool {
+        UserDefaults.standard.bool(forKey: requestedAccessKey)
+    }
+
     func requestSleepAccess() async -> AuthorizationState {
 #if canImport(HealthKit)
         guard isAvailable, let sleepType else { return .unavailable }
         do {
             try await healthStore.requestAuthorization(toShare: [], read: [sleepType])
-            return .authorized
+            UserDefaults.standard.set(true, forKey: requestedAccessKey)
+            return .requested
         } catch {
-            return .denied(error.localizedDescription)
+            return .error(error.localizedDescription)
         }
 #else
         return .unavailable
@@ -49,16 +55,37 @@ final class HealthSleepService {
     }
 
     func lastNightSleep() async -> SleepSummary? {
+        let summaries = await recentNightSleeps(days: 1)
+        return summaries.first
+    }
+
+    func recentNightSleeps(days: Int = 7) async -> [SleepSummary] {
 #if canImport(HealthKit)
-        guard isAvailable, let sleepType else { return nil }
-        let interval = lastNightInterval()
+        guard isAvailable, let sleepType else { return [] }
+        let calendar = Calendar.current
+        let windows = (0..<max(1, days)).compactMap { offset -> DatedSleepWindow? in
+            guard let referenceDate = Calendar.current.date(
+                byAdding: .day,
+                value: -offset,
+                to: Date()
+            ) else { return nil }
+            return DatedSleepWindow(
+                nightEndingDate: calendar.startOfDay(for: referenceDate),
+                interval: lastNightInterval(referenceDate: referenceDate, calendar: calendar)
+            )
+        }
+        guard let earliestStart = windows.map(\.interval.start).min(),
+              let latestEnd = windows.map(\.interval.end).max() else {
+            return []
+        }
+        let interval = DateInterval(start: earliestStart, end: latestEnd)
         let predicate = HKQuery.predicateForSamples(withStart: interval.start, end: interval.end, options: .strictStartDate)
         let descriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
 
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [descriptor]) { _, samples, error in
                 guard error == nil else {
-                    continuation.resume(returning: nil)
+                    continuation.resume(returning: [])
                     return
                 }
                 let sleepSamples = (samples as? [HKCategorySample]) ?? []
@@ -69,12 +96,23 @@ final class HealthSleepService {
                     }
                     return DateInterval(start: sample.startDate, end: sample.endDate)
                 }
-                continuation.resume(returning: SleepIntervalMath.summary(for: asleepIntervals))
+                let summaries = windows.compactMap { window -> SleepSummary? in
+                    let clipped = asleepIntervals.compactMap { interval -> DateInterval? in
+                        let start = max(interval.start, window.interval.start)
+                        let end = min(interval.end, window.interval.end)
+                        return start < end ? DateInterval(start: start, end: end) : nil
+                    }
+                    return SleepIntervalMath.summary(
+                        for: clipped,
+                        nightEndingDate: window.nightEndingDate
+                    )
+                }
+                continuation.resume(returning: summaries)
             }
             healthStore.execute(query)
         }
 #else
-        return nil
+        return []
 #endif
     }
 
@@ -84,11 +122,18 @@ final class HealthSleepService {
     }
 #endif
 
-    private func lastNightInterval(calendar: Calendar = .current) -> DateInterval {
-        let now = Date()
-        let todayStart = calendar.startOfDay(for: now)
+    private func lastNightInterval(
+        referenceDate: Date = Date(),
+        calendar: Calendar = .current
+    ) -> DateInterval {
+        let todayStart = calendar.startOfDay(for: referenceDate)
         let start = calendar.date(byAdding: .hour, value: -12, to: todayStart) ?? todayStart.addingTimeInterval(-12 * 60 * 60)
         let end = calendar.date(byAdding: .hour, value: 12, to: todayStart) ?? todayStart.addingTimeInterval(12 * 60 * 60)
         return DateInterval(start: start, end: end)
+    }
+
+    private struct DatedSleepWindow {
+        var nightEndingDate: Date
+        var interval: DateInterval
     }
 }

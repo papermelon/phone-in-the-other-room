@@ -1,30 +1,97 @@
 import SwiftUI
+import UIKit
 
 enum AppColors {
-    static let background = Color(red: 0.98, green: 0.97, blue: 0.92)
-    static let paper = Color(red: 0.99, green: 0.985, blue: 0.965)
-    static let surface = Color.white
-    static let surfaceMuted = Color(red: 0.93, green: 0.91, blue: 0.84)
-    static let panel = Color.white
-    static let ink = Color(red: 0.12, green: 0.12, blue: 0.10)
-    static let secondaryText = Color(red: 0.45, green: 0.45, blue: 0.40)
-    static let muted = Color(red: 0.48, green: 0.48, blue: 0.46)
-    static let grass = Color(red: 0.34, green: 0.52, blue: 0.27)
-    static let grassLight = Color(red: 0.72, green: 0.80, blue: 0.57)
-    static let floor = Color(red: 0.82, green: 0.72, blue: 0.58)
-    static let wood = Color(red: 0.56, green: 0.34, blue: 0.20)
-    static let sky = Color(red: 0.55, green: 0.78, blue: 0.92)
-    static let wool = Color(red: 0.94, green: 0.92, blue: 0.84)
-    static let sheep = Color(red: 0.92, green: 0.90, blue: 0.82)
+    static let background = adaptive(
+        light: UIColor(red: 0.98, green: 0.97, blue: 0.92, alpha: 1),
+        dark: UIColor(red: 0.055, green: 0.075, blue: 0.06, alpha: 1)
+    )
+    static let paper = adaptive(
+        light: UIColor(red: 0.99, green: 0.985, blue: 0.965, alpha: 1),
+        dark: UIColor(red: 0.075, green: 0.095, blue: 0.078, alpha: 1)
+    )
+    static let surface = adaptive(light: .white, dark: UIColor(red: 0.12, green: 0.15, blue: 0.12, alpha: 1))
+    static let surfaceMuted = adaptive(
+        light: UIColor(red: 0.93, green: 0.91, blue: 0.84, alpha: 1),
+        dark: UIColor(red: 0.16, green: 0.19, blue: 0.155, alpha: 1)
+    )
+    static let panel = adaptive(light: .white, dark: UIColor(red: 0.11, green: 0.14, blue: 0.115, alpha: 1))
+    static let ink = adaptive(
+        light: UIColor(red: 0.12, green: 0.12, blue: 0.10, alpha: 1),
+        dark: UIColor(red: 0.93, green: 0.90, blue: 0.82, alpha: 1)
+    )
+    static let secondaryText = adaptive(
+        light: UIColor(red: 0.45, green: 0.45, blue: 0.40, alpha: 1),
+        dark: UIColor(red: 0.72, green: 0.70, blue: 0.64, alpha: 1)
+    )
+    static let muted = adaptive(
+        light: UIColor(red: 0.48, green: 0.48, blue: 0.46, alpha: 1),
+        dark: UIColor(red: 0.66, green: 0.64, blue: 0.59, alpha: 1)
+    )
+    static let grass = adaptive(
+        light: UIColor(red: 0.34, green: 0.52, blue: 0.27, alpha: 1),
+        dark: UIColor(red: 0.40, green: 0.60, blue: 0.32, alpha: 1)
+    )
+    static let grassLight = adaptive(
+        light: UIColor(red: 0.72, green: 0.80, blue: 0.57, alpha: 1),
+        dark: UIColor(red: 0.60, green: 0.72, blue: 0.48, alpha: 1)
+    )
+    static let floor = adaptive(
+        light: UIColor(red: 0.82, green: 0.72, blue: 0.58, alpha: 1),
+        dark: UIColor(red: 0.45, green: 0.37, blue: 0.28, alpha: 1)
+    )
+    static let wood = adaptive(
+        light: UIColor(red: 0.56, green: 0.34, blue: 0.20, alpha: 1),
+        dark: UIColor(red: 0.69, green: 0.46, blue: 0.28, alpha: 1)
+    )
+    static let sky = adaptive(
+        light: UIColor(red: 0.55, green: 0.78, blue: 0.92, alpha: 1),
+        dark: UIColor(red: 0.32, green: 0.48, blue: 0.60, alpha: 1)
+    )
+    static let wool = adaptive(
+        light: UIColor(red: 0.94, green: 0.92, blue: 0.84, alpha: 1),
+        dark: UIColor(red: 0.76, green: 0.72, blue: 0.62, alpha: 1)
+    )
+    static let sheep = adaptive(
+        light: UIColor(red: 0.92, green: 0.90, blue: 0.82, alpha: 1),
+        dark: UIColor(red: 0.78, green: 0.74, blue: 0.64, alpha: 1)
+    )
     static let coin = Color(red: 0.96, green: 0.72, blue: 0.18)
-    static let clay = Color(red: 0.70, green: 0.39, blue: 0.24)
-    static let bark = Color(red: 0.30, green: 0.18, blue: 0.11)
+    static let clay = adaptive(
+        light: UIColor(red: 0.70, green: 0.39, blue: 0.24, alpha: 1),
+        dark: UIColor(red: 0.78, green: 0.48, blue: 0.31, alpha: 1)
+    )
+    static let bark = adaptive(
+        light: UIColor(red: 0.30, green: 0.18, blue: 0.11, alpha: 1),
+        dark: UIColor(red: 0.66, green: 0.48, blue: 0.34, alpha: 1)
+    )
     static let amber = Color(red: 0.94, green: 0.68, blue: 0.22)
-    static let berry = Color(red: 0.62, green: 0.22, blue: 0.30)
-    static let lavender = Color(red: 0.48, green: 0.45, blue: 0.68)
-    static let success = Color(red: 0.22, green: 0.57, blue: 0.36)
-    static let warning = Color(red: 0.91, green: 0.53, blue: 0.21)
-    static let stroke = Color.black
+    static let berry = adaptive(
+        light: UIColor(red: 0.62, green: 0.22, blue: 0.30, alpha: 1),
+        dark: UIColor(red: 0.80, green: 0.42, blue: 0.49, alpha: 1)
+    )
+    static let lavender = adaptive(
+        light: UIColor(red: 0.48, green: 0.45, blue: 0.68, alpha: 1),
+        dark: UIColor(red: 0.68, green: 0.64, blue: 0.88, alpha: 1)
+    )
+    static let success = adaptive(
+        light: UIColor(red: 0.22, green: 0.57, blue: 0.36, alpha: 1),
+        dark: UIColor(red: 0.38, green: 0.72, blue: 0.48, alpha: 1)
+    )
+    static let warning = adaptive(
+        light: UIColor(red: 0.91, green: 0.53, blue: 0.21, alpha: 1),
+        dark: UIColor(red: 0.92, green: 0.62, blue: 0.31, alpha: 1)
+    )
+    static let stroke = adaptive(
+        light: .black,
+        dark: UIColor(red: 0.55, green: 0.54, blue: 0.48, alpha: 1)
+    )
+
+    private static func adaptive(light: UIColor, dark: UIColor) -> Color {
+        Color(uiColor: UIColor { traits in
+            traits.userInterfaceStyle == .dark ? dark : light
+        })
+    }
 }
 
 /// Backward-compatible aliases used across pixel-styled screens.
@@ -62,6 +129,22 @@ enum AppRadius {
     static let sm: CGFloat = 6
     static let md: CGFloat = 8
     static let lg: CGFloat = 12
+}
+
+/// A small motion vocabulary keeps interaction feedback consistent and makes
+/// the quieter Night Watch phases feel intentionally different from morning.
+enum AppMotion {
+    static let press = Animation.easeOut(duration: 0.12)
+    static let selection = Animation.spring(response: 0.28, dampingFraction: 0.84)
+    static let navigation = Animation.spring(response: 0.32, dampingFraction: 0.82)
+    static let progress = Animation.spring(response: 0.55, dampingFraction: 0.86)
+    static let stateChange = Animation.easeInOut(duration: 0.24)
+    static let settle = Animation.spring(response: 0.42, dampingFraction: 0.88)
+    static let celebration = Animation.spring(response: 0.48, dampingFraction: 0.74)
+    static let notice = Animation.spring(response: 0.28, dampingFraction: 0.86)
+    static let exit = Animation.easeOut(duration: 0.22)
+    static let ambient = Animation.easeInOut(duration: 1.6).repeatForever(autoreverses: true)
+    static let reducedFade = Animation.easeOut(duration: 0.12)
 }
 
 enum AppTypography {

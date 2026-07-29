@@ -29,6 +29,8 @@ final class ScreenTimeAuthorizationService {
             return .notDetermined
         case .approved:
             return .approved
+        case .approvedWithDataAccess:
+            return .approved
         case .denied:
             return .denied("Screen Time access was denied.")
         @unknown default:

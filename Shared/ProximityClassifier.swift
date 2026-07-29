@@ -98,7 +98,7 @@ struct ProximityClassifier {
         case .withYou: return "Ollie can tell the phone is still close."
         case .sameRoom: return "The phone seems nearby. Keep moving toward the pasture."
         case .doorway: return "The phone is drifting away; Ollie is watching for a stable trail."
-        case .probablyOtherRoom: return "Sustained readings say the phone is away enough for a Focus Run."
+        case .probablyOtherRoom: return "Sustained readings say the phone has reached its resting place."
         case .signalLost: return "The trail went quiet. Ollie will wait before judging the run."
         case .unsupported: return "Phone distance is unavailable on this setup."
         case .demo: return "Local simulation is driving a reliable shepherding run."

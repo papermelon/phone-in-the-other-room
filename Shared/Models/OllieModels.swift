@@ -13,7 +13,7 @@ enum ProximityBucket: String, Codable, CaseIterable {
         case .withYou: return "Phone is with you"
         case .sameRoom: return "Phone is nearby"
         case .doorway: return "Phone is drifting away"
-        case .probablyOtherRoom: return "Phone is in the focus pasture"
+        case .probablyOtherRoom: return "Phone is resting in the other room"
         case .signalLost: return "Phone signal lost"
         case .unsupported: return "Phone distance unsupported"
         case .demo: return "Demo Shepherding Run"
@@ -26,13 +26,13 @@ enum FocusRunState: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .setup: return "Set up Ollie's run"
+        case .setup: return "Set up Ollie's Night Watch"
         case .placementGrace: return "Put your phone in the other room"
-        case .waitingForPhoneAway: return "Ollie is waiting for the phone to reach the pasture"
-        case .running: return "Ollie is guarding your focus"
+        case .waitingForPhoneAway: return "Ollie is waiting for the phone to reach its bed"
+        case .running: return "Ollie is on Night Watch"
         case .warningPhoneTooClose: return "Phone is getting too close"
-        case .completed: return "Ollie completed the run"
-        case .endedEarly: return "Ollie came back early"
+        case .completed: return "Night Watch is complete"
+        case .endedEarly: return "Night Watch ended early"
         case .signalLost: return "Ollie lost the trail"
         case .unsupported: return "Phone distance unavailable"
         case .demo: return "Demo run active"
@@ -87,7 +87,7 @@ struct ProximityState: Codable, Equatable {
     var statusText: String
     var detailText: String
 
-    static let initial = ProximityState(bucket: .waitingForDistance, distanceMeters: nil, confidence: .low, source: .fallback, lastUpdated: Date(), statusText: ProximityBucket.waitingForDistance.label, detailText: "Phone distance appears after a Focus Run starts and the iPhone and Watch exchange distance tokens.")
+    static let initial = ProximityState(bucket: .waitingForDistance, distanceMeters: nil, confidence: .low, source: .fallback, lastUpdated: Date(), statusText: ProximityBucket.waitingForDistance.label, detailText: "Phone distance appears during the optional Night Watch tuck-in check.")
 }
 
 struct ThresholdProfile: Codable, Equatable {
@@ -117,8 +117,19 @@ struct FocusRun: Codable, Identifiable, Equatable {
     var completedSuccessfully: Bool
     var endedEarlyReason: EarlyEndReason?
     var earnedRewardIDs: [UUID]
+    var guardKind: SessionGuardKind
+    var placementStatus: PlacementStatus
+    var placementEvidence: PlacementEvidence
+    var nightWatchPlan: NightWatchPlan?
 
-    init(id: UUID = UUID(), plannedDurationSeconds: TimeInterval, startedAt: Date = Date(), state: FocusRunState = .placementGrace) {
+    init(
+        id: UUID = UUID(),
+        plannedDurationSeconds: TimeInterval,
+        startedAt: Date = Date(),
+        state: FocusRunState = .placementGrace,
+        guardKind: SessionGuardKind = .honorTimer,
+        nightWatchPlan: NightWatchPlan? = nil
+    ) {
         self.id = id
         self.plannedDurationSeconds = plannedDurationSeconds
         self.actualDurationSeconds = 0
@@ -132,6 +143,39 @@ struct FocusRun: Codable, Identifiable, Equatable {
         self.completedSuccessfully = false
         self.endedEarlyReason = nil
         self.earnedRewardIDs = []
+        self.guardKind = guardKind
+        self.placementStatus = guardKind.needsPlacementConfirmation ? .awaitingConfirmation : .notRequired
+        self.placementEvidence = .notRequired(for: guardKind)
+        self.nightWatchPlan = nightWatchPlan
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case id, plannedDurationSeconds, actualDurationSeconds, startedAt, plannedEndAt, endedAt
+        case state, phoneAwayValidatedAt, proximityHistory, warningCount, completedSuccessfully
+        case endedEarlyReason, earnedRewardIDs, guardKind, placementStatus, placementEvidence, nightWatchPlan
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        plannedDurationSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .plannedDurationSeconds) ?? 25 * 60
+        actualDurationSeconds = try container.decodeIfPresent(TimeInterval.self, forKey: .actualDurationSeconds) ?? 0
+        startedAt = try container.decodeIfPresent(Date.self, forKey: .startedAt) ?? Date()
+        plannedEndAt = try container.decodeIfPresent(Date.self, forKey: .plannedEndAt) ?? startedAt.addingTimeInterval(plannedDurationSeconds)
+        endedAt = try container.decodeIfPresent(Date.self, forKey: .endedAt)
+        state = try container.decodeIfPresent(FocusRunState.self, forKey: .state) ?? .setup
+        phoneAwayValidatedAt = try container.decodeIfPresent(Date.self, forKey: .phoneAwayValidatedAt)
+        proximityHistory = try container.decodeIfPresent([ProximityReading].self, forKey: .proximityHistory) ?? []
+        warningCount = try container.decodeIfPresent(Int.self, forKey: .warningCount) ?? 0
+        completedSuccessfully = try container.decodeIfPresent(Bool.self, forKey: .completedSuccessfully) ?? false
+        endedEarlyReason = try container.decodeIfPresent(EarlyEndReason.self, forKey: .endedEarlyReason)
+        earnedRewardIDs = try container.decodeIfPresent([UUID].self, forKey: .earnedRewardIDs) ?? []
+        guardKind = try container.decodeIfPresent(SessionGuardKind.self, forKey: .guardKind) ?? .watchPlacement
+        placementStatus = try container.decodeIfPresent(PlacementStatus.self, forKey: .placementStatus)
+            ?? (guardKind.needsPlacementConfirmation ? .awaitingConfirmation : .notRequired)
+        placementEvidence = try container.decodeIfPresent(PlacementEvidence.self, forKey: .placementEvidence)
+            ?? .notRequired(for: guardKind)
+        nightWatchPlan = try container.decodeIfPresent(NightWatchPlan.self, forKey: .nightWatchPlan)
     }
 }
 
@@ -157,25 +201,6 @@ struct SessionEvent: Codable, Identifiable, Equatable {
 
 enum EventSeverity: String, Codable {
     case info, success, warning, critical
-}
-
-enum RewardType: String, Codable, CaseIterable {
-    case ollieMail, letter, ribbon, trophy, tennisBall, stick, postcard, sheepBadge, fieldMap, muddyPaw
-}
-
-enum RewardRarity: String, Codable, CaseIterable {
-    case common, uncommon, rare, legendary, consolation, demo
-}
-
-struct RewardItem: Codable, Identifiable, Equatable {
-    let id: UUID
-    let type: RewardType
-    let rarity: RewardRarity
-    let title: String
-    let description: String
-    let earnedAt: Date
-    let runDurationMinutes: Int
-    let isDemoReward: Bool
 }
 
 enum FocusStarTier: String, Codable, CaseIterable, Identifiable {
@@ -242,10 +267,10 @@ enum OllieDailyStatus: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .waiting: return "Ollie is waiting for today's first other-room minutes."
-        case .warmedUp: return "Ollie is warmed up by today's focus."
-        case .steady: return "Ollie is steady from a good focus rhythm."
-        case .bright: return "Ollie is bright from a deep focus day."
+        case .waiting: return "Ollie is ready for tonight's phone tuck-in."
+        case .warmedUp: return "Ollie is warmed up by a little quiet time."
+        case .steady: return "Ollie is steady after a protected night."
+        case .bright: return "Ollie is bright after a phone-free night."
         }
     }
 }
@@ -381,7 +406,7 @@ struct UserProgress: Codable, Equatable {
         case 2: return "Yard Runner"
         case 3: return "Field Scout"
         case 4: return "Sheep Herder"
-        default: return "Focus Guardian"
+        default: return "Night Guardian"
         }
     }
 }

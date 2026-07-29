@@ -7,6 +7,8 @@ import FamilyControls
 
 @MainActor
 final class FocusRunViewModel: ObservableObject {
+    @Published var nightWatchPreferences: NightWatchPreferences = .defaults
+    @Published var offlinePurpose: OfflinePurposeProfile = .defaultProfile
     @Published var selectedDuration: TimeInterval = 25 * 60
     @Published var durationMinutes = 25
     @Published var durationSeconds = 0
@@ -15,11 +17,13 @@ final class FocusRunViewModel: ObservableObject {
     @Published var focusPromptAnswered = false
     @Published var focusAccepted = false
     @Published var focusGuidance = ""
-    @Published var demoDistance: Double = 1.0
     @Published var customDurationSelected = false
     @Published var screenTimeAuthorization: ScreenTimeAuthorizationService.AuthorizationState = .notDetermined
+    @Published var screenTimeReportPreferences: ScreenTimeReportPreferences
     @Published var sleepAuthorization: HealthSleepService.AuthorizationState = .notRequested
     @Published var lastNightSleep: SleepSummary?
+    @Published var recentNightSleeps: [SleepSummary] = []
+    @Published var morningCheckIns: MorningCheckInHistory = MorningCheckInHistory()
     @Published var analyticsExportURL: URL?
     @Published var analyticsExportError: String?
     @Published var manualAnalyticsEntries: [ManualAnalyticsEntry] = []
@@ -34,24 +38,49 @@ final class FocusRunViewModel: ObservableObject {
     @Published var bedtimeActivitySelection = FamilyActivitySelection()
 #endif
 
-    @Published var coordinator = ProximitySessionCoordinator()
+    @Published var coordinator: FocusSessionCoordinator
+    @Published var selectedGuardKind: SessionGuardKind = .honorTimer
+    @Published var showQRCodeScanner = false
+    @Published var qrCodeStatus = ""
+    @Published var nfcStatus = ""
+#if DEBUG
+    @Published var shieldingEnabled = UserDefaults.standard.bool(
+        forKey: QuietTimeShieldingService.enabledKey
+    )
+#endif
 
     private let focusService = FocusModeSuggestionService()
     private let notifications = PhoneNotificationService.shared
     private let persistence = PersistenceService.shared
     private let screenTimeService = ScreenTimeAuthorizationService()
     private let healthSleepService = HealthSleepService()
+    private let phoneBedNFCService = PhoneBedNFCService()
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     private let screenTimeSelectionService = ScreenTimeSelectionService.shared
 #endif
     private var cancellables = Set<AnyCancellable>()
 
-    init() {
-        coordinator.objectWillChange
+    init(coordinator: FocusSessionCoordinator? = nil) {
+        let savedQuietTime = PersistenceService.shared.nightWatchPreferences
+        let savedReportPreferences = PersistenceService.shared.screenTimeReportPreferences
+        let initialReportPreferences = savedReportPreferences
+            ?? ScreenTimeReportPreferences.defaults(for: savedQuietTime)
+        if savedReportPreferences == nil {
+            PersistenceService.shared.screenTimeReportPreferences = initialReportPreferences
+        }
+        self.coordinator = coordinator ?? FocusSessionCoordinator()
+        nightWatchPreferences = savedQuietTime
+        screenTimeReportPreferences = initialReportPreferences
+        offlinePurpose = persistence.offlinePurpose
+        morningCheckIns = persistence.morningCheckIns
+        selectedGuardKind = nightWatchPreferences.guardKind
+        self.coordinator.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
         screenTimeAuthorization = screenTimeService.currentState()
-        sleepAuthorization = healthSleepService.isAvailable ? .notRequested : .unavailable
+        sleepAuthorization = healthSleepService.isAvailable
+            ? (healthSleepService.hasRequestedAccess ? .requested : .notRequested)
+            : .unavailable
         manualAnalyticsEntries = persistence.manualAnalyticsEntries
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         distractingActivitySelection = screenTimeSelectionService.load(.distracting)
@@ -59,9 +88,14 @@ final class FocusRunViewModel: ObservableObject {
         bedtimeActivitySelection = screenTimeSelectionService.load(.bedtime)
 #endif
         applyShortcutPreparationIfNeeded()
+        if sleepAuthorization == .requested {
+            refreshSleepSummary()
+        }
     }
 
     var activeRun: FocusRun? { coordinator.run }
+    var hasConfiguredNightWatch: Bool { nightWatchPreferences.isConfigured }
+    var canBeginNightWatchNow: Bool { nightWatchPreferences.isStartWindowOpen() }
     var isRunning: Bool {
         guard let state = activeRun?.state else { return false }
         return ![.setup, .completed, .endedEarly].contains(state)
@@ -97,12 +131,101 @@ final class FocusRunViewModel: ObservableObject {
         durationSeconds = Int(duration) % 60
         selectedDuration = duration
         customDurationSelected = !Self.presetMinutes.contains(durationMinutes) || durationSeconds != 0
-        focusGuidance = "Shortcut prepared a \(selectedDurationLabel) Focus Run. Turn on Focus from your Shortcut, then tap Send Ollie Out."
+        focusGuidance = "A legacy Shortcut prepared \(selectedDurationLabel) of phone-away time. Your saved quiet time remains the main bedtime ritual."
     }
 
     func requestStartRun() {
         updateSelectedDuration()
         showFocusModePrompt = true
+    }
+
+    func requestStartNightWatch() {
+        saveNightWatchPreferences()
+        notifications.cancelNightWatchReminder()
+        let startedAt = Date()
+        let plan = nightWatchPreferences.makePlan(startedAt: startedAt)
+        coordinator.start(
+            configuration: FocusRunConfiguration(nightWatchPlan: plan, guardKind: selectedGuardKind),
+            focusAccepted: false
+        )
+        if let activeRun {
+            notifications.scheduleNightWatchTransitions(for: activeRun, purpose: offlinePurpose)
+        }
+        if let plannedEndAt = activeRun?.plannedEndAt {
+            notifications.scheduleNightWatchReminder(
+                at: nightWatchPreferences.nextStart(after: plannedEndAt.addingTimeInterval(60)),
+                purpose: offlinePurpose
+            )
+        }
+        if selectedGuardKind == .qrCode {
+            showQRCodeScanner = true
+        } else if selectedGuardKind == .nfcTag {
+            scanNFCTag()
+        }
+        showFocusModePrompt = false
+    }
+
+    func saveNightWatchPlanForTonight() {
+        saveNightWatchPreferences()
+        notifications.cancelNightWatchReminder()
+        notifications.scheduleNightWatchReminder(
+            at: nightWatchPreferences.nextStart(),
+            purpose: offlinePurpose
+        )
+    }
+
+    var nightWatchBedtimeDate: Date {
+        nightWatchPreferences.bedtimeDate()
+    }
+
+    var nightWatchWakeDate: Date {
+        nightWatchPreferences.wakeDate()
+    }
+
+    var nightWatchScheduleLabel: String {
+        let bedtime = nightWatchBedtimeDate.formatted(date: .omitted, time: .shortened)
+        let wake = nightWatchWakeDate.formatted(date: .omitted, time: .shortened)
+        return "\(bedtime) to \(wake)"
+    }
+
+    func updateNightWatchBedtime(_ date: Date) {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        nightWatchPreferences.bedtimeHour = components.hour ?? nightWatchPreferences.bedtimeHour
+        nightWatchPreferences.bedtimeMinute = components.minute ?? nightWatchPreferences.bedtimeMinute
+    }
+
+    func updateNightWatchWakeTime(_ date: Date) {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        nightWatchPreferences.wakeHour = components.hour ?? nightWatchPreferences.wakeHour
+        nightWatchPreferences.wakeMinute = components.minute ?? nightWatchPreferences.wakeMinute
+    }
+
+    func saveNightWatchPreferences() {
+        nightWatchPreferences.guardKind = selectedGuardKind
+        nightWatchPreferences.isConfigured = true
+        persistence.nightWatchPreferences = nightWatchPreferences
+        persistence.offlinePurpose = offlinePurpose
+    }
+
+    func saveQuietTimeDurations() {
+        saveNightWatchPreferences()
+        notifications.cancelNightWatchReminder()
+        notifications.scheduleNightWatchReminder(
+            at: nightWatchPreferences.nextStart(),
+            purpose: offlinePurpose
+        )
+    }
+
+    func updateOfflinePurpose(
+        category: OfflinePurposeCategory,
+        customText: String?,
+        allowsCustomTextInNotifications: Bool
+    ) {
+        offlinePurpose = OfflinePurposeProfile(
+            category: category,
+            customText: customText,
+            allowsCustomTextInNotifications: allowsCustomTextInNotifications
+        )
     }
 
     func answerFocusPrompt(_ accepted: Bool) {
@@ -113,14 +236,68 @@ final class FocusRunViewModel: ObservableObject {
 
     func startRun(focusAccepted accepted: Bool) {
         answerFocusPrompt(accepted)
-        coordinator.start(duration: max(1, selectedDuration), demoMode: false, focusAccepted: accepted)
-        notifications.scheduleOpenWatchReminder()
+        coordinator.start(configuration: FocusRunConfiguration(duration: selectedDuration, guardKind: selectedGuardKind), focusAccepted: accepted)
+        notifications.scheduleRunCompletion(at: activeRun?.plannedEndAt)
+        if selectedGuardKind == .qrCode {
+            showQRCodeScanner = true
+        } else if selectedGuardKind == .nfcTag {
+            scanNFCTag()
+        }
         showFocusModePrompt = false
     }
 
-    func updateDemoDistance(_ distance: Double) {
-        demoDistance = distance
+    func acceptQRCode(_ code: String) {
+        let normalizedCode = code.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalizedCode.isEmpty else {
+            qrCodeStatus = "Ollie could not read that code. Try again."
+            return
+        }
+        if persistence.phoneBedQRCode == nil {
+            persistence.phoneBedQRCode = normalizedCode
+            qrCodeStatus = "Ollie saved this as your phone bed."
+        }
+        if coordinator.confirmQRCode(normalizedCode, expectedCode: persistence.phoneBedQRCode) {
+            showQRCodeScanner = false
+            qrCodeStatus = ""
+        } else {
+            qrCodeStatus = "That code belongs somewhere else. Try the code by your phone's resting place."
+        }
     }
+
+    func scanNFCTag() {
+        nfcStatus = ""
+        phoneBedNFCService.scan { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .read(let fingerprint):
+                if self.persistence.phoneBedNFCTag == nil {
+                    self.persistence.phoneBedNFCTag = fingerprint
+                }
+                if self.coordinator.confirmNFCTag(
+                    fingerprint,
+                    expectedFingerprint: self.persistence.phoneBedNFCTag
+                ) {
+                    self.nfcStatus = "Ollie found the phone bed."
+                } else {
+                    self.nfcStatus = "That is not Ollie's phone-bed tag. Try the tag by the phone's resting place."
+                }
+            case .unavailable(let message):
+                self.nfcStatus = message
+            }
+        }
+    }
+
+#if DEBUG
+    func setShieldingEnabled(_ enabled: Bool) {
+        shieldingEnabled = enabled
+        UserDefaults.standard.set(enabled, forKey: QuietTimeShieldingService.enabledKey)
+        if enabled {
+            coordinator.reconcileSession()
+        } else {
+            QuietTimeShieldingService().clear()
+        }
+    }
+#endif
 
     func resetSetup() {
         coordinator.resetToSetup()
@@ -129,8 +306,11 @@ final class FocusRunViewModel: ObservableObject {
         focusPromptAnswered = false
         focusAccepted = false
         focusGuidance = ""
-        demoDistance = 1.0
         customDurationSelected = false
+        selectedGuardKind = nightWatchPreferences.guardKind
+        showQRCodeScanner = false
+        qrCodeStatus = ""
+        nfcStatus = ""
     }
 
     func connectScreenTime() {
@@ -139,14 +319,45 @@ final class FocusRunViewModel: ObservableObject {
         }
     }
 
+    func screenTimeReportDate(
+        for window: ScreenTimeReportPreferences.Window,
+        isStart: Bool
+    ) -> Date {
+        let minute = screenTimeReportPreferences.minute(for: window, isStart: isStart)
+        return Calendar.current.date(
+            bySettingHour: minute / 60,
+            minute: minute % 60,
+            second: 0,
+            of: Date()
+        ) ?? Date()
+    }
+
+    func updateScreenTimeReportDate(
+        _ date: Date,
+        for window: ScreenTimeReportPreferences.Window,
+        isStart: Bool
+    ) {
+        let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+        guard let hour = components.hour, let minute = components.minute else { return }
+        screenTimeReportPreferences.setMinute(
+            hour * 60 + minute,
+            for: window,
+            isStart: isStart
+        )
+        persistence.screenTimeReportPreferences = screenTimeReportPreferences
+    }
+
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     func saveScreenTimeSelection(_ scope: ScreenTimeSelectionScope) {
         switch scope {
         case .distracting:
+            distractingActivitySelection = distractingActivitySelection.appsAndCategoriesOnly
             screenTimeSelectionService.save(distractingActivitySelection, for: scope)
         case .productive:
+            productiveActivitySelection = productiveActivitySelection.appsAndCategoriesOnly
             screenTimeSelectionService.save(productiveActivitySelection, for: scope)
         case .bedtime:
+            bedtimeActivitySelection = bedtimeActivitySelection.appsAndCategoriesOnly
             screenTimeSelectionService.save(bedtimeActivitySelection, for: scope)
         }
     }
@@ -163,17 +374,58 @@ final class FocusRunViewModel: ObservableObject {
     func connectAppleHealthSleep() {
         Task { @MainActor in
             sleepAuthorization = await healthSleepService.requestSleepAccess()
-            if sleepAuthorization == .authorized {
-                lastNightSleep = await healthSleepService.lastNightSleep()
+            if sleepAuthorization == .requested {
+                await loadRecentSleepSummaries()
             }
         }
     }
 
     func refreshSleepSummary() {
         Task { @MainActor in
-            guard sleepAuthorization == .authorized else { return }
-            lastNightSleep = await healthSleepService.lastNightSleep()
+            guard sleepAuthorization == .requested else { return }
+            await loadRecentSleepSummaries()
         }
+    }
+
+    var todayMorningCheckIn: MorningCheckIn {
+        morningCheckIns.entry(for: Date()) ?? MorningCheckIn(
+            day: Date(),
+            sleepOnset: nil,
+            restfulness: nil,
+            bedtimeSleepiness: nil
+        )
+    }
+
+    func updateMorningSleepOnset(_ value: SleepOnsetEstimate?) {
+        var entry = todayMorningCheckIn
+        entry.sleepOnset = value
+        saveMorningCheckIn(entry)
+    }
+
+    func updateMorningRestfulness(_ value: MorningRestfulness?) {
+        var entry = todayMorningCheckIn
+        entry.restfulness = value
+        saveMorningCheckIn(entry)
+    }
+
+    func updateBedtimeSleepiness(_ value: BedtimeSleepiness?) {
+        var entry = todayMorningCheckIn
+        entry.bedtimeSleepiness = value
+        saveMorningCheckIn(entry)
+    }
+
+    private func loadRecentSleepSummaries() async {
+        recentNightSleeps = await healthSleepService.recentNightSleeps(days: 7)
+        let calendar = Calendar.current
+        lastNightSleep = recentNightSleeps.first { summary in
+            guard let nightEndingDate = summary.nightEndingDate else { return false }
+            return calendar.isDate(nightEndingDate, inSameDayAs: Date())
+        }
+    }
+
+    private func saveMorningCheckIn(_ entry: MorningCheckIn) {
+        morningCheckIns.upsert(entry)
+        persistence.morningCheckIns = morningCheckIns
     }
 
     var analyticsRecords: [AnalyticsDayRecord] {

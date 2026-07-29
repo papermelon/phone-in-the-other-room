@@ -1,123 +1,143 @@
 # Playbook: TestFlight Readiness
 
-Step-by-step preparation for shipping the first TestFlight build of Counting Sheep.
-Work top-to-bottom; earlier sections block later ones. Scope decisions are fixed in
-`docs/PROJECT_BRIEF.md` (two tabs; gated features per ADR-0003/0004) — do not relitigate
-them here.
+Prepare the first Counting Sheep TestFlight build from top to bottom. Product scope is fixed
+by `PROJECT_BRIEF.md` and ADR-0003/0004/0006: two Release tabs, one Night Watch, no release
+HealthKit or Screen Time UI.
 
-State when this playbook was written (July 2026): the project is deliberately configured
-for **unsigned local development**. Everything in §1–§2 is expected to be red at first.
+Last reconciled with `project.yml` and the Night Watch implementation: 2026-07-18.
 
-## 1. Apple account prerequisites (human tasks, start immediately)
+## 1. Human account and distribution work
 
-- [ ] Apple Developer Program membership active.
-- [ ] Decide the permanent bundle ID root (e.g. `com.<org>.countingsheep`) — it cannot
-      change after first upload.
-- [ ] **Submit the Family Controls distribution request** (Apple form: "Family Controls
-      Distribution"). Not needed for build 1, but the approval lead time is weeks —
-      submit before you need it. (ADR-0004 depends on it.)
-- [ ] Create the App Store Connect app record (name "Counting Sheep"; check availability
-      early — names are contested).
-- [ ] Register the App ID(s) with HealthKit capability (needed by build 2, harmless now).
+- [ ] Apple Developer Program membership is active.
+- [ ] App Store Connect record exists for **Counting Sheep**.
+- [ ] Permanent iOS bundle ID `com.ngawangchime.countingsheep` is registered and correct.
+- [ ] Team `4KZQPZR47B` is the intended distribution team.
+- [ ] Family Controls distribution request is submitted for the later Screen Time milestone.
+- [ ] Current artwork is cleared for distribution per `ASSET_NOTICE.md`.
+- [ ] App Store privacy disclosures cover every enabled network feature and dependency.
 
-## 2. Build identity and signing (in `project.yml`, then `xcodegen generate`)
+## 2. Generated project and signing
 
-- [ ] Replace `bundleIdPrefix: com.example` and all `com.example.*` bundle IDs with the
-      real root. Watch app keeps the `.watchkitapp` suffix and its
-      `WKCompanionAppBundleIdentifier` must match the new iOS bundle ID exactly.
-- [ ] Set `DEVELOPMENT_TEAM` to the real team ID.
-- [ ] Remove `CODE_SIGNING_ALLOWED: NO`, `CODE_SIGNING_REQUIRED: NO`, and the empty
-      `CODE_SIGN_IDENTITY` overrides; use automatic signing.
-- [ ] Set `MARKETING_VERSION` (e.g. `0.1.0`) and `CURRENT_PROJECT_VERSION` (e.g. `1`)
-      for iOS + Watch targets.
-- [ ] Wire `CODE_SIGN_ENTITLEMENTS` only for entitlements that are real *and* enabled in
-      the portal. For build 1 (no HealthKit, no Screen Time) the empty entitlement files
-      are correct — do not add keys speculatively (signing will fail).
-- [ ] `xcodegen generate`, then verify Archive succeeds:
-      `xcodebuild archive -project PhoneInTheOtherRoom.xcodeproj -scheme PhoneInTheOtherRoom -destination 'generic/platform=iOS'`
-- [ ] The Screen Time report extension stays **unembedded** in build 1 (it ships later
-      with ADR-0004 work). Confirm it is not in the app's dependencies in `project.yml`.
+- [ ] `project.yml` remains the only project source of truth; no hand-edited pbxproj changes.
+- [ ] `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` match the planned upload.
+- [ ] Automatic signing resolves for iPhone, Watch, and Live Activity targets.
+- [ ] Empty/deferred entitlement files contain no speculative HealthKit or Family Controls keys.
+- [ ] Screen Time report extension remains unembedded for build 1.
+- [ ] `xcodegen generate` completes, then a signed archive succeeds:
 
-## 3. App identity checks
+```bash
+xcodebuild archive \
+  -project PhoneInTheOtherRoom.xcodeproj \
+  -scheme PhoneInTheOtherRoom \
+  -destination 'generic/platform=iOS'
+```
 
-- [ ] Display name "Counting Sheep" on iPhone and Watch (`CFBundleDisplayName`).
-- [ ] App icon renders (1024 universal for iOS 17+ is acceptable); Watch icon present.
-- [ ] No user-visible string says "Phone in the Other Room" (repo name may — that's fine).
-- [ ] Replace redacted/placeholder art that `ASSET_NOTICE.md` flags before public builds,
-      or confirm the current art is cleared for distribution.
+## 3. Product identity and release scope
 
-## 4. Scope and mock-data checks (per ADR-0003)
+- [ ] iPhone and Watch display name is **Counting Sheep**.
+- [ ] No active customer surface calls the ritual a Focus Run or generic focus session.
+- [ ] Release exposes exactly Home and Stats.
+- [ ] Farm, Friends, Shop, `MVPMockData`, HealthKit, Screen Time selection/report UI, manual
+      analytics, and QA datasets are unreachable in Release.
+- [ ] Home immediately communicates both quiet bookends and the Night Watch schedule.
+- [ ] Stats describe protected nights and quiet bookends, not productivity output.
+- [ ] App Shortcut is **Night Watch** and opens the app without silently starting a timer.
 
-- [ ] Release build shows exactly two tabs: Home and Stats.
-- [ ] Farm / Friends / Shop and all Screen Time UI are unreachable in Release
-      (DEBUG-gated), with no "coming soon" placeholders.
-- [ ] `MVPMockData` is not referenced by any Release code path (grep it).
-- [ ] `PixelHomeDashboard` hardcoded values fixed: Watch connection status reflects
-      `WatchConnectivityManager` reality; sheep reward progress reads `UserProgress`.
-- [ ] `FocusStatsView` DEBUG placeholder/QA datasets cannot appear in Release.
-- [ ] Stats copy is bedtime-framed ("nights your phone slept in the other room").
+## 4. Fresh-install and setup checks
 
-## 5. Onboarding checks
+- [ ] A fresh user can set bedtime, wake time, both quiet-window lengths, and two offline cues.
+- [ ] Saving outside the start window requests notification permission in context and creates
+      the correct wind-down reminder.
+- [ ] Inside the start window, the primary action begins Night Watch in one tap after setup.
+- [ ] Honor timer is the default and never requires Watch/UWB.
+- [ ] Watch-unreachable and non-UWB paths offer warm timer fallback rather than a dead end.
+- [ ] QR phone bed supports camera denial/unavailability through the manual-code fallback.
 
-- [ ] Fresh-install flow: a new user can reach a started Focus Run without confusion —
-      including pairing expectations ("open the Watch app").
-- [ ] The no-Watch / no-UWB user gets an honest, warm explanation (the `unsupported`
-      path), not a dead end.
-- [ ] Notification permission is requested in context (when starting a run), not at launch.
+## 5. Permission and privacy checks
 
-## 6. Permission and privacy checks
+- [ ] iOS and Watch `NSNearbyInteractionUsageDescription` strings describe one optional
+      Night Watch tuck-in check.
+- [ ] Camera purpose string describes only the QR phone-bed scan.
+- [ ] Notifications are requested on plan save/start, never as generic re-engagement.
+- [ ] Build 1 does not expose a permission request for gated Screen Time or HealthKit UI.
+- [ ] No GPS or room-identification claim appears in metadata or onboarding.
+- [ ] Supabase Live Activity push is either intentionally configured and disclosed or disabled.
+- [ ] Logs never print raw ActivityKit push tokens, secrets, or selected Screen Time tokens.
 
-- [ ] Privacy strings present and consistent with the app name:
-      `NSNearbyInteractionUsageDescription` (iOS + Watch). No HealthKit/Screen Time
-      strings needed in build 1 (features absent) — remove or keep consistent if present.
-- [ ] App Store privacy "nutrition label" prepared: build 1 collects nothing off-device
-      (UserDefaults only, no analytics SDKs, no network calls). Verify that stays true.
-- [ ] Analytics export (if reachable in build 1) writes only to user-visible share sheets;
-      check the known `relativeDays` redaction bug before shipping export, or gate export.
-- [ ] No accounts, no tracking, no third-party SDKs — confirm and state in review notes.
+## 6. Core Night Watch behavior
 
-## 7. Crash-risk checks
+- [ ] Wind-down, overnight, and morning quiet are phases of one persisted run.
+- [ ] iPhone, Watch, and Live Activity agree on the current phase and next transition.
+- [ ] Starting late protects only remaining bookend time and keeps the intended-bedtime date.
+- [ ] Overnight hours never enter quiet-minute totals, reward rarity, stars, sheep, or coins.
+- [ ] Completion notification fires at the morning-quiet end, not at bedtime.
+- [ ] Ending early is always available and uses no failure haptic, shame, or loss language.
+- [ ] An unavailable placement check continues as an honor timer.
+- [ ] QR/Watch placement evidence gates only the initial tuck-in; later distance never warns
+      or ends the session.
 
-- [ ] Background the app mid-run, lock the phone, return after 10 min: no crash, honest
-      state (foreground-only limitation is communicated, not silently broken).
-- [ ] Kill the app mid-run and relaunch: state restores or resets gracefully via
-      `ollie.lastRun`.
-- [ ] Watch out of range / Bluetooth off mid-run: `signalLost` path works, copy is kind.
-- [ ] Run on a non-UWB device: `unsupported` path, no NI crash.
-- [ ] Decode of old persisted JSON (`UserProgress` legacy test) passes.
-- [ ] Midnight rollover during an active run: daily record lands on a sane day.
-- [ ] Watch app launched with phone unreachable: rehydration path doesn't hang.
+## 7. Restoration and edge cases
 
-## 8. UI polish checks
+- [ ] Lock/background during wind-down, overnight, and morning quiet; returning shows the
+      correct phase without restarting the clock.
+- [ ] Terminate and relaunch in each phase; `ollie.lastRun` restores or completes gracefully.
+- [ ] Relaunch after the planned end reconciles completion and records the intended-bedtime day.
+- [ ] Test a run across local midnight.
+- [ ] Test spring-forward and fall-back schedules on physical hardware where practical.
+- [ ] Change timezone during a test plan and record the chosen policy/result.
+- [ ] Watch unreachable or Bluetooth disabled mid-run does not alter iPhone authority.
+- [ ] Legacy `FocusRun` and `UserProgress` JSON decode tests pass.
 
-- [ ] Dynamic Type: core flow (dashboard, setup, active run, completion) survives large
-      text sizes without truncation of critical info.
-- [ ] Dark-room comfort: evening screens have no white flashes or harsh contrast.
-- [ ] VoiceOver: run timer, proximity state, and primary buttons are labeled; the run can
-      be started and ended with VoiceOver alone.
-- [ ] Watch screens legible at a glance; complications/notifications render.
-- [ ] No debug UI, console spam, or developer text in Release.
+## 8. ActivityKit, notifications, and Watch
 
-## 9. Manual QA script (run on hardware before each upload)
+- [ ] Live Activity starts once, shows phase-aware copy, and counts to the next transition.
+- [ ] Lock Screen, Dynamic Island, and paired-Watch Smart Stack layouts remain legible.
+- [ ] Local morning notification is the reliable completion fallback without remote push.
+- [ ] Reset, early end, replacement, and completion dismiss the matching Live Activity.
+- [ ] Watch rehydrates after launch and presents the same Night Watch plan.
+- [ ] Watch placement stops after confirmation/unavailability and releases Nearby Interaction.
+- [ ] Ping Phone works with reachable and queued delivery paths.
 
-1. Fresh install (delete app + Watch app first). Complete onboarding.
-2. Start a 15-minute Focus Run; walk the phone to another room; confirm Watch shows
-   distance and state transitions (grace → waiting → running).
-3. Trigger a warning: bring the phone back mid-run; confirm warning state and recovery.
-4. Complete the run; confirm stars/reward/streak update and persist after app restart.
-5. Start another run and end it early; confirm the muddy-paw consolation, no shame copy.
-6. "Whistle" from the Watch; confirm the phone pings.
-7. Check Stats tab reflects both runs, bedtime-framed.
-8. Repeat run start with Watch unreachable (airplane mode on Watch): honest failure.
-9. TestFlight-install the build on a second device model if available.
+## 9. UI, accessibility, and bedtime comfort
 
-## 10. Do NOT add before TestFlight
+- [ ] Core screens survive large Dynamic Type without hiding primary actions or phase time.
+- [ ] VoiceOver can configure, begin, understand, and end Night Watch.
+- [ ] Timers announce the next Night Watch transition rather than an unexplained duration.
+- [ ] Decorative art is hidden; meaningful Ollie/phone-bed imagery has concise labels.
+- [ ] Touch targets meet 44-point minimums.
+- [ ] Evening surfaces are calm, with no urgent colors, flashing, or loud celebration.
+- [ ] Copy contains no medical promise, productivity jargon, reward tease, or missed-night guilt.
 
-- HealthKit sleep card (build 2), Screen Time reports/pickers, NFC/QR sessions (ADR-0004)
-- Farm/Friends/Shop reintroduction (ADR-0003)
-- New dependencies, analytics SDKs, or accounts
-- Design-system refactors, file splits, or architecture cleanups not on the blocker list
-- Any new feature that hasn't passed the belonging test in `docs/PRODUCT_PRINCIPLES.md`
+## 10. Local merge gate
 
-Ship the smallest honest build. Everything else has a gate and a place in
-`docs/FUTURE_AGENT_TASKS.md`.
+- [ ] `xcodegen generate`
+- [ ] Debug simulator build succeeds for the shared scheme.
+- [ ] Release simulator build succeeds for the shared scheme.
+- [ ] Full unit suite passes on an available iPhone simulator.
+- [ ] `git diff --check` is clean.
+- [ ] Release simulator visual pass confirms two tabs and no gated UI.
+- [ ] Human reviews L-risk coordinator/state changes before merge.
+
+## 11. Physical overnight QA script
+
+1. Fresh-install iPhone and Watch apps.
+2. Save a near-term bedtime/wake plan and allow notifications.
+3. Begin with honor timer; lock the phone through all three phases.
+4. Verify Live Activity transitions and morning notification.
+5. Relaunch and confirm the completion receipt, quiet-minute split, reward, and Stats date.
+6. Repeat with Watch placement; turn off Bluetooth after tuck-in and confirm the timer continues.
+7. Repeat with QR; test camera permission denial and manual fallback.
+8. End once during wind-down and once during morning quiet; confirm accurate partial minutes.
+9. Ping the phone from Watch.
+10. Install the TestFlight build on a second supported iPhone model and repeat the core path.
+
+## 12. Do not add to build 1
+
+- Embedded Screen Time reports, FamilyActivityPicker, or ManagedSettings shielding
+- HealthKit sleep card
+- NFC phone-bed interaction
+- Farm, Friends, Shop, or social/backend engagement features
+- New analytics/tracking SDKs
+- A second morning timer, generic duration picker, or all-day productivity mode
+
+Ship the smallest honest Night Watch. Deferred features stay in `FUTURE_AGENT_TASKS.md`.

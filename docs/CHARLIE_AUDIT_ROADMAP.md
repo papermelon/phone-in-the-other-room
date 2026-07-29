@@ -1,5 +1,9 @@
 # Charlie-Inspired Product Audit
 
+> Historical reference. This audit records the earlier generic-focus/farm exploration and
+> is superseded for active product direction by ADR-0003 and ADR-0006. Do not use its daily
+> missions, social comparison, or all-day focus roadmap as current acceptance criteria.
+
 ## Charlie Mechanics And Design Language
 
 Charlie uses a compact daily loop: steps feed visible star thresholds, stars feed missions and statistics, and donuts fund avatar rewards. The avatar is central, emotionally reactive, and socially comparable. Screens stay low-friction by using big numbers, short labels, simple progress bars, pixel assets, and persistent bottom navigation.

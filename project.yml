@@ -2,30 +2,53 @@
 # Never hand-edit project.pbxproj; edit this file and run `xcodegen generate`.
 #
 # TestFlight prep status (docs/PLAYBOOKS/testflight-readiness.md §2):
-# - Bundle ID root `com.papermelon.countingsheep` is PENDING HUMAN CONFIRMATION.
+# - Bundle ID root is `com.ngawangchime.countingsheep`.
 #   It is permanent after the first App Store Connect upload.
-# - DEVELOPMENT_TEAM is intentionally empty until the Apple Developer account is
-#   active. Simulator builds work without it; device/archive builds require it.
-# - Entitlement files are wired but intentionally empty for build 1 (no HealthKit,
-#   no Family Controls). Populate only after portal capabilities exist.
+# - DEVELOPMENT_TEAM is Chime Ngawang's Apple Developer Team ID.
+# - Entitlement files are wired but intentionally empty until features that require
+#   entitlements are implemented and portal capabilities are ready.
 name: PhoneInTheOtherRoom
 options:
-  bundleIdPrefix: com.papermelon.countingsheep
+  bundleIdPrefix: com.ngawangchime.countingsheep
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
 settings:
   base:
     SWIFT_VERSION: 5.9
-    # TODO(human): set the real Apple Developer Team ID before archiving.
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: 4KZQPZR47B
     CODE_SIGN_STYLE: Automatic
-    MARKETING_VERSION: 0.1.0
+    MARKETING_VERSION: 1.0
     CURRENT_PROJECT_VERSION: 1
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift.git
+    from: 2.51.0
 targets:
   PhoneInTheOtherRoom:
     type: application
     platform: iOS
+    configFiles:
+      Debug: Config/Supabase.xcconfig
+      Release: Config/Supabase.release.xcconfig
+    info:
+      path: PhoneInTheOtherRoomApp/Info.plist
+      properties:
+        CFBundleDisplayName: Counting Sheep
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        UIApplicationSupportsIndirectInputEvents: true
+        UIRequiresFullScreen: true
+        NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance for an optional Night Watch tuck-in check with your Apple Watch.
+        NSCameraUsageDescription: Counting Sheep uses your camera to scan the code where your phone will rest.
+        NFCReaderUsageDescription: Counting Sheep reads the phone-bed tag you choose so Ollie can confirm where your phone rests.
+        NSHealthShareUsageDescription: Counting Sheep reads sleep duration to show how bedtime phone-away habits relate to rest.
+        NSSupportsLiveActivities: true
+        SUPABASE_URL: "$(SUPABASE_URL)"
+        SUPABASE_PUBLISHABLE_KEY: "$(SUPABASE_PUBLISHABLE_KEY)"
+        SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED: "$(SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED)"
+        UILaunchScreen:
+          UIColorName: LaunchBackground
     sources:
       - path: Shared
       - path: PhoneInTheOtherRoomApp
@@ -33,26 +56,23 @@ targets:
         buildPhase: resources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.papermelon.countingsheep
+        PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep
         PRODUCT_NAME: Counting Sheep
-        GENERATE_INFOPLIST_FILE: YES
-        INFOPLIST_KEY_CFBundleDisplayName: Counting Sheep
-        INFOPLIST_KEY_UILaunchScreen_Generation: YES
-        INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents: YES
-        INFOPLIST_KEY_UIRequiresFullScreen: YES
-        INFOPLIST_KEY_NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance to check whether your iPhone is away from your Apple Watch during a Focus Run.
-        INFOPLIST_KEY_NSHealthShareUsageDescription: Counting Sheep reads sleep duration to show how bedtime phone-away habits relate to rest.
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomApp/PhoneInTheOtherRoom.entitlements
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SCREEN_TIME_REPORTS"
         TARGETED_DEVICE_FAMILY: 1
+      configs:
+        Debug:
+          CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomApp/PhoneInTheOtherRoom.debug.entitlements
     dependencies:
+      - package: Supabase
       - target: PhoneInTheOtherRoomWatchApp
         embed: true
-    postCompileScripts:
-      - script: |
-          echo "Screen Time reports require Apple-managed FamilyControls/DeviceActivity entitlements before device validation."
-        name: Screen Time Entitlement Note
-        basedOnDependencyAnalysis: false
+      - target: PhoneInTheOtherRoomLiveActivity
+        embed: true
+      - target: PhoneInTheOtherRoomScreenTimeReport
+        embed: true
   PhoneInTheOtherRoomWatchApp:
     type: application
     platform: watchOS
@@ -63,17 +83,30 @@ targets:
         buildPhase: resources
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.papermelon.countingsheep.watchkitapp
+        PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.watchkitapp
         PRODUCT_NAME: Counting Sheep Watch
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Counting Sheep
-        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.papermelon.countingsheep
-        INFOPLIST_KEY_NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance to check whether your iPhone is away during a Focus Run.
+        INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.ngawangchime.countingsheep
+        INFOPLIST_KEY_NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance for an optional Night Watch tuck-in check with your iPhone.
         ASSETCATALOG_COMPILER_APPICON_NAME: WatchAppIcon
         CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomWatchApp/PhoneInTheOtherRoomWatchApp.entitlements
+  PhoneInTheOtherRoomLiveActivity:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Shared
+      - path: PhoneInTheOtherRoomLiveActivity
+      - path: Assets.xcassets
+        buildPhase: resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.liveactivity
+        PRODUCT_NAME: Counting Sheep Live Activity
+        INFOPLIST_FILE: PhoneInTheOtherRoomLiveActivity/Info.plist
   PhoneInTheOtherRoomScreenTimeReport:
-    # Standalone extension target; NOT embedded in the main app for build 1.
-    # Embedding + Family Controls entitlements happen post-TestFlight (ADR-0004, task C5).
+    # Embedded DeviceActivity report extension. Family Controls distribution is assigned
+    # to this target and the containing app; both share only scoped Screen Time selections.
     type: app-extension
     platform: iOS
     sources:
@@ -81,7 +114,7 @@ targets:
       - path: PhoneInTheOtherRoomScreenTimeReport
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.papermelon.countingsheep.ScreenTimeReport
+        PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.ScreenTimeReport
         PRODUCT_NAME: Counting Sheep Screen Time Report
         INFOPLIST_FILE: PhoneInTheOtherRoomScreenTimeReport/Info.plist
         CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomScreenTimeReport/PhoneInTheOtherRoomScreenTimeReport.entitlements
@@ -94,7 +127,7 @@ targets:
       - path: Tests
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.papermelon.countingsheep.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.tests
         GENERATE_INFOPLIST_FILE: YES
 schemes:
   PhoneInTheOtherRoom:
