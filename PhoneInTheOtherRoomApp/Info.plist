@@ -26,6 +26,8 @@
 	<string>Counting Sheep uses your camera to scan the code where your phone will rest.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>Counting Sheep reads sleep duration to show how bedtime phone-away habits relate to rest.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Counting Sheep can save your optional sleep-duration summaries so you can notice patterns alongside your phone-away nights.</string>
 	<key>NSNearbyInteractionUsageDescription</key>
 	<string>Ollie uses nearby-device distance for an optional Night Watch tuck-in check with your Apple Watch.</string>
 	<key>NSSupportsLiveActivities</key>

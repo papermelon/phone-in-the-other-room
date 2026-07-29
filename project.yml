@@ -43,6 +43,7 @@ targets:
         NSCameraUsageDescription: Counting Sheep uses your camera to scan the code where your phone will rest.
         NFCReaderUsageDescription: Counting Sheep reads the phone-bed tag you choose so Ollie can confirm where your phone rests.
         NSHealthShareUsageDescription: Counting Sheep reads sleep duration to show how bedtime phone-away habits relate to rest.
+        NSHealthUpdateUsageDescription: Counting Sheep can save your optional sleep-duration summaries so you can notice patterns alongside your phone-away nights.
         NSSupportsLiveActivities: true
         SUPABASE_URL: "$(SUPABASE_URL)"
         SUPABASE_PUBLISHABLE_KEY: "$(SUPABASE_PUBLISHABLE_KEY)"
@@ -107,7 +108,7 @@ targets:
   PhoneInTheOtherRoomScreenTimeReport:
     # Embedded DeviceActivity report extension. Family Controls distribution is assigned
     # to this target and the containing app; both share only scoped Screen Time selections.
-    type: app-extension
+    type: extensionkit-extension
     platform: iOS
     sources:
       - path: Shared
