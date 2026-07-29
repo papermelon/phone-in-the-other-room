@@ -142,6 +142,7 @@
 		C466BB4649F04B9D2E0872D3 /* WatchMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B830DE525CC379D8E1929C /* WatchMessage.swift */; };
 		C57F065ACCBB7C41ABAFE18E /* MorningCheckInTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BDC3C8DA311A6319747CCBE /* MorningCheckInTests.swift */; };
 		C7B8F63A0362C4103ADE8895 /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
+		CC10F6B26D7D056B00819D34 /* PhoneInTheOtherRoomScreenTimeReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 9B2EA2B025D77BE05F1451EC /* PhoneInTheOtherRoomScreenTimeReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CC3FFCFE6DBE15C54F3736E4 /* WatchRunViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6D3FBBE656EE8A700243E7 /* WatchRunViewModel.swift */; };
 		CD50E34B387FCECE5271255C /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		CE54168AB66AAD4DE81A11DA /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
@@ -163,7 +164,6 @@
 		E6265D9472BA67D36301D2CA /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		E75F662A389C8DE087C3AD24 /* FocusRunLiveActivityPushContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */; };
 		E8FED9FC54C957DBEC1B9C25 /* NightWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0017C31179B4E0FF551A79D4 /* NightWatch.swift */; };
-		EB5A720F4C50D9713EB6C1DF /* PhoneInTheOtherRoomScreenTimeReport.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9B2EA2B025D77BE05F1451EC /* PhoneInTheOtherRoomScreenTimeReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EB971264164D13BB707F1DD5 /* NightWatchGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE29836613BFD365670A422D /* NightWatchGuidance.swift */; };
 		EBC2F3E9EEB6054AF4888967 /* SessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7A93AA462082036AB119D5 /* SessionGuard.swift */; };
 		ECA8AD2BA315D4C86960BA13 /* FocusRunShortcutStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE81DCC9A79D8B3507F6D539 /* FocusRunShortcutStore.swift */; };
@@ -204,6 +204,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		1C26AF0BA794529326CAFAAF /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				CC10F6B26D7D056B00819D34 /* PhoneInTheOtherRoomScreenTimeReport.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		358554E52A2D46B3848DF4E9 /* Embed Watch Content */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -222,7 +233,6 @@
 			dstSubfolderSpec = 13;
 			files = (
 				1FB454DE0F819A98583ED49B /* PhoneInTheOtherRoomLiveActivity.appex in Embed Foundation Extensions */,
-				EB5A720F4C50D9713EB6C1DF /* PhoneInTheOtherRoomScreenTimeReport.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -284,7 +294,7 @@
 		84574AF008061FDF9EEDBE7A /* AnalyticsExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsExportService.swift; sourceTree = "<group>"; };
 		86474E30A0FD22942AB201DD /* EarlyEndView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarlyEndView.swift; sourceTree = "<group>"; };
 		96D492CABD33A3BC68F45C56 /* WatchNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchNotificationService.swift; sourceTree = "<group>"; };
-		9B2EA2B025D77BE05F1451EC /* PhoneInTheOtherRoomScreenTimeReport.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneInTheOtherRoomScreenTimeReport.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		9B2EA2B025D77BE05F1451EC /* PhoneInTheOtherRoomScreenTimeReport.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = PhoneInTheOtherRoomScreenTimeReport.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9B9585146105070D55D8A4B1 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepIntervalMath.swift; sourceTree = "<group>"; };
 		ABBAA24A4F91E63BAAED02F3 /* SupabaseAuthenticationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAuthenticationService.swift; sourceTree = "<group>"; };
@@ -650,6 +660,7 @@
 				BF1F7FCB125C3A048875DC2E /* Resources */,
 				4D14E4B993DADE66AC0681A7 /* Frameworks */,
 				B9C2B074E737CD7DCF424270 /* Embed Foundation Extensions */,
+				1C26AF0BA794529326CAFAAF /* Embed ExtensionKit Extensions */,
 				358554E52A2D46B3848DF4E9 /* Embed Watch Content */,
 			);
 			buildRules = (
@@ -700,7 +711,7 @@
 			);
 			productName = PhoneInTheOtherRoomScreenTimeReport;
 			productReference = 9B2EA2B025D77BE05F1451EC /* PhoneInTheOtherRoomScreenTimeReport.appex */;
-			productType = "com.apple.product-type.app-extension";
+			productType = "com.apple.product-type.extensionkit-extension";
 		};
 		F85AE1C197B12B05BEBE98A2 /* PhoneInTheOtherRoomLiveActivity */ = {
 			isa = PBXNativeTarget;
@@ -1108,7 +1119,6 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ngawangchime.countingsheep.ScreenTimeReport;
 				PRODUCT_NAME = "Counting Sheep Screen Time Report";
@@ -1246,7 +1256,6 @@
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ngawangchime.countingsheep.ScreenTimeReport;
 				PRODUCT_NAME = "Counting Sheep Screen Time Report";
