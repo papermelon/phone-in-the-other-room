@@ -132,7 +132,7 @@ enum AppRadius {
 }
 
 /// A small motion vocabulary keeps interaction feedback consistent and makes
-/// the quieter Night Watch phases feel intentionally different from morning.
+/// the quieter Wind Down phases feel intentionally different from morning.
 enum AppMotion {
     static let press = Animation.easeOut(duration: 0.12)
     static let selection = Animation.spring(response: 0.28, dampingFraction: 0.84)

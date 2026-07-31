@@ -3,7 +3,7 @@
 Practical architecture reference for humans and agents. Canonical rules live in
 [`AGENTS.md`](../AGENTS.md); this file goes deeper on structure, data flow, and risk.
 
-Last verified against code: July 2026.
+Last verified against code: 1 August 2026.
 
 ## 1. Stack and build system
 
@@ -11,9 +11,10 @@ Last verified against code: July 2026.
 - **XcodeGen**: `project.yml` is the source of truth; `PhoneInTheOtherRoom.xcodeproj` is
   generated. Run `xcodegen generate` after adding/moving files or editing `project.yml`.
   Never hand-edit `project.pbxproj`.
-- One approved SPM dependency: official `supabase-swift`, limited to the optional
-  ADR-0005 ActivityKit delivery path. No CocoaPods dependencies. No CI (local build + test is the gate).
-- Five application/test targets plus shared domain code; use `rg --files` when exact counts matter.
+- One approved SPM dependency: official `supabase-swift`, limited to optional ActivityKit,
+  consented impact-data, and gated feedback paths. No CocoaPods dependencies. No CI
+  (local build + test is the gate).
+- Eight application/extension/test targets plus shared domain code.
 
 ## 2. Targets
 
@@ -23,6 +24,9 @@ Last verified against code: July 2026.
 | `PhoneInTheOtherRoomWatchApp` | watchOS app | `Shared/` + `PhoneInTheOtherRoomWatchApp/` | Optional companion: mirrors run state and can make one brief Nearby Interaction placement check. |
 | `PhoneInTheOtherRoomLiveActivity` | iOS Widget extension | `Shared/` + `PhoneInTheOtherRoomLiveActivity/` + assets | Embedded Live Activity for Lock Screen, Dynamic Island, and paired-Watch Smart Stack status. |
 | `PhoneInTheOtherRoomScreenTimeReport` | iOS app extension | `Shared/` + `PhoneInTheOtherRoomScreenTimeReport/` | Embedded DeviceActivity report extension. Main app and extension compile the `SCREEN_TIME_REPORTS` paths and share scoped selections through the App Group. |
+| `PhoneInTheOtherRoomDeviceActivityMonitor` | iOS app extension | `Shared/` + `PhoneInTheOtherRoomDeviceActivityMonitor/` | Applies and clears scheduled wind-down/morning shields while the app is suspended. |
+| `PhoneInTheOtherRoomShieldConfiguration` | iOS app extension | `PhoneInTheOtherRoomShieldConfiguration/` | Gentle Quiet Time shield appearance. |
+| `PhoneInTheOtherRoomShieldAction` | iOS app extension | `PhoneInTheOtherRoomShieldAction/` | Closes the shielded app; the main app remains the emergency exit. |
 | `PhoneInTheOtherRoomTests` | unit tests | `Shared/` + `Tests/` | Shared-domain coverage, including Night Watch schedule and legacy decoding. |
 
 Schemes: `PhoneInTheOtherRoom` (builds iOS + Watch, runs tests) and
@@ -32,20 +36,25 @@ Schemes: `PhoneInTheOtherRoom` (builds iOS + Watch, runs tests) and
 
 ```
 Shared/                        Pure domain logic (no UI, unit-testable)
-├─ Models/OllieModels.swift      FocusRun, FocusRunState, UserProgress, stars,
-│                                daily records, sheep/coin economy
-├─ RewardModels.swift            keepsake types, families, and bookend context
+├─ Models/OllieModels.swift      FocusRun, FocusRunState, UserProgress, flock count,
+│                                daily records, legacy economy fields
+├─ RewardModels.swift            legacy keepsake compatibility types and context
 ├─ ProximityClassifier.swift     legacy/shared distance buckets (placement only)
 ├─ FocusRunRules.swift           timing and completion eligibility
 ├─ SessionGuard.swift            honor timer / Watch placement / QR / NFC guard metadata
 ├─ NightWatch.swift              saved sleep-bookend plan, phases, activities, quiet credit
 ├─ OfflinePurpose.swift          private offline intention + notification privacy choice
-├─ RewardEngine.swift            rotating keepsakes, cumulative milestones, progress updates
+├─ RewardEngine.swift            protected-night progress + legacy reward updates
 ├─ FocusAnalytics.swift          day records, correlations, CSV/JSON export
+├─ ImpactMeasurement.swift       local outcome comparison + minimised sharing record
+├─ NightWatchHistory.swift       90-day aggregate records + idempotent ritual events
+├─ PhoneBedTag.swift             local NDEF registration digest
+├─ QuietTimeShieldSchedule.swift schedule/status/evidence App Group contract
 ├─ WatchMessage.swift            typed phone↔watch message envelope + codec
 ├─ ScreenTimeIntegration.swift   Screen Time scopes + report context IDs (phone-other.*)
 ├─ SleepIntervalMath.swift       merge sleep intervals → SleepSummary
 ├─ MorningCheckIn.swift          private, optional morning reflections (no score/reward)
+├─ AppFeedback.swift             validated feedback draft/attachment/receipt protocol
 ├─ DistanceProvider.swift        protocol: async stream of distance readings
 └─ Formatting.swift              OllieFormat timer/minute formatting
 
@@ -62,6 +71,10 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ PingService.swift                        haptic/sound "whistle" at phone
 │  ├─ FocusModeSuggestionService.swift         Focus Mode guidance strings
 │  ├─ HealthSleepService.swift                 optional, read-only HealthKit sleep reads
+│  ├─ PhoneBedNFCService.swift                 Core NFC provision/scan lifecycle
+│  ├─ QuietTimeShieldingService.swift          schedule/apply/clear ManagedSettings
+│  ├─ ImpactDataSyncService.swift              optional minimised Supabase upsert/delete
+│  ├─ FeedbackService.swift                    gated private upload + Edge Function client
 │  ├─ ScreenTimeAuthorizationService.swift     FamilyControls auth (flag-gated)
 │  ├─ ScreenTimeSelectionService.swift         FamilyActivitySelection per scope
 │  ├─ AnalyticsExportService.swift             JSON/CSV export to temp files
@@ -76,7 +89,9 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ ActiveRunView.swift                      in-run UI
 │  ├─ CompletionView.swift / EarlyEndView.swift
 │  ├─ FocusStatsView.swift                     dated Nights history + health/bookend reports
-│  ├─ RewardShelfView.swift
+│  ├─ MoreView.swift                           configuration, connections, privacy, help
+│  ├─ FeedbackFormView.swift                   validated form + email fallback
+│  ├─ RewardShelfView.swift                    Debug internal preview only
 │  ├─ Components/QRCodeScannerView.swift       QR phone-bed scanner + manual fallback
 │  ├─ Components/NightWatchReceiptCard.swift   elapsed/bookend/sleep/data-status receipt
 │  ├─ Components/MorningCheckInCard.swift       collapsed, optional morning reflection
@@ -100,6 +115,10 @@ PhoneInTheOtherRoomScreenTimeReport/
 └─ ScreenTimeReportExtension.swift   3 DeviceActivity report scenes:
                                      today / weekly / late-night (phone-other.*)
 
+PhoneInTheOtherRoomDeviceActivityMonitor/  background bookend shield callbacks
+PhoneInTheOtherRoomShieldConfiguration/    shield appearance
+PhoneInTheOtherRoomShieldAction/           shield-button response
+
 Config/                         local Supabase xcconfig values; secrets remain untracked
 supabase/                       versioned ADR-0005 migrations and Edge Functions
 ```
@@ -119,9 +138,9 @@ stateDiagram-v2
     windDown --> overnight: intended bedtime reached
     overnight --> morningQuiet: saved wake time reached
     morningQuiet --> completed: morning bookend elapsed
-    windDown --> endedEarly: user ends
-    overnight --> endedEarly: user ends
-    morningQuiet --> endedEarly: user ends
+    windDown --> endedEarly: configured end or emergency exit
+    overnight --> endedEarly: configured end or emergency exit
+    morningQuiet --> endedEarly: configured end or emergency exit
     completed --> setup: reset
     endedEarly --> setup: reset
 ```
@@ -142,23 +161,34 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    and lifecycle events; when the optional ActivityKit delivery path is deployed, the backend
    sends phase updates at the same two boundaries so the Live Activity can advance while the
    app is suspended.
-4. The default `.honorTimer` completes without either device being foregrounded. The
+4. The honor-timer fallback completes without either device being foregrounded. The
    optional `.watchPlacement` guard uses Nearby Interaction for at most 30 seconds to
    confirm the initial walk-away; it then stops. `.qrCode` records one phone-bed scan.
+   New plans default to `.nfcTag`; the honor timer remains the simplest fallback. `.nfcTag`
+   reads a provisioned NDEF record and compares its local token digest. A failed
+   tuck-in scan can explicitly pair a replacement writable tag without restarting the
+   current run; the new digest is committed only after a successful write, and supersedes
+   the previous tag for normal ending. When automatic Wind Down is enabled, the saved plan
+   schedules 60/30/10-minute lead-ins and future DeviceActivity shielding while the app is
+   closed; the next app activation reconstructs the local run.
 5. If optional placement is unavailable, the run automatically continues as a simple
    phone-away timer. No later distance reading can warn or end a run.
-6. On finish, `RewardEngine` credits only elapsed wind-down and morning-quiet minutes.
-   Overnight hours never inflate progress or the reward economy. One keepsake records the
-   two credited bookends and offline cues; its family rotates independently of minutes,
-   warnings, and streaks. Lifetime protected-night milestones cannot be lost. Progress is
-   attributed to the intended-bedtime date, then `PersistenceService` saves and the Watch
-   gets the completion or early-end message. See `docs/REWARDS.md`.
-7. `HomeView` routes to `CompletionView` / `EarlyEndView` based on `activeRun.state`.
+6. Optional shielding derives its two one-off DeviceActivity schedules from this same
+   `NightWatchPlan`. ManagedSettings applies during wind-down, clears overnight, returns
+   during morning quiet, and clears on terminal/reset/replacement. A bounded App Group
+   status history distinguishes observed shield time from a requested schedule.
+7. On finish, `RewardEngine` retains compatibility updates while crediting only elapsed
+   wind-down and morning-quiet minutes. The release presentation reads only
+   `totalCompletedRuns`: one completed protected night adds one equal visible sheep.
+   Overnight time, duration, warnings, method, Watch ownership, and streaks never change its
+   value. Progress is attributed to the intended-bedtime date, then `PersistenceService`
+   saves and the Watch gets the completion or early-end message. See `docs/REWARDS.md`.
+8. `HomeView` routes to `CompletionView` / `EarlyEndView` based on `activeRun.state`.
    Both outcomes show the same factual receipt: elapsed phone-away time, credited quiet
    bookends, optional Apple Health sleep context, and an explicit Screen Time availability
-   state. The separate Nights tab stays finite and reports only history, the current plan,
-   and consented selected-app use in independently configurable evening and morning report
-   windows. The chosen report windows do not alter Quiet Time. Missing data is never estimated.
+   state. The separate Nights tab stays finite and observational: flock total, history,
+   reflection, Health context, and consented selected-app results. More owns plan and report
+   configuration. Chosen report windows do not alter Quiet Time. Missing data is never estimated.
 
 ### Backgrounding during a run
 
@@ -169,14 +199,18 @@ the wall clock, schedules only the next boundary, and shows a warm return status
 require a fresh Watch reading, so a person can use or put down either device after starting
 the run.
 
-The Live Activity uses the system timer for the current phase so it remains glanceable on the
-Lock Screen and Dynamic Island while the app is backgrounded. ActivityKit does not execute a
+The Live Activity uses the system timer for the current phase when explicitly enabled, so it remains glanceable on the
+Lock Screen and Dynamic Island while the app is backgrounded. Its Lock Screen layout gives
+the status/timer and message separate vertical regions: the person's selected offline
+activity is primary, followed by one stable phase-appropriate cue. It does not shrink or
+truncate a combined paragraph to create artificial compactness. ActivityKit does not execute a
 WidgetKit timeline for phase changes, so the optional backend sends bedtime and morning-quiet
 updates in addition to the final end event. It is requested with `pushType: .token`, and
 `FocusRunLiveActivityService` observes every token rotation, associates it with the run and
 ActivityKit activity IDs, and emits only a short SHA-256 fingerprint to diagnostics. The
-remote sink is intentionally disabled unless ADR-0005's Supabase configuration and
-deployment checks explicitly enable it. Without it, iOS can mark the activity stale at
+feature is disabled by default while the widget target remains available for controlled A/B
+profiling; DEBUG can opt in with `-ollie.debug.enableLiveActivity YES`. The remote sink is also
+disabled in the local configurations. Without it, iOS can mark the activity stale at
 the planned end but cannot
 dismiss it until the app next finishes or restores the run; the local completion
 notification and app-reopen reconciliation remain the completion fallbacks. See
@@ -186,7 +220,9 @@ Energy-specific implementation notes and the physical-device profiling matrix li
 [`ENERGY_AUDIT.md`](ENERGY_AUDIT.md).
 
 **Authority:** the iPhone coordinator is authoritative for run state. The Watch displays,
-measures, and can request early end or "whistle" (`pingPhone`).
+measures, and can request early end or "whistle" (`pingPhone`). An early-end request from
+Watch is rejected while the active guard is NFC, because the registered tag must be read
+by the iPhone.
 
 ### WatchConnectivity strategy (both sides)
 
@@ -215,8 +251,8 @@ measures, and can request early end or "whistle" (`pingPhone`).
 
 | Key | Type | Purpose |
 |---|---|---|
-| `ollie.progress` | `UserProgress` | protected nights, quiet bookend minutes, daily records, sheep/coins, Ollie level |
-| `ollie.rewards` | `[RewardItem]` | earned keepsakes with optional bookend context |
+| `ollie.progress` | `UserProgress` | protected-night flock count, quiet bookend minutes, daily records, legacy economy fields |
+| `ollie.rewards` | `[RewardItem]` | legacy keepsakes retained for compatible decoding/internal preview |
 | `ollie.thresholds` | `ThresholdProfile` | proximity calibration |
 | `ollie.lastRun` | `FocusRun?` | last run snapshot |
 | `ollie.analytics.manualEntries` | `[ManualAnalyticsEntry]` | manual stat entries |
@@ -224,10 +260,14 @@ measures, and can request early end or "whistle" (`pingPhone`).
 | `ollie.offlinePurpose` | `OfflinePurposeProfile` | optional in-app intention and explicit custom-notification opt-in |
 | `ollie.screenTime.reportPreferences` | `ScreenTimeReportPreferences` | independent evening and morning Screen Time report windows |
 | `ollie.morningCheckIns` | `MorningCheckInHistory` | up to 45 days of private optional morning reflections |
+| `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
+| `ollie.phoneBedNFCTag.registration` | `PhoneBedTagRegistration` | local tag UUID + digest metadata; raw token is not retained |
+| `ollie.impactSharing.preferences` | `ImpactSharingPreferences` | explicit optional-sharing state and consent date |
+| `ollie.impactSharing.records` | `[ImpactUploadRecord]` | date-free retry cache for consented impact rows |
 
-- No CoreData / SwiftData. Core state stays in standard defaults. Screen Time selections
-  alone use `group.com.ngawangchime.countingsheep`; legacy standard-default keys migrate
-  forward without overwriting an existing shared selection.
+- No CoreData / SwiftData. Core state stays in standard defaults. The App Group is limited
+  to Screen Time selections plus shield schedule/status contracts needed by extensions;
+  legacy standard-default selection keys migrate forward without overwriting shared data.
 - Codable models are the schema. Changing them requires backwards-compatible decoding;
   a legacy-decode test exists in `Tests/` and must keep passing.
 - Watch and phone do not share persistence; the Watch is rehydrated over WatchConnectivity.
@@ -239,34 +279,53 @@ client restores or refreshes an anonymous Supabase session and creates an anonym
 only when no stored session exists. Live Activity registration/cancellation is injected
 through `FocusRunLiveActivityRemoteSink` and remains disabled by default through
 `SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED`. Configuration or network failure never changes the
-local coordinator's authority, local notification, rewards, or reopen reconciliation.
+  local coordinator's authority, local notification, flock, or reopen reconciliation.
 
-The versioned `supabase/` backend contains the ActivityKit delivery schema and Edge
-Functions. Client-visible tables use RLS with `auth.uid()`; raw tokens, worker queues, and
-delivery administration have no direct client grants. ADR-0005 and
-`ACTIVITYKIT_PUSH_BACKEND.md` define the lifecycle and deployment gates.
+The versioned `supabase/` backend contains the ActivityKit delivery schema, the optional
+`impact_nights` table, and gated feedback delivery. Impact rows use relative nights and exclude exact dates/times, source
+names, app tokens, NFC identity, raw Health samples, and free text. The user can stop future
+sharing or call a scoped deletion RPC without deleting local history. The backend and Edge
+Functions remain separately deployed. Client-visible tables use RLS with `auth.uid()`; raw tokens, worker queues, and
+delivery administration have no direct client grants.
+
+Feedback uses anonymous auth, direct uploads to the private `feedback-attachments` bucket,
+and an authenticated idempotent `submit-feedback` function. `app_feedback` has no client
+read/write grants. A service-only database RPC serializes each user's rolling five-per-day
+limit. Resend notification failures remain pending; a secret-protected scheduled function
+retries every ten minutes up to five attempts and purges rows/private objects after 180 days.
+`SUPABASE_FEEDBACK_ENABLED` remains off until the independent production gate passes; the
+iOS form then uses Mail instead. ADR-0005/0007 and `ACTIVITYKIT_PUSH_BACKEND.md` define the
+cloud boundaries.
 
 ## 7. Known architectural risks
 
-1. **Placement evidence is intentionally light.** The default timer is an honest ritual,
-   not tamper-proof verification. Watch and QR provide an optional start signal only.
+1. **Placement evidence is intentionally light.** The honor timer is an honest fallback,
+   not tamper-proof verification. Watch and QR provide optional start signals. NFC also
+   authenticates the normal end action with the same registered tag; a multi-step emergency
+   bypass remains available and is recorded locally.
 2. **Night Watch intentionally crosses midnight.** Date boundaries, daylight-saving
    changes, timezone changes, termination, and background restoration need physical-device
    QA in addition to the pure scheduling tests. Only quiet bookends count as progress.
-3. **Screen Time needs physical-device QA.** The report extension is embedded and signed
+3. **Screen Time needs physical-device QA.** The report/monitor/configuration/action
+   extensions are embedded locally, but the three new shield bundle IDs still need Family
+   Controls distribution assignment and all bookend transitions need physical proof.
    in the project, but authorization, picker persistence, report rendering, empty states,
    and distribution profiles must be exercised on a physical iPhone.
-4. **Mock layer remains in Debug navigation.** Farm/Friends/Shop still render
-   `MVPMockData`; keep that entire layer gated from Release until ADR-0003's milestones.
+4. **Mock layer remains compiled in Debug.** Farm/Friends/Shop still render `MVPMockData`;
+   they appear only inside More with `-ollie.debug.enableMockScreens YES` and stay gated
+   from Release until ADR-0003's milestones.
 5. **Oversized files.** `AssetReadyScreens.swift` and `PixelComponents.swift` resist safe
    editing by agents with limited context.
 6. **Singleton coupling.** Services are reached via `.shared` from the coordinator, which
    makes unit-testing the coordinator itself hard (currently untested; only `Shared/` is).
-7. **UserDefaults as the only store.** Fine at this scale; becomes a liability if run
-   history grows or the extension needs shared reads (App Group migration is the fix).
+7. **UserDefaults as the detailed-history store.** The 90-day bound is appropriate now;
+   schema growth or richer user inspection may justify a local database later.
 8. **ActivityKit remote delivery is disabled by default.** Token observation, lifecycle
    contracts, and the approved Supabase implementation exist, but deployment, secrets, and
    APNs delivery still require validation. Local completion behavior remains authoritative.
+9. **Feedback delivery is disabled by default.** Resend secrets/domain, scheduled retry,
+   hosted migration, private-object behavior, mailbox retention, and a physical-device
+   upload must all pass before enabling it. Email fallback is the release-safe path.
 
 ## 8. Recommended architecture direction
 
@@ -274,36 +333,34 @@ delivery administration have no direct client grants. ADR-0005 and
   Redux, etc.) — the codebase is small and the pattern works.
 - Keep wind-down, overnight, and morning quiet as phases of the same persisted run. New
   morning features must extend `NightWatchPlan`, not introduce a parallel session model.
-- The session-guard seam now lives in `SessionGuardKind` (`.honorTimer`,
+- The session-guard seam lives in `SessionGuardKind` (`.honorTimer`,
   `.watchPlacement`, `.qrCode`, `.nfcTag`). Keep completion phone-authoritative; future
-  NFC and Screen Time shielding must remain optional and preserve an emergency exit.
-- When Family Controls ships, apply the same consented selection across the two quiet
-  bookends. Do not shield the entire overnight interval merely because Night Watch is active.
-- Keep the App Group limited to scoped Screen Time selections; do not migrate unrelated
-  local progress or rewards into it.
+  NFC and Screen Time shielding are optional and preserve an emergency exit.
+- Keep the App Group limited to Screen Time/Shield extension contracts; do not migrate
+  unrelated progress, rewards, HealthKit history, or reflections into it.
 - Converge run-screen UI onto the pixel Theme; retire `GameComponents` gradually.
 - Inject services into `FocusSessionCoordinator` (init parameters defaulting to
   `.shared`) to make it testable — mechanical, low-risk refactor.
-- Keep the approved ADR-0005 Supabase increment limited to ActivityKit scheduling and
-  additive to local persistence until a later product decision expands its scope.
+- Keep ADR-0005 cloud work additive: ActivityKit delivery plus explicitly consented,
+  minimised impact rows. Detailed history remains local.
 
-## 9. Clean up before TestFlight (build 1)
+## 9. Clean up before App Store 1.0
 
-1. Gate Farm/Friends/Shop tabs + Screen Time UI out of release builds; quarantine `MVPMockData`.
-2. Fix hardcoded dashboard values (Watch "Connected", "1 / 3" sheep progress).
-3. Signing pass in `project.yml`: real bundle IDs, team, versions, entitlement wiring.
+1. Keep Farm/Friends/Shop, the legacy shelf, and `MVPMockData` behind the explicit Debug flag.
+2. Register/approve/sign the three new shield extension IDs.
+3. Increment the build number and produce a distribution archive.
 4. `HealthSleepService` uses requested/no-data/error states because HealthKit does not
    disclose whether read access was denied. Do not regress to an “authorized” read state.
-5. Manually validate backgrounding, restore, local completion notification, QR fallback,
-   and the one-time Watch placement assist on physical hardware.
+5. Manually validate NFC tag lifecycle, background/terminated shielding, HealthKit stages,
+   optional impact deletion, run restore, and QR/Watch fallbacks on physical hardware.
 6. Accessibility pass on the core run flow (timer, proximity state, Watch views).
-7. Align stale docs (see AGENTS.md §16).
+7. Keep backend feedback disabled unless every ADR-0007/TestFlight gate is proven.
 
 ## 10. Explicitly postponed
 
 - Splitting the oversized files (do opportunistically, not as a pre-TestFlight project)
 - Removing `GameComponents` / design-system convergence
 - Screen Time shielding (separate from the embedded read-only report; ADR-0004 gates apply)
-- NFC and Family Controls blocking integration (QR currently only confirms phone-bed placement)
+- Physical-device proof for NFC-authenticated ending and terminated-app shielding
 - Coordinator dependency injection refactor
 - Any new persistence layer

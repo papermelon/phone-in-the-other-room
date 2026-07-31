@@ -23,8 +23,8 @@ struct PhoneInTheOtherRoomScreenTimeReport: DeviceActivityReportExtension {
         )
         PhoneOtherScreenTimeReportScene(
             context: .phoneOtherWindDown,
-            title: "Quiet time before bed",
-            emptyCaption: "No selected app use during quiet time"
+            title: "Wind Down before bed",
+            emptyCaption: "No selected app use during Wind Down"
         )
         PhoneOtherScreenTimeReportScene(
             context: .phoneOtherMorningQuiet,

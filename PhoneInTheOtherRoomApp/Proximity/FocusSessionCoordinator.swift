@@ -13,6 +13,7 @@ final class FocusSessionCoordinator: ObservableObject {
     @Published var pingPulseCount = 0
     @Published var ollieMessage = "Ollie is ready when your phone is."
     @Published var backgroundReturnMessage: String?
+    @Published var shieldingMessage: String?
 
     private let persistence: PersistenceService
     private let rewardEngine = RewardEngine()
@@ -76,45 +77,82 @@ final class FocusSessionCoordinator: ObservableObject {
         return run.nightWatchPlan?.nextTransition(after: Date())
     }
 
-    func start(configuration: FocusRunConfiguration, focusAccepted: Bool) {
+    func start(
+        configuration: FocusRunConfiguration,
+        focusAccepted: Bool,
+        startedAt: Date = Date(),
+        autoConfirmPlacement: Bool = false
+    ) {
         resetToSetup(clearPersistedRun: false, liveActivityCancellationReason: .replaced)
-        let startedAt = Date()
         let plannedDuration = configuration.nightWatchPlan.map {
             max(60, $0.protectedUntil.timeIntervalSince(startedAt))
         } ?? configuration.duration
+        let placementRequired = configuration.guardKind.needsPlacementConfirmation
+            && !autoConfirmPlacement
         var newRun = FocusRun(
             plannedDurationSeconds: plannedDuration,
             startedAt: startedAt,
-            state: configuration.guardKind.needsPlacementConfirmation ? .placementGrace : .running,
+            state: placementRequired ? .placementGrace : .running,
             guardKind: configuration.guardKind,
             nightWatchPlan: configuration.nightWatchPlan
         )
-        if !configuration.guardKind.needsPlacementConfirmation {
+        if !configuration.guardKind.needsPlacementConfirmation || autoConfirmPlacement {
             newRun.phoneAwayValidatedAt = startedAt
         }
+        if autoConfirmPlacement {
+            newRun.placementStatus = .confirmed
+            newRun.placementEvidence = PlacementEvidence(
+                guardKind: configuration.guardKind,
+                confirmedAt: startedAt,
+                note: "Automatic Wind Down schedule started"
+            )
+        }
         run = newRun
-        shielding.reconcile(for: newRun, at: startedAt)
         latestReward = nil
         proximityState = .initial
         ollieMessage = openingMessage(for: configuration.guardKind)
         addEvent(
-            newRun.isNightWatch ? "Quiet time started." : "Phone-away time started.",
+            newRun.isNightWatch ? "Wind Down started." : "Phone-away time started.",
             detail: focusAccepted ? "System Focus was turned on." : nil
         )
         persistActiveRun()
+        if let record = newRun.nightWatchRecord(updatedAt: startedAt) {
+            persistence.upsertNightWatchRecord(record, now: startedAt)
+            recordRitualEvent(
+                .sessionStarted,
+                for: newRun,
+                at: startedAt,
+                idempotencyKey: "\(newRun.id.uuidString):session-started",
+                payload: ["startMethod": newRun.guardKind.rawValue]
+            )
+            if !placementRequired {
+                reconcileShielding(for: newRun, at: Date())
+            }
+        }
         liveActivity.start(for: newRun)
-        lastLiveActivityPhase = newRun.nightWatchPhase(at: startedAt)
+        lastLiveActivityPhase = newRun.nightWatchPhase(at: Date())
         UIApplication.shared.isIdleTimerDisabled = configuration.guardKind == .watchPlacement
         scheduleNextBoundaryTimer()
         watch.send(WatchMessage(type: .startFocusRun, run: newRun, proximity: proximityState))
 
         switch configuration.guardKind {
         case .watchPlacement:
-            startWatchPlacement()
+            if !autoConfirmPlacement {
+                startWatchPlacement()
+            }
         case .qrCode:
-            addEvent("Phone bed scan needed.", detail: "Scan the code where your phone will rest.")
+            if !autoConfirmPlacement {
+                addEvent("Phone bed scan needed.", detail: "Scan the code where your phone will rest.")
+            }
         case .nfcTag:
-            addEvent("Phone bed tap needed.", detail: "Tap the tag where your phone will rest.")
+            addEvent(
+                autoConfirmPlacement
+                    ? "Automatic Wind Down started."
+                    : "Phone bed tap needed.",
+                detail: autoConfirmPlacement
+                    ? "The registered NFC tag is still required to end normally."
+                    : "Tap the tag where your phone will rest."
+            )
         case .honorTimer:
             break
         }
@@ -124,9 +162,16 @@ final class FocusSessionCoordinator: ObservableObject {
         guard var run, run.guardKind == .qrCode else { return false }
         guard expectedCode == nil || expectedCode == code else {
             ollieMessage = "That is not Ollie's phone bed code. Try the one by your phone's resting place."
+            recordRitualEvent(.placementValidationFailed, for: run, payload: ["method": "qrCode"])
             return false
         }
         confirmPlacement(&run, note: "QR code scanned at phone bed")
+        recordRitualEvent(
+            .placementConfirmed,
+            for: run,
+            idempotencyKey: "\(run.id.uuidString):placement-confirmed",
+            payload: ["method": "qrCode"]
+        )
         return true
     }
 
@@ -134,9 +179,16 @@ final class FocusSessionCoordinator: ObservableObject {
         guard var run, run.guardKind == .nfcTag else { return false }
         guard expectedFingerprint == nil || expectedFingerprint == fingerprint else {
             ollieMessage = "That is not Ollie's phone-bed tag. Try the tag by your phone's resting place."
+            recordRitualEvent(.placementValidationFailed, for: run, payload: ["method": "nfcTag"])
             return false
         }
         confirmPlacement(&run, note: "NFC tag tapped at phone bed")
+        recordRitualEvent(
+            .placementConfirmed,
+            for: run,
+            idempotencyKey: "\(run.id.uuidString):placement-confirmed",
+            payload: ["method": "nfcTag"]
+        )
         return true
     }
 
@@ -150,8 +202,15 @@ final class FocusSessionCoordinator: ObservableObject {
         run.state = .running
         self.run = run
         ollieMessage = "Ollie will keep the quiet while your phone rests away."
-        addEvent("Quiet time continued without a placement check.")
+        addEvent("Wind Down continued without a placement check.")
+        recordRitualEvent(
+            .fallbackSelected,
+            for: run,
+            idempotencyKey: "\(run.id.uuidString):fallback-selected",
+            payload: ["method": "honorTimer"]
+        )
         persistActiveRun()
+        reconcileShielding(for: run)
         UIApplication.shared.isIdleTimerDisabled = false
         watch.send(WatchMessage(type: .focusRunStateUpdate, run: run, proximity: proximityState))
         if Date() >= run.plannedEndAt {
@@ -217,6 +276,7 @@ final class FocusSessionCoordinator: ObservableObject {
         latestReward = nil
         proximityState = .initial
         backgroundReturnMessage = nil
+        shieldingMessage = nil
         lastLiveActivityPhase = nil
         ollieMessage = "Ollie is ready when your phone is."
         notifications.cancelRunCompletion()
@@ -242,7 +302,9 @@ final class FocusSessionCoordinator: ObservableObject {
             persistence.lastRun = storedRun
         }
         run = storedRun
-        shielding.reconcile(for: storedRun, at: Date())
+        if storedRun.placementStatus != .awaitingConfirmation {
+            reconcileShielding(for: storedRun)
+        }
         liveActivity.start(for: storedRun)
         lastLiveActivityPhase = storedRun.nightWatchPhase()
         if Date() >= storedRun.plannedEndAt,
@@ -310,7 +372,9 @@ final class FocusSessionCoordinator: ObservableObject {
             return
         }
         self.run = run
-        shielding.reconcile(for: run, at: now)
+        if run.placementStatus != .awaitingConfirmation {
+            reconcileShielding(for: run, at: now)
+        }
         let phase = run.nightWatchPhase(at: now)
         if phase != lastLiveActivityPhase {
             lastLiveActivityPhase = phase
@@ -319,6 +383,34 @@ final class FocusSessionCoordinator: ObservableObject {
         persistActiveRun()
         watch.send(WatchMessage(type: .focusRunStateUpdate, run: run, proximity: proximityState))
         scheduleNextBoundaryTimer()
+    }
+
+    /// Materializes an automatic Wind Down that completed while the app was closed.
+    /// DeviceActivity can enforce the shield without the app, so the next activation
+    /// needs to create the local run and receipt without replaying the full UI flow.
+    func reconcileExpiredAutomaticNightWatch(
+        plan: NightWatchPlan,
+        guardKind: SessionGuardKind,
+        startedAt: Date,
+        endedAt: Date
+    ) {
+        guard endedAt > startedAt else { return }
+        if let run, ![.setup, .completed, .endedEarly].contains(run.state) {
+            return
+        }
+        if run != nil {
+            resetToSetup(clearPersistedRun: false, liveActivityCancellationReason: .replaced)
+        }
+        start(
+            configuration: FocusRunConfiguration(
+                nightWatchPlan: plan,
+                guardKind: guardKind
+            ),
+            focusAccepted: false,
+            startedAt: startedAt,
+            autoConfirmPlacement: true
+        )
+        reconcileSession(at: endedAt)
     }
 
     private func updateElapsedTime(at date: Date) {
@@ -333,8 +425,12 @@ final class FocusSessionCoordinator: ObservableObject {
         UIApplication.shared.isIdleTimerDisabled = false
         notifications.cancelRunCompletion()
         liveActivity.finish(for: run)
-        shielding.clear()
         var finalRun = run
+        let protection = shielding.protectionSummary(
+            for: finalRun,
+            at: finalRun.endedAt ?? Date()
+        )
+        shielding.clear()
         let reward = rewardEngine.generateReward(for: finalRun, progress: progress)
         if let reward {
             finalRun.earnedRewardIDs.append(reward.id)
@@ -345,6 +441,21 @@ final class FocusSessionCoordinator: ObservableObject {
         persistence.progress = progress
         persistence.rewards = rewards
         persistence.lastRun = finalRun
+        if let record = finalRun.nightWatchRecord(
+            updatedAt: finalRun.endedAt ?? Date(),
+            shieldedWindDownMinutes: protection.windDownMinutes,
+            shieldedMorningQuietMinutes: protection.morningQuietMinutes,
+            shieldProtectionEvidence: protection.evidence
+        ) {
+            persistence.upsertNightWatchRecord(record, now: finalRun.endedAt ?? Date())
+            recordRitualEvent(
+                finalRun.completedSuccessfully ? .sessionCompleted : .sessionEndedEarly,
+                for: finalRun,
+                at: finalRun.endedAt ?? Date(),
+                idempotencyKey: "\(finalRun.id.uuidString):terminal",
+                payload: finalRun.endedEarlyReason.map { ["reason": $0.rawValue] } ?? [:]
+            )
+        }
         self.run = finalRun
         ollieMessage = finalRun.completedSuccessfully
             ? "The phone slept away while both edges of the night stayed quiet."
@@ -372,6 +483,104 @@ final class FocusSessionCoordinator: ObservableObject {
         events = Array(events.prefix(8))
     }
 
+    private func recordRitualEvent(
+        _ kind: RitualEventKind,
+        for run: FocusRun,
+        at date: Date = Date(),
+        idempotencyKey: String? = nil,
+        payload: [String: String] = [:]
+    ) {
+        guard run.isNightWatch else { return }
+        persistence.appendRitualEvent(
+            RitualEvent(
+                runID: run.id,
+                occurredAt: date,
+                recordedAt: Date(),
+                kind: kind,
+                source: .observed,
+                idempotencyKey: idempotencyKey,
+                payload: payload
+            )
+        )
+    }
+
+    private func recordShieldingOutcome(
+        _ outcome: QuietTimeShieldingOutcome,
+        for run: FocusRun,
+        at date: Date = Date()
+    ) {
+        switch outcome {
+        case .disabled:
+            shieldingMessage = nil
+            break
+        case .noSelection:
+            shieldingMessage = "No apps were selected, so Wind Down is continuing without a shield."
+            recordRitualEvent(
+                .shieldActivationFailed,
+                for: run,
+                at: date,
+                idempotencyKey: "\(run.id.uuidString):shield:no-selection",
+                payload: ["reason": "noSelection"]
+            )
+        case .scheduled:
+            shieldingMessage = "The selected apps will rest during the next quiet window."
+            recordRitualEvent(
+                .shieldScheduleRequested,
+                for: run,
+                at: date,
+                idempotencyKey: "\(run.id.uuidString):shield:scheduled"
+            )
+        case .applied:
+            shieldingMessage = "The selected apps are resting until this quiet window ends."
+            recordRitualEvent(
+                .shieldScheduleRequested,
+                for: run,
+                at: date,
+                idempotencyKey: "\(run.id.uuidString):shield:scheduled"
+            )
+            recordRitualEvent(
+                .shieldApplied,
+                for: run,
+                at: date,
+                idempotencyKey: "\(run.id.uuidString):shield:applied:\(run.nightWatchPhase(at: date)?.rawValue ?? "unknown")"
+            )
+        case .cleared:
+            shieldingMessage = "The app shield is resting for now."
+            recordRitualEvent(
+                .shieldCleared,
+                for: run,
+                at: date,
+                idempotencyKey: "\(run.id.uuidString):shield:cleared:\(run.nightWatchPhase(at: date)?.rawValue ?? "terminal")"
+            )
+        case .failed(let reason):
+            shieldingMessage = "The app shield could not start. Wind Down is still running, and you can try again next time."
+            recordRitualEvent(
+                .shieldActivationFailed,
+                for: run,
+                at: date,
+                idempotencyKey: "\(run.id.uuidString):shield:failed:\(reason)",
+                payload: ["reason": reason]
+            )
+        }
+    }
+
+    func reconcileShielding(for run: FocusRun, at date: Date = Date()) {
+        recordShieldingOutcome(
+            shielding.reconcile(for: run, at: date),
+            for: run,
+            at: date
+        )
+        let protection = shielding.protectionSummary(for: run, at: date)
+        if let record = run.nightWatchRecord(
+            updatedAt: date,
+            shieldedWindDownMinutes: protection.windDownMinutes,
+            shieldedMorningQuietMinutes: protection.morningQuietMinutes,
+            shieldProtectionEvidence: protection.evidence
+        ) {
+            persistence.upsertNightWatchRecord(record, now: date)
+        }
+    }
+
     private func openingMessage(for guardKind: SessionGuardKind) -> String {
         switch guardKind {
         case .honorTimer: return "Carry the phone to its resting place. Ollie will keep the quiet."
@@ -391,6 +600,22 @@ final class FocusSessionCoordinator: ObservableObject {
         case .pingPhone:
             pingPhone()
         case .endFocusRunEarly:
+            guard run?.guardKind != .nfcTag else {
+                addEvent(
+                    "Phone-bed tag needed.",
+                    detail: "Use the iPhone and tap the registered tag to end Wind Down."
+                )
+                if let run {
+                    watch.send(
+                        WatchMessage(
+                            type: .focusRunStateUpdate,
+                            run: run,
+                            proximity: proximityState
+                        )
+                    )
+                }
+                return
+            }
             endEarly()
         default:
             break

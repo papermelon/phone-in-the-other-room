@@ -1,10 +1,36 @@
 import Foundation
 
+struct SleepStageBreakdown: Equatable {
+    var awakeSeconds: TimeInterval
+    var coreSeconds: TimeInterval
+    var deepSeconds: TimeInterval
+    var remSeconds: TimeInterval
+    var unspecifiedSeconds: TimeInterval
+
+    static let empty = SleepStageBreakdown(
+        awakeSeconds: 0,
+        coreSeconds: 0,
+        deepSeconds: 0,
+        remSeconds: 0,
+        unspecifiedSeconds: 0
+    )
+
+    var stagedSleepSeconds: TimeInterval {
+        coreSeconds + deepSeconds + remSeconds
+    }
+
+    var hasStages: Bool {
+        stagedSleepSeconds > 0
+    }
+}
+
 struct SleepSummary: Equatable {
     var durationSeconds: TimeInterval
     var startDate: Date?
     var endDate: Date?
     var nightEndingDate: Date? = nil
+    var stages: SleepStageBreakdown = .empty
+    var sourceName: String? = nil
 
     var durationLabel: String {
         let minutes = Int(durationSeconds / 60)
@@ -21,7 +47,9 @@ struct WakeTimeRange: Equatable {
 enum SleepIntervalMath {
     static func summary(
         for intervals: [DateInterval],
-        nightEndingDate: Date? = nil
+        nightEndingDate: Date? = nil,
+        stages: SleepStageBreakdown = .empty,
+        sourceName: String? = nil
     ) -> SleepSummary? {
         let merged = merge(intervals)
         guard !merged.isEmpty else { return nil }
@@ -30,8 +58,14 @@ enum SleepIntervalMath {
             durationSeconds: duration,
             startDate: merged.first?.start,
             endDate: merged.last?.end,
-            nightEndingDate: nightEndingDate
+            nightEndingDate: nightEndingDate,
+            stages: stages,
+            sourceName: sourceName
         )
+    }
+
+    static func duration(of intervals: [DateInterval]) -> TimeInterval {
+        merge(intervals).reduce(0) { $0 + $1.duration }
     }
 
     static func merge(_ intervals: [DateInterval]) -> [DateInterval] {

@@ -35,7 +35,7 @@ enum OllieRitualState: String, CaseIterable, Identifiable {
     }
 }
 
-/// Gives Night Watch one visual character state without creating a second
+/// Gives Wind Down one visual character state without creating a second
 /// session state machine. The caller maps authoritative run state to a pose.
 struct OllieRitualView: View {
     var state: OllieRitualState

@@ -29,6 +29,9 @@ final class FocusRunViewModel: ObservableObject {
     @Published var manualAnalyticsEntries: [ManualAnalyticsEntry] = []
     @Published var includeAnalyticsPlaceholders = false
     @Published var analyticsExportPrivacyMode: AnalyticsExportPrivacyMode = .exactDates
+    @Published var impactSharingPreferences: ImpactSharingPreferences
+    @Published var impactDataSyncState: ImpactDataSyncState = .idle
+    @Published var impactSharingAvailable: Bool
 #if DEBUG
     @Published var useAnalyticsQADataset = false
 #endif
@@ -39,15 +42,15 @@ final class FocusRunViewModel: ObservableObject {
 #endif
 
     @Published var coordinator: FocusSessionCoordinator
-    @Published var selectedGuardKind: SessionGuardKind = .honorTimer
+    @Published var selectedGuardKind: SessionGuardKind = .nfcTag
     @Published var showQRCodeScanner = false
     @Published var qrCodeStatus = ""
     @Published var nfcStatus = ""
-#if DEBUG
+    @Published var isProvisioningNFCTag = false
+    @Published var phoneBedTagRegistration: PhoneBedTagRegistration?
     @Published var shieldingEnabled = UserDefaults.standard.bool(
         forKey: QuietTimeShieldingService.enabledKey
     )
-#endif
 
     private let focusService = FocusModeSuggestionService()
     private let notifications = PhoneNotificationService.shared
@@ -55,6 +58,8 @@ final class FocusRunViewModel: ObservableObject {
     private let screenTimeService = ScreenTimeAuthorizationService()
     private let healthSleepService = HealthSleepService()
     private let phoneBedNFCService = PhoneBedNFCService()
+    private let quietTimeShielding = QuietTimeShieldingService()
+    private let impactDataSyncService = ImpactDataSyncService()
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     private let screenTimeSelectionService = ScreenTimeSelectionService.shared
 #endif
@@ -69,10 +74,13 @@ final class FocusRunViewModel: ObservableObject {
             PersistenceService.shared.screenTimeReportPreferences = initialReportPreferences
         }
         self.coordinator = coordinator ?? FocusSessionCoordinator()
+        impactSharingPreferences = PersistenceService.shared.impactSharingPreferences
+        impactSharingAvailable = (try? SupabaseConfiguration.load()) != nil
         nightWatchPreferences = savedQuietTime
         screenTimeReportPreferences = initialReportPreferences
         offlinePurpose = persistence.offlinePurpose
         morningCheckIns = persistence.morningCheckIns
+        phoneBedTagRegistration = persistence.phoneBedNFCTagRegistration
         selectedGuardKind = nightWatchPreferences.guardKind
         self.coordinator.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
@@ -88,6 +96,7 @@ final class FocusRunViewModel: ObservableObject {
         bedtimeActivitySelection = screenTimeSelectionService.load(.bedtime)
 #endif
         applyShortcutPreparationIfNeeded()
+        reconcileAutomaticWindDownIfNeeded()
         if sleepAuthorization == .requested {
             refreshSleepSummary()
         }
@@ -95,6 +104,7 @@ final class FocusRunViewModel: ObservableObject {
 
     var activeRun: FocusRun? { coordinator.run }
     var hasConfiguredNightWatch: Bool { nightWatchPreferences.isConfigured }
+    var hasRegisteredNFCTag: Bool { registeredNFCDigest != nil }
     var canBeginNightWatchNow: Bool { nightWatchPreferences.isStartWindowOpen() }
     var isRunning: Bool {
         guard let state = activeRun?.state else { return false }
@@ -131,7 +141,7 @@ final class FocusRunViewModel: ObservableObject {
         durationSeconds = Int(duration) % 60
         selectedDuration = duration
         customDurationSelected = !Self.presetMinutes.contains(durationMinutes) || durationSeconds != 0
-        focusGuidance = "A legacy Shortcut prepared \(selectedDurationLabel) of phone-away time. Your saved quiet time remains the main bedtime ritual."
+        focusGuidance = "A legacy Shortcut prepared \(selectedDurationLabel) of phone-away time. Your saved Wind Down remains the main bedtime ritual."
     }
 
     func requestStartRun() {
@@ -142,6 +152,8 @@ final class FocusRunViewModel: ObservableObject {
     func requestStartNightWatch() {
         saveNightWatchPreferences()
         notifications.cancelNightWatchReminder()
+        persistence.automaticWindDownSchedule = nil
+        quietTimeShielding.cancelAutomaticSchedule()
         let startedAt = Date()
         let plan = nightWatchPreferences.makePlan(startedAt: startedAt)
         coordinator.start(
@@ -167,11 +179,7 @@ final class FocusRunViewModel: ObservableObject {
 
     func saveNightWatchPlanForTonight() {
         saveNightWatchPreferences()
-        notifications.cancelNightWatchReminder()
-        notifications.scheduleNightWatchReminder(
-            at: nightWatchPreferences.nextStart(),
-            purpose: offlinePurpose
-        )
+        scheduleAutomaticWindDownIfNeeded()
     }
 
     var nightWatchBedtimeDate: Date {
@@ -207,13 +215,24 @@ final class FocusRunViewModel: ObservableObject {
         persistence.offlinePurpose = offlinePurpose
     }
 
+    func selectGuardKind(_ kind: SessionGuardKind) {
+        selectedGuardKind = kind
+        nightWatchPreferences.guardKind = kind
+        guard nightWatchPreferences.isConfigured else { return }
+        persistence.nightWatchPreferences = nightWatchPreferences
+        scheduleAutomaticWindDownIfNeeded()
+    }
+
+    func setAutomaticStartEnabled(_ enabled: Bool) {
+        nightWatchPreferences.automaticStartEnabled = enabled
+        guard nightWatchPreferences.isConfigured else { return }
+        persistence.nightWatchPreferences = nightWatchPreferences
+        scheduleAutomaticWindDownIfNeeded()
+    }
+
     func saveQuietTimeDurations() {
         saveNightWatchPreferences()
-        notifications.cancelNightWatchReminder()
-        notifications.scheduleNightWatchReminder(
-            at: nightWatchPreferences.nextStart(),
-            purpose: offlinePurpose
-        )
+        scheduleAutomaticWindDownIfNeeded()
     }
 
     func updateOfflinePurpose(
@@ -266,38 +285,221 @@ final class FocusRunViewModel: ObservableObject {
 
     func scanNFCTag() {
         nfcStatus = ""
+        guard registeredNFCDigest != nil else {
+            nfcStatus = "Set up this phone-bed tag first, or continue without a placement check."
+            return
+        }
         phoneBedNFCService.scan { [weak self] result in
             guard let self else { return }
             switch result {
-            case .read(let fingerprint):
-                if self.persistence.phoneBedNFCTag == nil {
-                    self.persistence.phoneBedNFCTag = fingerprint
-                }
+            case .read(let read):
+                let expectedDigest = self.registeredNFCDigest
                 if self.coordinator.confirmNFCTag(
-                    fingerprint,
-                    expectedFingerprint: self.persistence.phoneBedNFCTag
+                    read.digest,
+                    expectedFingerprint: expectedDigest
                 ) {
+                    if var registration = self.phoneBedTagRegistration {
+                        registration.lastVerifiedAt = Date()
+                        self.phoneBedTagRegistration = registration
+                        self.persistence.phoneBedNFCTagRegistration = registration
+                    }
                     self.nfcStatus = "Ollie found the phone bed."
                 } else {
                     self.nfcStatus = "That is not Ollie's phone-bed tag. Try the tag by the phone's resting place."
                 }
+            case .cancelled:
+                self.nfcStatus = "The tag can wait. Try again, or continue without a placement check."
             case .unavailable(let message):
                 self.nfcStatus = message
             }
         }
     }
 
-#if DEBUG
+    func requestEndWindDown() {
+        guard activeRun?.guardKind == .nfcTag else {
+            coordinator.endEarly()
+            return
+        }
+        nfcStatus = ""
+        guard let expectedDigest = registeredNFCDigest else {
+            nfcStatus = "The saved tag is missing. Use the emergency exit if you need your apps now."
+            return
+        }
+        phoneBedNFCService.scan { [weak self] result in
+            guard let self else { return }
+            switch result {
+            case .read(let read):
+                let matchesRegisteredTag = self.phoneBedTagRegistration?
+                    .matches(scannedDigest: read.digest)
+                    ?? (read.digest == expectedDigest)
+                guard matchesRegisteredTag else {
+                    self.nfcStatus = "That is not Ollie's phone-bed tag. Wind Down is still running."
+                    return
+                }
+                if var registration = self.phoneBedTagRegistration {
+                    registration.lastVerifiedAt = Date()
+                    self.phoneBedTagRegistration = registration
+                    self.persistence.phoneBedNFCTagRegistration = registration
+                }
+                self.nfcStatus = "Phone-bed tag confirmed."
+                self.coordinator.endEarly(reason: .nfcTagAuthenticated)
+            case .cancelled:
+                self.nfcStatus = "No tag was read. Wind Down is still running."
+            case .unavailable(let message):
+                self.nfcStatus = message
+            }
+        }
+    }
+
+    func emergencyEndWindDown() {
+        coordinator.endEarly(reason: .emergencyBypass)
+    }
+
+    /// Writes and registers a new tag. When called from an active NFC Wind Down,
+    /// the current run is kept and the new tag becomes its replacement guard.
+    func provisionNFCTag(forActiveRun: Bool = false) {
+        isProvisioningNFCTag = true
+        nfcStatus = ""
+        phoneBedNFCService.provision { [weak self] result in
+            guard let self else { return }
+            self.isProvisioningNFCTag = false
+            switch result {
+            case .registered(let registration):
+                self.phoneBedTagRegistration = registration
+                self.persistence.phoneBedNFCTagRegistration = registration
+                self.persistence.phoneBedNFCTag = nil
+                if !forActiveRun {
+                    self.scheduleAutomaticWindDownIfNeeded()
+                }
+                if forActiveRun, self.activeRun?.guardKind == .nfcTag {
+                    if self.activeRun?.placementStatus == .awaitingConfirmation {
+                        _ = self.coordinator.confirmNFCTag(
+                            registration.tokenDigest,
+                            expectedFingerprint: registration.tokenDigest
+                        )
+                        self.nfcStatus = "New tag paired. Wind Down is starting."
+                    } else {
+                        self.nfcStatus = "New tag paired. Tap it again to end Wind Down."
+                    }
+                } else {
+                    self.nfcStatus = "Ollie saved this as your phone bed."
+                }
+            case .cancelled:
+                self.nfcStatus = forActiveRun
+                    ? "No changes made. Wind Down is still running with your current tag."
+                    : "No changes made. Your current phone-bed tag is still ready."
+            case .unavailable(let message):
+                self.nfcStatus = message
+            }
+        }
+    }
+
+    func resetNFCTag() {
+        persistence.resetPhoneBedNFCTag()
+        phoneBedTagRegistration = nil
+        nfcStatus = "The old tag has been forgotten. Set up a new one whenever you are ready."
+        scheduleAutomaticWindDownIfNeeded()
+    }
+
+    private var registeredNFCDigest: String? {
+        phoneBedTagRegistration?.tokenDigest ?? persistence.phoneBedNFCTag
+    }
+
     func setShieldingEnabled(_ enabled: Bool) {
         shieldingEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: QuietTimeShieldingService.enabledKey)
         if enabled {
+            if screenTimeAuthorization != .approved {
+                connectScreenTime()
+            }
             coordinator.reconcileSession()
+            scheduleAutomaticWindDownIfNeeded()
         } else {
-            QuietTimeShieldingService().clear()
+            quietTimeShielding.clear()
         }
     }
-#endif
+
+    /// Rehydrates an automatic run after the app returns from the background or is
+    /// relaunched. DeviceActivity handles the shield while the app is closed.
+    func reconcileAutomaticWindDownIfNeeded() {
+        guard !isRunning,
+              nightWatchPreferences.isConfigured,
+              nightWatchPreferences.automaticStartEnabled,
+              let schedule = persistence.automaticWindDownSchedule else {
+            return
+        }
+
+        let now = Date()
+        guard now >= schedule.startedAt else {
+            if shieldingEnabled {
+                quietTimeShielding.scheduleAutomatic(for: schedule, at: now)
+            }
+            return
+        }
+
+        guard now < schedule.plan.protectedUntil else {
+            notifications.cancelNightWatchReminder()
+            persistence.automaticWindDownSchedule = nil
+            coordinator.reconcileExpiredAutomaticNightWatch(
+                plan: schedule.plan,
+                guardKind: nightWatchPreferences.guardKind,
+                startedAt: schedule.startedAt,
+                endedAt: schedule.plan.protectedUntil
+            )
+            scheduleNextAutomaticWindDown()
+            return
+        }
+
+        notifications.cancelNightWatchReminder()
+        coordinator.start(
+            configuration: FocusRunConfiguration(
+                nightWatchPlan: schedule.plan,
+                guardKind: nightWatchPreferences.guardKind
+            ),
+            focusAccepted: false,
+            startedAt: schedule.startedAt,
+            autoConfirmPlacement: true
+        )
+        if let activeRun {
+            notifications.scheduleNightWatchTransitions(for: activeRun, purpose: offlinePurpose)
+        }
+    }
+
+    private func scheduleAutomaticWindDownIfNeeded() {
+        guard !isRunning else { return }
+        guard nightWatchPreferences.isConfigured,
+              nightWatchPreferences.automaticStartEnabled else {
+            persistence.automaticWindDownSchedule = nil
+            notifications.cancelNightWatchReminder()
+            quietTimeShielding.cancelAutomaticSchedule()
+            return
+        }
+        guard selectedGuardKind != .nfcTag || hasRegisteredNFCTag else {
+            persistence.automaticWindDownSchedule = nil
+            notifications.cancelNightWatchReminder()
+            notifications.scheduleNightWatchReminder(
+                at: nightWatchPreferences.nextStart(),
+                purpose: offlinePurpose
+            )
+            return
+        }
+        scheduleNextAutomaticWindDown()
+    }
+
+    private func scheduleNextAutomaticWindDown() {
+        let startDate = nightWatchPreferences.nextStart()
+        let plan = nightWatchPreferences.makePlan(startedAt: startDate)
+        let schedule = AutomaticWindDownSchedule(startedAt: startDate, plan: plan)
+        persistence.automaticWindDownSchedule = schedule
+        notifications.cancelNightWatchReminder()
+        notifications.scheduleAutomaticWindDownReminders(
+            at: startDate,
+            purpose: offlinePurpose
+        )
+        if shieldingEnabled {
+            quietTimeShielding.scheduleAutomatic(for: schedule)
+        }
+    }
 
     func resetSetup() {
         coordinator.resetToSetup()
@@ -415,17 +617,58 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     private func loadRecentSleepSummaries() async {
-        recentNightSleeps = await healthSleepService.recentNightSleeps(days: 7)
+        recentNightSleeps = await healthSleepService.recentNightSleeps(days: 30)
         let calendar = Calendar.current
         lastNightSleep = recentNightSleeps.first { summary in
             guard let nightEndingDate = summary.nightEndingDate else { return false }
             return calendar.isDate(nightEndingDate, inSameDayAs: Date())
+        }
+        linkHealthOutcomesToRitualHistory()
+        if impactSharingPreferences.isEnabled {
+            await syncImpactData()
         }
     }
 
     private func saveMorningCheckIn(_ entry: MorningCheckIn) {
         morningCheckIns.upsert(entry)
         persistence.morningCheckIns = morningCheckIns
+        if let record = persistence.nightWatchHistory.records.first(where: {
+            Calendar.current.isDate($0.plan.wakeTime, inSameDayAs: entry.day)
+        }) {
+            persistence.appendRitualEvent(
+                RitualEvent(
+                    runID: record.id,
+                    kind: .morningReflectionSaved,
+                    source: .selfReported,
+                    idempotencyKey: "\(record.id.uuidString):morning-reflection",
+                    payload: ["answerSummary": entry.summary]
+                )
+            )
+        }
+    }
+
+    private func linkHealthOutcomesToRitualHistory() {
+        let calendar = Calendar.current
+        for record in persistence.nightWatchHistory.records {
+            guard let sleep = recentNightSleeps.first(where: { summary in
+                guard let date = summary.nightEndingDate ?? summary.endDate else {
+                    return false
+                }
+                return calendar.isDate(date, inSameDayAs: record.plan.wakeTime)
+            }) else { continue }
+            persistence.appendRitualEvent(
+                RitualEvent(
+                    runID: record.id,
+                    kind: .healthOutcomeLinked,
+                    source: .system,
+                    idempotencyKey: "\(record.id.uuidString):health-outcome",
+                    payload: [
+                        "hasStages": sleep.stages.hasStages ? "true" : "false",
+                        "sourceAvailable": sleep.sourceName == nil ? "false" : "true"
+                    ]
+                )
+            )
+        }
     }
 
     var analyticsRecords: [AnalyticsDayRecord] {
@@ -444,6 +687,76 @@ final class FocusRunViewModel: ObservableObject {
 
     var analyticsExportPackage: AnalyticsExportPackage {
         FocusAnalyticsEngine.exportPackage(records: analyticsRecords, privacyMode: analyticsExportPrivacyMode)
+    }
+
+    var impactSamples: [NightImpactSample] {
+        ImpactMeasurementEngine.samples(
+            history: persistence.nightWatchHistory,
+            sleeps: recentNightSleeps,
+            checkIns: morningCheckIns
+        )
+    }
+
+    var nightWatchRecords: [NightWatchRecord] {
+        persistence.nightWatchHistory.records
+    }
+
+    var sleepOutcomeComparison: SleepOutcomeComparison? {
+        ImpactMeasurementEngine.sleepComparison(for: impactSamples)
+    }
+
+    func setImpactSharingEnabled(_ isEnabled: Bool) {
+        if isEnabled {
+            guard impactSharingAvailable else {
+                impactDataSyncState = .unavailable
+                return
+            }
+            impactSharingPreferences.isEnabled = true
+            impactSharingPreferences.consentedAt =
+                impactSharingPreferences.consentedAt ?? Date()
+            persistence.impactSharingPreferences = impactSharingPreferences
+            Task { @MainActor in
+                await syncImpactData()
+            }
+        } else {
+            impactSharingPreferences.isEnabled = false
+            persistence.impactSharingPreferences = impactSharingPreferences
+            impactDataSyncState = .idle
+        }
+    }
+
+    func deleteSharedImpactData() {
+        Task { @MainActor in
+            impactDataSyncState = .syncing
+            let result = await impactDataSyncService.deleteSharedData()
+            impactDataSyncState = result
+            guard result == .synced else { return }
+            impactSharingPreferences = ImpactSharingPreferences()
+            persistence.impactSharingPreferences = impactSharingPreferences
+            persistence.deleteImpactUploadRecords()
+        }
+    }
+
+    private func syncImpactData() async {
+        guard impactSharingPreferences.isEnabled,
+              let consentedAt = impactSharingPreferences.consentedAt else { return }
+        let existing = Dictionary(
+            uniqueKeysWithValues: persistence.impactUploadRecords.map {
+                ($0.relativeNight, $0.id)
+            }
+        )
+        let records = ImpactMeasurementEngine.uploadRecords(
+            for: impactSamples,
+            consentedAt: consentedAt,
+            existingIDs: existing,
+            appVersion: Bundle.main.object(
+                forInfoDictionaryKey: "CFBundleShortVersionString"
+            ) as? String ?? "unknown"
+        )
+        persistence.impactUploadRecords = records
+        guard !records.isEmpty else { return }
+        impactDataSyncState = .syncing
+        impactDataSyncState = await impactDataSyncService.sync(records)
     }
 
     func prepareAnalyticsJSONExport() {

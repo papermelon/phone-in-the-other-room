@@ -55,7 +55,7 @@ See `docs/DECISIONS/ADR-0006-sleep-bookends-positioning.md` for the current rati
 
 Stack: Swift 5.9, SwiftUI, iOS 17.0+, watchOS 10.0+, **XcodeGen** (`project.yml` generates `PhoneInTheOtherRoom.xcodeproj`). The official `supabase-swift` package is the one approved SPM dependency, limited to optional ActivityKit delivery (ADR-0005); there are no CocoaPods dependencies. Pattern: MVVM + a session coordinator.
 
-Five targets (defined in `project.yml`):
+Eight targets (defined in `project.yml`):
 
 | Target | Type | Notes |
 |---|---|---|
@@ -63,6 +63,9 @@ Five targets (defined in `project.yml`):
 | `PhoneInTheOtherRoomWatchApp` | watchOS app | Sources: `Shared/` + `PhoneInTheOtherRoomWatchApp/`. Optional companion and one-time Watch placement assist. |
 | `PhoneInTheOtherRoomLiveActivity` | iOS Widget extension | Lock Screen, Dynamic Island, and paired-Watch Smart Stack run status. Embedded in the iOS app. |
 | `PhoneInTheOtherRoomScreenTimeReport` | iOS app extension | Embedded DeviceActivity report extension. Main app + extension compile with `SCREEN_TIME_REPORTS`, share scoped selections through the approved App Group, and carry Family Controls entitlements. |
+| `PhoneInTheOtherRoomDeviceActivityMonitor` | iOS app extension | Starts and clears the two scheduled quiet-window shields while the app is suspended. |
+| `PhoneInTheOtherRoomShieldConfiguration` | iOS app extension | Supplies the gentle, bedtime-specific shield appearance. |
+| `PhoneInTheOtherRoomShieldAction` | iOS app extension | Closes the shielded app when the shield button is pressed; Counting Sheep remains available as the emergency exit. |
 | `PhoneInTheOtherRoomTests` | unit tests | Compiles `Shared/` + `Tests/`, including Night Watch schedule and legacy-decode coverage. |
 
 Data flow for a Night Watch (represented internally by `FocusRun` for persisted-data compatibility):
@@ -88,12 +91,17 @@ flowchart LR
 2. `NightWatchPreferences` creates an anchored `NightWatchPlan`; the iPhone persists and
    keeps its wall-clock transitions even while either app is backgrounded. Local reminders
    support the next requested wind-down and morning completion.
-3. The default `.honorTimer` needs no Watch. `.watchPlacement` makes one optional, time-boxed Nearby Interaction check at the start; `.qrCode` records a phone-bed scan.
+3. New plans default to `.nfcTag`, using a locally registered NDEF phone-bed tag; `.honorTimer` remains the simplest fallback. `.watchPlacement` makes one optional, time-boxed Nearby Interaction check at the start; `.qrCode` records a phone-bed scan. An opted-in automatic Wind Down can schedule shielding while the app is closed, with the app reconciling the run on next activation.
 4. The plan moves through `.windDown`, `.overnight`, and `.morningQuiet`. Optional placement
    can always become a simple timer; no later Watch distance can warn or end Night Watch.
-5. On finish, `Shared/RewardEngine.swift` credits only the two quiet bookends—not the
+5. If the user opted into shielding, the same consented Screen Time selection is shielded
+   during wind-down and morning quiet, never the overnight phase. The monitor extension
+   records observed apply/clear evidence in the App Group.
+6. On finish, `Shared/RewardEngine.swift` credits only the two quiet bookends—not the
    overnight hours—then grants one completion reward. `PersistenceService` saves JSON in
-   `UserDefaults` under `ollie.*`, including `ollie.nightWatch.preferences`.
+   `UserDefaults` under `ollie.*`, including a 90-day session-and-event history. Detailed
+   ritual, reflection, and HealthKit history remains local. Separately consented impact
+   records omit exact dates/times, source names, selected apps, and raw Health samples.
 
 The iPhone is the **authoritative** side of a run. The Watch displays state and reports a brief optional placement distance only.
 Persistence is UserDefaults + Codable JSON only — no CoreData or SwiftData. Core app
@@ -114,8 +122,12 @@ Shared/                        ← Pure domain logic compiled into all targets
   FocusRunRules.swift            (timing thresholds, completion rules)
   NightWatch.swift               (sleep-bookend preferences, phases, offline cues)
   SessionGuard.swift              (phone-away timer / Watch placement / QR / NFC metadata)
-  RewardEngine.swift             (rewards, streaks, sheep/coin economy)
+  RewardEngine.swift             (protected-night progress + legacy reward/economy compatibility)
   FocusAnalytics.swift           (day records, correlations, CSV/JSON export)
+  ImpactMeasurement.swift        (local sleep-outcome comparison + minimised upload contract)
+  NightWatchHistory.swift        (90-day session records + idempotent ritual events)
+  PhoneBedTag.swift              (local NFC tag registration digest)
+  QuietTimeShieldSchedule.swift  (shared schedule/status/evidence contract)
   WatchMessage.swift             (typed phone↔watch message protocol)
   ScreenTimeIntegration.swift    (Screen Time scopes + report context IDs)
   SleepIntervalMath.swift        (sleep interval merging)
@@ -125,7 +137,7 @@ PhoneInTheOtherRoomApp/        ← iOS app
   Design/                        (Theme.swift, PixelComponents.swift — the design system)
   Proximity/                     (FocusSessionCoordinator + optional Nearby Interaction provider)
   Services/                      (persistence, watch connectivity, notifications,
-                                  HealthKit sleep, Screen Time auth/selection, exports,
+                                  HealthKit sleep, Screen Time auth/selection, feedback, exports,
                                   optional Supabase ActivityKit delivery)
   ViewModels/                    (FocusRunViewModel and friends)
   Views/                         (screens; Components/ = shared UI; MVP/ = GATED mock screens)
@@ -133,6 +145,9 @@ PhoneInTheOtherRoomApp/        ← iOS app
 PhoneInTheOtherRoomWatchApp/   ← watchOS app (App/, Services/, ViewModels/, Views/)
 PhoneInTheOtherRoomLiveActivity/ ← WidgetKit / ActivityKit extension
 PhoneInTheOtherRoomScreenTimeReport/ ← embedded DeviceActivity report extension
+PhoneInTheOtherRoomDeviceActivityMonitor/ ← quiet-window scheduling callbacks
+PhoneInTheOtherRoomShieldConfiguration/ ← custom shield appearance
+PhoneInTheOtherRoomShieldAction/ ← shield-button response
 Config/                         ← local Supabase xcconfig inputs (secrets stay untracked)
 supabase/                       ← versioned ADR-0005 schema/functions for ActivityKit delivery
 Assets.xcassets/               ← pixel art groups (dog/, farm/, home/, sheep/, ...) + rewards
@@ -188,9 +203,9 @@ skills/                        ← portable agent skills (see skills/README.md)
 
 - Copy is gentle, warm, and Ollie-voiced. Never guilt, shame, urgency, or FOMO. See `skills/product-copy-review/SKILL.md`.
 - No medical claims ("improves sleep", "fixes insomnia"). Say "helps you wind down", "phone-away habit".
-- Habit formation is intentional: a completed Night Watch may reveal a varied collectible or a
-  rotating insight. Variety happens once at completion to make the phone-away ritual worth
-  returning to; it must not tease future rewards, require repeated checking, or use paid odds.
+- Habit formation is intentional: each completed protected night settles exactly one equal
+  sheep into the flock. It happens once at completion and must not tease future rewards,
+  require repeated checking, or use currency, rarity, or paid odds.
 - Rewards celebrate; they never punish. An early-ended run gets a consolation (muddy paw), not a loss.
 - Streak copy must never threaten ("don't break your streak!"). A missed night is a fresh start.
 - Every feature must pass the belonging test in `docs/PRODUCT_PRINCIPLES.md` §"Does this feature belong?".
@@ -244,8 +259,9 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 - **Trusting stale docs.** See "Known documentation drift" below.
 - **"Finishing" the mock screens.** `Views/MVP/AssetReadyScreens.swift` + `MockData/` look like unfinished features begging to be wired up. They are deliberately gated. Don't.
 - **Adding entitlement keys without portal setup.** HealthKit and Family Controls require capabilities in the Apple Developer portal and (for Family Controls distribution) Apple's approval. Adding plist/entitlement text alone breaks signing.
-- **Expanding Screen Time reports into blocking by accident.** Reporting/pickers are enabled;
-  shielding remains a separate ADR-0004 gate with a consensual selection and emergency exit.
+- **Expanding shielding beyond its consented boundary.** Reporting/pickers and optional
+  shielding are enabled; shielding must use the consented selection, cover only the two
+  quiet bookends, preserve the early exit, and fail open.
 - **Breaking the unsupported-device path.** Not all devices have UWB. `unsupported` state and fallback providers must keep working.
 - **Breaking persisted-data decoding.** `UserProgress` etc. are stored as JSON. Changing Codable models needs backwards-compatible decoding (there is a legacy-decode test — keep it passing).
 - **Adding dark-pattern gamification.** See §9 and `docs/PRODUCT_PRINCIPLES.md`. This is a hard product boundary, not a style preference.
@@ -255,10 +271,10 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 
 | Feature | Status | Gate |
 |---|---|---|
-| Farm / Friends / Shop tabs | Hidden from release builds, DEBUG-gated | ADR-0003 milestones |
+| Farm / Friends / Shop screens | Debug internal-preview launch flag only | ADR-0003/0007 milestones |
 | Screen Time reports & pickers | Foundation enabled; physical-device QA pending | Family Controls distribution assigned to app + report extension |
-| HealthKit sleep card | Deferred to TestFlight build 2 | Signing + entitlements settled |
-| NFC + app shielding for Night Watch | Approved direction, post-build-1 | ADR-0004 gates |
+| HealthKit sleep duration/stages | Included for 1.0, optional and read-only | Physical-device reads + privacy disclosure |
+| NFC + app shielding for Night Watch | Included for 1.0, optional | New extension App IDs, Family Controls distribution, and physical overnight QA |
 | Social features | Not planned | Own decision record required; ADR-0005 does not authorize social UI |
 | Supabase ActivityKit delivery | Approved, disabled by default | ADR-0005 deployment and privacy gates |
 
@@ -269,10 +285,13 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 2. Privacy strings consistent with Night Watch; App Store privacy labels cover the optional
    Supabase dependency and its enabled/disabled configuration.
 3. Re-run a signed archive with the configured bundle IDs, Team ID, and version numbers.
-4. First-build scope stays two tabs (Home + Stats), with mock UI gated and Screen Time
-   limited to its consented native reporting surface.
+4. App Store 1.0 stays three tabs (Home + Nights + More), with mock UI gated behind the
+   explicit Debug preview flag. NFC, read-only HealthKit sleep, Screen Time reports, and
+   optional bookend shielding serve that ritual.
 5. Manual QA per `docs/PLAYBOOKS/testflight-readiness.md`.
 6. Confirm the embedded Screen Time report extension signs and renders on a physical device.
+7. Confirm the monitor, shield configuration, and shield action App IDs have Family Controls
+   distribution profiles and survive an overnight terminated-app test.
 
 ## 16. Known documentation drift (do not propagate)
 

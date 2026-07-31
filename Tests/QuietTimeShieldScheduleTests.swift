@@ -1,0 +1,179 @@
+import XCTest
+
+final class QuietTimeShieldScheduleTests: XCTestCase {
+    func testScheduleUsesRemainingWindDownAndFullMorningBookend() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(20 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: plan.protectedUntil.timeIntervalSince(start),
+            startedAt: start,
+            state: .running,
+            guardKind: .honorTimer,
+            nightWatchPlan: plan
+        )
+
+        let snapshot = QuietTimeShieldScheduleBuilder.snapshot(
+            for: run,
+            revision: 2,
+            updatedAt: start
+        )
+
+        XCTAssertEqual(snapshot?.revision, 2)
+        XCTAssertEqual(snapshot?.windDownInterval?.duration, 20 * 60)
+        XCTAssertEqual(snapshot?.morningQuietInterval.duration, 30 * 60)
+        XCTAssertTrue(snapshot?.contains(start.addingTimeInterval(5 * 60), in: .windDown) == true)
+        XCTAssertFalse(snapshot?.contains(start.addingTimeInterval(4 * 60 * 60), in: .windDown) == true)
+    }
+
+    func testScheduleOmitsWindDownWhenRunBeginsAfterBedtime() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(-10 * 60),
+            wakeTime: start.addingTimeInterval(7 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(7.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: plan.protectedUntil.timeIntervalSince(start),
+            startedAt: start,
+            state: .running,
+            guardKind: .honorTimer,
+            nightWatchPlan: plan
+        )
+
+        let snapshot = QuietTimeShieldScheduleBuilder.snapshot(for: run, revision: 1)
+
+        XCTAssertNil(snapshot?.windDownInterval)
+        XCTAssertNotNil(snapshot?.morningQuietInterval)
+    }
+
+    func testAutomaticScheduleRepeatsAtTheSameLocalTimeEachDay() {
+        let calendar = Calendar.current
+        let start = calendar.date(bySettingHour: 22, minute: 30, second: 0, of: Date())!
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(30 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let schedule = AutomaticWindDownSchedule(startedAt: start, plan: plan)
+        let snapshot = QuietTimeShieldScheduleBuilder.snapshot(for: schedule, revision: 1)
+        let nextDay = calendar.date(byAdding: .day, value: 1, to: start)!
+
+        XCTAssertTrue(snapshot.repeatsDaily)
+        XCTAssertTrue(snapshot.contains(nextDay.addingTimeInterval(5 * 60), in: .windDown))
+        XCTAssertFalse(snapshot.contains(nextDay.addingTimeInterval(2 * 60 * 60), in: .windDown))
+    }
+
+    func testProtectionSummaryUsesObservedStatusWindows() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(30 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: plan.protectedUntil.timeIntervalSince(start),
+            startedAt: start,
+            state: .completed,
+            guardKind: .nfcTag,
+            nightWatchPlan: plan
+        )
+        let statuses = [
+            status(run: run, value: .applied, window: .windDown, at: start),
+            status(run: run, value: .cleared, window: .windDown, at: plan.intendedBedtime),
+            status(run: run, value: .applied, window: .morningQuiet, at: plan.wakeTime),
+            status(run: run, value: .cleared, window: .morningQuiet, at: plan.protectedUntil)
+        ]
+
+        let summary = QuietTimeShieldEvidenceMath.summary(
+            for: run,
+            statuses: statuses,
+            at: plan.protectedUntil
+        )
+
+        XCTAssertEqual(summary.windDownMinutes, 30)
+        XCTAssertEqual(summary.morningQuietMinutes, 30)
+        XCTAssertEqual(summary.evidence, .observed)
+    }
+
+    func testProtectionSummaryCanUseAutomaticScheduleEvidence() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(30 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: plan.protectedUntil.timeIntervalSince(start),
+            startedAt: start,
+            state: .completed,
+            guardKind: .nfcTag,
+            nightWatchPlan: plan
+        )
+        let scheduleID = UUID()
+        let statuses = [
+            QuietTimeShieldStatusSnapshot(
+                runID: scheduleID,
+                revision: 1,
+                status: .applied,
+                window: .windDown,
+                observedAt: start
+            ),
+            QuietTimeShieldStatusSnapshot(
+                runID: scheduleID,
+                revision: 1,
+                status: .cleared,
+                window: .windDown,
+                observedAt: plan.intendedBedtime
+            )
+        ]
+
+        let summary = QuietTimeShieldEvidenceMath.summary(
+            for: run,
+            statuses: statuses,
+            at: plan.protectedUntil,
+            additionalRunIDs: [scheduleID]
+        )
+
+        XCTAssertEqual(summary.windDownMinutes, 30)
+        XCTAssertEqual(summary.evidence, .partial)
+    }
+
+    private func status(
+        run: FocusRun,
+        value: QuietTimeShieldStatus,
+        window: QuietTimeShieldWindow,
+        at date: Date
+    ) -> QuietTimeShieldStatusSnapshot {
+        QuietTimeShieldStatusSnapshot(
+            runID: run.id,
+            revision: 1,
+            status: value,
+            window: window,
+            observedAt: date
+        )
+    }
+}

@@ -1,5 +1,7 @@
 import SwiftUI
 
+#if DEBUG
+
 struct RewardShelfView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
 
@@ -39,7 +41,7 @@ private struct RewardShelfContent: View {
                 Text(rewards.isEmpty ? "A QUIET SHELF" : "\(rewards.count) KEEPSAKES")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Every keepsake marks a finished Night Watch or a kind fresh start.")
+                Text("Every keepsake marks a finished Wind Down or a kind fresh start.")
                     .font(pixelFont(.body))
                 Text("Three keepsake families take turns. Milestones count all protected nights. A gap takes nothing away.")
                     .font(pixelFont(.caption))
@@ -186,3 +188,5 @@ private struct RewardShelfContent: View {
             .navigationTitle("Ollie's Keepsakes")
     }
 }
+
+#endif

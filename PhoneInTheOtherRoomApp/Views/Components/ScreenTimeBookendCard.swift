@@ -5,8 +5,14 @@ import DeviceActivity
 import FamilyControls
 
 struct ScreenTimeBookendCard: View {
+    enum Mode {
+        case reports
+        case settings
+    }
+
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Binding var showAppPicker: Bool
+    var mode: Mode = .reports
 
     var body: some View {
         PixelCard {
@@ -16,24 +22,34 @@ struct ScreenTimeBookendCard: View {
                     .foregroundStyle(AppColors.ink)
 
                 if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
-                    Text("Choose the apps or categories you want included in both reports.")
+                    Text(
+                        mode == .settings
+                            ? "Choose the apps or categories you want included in both reports."
+                            : "Choose the apps and report windows in More to see them here."
+                    )
                         .font(AppTypography.body)
-                    Button("Choose apps", action: { showAppPicker = true })
-                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    if mode == .settings {
+                        Button("Choose apps", action: { showAppPicker = true })
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    }
                 } else {
-                    reportSection(
-                        title: "Late evening",
-                        window: .evening,
-                        context: .phoneOtherLateNight
-                    )
-                    Divider()
-                    reportSection(
-                        title: "After waking",
-                        window: .morning,
-                        context: .phoneOtherMorningQuiet
-                    )
-                    Divider()
-                    selectedAppsSection
+                    if mode == .reports {
+                        reportSection(
+                            title: "Late evening",
+                            window: .evening,
+                            context: .phoneOtherLateNight
+                        )
+                        Divider()
+                        reportSection(
+                            title: "After waking",
+                            window: .morning,
+                            context: .phoneOtherMorningQuiet
+                        )
+                    } else {
+                        reportWindowSettings
+                        Divider()
+                        selectedAppsSection
+                    }
                 }
             }
         }
@@ -47,14 +63,12 @@ struct ScreenTimeBookendCard: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text(title)
                 .font(AppTypography.headline)
-            HStack(spacing: AppSpacing.sm) {
-                reportTimePicker("From", window: window, isStart: true)
-                reportTimePicker("To", window: window, isStart: false)
-            }
+            Text(reportWindowLabel(for: window))
+                .font(AppTypography.body)
             Text(reportDateLabel(for: window))
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.grass)
-            Text("Only activity from the apps and categories you selected is counted. This window is separate from Quiet Time.")
+            Text("Only activity from the apps and categories you selected is counted. This window is separate from Wind Down.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.muted)
             DeviceActivityReport(context, filter: screenTimeFilter(for: window))
@@ -63,6 +77,30 @@ struct ScreenTimeBookendCard: View {
                 .padding(AppSpacing.sm)
                 .background(AppColors.background.opacity(0.42), in: PixelPanelShape(cut: 6))
                 .clipped()
+        }
+    }
+
+    private var reportWindowSettings: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            reportWindowEditor(title: "Late evening", window: .evening)
+            Divider()
+            reportWindowEditor(title: "After waking", window: .morning)
+        }
+    }
+
+    private func reportWindowEditor(
+        title: String,
+        window: ScreenTimeReportPreferences.Window
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text(title).font(AppTypography.headline)
+            HStack(spacing: AppSpacing.sm) {
+                reportTimePicker("From", window: window, isStart: true)
+                reportTimePicker("To", window: window, isStart: false)
+            }
+            Text("This report window is separate from Wind Down.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.muted)
         }
     }
 
@@ -145,6 +183,16 @@ struct ScreenTimeBookendCard: View {
             .dateTime.weekday(.wide).month().day()
         )
         return "Showing \(startDate)–\(endDate)"
+    }
+
+    private func reportWindowLabel(
+        for window: ScreenTimeReportPreferences.Window
+    ) -> String {
+        let start = viewModel.screenTimeReportDate(for: window, isStart: true)
+            .formatted(date: .omitted, time: .shortened)
+        let end = viewModel.screenTimeReportDate(for: window, isStart: false)
+            .formatted(date: .omitted, time: .shortened)
+        return "\(start)–\(end)"
     }
 }
 

@@ -24,7 +24,25 @@ enum SessionGuardKind: String, Codable, CaseIterable, Identifiable {
         case .honorTimer: return "A simple timer for the walk to another room."
         case .watchPlacement: return "Ollie watches the phone head away, then rests."
         case .qrCode: return "Scan a code where your phone sleeps."
-        case .nfcTag: return "Tap a tag where your phone sleeps."
+        case .nfcTag: return "Tap the same tag to start and end Wind Down."
+        }
+    }
+
+    var compactTitle: String {
+        switch self {
+        case .honorTimer: return "Timer"
+        case .watchPlacement: return "Watch"
+        case .qrCode: return "QR code"
+        case .nfcTag: return "NFC tag"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .honorTimer: return "timer"
+        case .watchPlacement: return "applewatch"
+        case .qrCode: return "qrcode.viewfinder"
+        case .nfcTag: return "dot.radiowaves.left.and.right"
         }
     }
 

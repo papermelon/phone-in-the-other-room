@@ -18,7 +18,7 @@ struct RewardEngine {
                 type: .ollieMail,
                 rarity: .demo,
                 title: "Ollie Mail",
-                description: "A small note from Ollie's practice Night Watch.",
+                description: "A small note from Ollie's practice Wind Down.",
                 earnedAt: earnedAt,
                 runDurationMinutes: minutes,
                 isDemoReward: true,
@@ -134,8 +134,8 @@ struct RewardEngine {
     private func title(for type: RewardType) -> String {
         switch type {
         case .ollieMail: return "Ollie Mail"
-        case .letter: return "Night Watch Letter"
-        case .ribbon: return "Night Watch Ribbon"
+        case .letter: return "Wind Down Letter"
+        case .ribbon: return "Wind Down Ribbon"
         case .trophy: return "Barn-Shelf Trophy"
         case .tennisBall: return "Tiny Tennis Ball"
         case .stick: return "Perfect Stick"
@@ -148,7 +148,7 @@ struct RewardEngine {
 
     private func description(for type: RewardType) -> String {
         switch type {
-        case .ollieMail: return "A note Ollie carried back after Night Watch."
+        case .ollieMail: return "A note Ollie carried back after Wind Down."
         case .letter: return "A little letter guarded until the phone woke."
         case .ribbon: return "A ribbon for keeping both edges of the night quiet."
         case .trophy: return "A tiny marker for protected nights gathered over time."

@@ -21,6 +21,7 @@ struct SupabaseConfiguration: Equatable, Sendable {
     let url: URL
     let publishableKey: String
     let liveActivityPushEnabled: Bool
+    let feedbackEnabled: Bool
 
     static func load(bundle: Bundle = .main) throws -> SupabaseConfiguration {
         guard let rawURL = bundle.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
@@ -41,7 +42,15 @@ struct SupabaseConfiguration: Equatable, Sendable {
         }
         let enabledValue = bundle.object(forInfoDictionaryKey: "SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED")
         let enabled = (enabledValue as? Bool) ?? ((enabledValue as? String)?.uppercased() == "YES")
-        return SupabaseConfiguration(url: url, publishableKey: key, liveActivityPushEnabled: enabled)
+        let feedbackValue = bundle.object(forInfoDictionaryKey: "SUPABASE_FEEDBACK_ENABLED")
+        let feedbackEnabled = (feedbackValue as? Bool)
+            ?? ((feedbackValue as? String)?.uppercased() == "YES")
+        return SupabaseConfiguration(
+            url: url,
+            publishableKey: key,
+            liveActivityPushEnabled: enabled,
+            feedbackEnabled: feedbackEnabled
+        )
     }
 }
 

@@ -2,10 +2,11 @@
 <Scheme
    LastUpgradeVersion = "1430"
    wasCreatedForAppExtension = "YES"
-   version = "2.0">
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      runPostActionsOnFailure = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -16,7 +17,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "C6AF33C3A2AA9139EC14936F"
-               BuildableName = "Counting Sheep Screen Time Report.appex"
+               BuildableName = "PhoneInTheOtherRoomScreenTimeReport.appex"
                BlueprintName = "PhoneInTheOtherRoomScreenTimeReport"
                ReferencedContainer = "container:PhoneInTheOtherRoom.xcodeproj">
             </BuildableReference>
@@ -27,12 +28,13 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      onlyGenerateCoverageForSpecifiedTargets = "NO">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "C6AF33C3A2AA9139EC14936F"
-            BuildableName = "Counting Sheep Screen Time Report.appex"
+            BuildableName = "PhoneInTheOtherRoomScreenTimeReport.appex"
             BlueprintName = "PhoneInTheOtherRoomScreenTimeReport"
             ReferencedContainer = "container:PhoneInTheOtherRoom.xcodeproj">
          </BuildableReference>
@@ -45,7 +47,6 @@
       selectedDebuggerIdentifier = ""
       selectedLauncherIdentifier = "Xcode.IDEFoundation.Launcher.PosixSpawn"
       launchStyle = "0"
-      askForAppToLaunch = "Yes"
       useCustomWorkingDirectory = "NO"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
@@ -57,7 +58,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "C6AF33C3A2AA9139EC14936F"
-            BuildableName = "Counting Sheep Screen Time Report.appex"
+            BuildableName = "PhoneInTheOtherRoomScreenTimeReport.appex"
             BlueprintName = "PhoneInTheOtherRoomScreenTimeReport"
             ReferencedContainer = "container:PhoneInTheOtherRoom.xcodeproj">
          </BuildableReference>
@@ -74,7 +75,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "C6AF33C3A2AA9139EC14936F"
-            BuildableName = "Counting Sheep Screen Time Report.appex"
+            BuildableName = "PhoneInTheOtherRoomScreenTimeReport.appex"
             BlueprintName = "PhoneInTheOtherRoomScreenTimeReport"
             ReferencedContainer = "container:PhoneInTheOtherRoom.xcodeproj">
          </BuildableReference>

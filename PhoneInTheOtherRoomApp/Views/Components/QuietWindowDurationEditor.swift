@@ -29,7 +29,7 @@ struct QuietWindowDurationEditor: View {
                 Image(systemName: "clock")
                     .foregroundStyle(AppColors.grass)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("Your quiet time")
+                    Text("Your Wind Down")
                         .font(AppTypography.headline)
                     Text(summary)
                         .font(AppTypography.caption)

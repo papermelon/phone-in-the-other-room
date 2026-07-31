@@ -10,7 +10,7 @@ struct EarlyEndView: View {
                     HStack(alignment: .top, spacing: 14) {
                         OllieRitualView(state: .endedEarly)
                         VStack(alignment: .leading, spacing: 7) {
-                            Text("NIGHT WATCH ENDED")
+                            Text("WIND DOWN ENDED")
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.secondaryText)
                             Text("Welcome back. Ollie kept your spot warm.")
@@ -19,12 +19,6 @@ struct EarlyEndView: View {
                                 .font(pixelFont(.body))
                                 .foregroundStyle(AppColors.secondaryText)
                         }
-                    }
-                }
-                if let reward = viewModel.coordinator.latestReward {
-                    PixelCard {
-                        Text("Ollie found: \(reward.title)")
-                            .font(pixelFont(.body))
                     }
                 }
                 NightWatchReceiptCard(

@@ -30,6 +30,25 @@ final class NightWatchTests: XCTestCase {
         )
     }
 
+    func testNewDefaultsPreferNFCAndAutomaticWindDown() {
+        XCTAssertEqual(NightWatchPreferences.defaults.guardKind, .nfcTag)
+        XCTAssertTrue(NightWatchPreferences.defaults.automaticStartEnabled)
+    }
+
+    func testOlderPreferencesDecodeWithAutomaticStartOff() throws {
+        let data = try JSONEncoder().encode(makePreferences())
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        object.removeValue(forKey: "automaticStartEnabled")
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try JSONDecoder().decode(NightWatchPreferences.self, from: legacyData)
+
+        XCTAssertFalse(decoded.automaticStartEnabled)
+        XCTAssertEqual(decoded.guardKind, .honorTimer)
+    }
+
     func testAfterMidnightStartIsTreatedAsLateTuckIn() throws {
         let startedAt = try date(2026, 7, 19, 0, 30)
 
@@ -130,19 +149,19 @@ final class NightWatchTests: XCTestCase {
         XCTAssertNil(NightWatchGuidance.tip(for: .overnight, seed: runID))
     }
 
-    func testGuidanceNamesSleepAndPhoneFreePhasesClearly() throws {
+    func testLiveActivityGuidanceSeparatesTheChosenActivityFromTheTip() throws {
         let runID = try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000042"))
+        let guidance = NightWatchGuidance.liveActivityGuidance(
+            for: .morningQuiet,
+            activityTitle: "Open the curtains",
+            seed: runID
+        )
 
         XCTAssertEqual(NightWatchPhase.windDown.title, "Phone-free wind-down")
         XCTAssertEqual(NightWatchPhase.overnight.title, "Sleep time")
         XCTAssertEqual(NightWatchPhase.morningQuiet.title, "Phone-free morning")
-        XCTAssertTrue(
-            NightWatchGuidance.liveActivityDetail(
-                for: .morningQuiet,
-                activityTitle: "Open curtains",
-                seed: runID
-            ).contains("phone-free")
-        )
+        XCTAssertEqual(guidance.primary, "This morning: Open the curtains.")
+        XCTAssertFalse(try XCTUnwrap(guidance.secondary).isEmpty)
     }
 
     func testNotificationCopyExplainsEachNightWatchTransition() {

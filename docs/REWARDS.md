@@ -1,8 +1,8 @@
-# Keepsakes and the Night Watch Reward Loop
+# One Night, One Sheep
 
-Counting Sheep rewards the phone-away ritual, not time asleep and not time spent in the
-app. The morning reveal should make a completed Night Watch feel warm enough to repeat,
-then let the person leave.
+Counting Sheep marks the phone-away ritual, not time asleep and not time spent in the app.
+Ollie guards and guides. Each completed protected night settles exactly one equal sheep into
+the flock, then the person can leave.
 
 ## The loop
 
@@ -12,48 +12,32 @@ flowchart LR
     Away --> Evening[Phone-free wind-down]
     Evening --> Night[Ollie keeps Night Watch]
     Night --> Morning[Phone-free morning]
-    Morning --> Reveal[One keepsake and factual receipt]
-    Reveal --> Shelf[Finite keepsake shelf]
-    Shelf --> Plan
+    Morning --> Arrival[One sheep and factual receipt]
+    Arrival --> Nights[Cumulative flock in Nights]
+    Nights --> Plan
 ```
 
-Only the two quiet bookends are credited. The overnight interval, Health data, Screen Time
-data, placement method, warning count, and app opens never improve the reward.
+Only completion determines whether one sheep arrives. The factual receipt keeps wind-down
+and morning-quiet minutes separate. Duration, the overnight interval, Health data, Screen
+Time data, placement method, warning count, streak, Watch ownership, and app opens never
+change a sheep's value.
 
-## What a keepsake remembers
+## Canonical presentation
 
-New `RewardItem` values carry an optional `RewardContext` snapshot:
+The completion card says “A sheep settled in,” shows one common sheep illustration, displays
+the cumulative flock count from `UserProgress.totalCompletedRuns`, and includes the factual
+quiet-time receipt. Nights shows the same cumulative count without locked slots, rarity,
+collection percentage, or future-reward teasing.
 
-- credited minutes before bed;
-- credited minutes after waking;
-- the chosen evening and morning offline cues; and
-- the cumulative protected-night number.
+An early-ended Night Watch adds no sheep. It still receives warm copy and the factual receipt;
+no sheep or previously completed night is lost.
 
-This makes a keepsake a small receipt for the ritual that produced it. It does not claim
-that the user completed an offline activity, slept better, or reduced selected-app use.
-Legacy rewards decode without a context and remain on the shelf.
+## Persisted compatibility
 
-## Variety without a value ladder
-
-Ordinary completions rotate through three families:
-
-| Family | Examples | Meaning |
-|---|---|---|
-| Ollie's notes | mail, letter, postcard | A calm reflection from Night Watch |
-| Pasture finds | tennis ball, stick, field map | A playful object from the other room |
-| Night markers | ribbon, sheep badge | A marker for quiet gathered over time |
-
-The families and their items use a balanced rotation. There are no odds, refresh rolls,
-paid outcomes, limited windows, duplicate compensation, or “come back later” teasers.
-Minutes, warnings, and current streak do not create a higher-value tier.
-
-Cumulative milestones arrive at 1, 3, 7, 14, 30, 50, and 100 protected nights. They count
-all protected nights rather than consecutive nights, so a gap never removes progress.
-The persisted `RewardRarity` field remains for legacy compatibility and milestone artwork;
-the shipping shelf presents a keepsake's family and receipt instead of a rarity hierarchy.
-
-An early-ended Night Watch can still leave a muddy paw. It is a fresh-start keepsake, not
-a failed reward, and it does not increment the protected-night count.
+`RewardItem`, `RewardContext`, rarity, coin and sheep balances, total earned fields, and
+Ollie level remain encoded and decoded so existing users lose no data. The release UI does
+not read those legacy economy values. The old keepsake shelf is available only through the
+explicit Debug internal-preview flag until a later compatibility cleanup.
 
 ## Evidence boundary
 
@@ -82,24 +66,23 @@ Sources:
 
 - **Slow living:** the reveal repeats what the quiet made room for and the two offline cues;
   it adds no routine checklist.
-- **Purpose over accumulation:** the shelf explains the ritual behind each item. It exposes
-  no locked slots, collection percentage, or next-reward countdown.
+- **Purpose over accumulation:** one protected night is one equal sheep. There are no locked
+  slots, collection percentage, rarity classes, currencies, or next-reward countdowns.
 - **Mindful screen-time management:** the rewarded behavior is physical separation during
   the selected bookends. Optional Screen Time reports can supply context elsewhere but
-  never determine the keepsake.
-- **Kindness:** lifetime milestones cannot be lost; shorter attempts receive warmth rather
-  than punishment.
-- **Finite attention:** one reveal occurs at completion and the shelf has a definite end.
+  never determine the sheep.
+- **Kindness:** the flock cannot shrink; shorter attempts receive warmth rather than punishment.
+- **Finite attention:** one arrival appears at completion and Nights remains a finite record.
 
 ## Evaluation
 
-Judge this loop by protected behavior, not shelf engagement:
+Judge this loop by protected behavior, not collection engagement:
 
 - completed Night Watches in a tester's first 14 nights;
 - credited wind-down and morning-quiet minutes, kept separate;
-- whether users understand why they received a keepsake;
+- whether users understand that every protected night adds one equal sheep;
 - selected-app use around sleep when the person explicitly enables Screen Time reports; and
 - qualitative reports that rewards feel calm, meaningful, and non-compulsive.
 
-Do not optimize reward-screen opens, shelf dwell time, notification taps, rarity demand, or
-the number of muddy paws collected.
+Do not optimize completion-screen opens, flock-page dwell time, notification taps, rarity
+demand, or currency accumulation.

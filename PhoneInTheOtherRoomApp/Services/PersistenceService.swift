@@ -12,11 +12,16 @@ final class PersistenceService {
     private let manualAnalyticsKey = "ollie.analytics.manualEntries"
     private let phoneBedQRCodeKey = "ollie.phoneBedQRCode"
     private let phoneBedNFCTagKey = "ollie.phoneBedNFCTag"
+    private let phoneBedNFCTagRegistrationKey = "ollie.phoneBedNFCTag.registration"
     private let installationIDKey = "ollie.installationID"
     private let nightWatchPreferencesKey = "ollie.nightWatch.preferences"
+    private let automaticWindDownScheduleKey = "ollie.nightWatch.automaticSchedule"
     private let offlinePurposeKey = "ollie.offlinePurpose"
     private let screenTimeReportPreferencesKey = "ollie.screenTime.reportPreferences"
     private let morningCheckInsKey = "ollie.morningCheckIns"
+    private let nightWatchHistoryKey = "ollie.nightWatch.history"
+    private let impactSharingPreferencesKey = "ollie.impactSharing.preferences"
+    private let impactUploadRecordsKey = "ollie.impactSharing.records"
 #if DEBUG
     private let energyLogger = Logger(
         subsystem: "com.ngawangchime.countingsheep",
@@ -61,9 +66,24 @@ final class PersistenceService {
         set { defaults.set(newValue, forKey: phoneBedNFCTagKey) }
     }
 
+    var phoneBedNFCTagRegistration: PhoneBedTagRegistration? {
+        get { load(PhoneBedTagRegistration.self, key: phoneBedNFCTagRegistrationKey) }
+        set { save(newValue, key: phoneBedNFCTagRegistrationKey) }
+    }
+
+    func resetPhoneBedNFCTag() {
+        defaults.removeObject(forKey: phoneBedNFCTagKey)
+        defaults.removeObject(forKey: phoneBedNFCTagRegistrationKey)
+    }
+
     var nightWatchPreferences: NightWatchPreferences {
         get { load(NightWatchPreferences.self, key: nightWatchPreferencesKey) ?? .defaults }
         set { save(newValue, key: nightWatchPreferencesKey) }
+    }
+
+    var automaticWindDownSchedule: AutomaticWindDownSchedule? {
+        get { load(AutomaticWindDownSchedule.self, key: automaticWindDownScheduleKey) }
+        set { save(newValue, key: automaticWindDownScheduleKey) }
     }
 
     var offlinePurpose: OfflinePurposeProfile {
@@ -79,6 +99,44 @@ final class PersistenceService {
     var morningCheckIns: MorningCheckInHistory {
         get { load(MorningCheckInHistory.self, key: morningCheckInsKey) ?? MorningCheckInHistory() }
         set { save(newValue, key: morningCheckInsKey) }
+    }
+
+    var nightWatchHistory: NightWatchHistory {
+        get { load(NightWatchHistory.self, key: nightWatchHistoryKey) ?? NightWatchHistory() }
+        set { save(newValue, key: nightWatchHistoryKey) }
+    }
+
+    func upsertNightWatchRecord(_ record: NightWatchRecord, now: Date = Date()) {
+        var history = nightWatchHistory
+        history.upsert(record, now: now)
+        nightWatchHistory = history
+    }
+
+    func appendRitualEvent(_ event: RitualEvent, now: Date = Date()) {
+        var history = nightWatchHistory
+        history.append(event, now: now)
+        nightWatchHistory = history
+    }
+
+    func deleteNightWatchHistory() {
+        defaults.removeObject(forKey: nightWatchHistoryKey)
+    }
+
+    var impactSharingPreferences: ImpactSharingPreferences {
+        get {
+            load(ImpactSharingPreferences.self, key: impactSharingPreferencesKey)
+                ?? ImpactSharingPreferences()
+        }
+        set { save(newValue, key: impactSharingPreferencesKey) }
+    }
+
+    var impactUploadRecords: [ImpactUploadRecord] {
+        get { load([ImpactUploadRecord].self, key: impactUploadRecordsKey) ?? [] }
+        set { save(newValue, key: impactUploadRecordsKey) }
+    }
+
+    func deleteImpactUploadRecords() {
+        defaults.removeObject(forKey: impactUploadRecordsKey)
     }
 
     var installationID: UUID {

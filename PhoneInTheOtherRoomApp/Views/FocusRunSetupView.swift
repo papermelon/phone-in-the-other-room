@@ -1,11 +1,19 @@
 import SwiftUI
 
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+import FamilyControls
+#endif
+
 struct FocusRunSetupView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var purposeCategory: OfflinePurposeCategory = .rest
     @State private var customPurpose = ""
     @State private var includePurposeInNotifications = false
+    @State private var showTagReplacementConfirmation = false
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+    @State private var showBedtimeAppPicker = false
+#endif
 
     var body: some View {
         ScrollView {
@@ -14,6 +22,7 @@ struct FocusRunSetupView: View {
                 scheduleCard
                 quietTimeCard
                 activityCard
+                automaticStartCard
                 purposeCard
                 guardCard
                 Button {
@@ -26,7 +35,7 @@ struct FocusRunSetupView: View {
                 } label: {
                     HStack {
                         Image(systemName: "door.left.hand.open")
-                        Text(viewModel.canBeginNightWatchNow ? "Start Quiet Time" : "Save Quiet Time")
+                        Text(viewModel.canBeginNightWatchNow ? "Start Wind Down" : "Save Wind Down")
                         Spacer()
                         Text(viewModel.nightWatchScheduleLabel)
                             .font(AppTypography.caption)
@@ -43,12 +52,34 @@ struct FocusRunSetupView: View {
             .padding(AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Quiet Time")
+        .navigationTitle("Wind Down")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: loadPurpose)
         .onChange(of: viewModel.isRunning) { _, isRunning in
             if isRunning { dismiss() }
         }
+        .alert(
+            "Replace phone-bed tag?",
+            isPresented: $showTagReplacementConfirmation
+        ) {
+            Button("Keep current tag", role: .cancel) {}
+            Button("Replace tag") {
+                viewModel.provisionNFCTag()
+            }
+        } message: {
+            Text("We’ll write a new tag now. The current tag will stop working after the new one is saved.")
+        }
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        .familyActivityPicker(
+            headerText: "Choose the apps or categories that can rest during Wind Down.",
+            footerText: "Counting Sheep uses this selection only for your two quiet windows. Websites are ignored.",
+            isPresented: $showBedtimeAppPicker,
+            selection: $viewModel.bedtimeActivitySelection
+        )
+        .onChange(of: viewModel.bedtimeActivitySelection) { _, _ in
+            viewModel.saveScreenTimeSelection(.bedtime)
+        }
+#endif
     }
 
     private var hero: some View {
@@ -205,6 +236,36 @@ struct FocusRunSetupView: View {
         }
     }
 
+    private var automaticStartCard: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Toggle(
+                    "Start Wind Down automatically",
+                    isOn: Binding(
+                        get: { viewModel.nightWatchPreferences.automaticStartEnabled },
+                        set: viewModel.setAutomaticStartEnabled
+                    )
+                )
+                .font(AppTypography.headline)
+                Text("Ollie will let you know 60, 30, and 10 minutes before the phone rests. At the scheduled time, selected apps can rest automatically when shielding is enabled.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                Text(
+                    viewModel.selectedGuardKind == .nfcTag
+                        ? "The app cannot open itself from a notification, so open Counting Sheep whenever you want to see the active Wind Down. Your NFC tag is still required to end normally."
+                        : "The app cannot open itself from a notification, so open Counting Sheep whenever you want to see the active Wind Down."
+                )
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                if viewModel.selectedGuardKind == .nfcTag && !viewModel.hasRegisteredNFCTag {
+                    Text("Pair a phone-bed NFC tag to use automatic NFC Wind Down.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.grass)
+                }
+            }
+        }
+    }
+
     private var guardCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -213,7 +274,13 @@ struct FocusRunSetupView: View {
                 HStack(spacing: AppSpacing.sm) {
                     Image(systemName: icon(for: viewModel.selectedGuardKind))
                         .foregroundStyle(AppColors.grass)
-                    Picker("Phone-bed check", selection: $viewModel.selectedGuardKind) {
+                    Picker(
+                        "Phone-bed check",
+                        selection: Binding(
+                            get: { viewModel.selectedGuardKind },
+                            set: viewModel.selectGuardKind
+                        )
+                    ) {
                         ForEach(availableGuardKinds) { kind in
                             Text(kind.title).tag(kind)
                         }
@@ -223,7 +290,36 @@ struct FocusRunSetupView: View {
                 Text(viewModel.selectedGuardKind.detail)
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
-#if DEBUG
+
+                if viewModel.selectedGuardKind == .nfcTag {
+                    Divider()
+                    if viewModel.phoneBedTagRegistration == nil {
+                        Text("Prepare one writable NFC tag where your phone will rest.")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                        Button("Set up phone-bed tag") {
+                            viewModel.provisionNFCTag()
+                        }
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    } else {
+                        Label("Phone-bed tag is ready", systemImage: "checkmark.circle.fill")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.grass)
+                        HStack {
+                            Button("Replace tag") {
+                                showTagReplacementConfirmation = true
+                            }
+                            Button("Forget tag", role: .destructive, action: viewModel.resetNFCTag)
+                        }
+                        .font(AppTypography.caption)
+                    }
+                    if !viewModel.nfcStatus.isEmpty {
+                        Text(viewModel.nfcStatus)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                }
+
                 Divider()
                 Toggle(
                     "Shield selected apps during the two quiet windows",
@@ -233,20 +329,34 @@ struct FocusRunSetupView: View {
                     )
                 )
                 .font(AppTypography.caption)
-                Text("Development preview. Overnight stays unshielded, and ending Quiet Time always clears the shield.")
+                Text("The shield lifts overnight and returns for morning quiet. Ending Wind Down always opens your apps again.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
+
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+                if viewModel.shieldingEnabled {
+                    if viewModel.screenTimeAuthorization != .approved {
+                        Button("Allow Screen Time access", action: viewModel.connectScreenTime)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    } else if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
+                        Button("Choose apps to rest", action: { showBedtimeAppPicker = true })
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    } else {
+                        Text(viewModel.bedtimeActivitySelection.phoneOtherSelectionSummary)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.grass)
+                        Button("Change shielded apps", action: { showBedtimeAppPicker = true })
+                            .font(AppTypography.caption)
+                            .buttonStyle(.plain)
+                    }
+                }
 #endif
             }
         }
     }
 
     private var availableGuardKinds: [SessionGuardKind] {
-#if DEBUG
         [.honorTimer, .watchPlacement, .qrCode, .nfcTag]
-#else
-        [.honorTimer, .watchPlacement, .qrCode]
-#endif
     }
 
     private func loadPurpose() {
@@ -276,7 +386,7 @@ struct FocusRunSetupView: View {
     }
 }
 
-#Preview("Quiet Time setup") {
+#Preview("Wind Down setup") {
     NavigationStack {
         FocusRunSetupView()
             .environmentObject(FocusRunViewModel())

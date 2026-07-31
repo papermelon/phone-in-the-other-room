@@ -21,10 +21,10 @@ The repository folder and target names still use the code name **Phone in the Ot
 3. Pick one gentle offline cue for each bookend, such as reading, stretching, breakfast,
    or opening the curtains.
 4. At wind-down, tuck the phone away and begin Night Watch.
-5. Use the default honor timer, an optional Apple Watch placement assist, or a QR phone bed.
+5. Use the default honor timer, an optional Apple Watch placement assist, QR phone bed, or
+   locally registered NFC phone-bed tag.
 6. Let the phone remain tucked away through morning quiet.
-7. Return to one calm completion receipt, a collectible, and the quiet minutes from the
-   two bookends.
+7. Return to one calm completion receipt; one equal sheep settles into the cumulative flock.
 
 The iPhone owns the wall-clock state and restoration path. The Watch is optional. Nearby
 Interaction is a one-time, time-boxed tuck-in assist; it never monitors the whole night,
@@ -32,33 +32,38 @@ warns later, or ends Night Watch because distance changed.
 
 ## What ships in the first release
 
-- Home and Stats tabs only
+- Home, Nights, and More tabs
 - Saved Night Watch schedule and requested wind-down reminder
 - Wind-down, overnight, and morning-quiet phases
-- Honor timer, optional Watch placement, and QR phone-bed starts
+- Honor timer plus optional Watch, QR, and NFC phone-bed starts
+- Optional selected-app shielding during wind-down and morning quiet only
+- Optional read-only Apple Health sleep duration/stages and local outcome comparison
+- Separately consented, minimised impact sharing with stop/delete controls
 - Local completion notification and phase-aware Live Activity
 - Watch companion for status, tuck-in placement, early end, and phone ping
-- Local progress, rewards, streaks, sheep, coins, and quiet-bookend history
+- One-night-one-sheep flock, local streak record, and quiet-bookend history
+- Optional private in-app feedback with a release-safe email fallback
 - Backwards-compatible decoding of earlier `FocusRun` and `UserProgress` data
 
-Farm, Friends, Shop, mock data, HealthKit cards, and Screen Time UI remain gated from
-Release. See [ADR-0003](docs/DECISIONS/ADR-0003-gated-features.md),
+Farm, Friends, Shop, the legacy reward shelf, mock data, adaptive coaching, and social
+features remain gated from Release and ordinary Debug navigation. See
+[ADR-0003](docs/DECISIONS/ADR-0003-gated-features.md),
 [ADR-0004](docs/DECISIONS/ADR-0004-watch-independent-sessions.md), and
-[ADR-0006](docs/DECISIONS/ADR-0006-sleep-bookends-positioning.md).
+[ADR-0006](docs/DECISIONS/ADR-0006-sleep-bookends-positioning.md), and
+[ADR-0007](docs/DECISIONS/ADR-0007-launch-navigation-flock-and-feedback.md).
 
 ## Screen Time and sleep data status
 
-Screen Time is part of the product direction, but not a pretend integration:
+Screen Time reports and selection are embedded. Optional ManagedSettings shields use that
+same selection only during the two quiet bookends and lift overnight. The new monitor,
+shield-configuration, and shield-action targets exported with Apple Distribution profiles
+carrying Family Controls on 2026-07-30. Physical-device proof and App Store server
+validation are still required before submission.
 
-- A DeviceActivity report extension and Debug-only selection/report scaffolding exist.
-- The extension is not embedded in the release app.
-- The app and extension do not yet share an App Group.
-- Family Controls distribution approval and matching portal capabilities are required.
-- The intended future boundary is the two quiet bookends, using one consented selection.
-  App shielding must not cover the entire overnight interval by default.
-
-HealthKit sleep context is also deferred. It may provide optional comparison data later,
-but Counting Sheep will not grade sleep or claim that Night Watch caused better sleep.
+HealthKit requests read access only to `sleepAnalysis`. It shows time asleep and available
+core/deep/REM stages from one coherent source, then compares protected and other measured
+nights locally when sample sizes are sufficient. Counting Sheep reports association, not
+causation or a sleep-quality score.
 
 ## Platforms and architecture
 
@@ -70,17 +75,20 @@ but Counting Sheep will not grade sleep or claim that Night Watch caused better 
 - Codable JSON in `UserDefaults` using the `ollie.*` key prefix
 - No CoreData or SwiftData
 
-Five targets are generated:
+Eight targets are generated:
 
 - `PhoneInTheOtherRoom` — iOS app
 - `PhoneInTheOtherRoomWatchApp` — optional watchOS companion
 - `PhoneInTheOtherRoomLiveActivity` — Lock Screen, Dynamic Island, and Smart Stack status
-- `PhoneInTheOtherRoomScreenTimeReport` — deferred DeviceActivity report extension
+- `PhoneInTheOtherRoomScreenTimeReport` — DeviceActivity report extension
+- `PhoneInTheOtherRoomDeviceActivityMonitor` — quiet-window shield scheduling
+- `PhoneInTheOtherRoomShieldConfiguration` — custom shield appearance
+- `PhoneInTheOtherRoomShieldAction` — shield-button response
 - `PhoneInTheOtherRoomTests` — shared-domain tests
 
-An optional Supabase-backed Live Activity push sink is present in the current worktree. It
-is disabled unless explicitly configured. Local timing, notification, restore, and reward
-behavior remain authoritative when the backend is absent or unavailable.
+Optional Supabase-backed Live Activity and feedback transports are present. Each is disabled
+unless explicitly configured. Local timing, notification, restore, flock, and email-fallback
+behavior remain available when the backend is absent or unavailable.
 
 ## Build and test
 
@@ -115,8 +123,8 @@ Do not hand-edit `PhoneInTheOtherRoom.xcodeproj/project.pbxproj`; regenerate it 
 - Nearby Interaction is used only for the optional Watch tuck-in assist and degrades to
   the honor timer on unsupported or unreachable setups.
 - No GPS location permission is requested.
-- HealthKit and Family Controls entitlements must not be added until the matching product
-  gate and Apple portal setup are complete.
+- HealthKit reads only sleep analysis. Family Controls covers reports and optional shielding.
+  The matching production capabilities/profiles must exist for every embedded target.
 
 Use the same Apple Development Team for the iPhone, Watch, and embedded extensions on
 physical hardware. Real-device validation is still required for Nearby Interaction,
@@ -129,9 +137,10 @@ ritual; it does not silently enable a system Focus or start an unseen timer.
 
 ## Privacy
 
-Night Watch schedules, progress, rewards, and run snapshots are local by default. No GPS
-room identity or raw distance history is uploaded. Review optional backend configuration
-and App Store privacy disclosures before enabling any network feature.
+Detailed schedules, ritual events, reflections, HealthKit context, progress, and rewards
+are local by default. Optional impact sharing omits exact dates/times, raw Health samples,
+source names, app selections, NFC identity, and free text. See
+[the 1.0 data map](docs/PRIVACY_DATA_MAP.md).
 
 ## Repository status
 

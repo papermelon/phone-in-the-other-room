@@ -13,6 +13,11 @@ carefully gated social features. The current app is offline-first and stores Cod
 in UserDefaults. It has no networking, account, server analytics, or cloud persistence
 layer.
 
+App Store 1.0 also needs an ethically bounded way to answer whether the ritual changes
+completed quiet time and whether those behavioural changes are associated with measured
+sleep outcomes. Detailed history remains local; this is not authorization for wholesale
+cloud sync.
+
 ## Decision
 
 Use **hosted Supabase** as the primary backend for the next three to five years:
@@ -96,6 +101,13 @@ rewards or replace local notification and app-reopen reconciliation.
 - `scheduled_events`: run/activity, kind, due time, status, attempt count, next attempt,
   generation, lease, APNs response code/reason, and unique idempotency key.
 - `delivery_attempts`: short-retention operational records without raw tokens or payload secrets.
+- `impact_nights`: separately consented, date-free nightly measures (quiet completion,
+  shield evidence, sleep duration/stages where present, and categorical restfulness).
+  RLS ties rows to the anonymous account; the user can delete every row through
+  `delete_my_impact_data`.
+- `app_feedback`: launch-gated support reports accepted through an authenticated Edge
+  Function, with private Storage attachments and no client table reads. Resend delivery,
+  retry, rate-limit, and retention boundaries are defined by ADR-0007.
 
 Progression, inventory, friendships, subscriptions, and moderation get separate normalized
 tables when their gated product milestones are approved. Do not encode them into a generic
@@ -112,3 +124,9 @@ JSON profile now.
 - The official Swift package, schema, and disabled-by-default development transport may be
   versioned now that the Singapore development project and anonymous-auth direction are approved.
   Hosted migrations, functions, secrets, and Cron remain explicit deployment steps.
+- Optional impact sharing is purpose-limited and off by default. Exact dates/times, raw
+  HealthKit samples, Health source names, app selections, NFC identities, and free text do
+  not enter `impact_nights`. See `docs/PRIVACY_DATA_MAP.md`.
+- Optional feedback is independently disabled by default. It may use Supabase and Resend
+  only after ADR-0007's privacy, delivery, retry, retention, and physical-device gates pass;
+  email fallback remains available without enabling the backend.

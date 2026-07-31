@@ -19,7 +19,7 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## B. MVP polish (before or shortly after first upload)
 
-### B1. Validate a full Night Watch on physical hardware
+### B1. Validate a full Wind Down on physical hardware
 - **Why:** the session deliberately crosses midnight and depends on restoration, local
   notifications, ActivityKit, and optional Watch placement behavior that unit tests and a
   short simulator run cannot fully reproduce.
@@ -51,6 +51,18 @@ execute without human sign-off mid-task (final merge review still applies per
   access was denied. Nights explains that Apple's Sleep Score is not exposed through
   HealthKit.
 
+### B4. Decide and prove the production feedback route
+- **Why:** the in-app backend is intentionally launch-gated; email fallback is already the
+  safe default.
+- **Mode:** Human + Codex support · **Size:** S · **Autonomous:** no
+- **Accept:** deploy `20260801090000_app_feedback.sql`, `submit-feedback`, and
+  `feedback-email-delivery`; configure verified Resend sender/recipient/secrets and a
+  ten-minute Cron; approve privacy/App Store answers and 180-day support-mail retention;
+  prove zero/one/three private screenshot uploads and one idempotent Gmail delivery on a
+  physical iPhone. The schema and functions are deployed and the Release flag is now YES
+  by explicit launch approval; finish the remaining external gates before enabling
+  production notification delivery or calling this item complete.
+
 ## C. Architecture cleanup (post-first-upload, opportunistic)
 
 ### C2. Split AssetReadyScreens.swift (gated code)
@@ -66,33 +78,36 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## D. Product experiments (gated — check the ADR before starting)
 
-### D1. NFC + optional app shielding after the QR phone-bed guard (ADR-0004)
-- **Gate:** Family Controls approval AND build 1 stable. QR placement is already
-  available without blocking; NFC and shielding remain deferred.
-- **Mode:** Cursor Plan→Build for the strategy-seam design; Codex for increments
-- **Size:** L · **Autonomous:** no — new entitlements, new interaction model
-- **Accept:** NFC and ManagedSettings extend the existing session-guard seam; consent,
-  gentle shield copy, and an emergency exit are implemented; workshop demo works on an
-  iPhone without a Watch.
+### D1. App Store 1.0 entitlement and physical-device release proof
+- **Gate:** code implementation complete; human Apple account and hardware required.
+- **Mode:** Human + Codex support · **Size:** L · **Autonomous:** no
+- **Accept:** Family Controls distribution profiles exist for monitor/configuration/action;
+  a Release archive validates; generic NDEF lifecycle, registered-tag ending plus emergency
+  bypass, terminated-app bookend transitions, HealthKit stages, and impact-data deletion pass
+  `docs/PLAYBOOKS/testflight-readiness.md`. Deploy both pending production migrations and
+  the versioned Live Activity registration endpoint; linked database lint must no longer
+  report the registration-overload ambiguity.
 
-### D2. HealthKit sleep card (TestFlight build 2)
-- **Gate:** signing settled; B3 fixed; privacy label prepared.
-- **Mode:** Codex · **Size:** M · **Autonomous:** yes for code; human does portal +
-  App Store Connect label
-- **Accept:** optional sleep card on Stats; graceful denied/no-data states; no
-  sleep-quality claims in copy.
+### D2. Transparent behavioural experiments (post-1.0)
+- **Gate:** enough real, consented local history and qualitative feedback from 1.0.
+- **Mode:** Product decision before code · **Size:** M · **Autonomous:** no
+- **Accept:** at most one rule-based, confidence-qualified experiment at a time; the user
+  can dismiss/correct it; no composite score, opaque AI, medical claim, or extra nighttime
+  interaction.
 
-### D3. Optional sleep-bookend Screen Time shielding (flagship differentiator)
-- **Gate:** Read-only bookend reports are complete; shielding remains separately gated.
-- **Mode:** Cursor Plan→Build · **Size:** L · **Autonomous:** no
-- **Accept:** the existing consented app selection supports optional shields only during
-  the configured quiet windows, always offers an emergency exit, and never claims to
-  measure sleep. Preserve the read-only `phone-other.*` report contexts.
+### D3. Curated educational Live Activity notes (post-1.0 content expansion)
+- **Gate:** first validate the taller activity-and-tip layout in build 3 and finish App
+  Store 1.0 submission. Sleep education requires a reviewed content source list.
+- **Mode:** Product + Codex · **Size:** S · **Autonomous:** no
+- **Accept:** one short, static note per Wind Down phase; user goals remain primary; every
+  sleep or healthy-habit fact has an authoritative source recorded in docs; no diagnosis,
+  sleep-quality promise, notification, feed, novelty teaser, or reason to keep checking the
+  phone. Notes rotate at most once per completed night and remain readable at Dynamic Type.
 
 ## E. Later / explicitly postponed (do not start; citable refusals)
 
-- **Farm reintroduction** — ADR-0003 gates 0–3, after D1.
-- **Shop** — after Farm; anti-addiction review required.
+- **Farm reintroduction** — ADR-0003 gates 0–3, after D1; visualize only `totalCompletedRuns`.
+- **Shop** — later nested Farm destination only; new product decision required.
 - **Friends / social** — requires its own ADR; default no (ADR-0003).
 - **Design-system convergence** (retire `GameComponents`) — opportunistic only.
 - **New persistence layer / CoreData / SwiftData** — not needed at this scale.
@@ -106,6 +121,57 @@ execute without human sign-off mid-task (final merge review still applies per
 "Done" list at the bottom; new tasks must include all fields.*
 
 ## Done
+
+- **2026-08-01 · Codex + human-approved plan:** Replaced ordinary Debug and Release
+  navigation with Home/Nights/More; moved setup and connection controls into More; kept
+  Farm/Friends/Shop and the legacy shelf behind the explicit Debug preview argument; and
+  made the release presentation one equal sheep per completed protected night, derived only
+  from `totalCompletedRuns`. Added the validated feedback form, metadata-stripped screenshot
+  preparation, automatic email fallback, private Supabase schema/Storage policies,
+  authenticated idempotent submission, five-per-day enforcement, Resend delivery/retry,
+  180-day cleanup, privacy declarations, release docs, and ADR-0007. Backend enablement,
+  sender/domain/Cron configuration, public-policy publication, and physical-device delivery
+  remain the human B4 gate; Release stays on email fallback until it passes.
+
+- **2026-08-01 · Codex:** New Wind Down plans default to NFC, with the honor timer still
+  available as a fallback. Added an opt-in automatic schedule with 60/30/10-minute lead-ins;
+  selected Screen Time apps can be shielded by repeating DeviceActivity windows while the
+  app is closed, and the main app reconstructs the run when next activated. iOS cannot
+  silently launch the app from a local notification, so the active run remains visible on
+  next open and the NFC tag remains required for normal ending.
+
+- **2026-07-31 · Codex:** Added an explicit NFC replacement recovery flow. From setup or a
+  failed active tuck-in scan, people can confirm that they want to pair a new writable tag;
+  the existing Wind Down is preserved, the new tag confirms placement when appropriate,
+  and a replacement during a running Wind Down becomes the only normal end credential.
+  The old tag is superseded only after the new write succeeds; emergency ending remains
+  available. Physical-device replacement and lost-tag QA is still part of D1.
+
+- **2026-07-30 · Codex + human approval:** Prepared build 3 after physical NFC start
+  feedback. The registered NFC tag now authenticates normal early ending, the Watch cannot
+  bypass it, and a multi-step emergency exit remains available and records the bypass.
+  Home presents the four Wind Down methods at the bottom of its configuration flow; the
+  active-screen count-up is a bounded elapsed row; the taller Live Activity separates its
+  timer, chosen activity, and one readable cue; optional impact consent uses a sheet; and
+  customer-facing ritual copy is
+  Wind Down while persisted `NightWatch*` identifiers remain compatible. Renamed generated
+  permission copy and Screen Time extension display names, produced a valid signed archive,
+  installed build 3 on the connected iPhone, and passed 74 tests. The matching-tag end
+  barrier is physically confirmed; wrong-tag, Watch, shield-lift, and revised Lock Screen
+  proof remain under D1.
+
+- **2026-07-30 · Codex + human direction:** Implemented the App Store 1.0 NFC/shielding
+  increment and sleep-outcome measurement foundation. Generic writable NDEF tags can be
+  provisioned/replaced/forgotten and confirmed without retaining the raw token. Optional
+  ManagedSettings shields cover only wind-down and morning quiet through dedicated monitor,
+  configuration, and action extensions; observed status evidence feeds a 90-day local
+  session/event history. HealthKit reads only `sleepAnalysis`, preserves duration and
+  available stages from one coherent source, and powers a sample-qualified local comparison.
+  Separately consented impact rows omit dates, raw samples, source names, selected apps, NFC
+  identity, and free text, with stop/delete controls and RLS migration. No Foqos source was
+  copied, so no NOTICE was added. The App Store export produced Family Controls distribution
+  profiles for all Screen Time targets. Hosted migration, archive upload/App Store server
+  validation, and physical-device proof remain D1.
 
 - **2026-07-27 · Codex + human direction:** Added an ADR-gated development preview for
   NDEF phone-bed registration/confirmation and ManagedSettings shielding. The shared

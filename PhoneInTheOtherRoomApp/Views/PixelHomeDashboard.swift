@@ -10,28 +10,26 @@ struct PixelHomeDashboard: View {
     }
 
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            PixelHomeDashboardContent(
-                progress: viewModel.coordinator.progress,
-                preferences: viewModel.nightWatchPreferences,
-                purpose: viewModel.offlinePurpose,
-                watchReachable: watch.isReachable,
-                canBeginNow: viewModel.canBeginNightWatchNow,
-                onPrimaryAction: {
-                    if viewModel.hasConfiguredNightWatch && viewModel.canBeginNightWatchNow {
-                        viewModel.requestStartNightWatch()
-                    } else {
-                        showRunSetup = true
-                    }
-                },
-                onAdjust: { showRunSetup = true }
-            )
-
-            PixelCard {
-                QuietWindowDurationEditor()
-                    .environmentObject(viewModel)
-            }
-        }
+        PixelHomeDashboardContent(
+            progress: viewModel.coordinator.progress,
+            preferences: viewModel.nightWatchPreferences,
+            purpose: viewModel.offlinePurpose,
+            watchReachable: watch.isReachable,
+            canBeginNow: viewModel.canBeginNightWatchNow,
+            isNFCTagReady: viewModel.hasRegisteredNFCTag,
+            onPrimaryAction: {
+                let methodIsReady = viewModel.selectedGuardKind != .nfcTag
+                    || viewModel.hasRegisteredNFCTag
+                if viewModel.hasConfiguredNightWatch
+                    && viewModel.canBeginNightWatchNow
+                    && methodIsReady {
+                    viewModel.requestStartNightWatch()
+                } else {
+                    showRunSetup = true
+                }
+            },
+            onAdjust: { showRunSetup = true }
+        )
         .navigationDestination(isPresented: $showRunSetup) {
             FocusRunSetupView()
                 .environmentObject(viewModel)
@@ -45,6 +43,7 @@ private struct PixelHomeDashboardContent: View {
     var purpose: OfflinePurposeProfile
     var watchReachable: Bool
     var canBeginNow: Bool
+    var isNFCTagReady: Bool
     var onPrimaryAction: () -> Void
     var onAdjust: () -> Void
 
@@ -55,7 +54,7 @@ private struct PixelHomeDashboardContent: View {
             NightWatchOverviewBlock(preferences: preferences, latestNight: latestNight)
 
             OllieRitualView(state: .ready, size: 152)
-                .accessibilityLabel("Ollie is ready for tonight's quiet time")
+                .accessibilityLabel("Ollie is ready for tonight's Wind Down")
 
             VStack(spacing: AppSpacing.sm) {
                 Text(purpose.inAppDisplayPhrase)
@@ -76,7 +75,7 @@ private struct PixelHomeDashboardContent: View {
             )
 
             if preferences.isConfigured {
-                Button("Change bedtime, wake time, or purpose", action: onAdjust)
+                Button("Edit Plan", action: onAdjust)
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
             }
 
@@ -87,8 +86,11 @@ private struct PixelHomeDashboardContent: View {
     }
 
     private var primaryTitle: String {
-        if !preferences.isConfigured { return "Set Quiet Time" }
-        return canBeginNow ? "Start Quiet Time" : "Adjust Quiet Time"
+        if !preferences.isConfigured { return "Set Wind Down" }
+        if preferences.guardKind == .nfcTag, !isNFCTagReady {
+            return "Set up NFC tag"
+        }
+        return canBeginNow ? "Start Wind Down" : "Adjust Wind Down"
     }
 
     private var scheduleLabel: String {
@@ -199,6 +201,7 @@ private struct NightWatchOverviewBlock: View {
                 purpose: OfflinePurposeProfile(category: .read),
                 watchReachable: false,
                 canBeginNow: false,
+                isNFCTagReady: false,
                 onPrimaryAction: {},
                 onAdjust: {}
             )
@@ -229,6 +232,7 @@ private struct NightWatchOverviewBlock: View {
                 purpose: OfflinePurposeProfile(category: .read),
                 watchReachable: false,
                 canBeginNow: false,
+                isNFCTagReady: false,
                 onPrimaryAction: {},
                 onAdjust: {}
             )

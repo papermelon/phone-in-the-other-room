@@ -1,6 +1,6 @@
 # ADR-0004: Watch-Independent Bedtime Sessions (Foqos-Inspired NFC/QR)
 
-- Status: Accepted; QR shipped, NFC/shielding development preview implemented, Release still gated
+- Status: Accepted; NFC and optional sleep-bookend shielding implemented for App Store 1.0, distribution/physical QA pending
 - Date: 2026-07-07
 - Deciders: Founder
 - Related: ADR-0001, ADR-0003 (which this outranks), ADR-0006 (sleep bookends), `docs/PROJECT_BRIEF.md`
@@ -25,26 +25,33 @@ all-night shield—the intended Screen Time boundary.
 
 ## Decision
 
-**Adopt the concept — not the codebase — as Counting Sheep's top post-build-1 product
-bet:** a watch-independent bedtime session where a tag or QR code placed in another room
-becomes the phone's "bed".
+**Adopt the concept — not the codebase — for Counting Sheep 1.0:** a watch-independent
+bedtime session where a tag or QR code placed in another room becomes the phone's "bed".
 
 - At bedtime, the user carries the phone to the tag/code and taps/scans it: the walk *is*
   the ritual, preserving physical separation as the product (ADR-0001) rather than
   becoming pure software blocking.
-- The tap starts Night Watch. A future `ManagedSettingsStore` shield may use the user's
-  consented selection during wind-down, clear overnight, and optionally return during the
+- The tap starts the user-facing Wind Down ritual. In NFC mode, ending normally requires
+  tapping the same registered tag again. A deliberately multi-step emergency exit remains
+  available if the tag is lost or unreachable. The optional `ManagedSettingsStore` shield uses the user's
+  consented selection during wind-down, clears overnight, and returns during the
   morning-quiet bookend. The saved morning end time clears it automatically.
-- **QR first, NFC second.** QR works on every iPhone with a camera and costs nothing
-  (printable); NFC tags (<$1) become the branded workshop takeaway ("tuck your phone in").
+- QR works on every iPhone with a camera and costs nothing; generic writable NDEF tags add
+  the most tactile version of the same ritual.
 
-### Gates for blocking (all must pass before implementation)
+### Gates for App Store distribution
 
-1. **Family Controls distribution entitlement approved by Apple.** Completed for the
-   containing app and Screen Time report extension on 2026-07-25.
-2. **TestFlight build 1 shipped and stable** (same Gate 0 as ADR-0003).
-3. Design passes the anti-addiction review: consensual block list, gentle shield copy,
-   always-available emergency exit, no shame on early unlock.
+1. **Family Controls distribution entitlement available for every target.** The 2026-07-30
+   App Store export produced Apple Distribution profiles carrying Family Controls for the
+   containing app, report, monitor, configuration, and action targets. App Store server
+   validation and physical runtime proof remain pending.
+2. **TestFlight build 1 uploaded.** Build 1 was uploaded and was still waiting for external
+   beta review on 2026-07-30. It has not yet produced external-tester evidence.
+3. **Anti-addiction review.** Implemented: consensual selection, bookends only, gentle
+   shield copy, Counting Sheep remains unshielded, and a visible emergency exit always
+   clears settings.
+4. **Physical-device proof.** Pending: provision/replace/read generic NDEF tags; background
+   and terminated-app window transitions; early end; schedule replacement; timezone/DST.
 
 ### Implemented first increment (2026-07-11)
 
@@ -55,7 +62,7 @@ does not shield apps, prevent an early end, or make any sleep claim. This increm
 deliberately usable without Family Controls approval because it is only a gentle ritual
 signal.
 
-The default `.honorTimer` is now phone-authoritative and the Watch/UWB path is a brief,
+The honor-timer fallback is phone-authoritative and the Watch/UWB path is a brief,
 optional `.watchPlacement` check. Once a run starts, neither app needs to remain open.
 
 ### Implemented reporting foundation (2026-07-25)
@@ -69,17 +76,19 @@ This increment is read-only reporting infrastructure. It does not authorize or i
 ManagedSettings shielding, NFC, or an all-night block. Those remain subject to gates 2–3
 and must apply only to the two quiet bookends with an emergency exit.
 
-### Implemented development preview (2026-07-27)
+### Implemented App Store 1.0 increment (2026-07-30)
 
-Debug builds can register and confirm an NDEF phone-bed tag and can opt into shielding the
-existing consented bedtime selection. The policy shields only wind-down and morning quiet,
-clears settings overnight, and clears on completion, early end, reset, and replacement.
-The NFC and shielding controls remain absent from Release until gate 2 is met.
+Release builds can provision and confirm a generic writable NDEF phone-bed tag. Only a
+SHA-256 digest of the generated registration token is stored locally; legacy tag
+fingerprints remain readable for migration. Scanning never silently enrols an unknown tag.
+The same registered tag authenticates the normal early-end path; a mismatch or cancelled
+scan leaves Wind Down running. The Watch cannot bypass this requirement.
 
-This foreground coordinator integration is intentionally not described as reliable
-background scheduling. Shipping phase-accurate shielding while the app is suspended or
-terminated requires a `DeviceActivityMonitor` extension, its own explicit App ID and
-Family Controls distribution assignment, and physical-device validation.
+Optional shielding reuses the consented bedtime selection. A `DeviceActivityMonitor`
+derives both windows from the authoritative `NightWatchPlan`, a shield-configuration
+extension supplies gentle copy, and a shield-action extension closes the shielded app.
+The main app and extension append bounded apply/clear status evidence through the App Group,
+allowing protected shield minutes to be distinguished from merely scheduled minutes.
 
 ### Architecture direction
 
@@ -90,22 +99,24 @@ session-guard strategies consumed by `FocusSessionCoordinator`:
 - `.watchPlacement` — one initial Watch/UWB placement check, then it stops
 - `.nfcTag` / `.qrCode` — QR now confirms placement; later shield via ManagedSettings,
   with tap/scan-to-end
-- `.honorTimer` — no-hardware, phone-authoritative timer
+- `.nfcTag` — default registered phone-bed tag, required for the normal end action
+- `.honorTimer` — explicit no-hardware, phone-authoritative timer fallback
 
 Reuse `ScreenTimeAuthorizationService` and the bedtime scope in
 `ScreenTimeSelectionService`. New capability needs: Core NFC (standard, no special
 approval) and the Family Controls entitlement (approval required). An App Group becomes
 necessary when the Screen Time report extension ships alongside.
 
-Night Watch remains one phone-authoritative run across all three phases. Shield scheduling
+The internal `NightWatch*` model remains one phone-authoritative run across all three phases. Shield scheduling
 must derive from its `NightWatchPlan`; it must not create separate bedtime and morning
 timers, shield overnight by default, or count the overnight interval as progress.
 
 ### Attribution
 
-If any Foqos code is adapted (vs. concept-only reimplementation), credit it in a NOTICE
-file per its MIT license. Prefer studying `Foqos/Models/Strategies/` +
-`Utils/StrategyManager.swift` as reference and writing our own.
+The 1.0 implementation was independently written against Apple framework contracts and the
+existing Counting Sheep session coordinator. No literal or substantial Foqos source was
+adapted, so its MIT notice is not required in the app bundle. This ADR keeps the conceptual
+reference. If source is copied later, add Foqos's copyright and MIT text to `NOTICE`.
 
 ## Consequences and tradeoffs
 
@@ -115,7 +126,7 @@ file per its MIT license. Prefer studying `Foqos/Models/Strategies/` +
 - **Priority displacement:** this outranks Farm/Shop reintroduction (ADR-0003) — it grows
   who can use the app rather than deepening engagement for existing users.
 - **Review risk:** blocking features draw App Review scrutiny and depend on Apple's
-  entitlement approval timeline — hence hard-gated, and never in build 1.
+  entitlement approval and server validation — hence the explicit release gates.
 - **Principle tension:** shields are coercion-adjacent. The anti-addiction constraints
   (consent, gentle copy, emergency exit) are part of this decision, not optional polish.
 - **Scope discipline:** this is the sanctioned answer to "the Watch requirement is too

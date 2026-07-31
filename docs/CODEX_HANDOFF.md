@@ -1,4 +1,7 @@
-# Codex Handoff — July 2026
+# Codex Handoff — July 2026 (historical)
+
+> Historical session record. It is not current release guidance. Use `AGENTS.md`,
+> `docs/PROJECT_BRIEF.md`, `docs/ARCHITECTURE.md`, and `docs/FUTURE_AGENT_TASKS.md`.
 
 Durable session handoff after the Cursor/Fable window. Read this once at your first
 Codex session, then work from `docs/FUTURE_AGENT_TASKS.md` for scoped tasks.
@@ -135,7 +138,7 @@ Before any edit, read AGENTS.md fully, then docs/CODEX_HANDOFF.md and
 docs/FUTURE_AGENT_TASKS.md. Follow docs/PRODUCT_PRINCIPLES.md — no guilt copy, no medical
 claims, no dark-pattern gamification.
 
-Current state (2026-07-11): main has a two-tab Release MVP (Home + Stats), DEBUG-gated
+Historical state (2026-07-11; superseded by ADR-0007): main had a two-tab Release MVP (Home + Stats), DEBUG-gated
 mock screens, configured `com.ngawangchime.countingsheep` signing, and a signed archive.
 Focus Runs are now phone-authoritative: the default is an honor timer, Watch/UWB is a
 one-time optional placement assist, and QR can mark a phone bed without Family Controls.

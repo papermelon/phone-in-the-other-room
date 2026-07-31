@@ -29,7 +29,7 @@ struct CompletionView: View {
                 if let plan = viewModel.activeRun?.nightWatchPlan {
                     PixelCard {
                         VStack(alignment: .leading, spacing: 10) {
-                            Text("LAST NIGHT'S QUIET TIME")
+                            Text("LAST NIGHT'S WIND DOWN")
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.grass)
                             quietTimeRow(
@@ -55,33 +55,24 @@ struct CompletionView: View {
                     screenTimeAuthorization: viewModel.screenTimeAuthorization
                 )
 
-                if let reward = viewModel.coordinator.latestReward {
-                    PixelCard {
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack(spacing: 14) {
-                                PixelAssetImage(name: artworkName(for: reward.type))
-                                    .frame(width: 68, height: 68)
-                                    .accessibilityHidden(true)
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(reward.family.title.uppercased())
-                                        .font(pixelFont(.caption))
-                                        .foregroundStyle(AppColors.grass)
-                                    Text(reward.title)
-                                        .font(pixelFont(.title3))
-                                    Text(reward.description)
-                                        .font(pixelFont(.body))
-                                        .foregroundStyle(AppColors.secondaryText)
-                                }
-                            }
-
-                            if let context = reward.context {
-                                Divider()
-                                Label(context.bookendSummary, systemImage: "moon.stars.fill")
-                                    .font(pixelFont(.caption))
-                                    .foregroundStyle(AppColors.secondaryText)
-                            }
+                PixelCard {
+                    HStack(spacing: 14) {
+                        PixelAssetImage(name: AssetSlot.Sheep.common)
+                            .frame(width: 76, height: 76)
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("A SHEEP SETTLED IN")
+                                .font(pixelFont(.caption))
+                                .foregroundStyle(AppColors.grass)
+                            Text("Your flock has \(viewModel.coordinator.progress.totalCompletedRuns) sheep.")
+                                .font(pixelFont(.title3))
+                            Text("One for each protected night. Every sheep counts the same.")
+                                .font(pixelFont(.body))
+                                .foregroundStyle(AppColors.secondaryText)
                         }
+                        Spacer(minLength: 0)
                     }
+                    .accessibilityElement(children: .combine)
                 }
 
                 PixelCard {
@@ -91,24 +82,14 @@ struct CompletionView: View {
                             .foregroundStyle(AppColors.grass)
                         Text(viewModel.offlinePurpose.completionPhrase)
                             .font(pixelFont(.body))
-                        if let reflection = viewModel.coordinator.latestReward?.gentleReflection {
-                            Text(reflection)
-                                .font(pixelFont(.caption))
-                                .foregroundStyle(AppColors.secondaryText)
-                        }
+                        Text("The quiet made a little more room for the evening and morning you chose.")
+                            .font(pixelFont(.caption))
+                            .foregroundStyle(AppColors.secondaryText)
                         Text("A quiet record, not a sleep score.")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.secondaryText)
                     }
                 }
-
-                NavigationLink {
-                    RewardShelfView()
-                        .environmentObject(viewModel)
-                } label: {
-                    Label("See Ollie's keepsake shelf", systemImage: "shippingbox.fill")
-                }
-                .buttonStyle(PixelChipButtonStyle(isSelected: false))
 
                 NavigationLink("See your nights") {
                     FocusStatsView()
@@ -144,18 +125,4 @@ struct CompletionView: View {
         }
     }
 
-    private func artworkName(for type: RewardType) -> String {
-        switch type {
-        case .ollieMail: return "RewardOllieMail"
-        case .letter: return "RewardLetter"
-        case .ribbon: return "RewardRibbon"
-        case .trophy: return "RewardTrophy"
-        case .tennisBall: return "RewardTennisBall"
-        case .stick: return "RewardStick"
-        case .postcard: return "RewardPostcard"
-        case .sheepBadge: return "RewardSheepBadge"
-        case .fieldMap: return "RewardFieldMap"
-        case .muddyPaw: return "RewardMuddyPaw"
-        }
-    }
 }

@@ -26,13 +26,13 @@ enum FocusRunState: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .setup: return "Set up Ollie's Night Watch"
+        case .setup: return "Set up Wind Down"
         case .placementGrace: return "Put your phone in the other room"
         case .waitingForPhoneAway: return "Ollie is waiting for the phone to reach its bed"
-        case .running: return "Ollie is on Night Watch"
+        case .running: return "Ollie is guarding Wind Down"
         case .warningPhoneTooClose: return "Phone is getting too close"
-        case .completed: return "Night Watch is complete"
-        case .endedEarly: return "Night Watch ended early"
+        case .completed: return "Wind Down is complete"
+        case .endedEarly: return "Wind Down ended early"
         case .signalLost: return "Ollie lost the trail"
         case .unsupported: return "Phone distance unavailable"
         case .demo: return "Demo run active"
@@ -87,7 +87,7 @@ struct ProximityState: Codable, Equatable {
     var statusText: String
     var detailText: String
 
-    static let initial = ProximityState(bucket: .waitingForDistance, distanceMeters: nil, confidence: .low, source: .fallback, lastUpdated: Date(), statusText: ProximityBucket.waitingForDistance.label, detailText: "Phone distance appears during the optional Night Watch tuck-in check.")
+    static let initial = ProximityState(bucket: .waitingForDistance, distanceMeters: nil, confidence: .low, source: .fallback, lastUpdated: Date(), statusText: ProximityBucket.waitingForDistance.label, detailText: "Phone distance appears during the optional Wind Down tuck-in check.")
 }
 
 struct ThresholdProfile: Codable, Equatable {
@@ -180,7 +180,13 @@ struct FocusRun: Codable, Identifiable, Equatable {
 }
 
 enum EarlyEndReason: String, Codable {
-    case userEnded, phoneReturnedTooSoon, signalLostTooLong, appInterrupted, unsupported
+    case userEnded
+    case nfcTagAuthenticated
+    case emergencyBypass
+    case phoneReturnedTooSoon
+    case signalLostTooLong
+    case appInterrupted
+    case unsupported
 }
 
 struct SessionEvent: Codable, Identifiable, Equatable {
@@ -268,7 +274,7 @@ enum OllieDailyStatus: String, Codable, CaseIterable {
     var label: String {
         switch self {
         case .waiting: return "Ollie is ready for tonight's phone tuck-in."
-        case .warmedUp: return "Ollie is warmed up by a little quiet time."
+        case .warmedUp: return "Ollie is warmed up by a little phone-free time."
         case .steady: return "Ollie is steady after a protected night."
         case .bright: return "Ollie is bright after a phone-free night."
         }

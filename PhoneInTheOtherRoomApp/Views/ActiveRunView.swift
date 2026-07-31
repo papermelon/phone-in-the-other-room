@@ -5,6 +5,9 @@ import SwiftUI
 struct ActiveRunView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var emergencyExitExpanded = false
+    @State private var showEmergencyExitConfirmation = false
+    @State private var showNFCTagReplacementConfirmation = false
 
     private var run: FocusRun? { viewModel.activeRun }
     private var guardKind: SessionGuardKind { run?.guardKind ?? .honorTimer }
@@ -18,13 +21,38 @@ struct ActiveRunView: View {
                 if let message = viewModel.coordinator.backgroundReturnMessage {
                     returnBanner(message)
                 }
+                if let message = viewModel.coordinator.shieldingMessage {
+                    returnBanner(message)
+                }
                 actions
             }
             .padding(16)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle(run?.isNightWatch == true ? "Quiet Time" : "Phone-away time")
+        .navigationTitle(run?.isNightWatch == true ? "Wind Down" : "Phone-away time")
         .navigationBarTitleDisplayMode(.inline)
+        .alert(
+            "End Wind Down without the tag?",
+            isPresented: $showEmergencyExitConfirmation
+        ) {
+            Button("Keep Wind Down running", role: .cancel) {}
+            Button("Use emergency exit", role: .destructive) {
+                viewModel.emergencyEndWindDown()
+            }
+        } message: {
+            Text("This immediately lifts any app shields and records that the tag was bypassed.")
+        }
+        .alert(
+            "Pair a new phone-bed tag?",
+            isPresented: $showNFCTagReplacementConfirmation
+        ) {
+            Button("Keep current tag", role: .cancel) {}
+            Button("Pair new tag") {
+                viewModel.provisionNFCTag(forActiveRun: true)
+            }
+        } message: {
+            Text("We’ll write a new tag now. Your current Wind Down will stay in place, and the old tag will stop working after the new one is saved.")
+        }
     }
 
     private var hero: some View {
@@ -56,13 +84,7 @@ struct ActiveRunView: View {
                     .accessibilityLabel(timerAccessibilityLabel)
                     .accessibilityAddTraits(.updatesFrequently)
 
-                ProgressView(timerInterval: progressInterval, countsDown: false)
-                    .progressViewStyle(.linear)
-                    .tint(AppColors.grass)
-                    .scaleEffect(y: 2, anchor: .center)
-                    .frame(height: 18)
-                    .background(AppColors.panel)
-                    .overlay(Rectangle().stroke(AppColors.stroke, lineWidth: 2))
+                WindDownPhaseProgressView(interval: progressInterval)
                 Text(transitionCaption)
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.secondaryText)
@@ -115,6 +137,11 @@ struct ActiveRunView: View {
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.secondaryText)
                     }
+                    Button(viewModel.hasRegisteredNFCTag ? "Pair a new tag instead" : "Pair this tag") {
+                        showNFCTagReplacementConfirmation = true
+                    }
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
                     Button("Continue without a placement check") {
                         viewModel.coordinator.continueWithoutWatch()
                     }
@@ -215,11 +242,53 @@ struct ActiveRunView: View {
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
             }
 
-            Button(run?.isNightWatch == true ? "End quiet time early" : "End early") {
-                viewModel.coordinator.endEarly()
+            if guardKind == .nfcTag, run?.isNightWatch == true {
+                Button {
+                    viewModel.requestEndWindDown()
+                } label: {
+                    Label("Tap tag to end Wind Down", systemImage: "dot.radiowaves.left.and.right")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PixelPrimaryButtonStyle())
+                .accessibilityHint("Scans the registered phone-bed tag before ending Wind Down")
+
+                if !viewModel.nfcStatus.isEmpty {
+                    Text(viewModel.nfcStatus)
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                DisclosureGroup(
+                    "Can't access your tag?",
+                    isExpanded: $emergencyExitExpanded
+                ) {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("The emergency exit is always available if the tag is lost or unreachable.")
+                            .font(pixelFont(.caption))
+                            .foregroundStyle(AppColors.secondaryText)
+                        Button("Pair a replacement tag") {
+                            showNFCTagReplacementConfirmation = true
+                        }
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                        Button("End without tag") {
+                            showEmergencyExitConfirmation = true
+                        }
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.secondaryText)
+                    }
+                    .padding(.top, AppSpacing.xs)
+                }
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.secondaryText)
+            } else {
+                Button(run?.isNightWatch == true ? "End Wind Down early" : "End early") {
+                    viewModel.coordinator.endEarly()
+                }
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.secondaryText)
             }
-            .font(pixelFont(.caption))
-            .foregroundStyle(AppColors.secondaryText)
         }
     }
 
@@ -315,7 +384,7 @@ struct ActiveRunView: View {
         case .windDown: return "Bedtime at \(time)"
         case .overnight: return "Phone-free morning begins at \(time)"
         case .morningQuiet: return "Your phone wakes at \(time)"
-        case .complete: return "Quiet time is complete"
+        case .complete: return "Wind Down is complete"
         }
     }
 
@@ -340,6 +409,6 @@ struct ActiveRunView: View {
 
     private var timerAccessibilityLabel: String {
         let remaining = OllieFormat.minutes(transitionRemainingSeconds)
-        return remaining > 0 ? "\(remaining) minutes until the next quiet-time step" : "Less than a minute remaining"
+        return remaining > 0 ? "\(remaining) minutes until the next Wind Down step" : "Less than a minute remaining"
     }
 }
