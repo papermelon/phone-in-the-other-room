@@ -100,6 +100,7 @@ extension FocusSessionCoordinator {
         ollieMessage = "Ollie saw the phone head out. The timer can rest now."
         addEvent("Phone placement confirmed.", severity: .success)
         persistActiveRun()
+        reconcileShielding(for: run)
         stopWatchPlacement()
         UIApplication.shared.isIdleTimerDisabled = false
         watch.send(WatchMessage(type: .focusRunStateUpdate, run: run, proximity: proximityState))
@@ -120,6 +121,7 @@ extension FocusSessionCoordinator {
         ollieMessage = "The Watch check can rest. Ollie will keep the timer warm."
         addEvent("Watch placement unavailable; timer continued.")
         persistActiveRun()
+        reconcileShielding(for: run)
         stopWatchPlacement()
         UIApplication.shared.isIdleTimerDisabled = false
         if Date() >= run.plannedEndAt {

@@ -17,11 +17,12 @@ one is real, and it is the single strongest temptation for future agents to "fin
 ## Decision
 
 **Farm, Friends, and Shop are hidden from release builds — code kept, gated behind a
-DEBUG flag — until the milestone gates below are met.** They are not deleted (the sheep
-economy in `RewardEngine` already accrues balances they will eventually display), and they
-are never shipped as "coming soon" placeholders.
+DEBUG launch flag — until the milestone gates below are met.** They are not deleted, and
+they are never shipped as "coming soon" placeholders.
 
-The first-TestFlight surface is two tabs: Home and Stats (`docs/PROJECT_BRIEF.md`).
+The launch surface is Home, Nights, and More. Ordinary Debug navigation matches Release.
+Internal mock screens appear inside More only when launched with
+`-ollie.debug.enableMockScreens YES` (ADR-0007).
 
 ## Reintroduction gates (all must pass, in order)
 
@@ -30,24 +31,25 @@ The first-TestFlight surface is two tabs: Home and Stats (`docs/PROJECT_BRIEF.md
 - **Gate 1 — Retention evidence.** Testers complete bedtime runs on 5+ of their first 14
   nights (the brief's success criterion), and qualitative feedback organically asks for
   more progression/collection. If nobody asks, these features stay gated.
-- **Gate 2 — Technical readiness.** The sheep/coin economy is wired to real
-  `UserProgress` (no `MVPMockData` in any release path), and persisted-model changes have
-  backwards-compatible decoding with tests.
+- **Gate 2 — Technical readiness.** Farm reads `totalCompletedRuns` as the one-night-one-sheep
+  flock (no `MVPMockData` in any release path), and persisted-model changes have
+  backwards-compatible decoding with tests. It does not expose coins, balances, rarity,
+  levels, or minute-based sheep values.
 - **Gate 3 — Art readiness.** The relevant asset set is complete per
   `docs/SCREEN_ASSET_MAP.md` (no placeholder-shape fallbacks on shipped screens).
 
 ## Reintroduction order and method
 
-1. **Farm first.** The economy already exists (`sheepBalance`, `coinBalance` accrue in
-   `RewardEngine`); Farm is display + light interaction on real data. Lowest risk, most
-   on-brand.
-2. **Shop second.** Spending coins on cosmetic/cozy items. Must pass the anti-addiction
-   review in `docs/PRODUCT_PRINCIPLES.md` — no scarcity pressure, no premium currency.
+1. **Farm first.** Farm visualizes the cumulative flock from `totalCompletedRuns`. If it
+   earns a root destination, Home/Nights/Farm remain the three tabs and More becomes a
+   top-right utility sheet.
+2. **Shop later, nested in Farm.** Shop is never a root tab and cannot revive a coin or
+   scarcity economy. Its value and mechanics require a new reviewed scope.
 3. **Friends last — or never.** Requires a backend, accounts, and moderation, and is the
    feature most at odds with the anti-addiction principles (social comparison). Requires
    its own ADR before any work starts. Default answer is no.
 
-Method, per feature: one tab at a time; wire to real data *before* flipping the gate;
+Method, per feature: one destination at a time; wire to real data *before* flipping the gate;
 apply the belonging test (`PRODUCT_PRINCIPLES.md`) and `docs/PLAYBOOKS/pre-merge-review.md`;
 human approves the gate flip.
 

@@ -90,6 +90,7 @@ struct NightWatchPreferences: Codable, Equatable {
     var morningActivity: PhoneFreeActivity
     var guardKind: SessionGuardKind
     var isConfigured: Bool
+    var automaticStartEnabled: Bool
 
     static let defaults = NightWatchPreferences(
         bedtimeHour: 23,
@@ -100,8 +101,9 @@ struct NightWatchPreferences: Codable, Equatable {
         morningQuietMinutes: 30,
         eveningActivity: .read,
         morningActivity: .openCurtains,
-        guardKind: .honorTimer,
-        isConfigured: false
+        guardKind: .nfcTag,
+        isConfigured: false,
+        automaticStartEnabled: true
     )
 
     init(
@@ -114,7 +116,8 @@ struct NightWatchPreferences: Codable, Equatable {
         eveningActivity: PhoneFreeActivity,
         morningActivity: PhoneFreeActivity,
         guardKind: SessionGuardKind,
-        isConfigured: Bool
+        isConfigured: Bool,
+        automaticStartEnabled: Bool = true
     ) {
         self.bedtimeHour = min(23, max(0, bedtimeHour))
         self.bedtimeMinute = min(59, max(0, bedtimeMinute))
@@ -126,6 +129,29 @@ struct NightWatchPreferences: Codable, Equatable {
         self.morningActivity = morningActivity
         self.guardKind = guardKind
         self.isConfigured = isConfigured
+        self.automaticStartEnabled = automaticStartEnabled
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case bedtimeHour, bedtimeMinute, wakeHour, wakeMinute
+        case windDownMinutes, morningQuietMinutes, eveningActivity, morningActivity
+        case guardKind, isConfigured, automaticStartEnabled
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        bedtimeHour = min(23, max(0, try container.decodeIfPresent(Int.self, forKey: .bedtimeHour) ?? Self.defaults.bedtimeHour))
+        bedtimeMinute = min(59, max(0, try container.decodeIfPresent(Int.self, forKey: .bedtimeMinute) ?? Self.defaults.bedtimeMinute))
+        wakeHour = min(23, max(0, try container.decodeIfPresent(Int.self, forKey: .wakeHour) ?? Self.defaults.wakeHour))
+        wakeMinute = min(59, max(0, try container.decodeIfPresent(Int.self, forKey: .wakeMinute) ?? Self.defaults.wakeMinute))
+        windDownMinutes = min(180, max(15, try container.decodeIfPresent(Int.self, forKey: .windDownMinutes) ?? Self.defaults.windDownMinutes))
+        morningQuietMinutes = min(180, max(15, try container.decodeIfPresent(Int.self, forKey: .morningQuietMinutes) ?? Self.defaults.morningQuietMinutes))
+        eveningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .eveningActivity) ?? Self.defaults.eveningActivity
+        morningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .morningActivity) ?? Self.defaults.morningActivity
+        guardKind = try container.decodeIfPresent(SessionGuardKind.self, forKey: .guardKind) ?? Self.defaults.guardKind
+        isConfigured = try container.decodeIfPresent(Bool.self, forKey: .isConfigured) ?? false
+        // Existing saved plans should not silently begin shielding or sessions after an update.
+        automaticStartEnabled = try container.decodeIfPresent(Bool.self, forKey: .automaticStartEnabled) ?? false
     }
 
     func bedtimeDate(on referenceDate: Date = Date(), calendar: Calendar = .current) -> Date {
@@ -207,6 +233,27 @@ struct NightWatchPreferences: Codable, Equatable {
 
         return calendar.date(byAdding: .day, value: 1, to: todayBedtime)
             ?? todayBedtime.addingTimeInterval(24 * 60 * 60)
+    }
+}
+
+struct AutomaticWindDownSchedule: Codable, Equatable {
+    static let currentSchemaVersion = 1
+
+    var schemaVersion: Int
+    let id: UUID
+    let startedAt: Date
+    let plan: NightWatchPlan
+
+    init(
+        schemaVersion: Int = currentSchemaVersion,
+        id: UUID = UUID(),
+        startedAt: Date,
+        plan: NightWatchPlan
+    ) {
+        self.schemaVersion = schemaVersion
+        self.id = id
+        self.startedAt = startedAt
+        self.plan = plan
     }
 }
 

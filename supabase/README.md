@@ -13,11 +13,18 @@ npx supabase db reset
 npx supabase db lint --local
 docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
   -v ON_ERROR_STOP=1 < supabase/tests/activitykit_delivery_test.sql
+docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
+  -v ON_ERROR_STOP=1 < supabase/tests/impact_data_test.sql
+docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
+  -v ON_ERROR_STOP=1 < supabase/tests/app_feedback_test.sql
 npx deno check \
   supabase/functions/live-activity-registration/index.ts \
   supabase/functions/live-activity-cancellation/index.ts \
   supabase/functions/focus-run-sync/index.ts \
-  supabase/functions/live-activity-dispatch/index.ts
+  supabase/functions/live-activity-dispatch/index.ts \
+  supabase/functions/submit-feedback/index.ts \
+  supabase/functions/feedback-email-delivery/index.ts
+npx deno test --allow-env supabase/functions/_shared/feedback_test.ts
 ```
 
 ## Hosted development project
@@ -39,12 +46,28 @@ npx supabase functions deploy live-activity-registration
 npx supabase functions deploy live-activity-cancellation
 npx supabase functions deploy focus-run-sync
 npx supabase functions deploy live-activity-dispatch --no-verify-jwt
+npx supabase functions deploy submit-feedback
+npx supabase functions deploy feedback-email-delivery --no-verify-jwt
 ```
+
+Apply `20260730100000_fix_live_activity_rpc_overload.sql` and deploy the updated
+`live-activity-registration` function in the same maintenance window. The original
+ten-argument `register_live_activity` remains available to older clients. A no-default
+sixteen-argument compatibility wrapper keeps the currently deployed Edge Function working
+during rollout; updated schema-version-2 registrations use `register_live_activity_v2`.
 
 Add `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY_P8`,
 `APNS_LIVE_ACTIVITY_TOPIC`, `APNS_HOST`, `APNS_ENVIRONMENT`, and `DISPATCH_SECRET` through Supabase function secrets. The
 platform supplies the Supabase URL and server keys. Do not add secret values to a local
 tracked file.
+
+Feedback additionally requires `RESEND_API_KEY`, `FEEDBACK_FROM_EMAIL`,
+`FEEDBACK_TO_EMAIL`, and a high-entropy `FEEDBACK_DELIVERY_SECRET`. Keep the recipient and
+verified sender in secrets, not source. Configure Supabase Cron to POST
+`feedback-email-delivery` every ten minutes with the same secret in the
+`x-feedback-delivery-secret` header. The function retries pending notification rows once per
+run, stops after five attempts, and removes feedback rows/private attachments after 180
+days. The support mailbox owner must follow the matching 180-day deletion process.
 
 For development, `APNS_HOST` is `https://api.sandbox.push.apple.com` and
 `APNS_ENVIRONMENT` is `sandbox`.
@@ -58,12 +81,16 @@ do not overwrite it if it already exists. Paste the Singapore development values
 SUPABASE_URL = https:/$()/gftqcxfbzngopwndvjyp.supabase.co
 SUPABASE_PUBLISHABLE_KEY = sb_publishable_REPLACE_LOCALLY
 SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED = NO
+SUPABASE_FEEDBACK_ENABLED = NO
 ```
 
 Keep the feature disabled until migrations, functions, Cron, Sandbox APNs credentials,
 and physical-device checks are ready. Only the publishable key belongs in this file.
 
 Release and TestFlight builds read `Config/Supabase.release.local.xcconfig`, which is also
-ignored. Populate it only with the separate production project URL and publishable key;
-keep its feature flag `NO` until production migrations, functions, Cron, and production
-APNs credentials have been verified. Development credentials must never ship in Release.
+ignored. It now opts into the feedback route with `SUPABASE_FEEDBACK_ENABLED = YES` by
+explicit launch approval. Development credentials must never ship in Release. The
+production schema and functions are deployed, but Resend credentials/domain, Cron retry,
+privacy publication, mailbox retention, and physical-iPhone upload/accessibility checks
+remain external launch gates; until those pass, notification rows remain retryable and the
+iOS form offers its recoverable prefilled-email fallback after a backend failure.

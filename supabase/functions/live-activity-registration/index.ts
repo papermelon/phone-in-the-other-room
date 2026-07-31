@@ -22,7 +22,7 @@ Deno.serve(async (request) => {
     if (request.headers.get("idempotency-key") !== idempotencyKey) {
       throw new Error("Idempotency key mismatch");
     }
-    const { data, error } = await client.rpc("register_live_activity", {
+    const { data, error } = await client.rpc("register_live_activity_v2", {
       p_run_id: requireString(body, "runID"),
       p_installation_id: requireString(body, "installationID"),
       p_activity_id: requireString(body, "activityID"),

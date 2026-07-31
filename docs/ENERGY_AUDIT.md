@@ -1,4 +1,4 @@
-# Battery and energy audit — 2026-07-27
+# Battery and energy audit — 2026-07-31
 
 Scope: the working implementation from session start through placement, foreground and
 background phase transitions, completion, restoration, and restart. Findings marked
@@ -23,6 +23,10 @@ measurement before drawing a conclusion.
    terminal events.
 6. **Trade-off:** a foreground phase transition may be coalesced by up to one second. Local
    notifications and remote Live Activity phase events remain system-managed.
+
+The active-run progress card subsequently contained a separate `TimelineView(.periodic(...,
+by: 1))` for its custom elapsed label. That view was replaced with date-relative
+`ProgressView`/`Text` rendering on 2026-07-31; no app-owned one-second UI schedule remains.
 
 ### 🟠 Nearby Interaction placement burst — proven, bounded; semantics unchanged
 
@@ -80,18 +84,23 @@ measurement before drawing a conclusion.
 5. **Expected benefit:** small cleanup after an occasional action.
 6. **Trade-off:** none expected; other audio receives a normal deactivation notification.
 
-### 🟢 Live Activity countdown — proven efficient
+### 🟠 Live Activity presentation — countdown efficient; disabled by default
 
 1. **Behavior:** the widget uses `Text(timerInterval:countsDown:showsHours:)` with absolute
    bedtime, wake, and completion dates.
 2. **Energy mechanism:** iOS renders the changing countdown; the app does not push seconds.
 3. **Overnight/background:** `activity.update()` occurs only on restoration/reconciliation
    and semantic phase changes. Scheduled APNs handles suspended phase changes.
-4. **Change:** retained. DEBUG counters now identify every request, update, token observer,
-   and end. `-ollie.debug.disableLiveActivity YES` disables creation for comparison runs.
-5. **Expected benefit:** preserves the countdown with essentially no periodic app work.
-6. **Trade-off:** a Live Activity and Always-On display can still have system display cost;
-   measure it rather than attributing it to app CPU.
+4. **Change:** the feature is now disabled by default, while the widget target remains for
+   reversible A/B profiling. DEBUG can opt in with `-ollie.debug.enableLiveActivity YES`;
+   `-ollie.debug.disableLiveActivity YES` remains an explicit off switch. Local Supabase
+   Live Activity transport is also set to `NO` in both local xcconfig files.
+5. **Expected benefit:** normal sessions avoid the Dynamic Island/Lock Screen surface,
+   ActivityKit token observation, and optional push-registration/network work. The app still
+   owns timing through the same one-shot boundary architecture.
+6. **Trade-off:** the glanceable countdown and paired-Watch Smart Stack status are absent by
+   default. Re-enable only for controlled comparison or a later product decision; ActivityKit
+   also limits an active Live Activity to eight hours.
 
 ### 🟢 Dormant background architecture — proven
 
@@ -112,14 +121,14 @@ Unified logging uses subsystem `com.ngawangchime.countingsheep` and these catego
 - `LiveActivityTransport`: actual Supabase attempt and outcome
 
 The logs and counters compile only in DEBUG, except pre-existing rare error logs. To profile a
-session without a Live Activity, add this launch argument to the Debug Run action:
+session with a Live Activity, add this launch argument to the Debug Run action:
 
 ```text
--ollie.debug.disableLiveActivity YES
+-ollie.debug.enableLiveActivity YES
 ```
 
-Remove the argument (or set it to `NO`) for normal behavior. End any existing session before
-recording so a prior Live Activity cleanup does not contaminate the first measurement.
+Normal behavior is now Live Activity-off. End any existing session before recording so a prior
+Live Activity cleanup does not contaminate the first measurement.
 
 ## Controlled profiling procedure
 
@@ -137,10 +146,10 @@ display, suspension, or battery behavior.
 4. Capture these scenarios:
    - **A — baseline:** first record the device with the app terminated, then a separate
      idle-app/background trace.
-   - **B — session without Live Activity:** use the DEBUG launch argument, honor timer,
-     start the session, lock the phone, and record.
-   - **C — Live Activity countdown:** remove the launch argument and repeat the same honor
-     timer schedule and display conditions.
+   - **B — session without Live Activity:** use the normal build, honor timer, start the
+     session, lock the phone, and record.
+   - **C — Live Activity countdown:** add `-ollie.debug.enableLiveActivity YES` and repeat the
+     same honor-timer schedule and display conditions.
    - **D — NI/UWB:** choose Watch placement and record from just before start through
      confirmation or the 30-second timeout. Inspect both device logs and WatchConnectivity
      message spacing.

@@ -9,7 +9,7 @@ struct NightWatchReceiptCard: View {
     var body: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("YOUR QUIET TIME")
+                Text("YOUR WIND DOWN")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
 
@@ -17,7 +17,7 @@ struct NightWatchReceiptCard: View {
                     icon: "iphone.slash",
                     title: "Phone-away time",
                     value: elapsedLabel,
-                    detail: "Elapsed from the moment quiet time began"
+                    detail: "Elapsed from the moment Wind Down began"
                 )
 
                 if let run, run.isNightWatch {

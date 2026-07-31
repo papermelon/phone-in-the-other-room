@@ -11,10 +11,10 @@ struct WatchCompletionView: View {
                 .multilineTextAlignment(.center)
             Text("Ollie found")
                 .font(.caption2)
-            Text(viewModel.reward?.title ?? "Night Watch Letter")
+            Text(viewModel.reward?.title ?? "Wind Down Letter")
                 .font(.caption)
                 .multilineTextAlignment(.center)
-                .accessibilityLabel("Reward: \(viewModel.reward?.title ?? "Night Watch Letter")")
+                .accessibilityLabel("Reward: \(viewModel.reward?.title ?? "Wind Down Letter")")
             Button("Done") { viewModel.clearRunSummary() }
                 .accessibilityHint("Returns to the Watch start screen")
             Button("Ping Phone") { viewModel.pingPhone() }

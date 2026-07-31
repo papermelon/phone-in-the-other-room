@@ -27,6 +27,7 @@ final class DisabledFocusRunLiveActivityRemoteSink: FocusRunLiveActivityRemoteSi
 @MainActor
 final class FocusRunLiveActivityService {
     private let remoteSink: FocusRunLiveActivityRemoteSink
+    private let enabled: Bool
     private var tokenObservationTasks: [String: Task<Void, Never>] = [:]
     private var latestTokens: [String: Data] = [:]
     private var tokenGenerations: [String: Int] = [:]
@@ -41,10 +42,23 @@ final class FocusRunLiveActivityService {
 
     init(
         remoteSink: FocusRunLiveActivityRemoteSink? = nil,
-        installationID: UUID = PersistenceService.shared.installationID
+        installationID: UUID = PersistenceService.shared.installationID,
+        enabled: Bool? = nil
     ) {
-        self.remoteSink = remoteSink ?? DisabledFocusRunLiveActivityRemoteSink()
+        let resolvedEnabled = enabled ?? Self.defaultEnabled
+        self.enabled = resolvedEnabled
+        self.remoteSink = resolvedEnabled
+            ? (remoteSink ?? DisabledFocusRunLiveActivityRemoteSink())
+            : DisabledFocusRunLiveActivityRemoteSink()
         self.installationID = installationID
+#if DEBUG
+        logger.debug("Live Activity policy enabled=\(resolvedEnabled, privacy: .public)")
+#endif
+        // Keep the target available for controlled comparisons without adding a persistent
+        // Dynamic Island surface, token observer, or push transport to normal sessions.
+        if !resolvedEnabled {
+            endAll(reason: .reset)
+        }
     }
 
     deinit {
@@ -63,6 +77,13 @@ final class FocusRunLiveActivityService {
             return
         }
 #endif
+        guard enabled else {
+#if DEBUG
+            logger.notice("Live Activity disabled by default policy")
+#endif
+            endAll(reason: .reset)
+            return
+        }
         syncRun(run, status: .active)
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         if let activity = activeActivity(for: run.id) {
@@ -100,6 +121,10 @@ final class FocusRunLiveActivityService {
             return
         }
 #endif
+        guard enabled else {
+            endAll(reason: run.completedSuccessfully ? .completed : .endedEarly)
+            return
+        }
         syncRun(run, status: run.completedSuccessfully ? .completed : .endedEarly)
         let finalContent = contentState(for: run, isComplete: true)
         let content = ActivityContent(state: finalContent, staleDate: nil)
@@ -126,6 +151,7 @@ final class FocusRunLiveActivityService {
 #if DEBUG
         guard !liveActivitiesDisabledForEnergyProfiling else { return }
 #endif
+        guard enabled else { return }
         syncRun(run, status: .active)
         guard let activity = activeActivity(for: run.id) else { return }
         let state = contentState(for: run, isComplete: false)
@@ -216,8 +242,8 @@ final class FocusRunLiveActivityService {
             bedtimeAt: run.nightWatchPlan?.intendedBedtime,
             wakeAt: run.nightWatchPlan?.wakeTime,
             morningQuietEndsAt: run.nightWatchPlan?.protectedUntil,
-            eveningActivityTitle: run.nightWatchPlan?.eveningActivity.shortTitle,
-            morningActivityTitle: run.nightWatchPlan?.morningActivity.shortTitle
+            eveningActivityTitle: run.nightWatchPlan?.eveningActivity.title,
+            morningActivityTitle: run.nightWatchPlan?.morningActivity.title
         )
         await remoteSink.upsert(registration)
     }
@@ -273,6 +299,16 @@ final class FocusRunLiveActivityService {
         UserDefaults.standard.bool(forKey: "ollie.debug.disableLiveActivity")
     }
 
+    private static var defaultEnabled: Bool {
+        if UserDefaults.standard.bool(forKey: "ollie.debug.disableLiveActivity") {
+            return false
+        }
+        if UserDefaults.standard.bool(forKey: "ollie.debug.enableLiveActivity") {
+            return true
+        }
+        return UserDefaults.standard.bool(forKey: "ollie.liveActivity.enabled")
+    }
+
     private func logActivityUpdate(reason: String) {
         debugUpdateCount += 1
         let now = Date()
@@ -281,6 +317,10 @@ final class FocusRunLiveActivityService {
         logger.debug(
             "activity.update count=\(self.debugUpdateCount) reason=\(reason, privacy: .public) secondsSincePrevious=\(interval, format: .fixed(precision: 3))"
         )
+    }
+#else
+    private static var defaultEnabled: Bool {
+        UserDefaults.standard.bool(forKey: "ollie.liveActivity.enabled")
     }
 #endif
 
@@ -304,8 +344,8 @@ final class FocusRunLiveActivityService {
             bedtimeAt: run.nightWatchPlan?.intendedBedtime,
             wakeAt: run.nightWatchPlan?.wakeTime,
             morningQuietEndsAt: run.nightWatchPlan?.protectedUntil,
-            eveningActivityTitle: run.nightWatchPlan?.eveningActivity.shortTitle,
-            morningActivityTitle: run.nightWatchPlan?.morningActivity.shortTitle
+            eveningActivityTitle: run.nightWatchPlan?.eveningActivity.title,
+            morningActivityTitle: run.nightWatchPlan?.morningActivity.title
         )
     }
 }

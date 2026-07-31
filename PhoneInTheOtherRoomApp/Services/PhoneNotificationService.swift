@@ -9,6 +9,12 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         "night-watch-phone-free-morning",
         "focus-run-complete"
     ]
+    private let nightWatchReminderIdentifiers = [
+        "night-watch-reminder",
+        "night-watch-lead-in-60",
+        "night-watch-lead-in-30",
+        "night-watch-lead-in-10"
+    ]
 
     private override init() {
         super.init()
@@ -24,7 +30,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
 
             let content = UNMutableNotificationContent()
             content.title = "Ollie is ready on your Watch"
-            content.body = "Open the Watch app to see tonight's quiet time."
+            content.body = "Open the Watch app to see tonight's Wind Down."
             content.sound = .default
 
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
@@ -117,6 +123,46 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         }
     }
 
+    func scheduleAutomaticWindDownReminders(
+        at startDate: Date,
+        purpose: OfflinePurposeProfile = .defaultProfile
+    ) {
+        guard startDate > Date() else { return }
+        Task {
+            guard await requestAuthorizationIfNeeded() else { return }
+            let center = UNUserNotificationCenter.current()
+            center.removePendingNotificationRequests(withIdentifiers: nightWatchReminderIdentifiers)
+
+            let leadIns: [(String, Int)] = [
+                ("night-watch-lead-in-60", 60),
+                ("night-watch-lead-in-30", 30),
+                ("night-watch-lead-in-10", 10)
+            ]
+            for (identifier, minutes) in leadIns {
+                let leadInDate = startDate.addingTimeInterval(TimeInterval(-minutes * 60))
+                await addRunNotification(
+                    identifier: identifier,
+                    at: leadInDate,
+                    copy: NightWatchGuidance.notificationCopy(
+                        for: .windDownLeadIn(minutes: minutes)
+                    ),
+                    sound: nil,
+                    center: center
+                )
+            }
+            await addRunNotification(
+                identifier: "night-watch-reminder",
+                at: startDate,
+                copy: NightWatchGuidance.notificationCopy(
+                    for: .windDownReminder,
+                    tip: purpose.reminderPhrase
+                ),
+                sound: nil,
+                center: center
+            )
+        }
+    }
+
     func cancelRunCompletion() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(
             withIdentifiers: runNotificationIdentifiers
@@ -124,7 +170,9 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
     }
 
     func cancelNightWatchReminder() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["night-watch-reminder"])
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: nightWatchReminderIdentifiers
+        )
     }
 
     private func requestAuthorizationIfNeeded() async -> Bool {

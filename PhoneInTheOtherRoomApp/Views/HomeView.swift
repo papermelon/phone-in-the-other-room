@@ -11,7 +11,7 @@ struct HomeView: View {
             ZStack {
                 AppColors.paper.ignoresSafeArea()
                 VStack(spacing: 0) {
-                    if showChrome, selectedTab != .farm {
+                    if showChrome {
                         CountingSheepTopBar()
                             .padding(.horizontal, 18)
                             .padding(.top, 10)
@@ -87,22 +87,12 @@ struct HomeView: View {
             case .home:
                 PixelHomeDashboard()
                     .environmentObject(viewModel)
-            case .stats:
+            case .nights:
                 FocusStatsView()
                     .environmentObject(viewModel)
-#if DEBUG
-            case .farm:
-                FarmOverviewScreen(progress: viewModel.coordinator.progress)
-            case .friends:
-                FriendsOverviewScreen()
-            case .shop:
-                ShopPlaceholderScreen()
-#else
-            case .farm, .friends, .shop:
-                // Gated tabs (ADR-0003) are not selectable in Release; fall back safely.
-                PixelHomeDashboard()
+            case .more:
+                MoreView()
                     .environmentObject(viewModel)
-#endif
             }
         }
     }

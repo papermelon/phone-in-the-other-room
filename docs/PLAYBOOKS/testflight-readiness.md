@@ -1,143 +1,225 @@
-# Playbook: TestFlight Readiness
+# Playbook: App Store 1.0 Readiness
 
-Prepare the first Counting Sheep TestFlight build from top to bottom. Product scope is fixed
-by `PROJECT_BRIEF.md` and ADR-0003/0004/0006: two Release tabs, one Night Watch, no release
-HealthKit or Screen Time UI.
+Prepare Counting Sheep 1.0 for TestFlight and App Store review. Product scope is fixed by
+`PROJECT_BRIEF.md` and ADR-0003/0004/0006/0007: three Release tabs, one user-facing Wind Down
+ritual, optional NFC and bookend shielding, optional read-only sleep context, and no social
+layer.
 
-Last reconciled with `project.yml` and the Night Watch implementation: 2026-07-18.
+Last reconciled with `project.yml`: 2026-08-01.
+
+For current App Store Connect status and submission-ready copy, see
+`docs/APP_STORE_SUBMISSION.md`.
+For the pending production schema/function change, use
+`docs/PLAYBOOKS/production-backend-release.md`.
+
+## Evidence snapshot — 2026-08-01
+
+Locally proven:
+
+- Debug and Release simulator builds succeed.
+- A Debug build targeted at the connected physical iPhone succeeds and the current
+  development build is installed for NFC end-flow retesting.
+- The full unit suite passes; the latest run includes 74 tests.
+- A signed Release archive and App Store export succeed for build 3. The exported IPA has
+  distribution profiles with `get-task-allow=false` for the app, Watch, report, monitor,
+  shield configuration, and shield action targets.
+- The exported app carries production Family Controls profiles for the containing app,
+  report, monitor, shield configuration, and shield action targets.
+- The exported app contains the main and monitor privacy manifests.
+- Debug and Release navigation render Home, Nights, and More; internal previews require the
+  explicit Debug launch argument.
+
+Read-only external audit:
+
+- App Store Connect version 1.0 is Prepare for Submission.
+- TestFlight build 2 is processed and selected for App Store version 1.0.
+- Build 3 is prepared locally with NFC-authenticated ending and Wind Down presentation.
+- App Privacy and the public policy URL are not yet fully reconciled with the new feedback
+  disclosures; screenshots, age rating, content rights, remaining legal declarations,
+  build-3 upload, and final review submission remain.
+- The production Supabase migrations, `live-activity-registration`, `submit-feedback`, and
+  `feedback-email-delivery` Edge Functions are deployed and the linked schema is lint-clean.
+- Release/TestFlight configuration now opts into feedback (`SUPABASE_FEEDBACK_ENABLED=YES`)
+  by explicit launch approval. Resend secrets/domain, the ten-minute Cron, policy
+  publication, mailbox retention approval, and physical-device feedback testing remain
+  launch gates; until those pass, accepted reports may remain pending and the form keeps its
+  recoverable Mail fallback.
+
+Not locally provable:
+
+- Real NFC, Family Controls scheduling while terminated, Apple Health stage provenance,
+  accessibility on physical devices, full overnight restoration, and App Review acceptance.
 
 ## 1. Human account and distribution work
 
-- [ ] Apple Developer Program membership is active.
-- [ ] App Store Connect record exists for **Counting Sheep**.
-- [ ] Permanent iOS bundle ID `com.ngawangchime.countingsheep` is registered and correct.
-- [ ] Team `4KZQPZR47B` is the intended distribution team.
-- [ ] Family Controls distribution request is submitted for the later Screen Time milestone.
-- [ ] Current artwork is cleared for distribution per `ASSET_NOTICE.md`.
-- [ ] App Store privacy disclosures cover every enabled network feature and dependency.
+- [ ] Apple Developer Program membership and the Counting Sheep App Store Connect record
+      are active.
+- [ ] Main bundle ID is `com.ngawangchime.countingsheep`; Team is `4KZQPZR47B`.
+- [ ] Register these explicit extension App IDs:
+  - `com.ngawangchime.countingsheep.DeviceActivityMonitor`
+  - `com.ngawangchime.countingsheep.ShieldConfiguration`
+  - `com.ngawangchime.countingsheep.ShieldAction`
+- [ ] Assign Family Controls distribution to the main app, Screen Time report, monitor,
+      shield configuration, and shield action App IDs. Regenerate distribution profiles
+      after approval.
+- [ ] HealthKit, NFC Tag Reading, App Groups, Live Activities/push, and Family Controls
+      capabilities match the entitlements in `project.yml`.
+- [ ] Current artwork is cleared per `ASSET_NOTICE.md`.
+- [ ] A public privacy-policy URL reflects `docs/PRIVACY_DATA_MAP.md` and the feedback
+      disclosures in `docs/PUBLIC_PRIVACY_POLICY.md`.
+- [ ] App Privacy answers disclose any enabled Supabase transport, optional impact data,
+      and optional feedback text/email/screenshots/diagnostics.
 
-## 2. Generated project and signing
+## 2. Generated project, versions, and archive
 
-- [ ] `project.yml` remains the only project source of truth; no hand-edited pbxproj changes.
-- [ ] `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` match the planned upload.
-- [ ] Automatic signing resolves for iPhone, Watch, and Live Activity targets.
-- [ ] Empty/deferred entitlement files contain no speculative HealthKit or Family Controls keys.
-- [ ] Screen Time report extension remains unembedded for build 1.
-- [ ] `xcodegen generate` completes, then a signed archive succeeds:
+- [ ] `project.yml` is the only project source of truth.
+- [ ] Increase `CURRENT_PROJECT_VERSION` above the already-uploaded TestFlight build before
+      the next upload; confirm `MARKETING_VERSION` is `1.0`.
+- [ ] `xcodegen generate` completes.
+- [ ] Automatic distribution signing resolves for all eight targets.
+- [ ] A Release archive succeeds:
 
 ```bash
 xcodebuild archive \
   -project PhoneInTheOtherRoom.xcodeproj \
   -scheme PhoneInTheOtherRoom \
-  -destination 'generic/platform=iOS'
+  -configuration Release \
+  -destination 'generic/platform=iOS' \
+  -archivePath /tmp/CountingSheep.xcarchive
 ```
 
-## 3. Product identity and release scope
+- [ ] Inspect the archive: all six embedded iOS extensions and the Watch app are present;
+      every `.appex` has the expected extension-point identifier and distribution entitlement.
+- [ ] Validate/upload the archive through Xcode Organizer or App Store Connect before
+      declaring 1.0 ready. Local `altool` validation is blocked until an App Store Connect
+      JWT or app-specific password is provided.
 
-- [ ] iPhone and Watch display name is **Counting Sheep**.
-- [ ] No active customer surface calls the ritual a Focus Run or generic focus session.
-- [ ] Release exposes exactly Home and Stats.
-- [ ] Farm, Friends, Shop, `MVPMockData`, HealthKit, Screen Time selection/report UI, manual
-      analytics, and QA datasets are unreachable in Release.
-- [ ] Home immediately communicates both quiet bookends and the Night Watch schedule.
-- [ ] Stats describe protected nights and quiet bookends, not productivity output.
-- [ ] App Shortcut is **Night Watch** and opens the app without silently starting a timer.
+## 3. Release scope and product identity
 
-## 4. Fresh-install and setup checks
+- [ ] Debug and Release expose exactly Home, Nights, and More by default.
+- [ ] Farm, Friends, Shop, the legacy shelf, `MVPMockData`, manual analytics, and QA data are
+      unreachable without `-ollie.debug.enableMockScreens YES`, and always unreachable in Release.
+- [ ] No customer surface calls the ritual a Focus Run or generic productivity session.
+- [ ] NFC is the default for new plans. Honor timer, Watch, and QR remain optional
+      alternatives, and an NFC tag is required to end normally in NFC mode.
+- [ ] Automatic Wind Down sends 60/30/10-minute lead-ins; with shielding enabled, selected
+      apps rest at the saved start time while the main app is closed.
+- [ ] Shielding is separately optional, uses a user-selected set, lifts overnight, and
+      never prevents opening Counting Sheep.
+- [ ] Sleep outcomes are described as context/association, never diagnosis or causation.
 
-- [ ] A fresh user can set bedtime, wake time, both quiet-window lengths, and two offline cues.
-- [ ] Saving outside the start window requests notification permission in context and creates
-      the correct wind-down reminder.
-- [ ] Inside the start window, the primary action begins Night Watch in one tap after setup.
-- [ ] Honor timer is the default and never requires Watch/UWB.
-- [ ] Watch-unreachable and non-UWB paths offer warm timer fallback rather than a dead end.
-- [ ] QR phone bed supports camera denial/unavailability through the manual-code fallback.
+## 4. Fresh-install permission sequence
 
-## 5. Permission and privacy checks
+- [ ] Notifications are requested only when saving/starting a requested ritual.
+- [ ] Camera denial preserves QR manual fallback.
+- [ ] NFC unavailable/cancelled/read-only/full/multiple-tag states preserve honor/QR fallback.
+- [ ] Screen Time denial or empty selection preserves an unshielded Wind Down.
+- [ ] HealthKit requests read access only to `HKCategoryTypeIdentifierSleepAnalysis`.
+- [ ] HealthKit no-data and denied-read ambiguity use honest requested/no-data copy.
+- [ ] No permission is requested just by browsing Home or Nights.
 
-- [ ] iOS and Watch `NSNearbyInteractionUsageDescription` strings describe one optional
-      Night Watch tuck-in check.
-- [ ] Camera purpose string describes only the QR phone-bed scan.
-- [ ] Notifications are requested on plan save/start, never as generic re-engagement.
-- [ ] Build 1 does not expose a permission request for gated Screen Time or HealthKit UI.
-- [ ] No GPS or room-identification claim appears in metadata or onboarding.
-- [ ] Supabase Live Activity push is either intentionally configured and disclosed or disabled.
-- [ ] Logs never print raw ActivityKit push tokens, secrets, or selected Screen Time tokens.
+## 5. NFC physical-device matrix
 
-## 6. Core Night Watch behavior
+- [ ] Register a blank writable NDEF tag, confirm it on the next run, and verify only a
+      digest is persisted.
+- [ ] Replace the tag; the old tag no longer confirms.
+- [ ] From the active NFC tuck-in recovery state, explicitly pair a replacement tag and
+      verify the same Wind Down continues; after a replacement during a running Wind Down,
+      only the new tag can authenticate the normal end action.
+- [ ] Forget the tag; scanning does not silently re-enrol it.
+- [ ] Verify a mismatched tag, repeated scan, cancellation, two tags, read-only tag, and
+      insufficient-capacity tag.
+- [ ] Confirm the registered tag works offline.
+- [ ] Verify scan success followed by Screen Time scheduling failure still starts the local
+      ritual and explains the shield fallback.
+- [ ] In NFC mode, the normal iPhone end action accepts only the registered tag; a
+      mismatched tag or cancelled scan leaves Wind Down and its shields active.
+- [ ] The Watch cannot end an NFC-protected Wind Down. The multi-step emergency exit on
+      iPhone remains reachable, records the bypass, and clears shields immediately.
 
-- [ ] Wind-down, overnight, and morning quiet are phases of one persisted run.
-- [ ] iPhone, Watch, and Live Activity agree on the current phase and next transition.
-- [ ] Starting late protects only remaining bookend time and keeps the intended-bedtime date.
-- [ ] Overnight hours never enter quiet-minute totals, reward rarity, stars, sheep, or coins.
-- [ ] Completion notification fires at the morning-quiet end, not at bedtime.
-- [ ] Ending early is always available and uses no failure haptic, shame, or loss language.
-- [ ] An unavailable placement check continues as an honor timer.
-- [ ] QR/Watch placement evidence gates only the initial tuck-in; later distance never warns
-      or ends the session.
+## 6. Shielding physical-device matrix
 
-## 7. Restoration and edge cases
+- [ ] Select one disposable test app and one category; never select safety-critical apps.
+- [ ] Wind-down shield applies after honor, QR, NFC, and Watch-confirmed starts.
+- [ ] Wind-down shield clears at bedtime; morning shield returns at wake time and clears at
+      `protectedUntil`, while Counting Sheep is foregrounded, backgrounded, and terminated.
+- [ ] The shield appearance is gentle and “Return to quiet” closes the shielded app.
+- [ ] Opening Counting Sheep and ending Wind Down through its configured method—or using
+      the emergency exit—immediately clears shields.
+- [ ] Reset, replacement run, disabled toggle, no selection, scheduling error, timezone
+      change, DST transition, and device reboot do not strand a shield.
+- [ ] The completion/history record distinguishes scheduled, partial, unavailable, and
+      observed shield evidence; it never assumes scheduled minutes were protected.
 
-- [ ] Lock/background during wind-down, overnight, and morning quiet; returning shows the
-      correct phase without restarting the clock.
-- [ ] Terminate and relaunch in each phase; `ollie.lastRun` restores or completes gracefully.
-- [ ] Relaunch after the planned end reconciles completion and records the intended-bedtime day.
-- [ ] Test a run across local midnight.
-- [ ] Test spring-forward and fall-back schedules on physical hardware where practical.
-- [ ] Change timezone during a test plan and record the chosen policy/result.
-- [ ] Watch unreachable or Bluetooth disabled mid-run does not alter iPhone authority.
-- [ ] Legacy `FocusRun` and `UserProgress` JSON decode tests pass.
+## 7. HealthKit and impact measurement
 
-## 8. ActivityKit, notifications, and Watch
+- [ ] Sleep interval and duration match Apple Health for the night-ending date.
+- [ ] Core/deep/REM are shown only where present; overlapping Watch/iPhone sources are not
+      double-counted, and the chosen source is labelled locally.
+- [ ] Two protected plus two other measured nights unlock the local comparison.
+- [ ] Comparison copy includes group sizes and says association is not proof of cause.
+- [ ] Optional impact consent names every shared category and every important exclusion.
+- [ ] Shared records have relative nights only—no exact date/time, source name, selected app,
+      NFC identity, raw Health sample, or personal free text.
+- [ ] Stop sharing prevents future upload. Delete shared data removes backend rows without
+      deleting local detailed history.
+- [ ] Hosted migration `20260730090000_optional_impact_data.sql` is deployed and RLS/deletion
+      are tested before exposing sharing in production.
 
-- [ ] Live Activity starts once, shows phase-aware copy, and counts to the next transition.
-- [ ] Lock Screen, Dynamic Island, and paired-Watch Smart Stack layouts remain legible.
-- [ ] Local morning notification is the reliable completion fallback without remote push.
-- [ ] Reset, early end, replacement, and completion dismiss the matching Live Activity.
-- [ ] Watch rehydrates after launch and presents the same Night Watch plan.
-- [ ] Watch placement stops after confirmation/unavailability and releases Nearby Interaction.
-- [ ] Ping Phone works with reachable and queued delivery paths.
+## 8. Feedback release gate
 
-## 9. UI, accessibility, and bedtime comfort
+- [ ] The form validates 10–4,000 characters, optional email, and zero/one/three screenshots.
+- [ ] Each selected image is metadata-stripped JPEG, no more than 2,048 pixels on its longest
+      edge and no more than 3 MB; technical details contain only app/build/iOS/device family.
+- [ ] Migration `20260801090000_app_feedback.sql` passes SQL tests for table isolation,
+      ownership constraints, rate limits, idempotency, and retry state.
+- [ ] `submit-feedback` and `feedback-email-delivery` pass Deno checks/tests. The private
+      bucket never returns a public attachment URL.
+- [ ] Resend sender/domain, recipient, secrets, ten-minute schedule, five-attempt retry, and
+      180-day deletion are verified in the production project. The schema and functions are
+      deployed, but the production project currently has no `RESEND_*` or feedback-delivery
+      secrets and only the existing Live Activity Cron is configured.
+- [ ] A physical iPhone submission produces exactly one correctly formatted support email
+      with zero/one/three screenshots, including after a simulated first-attempt failure.
+- [ ] The support mailbox has an approved process to delete corresponding messages and
+      attachments within 180 days.
+- [ ] Keep `SUPABASE_FEEDBACK_ENABLED = NO` unless every preceding item passes. With it off,
+      the form opens the prefilled Mail fallback and copies the support address when Mail is absent.
 
-- [ ] Core screens survive large Dynamic Type without hiding primary actions or phase time.
-- [ ] VoiceOver can configure, begin, understand, and end Night Watch.
-- [ ] Timers announce the next Night Watch transition rather than an unexplained duration.
-- [ ] Decorative art is hidden; meaningful Ollie/phone-bed imagery has concise labels.
-- [ ] Touch targets meet 44-point minimums.
-- [ ] Evening surfaces are calm, with no urgent colors, flashing, or loud celebration.
-- [ ] Copy contains no medical promise, productivity jargon, reward tease, or missed-night guilt.
+## 9. Core lifecycle and restoration
 
-## 10. Local merge gate
+- [ ] Wind-down, overnight, and morning quiet remain phases of one persisted run.
+- [ ] Overnight hours never enter quiet-minute totals or change flock value.
+- [ ] Background/terminate/relaunch in every phase reconciles correctly.
+- [ ] Completion and early end clear Live Activity, notifications, shielding, and placement
+      resources without shame or loss language.
+- [ ] Watch unreachable/non-UWB always falls back to the timer.
+- [ ] Test local midnight, spring/fall DST, timezone change, late start, and app update from
+      the current TestFlight build.
+
+## 10. Privacy, accessibility, and review copy
+
+- [ ] Purpose strings describe only actual NFC, camera, Nearby Interaction, and sleep reads.
+- [ ] Logs contain no raw tokens, Family Activity tokens, NFC registration token, sleep
+      values, or Supabase secrets.
+- [ ] VoiceOver and large Dynamic Type can configure, begin, understand, and end the ritual.
+- [ ] Night screens are calm; no medical promise, reward tease, guilt, or confirm-shaming.
+- [ ] App Review notes explain why Family Controls, NFC, HealthKit, and the three shield
+      extensions are needed for a bedtime phone-away ritual.
+- [ ] Foqos is referenced conceptually in ADR-0004 only. No NOTICE is required unless source
+      is copied later.
+
+## 11. Local merge gate
 
 - [ ] `xcodegen generate`
-- [ ] Debug simulator build succeeds for the shared scheme.
-- [ ] Release simulator build succeeds for the shared scheme.
+- [ ] Debug and Release simulator builds succeed.
 - [ ] Full unit suite passes on an available iPhone simulator.
 - [ ] `git diff --check` is clean.
-- [ ] Release simulator visual pass confirms two tabs and no gated UI.
-- [ ] Human reviews L-risk coordinator/state changes before merge.
+- [ ] `plutil -lint` passes for every plist and entitlement.
+- [ ] `supabase db lint` (or hosted migration validation) passes.
+- [ ] Feedback SQL tests and Deno checks/tests pass.
+- [ ] Human reviews coordinator, entitlement, target, privacy, and migration changes.
 
-## 11. Physical overnight QA script
-
-1. Fresh-install iPhone and Watch apps.
-2. Save a near-term bedtime/wake plan and allow notifications.
-3. Begin with honor timer; lock the phone through all three phases.
-4. Verify Live Activity transitions and morning notification.
-5. Relaunch and confirm the completion receipt, quiet-minute split, reward, and Stats date.
-6. Repeat with Watch placement; turn off Bluetooth after tuck-in and confirm the timer continues.
-7. Repeat with QR; test camera permission denial and manual fallback.
-8. End once during wind-down and once during morning quiet; confirm accurate partial minutes.
-9. Ping the phone from Watch.
-10. Install the TestFlight build on a second supported iPhone model and repeat the core path.
-
-## 12. Do not add to build 1
-
-- Embedded Screen Time reports, FamilyActivityPicker, or ManagedSettings shielding
-- HealthKit sleep card
-- NFC phone-bed interaction
-- Farm, Friends, Shop, or social/backend engagement features
-- New analytics/tracking SDKs
-- A second morning timer, generic duration picker, or all-day productivity mode
-
-Ship the smallest honest Night Watch. Deferred features stay in `FUTURE_AGENT_TASKS.md`.
+The repository can prove compilation and pure logic. Apple distribution approval,
+physical NFC/HealthKit/DeviceActivity behavior, archive upload, and App Store review remain
+human/external gates.

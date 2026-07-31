@@ -42,6 +42,26 @@ begin
   );
   if rotated_generation <> 2 then raise exception 'token rotation did not increment generation'; end if;
 
+  select accepted_generation into repeated_generation from public.register_live_activity_v2(
+    run_a, device_a, 'activity-a', repeat('b', 64), now() + interval '5 minutes', now(),
+    'sandbox', 1, 2, 'registration-activity-a-generation-2',
+    'windDown', now() + interval '1 minute', now() + interval '8 hours',
+    now() + interval '8 hours 30 minutes', 'Wind down', 'Morning quiet'
+  );
+  if repeated_generation <> rotated_generation then
+    raise exception 'phase-aware registration did not preserve the accepted generation';
+  end if;
+
+  select accepted_generation into repeated_generation from public.register_live_activity(
+    run_a, device_a, 'activity-a', repeat('b', 64), now() + interval '5 minutes', now(),
+    'sandbox', 1, 2, 'registration-activity-a-generation-2',
+    'windDown', now() + interval '1 minute', now() + interval '8 hours',
+    now() + interval '8 hours 30 minutes', 'Wind down', 'Morning quiet'
+  );
+  if repeated_generation <> rotated_generation then
+    raise exception 'sixteen-argument compatibility registration did not preserve generation';
+  end if;
+
   perform set_config('request.jwt.claim.sub', user_b::text, true);
   begin
     perform public.register_live_activity(

@@ -4,12 +4,12 @@
 
 ## One-paragraph summary
 
-Counting Sheep is an iOS + watchOS app that protects quiet time around sleep. Before
-bed, the user starts Quiet Time and physically puts the phone in another room; it
+Counting Sheep is an iOS + watchOS app that protects phone-free time around sleep. Before
+bed, the user starts Wind Down and physically puts the phone in another room; it
 stays tucked away overnight and through a chosen morning-quiet window. An Apple Watch can make
 one optional placement check using Nearby Interaction (UWB). Ollie, a pixel-art border collie,
 guards the ritual and offers one user-chosen offline cue before bed and after waking. This is
-a quiet-time ritual, not a productivity tool or sleep-quality tracker. The established
+a Wind Down ritual, not a productivity tool or sleep-quality tracker. The established
 `NightWatch*` names remain internal for persisted-data compatibility.
 
 ## Target user
@@ -40,34 +40,48 @@ optional QR/Watch tuck-in check → one offline evening cue → Ollie keeps the 
 one quiet morning cue → the phone wakes later → a small completion receipt
 ```
 
+The product loop is deliberately closed but small: **Prompt → Protect → Observe → Learn**.
+Coaching remains a later layer and must offer one transparent experiment, not keep someone
+inside the app. Counting Sheep supports the bedtime ritual; it does not become the ritual.
+
 ## Desired emotional tone
 
 Warm. Cozy. Playful but calm. Like a children's-book farm at dusk. The user should feel
-*cared for*, never policed, judged, or hustled. Ending a run early earns a sympathetic muddy
-paw, not a failure screen. Dark-room-friendly visuals; nothing urgent, flashing, or loud.
+*cared for*, never policed, judged, or hustled. Ending a run early gets a warm factual
+receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flashing, or loud.
 
 ## Key product principles (full version: `docs/PRODUCT_PRINCIPLES.md`)
 
 1. Physical separation is the product. Everything else supports the ritual.
 2. The edges of sleep are the niche. Evening and morning screen time are the differentiator.
-3. Build the ritual through kind habit formation. Completion can reveal varied rewards and
-   small insights; never use shame, loss-aversion, paid odds, or rewards for app opens.
+3. Build the ritual through kind habit formation. Each protected night adds one equal sheep
+   to the flock; never use shame, loss-aversion, paid odds, or rewards for app opens.
 4. Low friction wins. One tap to start. Setup is minutes, not a project.
 5. Restraint is a feature. When unsure whether to add something: don't.
 
-## MVP scope (first TestFlight build — decided July 2026)
+## App Store 1.0 scope (decided July 2026)
 
-**Shipped surface: two tabs.**
+**Shipped surface: three tabs — Home, Nights, and More.**
 
-- **Home**: one-time quiet-time plan → saved wind-down reminder → one-tap Quiet Time →
+- **Home**: one-time Wind Down plan → saved wind-down reminder → one-tap Wind Down →
   wind-down / overnight / morning-quiet phases → morning completion or kind early end.
   Active runs label those phases as phone-free wind-down, sleep time, and phone-free morning.
   Silent phase-change notices support bedtime and waking, followed by the requested audible
   completion. Setup also offers a private, optional reason for the quiet; custom wording stays
   in-app unless the person separately allows it in notifications.
-- **Nights (one finite scroll)**: the latest quiet-time result with its finish date, the
-  latest protected night, a dated seven-night view, inline quiet-time controls, optional
-  Apple Health sleep duration and seven-night wake-time range, and separate consented Screen
+  NFC is the default phone-bed method for new plans; the honor timer remains the simplest
+  fallback. QR and the brief Watch placement check are optional ways to confirm the same
+  physical transition. A writable generic NDEF tag can be
+  registered, replaced, or forgotten in place; NFC mode requires that same tag to end
+  normally while retaining a multi-step emergency exit. An automatic Wind Down can send
+  60-, 30-, and 10-minute lead-ins and schedule selected-app shielding at the saved start
+  time while the app is closed. Optional shielding covers only the selected
+  apps during wind-down and morning quiet; it lifts overnight and always has an early exit
+  through Counting Sheep.
+- **Nights (one finite scroll)**: the cumulative one-night-one-sheep flock, latest Wind Down
+  result with its finish date, latest protected night, dated seven-night view, optional
+  Apple Health sleep duration, available core/deep/REM stages and seven-night wake-time
+  range, and separate consented Screen
   Time reports for selected apps in user-chosen evening and morning reporting windows. Health
   samples are matched to the night they end; an older available sample is dated and never
   presented as last night. A collapsed, optional three-question morning note records the
@@ -75,16 +89,24 @@ paw, not a failure screen. Dark-room-friendly visuals; nothing urgent, flashing,
   producing a score or reward. Screen Time reports identify their report date, show selected
   app time as a share of the full window, offer tappable hourly detail, and distinguish
   Apple's exact first iPhone pickup from selected-app activity. Reporting windows are
-  independent of Quiet Time durations. Overnight hours are never credited as focus or quiet
+  independent of Wind Down durations. Overnight hours are never credited as focus or quiet
   minutes. Apple's Sleep Score remains in the Health app because HealthKit does not expose it
   to third-party apps.
+  Once there are at least two protected and two other measured nights, a local comparison
+  shows how sleep duration differs between them, explicitly as association rather than
+  causation. Detailed behavioural and HealthKit history stays on the phone.
+- **More**: Wind Down schedule, bookends, method, NFC, automatic Wind Down and shielding;
+  Apple Health, Screen Time, and notification connections; optional impact-sharing controls;
+  privacy information; feedback and support; and app version information. Optional feedback
+  can use private Supabase delivery only after its release gates pass, and otherwise uses a
+  prefilled email fallback.
 
-**Gated out of release builds (code kept behind DEBUG):** Farm, Friends, Shop tabs;
-mock-data screens. See `docs/DECISIONS/ADR-0003-gated-features.md`.
+**Gated out of normal navigation:** Farm, Friends, Shop, the legacy keepsake shelf, and
+mock-data screens. Debug access requires `-ollie.debug.enableMockScreens YES`; these screens
+are never reachable in Release. See ADR-0003 and ADR-0007.
 
-**Deferred:** Optional Screen Time shielding for the two quiet-time periods, plus NFC,
-remains post-build-1 and gated separately (see
-`ADR-0004`).
+**Still deferred:** adaptive coaching, routine checklists, composite behavioural scores,
+Farm/Friends/Shop, and social features. They are not required to prove the 1.0 ritual.
 
 ## Non-goals
 
@@ -104,5 +126,8 @@ remains post-build-1 and gated separately (see
    nobody reports feeling guilted or nagged.
 4. **The pitch is legible**: a new tester can explain what the app does after one session
    ("it puts my phone to bed and helps me wake before it, and there's a dog").
-5. **The optional start choices are legible**: testers can begin with the honor timer and
-   understand Watch or QR as optional phone-bed assists rather than prerequisites.
+5. **The start choices are legible**: new plans begin with NFC and explain the honor timer,
+   Watch, and QR as optional alternatives rather than prerequisites.
+6. **Quiet behaviour and sleep outcomes are both observed honestly**: evaluate completed
+   quiet minutes and, only with HealthKit consent, changes in sleep duration/stages and
+   morning restfulness. Report sample sizes and associations; do not claim causation.

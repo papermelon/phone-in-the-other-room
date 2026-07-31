@@ -40,6 +40,7 @@ struct PhoneInTheOtherRoomApp: App {
                         runViewModel.coordinator.applicationDidEnterBackground()
                     case .active:
                         runViewModel.coordinator.applicationDidBecomeActive()
+                        runViewModel.reconcileAutomaticWindDownIfNeeded()
                     case .inactive:
                         break
                     @unknown default:

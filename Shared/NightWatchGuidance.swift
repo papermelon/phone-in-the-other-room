@@ -1,6 +1,7 @@
 import Foundation
 
 enum NightWatchNotificationMoment {
+    case windDownLeadIn(minutes: Int)
     case windDownReminder
     case sleepTime
     case phoneFreeMorning
@@ -10,6 +11,11 @@ enum NightWatchNotificationMoment {
 struct NightWatchNotificationCopy: Equatable {
     var title: String
     var body: String
+}
+
+struct NightWatchLiveActivityGuidance: Equatable {
+    var primary: String
+    var secondary: String?
 }
 
 struct NightWatchGuidance {
@@ -46,25 +52,49 @@ struct NightWatchGuidance {
         activityTitle: String?,
         seed: UUID
     ) -> String {
+        let guidance = liveActivityGuidance(
+            for: phase,
+            activityTitle: activityTitle,
+            seed: seed
+        )
+        return [guidance.primary, guidance.secondary]
+            .compactMap { $0 }
+            .joined(separator: " ")
+    }
+
+    static func liveActivityGuidance(
+        for phase: NightWatchPhase?,
+        activityTitle: String?,
+        seed: UUID
+    ) -> NightWatchLiveActivityGuidance {
         switch phase {
         case .windDown:
-            return joinedCue(
-                prefix: "Wind down without the screen.",
-                activityTitle: activityTitle,
-                tip: tip(for: .windDown, seed: seed)
+            return NightWatchLiveActivityGuidance(
+                primary: activityTitle.map { "Tonight: \($0)." }
+                    ?? "Let the evening get quieter.",
+                secondary: tip(for: .windDown, seed: seed)
             )
         case .overnight:
-            return "Sleep time. Your phone is tucked away."
+            return NightWatchLiveActivityGuidance(
+                primary: "Your phone is tucked away.",
+                secondary: "There is nothing else to do here."
+            )
         case .morningQuiet:
-            return joinedCue(
-                prefix: "Keep this morning phone-free.",
-                activityTitle: activityTitle,
-                tip: tip(for: .morningQuiet, seed: seed)
+            return NightWatchLiveActivityGuidance(
+                primary: activityTitle.map { "This morning: \($0)." }
+                    ?? "Let the phone wake after you do.",
+                secondary: tip(for: .morningQuiet, seed: seed)
             )
         case .complete:
-            return "Your phone-free night is ready."
+            return NightWatchLiveActivityGuidance(
+                primary: "Your phone-free night is ready.",
+                secondary: "Open Counting Sheep whenever you are ready."
+            )
         case nil:
-            return "Your phone-away time is keeping on."
+            return NightWatchLiveActivityGuidance(
+                primary: "Ollie is keeping the quiet.",
+                secondary: nil
+            )
         }
     }
 
@@ -74,6 +104,29 @@ struct NightWatchGuidance {
         tip: String? = nil
     ) -> NightWatchNotificationCopy {
         switch moment {
+        case .windDownLeadIn(let minutes):
+            switch minutes {
+            case 60:
+                return NightWatchNotificationCopy(
+                    title: "Wind Down is coming",
+                    body: "In about an hour, Ollie will help the phone settle. Finish what you need, then find its resting place."
+                )
+            case 30:
+                return NightWatchNotificationCopy(
+                    title: "Wind Down in 30 minutes",
+                    body: "A little time before bed. Let the last scroll end gently, then put the phone to bed."
+                )
+            case 10:
+                return NightWatchNotificationCopy(
+                    title: "Wind Down soon",
+                    body: "Ten minutes until the phone rests. Find the NFC phone-bed tag and one quiet thing to do."
+                )
+            default:
+                return NightWatchNotificationCopy(
+                    title: "Wind Down starts now",
+                    body: "Your phone-free wind-down begins now. Put the phone to bed when you are ready."
+                )
+            }
         case .windDownReminder:
             let cue = tip.map { $0.hasSuffix(".") ? $0 : "\($0)." }
             return NightWatchNotificationCopy(
@@ -106,7 +159,7 @@ struct NightWatchGuidance {
         case .complete:
             return NightWatchNotificationCopy(
                 title: "Your phone can wake now",
-                body: "Night Watch is complete. Your phone-free minutes are ready whenever you are."
+                body: "Wind Down is complete. Your phone-free minutes are ready whenever you are."
             )
         }
     }

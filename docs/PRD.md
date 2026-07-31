@@ -22,8 +22,9 @@ room at wind-down, leave it there overnight, and let it wake after the user does
 ## Core promise
 
 Counting Sheep helps someone practice a phone-away ritual around sleep. It records completed
-Night Watches and quiet minutes in the two bookends. It does not measure sleep quality,
-diagnose a condition, or claim that using the app improves sleep.
+Night Watches and quiet minutes in the two bookends. With permission it compares measured
+sleep outcomes as context. It does not score sleep, diagnose a condition, or claim that
+using the app caused an improvement.
 
 ## Primary user
 
@@ -32,13 +33,16 @@ gentler physical boundary, without adopting a productivity system or punitive bl
 
 ## Release scope
 
-The first release contains two tabs:
+The first release contains three tabs:
 
-- **Home:** configure and begin Night Watch; see the saved bookends, Ollie, and local progress.
-- **Stats:** see protected nights, quiet-bookend minutes, recent history, and gentle trends.
+- **Home:** understand tonight's saved plan and purpose, then set/start Wind Down or edit it.
+- **Nights:** see protected nights, quiet-bookend minutes, recent history, optional sleep
+  duration/stages, selected-app Screen Time, and cautious local outcome comparisons.
+- **More:** configure Wind Down, manage connections and privacy, send feedback, and see app
+  information.
 
-Farm, Friends, Shop, HealthKit, Screen Time reports/pickers, and mock-backed features are
-not reachable in Release. Their gates are defined in ADR-0003 and ADR-0004.
+Farm, Friends, Shop, adaptive coaching, social features, and mock-backed features are not
+reachable in Release. Their gates are defined in ADR-0003 and ADR-0004.
 
 ## Core loop
 
@@ -48,10 +52,13 @@ not reachable in Release. Their gates are defined in ADR-0003 and ADR-0004.
 3. The user chooses one evening and one morning phone-free cue. Cues are suggestions,
    never checklists or completion requirements.
 4. At wind-down, the user begins Night Watch and physically places the phone elsewhere.
-5. The default honor timer starts immediately. Optional Watch or QR guards may confirm the
-   initial tuck-in, but always offer a timer fallback.
+5. New plans default to the registered NFC phone-bed tag. The same tag confirms the initial
+   tuck-in and the normal end action; Watch, QR, and the honor timer remain explicit alternatives.
+   Automatic Wind Down can send 60/30/10-minute lead-ins and apply the selected-app shield at
+   the saved start even while the app is closed; the app reconciles the run when next opened.
 6. The same persisted session moves through wind-down, overnight, and morning quiet.
-7. At the end of morning quiet, Ollie presents one calm completion receipt and reward.
+7. At the end of morning quiet, Ollie presents one calm completion receipt and one equal
+   sheep settles into the cumulative flock.
 8. Ending early remains available at all times and receives kind, non-punitive copy.
 
 ## Night Watch phases
@@ -61,19 +68,20 @@ not reachable in Release. Their gates are defined in ADR-0003 and ADR-0004.
 | Wind-down | Actual start | Intended bedtime | Show the evening cue and time until bedtime. |
 | Overnight | Intended bedtime | Saved wake time | Keep status glanceable; ask for no further interaction. |
 | Morning quiet | Saved wake time | Wake time + chosen bookend | Show the morning cue and time until the phone wakes. |
-| Complete | Morning bookend end | User dismisses receipt | Reveal the completion record and one reward. |
+| Complete | Morning bookend end | User dismisses receipt | Show the receipt and one equal flock arrival. |
 
 Night Watch may begin late. A late start protects only the quiet time that remains and is
 attributed to the intended-bedtime date, including after-midnight starts.
 
 ## Session guards
 
-- **Honor timer:** default, no Watch required.
+- **Honor timer:** explicit no-hardware fallback when NFC, Watch, or QR is not desired.
 - **Apple Watch assist:** one time-boxed Nearby Interaction placement check at tuck-in.
 - **QR phone bed:** one scan where the phone rests, with manual-code fallback.
-- **NFC phone bed:** approved direction, not exposed yet.
+- **NFC phone bed:** provision and confirm a generic writable NDEF tag; QR/honor fallback
+  remains available.
 
-The iPhone is authoritative for timing, persistence, restoration, completion, and rewards.
+The iPhone is authoritative for timing, persistence, restoration, completion, and flock progress.
 No later Watch distance can warn, punish, or end Night Watch.
 
 ## Phone-free cues
@@ -85,39 +93,41 @@ curtains, making breakfast, walking, getting ready, stretching, and writing.
 Cues must remain optional. The app does not request proof, photos, streak compliance, or a
 completed habit before restoring access or granting the Night Watch receipt.
 
-## Progress and rewards
+## Progress and the flock
 
-- Only elapsed wind-down and morning-quiet minutes count toward progress and reward value.
-- Overnight hours never become quiet minutes, stars, sheep, coins, or reward rarity.
+- Every completed protected night adds exactly one equal sheep to the flock.
+- Only elapsed wind-down and morning-quiet minutes appear in the factual receipt.
+- Overnight hours never become quiet minutes or improve flock value.
 - Completed Night Watches update the record for the intended-bedtime date.
-- An early end may reveal a Muddy Paw consolation but does not remove prior progress.
-- Reward variety appears once at completion. The app does not tease upcoming random rewards
-  or reward merely opening the app.
+- An early end adds no sheep and does not remove prior progress.
+- The app shows no currency, rarity, locked slots, or upcoming reward teasers.
 - Streak language is retrospective and warm; a missed night is always a fresh start.
 
-Legacy storage fields such as `totalFocusMinutes` and the persisted `FocusRun` type retain
-their names for backwards compatibility. Active customer copy calls them quiet-bookend
-minutes and Night Watch.
+Legacy storage fields such as `totalFocusMinutes`, reward/economy fields, and the persisted
+`FocusRun` type retain their names for backwards compatibility. Release UI derives the
+flock only from `totalCompletedRuns`.
 
-## Screen Time direction
+## Screen Time reports and optional shielding
 
-Screen Time is the flagship post-first-release measurement layer:
+Screen Time is the flagship protection/measurement layer:
 
 - Report late-evening and early-morning selected-app use separately and together.
 - Reuse one consented app/category selection across both bookends.
-- If shielding is enabled later, apply it only during those windows by default.
+- Optional shielding applies only during those windows and lifts overnight.
 - Always provide an emergency exit and gentle early-unlock copy.
 - Do not infer sleep, shame the user, or block the whole night merely because Night Watch
   is active.
 
-Shipping this requires Family Controls distribution approval, an App Group, extension
-embedding, signed capabilities, physical-device QA, and explicit human approval. The current
-report extension is scaffolding and remains unembedded.
+The report, monitor, configuration, and action extensions are embedded and share only the
+necessary Screen Time/shield contracts through the App Group. The 2026-07-30 App Store
+export produced Family Controls distribution profiles for every Screen Time target;
+physical-device QA and App Store server validation remain required.
 
 ## Optional sleep context
 
-HealthKit may later show last-night sleep duration as private, optional context. Empty data
-must not be presented as permission denial, and correlations must not be framed as causation.
+HealthKit optionally shows sleep interval, duration, and available stages. Empty data is
+not presented as permission denial. The local protected-versus-other comparison waits for
+two nights per group, reports sample sizes, and never frames correlation as causation.
 
 ## Platform behavior
 
@@ -131,9 +141,10 @@ must not be presented as permission denial, and correlations must not be framed 
 
 ## Privacy
 
-No GPS location or exact room identity is collected. Core schedules, history, progress,
-rewards, and placement evidence stay local. Optional backend delivery must remain additive
-to the local completion path and be covered by current privacy disclosures before enabling.
+No GPS location or exact room identity is collected. Detailed schedules, history, HealthKit
+context, reflections, flock progress, legacy reward records, and placement evidence stay local. Separately
+consented impact rows are relative-night, purpose-limited, and deletable; see
+`PRIVACY_DATA_MAP.md`.
 
 ## Non-goals
 
@@ -149,10 +160,13 @@ to the local completion path and be covered by current privacy disclosures befor
 
 - A fresh user can configure both bookends and save tonight's plan.
 - Inside the start window, one tap begins Night Watch.
-- Honor, Watch, and QR starts all reach the same phone-authoritative session.
+- Honor, Watch, QR, and NFC starts all reach the same phone-authoritative session.
 - Phase labels and next-transition timers are consistent across iPhone, Watch, and Live Activity.
 - Background/relaunch restoration reaches the correct phase and completion state.
 - Quiet-minute accounting excludes overnight time, including late starts and DST changes.
 - Early end is always available and never uses failure haptics or guilt copy.
-- Release shows only Home and Stats, with no mock or entitlement-gated UI.
+- Debug and Release show exactly Home, Nights, and More. Mock UI requires the explicit Debug
+  internal-preview launch argument and is never reachable in Release.
+- Optional shields cover only the two selected quiet windows and always clear on early end.
+- HealthKit requests only read-only `sleepAnalysis` and labels available stage provenance.
 - Legacy persisted runs decode without a Night Watch plan and retain their previous behavior.

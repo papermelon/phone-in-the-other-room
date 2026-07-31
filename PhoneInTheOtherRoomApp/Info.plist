@@ -20,18 +20,22 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NFCReaderUsageDescription</key>
-	<string>Counting Sheep reads the phone-bed tag you choose so Ollie can confirm where your phone rests.</string>
+	<string>Counting Sheep reads the phone-bed tag you choose to start and end Wind Down.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Counting Sheep uses your camera to scan the code where your phone will rest.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Counting Sheep reads sleep duration to show how bedtime phone-away habits relate to rest.</string>
+	<string>Counting Sheep reads sleep times, duration, and available stages so you can view them alongside your Wind Down history.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Counting Sheep can save your optional sleep-duration summaries so you can notice patterns alongside your phone-away nights.</string>
+	<string>Counting Sheep does not add or change Apple Health data; it only reads sleep information you choose to share.</string>
 	<key>NSNearbyInteractionUsageDescription</key>
-	<string>Ollie uses nearby-device distance for an optional Night Watch tuck-in check with your Apple Watch.</string>
+	<string>Ollie uses nearby-device distance for an optional Wind Down tuck-in check with your Apple Watch.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>SUPABASE_FEEDBACK_ENABLED</key>
+	<string>$(SUPABASE_FEEDBACK_ENABLED)</string>
 	<key>SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED</key>
 	<string>$(SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED)</string>
 	<key>SUPABASE_PUBLISHABLE_KEY</key>

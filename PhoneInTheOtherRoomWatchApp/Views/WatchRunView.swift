@@ -37,9 +37,16 @@ struct WatchRunView: View {
                 }
                 Button("Ping Phone") { viewModel.pingPhone() }
                     .accessibilityHint("Plays a sound on your iPhone")
-                Button("End Night Watch") { viewModel.endRun() }
-                    .tint(.orange)
-                    .accessibilityHint("Ends this Night Watch early")
+                if viewModel.run?.guardKind == .nfcTag {
+                    Text("To end, open Counting Sheep on iPhone and tap your phone-bed tag.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                } else {
+                    Button("End Wind Down") { viewModel.endRun() }
+                        .tint(.orange)
+                        .accessibilityHint("Ends this Wind Down early")
+                }
             }
             .padding(.vertical, 4)
         }
@@ -109,7 +116,7 @@ struct WatchRunView: View {
         case .windDown: destination = "bedtime"
         case .overnight: destination = "the phone-free morning"
         case .morningQuiet: destination = "the phone's wake time"
-        case .complete, nil: destination = "the end of Night Watch"
+        case .complete, nil: destination = "the end of Wind Down"
         }
         return "\(minutes) minutes until \(destination)"
     }

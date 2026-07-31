@@ -1,12 +1,12 @@
 import AppIntents
 
 struct PrepareNightWatchIntent: AppIntent {
-    static var title: LocalizedStringResource = "Open Quiet Time"
+    static var title: LocalizedStringResource = "Open Wind Down"
     static var description = IntentDescription("Opens Counting Sheep so you can tuck your phone in for the night.")
     static var openAppWhenRun = true
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        .result(dialog: "Ollie is ready for quiet time. Put your phone to bed when you are ready.")
+        .result(dialog: "Ollie is ready for Wind Down. Put your phone to bed when you are ready.")
     }
 }
 
@@ -17,11 +17,11 @@ struct PhoneInTheOtherRoomShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: PrepareNightWatchIntent(),
             phrases: [
-                "Start Quiet Time in \(.applicationName)",
+                "Start Wind Down in \(.applicationName)",
                 "Put my phone to bed with \(.applicationName)",
-                "Start quiet time with Ollie in \(.applicationName)"
+                "Start Wind Down with Ollie in \(.applicationName)"
             ],
-            shortTitle: "Quiet Time",
+            shortTitle: "Wind Down",
             systemImageName: "moon.stars.fill"
         )
     }

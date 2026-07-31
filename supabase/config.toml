@@ -219,6 +219,12 @@ verify_jwt = true
 [functions.live-activity-dispatch]
 verify_jwt = false
 
+[functions.submit-feedback]
+verify_jwt = true
+
+[functions.feedback-email-delivery]
+verify_jwt = false
+
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
 # [auth.captcha]
 # enabled = true

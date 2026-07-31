@@ -62,20 +62,24 @@ final class WatchRunViewModel: ObservableObject {
     }
 
     func requestCurrentRun() {
-        connectionText = watch.isReachable ? "Looking for Night Watch..." : "Open the iPhone app and begin Night Watch"
+        connectionText = watch.isReachable ? "Looking for Wind Down..." : "Open the iPhone app and begin Wind Down"
         watch.sendWithReply(WatchMessage(type: .pingWatch)) { [weak self] reply in
             Task { @MainActor in
                 guard let self else { return }
                 if let reply, reply.run != nil {
                     self.handle(reply)
                 } else if self.run == nil {
-                    self.connectionText = self.watch.isReachable ? "No active Night Watch found" : "iPhone not reachable"
+                    self.connectionText = self.watch.isReachable ? "No active Wind Down found" : "iPhone not reachable"
                 }
             }
         }
     }
 
     func endRun() {
+        guard run?.guardKind != .nfcTag else {
+            connectionText = "Use iPhone and tap the phone-bed tag to end Wind Down"
+            return
+        }
         WKInterfaceDevice.current().play(.stop)
         watch.send(WatchMessage(type: .endFocusRunEarly))
         guard var run else { return }
@@ -97,7 +101,7 @@ final class WatchRunViewModel: ObservableObject {
     func requestDistanceCheck() {
         guard run?.guardKind == .watchPlacement,
               run?.placementStatus == .awaitingConfirmation else {
-            connectionText = "Night Watch is keeping time on iPhone"
+            connectionText = "Wind Down is keeping time on iPhone"
             return
         }
         WKInterfaceDevice.current().play(.click)
@@ -122,7 +126,7 @@ final class WatchRunViewModel: ObservableObject {
                 connectionText = "One quick placement check"
             } else {
                 stopNearbyInteraction()
-                connectionText = "Night Watch is keeping time on iPhone"
+                connectionText = "Wind Down is keeping time on iPhone"
             }
         case .nearbyDiscoveryToken:
             if run?.guardKind == .watchPlacement,

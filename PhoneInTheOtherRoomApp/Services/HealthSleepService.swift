@@ -89,21 +89,10 @@ final class HealthSleepService {
                     return
                 }
                 let sleepSamples = (samples as? [HKCategorySample]) ?? []
-                let asleepIntervals = sleepSamples.compactMap { sample -> DateInterval? in
-                    guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value) else { return nil }
-                    guard value == .asleepUnspecified || value == .asleepCore || value == .asleepDeep || value == .asleepREM else {
-                        return nil
-                    }
-                    return DateInterval(start: sample.startDate, end: sample.endDate)
-                }
                 let summaries = windows.compactMap { window -> SleepSummary? in
-                    let clipped = asleepIntervals.compactMap { interval -> DateInterval? in
-                        let start = max(interval.start, window.interval.start)
-                        let end = min(interval.end, window.interval.end)
-                        return start < end ? DateInterval(start: start, end: end) : nil
-                    }
-                    return SleepIntervalMath.summary(
-                        for: clipped,
+                    self.summary(
+                        from: sleepSamples,
+                        in: window.interval,
                         nightEndingDate: window.nightEndingDate
                     )
                 }
@@ -119,6 +108,108 @@ final class HealthSleepService {
 #if canImport(HealthKit)
     private var sleepType: HKCategoryType? {
         HKObjectType.categoryType(forIdentifier: .sleepAnalysis)
+    }
+
+    private nonisolated func summary(
+        from samples: [HKCategorySample],
+        in window: DateInterval,
+        nightEndingDate: Date
+    ) -> SleepSummary? {
+        let grouped = Dictionary(grouping: samples) {
+            $0.sourceRevision.source.bundleIdentifier
+        }
+        let candidates = grouped.compactMap { _, sourceSamples -> SourceSleepCandidate? in
+            let clipped = sourceSamples.compactMap { sample -> StagedInterval? in
+                guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value),
+                      let stage = SleepStage(value: value) else { return nil }
+                let start = max(sample.startDate, window.start)
+                let end = min(sample.endDate, window.end)
+                guard start < end else { return nil }
+                return StagedInterval(
+                    interval: DateInterval(start: start, end: end),
+                    stage: stage
+                )
+            }
+            let asleep = clipped.filter(\.stage.isAsleep).map(\.interval)
+            let duration = SleepIntervalMath.duration(of: asleep)
+            guard duration > 0 else { return nil }
+            let stageCoverage = SleepIntervalMath.duration(
+                of: clipped.filter(\.stage.isSpecificSleepStage).map(\.interval)
+            )
+            return SourceSleepCandidate(
+                sourceName: sourceSamples.first?.sourceRevision.source.name,
+                intervals: clipped,
+                asleepDuration: duration,
+                stageCoverage: stageCoverage
+            )
+        }
+        guard let chosen = candidates.max(by: {
+            if $0.asleepDuration == $1.asleepDuration {
+                return $0.stageCoverage < $1.stageCoverage
+            }
+            return $0.asleepDuration < $1.asleepDuration
+        }) else { return nil }
+
+        return SleepIntervalMath.summary(
+            for: chosen.intervals.filter(\.stage.isAsleep).map(\.interval),
+            nightEndingDate: nightEndingDate,
+            stages: SleepStageBreakdown(
+                awakeSeconds: duration(for: .awake, in: chosen.intervals),
+                coreSeconds: duration(for: .core, in: chosen.intervals),
+                deepSeconds: duration(for: .deep, in: chosen.intervals),
+                remSeconds: duration(for: .rem, in: chosen.intervals),
+                unspecifiedSeconds: duration(for: .unspecified, in: chosen.intervals)
+            ),
+            sourceName: chosen.sourceName
+        )
+    }
+
+    private nonisolated func duration(
+        for stage: SleepStage,
+        in intervals: [StagedInterval]
+    ) -> TimeInterval {
+        SleepIntervalMath.duration(
+            of: intervals.filter { $0.stage == stage }.map(\.interval)
+        )
+    }
+
+    private enum SleepStage: Equatable {
+        case awake
+        case core
+        case deep
+        case rem
+        case unspecified
+
+        init?(value: HKCategoryValueSleepAnalysis) {
+            switch value {
+            case .awake: self = .awake
+            case .asleepCore: self = .core
+            case .asleepDeep: self = .deep
+            case .asleepREM: self = .rem
+            case .asleepUnspecified: self = .unspecified
+            default: return nil
+            }
+        }
+
+        var isAsleep: Bool {
+            self != .awake
+        }
+
+        var isSpecificSleepStage: Bool {
+            self == .core || self == .deep || self == .rem
+        }
+    }
+
+    private struct StagedInterval {
+        var interval: DateInterval
+        var stage: SleepStage
+    }
+
+    private struct SourceSleepCandidate {
+        var sourceName: String?
+        var intervals: [StagedInterval]
+        var asleepDuration: TimeInterval
+        var stageCoverage: TimeInterval
     }
 #endif
 

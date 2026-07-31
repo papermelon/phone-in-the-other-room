@@ -19,7 +19,7 @@ settings:
     DEVELOPMENT_TEAM: 4KZQPZR47B
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: 1.0
-    CURRENT_PROJECT_VERSION: 1
+    CURRENT_PROJECT_VERSION: 3
 packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift.git
@@ -37,17 +37,19 @@ targets:
         CFBundleDisplayName: Counting Sheep
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        ITSAppUsesNonExemptEncryption: false
         UIApplicationSupportsIndirectInputEvents: true
         UIRequiresFullScreen: true
-        NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance for an optional Night Watch tuck-in check with your Apple Watch.
+        NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance for an optional Wind Down tuck-in check with your Apple Watch.
         NSCameraUsageDescription: Counting Sheep uses your camera to scan the code where your phone will rest.
-        NFCReaderUsageDescription: Counting Sheep reads the phone-bed tag you choose so Ollie can confirm where your phone rests.
-        NSHealthShareUsageDescription: Counting Sheep reads sleep duration to show how bedtime phone-away habits relate to rest.
-        NSHealthUpdateUsageDescription: Counting Sheep can save your optional sleep-duration summaries so you can notice patterns alongside your phone-away nights.
+        NFCReaderUsageDescription: Counting Sheep reads the phone-bed tag you choose to start and end Wind Down.
+        NSHealthShareUsageDescription: Counting Sheep reads sleep times, duration, and available stages so you can view them alongside your Wind Down history.
+        NSHealthUpdateUsageDescription: Counting Sheep does not add or change Apple Health data; it only reads sleep information you choose to share.
         NSSupportsLiveActivities: true
         SUPABASE_URL: "$(SUPABASE_URL)"
         SUPABASE_PUBLISHABLE_KEY: "$(SUPABASE_PUBLISHABLE_KEY)"
         SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED: "$(SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED)"
+        SUPABASE_FEEDBACK_ENABLED: "$(SUPABASE_FEEDBACK_ENABLED)"
         UILaunchScreen:
           UIColorName: LaunchBackground
     sources:
@@ -74,6 +76,12 @@ targets:
         embed: true
       - target: PhoneInTheOtherRoomScreenTimeReport
         embed: true
+      - target: PhoneInTheOtherRoomDeviceActivityMonitor
+        embed: true
+      - target: PhoneInTheOtherRoomShieldConfiguration
+        embed: true
+      - target: PhoneInTheOtherRoomShieldAction
+        embed: true
   PhoneInTheOtherRoomWatchApp:
     type: application
     platform: watchOS
@@ -89,7 +97,7 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: Counting Sheep
         INFOPLIST_KEY_WKCompanionAppBundleIdentifier: com.ngawangchime.countingsheep
-        INFOPLIST_KEY_NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance for an optional Night Watch tuck-in check with your iPhone.
+        INFOPLIST_KEY_NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance for an optional Wind Down tuck-in check with your iPhone.
         ASSETCATALOG_COMPILER_APPICON_NAME: WatchAppIcon
         CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomWatchApp/PhoneInTheOtherRoomWatchApp.entitlements
   PhoneInTheOtherRoomLiveActivity:
@@ -120,6 +128,41 @@ targets:
         INFOPLIST_FILE: PhoneInTheOtherRoomScreenTimeReport/Info.plist
         CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomScreenTimeReport/PhoneInTheOtherRoomScreenTimeReport.entitlements
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SCREEN_TIME_REPORTS"
+  PhoneInTheOtherRoomDeviceActivityMonitor:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Shared
+      - path: PhoneInTheOtherRoomDeviceActivityMonitor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.DeviceActivityMonitor
+        PRODUCT_NAME: Counting Sheep Wind Down Monitor
+        INFOPLIST_FILE: PhoneInTheOtherRoomDeviceActivityMonitor/Info.plist
+        CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomDeviceActivityMonitor/PhoneInTheOtherRoomDeviceActivityMonitor.entitlements
+        SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SCREEN_TIME_REPORTS"
+  PhoneInTheOtherRoomShieldConfiguration:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: PhoneInTheOtherRoomShieldConfiguration
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.ShieldConfiguration
+        PRODUCT_NAME: Counting Sheep Wind Down Shield
+        INFOPLIST_FILE: PhoneInTheOtherRoomShieldConfiguration/Info.plist
+        CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomShieldConfiguration/PhoneInTheOtherRoomShieldConfiguration.entitlements
+  PhoneInTheOtherRoomShieldAction:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: PhoneInTheOtherRoomShieldAction
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.ShieldAction
+        PRODUCT_NAME: Counting Sheep Wind Down Action
+        INFOPLIST_FILE: PhoneInTheOtherRoomShieldAction/Info.plist
+        CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomShieldAction/PhoneInTheOtherRoomShieldAction.entitlements
   PhoneInTheOtherRoomTests:
     type: bundle.unit-test
     platform: iOS

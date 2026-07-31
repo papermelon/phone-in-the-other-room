@@ -135,7 +135,7 @@ enum ScreenTimeSelectionScope: String, CaseIterable, Identifiable {
         case .distracting:
             return "Apps and categories to count as avoidable screen time. Websites shown by Apple are ignored."
         case .productive:
-            return "A legacy analytics scope kept for compatibility; it is not part of Night Watch."
+            return "A legacy analytics scope kept for compatibility; it is not part of Wind Down."
         case .bedtime:
             return "Apps and categories to watch during the wind-down window. Websites shown by Apple are ignored."
         }

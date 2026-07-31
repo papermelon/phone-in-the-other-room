@@ -21,14 +21,11 @@ Counting Sheep deliberately competes with the pull of social apps. It should bec
 habitual part of a sleep-bookends ritual—not by keeping people scrolling, but by making the
 phone-away choice feel warm, rewarding, and worth repeating.
 
-1. **Completion-only intermittent variety.** A completed Night Watch may reveal a varied
-   collectible, Ollie moment, or insight. This is an intentional habit loop: the reveal
-   happens once after the ritual is complete, never after an app open, a refresh, or a
-   paid action. Do not show odds, countdowns, limited windows, or "come back to see what
-   you got" teasers.
-   Variety must not become a performance ladder: longer bookends, fewer warnings, Watch
-   ownership, and an unbroken streak do not buy a better class of keepsake. Milestones count
-   lifetime protected nights so absence never erases them. See `docs/REWARDS.md`.
+1. **One night, one sheep.** A completed protected night settles exactly one equal sheep
+   into the flock. The arrival happens once after the ritual, never after an app open,
+   refresh, or paid action. Longer bookends, fewer warnings, Watch ownership, and an
+   unbroken streak do not improve its value. Do not show rarity, odds, countdowns, locked
+   slots, currencies, or future-arrival teasers. See `docs/REWARDS.md`.
 2. **No loss-aversion streak mechanics.** A streak is a record of care, not a hostage. A
    missed night resets nothing punitively and generates no "you'll lose everything!" copy.
 3. **No infinite or bottomless surfaces.** No feeds, no endless scrolls, no autoplaying
@@ -37,7 +34,7 @@ phone-away choice feel warm, rewarding, and worth repeating.
    no paid randomness, and no notification designed to pull the user in at night.
    Notifications exist only to support an active run or a ritual the user asked for.
 5. **No guilt or shame, ever.** Not in copy, not in visuals, not in mechanics. An early-ended
-   run earns a sympathetic consolation (the muddy paw), not a failure state.
+   run gets a warm factual receipt, adds no sheep, and loses nothing.
 6. **Blocking must stay consensual.** If/when app-blocking ships (ADR-0004): the user picks
    what's blocked, shield copy is gentle, and an emergency exit is always available. We add
    friction, never bars.
@@ -47,9 +44,8 @@ phone-away choice feel warm, rewarding, and worth repeating.
 
 ## Playful, not manipulative — the distinction
 
-Playful: Ollie has moods. Sheep have names. Completion reveals may vary, so the ritual has
-a small sense of discovery. Collection exists to be *looked at fondly*, not to be completed
-compulsively.
+Playful: Ollie has moods. Sheep may have names later. The flock can be *looked at fondly*,
+but every sheep represents the same completed ritual and the flock is never a compulsion.
 
 Manipulative: rewards for mere app opens, paid random outcomes, countdowns that pressure,
 red badges, "your friends did X", limited-time rewards, progress bars that reset on
@@ -76,7 +72,7 @@ A feature belongs only if it passes all five:
 When a feature fails the test but seems valuable later, record it as gated with explicit
 milestones (see ADR-0003) rather than half-shipping it.
 
-## Quiet-time UX principles
+## Wind Down UX principles
 
 - **Dark-room friendly.** Evening screens must be comfortable at night: warm darks, low
   contrast jumps, no pure white flashes, nothing animated aggressively.
@@ -90,8 +86,8 @@ milestones (see ADR-0003) rather than half-shipping it.
 - **Respect the morning.** Morning is when rewards land, stats are glanced at, and streak
   warmth is felt. Keep the chosen morning-quiet window calm; do not turn it into a routine
   checklist or an app-browsing session.
-- **One session, not two timers.** Quiet time before bed, overnight separation, and quiet
-  time after waking are phases of one internal Night Watch session. Independent morning
+- **One session, not two timers.** Phone-free time before bed, overnight separation, and quiet
+  time after waking are phases of one internal `NightWatch*` session. Independent morning
   focus sessions do not belong.
 - **Start small; let people choose.** New plans begin with 30 quiet minutes before bed and
   30 after waking. Longer windows, including a fuller 60-minute wind-down, are selectable
@@ -105,12 +101,31 @@ milestones (see ADR-0003) rather than half-shipping it.
   bed and after waking. Overnight hours are recorded only as the internal session interval and
   never converted into focus minutes, stars, or inflated economy.
 - **Honest measurement, humble claims.** We count protected nights and quiet bookend minutes.
-  We never claim to measure or improve sleep quality — that is a medical claim we refuse.
+  With permission, we may show measured sleep duration/stages and self-reported restfulness
+  as outcomes. We may describe within-person changes or associations with sample sizes; we
+  never say the ritual caused an improvement, diagnose a condition, or issue a sleep score.
 - **Reflection without grading.** Optional morning questions may help someone notice their
   own sleep context, but they stay private, produce no score, and never change rewards.
 - **CBT-I-informed, not CBT-I treatment.** Favor gentle cues such as going to bed when sleepy
   and keeping wake times steady. Do not prescribe sleep restriction, diagnose insomnia, or
   present the app as a substitute for care.
+- **Local insight before cloud collection.** Detailed behavioural events, exact dates,
+  HealthKit samples, source names, app selections, and personal reflections stay local.
+  Optional impact sharing must be purpose-limited, separately consented, date-free, minimal,
+  inspectable in copy, stoppable, and deletable.
+
+## Product constitution
+
+1. Optimise for healthier bedtime behaviour, not time inside Counting Sheep.
+2. Support the ritual; do not become the ritual.
+3. Measure only what creates understandable user value.
+4. Label observation, inference, and self-report honestly.
+5. Treat sleep outcomes as context and association, never proof or diagnosis.
+6. Prefer one small, transparent experiment over opaque scores or AI advice.
+7. Help people recover; never punish absence.
+8. Keep NFC optional, shielding consensual, and the emergency exit obvious.
+9. Earn trust locally before asking to share minimised impact data.
+10. Graduation or lower-frequency use is a successful outcome.
 
 ## Copywriting tone
 

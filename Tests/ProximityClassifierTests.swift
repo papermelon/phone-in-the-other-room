@@ -255,6 +255,26 @@ final class ProximityClassifierTests: XCTestCase {
         XCTAssertEqual(summary?.endDate, start.addingTimeInterval(150 * 60))
     }
 
+    func testSleepSummaryCarriesAvailableStagesAndSource() {
+        let start = Date(timeIntervalSince1970: 10_000)
+        let summary = SleepIntervalMath.summary(
+            for: [DateInterval(start: start, duration: 7 * 60 * 60)],
+            stages: SleepStageBreakdown(
+                awakeSeconds: 20 * 60,
+                coreSeconds: 4 * 60 * 60,
+                deepSeconds: 90 * 60,
+                remSeconds: 90 * 60,
+                unspecifiedSeconds: 0
+            ),
+            sourceName: "Apple Watch"
+        )
+
+        XCTAssertEqual(summary?.stages.deepSeconds, 90 * 60)
+        XCTAssertEqual(summary?.stages.remSeconds, 90 * 60)
+        XCTAssertEqual(summary?.sourceName, "Apple Watch")
+        XCTAssertEqual(summary?.stages.hasStages, true)
+    }
+
     func testScreenTimeBucketsAggregateMatchingHoursAndUseHourCapacity() {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         let end = start.addingTimeInterval(60 * 60)

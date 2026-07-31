@@ -145,93 +145,25 @@ struct PixelProgressRail: View {
 // MARK: - Navigation chrome
 
 enum MainAppTab: String, CaseIterable, Identifiable {
-    case home, stats, farm, friends, shop
+    case home, nights, more
 
-    /// Tabs visible in the shipping UI. Farm/Friends/Shop are DEBUG-only until the
-    /// reintroduction gates in docs/DECISIONS/ADR-0003-gated-features.md are met.
-    static var visibleTabs: [MainAppTab] {
-#if DEBUG
-        allCases
-#else
-        [.home, .stats]
-#endif
-    }
+    static var visibleTabs: [MainAppTab] { allCases }
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .home: return "Home"
-        case .stats: return "Nights"
-        case .farm: return "Farm"
-        case .friends: return "Friends"
-        case .shop: return "Shop"
+        case .nights: return "Nights"
+        case .more: return "More"
         }
     }
 
     var icon: String {
         switch self {
         case .home: return "house.fill"
-        case .stats: return "moon.stars.fill"
-        case .farm: return "house.lodge.fill"
-        case .friends: return "person.2.fill"
-        case .shop: return "storefront.fill"
-        }
-    }
-}
-
-struct PixelTopBar: View {
-    var progress: UserProgress
-
-    var body: some View {
-        HStack {
-            NavigationLink(destination: RewardShelfView()) {
-                HStack(spacing: 6) {
-                    Image(systemName: "gift.fill")
-                        .font(.title3.weight(.black))
-                    Text("\(progress.rewardsCountLabel)")
-                        .font(pixelFont(.title3))
-                }
-            }
-            .buttonStyle(.plain)
-
-            Spacer()
-
-            HStack(spacing: 14) {
-                CurrencyPill(icon: "cloud.fill", value: progress.sheepBalance, tint: AppColors.sheep)
-                CurrencyPill(icon: "circle.hexagongrid.fill", value: progress.coinBalance, tint: AppColors.coin)
-#if DEBUG
-                NavigationLink(destination: SettingsPlaceholderScreen()) {
-                    Image(systemName: "gearshape")
-                        .font(.title3.weight(.black))
-                }
-                .buttonStyle(.plain)
-#endif
-            }
-        }
-        .foregroundStyle(AppColors.ink)
-    }
-}
-
-private extension UserProgress {
-    var rewardsCountLabel: String {
-        "\(max(0, rewardsCollected))"
-    }
-}
-
-struct CurrencyPill: View {
-    var icon: String
-    var value: Int
-    var tint: Color
-
-    var body: some View {
-        HStack(spacing: 5) {
-            Image(systemName: icon)
-                .font(.headline.weight(.black))
-                .foregroundStyle(tint)
-                .shadow(color: AppColors.stroke, radius: 0, x: 1, y: 1)
-            Text("\(value)")
-                .font(pixelFont(.headline))
+        case .nights: return "moon.stars.fill"
+        case .more: return "ellipsis.circle.fill"
         }
     }
 }
@@ -297,15 +229,8 @@ struct CountingSheepTopBar: View {
                 .font(pixelFont(.headline))
                 .foregroundStyle(AppColors.ink)
             Spacer()
-            NavigationLink(destination: RewardShelfView()) {
-                Image(systemName: "shippingbox")
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(AppColors.muted)
-                    .frame(width: 42, height: 42)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Ollie's finds")
         }
+        .frame(minHeight: 42)
     }
 }
 
@@ -861,7 +786,7 @@ struct FocusSessionStartBar: View {
         Button(action: action) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Start Quiet Time")
+                    Text("Start Wind Down")
                         .font(PixelTypography.title(.title3))
                     Text("Tuck your phone in for the night")
                         .font(PixelTypography.title(.caption))

@@ -17,7 +17,7 @@ final class WatchNotificationService: NSObject, UNUserNotificationCenterDelegate
             guard await requestAuthorizationIfNeeded() else { return }
 
             let content = UNMutableNotificationContent()
-            content.title = "Ollie is on Night Watch"
+            content.title = "Ollie is on Wind Down"
             content.body = "Your phone is tucked in for the night."
             content.sound = .default
 
