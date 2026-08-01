@@ -13,10 +13,10 @@ struct CompletionView: View {
                         HStack(spacing: 14) {
                             OllieRitualView(state: .completed)
                             VStack(alignment: .leading, spacing: 6) {
-                                Text("A PROTECTED NIGHT")
+                                Text("A SHEPHERDING NIGHT")
                                     .font(pixelFont(.caption))
                                     .foregroundStyle(AppColors.grass)
-                                Text("You woke up before your phone did.")
+                                Text("Ollie brought the trail home.")
                                     .font(pixelFont(.title2))
                                 Text("You kept \(minutes) minutes phone-free around sleep.")
                                     .font(pixelFont(.body))
@@ -64,9 +64,9 @@ struct CompletionView: View {
                             Text("A SHEEP SETTLED IN")
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.grass)
-                            Text("Your flock has \(viewModel.coordinator.progress.totalCompletedRuns) sheep.")
+                            Text("Your flock has \(viewModel.sheepSearchState.foundSheepIDs.count) sheep.")
                                 .font(pixelFont(.title3))
-                            Text("One for each protected night. Every sheep counts the same.")
+                            Text("Each one has a name, a trail, and a story Ollie brought home.")
                                 .font(pixelFont(.body))
                                 .foregroundStyle(AppColors.secondaryText)
                         }
@@ -89,6 +89,23 @@ struct CompletionView: View {
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.secondaryText)
                     }
+                }
+
+                if let run = viewModel.activeRun,
+                   let idea = WindDownGuidanceLibrary.featured(
+                       for: .morningQuiet,
+                       seed: run.id
+                   ) {
+                    WindDownGuideCard(item: idea, compact: true)
+                }
+
+                if let run = viewModel.activeRun,
+                   let outcome = viewModel.latestSheepSearchOutcome,
+                   outcome.runID == run.id {
+                    SheepSearchOutcomeCard(
+                        outcome: outcome,
+                        showExactOdds: viewModel.sheepSearchState.showExactOdds
+                    )
                 }
 
                 NavigationLink("See your nights") {

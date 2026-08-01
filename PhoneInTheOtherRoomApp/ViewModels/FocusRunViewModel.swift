@@ -85,6 +85,9 @@ final class FocusRunViewModel: ObservableObject {
         self.coordinator.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
+        self.coordinator.optionalSheepSearchBonusProvider = { [weak self] in
+            self?.optionalSheepSearchBonusPoints() ?? 0
+        }
         screenTimeAuthorization = screenTimeService.currentState()
         sleepAuthorization = healthSleepService.isAvailable
             ? (healthSleepService.hasRequestedAccess ? .requested : .notRequested)
@@ -106,9 +109,42 @@ final class FocusRunViewModel: ObservableObject {
     var hasConfiguredNightWatch: Bool { nightWatchPreferences.isConfigured }
     var hasRegisteredNFCTag: Bool { registeredNFCDigest != nil }
     var canBeginNightWatchNow: Bool { nightWatchPreferences.isStartWindowOpen() }
+    var hasSelectedShieldingApps: Bool {
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        return !bedtimeActivitySelection.phoneOtherIsEmpty
+#else
+        return false
+#endif
+    }
     var isRunning: Bool {
         guard let state = activeRun?.state else { return false }
         return ![.setup, .completed, .endedEarly].contains(state)
+    }
+
+    var sheepSearchState: SheepSearchState { coordinator.sheepSearchState }
+    var latestSheepSearchOutcome: SheepSearchOutcome? { coordinator.latestSheepSearchOutcome }
+
+    func setSheepSearchExactOddsEnabled(_ enabled: Bool) {
+        var state = coordinator.sheepSearchState
+        state.showExactOdds = enabled
+        coordinator.sheepSearchState = state
+        persistence.sheepSearchState = state
+    }
+
+    private func optionalSheepSearchBonusPoints() -> Int {
+        var points = 0
+        if sleepAuthorization == .requested, lastNightSleep != nil {
+            points += 2
+        }
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        if screenTimeAuthorization == .approved, !bedtimeActivitySelection.phoneOtherIsEmpty {
+            points += 2
+        }
+#endif
+        if let recentReflection = morningCheckIns.entries.first, !recentReflection.isEmpty {
+            points += 1
+        }
+        return min(5, points)
     }
 
     func chooseDuration(minutes: Int) {
@@ -180,6 +216,38 @@ final class FocusRunViewModel: ObservableObject {
     func saveNightWatchPlanForTonight() {
         saveNightWatchPreferences()
         scheduleAutomaticWindDownIfNeeded()
+    }
+
+    func saveOnboardingDraft(_ draft: OnboardingDraft) {
+        persistence.onboardingDraft = draft
+    }
+
+    func applyOnboardingDraft(_ draft: OnboardingDraft) {
+        nightWatchPreferences = draft.makeNightWatchPreferences()
+        offlinePurpose = draft.makeOfflinePurpose()
+        selectedGuardKind = nightWatchPreferences.guardKind
+        persistence.nightWatchPreferences = nightWatchPreferences
+        persistence.offlinePurpose = offlinePurpose
+        persistence.screenTimeReportPreferences = ScreenTimeReportPreferences.defaults(
+            for: nightWatchPreferences
+        )
+        screenTimeReportPreferences = persistence.screenTimeReportPreferences
+            ?? ScreenTimeReportPreferences.defaults(for: nightWatchPreferences)
+        shieldingEnabled = draft.shieldingEnabled
+        UserDefaults.standard.set(
+            draft.shieldingEnabled,
+            forKey: QuietTimeShieldingService.enabledKey
+        )
+        notifications.remindersEnabled = draft.remindersEnabled
+        persistence.completeOnboarding()
+        scheduleAutomaticWindDownIfNeeded()
+    }
+
+    func setRemindersEnabled(_ enabled: Bool) {
+        notifications.remindersEnabled = enabled
+        if enabled {
+            scheduleAutomaticWindDownIfNeeded()
+        }
     }
 
     var nightWatchBedtimeDate: Date {
@@ -519,6 +587,10 @@ final class FocusRunViewModel: ObservableObject {
         Task { @MainActor in
             screenTimeAuthorization = await screenTimeService.requestAuthorization()
         }
+    }
+
+    func requestNotificationPermission() async -> Bool {
+        await notifications.requestAuthorization()
     }
 
     func screenTimeReportDate(

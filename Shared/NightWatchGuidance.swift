@@ -20,31 +20,8 @@ struct NightWatchLiveActivityGuidance: Equatable {
 
 struct NightWatchGuidance {
     static func tip(for phase: NightWatchPhase, seed: UUID) -> String? {
-        let choices: [String]
-        switch phase {
-        case .windDown:
-            choices = [
-                "Dim one light and let the room feel later.",
-                "Leave tomorrow's first task on paper.",
-                "Put a paper book where the phone used to be.",
-                "Try a few slow stretches before settling in.",
-                "Prepare one small thing for the morning.",
-                "Let a warm drink mark the end of the day."
-            ]
-        case .morningQuiet:
-            choices = [
-                "Open the curtains and let daylight arrive first.",
-                "Drink some water before checking the day.",
-                "Get dressed before the phone wakes.",
-                "Let breakfast be the first thing on the menu.",
-                "Step outside for a little morning air.",
-                "Write down one thought before reading anyone else's."
-            ]
-        case .overnight, .complete:
-            return nil
-        }
-
-        return choices[stableIndex(seed: seed, phase: phase, count: choices.count)]
+        guard phase == .windDown || phase == .morningQuiet else { return nil }
+        return WindDownGuidanceLibrary.featured(for: phase, seed: seed)?.body
     }
 
     static func liveActivityDetail(
@@ -71,7 +48,7 @@ struct NightWatchGuidance {
         case .windDown:
             return NightWatchLiveActivityGuidance(
                 primary: activityTitle.map { "Tonight: \($0)." }
-                    ?? "Let the evening get quieter.",
+                    ?? "Ollie is following tonight's trail.",
                 secondary: tip(for: .windDown, seed: seed)
             )
         case .overnight:
@@ -82,7 +59,7 @@ struct NightWatchGuidance {
         case .morningQuiet:
             return NightWatchLiveActivityGuidance(
                 primary: activityTitle.map { "This morning: \($0)." }
-                    ?? "Let the phone wake after you do.",
+                    ?? "Ollie is bringing the trail home.",
                 secondary: tip(for: .morningQuiet, seed: seed)
             )
         case .complete:
@@ -109,17 +86,17 @@ struct NightWatchGuidance {
             case 60:
                 return NightWatchNotificationCopy(
                     title: "Wind Down is coming",
-                    body: "In about an hour, Ollie will help the phone settle. Finish what you need, then find its resting place."
+                    body: "In about an hour, Ollie will head out on the trail. Finish what you need, then find the phone's resting place."
                 )
             case 30:
                 return NightWatchNotificationCopy(
                     title: "Wind Down in 30 minutes",
-                    body: "A little time before bed. Let the last scroll end gently, then put the phone to bed."
+                    body: "A little time before bed. Let the last scroll end gently, then send the phone to its bed."
                 )
             case 10:
                 return NightWatchNotificationCopy(
                     title: "Wind Down soon",
-                    body: "Ten minutes until the phone rests. Find the NFC phone-bed tag and one quiet thing to do."
+                    body: "Ten minutes until the phone rests. Find its resting place and give Ollie a clear trail."
                 )
             default:
                 return NightWatchNotificationCopy(

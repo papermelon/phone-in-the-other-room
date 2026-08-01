@@ -29,6 +29,16 @@ struct FocusStatsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
                 flockCard
+                SheepWantedPostersCard(
+                    searchState: viewModel.sheepSearchState,
+                    protectedNightNumber: progress.totalCompletedRuns + 1
+                )
+                if let outcome = viewModel.latestSheepSearchOutcome {
+                    SheepSearchOutcomeCard(
+                        outcome: outcome,
+                        showExactOdds: viewModel.sheepSearchState.showExactOdds
+                    )
+                }
                 recentNightCard
                 sleepCard
                 sleepOutcomeCard
@@ -110,9 +120,9 @@ struct FocusStatsView: View {
                     Text("YOUR FLOCK")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("\(progress.totalCompletedRuns) sheep settled in")
+                    Text("\(viewModel.sheepSearchState.foundSheepIDs.count) sheep found")
                         .font(AppTypography.headline)
-                    Text("One for each protected night. Every sheep counts the same.")
+                    Text("Ollie has followed \(String(format: "%.1f", viewModel.sheepSearchState.totalTrailDistance)) trail kilometres. Every found sheep has its own story.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }

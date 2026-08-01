@@ -39,7 +39,8 @@ Not generic productivity. Not medical sleep tracking. Not another gamified habit
 - Low friction: configure once, then one tap to start Quiet Time
 - Honest about what it measures (quiet minutes around sleep, protected nights, and
   "nights your phone slept in the other room")
-- Restrained in gamification: rewards celebrate rest, never punish failure
+- Purposeful gamification: search pressure, rarity, and anticipation help people return to
+  Wind Down; outcomes remain transparent, cosmetic/story-led, and recoverable
 
 **IS NOT:**
 
@@ -201,13 +202,16 @@ skills/                        ← portable agent skills (see skills/README.md)
 
 ## 9. Product taste rules
 
-- Copy is gentle, warm, and Ollie-voiced. Never guilt, shame, urgency, or FOMO. See `skills/product-copy-review/SKILL.md`.
+- Copy is warm, clear, and Ollie-voiced. Constructive urgency and anticipation are allowed
+  when the rule is understandable; never use humiliation, deception, or shame. See `skills/product-copy-review/SKILL.md`.
 - No medical claims ("improves sleep", "fixes insomnia"). Say "helps you wind down", "phone-away habit".
-- Habit formation is intentional: each completed protected night settles exactly one equal
-  sheep into the flock. It happens once at completion and must not tease future rewards,
-  require repeated checking, or use currency, rarity, or paid odds.
-- Rewards celebrate; they never punish. An early-ended run gets a consolation (muddy paw), not a loss.
-- Streak copy must never threaten ("don't break your streak!"). A missed night is a fresh start.
+- Habit formation is intentional: the first three completed protected nights settle a sheep;
+  later nights advance Ollie's search and can discover common, uncommon, rare, or legendary
+  cosmetic/story sheep. Search odds, streak momentum, and wanted posters may create anticipation.
+- Search outcomes are deterministic after resolution, persisted once, and protected against
+  unreasonable bad luck. Missing data never lowers the search chance.
+- Rewards never affect essential access. An early-ended run advances no sheep search but keeps
+  its factual trail receipt; a missed night is recoverable and never deletes found sheep.
 - Every feature must pass the belonging test in `docs/PRODUCT_PRINCIPLES.md` §"Does this feature belong?".
 
 ## 10. Validation — commands to run

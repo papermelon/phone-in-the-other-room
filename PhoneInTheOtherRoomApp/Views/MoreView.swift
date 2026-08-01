@@ -17,6 +17,8 @@ struct MoreView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
                 windDownSection
+                guidanceSection
+                sheepSearchSection
                 connectionsSection
                 dataAndPrivacySection
                 helpSection
@@ -134,6 +136,65 @@ struct MoreView: View {
                         .foregroundStyle(AppColors.muted)
                 }
             }
+        }
+    }
+
+    private var sheepSearchSection: some View {
+        VStack(spacing: AppSpacing.md) {
+            sectionHeader("Ollie's search", icon: "binoculars.fill")
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Toggle(
+                        "Show exact search odds",
+                        isOn: Binding(
+                            get: { viewModel.sheepSearchState.showExactOdds },
+                            set: viewModel.setSheepSearchExactOddsEnabled
+                        )
+                    )
+                    .font(AppTypography.headline)
+                    Text("By default, Ollie shows Faint, Promising, Strong, or Very strong trail conditions. Turn this on to see the percentage and the bonuses behind it.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    Text("Optional Health, Screen Time, and habit signals can add bonuses. Missing data never lowers the trail.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                }
+            }
+        }
+    }
+
+    private var guidanceSection: some View {
+        VStack(spacing: AppSpacing.md) {
+            sectionHeader("Wind Down ideas", icon: "sparkles")
+            NavigationLink {
+                WindDownHowItWorksView()
+            } label: {
+                settingsRow("How Wind Down works", icon: "moon.stars.fill")
+            }
+            .buttonStyle(.plain)
+            NavigationLink {
+                WindDownGuideView()
+            } label: {
+                PixelCard {
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "sparkles")
+                            .font(.title2.weight(.black))
+                            .foregroundStyle(AppColors.grass)
+                            .frame(width: 30)
+                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                            Text("Open the finite guide")
+                                .font(AppTypography.headline)
+                            Text("Small, sourced ideas for screens, settling, and mornings. Nothing to complete.")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.muted)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
+                            .foregroundStyle(AppColors.muted)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
         }
     }
 

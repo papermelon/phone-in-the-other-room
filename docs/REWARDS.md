@@ -1,8 +1,9 @@
-# One Night, One Sheep
+# Ollie's Search and Sheep Homecomings
 
 Counting Sheep marks the phone-away ritual, not time asleep and not time spent in the app.
-Ollie guards and guides. Each completed protected night settles exactly one equal sheep into
-the flock, then the person can leave.
+Ollie guards and guides. The first three completed protected nights bring a sheep home; later
+protected nights advance a probabilistic search with visible trail progress and bad-luck
+protection.
 
 ## The loop
 
@@ -12,22 +13,22 @@ flowchart LR
     Away --> Evening[Phone-free wind-down]
     Evening --> Night[Ollie keeps Night Watch]
     Night --> Morning[Phone-free morning]
-    Morning --> Arrival[One sheep and factual receipt]
+    Morning --> Search[Sheep found or trail advanced]
+    Search --> Arrival[Homecoming or clue and factual receipt]
     Arrival --> Nights[Cumulative flock in Nights]
     Nights --> Plan
 ```
 
-Only completion determines whether one sheep arrives. The factual receipt keeps wind-down
-and morning-quiet minutes separate. Duration, the overnight interval, Health data, Screen
-Time data, placement method, warning count, streak, Watch ownership, and app opens never
-change a sheep's value.
+Completion creates one search outcome. The factual receipt keeps wind-down and morning-quiet
+minutes separate. Core ritual evidence affects trail strength; optional HealthKit, Screen Time,
+and self-reported habits provide positive-only bonuses. Rarity affects cosmetic/story identity,
+never power or essential access.
 
 ## Canonical presentation
 
-The completion card says “A sheep settled in,” shows one common sheep illustration, displays
-the cumulative flock count from `UserProgress.totalCompletedRuns`, and includes the factual
-quiet-time receipt. Nights shows the same cumulative count without locked slots, rarity,
-collection percentage, or future-reward teasing.
+The completion card says that Ollie found a sheep or advanced the trail, shows the relevant
+poster/field clue, and includes the factual quiet-time receipt. Nights shows found identities,
+active wanted posters, habitats, trail distance, and rarity labels. Exact odds are optional.
 
 An early-ended Night Watch adds no sheep. It still receives warm copy and the factual receipt;
 no sheep or previously completed night is lost.
@@ -66,8 +67,8 @@ Sources:
 
 - **Slow living:** the reveal repeats what the quiet made room for and the two offline cues;
   it adds no routine checklist.
-- **Purpose over accumulation:** one protected night is one equal sheep. There are no locked
-  slots, collection percentage, rarity classes, currencies, or next-reward countdowns.
+- **Purposeful accumulation:** protected nights advance a search, wanted posters create
+  anticipation, and rare sheep remain cosmetic/story rewards. No paid odds or sheep power.
 - **Mindful screen-time management:** the rewarded behavior is physical separation during
   the selected bookends. Optional Screen Time reports can supply context elsewhere but
   never determine the sheep.
@@ -80,7 +81,8 @@ Judge this loop by protected behavior, not collection engagement:
 
 - completed Night Watches in a tester's first 14 nights;
 - credited wind-down and morning-quiet minutes, kept separate;
-- whether users understand that every protected night adds one equal sheep;
+- whether users understand that the first three searches guarantee homecomings and later
+  searches can produce clues, odds, or rarer sheep;
 - selected-app use around sleep when the person explicitly enables Screen Time reports; and
 - qualitative reports that rewards feel calm, meaningful, and non-compulsive.
 

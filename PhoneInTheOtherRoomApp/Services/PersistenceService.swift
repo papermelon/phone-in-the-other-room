@@ -22,6 +22,7 @@ final class PersistenceService {
     private let nightWatchHistoryKey = "ollie.nightWatch.history"
     private let impactSharingPreferencesKey = "ollie.impactSharing.preferences"
     private let impactUploadRecordsKey = "ollie.impactSharing.records"
+    private let sheepSearchStateKey = "ollie.sheepSearch.state"
 #if DEBUG
     private let energyLogger = Logger(
         subsystem: "com.ngawangchime.countingsheep",
@@ -135,6 +136,26 @@ final class PersistenceService {
         set { save(newValue, key: impactUploadRecordsKey) }
     }
 
+    var sheepSearchState: SheepSearchState {
+        get {
+            if let stored = load(SheepSearchState.self, key: sheepSearchStateKey) {
+                return stored
+            }
+            // Existing installs keep their protected-night count. Give the field book a
+            // deterministic starting flock without inventing historical run outcomes.
+            let legacyProgress = progress
+            guard legacyProgress.totalCompletedRuns > 0 else { return .empty }
+            var migrated = SheepSearchState.empty
+            migrated.foundSheepIDs = Array(
+                SheepCatalog.all.prefix(legacyProgress.totalCompletedRuns).map(\.id)
+            )
+            migrated.totalTrailDistance = Double(legacyProgress.totalFocusMinutes) * 0.08
+            save(migrated, key: sheepSearchStateKey)
+            return migrated
+        }
+        set { save(newValue, key: sheepSearchStateKey) }
+    }
+
     func deleteImpactUploadRecords() {
         defaults.removeObject(forKey: impactUploadRecordsKey)
     }
@@ -146,6 +167,26 @@ final class PersistenceService {
         let identifier = UUID()
         defaults.set(identifier.uuidString, forKey: installationIDKey)
         return identifier
+    }
+
+    var onboardingVersion: Int {
+        get { defaults.integer(forKey: CountingSheepOnboarding.versionKey) }
+        set { defaults.set(newValue, forKey: CountingSheepOnboarding.versionKey) }
+    }
+
+    var onboardingDraft: OnboardingDraft? {
+        get { load(OnboardingDraft.self, key: CountingSheepOnboarding.draftKey) }
+        set { save(newValue, key: CountingSheepOnboarding.draftKey) }
+    }
+
+    func completeOnboarding() {
+        onboardingVersion = CountingSheepOnboarding.currentVersion
+        onboardingDraft = nil
+    }
+
+    func resetOnboarding() {
+        defaults.removeObject(forKey: CountingSheepOnboarding.versionKey)
+        onboardingDraft = nil
     }
 
     private func load<T: Decodable>(_ type: T.Type, key: String) -> T? {

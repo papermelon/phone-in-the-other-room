@@ -12,6 +12,11 @@ guards the ritual and offers one user-chosen offline cue before bed and after wa
 a Wind Down ritual, not a productivity tool or sleep-quality tracker. The established
 `NightWatch*` names remain internal for persisted-data compatibility.
 
+First-run onboarding makes the promise legible: app shielding is the simplest no-hardware
+starting point, NFC is an optional second layer, and Wind Down also offers a finite, locally
+bundled set of cautious screen-time and sleep-habit ideas. These ideas are invitations, not
+medical treatment, scores, or a feed.
+
 ## Target user
 
 Someone who scrolls later than intended in bed, reaches for the phone immediately after
@@ -54,8 +59,9 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
 
 1. Physical separation is the product. Everything else supports the ritual.
 2. The edges of sleep are the niche. Evening and morning screen time are the differentiator.
-3. Build the ritual through kind habit formation. Each protected night adds one equal sheep
-   to the flock; never use shame, loss-aversion, paid odds, or rewards for app opens.
+3. Build the ritual through purposeful habit formation. The first three protected nights
+   guarantee a sheep; later nights use transparent search odds, rarity, streak momentum, and
+   wanted posters to make consistency meaningful without deleting found sheep or selling odds.
 4. Low friction wins. One tap to start. Setup is minutes, not a project.
 5. Restraint is a feature. When unsure whether to add something: don't.
 
@@ -78,7 +84,8 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   time while the app is closed. Optional shielding covers only the selected
   apps during wind-down and morning quiet; it lifts overnight and always has an early exit
   through Counting Sheep.
-- **Nights (one finite scroll)**: the cumulative one-night-one-sheep flock, latest Wind Down
+- **Nights (one finite scroll)**: the cumulative flock, Ollie's wanted posters and search trail,
+  latest Wind Down
   result with its finish date, latest protected night, dated seven-night view, optional
   Apple Health sleep duration, available core/deep/REM stages and seven-night wake-time
   range, and separate consented Screen
@@ -96,6 +103,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   shows how sleep duration differs between them, explicitly as association rather than
   causation. Detailed behavioural and HealthKit history stays on the phone.
 - **More**: Wind Down schedule, bookends, method, NFC, automatic Wind Down and shielding;
+  a replayable “How Wind Down works” explanation and a finite, source-linked guidance guide;
   Apple Health, Screen Time, and notification connections; optional impact-sharing controls;
   privacy information; feedback and support; and app version information. Optional feedback
   can use private Supabase delivery only after its release gates pass, and otherwise uses a

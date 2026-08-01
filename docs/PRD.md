@@ -95,17 +95,22 @@ completed habit before restoring access or granting the Night Watch receipt.
 
 ## Progress and the flock
 
-- Every completed protected night adds exactly one equal sheep to the flock.
-- Only elapsed wind-down and morning-quiet minutes appear in the factual receipt.
+- The first three completed protected nights guarantee a sheep from the starter wanted posters.
+- Later completed nights resolve into a persisted search outcome: sheep found or trail advanced.
+- Encounter odds, rarity, streak momentum, and wanted posters make consistency meaningful.
+- Optional HealthKit, Screen Time, and self-reported signals only add bonuses; missing data never
+  lowers the chance.
+- Only elapsed wind-down and morning-quiet minutes appear in the factual receipt. A separate
+  story-trail distance can drive search progress but is not a Health or GPS measurement.
 - Overnight hours never become quiet minutes or improve flock value.
 - Completed Night Watches update the record for the intended-bedtime date.
-- An early end adds no sheep and does not remove prior progress.
-- The app shows no currency, rarity, locked slots, or upcoming reward teasers.
-- Streak language is retrospective and warm; a missed night is always a fresh start.
+- An early end advances no search and does not remove prior progress.
+- Exact odds are hidden by default and available through a More toggle. Rare sheep are cosmetic
+  and story rewards only.
 
 Legacy storage fields such as `totalFocusMinutes`, reward/economy fields, and the persisted
-`FocusRun` type retain their names for backwards compatibility. Release UI derives the
-flock only from `totalCompletedRuns`.
+`FocusRun` type retain their names for backwards compatibility. Protected-night count remains
+`totalCompletedRuns`; found sheep and search outcomes live in `SheepSearchState`.
 
 ## Screen Time reports and optional shielding
 

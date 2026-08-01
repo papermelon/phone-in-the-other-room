@@ -195,9 +195,13 @@ enum AssetSlot {
     enum Sheep {
         static let common = "sheep/sheep_common"
         static let cream = "sheep/sheep_cream"
+        static let fluffy = "sheep/sheep_fluffy"
         static let black = "sheep/sheep_black"
+        static let spotted = "sheep/sheep_spotted"
+        static let merino = "sheep/sheep_merino"
         static let golden = "sheep/sheep_golden"
         static let night = "sheep/sheep_night"
+        static let guardian = "sheep/sheep_guardian"
     }
 
     enum Farm {

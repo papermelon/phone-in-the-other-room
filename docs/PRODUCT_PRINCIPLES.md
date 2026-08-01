@@ -21,20 +21,21 @@ Counting Sheep deliberately competes with the pull of social apps. It should bec
 habitual part of a sleep-bookends ritual—not by keeping people scrolling, but by making the
 phone-away choice feel warm, rewarding, and worth repeating.
 
-1. **One night, one sheep.** A completed protected night settles exactly one equal sheep
-   into the flock. The arrival happens once after the ritual, never after an app open,
-   refresh, or paid action. Longer bookends, fewer warnings, Watch ownership, and an
-   unbroken streak do not improve its value. Do not show rarity, odds, countdowns, locked
-   slots, currencies, or future-arrival teasers. See `docs/REWARDS.md`.
-2. **No loss-aversion streak mechanics.** A streak is a record of care, not a hostage. A
-   missed night resets nothing punitively and generates no "you'll lose everything!" copy.
+1. **One night, one search.** The first three completed protected nights guarantee a sheep.
+   After that, each completed night advances Ollie's search and may find a sheep. Encounter
+   odds, rarity, streak momentum, and wanted posters are allowed when clearly explained and
+   never sold. Search outcomes are persisted once and protected by a bad-luck guarantee.
+2. **Pressure must be constructive.** A streak or wanted poster may make returning feel
+   meaningful, but missed nights never delete found sheep, block essential access, or use
+   humiliation. A fresh start is always available.
 3. **No infinite or bottomless surfaces.** No feeds, no endless scrolls, no autoplaying
    sequences. Every screen has a floor.
 4. **No empty engagement bait.** No badges for opening the app, no daily-login rewards,
    no paid randomness, and no notification designed to pull the user in at night.
    Notifications exist only to support an active run or a ritual the user asked for.
-5. **No guilt or shame, ever.** Not in copy, not in visuals, not in mechanics. An early-ended
-   run gets a warm factual receipt, adds no sheep, and loses nothing.
+5. **No humiliation or deception.** Copy may create urgency, anticipation, and a desire to
+   keep a routine when the rules are honest. An early-ended run gets a factual receipt, adds
+   no search progress, and loses nothing already found.
 6. **Blocking must stay consensual.** If/when app-blocking ships (ADR-0004): the user picks
    what's blocked, shield copy is gentle, and an emergency exit is always available. We add
    friction, never bars.
@@ -134,7 +135,7 @@ never drill-sergeant. Full guide with examples: `skills/product-copy-review/SKIL
 
 - Say "phone slept in the other room", not "screen time reduced by 47 minutes".
 - Say "wake up before your phone does", not "optimize your morning productivity".
-- Say "tonight's a fresh start", never "you broke your streak".
+- Say "your trail is waiting", never "you lost everything".
 - Say "helps you wind down", never "improves your sleep" (medical claim).
 - Prefer concrete farm imagery over abstraction: Ollie guards, sheep settle, the barn light
   goes out.

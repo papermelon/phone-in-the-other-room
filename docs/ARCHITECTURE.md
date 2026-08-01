@@ -54,6 +54,9 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ ScreenTimeIntegration.swift   Screen Time scopes + report context IDs (phone-other.*)
 ├─ SleepIntervalMath.swift       merge sleep intervals → SleepSummary
 ├─ MorningCheckIn.swift          private, optional morning reflections (no score/reward)
+├─ Onboarding.swift              first-run Wind Down setup draft and protection choices
+├─ WindDownGuidance.swift         finite, source-linked screen-time and sleep-habit ideas
+├─ SheepSearch.swift               deterministic search outcomes, posters, rarity, habitats
 ├─ AppFeedback.swift             validated feedback draft/attachment/receipt protocol
 ├─ DistanceProvider.swift        protocol: async stream of distance readings
 └─ Formatting.swift              OllieFormat timer/minute formatting
@@ -260,6 +263,10 @@ by the iPhone.
 | `ollie.offlinePurpose` | `OfflinePurposeProfile` | optional in-app intention and explicit custom-notification opt-in |
 | `ollie.screenTime.reportPreferences` | `ScreenTimeReportPreferences` | independent evening and morning Screen Time report windows |
 | `ollie.morningCheckIns` | `MorningCheckInHistory` | up to 45 days of private optional morning reflections |
+| `ollie.onboarding.version` | `Int` | completed first-run onboarding version |
+| `ollie.onboarding.draft` | `OnboardingDraft` | resumable first-run setup choices |
+| `ollie.notifications.remindersEnabled` | `Bool` | explicit automatic Wind Down/reminder opt-in |
+| `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes, trail distance, no-find protection, odds preference |
 | `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
 | `ollie.phoneBedNFCTag.registration` | `PhoneBedTagRegistration` | local tag UUID + digest metadata; raw token is not retained |
 | `ollie.impactSharing.preferences` | `ImpactSharingPreferences` | explicit optional-sharing state and consent date |
