@@ -31,7 +31,7 @@ struct PhoneInTheOtherRoomApp: App {
 
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            AppRootView()
                 .environmentObject(runViewModel)
                 .preferredColorScheme(prefersNightPresentation ? .dark : nil)
                 .onChange(of: scenePhase) { _, newPhase in

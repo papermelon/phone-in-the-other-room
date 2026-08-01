@@ -14,6 +14,8 @@ final class FocusSessionCoordinator: ObservableObject {
     @Published var ollieMessage = "Ollie is ready when your phone is."
     @Published var backgroundReturnMessage: String?
     @Published var shieldingMessage: String?
+    @Published var sheepSearchState: SheepSearchState
+    @Published var latestSheepSearchOutcome: SheepSearchOutcome?
 
     private let persistence: PersistenceService
     private let rewardEngine = RewardEngine()
@@ -28,6 +30,7 @@ final class FocusSessionCoordinator: ObservableObject {
     var placementTimeoutTask: Task<Void, Never>?
     var pairedWatchTokenData: Data?
     private var lastLiveActivityPhase: NightWatchPhase?
+    var optionalSheepSearchBonusProvider: (() -> Int)?
 #if DEBUG
     let energyLogger = Logger(
         subsystem: "com.ngawangchime.countingsheep",
@@ -46,6 +49,8 @@ final class FocusSessionCoordinator: ObservableObject {
         self.shielding = shielding ?? QuietTimeShieldingService()
         self.progress = persistence.progress
         self.rewards = persistence.rewards
+        self.sheepSearchState = persistence.sheepSearchState
+        self.latestSheepSearchOutcome = persistence.sheepSearchState.lastOutcome
         watch.onMessage = { [weak self] message in
             Task { @MainActor in self?.handle(message) }
         }
@@ -441,6 +446,32 @@ final class FocusSessionCoordinator: ObservableObject {
         persistence.progress = progress
         persistence.rewards = rewards
         persistence.lastRun = finalRun
+        if finalRun.completedSuccessfully {
+            let plan = finalRun.nightWatchPlan
+            let evidence = SheepSearchEvidence(
+                windDownMinutes: finalRun.creditedWindDownMinutes,
+                morningQuietMinutes: finalRun.creditedMorningQuietMinutes,
+                plannedWindDownMinutes: plan?.windDownMinutes ?? finalRun.creditedWindDownMinutes,
+                plannedMorningQuietMinutes: plan?.morningQuietMinutes ?? finalRun.creditedMorningQuietMinutes,
+                startedNearSchedule: plan.map {
+                    abs(finalRun.startedAt.timeIntervalSince($0.intendedBedtime)) <= 30 * 60
+                } ?? false,
+                shieldingObserved: protection.evidence == .observed,
+                placementConfirmed: finalRun.placementStatus == .confirmed,
+                recentProtectedNights: min(12, sheepSearchState.outcomes.suffix(7).filter { $0.result == .found }.count),
+                optionalBonusPoints: optionalSheepSearchBonusProvider?() ?? 0
+            )
+            let calculation = SheepSearchEngine.calculate(
+                runID: finalRun.id,
+                protectedNightNumber: progress.totalCompletedRuns + 1,
+                evidence: evidence,
+                state: sheepSearchState,
+                now: finalRun.endedAt ?? Date()
+            )
+            sheepSearchState.append(calculation.outcome)
+            persistence.sheepSearchState = sheepSearchState
+            latestSheepSearchOutcome = calculation.outcome
+        }
         if let record = finalRun.nightWatchRecord(
             updatedAt: finalRun.endedAt ?? Date(),
             shieldedWindDownMinutes: protection.windDownMinutes,

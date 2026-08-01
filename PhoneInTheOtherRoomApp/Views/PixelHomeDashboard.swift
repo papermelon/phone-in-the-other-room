@@ -17,6 +17,8 @@ struct PixelHomeDashboard: View {
             watchReachable: watch.isReachable,
             canBeginNow: viewModel.canBeginNightWatchNow,
             isNFCTagReady: viewModel.hasRegisteredNFCTag,
+            searchState: viewModel.sheepSearchState,
+            protectedNightNumber: viewModel.coordinator.progress.totalCompletedRuns + 1,
             onPrimaryAction: {
                 let methodIsReady = viewModel.selectedGuardKind != .nfcTag
                     || viewModel.hasRegisteredNFCTag
@@ -44,6 +46,8 @@ private struct PixelHomeDashboardContent: View {
     var watchReachable: Bool
     var canBeginNow: Bool
     var isNFCTagReady: Bool
+    var searchState: SheepSearchState
+    var protectedNightNumber: Int
     var onPrimaryAction: () -> Void
     var onAdjust: () -> Void
 
@@ -65,6 +69,18 @@ private struct PixelHomeDashboardContent: View {
                     .foregroundStyle(AppColors.muted)
                     .multilineTextAlignment(.center)
             }
+
+            if let idea = WindDownGuidanceLibrary.featured(
+                for: .windDown,
+                seed: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!
+            ) {
+                WindDownGuideCard(item: idea, compact: true)
+            }
+
+            SheepWantedPostersCard(
+                searchState: searchState,
+                protectedNightNumber: protectedNightNumber
+            )
 
             PrimaryGreenCTA(
                 title: primaryTitle,
@@ -202,6 +218,8 @@ private struct NightWatchOverviewBlock: View {
                 watchReachable: false,
                 canBeginNow: false,
                 isNFCTagReady: false,
+                searchState: .empty,
+                protectedNightNumber: 1,
                 onPrimaryAction: {},
                 onAdjust: {}
             )
@@ -233,6 +251,8 @@ private struct NightWatchOverviewBlock: View {
                 watchReachable: false,
                 canBeginNow: false,
                 isNFCTagReady: false,
+                searchState: .empty,
+                protectedNightNumber: 1,
                 onPrimaryAction: {},
                 onAdjust: {}
             )

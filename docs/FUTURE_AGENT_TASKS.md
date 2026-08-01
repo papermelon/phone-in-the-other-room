@@ -95,14 +95,14 @@ execute without human sign-off mid-task (final merge review still applies per
   can dismiss/correct it; no composite score, opaque AI, medical claim, or extra nighttime
   interaction.
 
-### D3. Curated educational Live Activity notes (post-1.0 content expansion)
-- **Gate:** first validate the taller activity-and-tip layout in build 3 and finish App
-  Store 1.0 submission. Sleep education requires a reviewed content source list.
+### D3. Curated educational Live Activity notes — completed 2026-08-01
+- **Gate:** reviewed source list and finite guidance surface are shipped in onboarding, Home,
+  the active run, completion, and More. Live Activity remains limited to a single phase cue.
 - **Mode:** Product + Codex · **Size:** S · **Autonomous:** no
-- **Accept:** one short, static note per Wind Down phase; user goals remain primary; every
-  sleep or healthy-habit fact has an authoritative source recorded in docs; no diagnosis,
-  sleep-quality promise, notification, feed, novelty teaser, or reason to keep checking the
-  phone. Notes rotate at most once per completed night and remain readable at Dynamic Type.
+- **Accept:** satisfied by `docs/DECISIONS/ADR-0008-wind-down-guidance.md` and
+  `docs/SLEEP_GUIDANCE_SOURCES.md`: short static notes, authoritative source IDs, user goals
+  first, no diagnosis or sleep-quality promise, no notifications/feed/novelty loop, and no
+  nighttime interaction requirement. Any future expansion still needs product review.
 
 ## E. Later / explicitly postponed (do not start; citable refusals)
 
@@ -121,6 +121,11 @@ execute without human sign-off mid-task (final merge review still applies per
 "Done" list at the bottom; new tasks must include all fields.*
 
 ## Done
+
+- **2026-08-01 · Founder-approved direction:** Replaced the equal-sheep-only reward model with
+  Ollie's lost-sheep search loop. First three protected nights guarantee homecomings; later
+  searches use transparent qualitative odds, exact-odds opt-in, wanted posters, rarity, positive-
+  only optional bonuses, persisted trail progress, and cosmetic/story-only sheep identities.
 
 - **2026-08-01 · Codex + human-approved plan:** Replaced ordinary Debug and Release
   navigation with Home/Nights/More; moved setup and connection controls into More; kept

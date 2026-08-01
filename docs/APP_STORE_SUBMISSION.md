@@ -7,10 +7,10 @@ Last read-only App Store Connect audit: **2026-07-30, Asia/Singapore**.
 
 ## Current App Store Connect state
 
-- App: `Counting Sheep: Phone Away` (`6788186681`)
+- App: `Counting Sheep: Wind Down` (`6788186681`)
 - Version 1.0: **Prepare for Submission**
 - TestFlight build 2: **processed successfully** and selected for App Store version 1.0.
-- The current local candidate adds the Home/Nights/More shell, one-night-one-sheep flock,
+- The current local candidate adds the Home/Nights/More shell, Ollie's wanted-poster search,
   NFC-authenticated ending, Live Activity layout fixes, and optional-sharing/feedback flows.
   Physical retest, screenshots, privacy updates, and upload remain pending.
 - No iPhone or Watch screenshots are uploaded.
@@ -24,9 +24,9 @@ Last read-only App Store Connect audit: **2026-07-30, Asia/Singapore**.
 
 ### Name
 
-`Counting Sheep: Phone Away`
+`Counting Sheep: Wind Down`
 
-This preserves the existing App Store record while the installed display name remains
+This updates the App Store positioning while the installed display name remains
 `Counting Sheep`.
 
 ### Subtitle
@@ -52,7 +52,7 @@ Counting Sheep includes:
 • Optional app shielding during those two quiet windows
 • Honor-timer, QR, NFC-tag, and Apple Watch tuck-in choices
 • A calm Lock Screen Live Activity while Wind Down is running
-• Quiet-minute history and one equal sheep for each protected night
+• Quiet-minute history, wanted posters, and sheep homecomings after Wind Down
 • Optional Apple Health sleep duration and available sleep stages
 • Private morning reflections and cautious sleep-context comparisons
 • A direct feedback and support path

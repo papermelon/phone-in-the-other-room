@@ -3,6 +3,7 @@ import UserNotifications
 
 final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate {
     static let shared = PhoneNotificationService()
+    static let remindersEnabledKey = "ollie.notifications.remindersEnabled"
 
     private let runNotificationIdentifiers = [
         "night-watch-sleep-time",
@@ -24,6 +25,23 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         UNUserNotificationCenter.current().delegate = self
     }
 
+    var remindersEnabled: Bool {
+        get {
+            UserDefaults.standard.object(forKey: Self.remindersEnabledKey) as? Bool ?? true
+        }
+        set {
+            UserDefaults.standard.set(newValue, forKey: Self.remindersEnabledKey)
+            if !newValue {
+                cancelRunCompletion()
+                cancelNightWatchReminder()
+            }
+        }
+    }
+
+    func requestAuthorization() async -> Bool {
+        await requestAuthorizationIfNeeded()
+    }
+
     func scheduleOpenWatchReminder() {
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
@@ -40,6 +58,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
     }
 
     func scheduleRunCompletion(at endDate: Date?) {
+        guard remindersEnabled else { return }
         guard let endDate, endDate > Date() else { return }
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
@@ -61,6 +80,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         for run: FocusRun,
         purpose: OfflinePurposeProfile = .defaultProfile
     ) {
+        guard remindersEnabled else { return }
         guard let plan = run.nightWatchPlan else {
             scheduleRunCompletion(at: run.plannedEndAt)
             return
@@ -103,6 +123,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         at startDate: Date,
         purpose: OfflinePurposeProfile = .defaultProfile
     ) {
+        guard remindersEnabled else { return }
         guard startDate > Date() else { return }
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
@@ -127,6 +148,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         at startDate: Date,
         purpose: OfflinePurposeProfile = .defaultProfile
     ) {
+        guard remindersEnabled else { return }
         guard startDate > Date() else { return }
         Task {
             guard await requestAuthorizationIfNeeded() else { return }

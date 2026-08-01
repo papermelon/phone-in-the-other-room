@@ -13,10 +13,11 @@ showed configuration controls that competed with tonight's single action. The Au
 candidate needs one information architecture across Debug, TestFlight, and App Store
 builds, without deleting compatibility data or useful internal mock screens.
 
-The former keepsake, rarity, sheep-currency, coin, and Ollie-level concepts also made one
-protected night look as though it could have different values. That conflicts with a calm
-phone-away ritual. Testers still need a direct, privacy-bounded way to report problems, but
-backend readiness must not block submission.
+The former keepsake, sheep-currency, coin, and Ollie-level concepts were not connected to a
+real ritual. The updated direction makes Ollie's search, wanted posters, and cosmetic rarity
+part of the bedtime habit loop while keeping the result local, transparent, and non-functional.
+Testers still need a direct, privacy-bounded way to report problems, but backend readiness must
+not block submission.
 
 ## Decision
 
@@ -35,12 +36,18 @@ Farm, Friends, Shop, and the legacy keepsake shelf compile only in Debug and are
 only from More when the process is launched with
 `-ollie.debug.enableMockScreens YES`. They are not shown as locked or coming soon.
 
-### One night, one sheep
+### Ollie's search
 
-Ollie guards and guides the ritual. Every completed protected night adds exactly one equal
-sheep to the flock. The displayed total is `UserProgress.totalCompletedRuns`; duration,
-placement method, warnings, streaks, Health data, and Screen Time never alter a sheep's
-value. Early-ended sessions show their factual quiet-time receipt and add no sheep.
+The first three completed protected nights guarantee a sheep. Later completed nights produce
+an idempotent search outcome: Ollie may find a sheep or advance the trail without a find. Search
+strength uses Wind Down evidence plus optional positive-only HealthKit, Screen Time, and
+self-reported habit bonuses. Missing data never lowers the chance. Encounter odds and rarity
+are visible qualitatively by default, with an exact-odds toggle in More. Rare sheep are
+cosmetic/story rewards only; no sheep grants power or essential access. A persisted bad-luck
+threshold guarantees a future find after repeated successful no-find searches.
+
+`UserProgress.totalCompletedRuns` remains the protected-night count. Search outcomes and found
+sheep identities live in `SheepSearchState`; early-ended sessions do not advance the search.
 
 `RewardItem`, balances, coins, rarity, and Ollie-level fields remain persisted and continue
 decoding for compatibility. The August release UI does not read them. The old shelf remains
@@ -69,8 +76,8 @@ screenshots in Mail. If Mail is unavailable, the app displays and copies
 ## Post-launch gate
 
 After at least two stable weeks and the retention and qualitative gates in ADR-0003, a
-real-data Farm may be tested internally. It must visualize `totalCompletedRuns` as the
-flock and must not revive currency, rarity, or mock missions. If Farm later earns a root
+real-data Farm may be tested internally. It must visualize found sheep and search habitats
+from `SheepSearchState`; it must not revive currency, sheep power, or mock missions. If Farm later earns a root
 destination, the root three become Home, Nights, and Farm; More moves to a top-right
 utility sheet. Shop can only be nested in Farm. Friends remains last-or-never and requires
 its own ADR, backend, moderation, and belonging-test approval.

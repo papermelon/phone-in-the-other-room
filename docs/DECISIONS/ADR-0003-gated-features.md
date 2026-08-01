@@ -31,10 +31,10 @@ Internal mock screens appear inside More only when launched with
 - **Gate 1 — Retention evidence.** Testers complete bedtime runs on 5+ of their first 14
   nights (the brief's success criterion), and qualitative feedback organically asks for
   more progression/collection. If nobody asks, these features stay gated.
-- **Gate 2 — Technical readiness.** Farm reads `totalCompletedRuns` as the one-night-one-sheep
-  flock (no `MVPMockData` in any release path), and persisted-model changes have
-  backwards-compatible decoding with tests. It does not expose coins, balances, rarity,
-  levels, or minute-based sheep values.
+- **Gate 2 — Technical readiness.** Farm reads `SheepSearchState` for found sheep, wanted
+  posters, habitats, and cosmetic rarity (no `MVPMockData` in any release path), and
+  persisted-model changes have backwards-compatible decoding with tests. It does not expose
+  coins, balances, sheep power, or minute-based sheep values.
 - **Gate 3 — Art readiness.** The relevant asset set is complete per
   `docs/SCREEN_ASSET_MAP.md` (no placeholder-shape fallbacks on shipped screens).
 

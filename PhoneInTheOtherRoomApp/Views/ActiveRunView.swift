@@ -390,9 +390,9 @@ struct ActiveRunView: View {
 
     private var phaseStatusText: String {
         switch phase {
-        case .windDown: return "Your phone is tucked away until sleep time."
+        case .windDown: return "Your phone is tucked away. Ollie is following the first trail."
         case .overnight: return "Sleep time is keeping. There is nothing else to do here."
-        case .morningQuiet: return "This phone-free morning is yours until the countdown ends."
+        case .morningQuiet: return "This phone-free morning is yours. Ollie is taking the trail home."
         case .complete: return "Both phone-free windows are protected."
         case nil: return "Your phone-away time is yours now. Ollie will check in when it is done."
         }
@@ -400,7 +400,7 @@ struct ActiveRunView: View {
 
     private var guidanceTip: String? {
         guard let run, let phase else { return nil }
-        let phaseTip = NightWatchGuidance.tip(for: phase, seed: run.id)
+        let phaseTip = WindDownGuidanceLibrary.featured(for: phase, seed: run.id)?.body
         guard phase == .windDown || phase == .morningQuiet else { return phaseTip }
         return [viewModel.offlinePurpose.inAppDisplayPhrase + ".", phaseTip]
             .compactMap { $0 }

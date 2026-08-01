@@ -1,6 +1,8 @@
 # Asset Naming
 
-This project is asset-ready but intentionally does not include final artwork yet. SwiftUI placeholders should be replaced later by adding image assets with the names below and swapping the drawing internals of the reusable placeholder components.
+This project keeps the reusable SwiftUI fallback components, while importing final artwork in
+small, reviewable batches. A generated sheep batch should only be added to
+`Assets.xcassets/sheep` after its style has been approved against the Farm references.
 
 ## Format
 
@@ -69,7 +71,8 @@ Initial target sizes:
 
 - Dog full-body state: `512x512`
 - Dog head/bust: `256x256`
-- Sheep variant: `256x256`
+- Sheep variant: `256x256` minimum; generated full-body sprites may be larger and are scaled
+  by the image set at runtime.
 - Farm prop: `256x256` to `512x512`
 - Home prop: `256x256` to `512x512`
 - Full background: `1290x2796` for iPhone portrait source, with safe-area bleed
@@ -157,4 +160,3 @@ icon_tab_stats
 icon_device_watch_connected
 icon_device_phone_away
 ```
-

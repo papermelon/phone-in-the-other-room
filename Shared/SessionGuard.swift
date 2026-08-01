@@ -21,7 +21,7 @@ enum SessionGuardKind: String, Codable, CaseIterable, Identifiable {
 
     var detail: String {
         switch self {
-        case .honorTimer: return "A simple timer for the walk to another room."
+        case .honorTimer: return "A simple timer for the walk to another room. No NFC tag needed."
         case .watchPlacement: return "Ollie watches the phone head away, then rests."
         case .qrCode: return "Scan a code where your phone sleeps."
         case .nfcTag: return "Tap the same tag to start and end Wind Down."
