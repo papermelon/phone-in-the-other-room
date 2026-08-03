@@ -46,11 +46,26 @@ struct OnboardingPrimaryButton: View {
             }
             .font(AppTypography.headline)
             .padding(.horizontal, AppSpacing.md)
-            .frame(minHeight: 54)
+            .frame(minHeight: 46)
         }
-        .buttonStyle(PixelPrimaryButtonStyle())
+        .buttonStyle(OnboardingPrimaryButtonStyle())
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1 : 0.5)
+    }
+}
+
+private struct OnboardingPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(.white)
+            .padding(.vertical, 11)
+            .padding(.horizontal, AppSpacing.md)
+            .background(AppColors.grass.opacity(configuration.isPressed ? 0.88 : 1))
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).stroke(AppColors.stroke.opacity(0.9), lineWidth: 2))
+            .scaleEffect(!reduceMotion && configuration.isPressed ? 0.99 : 1)
     }
 }
 

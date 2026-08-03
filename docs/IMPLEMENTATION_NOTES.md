@@ -11,9 +11,11 @@ current UI and integration boundaries; those canonical files win if this note dr
 Home
 Nights
 Farm
+Settings
 ```
 
 Friends and Shop remain compiled only for Debug exploration and are backed by `MVPMockData`.
+The old More utility sheet and top-bar ellipsis are not part of the release shell.
 The shipping Farm reads the real flock count and sheep-search field book; its Missing Posters
 carousel is separate from the legacy mock Farm. There is no Missions tab. Do not add new code to
 `Views/MVP/` or `MockData/` as part of Night Watch work.

@@ -17,8 +17,15 @@ enum NightJourneySegment: String, Codable, CaseIterable, Equatable {
 }
 
 struct NightJourneyProgress: Equatable {
+    /// A visual trail marker, not physical-distance or reward accounting.
+    static let illustratedTrailMiles = 1.2
+
     let fraction: Double
     let segment: NightJourneySegment
+
+    var illustratedMiles: Double {
+        fraction * Self.illustratedTrailMiles
+    }
 
     static func resolve(plan: NightWatchPlan, at date: Date) -> Self {
         let start = plan.role == .additionalQuiet

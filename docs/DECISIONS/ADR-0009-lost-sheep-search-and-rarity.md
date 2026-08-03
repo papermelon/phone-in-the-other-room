@@ -34,7 +34,7 @@ and differ through markings and accessories.
 Wanted posters appear in a finite, deterministic catalogue. The starter board is available from
 the first run; later posters arrive through completion milestones, habitat access, and occasional
 seeded arrivals. Posters do not expire in the first release. Exact encounter odds are hidden by
-default and can be enabled in More; the default presentation uses qualitative trail strength and
+default and can be enabled in Settings; the default presentation uses qualitative trail strength and
 habitat eligibility.
 
 Poster presentation uses a native SwiftUI, bounty-poster-inspired composition rather than a

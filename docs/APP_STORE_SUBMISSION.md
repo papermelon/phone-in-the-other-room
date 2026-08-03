@@ -10,7 +10,7 @@ Last read-only App Store Connect audit: **2026-07-30, Asia/Singapore**.
 - App: `Counting Sheep: Wind Down` (`6788186681`)
 - Version 1.0: **Prepare for Submission**
 - TestFlight build 2: **processed successfully** and selected for App Store version 1.0.
-- The current local candidate adds the Home/Nights/Farm shell, with More as a utility sheet;
+- The current local candidate adds the Home/Nights/Farm/Settings shell;
   Farm includes a finite swipeable Missing Posters board while the shipping flock is counted from protected nights,
   NFC-authenticated ending, Live Activity layout fixes, and optional-sharing/feedback flows.
   Physical retest, screenshots, privacy updates, and upload remain pending.
@@ -89,13 +89,13 @@ hardware for its core flow.
 
 REVIEW PATH
 
-1. Open More → Your Wind Down, choose a method, and save the default plan.
-2. Keep “Honor timer” selected to test without NFC or Apple Watch, then return to Home.
-3. Optionally enable app shielding in More and choose a disposable app in Apple’s Family Activity
+1. Open Settings → Your Wind Down, choose App Shielding or NFC + App Shielding, and save the default plan.
+2. Keep App Shielding selected to test without NFC, then return to Home.
+3. In Settings, connect Screen Time and choose a disposable app in Apple’s Family Activity
    picker.
 4. Start Wind Down. The run moves through wind-down, overnight, and morning-quiet phases
    from one persisted schedule.
-5. Honor-timer, QR, and Watch sessions have a direct early-end action. In NFC mode, the
+5. App Shielding sessions have a direct early-end action. In NFC mode, the
    registered phone-bed tag authenticates the normal end action; a multi-step emergency exit
    remains available and immediately clears the ManagedSettings store.
 
@@ -167,7 +167,7 @@ the official Supabase SDK and enabled service behavior in the answers.
 At minimum, capture truthful Release-build screens showing:
 
 1. Home: tonight’s Wind Down plan and one primary start action.
-2. More: finite Wind Down, Connections, Data & Privacy, Help, and About groups.
+2. Settings: finite Wind Down, Connections, Data & Privacy, Help, and About groups.
 3. Active Wind Down: calm current phase with early exit visible.
 4. Nights: cumulative flock, completed quiet minutes, and seven-night history.
 5. Nights: optional sleep duration/stages and the association-not-causation comparison.

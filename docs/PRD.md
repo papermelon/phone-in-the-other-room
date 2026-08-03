@@ -33,14 +33,14 @@ gentler physical boundary, without adopting a productivity system or punitive bl
 
 ## Release scope
 
-The first release contains three tabs:
+The first release contains four tabs:
 
 - **Home:** understand tonight's saved plan and purpose, then set/start Wind Down or edit it.
 - **Nights:** see protected nights, quiet-bookend minutes, recent history, optional sleep
   duration/stages, selected-app Screen Time, and cautious local outcome comparisons.
 - **Farm:** see the equal protected-night flock and browse the finite Missing Posters carousel
   for cosmetic/story context; posters do not change progression value.
-- **More:** configure Wind Down, manage connections and privacy, send feedback, and see app
+- **Settings:** configure Wind Down, manage connections and privacy, send feedback, and see app
   information.
 
 Farm, Friends, Shop, adaptive coaching, social features, and mock-backed features are not
@@ -75,13 +75,14 @@ reachable in Release. Their gates are defined in ADR-0003 and ADR-0004.
 Night Watch may begin late. A late start protects only the quiet time that remains and is
 attributed to the intended-bedtime date, including after-midnight starts.
 
-## Session guards
+## Protection choices
 
-- **Honor timer:** explicit no-hardware fallback when NFC, Watch, or QR is not desired.
-- **Apple Watch assist:** one time-boxed Nearby Interaction placement check at tuck-in.
-- **QR phone bed:** one scan where the phone rests, with manual-code fallback.
-- **NFC phone bed:** provision and confirm a generic writable NDEF tag; QR/honor fallback
-  remains available.
+- **App Shielding:** selected apps rest during both quiet windows; no hardware setup is needed.
+- **NFC + App Shielding:** a registered phone-bed tag confirms the phone is away while selected
+  apps rest during both quiet windows.
+
+Legacy timer, Watch, and QR session-guard values remain decodable for existing data and active
+runs, but are not presented as current configuration choices.
 
 The iPhone is authoritative for timing, persistence, restoration, completion, and flock progress.
 No later Watch distance can warn, punish, or end Night Watch.
@@ -173,7 +174,7 @@ consented impact rows are relative-night, purpose-limited, and deletable; see
 - Background/relaunch restoration reaches the correct phase and completion state.
 - Quiet-minute accounting excludes overnight time, including late starts and DST changes.
 - Early end is always available and never uses failure haptics or guilt copy.
-- Debug and Release show exactly Home, Nights, and Farm. More is a utility sheet; mock UI requires the explicit Debug
+- Debug and Release show exactly Home, Nights, Farm, and Settings; mock UI requires the explicit Debug
   internal-preview launch argument and is never reachable in Release.
 - Optional shields cover only the two selected quiet windows and always clear on early end.
 - HealthKit requests only read-only `sleepAnalysis` and labels available stage provenance.

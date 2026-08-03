@@ -142,6 +142,37 @@ enum ScreenTimeSelectionScope: String, CaseIterable, Identifiable {
     }
 }
 
+/// The small set of states the app needs to explain before it promises an app shield.
+/// Keeping this independent of FamilyControls makes the start preflight testable on every
+/// target, including the watch and unit-test bundle.
+enum ShieldingReadiness: Equatable {
+    case ready
+    case authorizationRequired
+    case denied
+    case noSelection
+    case unavailable
+
+    var title: String {
+        switch self {
+        case .ready: return "App shielding is ready"
+        case .authorizationRequired: return "Screen Time access is needed"
+        case .denied: return "Screen Time access is off"
+        case .noSelection: return "Choose apps to shield"
+        case .unavailable: return "App shielding is unavailable"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .ready: return "Selected apps will rest during the two quiet windows."
+        case .authorizationRequired: return "Allow Screen Time access, then choose at least one app or category."
+        case .denied: return "Wind Down can still run as phone-away time without app shielding."
+        case .noSelection: return "Choose at least one app or category, or continue without app shielding."
+        case .unavailable: return "This device cannot provide the optional app-shielding feature."
+        }
+    }
+}
+
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity)
 import DeviceActivity
 import SwiftUI

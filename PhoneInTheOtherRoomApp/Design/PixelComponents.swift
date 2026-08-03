@@ -145,9 +145,9 @@ struct PixelProgressRail: View {
 // MARK: - Navigation chrome
 
 enum MainAppTab: String, CaseIterable, Identifiable {
-    case home, nights, farm
+    case home, nights, farm, settings
 
-    static var visibleTabs: [MainAppTab] { [.home, .nights, .farm] }
+    static var visibleTabs: [MainAppTab] { [.home, .nights, .farm, .settings] }
 
     var id: String { rawValue }
 
@@ -156,6 +156,7 @@ enum MainAppTab: String, CaseIterable, Identifiable {
         case .home: return "Home"
         case .nights: return "Nights"
         case .farm: return "Farm"
+        case .settings: return "Settings"
         }
     }
 
@@ -164,6 +165,7 @@ enum MainAppTab: String, CaseIterable, Identifiable {
         case .home: return "house.fill"
         case .nights: return "moon.stars.fill"
         case .farm: return "leaf.fill"
+        case .settings: return "gearshape.fill"
         }
     }
 }
@@ -221,8 +223,6 @@ struct PixelBottomBar: View {
 // MARK: - Counting Sheep mockup chrome
 
 struct CountingSheepTopBar: View {
-    var onMore: () -> Void = {}
-
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
             Image(systemName: "moon.stars.fill")
@@ -231,15 +231,6 @@ struct CountingSheepTopBar: View {
                 .font(pixelFont(.headline))
                 .foregroundStyle(AppColors.ink)
             Spacer()
-            Button(action: onMore) {
-                Image(systemName: "ellipsis.circle.fill")
-                    .font(.title3.weight(.black))
-                    .foregroundStyle(AppColors.ink)
-                    .frame(width: 42, height: 42)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("More")
         }
         .frame(minHeight: 42)
     }

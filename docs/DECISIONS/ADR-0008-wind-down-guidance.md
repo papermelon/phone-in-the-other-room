@@ -29,7 +29,7 @@ ritual. Guidance may appear in four places:
    Activity. A person may separately opt into one reviewed guidance tip per night in local
    notifications; that tip replaces an existing midpoint cue, never adds a notification.
    Overnight has no educational prompt.
-4. A finite guide in More with topic grouping and visible source labels.
+4. A finite guide in Settings with topic grouping and visible source labels.
 
 Guidance is optional, dismissible, and never a task, score, streak, reward condition, or
 notification campaign. A consented notification tip is finite, deterministic for the

@@ -97,7 +97,7 @@ extension FocusSessionCoordinator {
             statusText: "Phone is resting away",
             detailText: "Ollie finished the short placement check."
         )
-        ollieMessage = "Ollie saw the phone head out. The timer can rest now."
+        ollieMessage = "Ollie saw the phone head out. The quiet is now settled."
         addEvent("Phone placement confirmed.", severity: .success)
         persistActiveRun()
         reconcileShielding(for: run)

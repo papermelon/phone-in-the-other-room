@@ -18,7 +18,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         }
         guard let window = QuietTimeShieldWindow(activityName: activity),
               let snapshot = loadSchedule() else { return }
-        guard snapshot.contains(Date(), in: window),
+        guard snapshot.isEligible(at: Date()),
+              snapshot.contains(Date(), in: window),
               let selection = loadSelection(),
               !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
             store.clearAllSettings()

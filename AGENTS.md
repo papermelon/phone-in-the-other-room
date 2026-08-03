@@ -275,7 +275,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 
 | Feature | Status | Gate |
 |---|---|---|
-| Farm / Friends / Shop screens | Debug internal-preview launch flag only | ADR-0003/0007 milestones |
+| Friends / Shop screens | Debug internal-preview launch flag only | ADR-0003/0007 milestones |
 | Screen Time reports & pickers | Foundation enabled; physical-device QA pending | Family Controls distribution assigned to app + report extension |
 | HealthKit sleep duration/stages | Included for 1.0, optional and read-only | Physical-device reads + privacy disclosure |
 | NFC + app shielding for Night Watch | Included for 1.0, optional | New extension App IDs, Family Controls distribution, and physical overnight QA |
@@ -289,7 +289,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 2. Privacy strings consistent with Night Watch; App Store privacy labels cover the optional
    Supabase dependency and its enabled/disabled configuration.
 3. Re-run a signed archive with the configured bundle IDs, Team ID, and version numbers.
-4. App Store 1.0 stays three tabs (Home + Nights + More), with mock UI gated behind the
+4. App Store 1.0 stays four tabs (Home + Nights + Farm + Settings), with mock UI gated behind the
    explicit Debug preview flag. NFC, read-only HealthKit sleep, Screen Time reports, and
    optional bookend shielding serve that ritual.
 5. Manual QA per `docs/PLAYBOOKS/testflight-readiness.md`.

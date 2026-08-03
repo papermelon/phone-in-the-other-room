@@ -51,6 +51,56 @@ enum SessionGuardKind: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+/// The two protection choices shown in current release configuration UI. The
+/// older guard kinds remain above for backwards decoding and active-run support.
+enum WindDownProtectionChoice: String, CaseIterable, Identifiable, Equatable {
+    case appShielding
+    case nfcAndAppShielding
+
+    var id: String { rawValue }
+
+    var guardKind: SessionGuardKind {
+        switch self {
+        case .appShielding: return .honorTimer
+        case .nfcAndAppShielding: return .nfcTag
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .appShielding: return "App Shielding"
+        case .nfcAndAppShielding: return "NFC + App Shielding"
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .appShielding:
+            return "Selected apps rest during both quiet windows. No tag needed."
+        case .nfcAndAppShielding:
+            return "A phone-bed tag confirms the phone is away while selected apps rest."
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .appShielding: return "iphone.slash"
+        case .nfcAndAppShielding: return "dot.radiowaves.left.and.right"
+        }
+    }
+
+    static func from(guardKind: SessionGuardKind) -> Self {
+        guardKind == .nfcTag ? .nfcAndAppShielding : .appShielding
+    }
+}
+
+extension SessionGuardKind {
+    /// Maps retired UI choices to the current no-hardware protection choice.
+    var releaseCompatibleKind: Self {
+        self == .nfcTag ? .nfcTag : .honorTimer
+    }
+}
+
 enum PlacementStatus: String, Codable, Equatable {
     case notRequired
     case awaitingConfirmation

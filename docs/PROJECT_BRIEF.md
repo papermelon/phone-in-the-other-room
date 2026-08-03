@@ -66,7 +66,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
 
 ## App Store 1.0 scope (decided July 2026)
 
-**Shipped surface: three tabs — Home, Nights, and Farm. More opens from the Home utility button.**
+**Shipped surface: four tabs — Home, Nights, Farm, and Settings.**
 
 - **Home**: one-time Wind Down plan → saved wind-down reminder → one-tap Wind Down →
   wind-down / overnight / morning-quiet phases → morning completion or kind early end.
@@ -85,7 +85,8 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   Optional shielding covers only the selected
   apps during wind-down and morning quiet; it lifts overnight and always has an early exit
   through Counting Sheep.
-  Home stays focused on the saved plan and one-tap start; it does not lead with collection content.
+  Home stays focused on the saved plan and one-tap start; its schedule block opens the timing editor
+  and a compact One-Time Wind Down card handles bounded additional quiet.
 - **Nights (one finite scroll)**: latest Wind Down
   result with its finish date, latest protected night, dated seven-night view, optional
   monthly calendar and per-day Wind Down detail,
@@ -104,7 +105,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   Once there are at least two protected and two other measured nights, a local comparison
   shows how sleep duration differs between them, explicitly as association rather than
   causation. Detailed behavioural and HealthKit history stays on the phone.
-- **More**: Wind Down schedule, bookends, method, NFC, automatic Wind Down and shielding;
+- **Settings**: Wind Down schedule, bookends, App Shielding or NFC + App Shielding, automatic Wind Down and shielding;
   a replayable “How Wind Down works” explanation and a finite, source-linked guidance guide;
   Apple Health, Screen Time, and notification connections; optional impact-sharing controls;
   a local-progress reset that preserves the saved Wind Down plan and NFC pairing;

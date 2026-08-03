@@ -11,7 +11,8 @@ Farm, Friends, and Shop were visible enough in development to make the product a
 broader than the ritual being tested. Nights also mixed outcomes with setup, while Home
 showed configuration controls that competed with tonight's single action. The August
 candidate needs one information architecture across Debug, TestFlight, and App Store
-builds, without deleting compatibility data or useful internal mock screens.
+builds, without deleting compatibility data or useful internal mock screens. Settings is a
+root destination because configuration is part of the tested product, not a hidden utility.
 
 The former keepsake, sheep-currency, coin, and Ollie-level concepts were not connected to a
 real ritual. The updated direction makes Ollie's search, wanted posters, and cosmetic rarity
@@ -23,17 +24,17 @@ not block submission.
 
 ### Launch shell
 
-All ordinary builds use exactly three root destinations:
+All ordinary builds use exactly four root destinations:
 
 1. **Home** — tonight's saved plan, Ollie, the person's quiet-time purpose, one primary
-   Set/Start Wind Down action, and one Edit Plan action.
+   Set/Start Wind Down action, a clickable schedule editor, and a compact one-time Wind Down card.
 2. **Nights** — a finite, observational record: latest result, flock total, seven-night
    history, morning reflection, Apple Health context, and Screen Time results.
 3. **Farm** — the real-data flock presentation, one equal sheep per protected primary night.
+4. **Settings** — the Wind Down plan, App Shielding choice, connections, privacy, help, and app information.
 
-More opens from the Home top-right utility button and contains Wind Down configuration,
-connections, data and privacy, help, feedback, and app information. Friends, Shop, and the
-legacy Farm/shelf mock screens are reachable only from More when launched with
+The old More utility sheet and top-bar ellipsis are removed. Friends, Shop, and the
+legacy Farm/shelf mock screens are reachable only from Settings when launched with
 `-ollie.debug.enableMockScreens YES`; they are not shown as locked or coming soon.
 
 ### Ollie's search
@@ -81,9 +82,9 @@ remains last-or-never and requires its own ADR, backend, moderation, and belongi
 
 - Debug accurately represents the release surface unless internal previews are explicitly
   requested.
-- Setup has one finite home in More, while Nights can be evaluated as an outcome record.
+- Setup has one finite home in Settings, while Nights can be evaluated as an outcome record.
 - Existing persisted data remains safe, but compatibility fields and gated screens retain
   a maintenance cost until a later cleanup.
 - Feedback can improve TestFlight learning without becoming an App Store launch dependency.
 - App Store screenshots, review notes, privacy answers, and the public policy must describe
-  the three-tab shell and optional feedback collection.
+  the four-tab shell and optional feedback collection.

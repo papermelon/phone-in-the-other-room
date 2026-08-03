@@ -135,6 +135,13 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         }
         do {
             try installMonitoringIfNeeded(snapshot, at: date)
+            // Scheduling a future repeating window must never leave a shield from
+            // the window it replaced. The monitor will apply it when the first
+            // eligible interval actually begins.
+            if !snapshot.isEligible(at: date) {
+                clearStore()
+                writeStatus(for: snapshot, status: .cleared, window: nil, at: date)
+            }
             return .scheduled
         } catch {
             clear()

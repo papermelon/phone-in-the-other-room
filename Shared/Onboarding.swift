@@ -142,4 +142,12 @@ struct OnboardingDraft: Codable, Equatable {
             automaticStartEnabled: preferences.automaticStartEnabled
         )
     }
+
+    static func replay(from preferences: NightWatchPreferences) -> Self {
+        var draft = defaults(from: preferences)
+        draft.protectionChoice = preferences.guardKind == .nfcTag
+            ? .nfcAndAppShielding
+            : .appShielding
+        return draft
+    }
 }

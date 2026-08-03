@@ -84,17 +84,17 @@ by: 1))` for its custom elapsed label. That view was replaced with date-relative
 5. **Expected benefit:** small cleanup after an occasional action.
 6. **Trade-off:** none expected; other audio receives a normal deactivation notification.
 
-### 🟠 Live Activity presentation — countdown efficient; disabled by default
+### 🟠 Live Activity presentation — countdown efficient; user-controlled
 
 1. **Behavior:** the widget uses `Text(timerInterval:countsDown:showsHours:)` with absolute
    bedtime, wake, and completion dates.
 2. **Energy mechanism:** iOS renders the changing countdown; the app does not push seconds.
 3. **Overnight/background:** `activity.update()` occurs only on restoration/reconciliation
    and semantic phase changes. Scheduled APNs handles suspended phase changes.
-4. **Change:** the feature is now disabled by default, while the widget target remains for
-   reversible A/B profiling. DEBUG can opt in with `-ollie.debug.enableLiveActivity YES`;
-   `-ollie.debug.disableLiveActivity YES` remains an explicit off switch. Local Supabase
-   Live Activity transport is also set to `NO` in both local xcconfig files.
+4. **Change:** local Live Activity is enabled by default for new installs and is user-controlled
+   in Settings. DEBUG can opt in or out explicitly with `-ollie.debug.enableLiveActivity YES` or
+   `-ollie.debug.disableLiveActivity YES`. Local Supabase Live Activity transport remains `NO`
+   in both local xcconfig files.
 5. **Expected benefit:** normal sessions avoid the Dynamic Island/Lock Screen surface,
    ActivityKit token observation, and optional push-registration/network work. The app still
    owns timing through the same one-shot boundary architecture.
@@ -127,7 +127,7 @@ session with a Live Activity, add this launch argument to the Debug Run action:
 -ollie.debug.enableLiveActivity YES
 ```
 
-Normal behavior is now Live Activity-off. End any existing session before recording so a prior
+Normal behavior is now Live Activity-on for new installs, with a visible Settings toggle. End any existing session before recording so a prior
 Live Activity cleanup does not contaminate the first measurement.
 
 ## Controlled profiling procedure

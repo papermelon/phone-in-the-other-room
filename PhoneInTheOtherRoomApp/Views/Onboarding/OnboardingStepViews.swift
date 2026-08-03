@@ -133,13 +133,15 @@ struct OnboardingScheduleStep: View {
                 }
             }
             PixelCard {
-                durationPicker("Quiet before bed", selection: $draft.windDownMinutes)
-                Divider().padding(.vertical, AppSpacing.xs)
-                durationPicker("Quiet after waking", selection: $draft.morningQuietMinutes)
-                Text("Thirty minutes is a friendly place to begin. You can change either window later.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                    .padding(.top, AppSpacing.xs)
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    durationPicker("Quiet before bed", selection: $draft.windDownMinutes)
+                    Divider().padding(.vertical, AppSpacing.xs)
+                    durationPicker("Quiet after waking", selection: $draft.morningQuietMinutes)
+                    Text("Thirty minutes is a friendly place to begin. You can change either window later.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                        .padding(.top, AppSpacing.xs)
+                }
             }
         }
     }
@@ -215,6 +217,7 @@ struct OnboardingProtectionStep: View {
                 isSelected: draft.protectionChoice == .appShielding
             ) {
                 draft.protectionChoice = .appShielding
+                draft.shieldingEnabled = true
             }
             OnboardingChoiceCard(
                 title: OnboardingProtectionChoice.nfcAndAppShielding.title,
@@ -223,6 +226,7 @@ struct OnboardingProtectionStep: View {
                 isSelected: draft.protectionChoice == .nfcAndAppShielding
             ) {
                 draft.protectionChoice = .nfcAndAppShielding
+                draft.shieldingEnabled = true
             }
 
             if draft.protectionChoice == .nfcAndAppShielding {
@@ -289,6 +293,16 @@ struct OnboardingProtectionStep: View {
                     }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
                     Text("You choose which apps can rest. Counting Sheep never shields itself.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+                if viewModel.shieldingReadiness != .ready {
+                    Button("Continue without app shielding") {
+                        draft.shieldingEnabled = false
+                    }
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.grass)
+                    Text(viewModel.shieldingReadiness.detail)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }
