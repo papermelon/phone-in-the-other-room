@@ -39,8 +39,9 @@ legacy Farm/shelf mock screens are reachable only from More when launched with
 ### Ollie's search
 
 The release presentation uses `UserProgress.totalCompletedRuns` as the flock count: each
-completed primary protected night settles one equal sheep. Legacy idempotent search outcomes,
-rarity, and balances remain persisted for compatibility but are not read by release UI.
+completed primary protected night settles one equal sheep. Farm also reads the compatible
+sheep-search field book to render the finite Missing Posters board; poster identity, rarity, and
+trail context are cosmetic/story context only and never alter the equal sheep value.
 
 `UserProgress.totalCompletedRuns` remains the protected-night count. Search outcomes and found
 sheep identities live in `SheepSearchState`; early-ended sessions do not advance the search.
@@ -72,7 +73,7 @@ screenshots in Mail. If Mail is unavailable, the app displays and copies
 ## Post-launch gate
 
 After at least two stable weeks and the retention and qualitative gates in ADR-0003, the
-shipping Farm can be expanded internally from the same flock count and field notes. It must
+shipping Farm can be expanded internally from the same flock count and poster board. It must
 not revive currency, sheep power, or mock missions. Shop can only be nested in Farm. Friends
 remains last-or-never and requires its own ADR, backend, moderation, and belonging-test approval.
 

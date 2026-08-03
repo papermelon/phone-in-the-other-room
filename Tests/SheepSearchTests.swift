@@ -123,4 +123,42 @@ final class SheepSearchTests: XCTestCase {
         XCTAssertFalse(SheepCatalog.eligible(for: 1).contains { $0.id == "juniper" })
         XCTAssertTrue(SheepCatalog.eligible(for: 4).contains { $0.id == "juniper" })
     }
+
+    func testPosterBoardFiltersUsePersistedFoundIDsAndKeepCatalogueOrder() {
+        var state = SheepSearchState.empty
+        state.foundSheepIDs = ["pippin"]
+
+        let missing = SheepPosterSelection.posters(
+            for: state,
+            protectedNightNumber: 1,
+            filter: .missing
+        )
+        let home = SheepPosterSelection.posters(
+            for: state,
+            protectedNightNumber: 1,
+            filter: .home
+        )
+        let all = SheepPosterSelection.posters(
+            for: state,
+            protectedNightNumber: 1,
+            filter: .all
+        )
+
+        XCTAssertEqual(home.map(\.id), ["pippin"])
+        XCTAssertEqual(all.map(\.id), ["mabel", "pippin", "bramble", "clementine", "oat"])
+        XCTAssertEqual(missing.map(\.id), ["mabel", "bramble", "clementine", "oat"])
+    }
+
+    func testPosterBoardNeverShowsAFoundPosterBeforeItsArrivalNight() {
+        var state = SheepSearchState.empty
+        state.foundSheepIDs = ["juniper"]
+
+        let home = SheepPosterSelection.posters(
+            for: state,
+            protectedNightNumber: 1,
+            filter: .home
+        )
+
+        XCTAssertTrue(home.isEmpty)
+    }
 }

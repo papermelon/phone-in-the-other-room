@@ -15,7 +15,11 @@ navigation.
 Farm is a rehabilitation of the existing farm presentation and assets. Release Farm reads only
 the persisted sheep-search field book and presents an equal flock: one protected primary night
 settles one sheep. Legacy coins, balances, capacity, rarity, missions, upgrades, and reward shelf
-data remain decodable but are not read by release UI.
+data remain decodable but are not read by release UI. Beneath the flock, Farm includes the
+existing finite, horizontally snapping Missing Posters carousel. Posters use sheep-search
+identity, clue, and found status for cosmetic/story context only; they do not add currency,
+capacity, performance ranking, or a second progression system. The poster board is not shown in
+Home or Nights.
 
 Nights leads with a finite seven-day record and links to a monthly calendar. A recorded day can
 contain multiple separately inspectable Wind Down occurrences. Quiet minutes are the union of

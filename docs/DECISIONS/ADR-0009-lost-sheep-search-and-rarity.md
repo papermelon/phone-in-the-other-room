@@ -1,6 +1,6 @@
 # ADR-0009: Lost Sheep Search, Wanted Posters, and Rarity
 
-- Status: Accepted (legacy compatibility; release presentation superseded by ADR-0010)
+- Status: Accepted (Farm presentation clarified by ADR-0010)
 - Date: 2026-08-01
 - Decider: Founder
 - Related: ADR-0006, ADR-0007, `docs/PRODUCT_PRINCIPLES.md`
@@ -38,7 +38,7 @@ default and can be enabled in More; the default presentation uses qualitative tr
 habitat eligibility.
 
 Poster presentation uses a native SwiftUI, bounty-poster-inspired composition rather than a
-bitmap feed: a finite snapping carousel of missing posters appears on Home, Nights provides a
+bitmap feed: a finite snapping carousel of missing posters appears in Farm, with a
 Missing/Home/All poster board, and completion can stamp the resolved poster FOUND — HOME. The
 composition uses muted parchment, ink, portrait framing, trail clues, breed and rarity seals, and
 Ollie's return-home language while retaining Counting Sheep's own sheep art and pixel/paper
@@ -55,12 +55,14 @@ GPS or Health measurement.
 - No-find nights still create progress and reasons to continue.
 - The first three nights teach the mechanic before probability and rarity are introduced.
 - The collection can grow through generated and curated art without changing the Wind Down state
-  machine.
+  machine. The board remains a secondary Farm surface rather than a Home or Nights lead.
 - The old mock Farm remains a gated compatibility surface; the shipping Farm is defined by ADR-0010.
 
 For the launch shell, the legacy search calculation and rarity fields remain persisted and
-backward-decodable, but release UI presents one equal sheep per protected primary night and does
-not expose odds, rarity, wanted posters, currency, or a reward shelf. See ADR-0010.
+backward-decodable. Farm may read the field book for cosmetic/story poster context while the
+authoritative flock count remains `UserProgress.totalCompletedRuns`; posters never change the
+equal value of a protected night, and the release UI does not expose currency, locked slots, or
+a reward shelf. See ADR-0010.
 
 ## Out of scope
 
