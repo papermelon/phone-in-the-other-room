@@ -9,12 +9,14 @@ current UI and integration boundaries; those canonical files win if this note dr
 
 ```text
 Home
-Stats
+Nights
+Farm
 ```
 
-Farm, Friends, and Shop remain compiled only for Debug exploration and are backed by
-`MVPMockData`. They must not enter a Release path before ADR-0003's milestones. There is no
-Missions tab. Do not add new code to `Views/MVP/` or `MockData/` as part of Night Watch work.
+Friends and Shop remain compiled only for Debug exploration and are backed by `MVPMockData`.
+The shipping Farm reads the real flock count and sheep-search field book; its Missing Posters
+carousel is separate from the legacy mock Farm. There is no Missions tab. Do not add new code to
+`Views/MVP/` or `MockData/` as part of Night Watch work.
 
 ## Night Watch implementation
 

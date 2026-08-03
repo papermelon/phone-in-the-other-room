@@ -10,10 +10,6 @@ struct FarmView: View {
 
     private var searchState: SheepSearchState { viewModel.sheepSearchState }
 
-    private var flock: [SheepDefinition] {
-        searchState.foundSheepIDs.compactMap(SheepCatalog.definition)
-    }
-
     private var protectedNightCount: Int {
         viewModel.coordinator.progress.totalCompletedRuns
     }
@@ -27,15 +23,20 @@ struct FarmView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 FarmHeader(count: protectedNightCount)
-                ShippingFarmHeroScene(sheep: latestArrival, flockCount: protectedNightCount)
+                ShippingFarmHeroScene(
+                    sheep: latestArrival,
+                    flockCount: protectedNightCount
+                )
                 SettledFlockPreview(count: protectedNightCount)
 
-                if flock.isEmpty {
+                if protectedNightCount == 0 {
                     FarmEmptyState(protectedNightCount: protectedNightCount)
-                } else {
-                    FarmArrivalNote(sheep: latestArrival)
-                    FarmFieldNotes(sheep: flock)
                 }
+
+                SheepPosterBoard(
+                    searchState: searchState,
+                    protectedNightNumber: max(1, protectedNightCount)
+                )
             }
             .padding(.horizontal, AppSpacing.md)
             .padding(.top, AppSpacing.sm)
@@ -58,9 +59,12 @@ private struct FarmHeader: View {
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
                 Text("A place for the flock")
-                    .font(AppTypography.title)
+                    .font(AppTypography.headline)
                     .foregroundStyle(AppColors.ink)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
             }
+            .layoutPriority(1)
             Spacer(minLength: AppSpacing.sm)
             VStack(alignment: .trailing, spacing: AppSpacing.xxs) {
                 Text("\(count)")
@@ -70,33 +74,9 @@ private struct FarmHeader: View {
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
+            .frame(minWidth: 58)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Flock: \(count) sheep")
-        }
-    }
-}
-
-private struct FarmArrivalNote: View {
-    let sheep: SheepDefinition?
-
-    var body: some View {
-        PixelCard {
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                Image(systemName: "pawprint.fill")
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(AppColors.grass)
-                    .frame(width: 30, height: 30)
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("THE LATEST ARRIVAL")
-                        .font(pixelFont(.caption2))
-                        .foregroundStyle(AppColors.grass)
-                    Text(sheep.map { "\($0.name) is home." } ?? "The flock is growing.")
-                        .font(AppTypography.headline)
-                    Text("One protected night, one equal sheep.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-            }
         }
     }
 }
@@ -118,10 +98,13 @@ private struct SettledFlockPreview: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: AppSpacing.xs), count: 6), spacing: AppSpacing.xs) {
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 30, maximum: 42), spacing: AppSpacing.xs)],
+                    spacing: AppSpacing.xs
+                ) {
                     ForEach(0..<visibleCount, id: \.self) { index in
                         PixelAssetImage(name: AssetSlot.Sheep.common)
-                            .frame(height: 34)
+                            .frame(width: 34, height: 30)
                             .accessibilityHidden(true)
                             .accessibilityIdentifier("settled-sheep-\(index)")
                     }
@@ -149,116 +132,11 @@ private struct FarmEmptyState: View {
                     .foregroundStyle(AppColors.grass)
                 Text(protectedNightCount == 0 ? "Your first sheep will settle in after a protected night." : "The flock is growing quietly.")
                     .font(AppTypography.headline)
-                Text(protectedNightCount == 0 ? "There are no slots to fill and nothing to buy. Ollie will welcome the flock when it arrives." : "Each protected night settles one equal sheep. Ollie keeps the field notes here when a named arrival is found.")
+                Text(protectedNightCount == 0 ? "There are no slots to fill and nothing to buy. Ollie will welcome the flock when it arrives." : "Each protected night settles one equal sheep. Ollie keeps the missing posters here as the search unfolds.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
         }
-    }
-}
-
-private struct FarmFieldNotes: View {
-    let sheep: [SheepDefinition]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("FIELD NOTES")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-            }
-
-            LazyVStack(spacing: AppSpacing.sm) {
-                ForEach(sheep) { item in
-                    NavigationLink(destination: FarmSheepDetailView(sheep: item)) {
-                        FarmFieldNoteRow(sheep: item)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-}
-
-private struct FarmFieldNoteRow: View {
-    let sheep: SheepDefinition
-
-    var body: some View {
-        HStack(spacing: AppSpacing.sm) {
-            PixelAssetImage(name: sheep.assetName)
-                .frame(width: 64, height: 64)
-                .padding(AppSpacing.xs)
-                .background(AppColors.wool.opacity(0.46), in: RoundedRectangle(cornerRadius: AppRadius.md))
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(sheep.name)
-                    .font(AppTypography.headline)
-                    .foregroundStyle(AppColors.ink)
-                Text(sheep.story)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-            }
-            Spacer(minLength: AppSpacing.xs)
-            Image(systemName: "chevron.right")
-                .font(.caption.weight(.bold))
-                .foregroundStyle(AppColors.grass)
-        }
-        .padding(AppSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.panel, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .stroke(AppColors.stroke.opacity(0.25), lineWidth: 1)
-        }
-        .contentShape(Rectangle())
-        .accessibilityElement(children: .combine)
-        .accessibilityHint("View \(sheep.name)'s story")
-    }
-}
-
-private struct FarmSheepDetailView: View {
-    let sheep: SheepDefinition
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                PixelCard {
-                    VStack(spacing: AppSpacing.sm) {
-                        PixelAssetImage(name: sheep.assetName)
-                            .frame(height: 160)
-                            .accessibilityLabel(sheep.name)
-                        Text(sheep.name)
-                            .font(AppTypography.display(30))
-                        Text("A sheep settled in.")
-                            .font(pixelFont(.caption))
-                            .foregroundStyle(AppColors.grass)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("A QUIET STORY")
-                            .font(pixelFont(.caption))
-                            .foregroundStyle(AppColors.grass)
-                        Text(sheep.story)
-                            .font(AppTypography.body)
-                        if let accessory = sheep.accessory {
-                            Text("A small mark: \(accessory).")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.muted)
-                        }
-                    }
-                }
-            }
-            .padding(AppSpacing.md)
-            .padding(.bottom, AppSpacing.xxl)
-        }
-        .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle(sheep.name)
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

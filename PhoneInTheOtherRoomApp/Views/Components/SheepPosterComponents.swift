@@ -5,22 +5,6 @@ enum SheepPosterStatus: Equatable {
     case found
 }
 
-enum SheepPosterFilter: String, CaseIterable, Identifiable {
-    case missing
-    case home
-    case all
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .missing: return "Missing"
-        case .home: return "Home"
-        case .all: return "All"
-        }
-    }
-}
-
 struct SheepPosterBoard: View {
     let searchState: SheepSearchState
     let protectedNightNumber: Int
@@ -41,7 +25,7 @@ struct SheepPosterBoard: View {
                 searchState: searchState,
                 protectedNightNumber: protectedNightNumber,
                 filter: filter,
-                title: filter == .missing ? "OLLIE'S MISSING SHEEP" : "OLLIE'S POSTER BOARD"
+                title: filter == .missing ? "OLLIE'S MISSING POSTERS" : "OLLIE'S POSTER BOARD"
             )
         }
     }
@@ -51,18 +35,16 @@ struct SheepPosterCarousel: View {
     let searchState: SheepSearchState
     let protectedNightNumber: Int
     var filter: SheepPosterFilter = .missing
-    var title = "OLLIE'S MISSING SHEEP"
+    var title = "OLLIE'S MISSING POSTERS"
+
+    @State private var availableWidth: CGFloat = 0
 
     private var posters: [SheepDefinition] {
-        let eligible = SheepCatalog.eligible(for: max(1, protectedNightNumber))
-        switch filter {
-        case .missing:
-            return eligible.filter { !searchState.foundSheepIDs.contains($0.id) }
-        case .home:
-            return eligible.filter { searchState.foundSheepIDs.contains($0.id) }
-        case .all:
-            return eligible
-        }
+        SheepPosterSelection.posters(
+            for: searchState,
+            protectedNightNumber: protectedNightNumber,
+            filter: filter
+        )
     }
 
     var body: some View {
@@ -91,7 +73,7 @@ struct SheepPosterCarousel: View {
                                     showExactOdds: searchState.showExactOdds,
                                     isNew: isNewPoster(sheep)
                                 )
-                                .frame(width: 300)
+                                .frame(width: posterWidth)
                             }
                         }
                         .scrollTargetLayout()
@@ -108,6 +90,20 @@ struct SheepPosterCarousel: View {
                 }
             }
         }
+        .background {
+            GeometryReader { proxy in
+                Color.clear.preference(key: SheepPosterBoardWidthKey.self, value: proxy.size.width)
+            }
+        }
+        .onPreferenceChange(SheepPosterBoardWidthKey.self) { width in
+            guard width > 0, abs(width - availableWidth) > 0.5 else { return }
+            availableWidth = width
+        }
+    }
+
+    private var posterWidth: CGFloat {
+        let width = availableWidth > 0 ? availableWidth : 280
+        return min(300, max(240, width * 0.84))
     }
 
     private var footerCount: String {
@@ -154,6 +150,14 @@ struct SheepPosterCarousel: View {
               !SheepCatalog.starterIDs.contains(sheep.id)
         else { return false }
         return SheepCatalog.arrivalNight(for: sheep) == protectedNightNumber - 1
+    }
+}
+
+private struct SheepPosterBoardWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
     }
 }
 
@@ -349,7 +353,7 @@ struct SheepPosterCard: View {
         ),
         showExactOdds: false
     )
-    .frame(width: 300)
+    .frame(width: 280)
     .padding()
     .background(AppColors.paper)
 }

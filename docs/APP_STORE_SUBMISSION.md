@@ -11,7 +11,7 @@ Last read-only App Store Connect audit: **2026-07-30, Asia/Singapore**.
 - Version 1.0: **Prepare for Submission**
 - TestFlight build 2: **processed successfully** and selected for App Store version 1.0.
 - The current local candidate adds the Home/Nights/Farm shell, with More as a utility sheet;
-  named sheep field notes remain in Farm while the shipping flock is counted from protected nights,
+  Farm includes a finite swipeable Missing Posters board while the shipping flock is counted from protected nights,
   NFC-authenticated ending, Live Activity layout fixes, and optional-sharing/feedback flows.
   Physical retest, screenshots, privacy updates, and upload remain pending.
 - No iPhone or Watch screenshots are uploaded.

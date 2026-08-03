@@ -7,53 +7,59 @@ struct ShippingFarmHeroScene: View {
     let sheep: SheepDefinition?
     let flockCount: Int
 
+    private let artworkAspectRatio: CGFloat = 1784.0 / 882.0
+
     var body: some View {
-        ZStack {
-            PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .clipped()
+        GeometryReader { proxy in
+            let size = proxy.size
 
-            LinearGradient(
-                colors: [.clear, AppColors.bark.opacity(0.58)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            ZStack {
+                PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
+                    .frame(width: size.width, height: size.height)
+                    .clipped()
 
-            VStack {
-                HStack(alignment: .top) {
-                    fieldNoteBadge
+                LinearGradient(
+                    colors: [.clear, AppColors.bark.opacity(0.58)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+
+                VStack {
+                    HStack(alignment: .top) {
+                        arrivalBadge
+                        Spacer(minLength: 0)
+                    }
                     Spacer()
                 }
-                Spacer()
-            }
-            .padding(AppSpacing.sm)
+                .padding(AppSpacing.sm)
 
-            if let sheep {
-                ShippingFarmSheepFigure(sheep: sheep, size: 142)
-                    .offset(x: -24, y: 26)
-            } else {
-                PixelAssetImage(name: AssetSlot.Dog.proud)
-                    .frame(width: 112, height: 112)
-                    .offset(x: -20, y: 28)
-                    .accessibilityLabel("Ollie watching the pasture")
-            }
-
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    Text("\(flockCount) settled")
-                        .font(pixelFont(.caption2))
-                        .foregroundStyle(AppColors.ink)
-                        .padding(.horizontal, AppSpacing.sm)
-                        .padding(.vertical, AppSpacing.xs)
-                        .background(AppColors.panel.opacity(0.94), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                if let sheep {
+                    ShippingFarmSheepFigure(sheep: sheep, size: min(142, size.width * 0.38))
+                        .offset(x: -size.width * 0.07, y: size.height * 0.13)
+                } else {
+                    PixelAssetImage(name: AssetSlot.Dog.proud)
+                        .frame(width: min(112, size.width * 0.30), height: min(112, size.width * 0.30))
+                        .offset(x: -size.width * 0.06, y: size.height * 0.13)
+                        .accessibilityLabel("Ollie watching the pasture")
                 }
-                .padding(.trailing, AppSpacing.md)
-                .padding(.bottom, AppSpacing.md)
+
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Text("\(flockCount) settled")
+                            .font(pixelFont(.caption2))
+                            .foregroundStyle(AppColors.ink)
+                            .padding(.horizontal, AppSpacing.sm)
+                            .padding(.vertical, AppSpacing.xs)
+                            .background(AppColors.panel.opacity(0.94), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+                    }
+                    .padding(.trailing, AppSpacing.md)
+                    .padding(.bottom, AppSpacing.md)
+                }
             }
         }
-        .frame(height: 204)
+        .aspectRatio(artworkAspectRatio, contentMode: .fit)
         .frame(maxWidth: .infinity)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .overlay {
@@ -63,13 +69,13 @@ struct ShippingFarmHeroScene: View {
         .accessibilityElement(children: .contain)
     }
 
-    private var fieldNoteBadge: some View {
+    private var arrivalBadge: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
             Text(sheep?.name ?? "Ollie's pasture")
                 .font(.system(size: 18, weight: .black, design: .monospaced))
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
-            Text(sheep == nil ? "FIELD NOTES" : "A QUIET ARRIVAL")
+            Text(sheep == nil ? "A QUIET PLACE" : "A QUIET ARRIVAL")
                 .font(pixelFont(.caption2))
                 .foregroundStyle(AppColors.grass)
         }

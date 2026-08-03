@@ -16,6 +16,8 @@
 		029C75FF80662004F4590C5C /* AppFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984770912E1D1E0E0B021EAD /* AppFeedback.swift */; };
 		0368E6CDF477802E1CB27BFE /* ProximityClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E380CE5C4EF450772817B63 /* ProximityClassifier.swift */; };
 		03963E5F62E207B4A6248667 /* AssetPlaceholderComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53317BDED55DB805619E0AD9 /* AssetPlaceholderComponents.swift */; };
+		05C42B517ADD3067BA14A89D /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
+		06222F258AB04598CF778599 /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		067C01FF50E7AA5FD381F07A /* FocusAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CB9D7F6CBF2FB36B03D2B /* FocusAnalytics.swift */; };
 		088272F910A24724932F21D4 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
 		08C8173E50911325713FB510 /* WatchMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B830DE525CC379D8E1929C /* WatchMessage.swift */; };
@@ -82,6 +84,7 @@
 		30A4F43CD08D444AF06F89BA /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		32D48AF51A5F99FC8A3E53CC /* OfflinePurpose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180FD34F0C45EF5E28E01556 /* OfflinePurpose.swift */; };
 		34B3592154393AC82C33F4CA /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1703E9A69A2A56DE2F850967 /* AppRootView.swift */; };
+		368AE4B89A55C32403BB6D5E /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		36AA2B1114372488FABDCBBF /* FocusRunViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10F6B198F7484F2D1475ED0 /* FocusRunViewModel.swift */; };
 		36DFFE64F22A9D5E69C9D2AB /* MorningCheckInCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EBF5AEECC8C11A24F9AC80C /* MorningCheckInCard.swift */; };
 		36E3949801C2218FA39A9634 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
@@ -140,6 +143,7 @@
 		66085F93130816DF94740FCE /* NightJourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3647A02CD9963371D4436FD1 /* NightJourneyView.swift */; };
 		6624F7CCB77D6FAF9460AC47 /* PhoneBedTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */; };
 		69FA98FCA63048D31A258816 /* MorningCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */; };
+		6A36E13E1B1CB21F79B4BD5A /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		6B3C4937C330B8D5ABFC0273 /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
 		6B5C7625F3E7DC7C18792E07 /* SessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7A93AA462082036AB119D5 /* SessionGuard.swift */; };
 		6BAEF12783AF10C0E3936B4F /* NightWatchHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 766D336119CCB55800F75535 /* NightWatchHistory.swift */; };
@@ -231,6 +235,7 @@
 		B1C913224ABD7368AB62D6EA /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
 		B3F593924D0C732409BA2DE3 /* WindDownGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B90812500022857C5B05D0 /* WindDownGuidance.swift */; };
 		B438091A3DFCCCAF64F23ED5 /* GameComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4AFA2769B1B9866001DB88D /* GameComponents.swift */; };
+		B46E8AAB04BE67F0ED9C42CB /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		B51A234BE6159E575DECDAE8 /* ScreenTimeReportExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E438AF90E0E9ED338A5F5B9 /* ScreenTimeReportExtension.swift */; };
 		B6EC0930EF5F9EDF1DB31C0B /* WatchNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D492CABD33A3BC68F45C56 /* WatchNotificationService.swift */; };
 		B84D2F22229F0712E948150F /* PhoneBedTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */; };
@@ -298,6 +303,7 @@
 		EF4B4DFCF678485A7BDBEA1C /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
 		EF94EF60BE2D2D7E1C3E24FA /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
 		F11FBFDCC52A11AE378AE6D9 /* NightWatchUsageMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4203FF55399C57FCA0A042D /* NightWatchUsageMonitoring.swift */; };
+		F197308F41A6F56C115836E0 /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		F1AA073BD60F9F20E2B794DD /* FocusRunLiveActivityPushContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */; };
 		F48377902D560C8420220FC8 /* QuietTimeShieldingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3235011194BE427E8F19AD0 /* QuietTimeShieldingService.swift */; };
 		F4DD186DF14BC616CD52E2F5 /* FocusRunLiveActivityPushContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */; };
@@ -423,6 +429,7 @@
 		1F71861D5D292EA8E4A987B6 /* FeedbackFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackFormView.swift; sourceTree = "<group>"; };
 		1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldSchedule.swift; sourceTree = "<group>"; };
 		20513EF9877F54ADA4BEE987 /* WatchEarlyEndView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEarlyEndView.swift; sourceTree = "<group>"; };
+		22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepPosterBoard.swift; sourceTree = "<group>"; };
 		2586E1A7522D7966AA2BC040 /* ProximityClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityClassifierTests.swift; sourceTree = "<group>"; };
 		2620AED0BA47E2FAE4DEBE19 /* ScreenTimeAuthorizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeAuthorizationService.swift; sourceTree = "<group>"; };
 		29FA54459D95BF429B1EFE21 /* FocusRunLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -889,6 +896,7 @@
 				6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */,
 				D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */,
 				0D7A93AA462082036AB119D5 /* SessionGuard.swift */,
+				22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */,
 				B7511446B06F170927883265 /* SheepSearch.swift */,
 				9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */,
 				D5B830DE525CC379D8E1929C /* WatchMessage.swift */,
@@ -1286,6 +1294,7 @@
 				36F1E476A80E41A89D6C6534 /* ScreenTimeReportMath.swift in Sources */,
 				143BA010348297131085BBC9 /* ScreenTimeSelectionService.swift in Sources */,
 				DC813616AD49A2906F915E47 /* SessionGuard.swift in Sources */,
+				F197308F41A6F56C115836E0 /* SheepPosterBoard.swift in Sources */,
 				102FD2A1EF88A2710E58C60C /* SheepPosterComponents.swift in Sources */,
 				F9E8C987498EA62985893D75 /* SheepSearch.swift in Sources */,
 				AB09C72833923B6C0741105D /* SheepSearchCard.swift in Sources */,
@@ -1339,6 +1348,7 @@
 				B51A234BE6159E575DECDAE8 /* ScreenTimeReportExtension.swift in Sources */,
 				1EE1BB64D26FB68C8DA0971B /* ScreenTimeReportMath.swift in Sources */,
 				EBC2F3E9EEB6054AF4888967 /* SessionGuard.swift in Sources */,
+				05C42B517ADD3067BA14A89D /* SheepPosterBoard.swift in Sources */,
 				5D760A0E743BEAF0FFAE80F1 /* SheepSearch.swift in Sources */,
 				CE63A4962D304A0A3D69F1F1 /* SleepIntervalMath.swift in Sources */,
 				D6CF10C0442B8D15662A8752 /* WatchMessage.swift in Sources */,
@@ -1380,6 +1390,7 @@
 				C2CE381ADC249C646303A830 /* ScreenTimeIntegration.swift in Sources */,
 				CD50E34B387FCECE5271255C /* ScreenTimeReportMath.swift in Sources */,
 				F771741F41DCFD36EE158AAD /* SessionGuard.swift in Sources */,
+				368AE4B89A55C32403BB6D5E /* SheepPosterBoard.swift in Sources */,
 				658D6BCD0D5266E5E87AA675 /* SheepSearch.swift in Sources */,
 				C7B8F63A0362C4103ADE8895 /* SleepIntervalMath.swift in Sources */,
 				1491D088655BF8F895522217 /* WatchMessage.swift in Sources */,
@@ -1421,6 +1432,7 @@
 				799A1583C630B61C5D6EFFF5 /* ScreenTimeIntegration.swift in Sources */,
 				C75A9056849E551C6D6EBB2C /* ScreenTimeReportMath.swift in Sources */,
 				78DE4BC8D5E7F5E034A4B6A2 /* SessionGuard.swift in Sources */,
+				6A36E13E1B1CB21F79B4BD5A /* SheepPosterBoard.swift in Sources */,
 				6B3C4937C330B8D5ABFC0273 /* SheepSearch.swift in Sources */,
 				56DBD04F39227005E79616B6 /* SleepIntervalMath.swift in Sources */,
 				08C8173E50911325713FB510 /* WatchMessage.swift in Sources */,
@@ -1478,6 +1490,7 @@
 				24072A8A18D5C8DD8A237C5D /* ScreenTimeIntegration.swift in Sources */,
 				015AC9F3765DEF15E7AFCA39 /* ScreenTimeReportMath.swift in Sources */,
 				AEEE85314AC5967482D566AD /* SessionGuard.swift in Sources */,
+				B46E8AAB04BE67F0ED9C42CB /* SheepPosterBoard.swift in Sources */,
 				2E93C8883309FAF3A2E009EE /* SheepSearch.swift in Sources */,
 				993E731FB647A1A7C6E5763B /* SleepIntervalMath.swift in Sources */,
 				D2785EB5D97DA573EDFF309D /* WatchCompletionView.swift in Sources */,
@@ -1540,6 +1553,7 @@
 				AD4E02C525AC7431157B4230 /* ScreenTimeIntegration.swift in Sources */,
 				965610B95C3C084187C76393 /* ScreenTimeReportMath.swift in Sources */,
 				6B5C7625F3E7DC7C18792E07 /* SessionGuard.swift in Sources */,
+				06222F258AB04598CF778599 /* SheepPosterBoard.swift in Sources */,
 				CD6A523A3741BCA874E592BD /* SheepSearch.swift in Sources */,
 				0E8B87444B0FEA1FDB8EC9B9 /* SheepSearchTests.swift in Sources */,
 				D7408280A98EB7A1069D30A3 /* SleepIntervalMath.swift in Sources */,
