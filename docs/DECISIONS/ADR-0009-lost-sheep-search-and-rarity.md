@@ -1,6 +1,6 @@
 # ADR-0009: Lost Sheep Search, Wanted Posters, and Rarity
 
-- Status: Accepted
+- Status: Accepted (legacy compatibility; release presentation superseded by ADR-0010)
 - Date: 2026-08-01
 - Decider: Founder
 - Related: ADR-0006, ADR-0007, `docs/PRODUCT_PRINCIPLES.md`
@@ -56,7 +56,11 @@ GPS or Health measurement.
 - The first three nights teach the mechanic before probability and rarity are introduced.
 - The collection can grow through generated and curated art without changing the Wind Down state
   machine.
-- Farm remains a gated navigation decision; Nights can host the first field-book and poster board.
+- The old mock Farm remains a gated compatibility surface; the shipping Farm is defined by ADR-0010.
+
+For the launch shell, the legacy search calculation and rarity fields remain persisted and
+backward-decodable, but release UI presents one equal sheep per protected primary night and does
+not expose odds, rarity, wanted posters, currency, or a reward shelf. See ADR-0010.
 
 ## Out of scope
 

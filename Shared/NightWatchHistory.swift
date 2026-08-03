@@ -291,6 +291,7 @@ extension FocusRun {
             shieldedWindDownMinutes: shieldedWindDownMinutes,
             shieldedMorningQuietMinutes: shieldedMorningQuietMinutes,
             shieldProtectionEvidence: shieldProtectionEvidence,
+            role: nightWatchPlan.role,
             updatedAt: updatedAt
         )
     }

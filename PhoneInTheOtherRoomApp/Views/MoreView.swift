@@ -19,7 +19,6 @@ struct MoreView: View {
                 header
                 windDownSection
                 guidanceSection
-                sheepSearchSection
                 connectionsSection
                 dataAndPrivacySection
                 helpSection
@@ -92,8 +91,15 @@ struct MoreView: View {
             sectionHeader("Your Wind Down", icon: "moon.stars.fill")
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    QuietWindowDurationEditor()
-                        .environmentObject(viewModel)
+                    NavigationLink {
+                        WindDownScheduleView()
+                            .environmentObject(viewModel)
+                    } label: {
+                        Label("Wind Down periods", systemImage: "calendar.badge.clock")
+                            .font(AppTypography.headline)
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
                     Divider()
                     NavigationLink {
                         FocusRunSetupView()

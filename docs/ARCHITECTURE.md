@@ -43,6 +43,8 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ FocusRunRules.swift           timing and completion eligibility
 ├─ SessionGuard.swift            honor timer / Watch placement / QR / NFC guard metadata
 ├─ NightWatch.swift              saved sleep-bookend plan, phases, activities, quiet credit
+├─ WindDownScheduling.swift      recurring roles, one-time overrides, overlap rules, aggregation
+├─ NightJourneyProgress.swift    wall-clock journey segment reducer
 ├─ OfflinePurpose.swift          private offline intention + notification privacy choice
 ├─ RewardEngine.swift            protected-night progress + legacy reward updates
 ├─ FocusAnalytics.swift          day records, correlations, CSV/JSON export
@@ -90,9 +92,11 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ HomeView.swift                           navigation shell + run-state routing
 │  ├─ PixelHomeDashboard.swift                 home tab
 │  ├─ FocusRunSetupView.swift                  bedtime/wake, bookends, purpose + guard
-│  ├─ ActiveRunView.swift                      in-run UI
+│  ├─ ActiveRunView.swift                      in-run UI + non-scrolling journey state
 │  ├─ CompletionView.swift / EarlyEndView.swift
-│  ├─ FocusStatsView.swift                     dated Nights history + health/bookend reports
+│  ├─ FocusStatsView.swift                     concise seven-day Nights history + reports
+│  ├─ MonthlyNightsView.swift                  month calendar, day drill-down, period detail
+│  ├─ FarmView.swift                           shipping flock view backed by SheepSearchState
 │  ├─ MoreView.swift                           configuration, connections, privacy, help
 │  ├─ FeedbackFormView.swift                   validated form + email fallback
 │  ├─ RewardShelfView.swift                    Debug internal preview only
@@ -101,7 +105,7 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ Components/MorningCheckInCard.swift       collapsed, optional morning reflection
 │  ├─ Components/GameComponents.swift          legacy UI retained outside run flow
 │  ├─ Components/AssetPlaceholderComponents.swift  placeholder/sprite fallbacks
-│  └─ MVP/AssetReadyScreens.swift              GATED: Farm/Friends/Shop mock screens
+│  └─ MVP/AssetReadyScreens.swift              GATED: legacy Farm/Friends/Shop mock screens
 └─ MockData/MVPMockData.swift                  GATED: feeds MVP screens only
 
 PhoneInTheOtherRoomWatchApp/   watchOS companion
@@ -192,9 +196,10 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
 8. `HomeView` routes to `CompletionView` / `EarlyEndView` based on `activeRun.state`.
    Both outcomes show the same factual receipt: elapsed phone-away time, credited quiet
    bookends, optional Apple Health sleep context, and an explicit Screen Time availability
-   state. The separate Nights tab stays finite and observational: flock total, history,
-   reflection, Health context, and consented selected-app results. More owns plan and report
-   configuration. Chosen report windows do not alter Quiet Time. Missing data is never estimated.
+   state. The separate Nights tab stays finite and observational: seven-day results, monthly
+   drill-down, reflection, Health context, and consented selected-app results. Farm owns the
+   flock presentation; More owns plan and report configuration. Chosen report windows do not
+   alter Quiet Time. Missing data is never estimated.
 
 ### Backgrounding during a run
 
@@ -263,6 +268,8 @@ by the iPhone.
 | `ollie.lastRun` | `FocusRun?` | last run snapshot |
 | `ollie.analytics.manualEntries` | `[ManualAnalyticsEntry]` | manual stat entries |
 | `ollie.nightWatch.preferences` | `NightWatchPreferences` | bedtime, wake time, bookends, offline cues, placement guard |
+| `ollie.nightWatch.routines` | `[WindDownRoutine]` | migrated primary routine plus optional additional bounded periods |
+| `ollie.nightWatch.nextOverride` | `NextWindDownOverride?` | one-time next-period adjustment; consumed once |
 | `ollie.offlinePurpose` | `OfflinePurposeProfile` | optional in-app intention and explicit custom-notification opt-in |
 | `ollie.screenTime.reportPreferences` | `ScreenTimeReportPreferences` | independent evening and morning Screen Time report windows |
 | `ollie.morningCheckIns` | `MorningCheckInHistory` | up to 45 days of private optional morning reflections |
@@ -322,9 +329,9 @@ cloud boundaries.
    Controls distribution assignment and all bookend transitions need physical proof.
    in the project, but authorization, picker persistence, report rendering, empty states,
    and distribution profiles must be exercised on a physical iPhone.
-4. **Mock layer remains compiled in Debug.** Farm/Friends/Shop still render `MVPMockData`;
-   they appear only inside More with `-ollie.debug.enableMockScreens YES` and stay gated
-   from Release until ADR-0003's milestones.
+4. **Legacy mock layer remains compiled in Debug.** Friends/Shop and the old Farm/reward shelf
+   still render `MVPMockData`; they appear only inside More with
+   `-ollie.debug.enableMockScreens YES`. The shipping Farm is a separate real-data surface.
 5. **Oversized files.** `AssetReadyScreens.swift` and `PixelComponents.swift` resist safe
    editing by agents with limited context.
 6. **Singleton coupling.** Services are reached via `.shared` from the coordinator, which
@@ -357,7 +364,8 @@ cloud boundaries.
 
 ## 9. Clean up before App Store 1.0
 
-1. Keep Farm/Friends/Shop, the legacy shelf, and `MVPMockData` behind the explicit Debug flag.
+1. Keep Friends/Shop, the legacy Farm/shelf, and `MVPMockData` behind the explicit Debug flag;
+   keep the shipping Farm backed only by persisted `SheepSearchState`.
 2. Register/approve/sign the three new shield extension IDs.
 3. Increment the build number and produce a distribution archive.
 4. `HealthSleepService` uses requested/no-data/error states because HealthKit does not

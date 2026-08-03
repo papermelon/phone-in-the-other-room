@@ -16,6 +16,8 @@ final class PersistenceService {
     private let installationIDKey = "ollie.installationID"
     private let nightWatchPreferencesKey = "ollie.nightWatch.preferences"
     private let automaticWindDownScheduleKey = "ollie.nightWatch.automaticSchedule"
+    private let windDownRoutinesKey = "ollie.nightWatch.routines"
+    private let nextWindDownOverrideKey = "ollie.nightWatch.nextOverride"
     private let offlinePurposeKey = "ollie.offlinePurpose"
     private let screenTimeReportPreferencesKey = "ollie.screenTime.reportPreferences"
     private let morningCheckInsKey = "ollie.morningCheckIns"
@@ -85,6 +87,24 @@ final class PersistenceService {
     var automaticWindDownSchedule: AutomaticWindDownSchedule? {
         get { load(AutomaticWindDownSchedule.self, key: automaticWindDownScheduleKey) }
         set { save(newValue, key: automaticWindDownScheduleKey) }
+    }
+
+    /// The plural schedule is additive. Existing installs migrate their saved
+    /// primary preferences into one routine without rewriting the legacy key.
+    var windDownRoutines: [WindDownRoutine] {
+        get {
+            if let routines = load([WindDownRoutine].self, key: windDownRoutinesKey) {
+                return routines
+            }
+            guard nightWatchPreferences.isConfigured else { return [] }
+            return [WindDownRoutine.primary(from: nightWatchPreferences)]
+        }
+        set { save(newValue, key: windDownRoutinesKey) }
+    }
+
+    var nextWindDownOverride: NextWindDownOverride? {
+        get { load(NextWindDownOverride.self, key: nextWindDownOverrideKey) }
+        set { save(newValue, key: nextWindDownOverrideKey) }
     }
 
     var offlinePurpose: OfflinePurposeProfile {

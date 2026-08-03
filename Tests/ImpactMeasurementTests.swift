@@ -66,6 +66,49 @@ final class ImpactMeasurementTests: XCTestCase {
         XCTAssertEqual(records.first(where: { $0.relativeNight == 90 })?.sleepMinutes, 450)
     }
 
+    func testAdditionalQuietDoesNotClaimTheHealthSleepSample() {
+        let bedtime = Date(timeIntervalSince1970: 1_800_000_000)
+        let primaryPlan = NightWatchPlan(
+            intendedBedtime: bedtime,
+            wakeTime: bedtime.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: bedtime.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let additionalPlan = NightWatchPlan.additionalQuiet(
+            start: bedtime.addingTimeInterval(-4 * 60 * 60),
+            end: bedtime.addingTimeInterval(-3 * 60 * 60)
+        )
+        let primary = NightWatchRecord(
+            id: UUID(), plan: primaryPlan, startedAt: bedtime.addingTimeInterval(-30 * 60),
+            endedAt: primaryPlan.protectedUntil, startMethod: .honorTimer, outcome: .completed,
+            creditedWindDownMinutes: 30, creditedMorningQuietMinutes: 30
+        )
+        let additional = NightWatchRecord(
+            id: UUID(), plan: additionalPlan, startedAt: additionalPlan.intendedBedtime,
+            endedAt: additionalPlan.protectedUntil, startMethod: .honorTimer, outcome: .completed,
+            creditedWindDownMinutes: 60, role: .additionalQuiet
+        )
+        let sleep = SleepSummary(
+            durationSeconds: 7 * 60 * 60,
+            startDate: bedtime,
+            endDate: primaryPlan.wakeTime,
+            nightEndingDate: primaryPlan.wakeTime
+        )
+
+        let samples = ImpactMeasurementEngine.samples(
+            history: NightWatchHistory(records: [primary, additional]),
+            sleeps: [sleep],
+            checkIns: MorningCheckInHistory()
+        )
+
+        XCTAssertEqual(samples.count, 1)
+        XCTAssertTrue(samples[0].completedRitual)
+        XCTAssertEqual(samples[0].quietMinutes, 60)
+    }
+
     private func sample(
         day: Date,
         quiet: Int,

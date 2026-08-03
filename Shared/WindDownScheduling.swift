@@ -2,7 +2,7 @@ import Foundation
 
 /// The role of a Wind Down occurrence determines whether it belongs to the
 /// sleep-bookend ritual and whether it can advance Ollie's search.
-enum WindDownOccurrenceRole: String, Codable, CaseIterable, Equatable {
+enum WindDownOccurrenceRole: String, Codable, CaseIterable, Hashable {
     case primarySleepBookend
     case additionalQuiet
 
@@ -293,6 +293,11 @@ extension NightWatchRecord {
     var creditedIntervals: [DateInterval] {
         guard outcome != .active else { return [] }
         let endDate = endedAt ?? updatedAt
+        if occurrenceRole == .additionalQuiet {
+            let quietEnd = min(endDate, plan.protectedUntil)
+            guard quietEnd > startedAt, creditedWindDownMinutes > 0 else { return [] }
+            return [DateInterval(start: startedAt, end: quietEnd)]
+        }
         let windDownStart = plan.intendedBedtime.addingTimeInterval(
             TimeInterval(-plan.windDownMinutes * 60)
         )

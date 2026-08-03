@@ -5,6 +5,7 @@ struct HomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pingBannerVisible = false
     @State private var selectedTab: MainAppTab = .home
+    @State private var showMoreSheet = false
 
     var body: some View {
         NavigationStack {
@@ -12,7 +13,7 @@ struct HomeView: View {
                 AppColors.paper.ignoresSafeArea()
                 VStack(spacing: 0) {
                     if showChrome {
-                        CountingSheepTopBar()
+                        CountingSheepTopBar { showMoreSheet = true }
                             .padding(.horizontal, 18)
                             .padding(.top, 10)
                     }
@@ -80,6 +81,12 @@ struct HomeView: View {
                     onCode: viewModel.acceptQRCode
                 )
             }
+            .sheet(isPresented: $showMoreSheet) {
+                NavigationStack {
+                    MoreView()
+                        .environmentObject(viewModel)
+                }
+            }
             .toolbar(.hidden, for: .navigationBar)
         }
     }
@@ -110,8 +117,8 @@ struct HomeView: View {
             case .nights:
                 FocusStatsView()
                     .environmentObject(viewModel)
-            case .more:
-                MoreView()
+            case .farm:
+                FarmView()
                     .environmentObject(viewModel)
             }
         }

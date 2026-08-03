@@ -29,22 +29,18 @@ All ordinary builds use exactly three root destinations:
    Set/Start Wind Down action, and one Edit Plan action.
 2. **Nights** — a finite, observational record: latest result, flock total, seven-night
    history, morning reflection, Apple Health context, and Screen Time results.
-3. **More** — Wind Down configuration, connections, data and privacy, help, feedback, and
-   app information.
+3. **Farm** — the real-data flock presentation, one equal sheep per protected primary night.
 
-Farm, Friends, Shop, and the legacy keepsake shelf compile only in Debug and are reachable
-only from More when the process is launched with
-`-ollie.debug.enableMockScreens YES`. They are not shown as locked or coming soon.
+More opens from the Home top-right utility button and contains Wind Down configuration,
+connections, data and privacy, help, feedback, and app information. Friends, Shop, and the
+legacy Farm/shelf mock screens are reachable only from More when launched with
+`-ollie.debug.enableMockScreens YES`; they are not shown as locked or coming soon.
 
 ### Ollie's search
 
-The first three completed protected nights guarantee a sheep. Later completed nights produce
-an idempotent search outcome: Ollie may find a sheep or advance the trail without a find. Search
-strength uses Wind Down evidence plus optional positive-only HealthKit, Screen Time, and
-self-reported habit bonuses. Missing data never lowers the chance. Encounter odds and rarity
-are visible qualitatively by default, with an exact-odds toggle in More. Rare sheep are
-cosmetic/story rewards only; no sheep grants power or essential access. A persisted bad-luck
-threshold guarantees a future find after repeated successful no-find searches.
+The release presentation uses `UserProgress.totalCompletedRuns` as the flock count: each
+completed primary protected night settles one equal sheep. Legacy idempotent search outcomes,
+rarity, and balances remain persisted for compatibility but are not read by release UI.
 
 `UserProgress.totalCompletedRuns` remains the protected-night count. Search outcomes and found
 sheep identities live in `SheepSearchState`; early-ended sessions do not advance the search.
@@ -75,12 +71,10 @@ screenshots in Mail. If Mail is unavailable, the app displays and copies
 
 ## Post-launch gate
 
-After at least two stable weeks and the retention and qualitative gates in ADR-0003, a
-real-data Farm may be tested internally. It must visualize found sheep and search habitats
-from `SheepSearchState`; it must not revive currency, sheep power, or mock missions. If Farm later earns a root
-destination, the root three become Home, Nights, and Farm; More moves to a top-right
-utility sheet. Shop can only be nested in Farm. Friends remains last-or-never and requires
-its own ADR, backend, moderation, and belonging-test approval.
+After at least two stable weeks and the retention and qualitative gates in ADR-0003, the
+shipping Farm can be expanded internally from the same flock count and field notes. It must
+not revive currency, sheep power, or mock missions. Shop can only be nested in Farm. Friends
+remains last-or-never and requires its own ADR, backend, moderation, and belonging-test approval.
 
 ## Consequences
 
