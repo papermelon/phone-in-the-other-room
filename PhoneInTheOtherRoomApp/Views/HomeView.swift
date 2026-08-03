@@ -58,6 +58,16 @@ struct HomeView: View {
             }
             .onAppear {
                 viewModel.applyShortcutPreparationIfNeeded()
+                routePendingNotificationIfNeeded()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .countingSheepNotificationDestination)) { notification in
+                guard let destination = notification.object as? NotificationDestination else { return }
+                switch destination {
+                case .home, .activeRun:
+                    selectedTab = .home
+                case .nights, .morningReflection:
+                    selectedTab = .nights
+                }
             }
             .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
                 guard count > 0 else { return }
@@ -71,6 +81,16 @@ struct HomeView: View {
                 )
             }
             .toolbar(.hidden, for: .navigationBar)
+        }
+    }
+
+    private func routePendingNotificationIfNeeded() {
+        guard let destination = PhoneNotificationService.shared.consumePendingDestination() else { return }
+        switch destination {
+        case .home, .activeRun:
+            selectedTab = .home
+        case .nights, .morningReflection:
+            selectedTab = .nights
         }
     }
 

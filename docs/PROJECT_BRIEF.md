@@ -80,11 +80,16 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   physical transition. A writable generic NDEF tag can be
   registered, replaced, or forgotten in place; NFC mode requires that same tag to end
   normally while retaining a multi-step emergency exit. An automatic Wind Down can send
-  60-, 30-, and 10-minute lead-ins and schedule selected-app shielding at the saved start
-  time while the app is closed. Optional shielding covers only the selected
+  a chosen Quiet, Balanced, or Supportive cadence and schedule selected-app shielding at the
+  saved start time while the app is closed. Optional usage-aware reminders can send one
+  generic cue after three minutes in selected apps in each phase, including overnight.
+  Optional shielding covers only the selected
   apps during wind-down and morning quiet; it lifts overnight and always has an early exit
   through Counting Sheep.
-- **Nights (one finite scroll)**: the cumulative flock, Ollie's wanted posters and search trail,
+  Home also shows a finite snapping carousel of the currently missing sheep, keeping the next
+  Wind Down search legible without turning the bedtime path into a feed.
+- **Nights (one finite scroll)**: the cumulative flock, a finite Missing/Home/All poster board
+  with bounty-poster-inspired sheep cards and search trail,
   latest Wind Down
   result with its finish date, latest protected night, dated seven-night view, optional
   Apple Health sleep duration, available core/deep/REM stages and seven-night wake-time
@@ -105,6 +110,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
 - **More**: Wind Down schedule, bookends, method, NFC, automatic Wind Down and shielding;
   a replayable “How Wind Down works” explanation and a finite, source-linked guidance guide;
   Apple Health, Screen Time, and notification connections; optional impact-sharing controls;
+  a local-progress reset that preserves the saved Wind Down plan and NFC pairing;
   privacy information; feedback and support; and app version information. Optional feedback
   can use private Supabase delivery only after its release gates pass, and otherwise uses a
   prefilled email fallback.

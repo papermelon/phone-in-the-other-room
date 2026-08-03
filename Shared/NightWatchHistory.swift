@@ -86,6 +86,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
     var shieldedWindDownMinutes: Int
     var shieldedMorningQuietMinutes: Int
     var shieldProtectionEvidence: ShieldProtectionEvidence
+    var role: WindDownOccurrenceRole
     var updatedAt: Date
 
     init(
@@ -101,6 +102,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         shieldedWindDownMinutes: Int = 0,
         shieldedMorningQuietMinutes: Int = 0,
         shieldProtectionEvidence: ShieldProtectionEvidence = .notRequested,
+        role: WindDownOccurrenceRole = .primarySleepBookend,
         updatedAt: Date = Date()
     ) {
         self.schemaVersion = schemaVersion
@@ -115,6 +117,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         self.shieldedWindDownMinutes = max(0, shieldedWindDownMinutes)
         self.shieldedMorningQuietMinutes = max(0, shieldedMorningQuietMinutes)
         self.shieldProtectionEvidence = shieldProtectionEvidence
+        self.role = role
         self.updatedAt = updatedAt
     }
 
@@ -131,6 +134,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         case shieldedWindDownMinutes
         case shieldedMorningQuietMinutes
         case shieldProtectionEvidence
+        case role
         case updatedAt
     }
 
@@ -164,6 +168,8 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
             ShieldProtectionEvidence.self,
             forKey: .shieldProtectionEvidence
         ) ?? .notRequested
+        role = try container.decodeIfPresent(WindDownOccurrenceRole.self, forKey: .role)
+            ?? .primarySleepBookend
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
             ?? endedAt
             ?? startedAt

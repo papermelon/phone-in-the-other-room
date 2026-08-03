@@ -7,6 +7,7 @@ struct RewardEngine {
         demoMode: Bool = false,
         earnedAt: Date = Date()
     ) -> RewardItem? {
+        guard run.isProgressionEligibleNightWatch || !run.isNightWatch else { return nil }
         guard run.completedSuccessfully else {
             return consolation(for: run, earnedAt: earnedAt)
         }
@@ -56,6 +57,7 @@ struct RewardEngine {
     }
 
     func consolation(for run: FocusRun, earnedAt: Date = Date()) -> RewardItem? {
+        guard run.isProgressionEligibleNightWatch || !run.isNightWatch else { return nil }
         guard run.state == .endedEarly else { return nil }
         let minutes = run.isNightWatch ? run.creditedQuietMinutes : max(0, Int(run.actualDurationSeconds / 60))
         return RewardItem(
@@ -73,7 +75,7 @@ struct RewardEngine {
 
     func updatedProgress(after run: FocusRun, current: UserProgress, reward: RewardItem?) -> UserProgress {
         var progress = current
-        if run.completedSuccessfully {
+        if run.completedSuccessfully && (run.isProgressionEligibleNightWatch || !run.isNightWatch) {
             let minutes = run.creditedQuietMinutes
             progress.totalCompletedRuns += 1
             progress.totalFocusMinutes += minutes

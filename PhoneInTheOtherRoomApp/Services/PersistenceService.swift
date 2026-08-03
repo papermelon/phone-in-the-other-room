@@ -123,6 +123,22 @@ final class PersistenceService {
         defaults.removeObject(forKey: nightWatchHistoryKey)
     }
 
+    /// Clears local ritual progression while leaving the person's setup and physical
+    /// phone-bed pairing intact so a fresh trail does not require reconfiguration.
+    func resetLocalProgress() {
+        [
+            progressKey,
+            rewardsKey,
+            thresholdKey,
+            lastRunKey,
+            manualAnalyticsKey,
+            morningCheckInsKey,
+            nightWatchHistoryKey,
+            impactUploadRecordsKey,
+            sheepSearchStateKey
+        ].forEach { defaults.removeObject(forKey: $0) }
+    }
+
     var impactSharingPreferences: ImpactSharingPreferences {
         get {
             load(ImpactSharingPreferences.self, key: impactSharingPreferencesKey)

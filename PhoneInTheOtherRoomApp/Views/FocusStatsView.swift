@@ -29,7 +29,7 @@ struct FocusStatsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
                 flockCard
-                SheepWantedPostersCard(
+                SheepPosterBoard(
                     searchState: viewModel.sheepSearchState,
                     protectedNightNumber: progress.totalCompletedRuns + 1
                 )

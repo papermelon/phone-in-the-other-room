@@ -116,4 +116,11 @@ final class SheepSearchTests: XCTestCase {
         XCTAssertEqual(SheepCatalog.definition(for: "oat")?.assetName, "sheep/sheep_merino")
         XCTAssertEqual(SheepCatalog.definition(for: "wisp")?.assetName, "sheep/sheep_night")
     }
+
+    func testPosterArrivalNightsKeepStarterPostersAvailableAndLaterPostersGated() {
+        XCTAssertEqual(SheepCatalog.arrivalNight(for: SheepCatalog.all[0]), 1)
+        XCTAssertTrue(SheepCatalog.eligible(for: 1).contains { $0.id == "mabel" })
+        XCTAssertFalse(SheepCatalog.eligible(for: 1).contains { $0.id == "juniper" })
+        XCTAssertTrue(SheepCatalog.eligible(for: 4).contains { $0.id == "juniper" })
+    }
 }

@@ -27,7 +27,11 @@ execute without human sign-off mid-task (final merge review still applies per
 - **Accept:** run from wind-down through morning quiet on a physical iPhone; cover locked
   screen, termination/relaunch, notification delivery, Live Activity phase changes, early
   end, and one Watch/QR fallback; record results in the TestFlight QA playbook. Repeat one
-  schedule across a DST or timezone boundary before broader rollout.
+  schedule across a DST or timezone boundary before broader rollout. For the notification
+  expansion, also verify Quiet/Balanced/Supportive counts, tip replacement, tap routing,
+  reflection cancellation, three-minute DeviceActivity thresholds in all three phases,
+  duplicate suppression, denied/empty Screen Time selections, and a full overnight usage
+  reminder path before enabling usage-aware reminders for external testers.
 
 ### B2. Establish physical-device overnight energy baselines
 - **Why:** the code is event-driven after the 2026-07-27 energy audit, but Live Activity

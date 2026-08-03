@@ -26,13 +26,16 @@ ritual. Guidance may appear in four places:
 1. A short example during onboarding, to explain that the app is more than an app shield.
 2. One optional, stable idea on Home before Wind Down.
 3. One short phase-appropriate cue during wind-down or morning quiet, including the Live
-   Activity. Overnight has no educational prompt.
+   Activity. A person may separately opt into one reviewed guidance tip per night in local
+   notifications; that tip replaces an existing midpoint cue, never adds a notification.
+   Overnight has no educational prompt.
 4. A finite guide in More with topic grouping and visible source labels.
 
 Guidance is optional, dismissible, and never a task, score, streak, reward condition, or
-notification campaign. Detailed HealthKit and Screen Time data must not automatically
-produce individualized sleep advice. Any future adaptive experiment requires its own
-decision record.
+notification campaign. A consented notification tip is finite, deterministic for the
+night, locally bundled, and limited to one per night. Detailed HealthKit and Screen Time
+data must not automatically produce individualized sleep advice. Any future adaptive
+experiment requires its own decision record.
 
 Allowed themes include quieter light and screens before bed, regular wake-time cues,
 daylight and movement during the day, a calm sleep environment, keeping the bed a sleep
@@ -49,6 +52,8 @@ reviewer before external release.
 - Onboarding explains Protect → Replace → Learn rather than presenting shielding as the
   whole product.
 - The active run remains a status surface, not an educational feed.
+- Notification tips remain a separately consented replacement for an existing cue, not a
+  new engagement channel; usage-aware reminders are generic and phase-specific.
 - Guidance content can be audited and updated without changing the session state machine.
 - App Store copy must describe support for winding down, not treatment or sleep outcomes.
 - The previous post-1.0 educational-note gate is satisfied for the current curated scope;

@@ -284,7 +284,7 @@ struct ActiveRunView: View {
                 .foregroundStyle(AppColors.secondaryText)
             } else {
                 Button(run?.isNightWatch == true ? "End Wind Down early" : "End early") {
-                    viewModel.coordinator.endEarly()
+                    viewModel.endWindDownEarly()
                 }
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.secondaryText)
