@@ -8,6 +8,15 @@ struct OnboardingWelcomeStep: View {
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
             OllieRitualView(state: .ready, size: 150)
+            if let starterSheep = SheepCatalog.all.first {
+                SheepPosterCard(
+                    sheep: starterSheep,
+                    status: .missing,
+                    outcome: nil,
+                    showExactOdds: false
+                )
+                .frame(maxWidth: 320)
+            }
             VStack(spacing: AppSpacing.sm) {
                 Text("Help Ollie bring a sheep home.")
                     .font(AppTypography.display(34))
@@ -307,14 +316,44 @@ struct OnboardingAutomaticStartStep: View {
             }
             PixelCard {
                 Toggle(
-                    "Send 60, 30, and 10-minute lead-ins",
+                    "Send Wind Down reminders",
                     isOn: $draft.remindersEnabled
                 )
                 .font(AppTypography.headline)
                 .disabled(!draft.automaticStartEnabled)
-                Text("No reminders are sent if you leave this off. The ritual remains available whenever you open the app.")
+                Text("Choose a rhythm below. Overnight stays quiet unless you opt into a usage-aware cue.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
+            }
+
+            if draft.remindersEnabled && draft.automaticStartEnabled {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("Choose your notification rhythm")
+                        .font(AppTypography.headline)
+                    ForEach(NotificationCadence.allCases) { cadence in
+                        OnboardingChoiceCard(
+                            title: cadence.title + " · " + String(cadence.scheduledTouchpointCount) + " cues",
+                            detail: cadence.detail,
+                            icon: cadence == .quiet ? "bell.slash" : "bell",
+                            isSelected: draft.notificationCadence == cadence
+                        ) {
+                            draft.notificationCadence = cadence
+                        }
+                    }
+                }
+
+                PixelCard {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Toggle("Allow sounds at Wind Down start and completion", isOn: $draft.notificationSoundsEnabled)
+                        Toggle("Offer one gentle sleep tip", isOn: $draft.educationalTipsEnabled)
+                        Toggle("Remind me about a morning reflection", isOn: $draft.morningReflectionReminderEnabled)
+                        Toggle("Remind me if selected apps are used", isOn: $draft.usageAwareRemindersEnabled)
+                        Text("Usage-aware reminders need Screen Time access and selected apps. You can finish setup and enable this later in More.")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                    .font(AppTypography.caption)
+                }
             }
         }
     }

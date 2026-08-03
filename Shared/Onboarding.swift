@@ -79,6 +79,11 @@ struct OnboardingDraft: Codable, Equatable {
     var shieldingEnabled = true
     var automaticStartEnabled = true
     var remindersEnabled = true
+    var notificationCadence: NotificationCadence = .balanced
+    var notificationSoundsEnabled = true
+    var educationalTipsEnabled = false
+    var usageAwareRemindersEnabled = false
+    var morningReflectionReminderEnabled = false
 
     var selectedGuardKind: SessionGuardKind { protectionChoice.guardKind }
 
@@ -104,6 +109,18 @@ struct OnboardingDraft: Codable, Equatable {
             customText: purposeCategory == .custom ? customPurpose : nil,
             allowsCustomTextInNotifications: purposeCategory == .custom
                 && allowsCustomTextInNotifications
+        )
+    }
+
+    func makeNotificationPreferences() -> NotificationPreferences {
+        NotificationPreferences(
+            remindersEnabled: remindersEnabled,
+            cadence: notificationCadence,
+            hasChosenCadence: true,
+            soundsEnabled: notificationSoundsEnabled,
+            educationalTipsEnabled: educationalTipsEnabled,
+            usageAwareRemindersEnabled: usageAwareRemindersEnabled,
+            morningReflectionReminderEnabled: morningReflectionReminderEnabled
         )
     }
 

@@ -127,15 +127,18 @@ enum SheepCatalog {
         all.first { $0.id == id }
     }
 
+    static func arrivalNight(for sheep: SheepDefinition) -> Int {
+        if starterIDs.contains(sheep.id) { return 1 }
+        return posterArrivalNights[sheep.id] ?? sheep.rarity.minimumProtectedNights
+    }
+
     static func eligible(for protectedNightNumber: Int) -> [SheepDefinition] {
         available(for: protectedNightNumber)
     }
 
     static func available(for protectedNightNumber: Int) -> [SheepDefinition] {
         all.filter { sheep in
-            if starterIDs.contains(sheep.id) { return true }
-            let arrivalNight = posterArrivalNights[sheep.id] ?? sheep.rarity.minimumProtectedNights
-            return arrivalNight <= protectedNightNumber
+            arrivalNight(for: sheep) <= protectedNightNumber
         }
     }
 }

@@ -8,6 +8,7 @@ struct MoreView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var showImpactConsent = false
     @State private var showImpactDeletion = false
+    @State private var showLocalProgressReset = false
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     @State private var showScreenTimePicker = false
 #endif
@@ -50,6 +51,18 @@ struct MoreView: View {
             Button("Keep it", role: .cancel) {}
         } message: {
             Text("This removes optional impact records from Counting Sheep's backend. Your detailed history stays on this iPhone.")
+        }
+        .confirmationDialog(
+            "Reset local progress?",
+            isPresented: $showLocalProgressReset,
+            titleVisibility: .visible
+        ) {
+            Button("Reset local progress", role: .destructive) {
+                viewModel.resetLocalProgress()
+            }
+            Button("Keep my progress", role: .cancel) {}
+        } message: {
+            Text("This clears your protected nights, flock, rewards, reflections, and local ritual history. Your Wind Down plan and NFC tag will stay paired.")
         }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
@@ -127,15 +140,13 @@ struct MoreView: View {
                 .environmentObject(viewModel)
             }
 #endif
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Label("Wind Down reminders", systemImage: "bell.fill")
-                        .font(AppTypography.headline)
-                    Text("Counting Sheep asks about reminders only when you save or start the Wind Down you chose.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
+            NavigationLink {
+                NotificationSettingsView()
+                    .environmentObject(viewModel)
+            } label: {
+                settingsRow("Notifications", icon: "bell.fill")
             }
+            .buttonStyle(.plain)
         }
     }
 
@@ -229,6 +240,19 @@ struct MoreView: View {
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
                     }
+                }
+            }
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("Start over locally")
+                        .font(AppTypography.headline)
+                    Text("Clear your protected nights, flock, rewards, reflections, and local ritual history. Your Wind Down plan and NFC tag stay ready.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    Button("Reset local progress", role: .destructive) {
+                        showLocalProgressReset = true
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
             if let privacyURL = Self.privacyURL {

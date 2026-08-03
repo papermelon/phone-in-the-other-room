@@ -8,7 +8,21 @@ struct SheepSearchOutcomeCard: View {
         outcome.sheepID.flatMap(SheepCatalog.definition)
     }
 
+    @ViewBuilder
     var body: some View {
+        if let sheep, outcome.result == .found {
+            SheepPosterCard(
+                sheep: sheep,
+                status: .found,
+                outcome: outcome,
+                showExactOdds: showExactOdds
+            )
+        } else {
+            trailBody
+        }
+    }
+
+    private var trailBody: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack(alignment: .top, spacing: AppSpacing.md) {
@@ -87,58 +101,12 @@ struct SheepWantedPostersCard: View {
     let searchState: SheepSearchState
     let protectedNightNumber: Int
 
-    private var activePosters: [SheepDefinition] {
-        SheepCatalog.eligible(for: max(1, protectedNightNumber))
-            .filter { !searchState.foundSheepIDs.contains($0.id) }
-            .prefix(5)
-            .map { $0 }
-    }
-
     var body: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack {
-                    Text("OLLIE'S WANTED POSTERS")
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(AppColors.grass)
-                    Spacer()
-                    Text("\(searchState.foundSheepIDs.count) found")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-                if activePosters.isEmpty {
-                    Text("The pasture is quiet for now. New posters will arrive as Ollie follows more trails.")
-                        .font(AppTypography.body)
-                        .foregroundStyle(AppColors.secondaryText)
-                } else {
-                    ForEach(activePosters) { sheep in
-                        HStack(spacing: AppSpacing.sm) {
-                            PixelAssetImage(name: sheep.assetName)
-                                .frame(width: 42, height: 42)
-                                .accessibilityHidden(true)
-                            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                                Text(sheep.name)
-                                    .font(AppTypography.headline)
-                                Text("\(sheep.breed.title) · \(sheep.rarity.title) · \(sheep.habitat.title)")
-                                    .font(AppTypography.caption)
-                                    .foregroundStyle(AppColors.muted)
-                                if let accessory = sheep.accessory {
-                                    Text(accessory)
-                                        .font(AppTypography.caption)
-                                        .foregroundStyle(AppColors.grass)
-                                }
-                            }
-                            Spacer()
-                            Text(sheep.posterClue)
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.secondaryText)
-                                .multilineTextAlignment(.trailing)
-                                .frame(maxWidth: 140, alignment: .trailing)
-                        }
-                    }
-                }
-            }
-        }
+        SheepPosterCarousel(
+            searchState: searchState,
+            protectedNightNumber: protectedNightNumber,
+            title: "OLLIE'S MISSING SHEEP"
+        )
     }
 }
 

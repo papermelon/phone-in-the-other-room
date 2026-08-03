@@ -37,6 +37,14 @@ seeded arrivals. Posters do not expire in the first release. Exact encounter odd
 default and can be enabled in More; the default presentation uses qualitative trail strength and
 habitat eligibility.
 
+Poster presentation uses a native SwiftUI, bounty-poster-inspired composition rather than a
+bitmap feed: a finite snapping carousel of missing posters appears on Home, Nights provides a
+Missing/Home/All poster board, and completion can stamp the resolved poster FOUND — HOME. The
+composition uses muted parchment, ink, portrait framing, trail clues, breed and rarity seals, and
+Ollie's return-home language while retaining Counting Sheep's own sheep art and pixel/paper
+palette. Active Wind Down screens do not expose the carousel, and no poster-arrival notification
+pulls the user back into the app at night.
+
 Search outcomes are local, deterministic after resolution, persisted by run ID, and never rerolled
 on relaunch. Trail distance is a story estimate based on quiet-window evidence and bonuses, not a
 GPS or Health measurement.

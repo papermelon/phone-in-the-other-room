@@ -265,8 +265,69 @@ struct NightWatchPlan: Codable, Equatable {
     var morningQuietMinutes: Int
     var eveningActivity: PhoneFreeActivity
     var morningActivity: PhoneFreeActivity
+    /// Primary plans span the sleep bookends. Additional plans are standalone
+    /// quiet intervals and must not advance protected-night progression.
+    var role: WindDownOccurrenceRole
+
+    private enum CodingKeys: String, CodingKey {
+        case intendedBedtime, wakeTime, protectedUntil, windDownMinutes, morningQuietMinutes
+        case eveningActivity, morningActivity, role
+    }
+
+    init(
+        intendedBedtime: Date,
+        wakeTime: Date,
+        protectedUntil: Date,
+        windDownMinutes: Int,
+        morningQuietMinutes: Int,
+        eveningActivity: PhoneFreeActivity,
+        morningActivity: PhoneFreeActivity,
+        role: WindDownOccurrenceRole = .primarySleepBookend
+    ) {
+        self.intendedBedtime = intendedBedtime
+        self.wakeTime = wakeTime
+        self.protectedUntil = protectedUntil
+        self.windDownMinutes = max(0, windDownMinutes)
+        self.morningQuietMinutes = max(0, morningQuietMinutes)
+        self.eveningActivity = eveningActivity
+        self.morningActivity = morningActivity
+        self.role = role
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        intendedBedtime = try container.decode(Date.self, forKey: .intendedBedtime)
+        wakeTime = try container.decode(Date.self, forKey: .wakeTime)
+        protectedUntil = try container.decode(Date.self, forKey: .protectedUntil)
+        windDownMinutes = max(0, try container.decodeIfPresent(Int.self, forKey: .windDownMinutes) ?? 0)
+        morningQuietMinutes = max(0, try container.decodeIfPresent(Int.self, forKey: .morningQuietMinutes) ?? 0)
+        eveningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .eveningActivity) ?? .read
+        morningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .morningActivity) ?? .openCurtains
+        role = try container.decodeIfPresent(WindDownOccurrenceRole.self, forKey: .role) ?? .primarySleepBookend
+    }
+
+    static func additionalQuiet(
+        start: Date,
+        end: Date,
+        activity: PhoneFreeActivity = .read
+    ) -> Self {
+        let minutes = max(0, Int(end.timeIntervalSince(start) / 60))
+        return Self(
+            intendedBedtime: start,
+            wakeTime: end,
+            protectedUntil: end,
+            windDownMinutes: minutes,
+            morningQuietMinutes: 0,
+            eveningActivity: activity,
+            morningActivity: .openCurtains,
+            role: .additionalQuiet
+        )
+    }
 
     func phase(at date: Date) -> NightWatchPhase {
+        if role == .additionalQuiet {
+            return date >= protectedUntil ? .complete : .windDown
+        }
         if date >= protectedUntil { return .complete }
         if date >= wakeTime { return .morningQuiet }
         if date >= intendedBedtime { return .overnight }
@@ -283,6 +344,11 @@ struct NightWatchPlan: Codable, Equatable {
     }
 
     func creditedWindDownMinutes(startedAt: Date, through endDate: Date? = nil) -> Int {
+        if role == .additionalQuiet {
+            let endDate = min(endDate ?? protectedUntil, protectedUntil)
+            let actualStart = max(startedAt, intendedBedtime)
+            return max(0, Int(max(0, endDate.timeIntervalSince(actualStart)) / 60))
+        }
         let endDate = min(endDate ?? protectedUntil, protectedUntil)
         let plannedWindDownStart = intendedBedtime.addingTimeInterval(TimeInterval(-windDownMinutes * 60))
         let actualWindDownStart = max(startedAt, plannedWindDownStart)
@@ -292,6 +358,7 @@ struct NightWatchPlan: Codable, Equatable {
     }
 
     func creditedMorningQuietMinutes(startedAt: Date, through endDate: Date? = nil) -> Int {
+        guard role == .primarySleepBookend else { return 0 }
         let endDate = min(endDate ?? protectedUntil, protectedUntil)
         let morningStart = max(startedAt, wakeTime)
         let morningSeconds = max(0, endDate.timeIntervalSince(morningStart))
@@ -306,6 +373,10 @@ struct NightWatchPlan: Codable, Equatable {
 
 extension FocusRun {
     var isNightWatch: Bool { nightWatchPlan != nil }
+
+    var isProgressionEligibleNightWatch: Bool {
+        nightWatchPlan?.role.isProgressionEligible ?? false
+    }
 
     func nightWatchPhase(at date: Date = Date()) -> NightWatchPhase? {
         nightWatchPlan?.phase(at: date)

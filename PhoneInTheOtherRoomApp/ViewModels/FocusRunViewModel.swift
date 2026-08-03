@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UserNotifications
 
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
 import FamilyControls
@@ -32,6 +33,8 @@ final class FocusRunViewModel: ObservableObject {
     @Published var impactSharingPreferences: ImpactSharingPreferences
     @Published var impactDataSyncState: ImpactDataSyncState = .idle
     @Published var impactSharingAvailable: Bool
+    @Published var notificationPreferences: NotificationPreferences
+    @Published var notificationAuthorization: UNAuthorizationStatus = .notDetermined
 #if DEBUG
     @Published var useAnalyticsQADataset = false
 #endif
@@ -59,6 +62,7 @@ final class FocusRunViewModel: ObservableObject {
     private let healthSleepService = HealthSleepService()
     private let phoneBedNFCService = PhoneBedNFCService()
     private let quietTimeShielding = QuietTimeShieldingService()
+    private let usageMonitoring = NightWatchUsageMonitoringService()
     private let impactDataSyncService = ImpactDataSyncService()
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     private let screenTimeSelectionService = ScreenTimeSelectionService.shared
@@ -76,6 +80,7 @@ final class FocusRunViewModel: ObservableObject {
         self.coordinator = coordinator ?? FocusSessionCoordinator()
         impactSharingPreferences = PersistenceService.shared.impactSharingPreferences
         impactSharingAvailable = (try? SupabaseConfiguration.load()) != nil
+        notificationPreferences = notifications.preferences
         nightWatchPreferences = savedQuietTime
         screenTimeReportPreferences = initialReportPreferences
         offlinePurpose = persistence.offlinePurpose
@@ -89,6 +94,9 @@ final class FocusRunViewModel: ObservableObject {
             self?.optionalSheepSearchBonusPoints() ?? 0
         }
         screenTimeAuthorization = screenTimeService.currentState()
+        Task { @MainActor in
+            notificationAuthorization = await notifications.authorizationStatus()
+        }
         sleepAuthorization = healthSleepService.isAvailable
             ? (healthSleepService.hasRequestedAccess ? .requested : .notRequested)
             : .unavailable
@@ -196,13 +204,22 @@ final class FocusRunViewModel: ObservableObject {
             configuration: FocusRunConfiguration(nightWatchPlan: plan, guardKind: selectedGuardKind),
             focusAccepted: false
         )
-        if let activeRun {
-            notifications.scheduleNightWatchTransitions(for: activeRun, purpose: offlinePurpose)
-        }
+        notifications.scheduleNightWatchNotifications(
+            for: plan,
+            startedAt: startedAt,
+            purpose: offlinePurpose,
+            seed: activeRun?.id ?? UUID(),
+            preferences: notificationPreferences
+        )
+        usageMonitoring.schedule(for: plan, startedAt: startedAt)
         if let plannedEndAt = activeRun?.plannedEndAt {
-            notifications.scheduleNightWatchReminder(
-                at: nightWatchPreferences.nextStart(after: plannedEndAt.addingTimeInterval(60)),
-                purpose: offlinePurpose
+            let nextStart = nightWatchPreferences.nextStart(after: plannedEndAt.addingTimeInterval(60))
+            notifications.scheduleAutomaticWindDownNotifications(
+                at: nextStart,
+                plan: nightWatchPreferences.makePlan(startedAt: nextStart),
+                purpose: offlinePurpose,
+                seed: UUID(),
+                preferences: notificationPreferences
             )
         }
         if selectedGuardKind == .qrCode {
@@ -238,16 +255,57 @@ final class FocusRunViewModel: ObservableObject {
             draft.shieldingEnabled,
             forKey: QuietTimeShieldingService.enabledKey
         )
-        notifications.remindersEnabled = draft.remindersEnabled
+        var updatedNotificationPreferences = draft.makeNotificationPreferences()
+        updatedNotificationPreferences.usageAwareRemindersEnabled =
+            draft.usageAwareRemindersEnabled && canUseUsageAwareReminders
+        notificationPreferences = updatedNotificationPreferences
+        notifications.preferences = updatedNotificationPreferences
         persistence.completeOnboarding()
         scheduleAutomaticWindDownIfNeeded()
     }
 
     func setRemindersEnabled(_ enabled: Bool) {
-        notifications.remindersEnabled = enabled
+        var updated = notificationPreferences
+        updated.remindersEnabled = enabled
+        notificationPreferences = updated
+        notifications.preferences = updated
         if enabled {
             scheduleAutomaticWindDownIfNeeded()
+        } else {
+            usageMonitoring.cancel()
         }
+    }
+
+    var canUseUsageAwareReminders: Bool {
+        screenTimeAuthorization == .approved && hasSelectedShieldingApps
+    }
+
+    func updateNotificationPreferences(_ preferences: NotificationPreferences) {
+        var updated = preferences
+        updated.hasChosenCadence = true
+        if !canUseUsageAwareReminders {
+            updated.usageAwareRemindersEnabled = false
+        }
+        notificationPreferences = updated
+        notifications.preferences = updated
+        if updated.remindersEnabled {
+            scheduleAutomaticWindDownIfNeeded()
+            if let activeRun, let plan = activeRun.nightWatchPlan {
+                usageMonitoring.schedule(for: plan, startedAt: activeRun.startedAt)
+            }
+        } else {
+            usageMonitoring.cancel()
+        }
+    }
+
+    func refreshNotificationAuthorization() {
+        Task { @MainActor in
+            notificationAuthorization = await notifications.authorizationStatus()
+        }
+    }
+
+    func openNotificationSettings() {
+        notifications.openSystemSettings()
     }
 
     var nightWatchBedtimeDate: Date {
@@ -324,7 +382,7 @@ final class FocusRunViewModel: ObservableObject {
     func startRun(focusAccepted accepted: Bool) {
         answerFocusPrompt(accepted)
         coordinator.start(configuration: FocusRunConfiguration(duration: selectedDuration, guardKind: selectedGuardKind), focusAccepted: accepted)
-        notifications.scheduleRunCompletion(at: activeRun?.plannedEndAt)
+        notifications.scheduleLegacyCompletion(at: activeRun?.plannedEndAt)
         if selectedGuardKind == .qrCode {
             showQRCodeScanner = true
         } else if selectedGuardKind == .nfcTag {
@@ -385,7 +443,7 @@ final class FocusRunViewModel: ObservableObject {
 
     func requestEndWindDown() {
         guard activeRun?.guardKind == .nfcTag else {
-            coordinator.endEarly()
+            endWindDownEarly()
             return
         }
         nfcStatus = ""
@@ -410,6 +468,7 @@ final class FocusRunViewModel: ObservableObject {
                     self.persistence.phoneBedNFCTagRegistration = registration
                 }
                 self.nfcStatus = "Phone-bed tag confirmed."
+                self.cancelActiveRunNotifications()
                 self.coordinator.endEarly(reason: .nfcTagAuthenticated)
             case .cancelled:
                 self.nfcStatus = "No tag was read. Wind Down is still running."
@@ -420,7 +479,18 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     func emergencyEndWindDown() {
+        cancelActiveRunNotifications()
         coordinator.endEarly(reason: .emergencyBypass)
+    }
+
+    func endWindDownEarly() {
+        cancelActiveRunNotifications()
+        coordinator.endEarly()
+    }
+
+    private func cancelActiveRunNotifications() {
+        notifications.cancelAllNightWatchNotifications()
+        usageMonitoring.cancel()
     }
 
     /// Writes and registers a new tag. When called from an active NFC Wind Down,
@@ -528,8 +598,15 @@ final class FocusRunViewModel: ObservableObject {
             startedAt: schedule.startedAt,
             autoConfirmPlacement: true
         )
-        if let activeRun {
-            notifications.scheduleNightWatchTransitions(for: activeRun, purpose: offlinePurpose)
+        if let activeRun, let plan = activeRun.nightWatchPlan {
+            notifications.scheduleNightWatchNotifications(
+                for: plan,
+                startedAt: activeRun.startedAt,
+                purpose: offlinePurpose,
+                seed: activeRun.id,
+                preferences: notificationPreferences
+            )
+            usageMonitoring.schedule(for: plan, startedAt: activeRun.startedAt)
         }
     }
 
@@ -540,15 +617,21 @@ final class FocusRunViewModel: ObservableObject {
             persistence.automaticWindDownSchedule = nil
             notifications.cancelNightWatchReminder()
             quietTimeShielding.cancelAutomaticSchedule()
+            usageMonitoring.cancel()
             return
         }
         guard selectedGuardKind != .nfcTag || hasRegisteredNFCTag else {
             persistence.automaticWindDownSchedule = nil
             notifications.cancelNightWatchReminder()
-            notifications.scheduleNightWatchReminder(
-                at: nightWatchPreferences.nextStart(),
-                purpose: offlinePurpose
+            let startDate = nightWatchPreferences.nextStart()
+            notifications.scheduleAutomaticWindDownNotifications(
+                at: startDate,
+                plan: nightWatchPreferences.makePlan(startedAt: startDate),
+                purpose: offlinePurpose,
+                seed: UUID(),
+                preferences: notificationPreferences
             )
+            usageMonitoring.cancel()
             return
         }
         scheduleNextAutomaticWindDown()
@@ -560,10 +643,14 @@ final class FocusRunViewModel: ObservableObject {
         let schedule = AutomaticWindDownSchedule(startedAt: startDate, plan: plan)
         persistence.automaticWindDownSchedule = schedule
         notifications.cancelNightWatchReminder()
-        notifications.scheduleAutomaticWindDownReminders(
+        notifications.scheduleAutomaticWindDownNotifications(
             at: startDate,
-            purpose: offlinePurpose
+            plan: plan,
+            purpose: offlinePurpose,
+            seed: schedule.id,
+            preferences: notificationPreferences
         )
+        usageMonitoring.schedule(for: plan, startedAt: startDate, repeatsDaily: true)
         if shieldingEnabled {
             quietTimeShielding.scheduleAutomatic(for: schedule)
         }
@@ -571,6 +658,7 @@ final class FocusRunViewModel: ObservableObject {
 
     func resetSetup() {
         coordinator.resetToSetup()
+        usageMonitoring.cancel()
         showCustomDurationPicker = false
         showFocusModePrompt = false
         focusPromptAnswered = false
@@ -583,6 +671,30 @@ final class FocusRunViewModel: ObservableObject {
         nfcStatus = ""
     }
 
+    func resetLocalProgress() {
+        resetSetup()
+        notifications.cancelAllNightWatchNotifications()
+        usageMonitoring.cancel()
+        persistence.automaticWindDownSchedule = nil
+        quietTimeShielding.cancelAutomaticSchedule()
+
+        persistence.resetLocalProgress()
+        coordinator.progress = .empty
+        coordinator.rewards = []
+        coordinator.sheepSearchState = .empty
+        coordinator.latestSheepSearchOutcome = nil
+        coordinator.events = []
+        morningCheckIns = persistence.morningCheckIns
+        manualAnalyticsEntries = persistence.manualAnalyticsEntries
+        analyticsExportURL = nil
+        analyticsExportError = nil
+        impactDataSyncState = .idle
+
+        // Keep the saved bedtime plan, but rebuild its next requested reminder if
+        // automatic Wind Down was enabled before the reset.
+        scheduleAutomaticWindDownIfNeeded()
+    }
+
     func connectScreenTime() {
         Task { @MainActor in
             screenTimeAuthorization = await screenTimeService.requestAuthorization()
@@ -590,7 +702,9 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     func requestNotificationPermission() async -> Bool {
-        await notifications.requestAuthorization()
+        let granted = await notifications.requestAuthorization()
+        notificationAuthorization = await notifications.authorizationStatus()
+        return granted
     }
 
     func screenTimeReportDate(
@@ -633,6 +747,13 @@ final class FocusRunViewModel: ObservableObject {
         case .bedtime:
             bedtimeActivitySelection = bedtimeActivitySelection.appsAndCategoriesOnly
             screenTimeSelectionService.save(bedtimeActivitySelection, for: scope)
+            if !canUseUsageAwareReminders {
+                var updated = notificationPreferences
+                updated.usageAwareRemindersEnabled = false
+                notificationPreferences = updated
+                notifications.preferences = updated
+                usageMonitoring.cancel()
+            }
         }
     }
 
@@ -704,6 +825,7 @@ final class FocusRunViewModel: ObservableObject {
     private func saveMorningCheckIn(_ entry: MorningCheckIn) {
         morningCheckIns.upsert(entry)
         persistence.morningCheckIns = morningCheckIns
+        notifications.cancelMorningReflectionReminder()
         if let record = persistence.nightWatchHistory.records.first(where: {
             Calendar.current.isDate($0.plan.wakeTime, inSameDayAs: entry.day)
         }) {

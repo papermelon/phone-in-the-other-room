@@ -446,7 +446,7 @@ final class FocusSessionCoordinator: ObservableObject {
         persistence.progress = progress
         persistence.rewards = rewards
         persistence.lastRun = finalRun
-        if finalRun.completedSuccessfully {
+        if finalRun.completedSuccessfully && finalRun.isProgressionEligibleNightWatch {
             let plan = finalRun.nightWatchPlan
             let evidence = SheepSearchEvidence(
                 windDownMinutes: finalRun.creditedWindDownMinutes,

@@ -29,5 +29,9 @@ content as medical treatment.
 - Do not diagnose insomnia or infer a disorder from HealthKit, Screen Time, or reflections.
 - Do not prescribe sleep restriction, sleep-efficiency targets, medication, supplements,
   or a fixed rule for leaving bed.
-- Do not send educational push notifications.
+- Educational notifications are allowed only when separately enabled by the person: use
+  one reviewed, locally bundled, deterministic tip per night, replacing an existing
+  midpoint or bedtime cue. Never send guidance overnight; an overnight notification may
+  only be a generic, usage-triggered reminder after selected-app activity. Require
+  qualified sleep/CBT-I review before external release.
 - Keep each card short enough for a tired reader and show its source label in the guide.

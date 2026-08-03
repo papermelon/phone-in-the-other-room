@@ -1,200 +1,276 @@
 import Foundation
+import UIKit
 import UserNotifications
 
 final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate {
     static let shared = PhoneNotificationService()
     static let remindersEnabledKey = "ollie.notifications.remindersEnabled"
+    static let preferencesKey = "ollie.notifications.preferences"
+    static let pendingDestinationKey = "ollie.notifications.pendingDestination"
 
-    private let runNotificationIdentifiers = [
-        "night-watch-sleep-time",
-        "night-watch-phone-free-morning",
-        "focus-run-complete"
-    ]
-    private let nightWatchReminderIdentifiers = [
-        "night-watch-reminder",
+    private let notificationIdentifiers = [
         "night-watch-lead-in-60",
         "night-watch-lead-in-30",
-        "night-watch-lead-in-10"
+        "night-watch-lead-in-10",
+        "night-watch-wind-down-start",
+        "night-watch-wind-down-midpoint",
+        "night-watch-sleep-time",
+        "night-watch-phone-free-morning",
+        "night-watch-morning-midpoint",
+        "focus-run-complete",
+        "night-watch-morning-reflection",
+        "night-watch-reminder",
+        "night-watch-usage-windDown",
+        "night-watch-usage-overnight",
+        "night-watch-usage-morningQuiet",
+        "night-watch-shielding-failed"
     ]
 
     private override init() {
         super.init()
     }
 
-    func configure() {
-        UNUserNotificationCenter.current().delegate = self
+    var preferences: NotificationPreferences {
+        get {
+            if let data = UserDefaults.standard.data(forKey: Self.preferencesKey),
+               let stored = try? JSONDecoder().decode(NotificationPreferences.self, from: data) {
+                return stored
+            }
+            let legacyEnabled = UserDefaults.standard.object(
+                forKey: Self.remindersEnabledKey
+            ) as? Bool ?? NotificationPreferences.defaults.remindersEnabled
+            var migrated = NotificationPreferences.defaults
+            migrated.remindersEnabled = legacyEnabled
+            return migrated
+        }
+        set {
+            guard let data = try? JSONEncoder().encode(newValue) else { return }
+            UserDefaults.standard.set(data, forKey: Self.preferencesKey)
+            UserDefaults.standard.set(newValue.remindersEnabled, forKey: Self.remindersEnabledKey)
+        }
     }
 
     var remindersEnabled: Bool {
-        get {
-            UserDefaults.standard.object(forKey: Self.remindersEnabledKey) as? Bool ?? true
-        }
+        get { preferences.remindersEnabled }
         set {
-            UserDefaults.standard.set(newValue, forKey: Self.remindersEnabledKey)
-            if !newValue {
-                cancelRunCompletion()
-                cancelNightWatchReminder()
-            }
+            var updated = preferences
+            updated.remindersEnabled = newValue
+            preferences = updated
+            if !newValue { cancelAllNightWatchNotifications() }
         }
+    }
+
+    func configure() {
+        UNUserNotificationCenter.current().delegate = self
     }
 
     func requestAuthorization() async -> Bool {
         await requestAuthorizationIfNeeded()
     }
 
-    func scheduleOpenWatchReminder() {
-        Task {
-            guard await requestAuthorizationIfNeeded() else { return }
-
-            let content = UNMutableNotificationContent()
-            content.title = "Ollie is ready on your Watch"
-            content.body = "Open the Watch app to see tonight's Wind Down."
-            content.sound = .default
-
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 2, repeats: false)
-            let request = UNNotificationRequest(identifier: "open-watch-reminder", content: content, trigger: trigger)
-            try? await UNUserNotificationCenter.current().add(request)
-        }
+    func authorizationStatus() async -> UNAuthorizationStatus {
+        let settings = await UNUserNotificationCenter.current().notificationSettings()
+        return settings.authorizationStatus
     }
 
-    func scheduleRunCompletion(at endDate: Date?) {
-        guard remindersEnabled else { return }
-        guard let endDate, endDate > Date() else { return }
-        Task {
-            guard await requestAuthorizationIfNeeded() else { return }
-            let copy = NightWatchGuidance.notificationCopy(for: .complete)
-            let content = UNMutableNotificationContent()
-            content.title = copy.title
-            content.body = copy.body
-            content.sound = .default
-            let request = UNNotificationRequest(
-                identifier: "focus-run-complete",
-                content: content,
-                trigger: UNTimeIntervalNotificationTrigger(timeInterval: endDate.timeIntervalSinceNow, repeats: false)
-            )
-            try? await UNUserNotificationCenter.current().add(request)
-        }
+    func openSystemSettings() {
+        guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+        UIApplication.shared.open(url)
     }
 
-    func scheduleNightWatchTransitions(
-        for run: FocusRun,
-        purpose: OfflinePurposeProfile = .defaultProfile
+    func scheduleNightWatchNotifications(
+        for plan: NightWatchPlan,
+        startedAt: Date,
+        purpose: OfflinePurposeProfile,
+        seed: UUID,
+        preferences: NotificationPreferences = PhoneNotificationService.shared.preferences
     ) {
-        guard remindersEnabled else { return }
-        guard let plan = run.nightWatchPlan else {
-            scheduleRunCompletion(at: run.plannedEndAt)
+        guard preferences.remindersEnabled else {
+            cancelAllNightWatchNotifications()
             return
         }
-
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
             let center = UNUserNotificationCenter.current()
-            center.removePendingNotificationRequests(withIdentifiers: runNotificationIdentifiers)
-
-            await addRunNotification(
-                identifier: "night-watch-sleep-time",
-                at: plan.intendedBedtime,
-                copy: NightWatchGuidance.notificationCopy(for: .sleepTime),
-                sound: nil,
-                center: center
+            center.removePendingNotificationRequests(withIdentifiers: notificationIdentifiers)
+            if !preferences.hasChosenCadence {
+                await addLegacyTransitions(
+                    for: plan,
+                    purpose: purpose,
+                    soundsEnabled: preferences.soundsEnabled,
+                    center: center
+                )
+                return
+            }
+            let planned = NightWatchNotificationPlanBuilder.scheduledNotifications(
+                for: plan,
+                startedAt: startedAt,
+                cadence: preferences.cadence,
+                purpose: purpose,
+                seed: seed,
+                educationalTipsEnabled: preferences.educationalTipsEnabled,
+                soundsEnabled: preferences.soundsEnabled
             )
-            await addRunNotification(
-                identifier: "night-watch-phone-free-morning",
-                at: plan.wakeTime,
-                copy: NightWatchGuidance.notificationCopy(
-                    for: .phoneFreeMorning,
-                    activityTitle: plan.morningActivity.shortTitle,
-                    tip: purpose.reminderPhrase
-                ),
-                sound: nil,
-                center: center
-            )
-            await addRunNotification(
-                identifier: "focus-run-complete",
-                at: plan.protectedUntil,
-                copy: NightWatchGuidance.notificationCopy(for: .complete),
-                sound: .default,
-                center: center
-            )
+            for notification in planned {
+                await add(notification, to: center)
+            }
+            if preferences.morningReflectionReminderEnabled,
+               let reflection = NightWatchNotificationPlanBuilder.reflectionNotification(
+                   at: plan.protectedUntil.addingTimeInterval(60 * 60)
+               ) {
+                await add(reflection, to: center)
+            }
         }
     }
 
-    func scheduleNightWatchReminder(
+    func scheduleAutomaticWindDownNotifications(
         at startDate: Date,
-        purpose: OfflinePurposeProfile = .defaultProfile
+        plan: NightWatchPlan,
+        purpose: OfflinePurposeProfile,
+        seed: UUID,
+        preferences: NotificationPreferences = PhoneNotificationService.shared.preferences
     ) {
-        guard remindersEnabled else { return }
-        guard startDate > Date() else { return }
+        guard preferences.remindersEnabled, startDate > Date() else { return }
+        Task {
+            guard await requestAuthorizationIfNeeded() else { return }
+            let center = UNUserNotificationCenter.current()
+            center.removePendingNotificationRequests(withIdentifiers: notificationIdentifiers)
+            if !preferences.hasChosenCadence {
+                await addLegacyAutomaticReminders(at: startDate, purpose: purpose, center: center)
+                return
+            }
+            let planned = NightWatchNotificationPlanBuilder.scheduledNotifications(
+                for: plan,
+                startedAt: startDate,
+                cadence: preferences.cadence,
+                purpose: purpose,
+                seed: seed,
+                educationalTipsEnabled: preferences.educationalTipsEnabled,
+                soundsEnabled: preferences.soundsEnabled
+            )
+            for notification in planned {
+                await add(notification, to: center)
+            }
+            if preferences.morningReflectionReminderEnabled,
+               let reflection = NightWatchNotificationPlanBuilder.reflectionNotification(
+                   at: plan.protectedUntil.addingTimeInterval(60 * 60)
+               ) {
+                await add(reflection, to: center)
+            }
+        }
+    }
+
+    func scheduleNextWindDownReminder(
+        at date: Date,
+        purpose: OfflinePurposeProfile,
+        preferences: NotificationPreferences = PhoneNotificationService.shared.preferences
+    ) {
+        guard preferences.remindersEnabled, date > Date() else { return }
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
             let copy = NightWatchGuidance.notificationCopy(
                 for: .windDownReminder,
                 tip: purpose.reminderPhrase
             )
-            let content = UNMutableNotificationContent()
-            content.title = copy.title
-            content.body = copy.body
-            content.sound = .default
-            let request = UNNotificationRequest(
-                identifier: "night-watch-reminder",
-                content: content,
-                trigger: UNTimeIntervalNotificationTrigger(timeInterval: startDate.timeIntervalSinceNow, repeats: false)
+            let notification = PlannedNotification(
+                id: "night-watch-reminder",
+                date: date,
+                title: copy.title,
+                body: copy.body,
+                phase: .windDown,
+                importance: .active,
+                playsSound: preferences.soundsEnabled,
+                destination: .home
             )
-            try? await UNUserNotificationCenter.current().add(request)
+            await add(notification, to: UNUserNotificationCenter.current())
         }
     }
 
-    func scheduleAutomaticWindDownReminders(
-        at startDate: Date,
-        purpose: OfflinePurposeProfile = .defaultProfile
-    ) {
-        guard remindersEnabled else { return }
-        guard startDate > Date() else { return }
+    func scheduleLegacyCompletion(at endDate: Date?) {
+        guard remindersEnabled, let endDate, endDate > Date() else { return }
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
-            let center = UNUserNotificationCenter.current()
-            center.removePendingNotificationRequests(withIdentifiers: nightWatchReminderIdentifiers)
-
-            let leadIns: [(String, Int)] = [
-                ("night-watch-lead-in-60", 60),
-                ("night-watch-lead-in-30", 30),
-                ("night-watch-lead-in-10", 10)
-            ]
-            for (identifier, minutes) in leadIns {
-                let leadInDate = startDate.addingTimeInterval(TimeInterval(-minutes * 60))
-                await addRunNotification(
-                    identifier: identifier,
-                    at: leadInDate,
-                    copy: NightWatchGuidance.notificationCopy(
-                        for: .windDownLeadIn(minutes: minutes)
-                    ),
-                    sound: nil,
-                    center: center
-                )
-            }
-            await addRunNotification(
-                identifier: "night-watch-reminder",
-                at: startDate,
-                copy: NightWatchGuidance.notificationCopy(
-                    for: .windDownReminder,
-                    tip: purpose.reminderPhrase
-                ),
-                sound: nil,
-                center: center
+            let copy = NightWatchGuidance.notificationCopy(for: .complete)
+            let notification = PlannedNotification(
+                id: "focus-run-complete",
+                date: endDate,
+                title: copy.title,
+                body: copy.body,
+                phase: .complete,
+                importance: .active,
+                playsSound: preferences.soundsEnabled,
+                destination: .nights
             )
+            await add(notification, to: .current())
         }
+    }
+
+    func scheduleUsageNotification(for phase: NightWatchPhase, at date: Date = Date()) {
+        guard preferences.remindersEnabled,
+              preferences.usageAwareRemindersEnabled,
+              let notification = NightWatchNotificationPlanBuilder.usageNotification(
+                  for: phase,
+                  date: date
+              ) else { return }
+        Task {
+            guard await requestAuthorizationIfNeeded() else { return }
+            await add(notification, to: .current())
+        }
+    }
+
+    func scheduleShieldingFailure(at date: Date = Date()) {
+        guard preferences.remindersEnabled else { return }
+        let copy = NightWatchGuidance.notificationCopy(for: .shieldingFailed)
+        let notification = PlannedNotification(
+            id: "night-watch-shielding-failed",
+            date: date,
+            title: copy.title,
+            body: copy.body,
+            phase: .windDown,
+            importance: .active,
+            playsSound: false,
+            destination: .activeRun
+        )
+        Task {
+            guard await requestAuthorizationIfNeeded() else { return }
+            await add(notification, to: UNUserNotificationCenter.current())
+        }
+    }
+
+    func cancelAllNightWatchNotifications() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: notificationIdentifiers
+        )
     }
 
     func cancelRunCompletion() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(
-            withIdentifiers: runNotificationIdentifiers
-        )
+        cancelAllNightWatchNotifications()
     }
 
     func cancelNightWatchReminder() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(
-            withIdentifiers: nightWatchReminderIdentifiers
+            withIdentifiers: [
+                "night-watch-reminder",
+                "night-watch-lead-in-60",
+                "night-watch-lead-in-30",
+                "night-watch-lead-in-10"
+            ]
         )
+    }
+
+    func cancelMorningReflectionReminder() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: ["night-watch-morning-reflection"]
+        )
+    }
+
+    func consumePendingDestination() -> NotificationDestination? {
+        guard let rawValue = UserDefaults.standard.string(forKey: Self.pendingDestinationKey),
+              let destination = NotificationDestination(rawValue: rawValue) else {
+            return nil
+        }
+        UserDefaults.standard.removeObject(forKey: Self.pendingDestinationKey)
+        return destination
     }
 
     private func requestAuthorizationIfNeeded() async -> Bool {
@@ -212,33 +288,146 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         }
     }
 
-    private func addRunNotification(
-        identifier: String,
-        at date: Date,
-        copy: NightWatchNotificationCopy,
-        sound: UNNotificationSound?,
-        center: UNUserNotificationCenter
-    ) async {
-        guard date > Date() else { return }
+    private func add(_ notification: PlannedNotification, to center: UNUserNotificationCenter) async {
+        guard notification.date > Date() else { return }
         let content = UNMutableNotificationContent()
-        content.title = copy.title
-        content.body = copy.body
-        content.sound = sound
+        content.title = notification.title
+        content.body = notification.body
+        content.sound = notification.playsSound ? .default : nil
+        content.interruptionLevel = notification.importance == .active ? .active : .passive
+        content.userInfo = [
+            "destination": notification.destination.rawValue
+        ]
         let request = UNNotificationRequest(
-            identifier: identifier,
+            identifier: notification.id,
             content: content,
             trigger: UNTimeIntervalNotificationTrigger(
-                timeInterval: max(1, date.timeIntervalSinceNow),
+                timeInterval: max(1, notification.date.timeIntervalSinceNow),
                 repeats: false
             )
         )
         try? await center.add(request)
     }
 
+    private func addLegacyTransitions(
+        for plan: NightWatchPlan,
+        purpose: OfflinePurposeProfile,
+        soundsEnabled: Bool,
+        center: UNUserNotificationCenter
+    ) async {
+        await add(
+            PlannedNotification(
+                id: "night-watch-sleep-time",
+                date: plan.intendedBedtime,
+                title: NightWatchGuidance.notificationCopy(for: .sleepTime).title,
+                body: NightWatchGuidance.notificationCopy(for: .sleepTime).body,
+                phase: .overnight,
+                importance: .passive,
+                playsSound: false,
+                destination: .activeRun
+            ),
+            to: center
+        )
+        let morning = NightWatchGuidance.notificationCopy(
+            for: .phoneFreeMorning,
+            activityTitle: plan.morningActivity.shortTitle,
+            tip: purpose.reminderPhrase
+        )
+        await add(
+            PlannedNotification(
+                id: "night-watch-phone-free-morning",
+                date: plan.wakeTime,
+                title: morning.title,
+                body: morning.body,
+                phase: .morningQuiet,
+                importance: .passive,
+                playsSound: false,
+                destination: .activeRun
+            ),
+            to: center
+        )
+        let complete = NightWatchGuidance.notificationCopy(for: .complete)
+        await add(
+            PlannedNotification(
+                id: "focus-run-complete",
+                date: plan.protectedUntil,
+                title: complete.title,
+                body: complete.body,
+                phase: .complete,
+                importance: .active,
+                playsSound: soundsEnabled,
+                destination: .nights
+            ),
+            to: center
+        )
+    }
+
+    private func addLegacyAutomaticReminders(
+        at startDate: Date,
+        purpose: OfflinePurposeProfile,
+        center: UNUserNotificationCenter
+    ) async {
+        for minutes in [60, 30, 10] {
+            let copy = NightWatchGuidance.notificationCopy(for: .windDownLeadIn(minutes: minutes))
+            await add(
+                PlannedNotification(
+                    id: "night-watch-lead-in-\(minutes)",
+                    date: startDate.addingTimeInterval(TimeInterval(-minutes * 60)),
+                    title: copy.title,
+                    body: copy.body,
+                    phase: .windDown,
+                    importance: .passive,
+                    playsSound: false,
+                    destination: .home
+                ),
+                to: center
+            )
+        }
+        let copy = NightWatchGuidance.notificationCopy(for: .windDownReminder, tip: purpose.reminderPhrase)
+        await add(
+            PlannedNotification(
+                id: "night-watch-reminder",
+                date: startDate,
+                title: copy.title,
+                body: copy.body,
+                phase: .windDown,
+                importance: .active,
+                playsSound: false,
+                destination: .home
+            ),
+            to: center
+        )
+    }
+
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+        if notification.request.content.interruptionLevel == .passive {
+            return [.list]
+        }
+        return notification.request.content.sound == nil ? [.banner] : [.banner, .sound]
     }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        if let rawValue = response.notification.request.content.userInfo["destination"] as? String,
+           let destination = NotificationDestination(rawValue: rawValue) {
+            UserDefaults.standard.set(destination.rawValue, forKey: Self.pendingDestinationKey)
+            NotificationCenter.default.post(
+                name: .countingSheepNotificationDestination,
+                object: destination
+            )
+        }
+        completionHandler()
+    }
+}
+
+extension Notification.Name {
+    static let countingSheepNotificationDestination = Notification.Name(
+        "countingSheep.notificationDestination"
+    )
 }

@@ -70,7 +70,8 @@ PhoneInTheOtherRoomApp/        iOS app
 ├─ Services/                     singletons for side effects
 │  ├─ PersistenceService.swift                 JSON-in-UserDefaults store
 │  ├─ WatchConnectivityManager.swift           WCSession (phone side)
-│  ├─ PhoneNotificationService.swift           local notifications
+│  ├─ PhoneNotificationService.swift           local notifications + tap routing
+│  ├─ NightWatchUsageMonitoringService.swift   phase-scoped DeviceActivity thresholds
 │  ├─ PingService.swift                        haptic/sound "whistle" at phone
 │  ├─ FocusModeSuggestionService.swift         Focus Mode guidance strings
 │  ├─ HealthSleepService.swift                 optional, read-only HealthKit sleep reads
@@ -172,8 +173,10 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    tuck-in scan can explicitly pair a replacement writable tag without restarting the
    current run; the new digest is committed only after a successful write, and supersedes
    the previous tag for normal ending. When automatic Wind Down is enabled, the saved plan
-   schedules 60/30/10-minute lead-ins and future DeviceActivity shielding while the app is
-   closed; the next app activation reconstructs the local run.
+   schedules the selected local notification cadence and future DeviceActivity shielding
+   while the app is closed; optional usage-aware monitoring is installed independently for
+   wind-down, overnight, and morning quiet, with one generic three-minute cue per phase.
+   The next app activation reconstructs the local run.
 5. If optional placement is unavailable, the run automatically continues as a simple
    phone-away timer. No later distance reading can warn or end a run.
 6. Optional shielding derives its two one-off DeviceActivity schedules from this same
@@ -265,7 +268,8 @@ by the iPhone.
 | `ollie.morningCheckIns` | `MorningCheckInHistory` | up to 45 days of private optional morning reflections |
 | `ollie.onboarding.version` | `Int` | completed first-run onboarding version |
 | `ollie.onboarding.draft` | `OnboardingDraft` | resumable first-run setup choices |
-| `ollie.notifications.remindersEnabled` | `Bool` | explicit automatic Wind Down/reminder opt-in |
+| `ollie.notifications.preferences` | `NotificationPreferences` | cadence, authorization choices, sounds, and separately opted-in optional channels |
+| `ollie.notifications.remindersEnabled` | `Bool` | backwards-compatible mirror of the notification master switch |
 | `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes, trail distance, no-find protection, odds preference |
 | `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
 | `ollie.phoneBedNFCTag.registration` | `PhoneBedTagRegistration` | local tag UUID + digest metadata; raw token is not retained |
