@@ -39,11 +39,10 @@ Read-only external audit:
   build-3 upload, and final review submission remain.
 - The production Supabase migrations, `live-activity-registration`, `submit-feedback`, and
   `feedback-email-delivery` Edge Functions are deployed and the linked schema is lint-clean.
-- Release/TestFlight configuration now opts into feedback (`SUPABASE_FEEDBACK_ENABLED=YES`)
-  by explicit launch approval. Resend secrets/domain, the ten-minute Cron, policy
-  publication, mailbox retention approval, and physical-device feedback testing remain
-  launch gates; until those pass, accepted reports may remain pending and the form keeps its
-  recoverable Mail fallback.
+- Release/TestFlight configuration keeps feedback disabled (`SUPABASE_FEEDBACK_ENABLED=NO`)
+  until Resend secrets/domain, the ten-minute Cron, policy publication, mailbox retention
+  approval, and physical-device feedback testing pass. The form keeps its recoverable Mail
+  fallback.
 
 Not locally provable:
 

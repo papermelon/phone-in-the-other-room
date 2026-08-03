@@ -88,7 +88,7 @@ Keep the feature disabled until migrations, functions, Cron, Sandbox APNs creden
 and physical-device checks are ready. Only the publishable key belongs in this file.
 
 Release and TestFlight builds read `Config/Supabase.release.local.xcconfig`, which is also
-ignored. It now opts into the feedback route with `SUPABASE_FEEDBACK_ENABLED = YES` by
+ignored. The feedback route remains disabled with `SUPABASE_FEEDBACK_ENABLED = NO` until the
 explicit launch approval. Development credentials must never ship in Release. The
 production schema and functions are deployed, but Resend credentials/domain, Cron retry,
 privacy publication, mailbox retention, and physical-iPhone upload/accessibility checks

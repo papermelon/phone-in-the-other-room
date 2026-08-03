@@ -43,7 +43,9 @@ enum ImpactMeasurementEngine {
             uniquingKeysWith: { first, _ in first }
         )
         let recordByDay = Dictionary(
-            history.records.map {
+            history.records
+                .filter { $0.occurrenceRole == .primarySleepBookend }
+                .map {
                 (calendar.startOfDay(for: $0.plan.wakeTime), $0)
             },
             uniquingKeysWith: { first, second in

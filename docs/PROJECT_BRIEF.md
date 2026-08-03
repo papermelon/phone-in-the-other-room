@@ -59,15 +59,14 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
 
 1. Physical separation is the product. Everything else supports the ritual.
 2. The edges of sleep are the niche. Evening and morning screen time are the differentiator.
-3. Build the ritual through purposeful habit formation. The first three protected nights
-   guarantee a sheep; later nights use transparent search odds, rarity, streak momentum, and
-   wanted posters to make consistency meaningful without deleting found sheep or selling odds.
+3. Build the ritual through purposeful habit formation. Each completed primary protected night
+   settles one equal sheep; legacy search odds and rarity remain decodable but are not release UI.
 4. Low friction wins. One tap to start. Setup is minutes, not a project.
 5. Restraint is a feature. When unsure whether to add something: don't.
 
 ## App Store 1.0 scope (decided July 2026)
 
-**Shipped surface: three tabs — Home, Nights, and More.**
+**Shipped surface: three tabs — Home, Nights, and Farm. More opens from the Home utility button.**
 
 - **Home**: one-time Wind Down plan → saved wind-down reminder → one-tap Wind Down →
   wind-down / overnight / morning-quiet phases → morning completion or kind early end.
@@ -86,12 +85,10 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   Optional shielding covers only the selected
   apps during wind-down and morning quiet; it lifts overnight and always has an early exit
   through Counting Sheep.
-  Home also shows a finite snapping carousel of the currently missing sheep, keeping the next
-  Wind Down search legible without turning the bedtime path into a feed.
-- **Nights (one finite scroll)**: the cumulative flock, a finite Missing/Home/All poster board
-  with bounty-poster-inspired sheep cards and search trail,
-  latest Wind Down
+  Home stays focused on the saved plan and one-tap start; it does not lead with collection content.
+- **Nights (one finite scroll)**: latest Wind Down
   result with its finish date, latest protected night, dated seven-night view, optional
+  monthly calendar and per-day Wind Down detail,
   Apple Health sleep duration, available core/deep/REM stages and seven-night wake-time
   range, and separate consented Screen
   Time reports for selected apps in user-chosen evening and morning reporting windows. Health
@@ -115,12 +112,12 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   can use private Supabase delivery only after its release gates pass, and otherwise uses a
   prefilled email fallback.
 
-**Gated out of normal navigation:** Farm, Friends, Shop, the legacy keepsake shelf, and
-mock-data screens. Debug access requires `-ollie.debug.enableMockScreens YES`; these screens
-are never reachable in Release. See ADR-0003 and ADR-0007.
+**Gated out of normal navigation:** Friends, Shop, the legacy Farm, the legacy keepsake shelf,
+and mock-data screens. Debug access requires `-ollie.debug.enableMockScreens YES`; these
+screens are never reachable in Release. The shipping Farm reads only real sheep-search data.
 
 **Still deferred:** adaptive coaching, routine checklists, composite behavioural scores,
-Farm/Friends/Shop, and social features. They are not required to prove the 1.0 ritual.
+Friends, Shop, and social features. They are not required to prove the 1.0 ritual.
 
 ## Non-goals
 

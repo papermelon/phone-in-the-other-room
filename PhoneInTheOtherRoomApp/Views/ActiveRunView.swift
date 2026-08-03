@@ -13,20 +13,26 @@ struct ActiveRunView: View {
     private var guardKind: SessionGuardKind { run?.guardKind ?? .honorTimer }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 16) {
-                hero
-                ritualStatus
-                phoneFreeCue
-                if let message = viewModel.coordinator.backgroundReturnMessage {
-                    returnBanner(message)
+        Group {
+            if let run, run.isNightWatch {
+                nightWatchBody(run: run)
+            } else {
+                ScrollView {
+                    VStack(spacing: 16) {
+                        hero
+                        ritualStatus
+                        phoneFreeCue
+                        if let message = viewModel.coordinator.backgroundReturnMessage {
+                            returnBanner(message)
+                        }
+                        if let message = viewModel.coordinator.shieldingMessage {
+                            returnBanner(message)
+                        }
+                        actions
+                    }
+                    .padding(16)
                 }
-                if let message = viewModel.coordinator.shieldingMessage {
-                    returnBanner(message)
-                }
-                actions
             }
-            .padding(16)
         }
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle(run?.isNightWatch == true ? "Wind Down" : "Phone-away time")
@@ -53,6 +59,35 @@ struct ActiveRunView: View {
         } message: {
             Text("We’ll write a new tag now. Your current Wind Down will stay in place, and the old tag will stop working after the new one is saved.")
         }
+    }
+
+    private func nightWatchBody(run: FocusRun) -> some View {
+        VStack(spacing: AppSpacing.sm) {
+            NightJourneyView(run: run, reduceMotion: reduceMotion)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text(phase?.title.uppercased() ?? "OLLIE IS ON WATCH")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Text(headline)
+                    .font(AppTypography.headline)
+                Text(timerInterval: countdownInterval, countsDown: true, showsHours: true)
+                    .font(.system(size: 34, weight: .black, design: .monospaced))
+                    .monospacedDigit()
+                    .accessibilityLabel(timerAccessibilityLabel)
+                Text(transitionCaption)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if run.placementStatus == .awaitingConfirmation {
+                ritualStatus
+            } else if let message = viewModel.coordinator.backgroundReturnMessage {
+                returnBanner(message)
+            }
+            actions
+        }
+        .padding(AppSpacing.md)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
     }
 
     private var hero: some View {

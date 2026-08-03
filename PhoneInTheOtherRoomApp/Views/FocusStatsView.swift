@@ -28,24 +28,13 @@ struct FocusStatsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
-                flockCard
-                SheepPosterBoard(
-                    searchState: viewModel.sheepSearchState,
-                    protectedNightNumber: progress.totalCompletedRuns + 1
-                )
-                if let outcome = viewModel.latestSheepSearchOutcome {
-                    SheepSearchOutcomeCard(
-                        outcome: outcome,
-                        showExactOdds: viewModel.sheepSearchState.showExactOdds
-                    )
-                }
                 recentNightCard
+                sevenNightCard
+                monthlyLink
                 sleepCard
-                sleepOutcomeCard
+                screenTimeCard
                 MorningCheckInCard()
                     .environmentObject(viewModel)
-                sevenNightCard
-                screenTimeCard
             }
             .padding(AppSpacing.md)
         }
@@ -55,6 +44,32 @@ struct FocusStatsView: View {
                 viewModel.refreshSleepSummary()
             }
         }
+    }
+
+    private var monthlyLink: some View {
+        NavigationLink {
+            MonthlyNightsView()
+                .environmentObject(viewModel)
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "calendar")
+                    .foregroundStyle(AppColors.grass)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("View month")
+                        .font(AppTypography.headline)
+                    Text("See quiet time and Wind Downs day by day.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(AppColors.muted)
+            }
+            .padding(AppSpacing.md)
+            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).stroke(AppColors.stroke.opacity(0.14), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
     }
 
     private var sleepOutcomeCard: some View {
