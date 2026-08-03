@@ -26,7 +26,7 @@ Locally proven:
 - The exported app carries production Family Controls profiles for the containing app,
   report, monitor, shield configuration, and shield action targets.
 - The exported app contains the main and monitor privacy manifests.
-- Debug and Release navigation render Home, Nights, and Farm; More is a utility sheet and internal previews require the
+- Debug and Release navigation render Home, Nights, Farm, and Settings; internal previews require the
   explicit Debug launch argument.
 
 Read-only external audit:
@@ -95,12 +95,12 @@ xcodebuild archive \
 
 ## 3. Release scope and product identity
 
-- [ ] Debug and Release expose exactly Home, Nights, and Farm by default; More is outside the root tabs.
+- [ ] Debug and Release expose exactly Home, Nights, Farm, and Settings by default.
 - [ ] Farm, Friends, Shop, the legacy shelf, `MVPMockData`, manual analytics, and QA data are
       unreachable without `-ollie.debug.enableMockScreens YES`, and always unreachable in Release.
 - [ ] No customer surface calls the ritual a Focus Run or generic productivity session.
-- [ ] NFC is the default for new plans. Honor timer, Watch, and QR remain optional
-      alternatives, and an NFC tag is required to end normally in NFC mode.
+- [ ] Current setup exposes App Shielding or NFC + App Shielding. Legacy timer, Watch, and QR
+      values remain decodable but are not offered to new configurations.
 - [ ] Automatic Wind Down sends 60/30/10-minute lead-ins; with shielding enabled, selected
       apps rest at the saved start time while the main app is closed.
 - [ ] Shielding is separately optional, uses a user-selected set, lifts overnight, and

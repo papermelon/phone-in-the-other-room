@@ -1,9 +1,9 @@
 import SwiftUI
 
-struct WindDownMethodPicker: View {
+struct WindDownProtectionPicker: View {
     let selectedKind: SessionGuardKind
     let isNFCTagReady: Bool
-    let onSelect: (SessionGuardKind) -> Void
+    let onSelect: (WindDownProtectionChoice) -> Void
 
     private let columns = [
         GridItem(.flexible(), spacing: AppSpacing.sm),
@@ -17,13 +17,13 @@ struct WindDownMethodPicker: View {
                     Text("HOW WILL YOU START?")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("Choose your Wind Down method")
+                Text("Choose how apps rest")
                         .font(AppTypography.headline)
                 }
 
                 LazyVGrid(columns: columns, spacing: AppSpacing.sm) {
-                    ForEach(SessionGuardKind.allCases) { kind in
-                        methodButton(kind)
+                    ForEach(WindDownProtectionChoice.allCases) { choice in
+                        methodButton(choice)
                     }
                 }
 
@@ -35,15 +35,15 @@ struct WindDownMethodPicker: View {
         }
     }
 
-    private func methodButton(_ kind: SessionGuardKind) -> some View {
-        let isSelected = selectedKind == kind
+    private func methodButton(_ choice: WindDownProtectionChoice) -> some View {
+        let isSelected = selectedKind == choice.guardKind
         return Button {
-            onSelect(kind)
+            onSelect(choice)
         } label: {
             HStack(spacing: AppSpacing.xs) {
-                Image(systemName: kind.systemImage)
+                Image(systemName: choice.systemImage)
                     .frame(width: 22)
-                Text(kind.compactTitle)
+                Text(choice.title)
                     .font(AppTypography.body)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -62,20 +62,20 @@ struct WindDownMethodPicker: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(kind.compactTitle), \(isSelected ? "selected" : "not selected")")
-        .accessibilityHint(kind.detail)
+        .accessibilityLabel("\(choice.title), \(isSelected ? "selected" : "not selected")")
+        .accessibilityHint(choice.detail)
     }
 
     private var methodDetail: String {
         if selectedKind == .nfcTag, !isNFCTagReady {
-            return "NFC needs a registered phone-bed tag. Open Wind Down settings to set one up."
+            return "NFC needs a registered phone-bed tag. Set one up below before your first night."
         }
-        return selectedKind.detail
+        return WindDownProtectionChoice.from(guardKind: selectedKind).detail
     }
 }
 
 #Preview("NFC selected") {
-    WindDownMethodPicker(
+    WindDownProtectionPicker(
         selectedKind: .nfcTag,
         isNFCTagReady: true,
         onSelect: { _ in }
@@ -85,7 +85,7 @@ struct WindDownMethodPicker: View {
 }
 
 #Preview("NFC setup needed") {
-    WindDownMethodPicker(
+    WindDownProtectionPicker(
         selectedKind: .nfcTag,
         isNFCTagReady: false,
         onSelect: { _ in }

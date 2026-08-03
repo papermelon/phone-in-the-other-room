@@ -49,4 +49,30 @@ final class OnboardingTests: XCTestCase {
 
         XCTAssertEqual(decoded, draft)
     }
+
+    func testReleaseProtectionChoicesMapOnlyToCurrentGuardKinds() {
+        XCTAssertEqual(WindDownProtectionChoice.appShielding.guardKind, .honorTimer)
+        XCTAssertEqual(WindDownProtectionChoice.nfcAndAppShielding.guardKind, .nfcTag)
+        XCTAssertEqual(WindDownProtectionChoice.from(guardKind: .watchPlacement), .appShielding)
+        XCTAssertEqual(WindDownProtectionChoice.from(guardKind: .qrCode), .appShielding)
+        XCTAssertEqual(SessionGuardKind.watchPlacement.releaseCompatibleKind, .honorTimer)
+        XCTAssertEqual(SessionGuardKind.qrCode.releaseCompatibleKind, .honorTimer)
+    }
+
+    func testReplayPreservesTheCurrentNFCChoiceWithoutResettingProgress() {
+        let preferences = NightWatchPreferences(
+            bedtimeHour: 22,
+            bedtimeMinute: 0,
+            wakeHour: 7,
+            wakeMinute: 0,
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains,
+            guardKind: .nfcTag,
+            isConfigured: true
+        )
+
+        XCTAssertEqual(OnboardingDraft.replay(from: preferences).protectionChoice, .nfcAndAppShielding)
+    }
 }

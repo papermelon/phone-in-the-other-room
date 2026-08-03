@@ -133,9 +133,10 @@ final class FocusSessionCoordinator: ObservableObject {
                 idempotencyKey: "\(newRun.id.uuidString):session-started",
                 payload: ["startMethod": newRun.guardKind.rawValue]
             )
-            if !placementRequired {
-                reconcileShielding(for: newRun, at: Date())
-            }
+            // App shielding protects the quiet window from the moment the user taps
+            // Start. NFC/QR are placement evidence for the receipt, not a prerequisite
+            // for the countdown or the shield.
+            reconcileShielding(for: newRun, at: Date())
         }
         liveActivity.start(for: newRun)
         lastLiveActivityPhase = newRun.nightWatchPhase(at: Date())
@@ -156,10 +157,10 @@ final class FocusSessionCoordinator: ObservableObject {
             addEvent(
                 autoConfirmPlacement
                     ? "Automatic Wind Down started."
-                    : "Phone bed tap needed.",
+                    : "Wind Down is running. Tap the phone-bed tag when it is ready.",
                 detail: autoConfirmPlacement
                     ? "The registered NFC tag is still required to end normally."
-                    : "Tap the tag where your phone will rest."
+                    : "The countdown and any selected app shield start immediately; the tap records the phone bed."
             )
         case .honorTimer:
             break
@@ -265,7 +266,7 @@ final class FocusSessionCoordinator: ObservableObject {
     func applicationDidBecomeActive() {
         guard let currentRun = run,
               ![.completed, .endedEarly, .setup].contains(currentRun.state) else { return }
-        backgroundReturnMessage = "A quick check is okay. When you are ready, let the phone settle back into its bed."
+        backgroundReturnMessage = "Welcome back. Ollie is still on watch."
         if run?.guardKind == .watchPlacement, run?.placementStatus == .awaitingConfirmation {
             ollieMessage = "Ollie can try the Watch placement check again, or you can continue without it."
         }
@@ -312,9 +313,10 @@ final class FocusSessionCoordinator: ObservableObject {
             persistence.lastRun = storedRun
         }
         run = storedRun
-        if storedRun.placementStatus != .awaitingConfirmation {
-            reconcileShielding(for: storedRun)
-        }
+        // Placement evidence is independent from app shielding. Reconcile on every
+        // restore so the active screen can explain whether the selected apps are still
+        // protected even when the user has not tapped the NFC tag yet.
+        reconcileShielding(for: storedRun)
         liveActivity.start(for: storedRun)
         lastLiveActivityPhase = storedRun.nightWatchPhase()
         if Date() >= storedRun.plannedEndAt,
@@ -382,9 +384,7 @@ final class FocusSessionCoordinator: ObservableObject {
             return
         }
         self.run = run
-        if run.placementStatus != .awaitingConfirmation {
-            reconcileShielding(for: run, at: now)
-        }
+        reconcileShielding(for: run, at: now)
         let phase = run.nightWatchPhase(at: now)
         if phase != lastLiveActivityPhase {
             lastLiveActivityPhase = phase
@@ -621,6 +621,17 @@ final class FocusSessionCoordinator: ObservableObject {
             shieldProtectionEvidence: protection.evidence
         ) {
             persistence.upsertNightWatchRecord(record, now: date)
+        }
+    }
+
+    func reconcileShieldingNow(for run: FocusRun) {
+        reconcileShielding(for: run, at: Date())
+    }
+
+    func setLiveActivityEnabled(_ enabled: Bool) {
+        liveActivity.setEnabled(enabled)
+        if enabled, let run {
+            liveActivity.start(for: run)
         }
     }
 

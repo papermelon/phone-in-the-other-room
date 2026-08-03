@@ -27,7 +27,7 @@ final class DisabledFocusRunLiveActivityRemoteSink: FocusRunLiveActivityRemoteSi
 @MainActor
 final class FocusRunLiveActivityService {
     private let remoteSink: FocusRunLiveActivityRemoteSink
-    private let enabled: Bool
+    private var enabled: Bool
     private var tokenObservationTasks: [String: Task<Void, Never>] = [:]
     private var latestTokens: [String: Data] = [:]
     private var tokenGenerations: [String: Int] = [:]
@@ -40,6 +40,13 @@ final class FocusRunLiveActivityService {
     private var debugLastUpdateAt: Date?
 #endif
 
+    static let preferenceKey = "ollie.liveActivity.enabled"
+
+    static var preferenceEnabled: Bool {
+        guard UserDefaults.standard.object(forKey: preferenceKey) != nil else { return true }
+        return UserDefaults.standard.bool(forKey: preferenceKey)
+    }
+
     init(
         remoteSink: FocusRunLiveActivityRemoteSink? = nil,
         installationID: UUID = PersistenceService.shared.installationID,
@@ -47,9 +54,9 @@ final class FocusRunLiveActivityService {
     ) {
         let resolvedEnabled = enabled ?? Self.defaultEnabled
         self.enabled = resolvedEnabled
-        self.remoteSink = resolvedEnabled
-            ? (remoteSink ?? DisabledFocusRunLiveActivityRemoteSink())
-            : DisabledFocusRunLiveActivityRemoteSink()
+        // Keep the configured sink available if the user turns Live Activity on later
+        // from Settings; the enabled preference gates all activity work, not sink setup.
+        self.remoteSink = remoteSink ?? DisabledFocusRunLiveActivityRemoteSink()
         self.installationID = installationID
 #if DEBUG
         logger.debug("Live Activity policy enabled=\(resolvedEnabled, privacy: .public)")
@@ -65,6 +72,12 @@ final class FocusRunLiveActivityService {
         for task in tokenObservationTasks.values {
             task.cancel()
         }
+    }
+
+    func setEnabled(_ enabled: Bool) {
+        self.enabled = enabled
+        UserDefaults.standard.set(enabled, forKey: Self.preferenceKey)
+        if !enabled { endAll(reason: .reset) }
     }
 
     func start(for run: FocusRun) {
@@ -306,7 +319,7 @@ final class FocusRunLiveActivityService {
         if UserDefaults.standard.bool(forKey: "ollie.debug.enableLiveActivity") {
             return true
         }
-        return UserDefaults.standard.bool(forKey: "ollie.liveActivity.enabled")
+        return Self.preferenceEnabled
     }
 
     private func logActivityUpdate(reason: String) {
@@ -320,7 +333,7 @@ final class FocusRunLiveActivityService {
     }
 #else
     private static var defaultEnabled: Bool {
-        UserDefaults.standard.bool(forKey: "ollie.liveActivity.enabled")
+        Self.preferenceEnabled
     }
 #endif
 
@@ -352,6 +365,9 @@ final class FocusRunLiveActivityService {
 #else
 @MainActor
 final class FocusRunLiveActivityService {
+    static let preferenceKey = "ollie.liveActivity.enabled"
+    static var preferenceEnabled: Bool { true }
+    func setEnabled(_ enabled: Bool) {}
     func start(for run: FocusRun) {}
     func update(for run: FocusRun) {}
     func finish(for run: FocusRun) {}

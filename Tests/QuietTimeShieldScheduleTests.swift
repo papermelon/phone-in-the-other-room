@@ -79,6 +79,30 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
         XCTAssertFalse(snapshot.contains(nextDay.addingTimeInterval(2 * 60 * 60), in: .windDown))
     }
 
+    func testRepeatingScheduleCannotApplyBeforeItsFirstScheduledWindow() {
+        let calendar = Calendar.current
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: Date())!
+        let start = calendar.date(bySettingHour: 22, minute: 0, second: 0, of: tomorrow)!
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(60 * 60),
+            wakeTime: start.addingTimeInterval(9 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(9.5 * 60 * 60),
+            windDownMinutes: 60,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let snapshot = QuietTimeShieldScheduleBuilder.snapshot(
+            for: AutomaticWindDownSchedule(startedAt: start, plan: plan),
+            revision: 1
+        )
+
+        let sameClockTimeToday = calendar.date(bySettingHour: 22, minute: 15, second: 0, of: Date())!
+        XCTAssertTrue(snapshot.contains(sameClockTimeToday, in: .windDown))
+        XCTAssertFalse(snapshot.isEligible(at: sameClockTimeToday))
+        XCTAssertTrue(snapshot.isEligible(at: start))
+    }
+
     func testProtectionSummaryUsesObservedStatusWindows() {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         let plan = NightWatchPlan(

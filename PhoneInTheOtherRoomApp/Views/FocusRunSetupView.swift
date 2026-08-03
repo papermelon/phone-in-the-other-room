@@ -269,27 +269,47 @@ struct FocusRunSetupView: View {
     private var guardCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("Optional phone-bed check")
+                Text("How will you start?")
                     .font(AppTypography.headline)
-                HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: icon(for: viewModel.selectedGuardKind))
-                        .foregroundStyle(AppColors.grass)
-                    Picker(
-                        "Phone-bed check",
-                        selection: Binding(
-                            get: { viewModel.selectedGuardKind },
-                            set: viewModel.selectGuardKind
+                ForEach(WindDownProtectionChoice.allCases) { choice in
+                    Button {
+                        viewModel.selectProtectionChoice(choice)
+                    } label: {
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: choice.systemImage)
+                                .foregroundStyle(AppColors.grass)
+                            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                                Text(choice.title)
+                                    .font(AppTypography.body.weight(.semibold))
+                                Text(choice.detail)
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.muted)
+                            }
+                            Spacer()
+                            if viewModel.selectedGuardKind == choice.guardKind {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundStyle(AppColors.grass)
+                            }
+                        }
+                        .padding(AppSpacing.sm)
+                        .background(
+                            viewModel.selectedGuardKind == choice.guardKind
+                                ? AppColors.grass.opacity(0.16)
+                                : AppColors.surfaceMuted,
+                            in: RoundedRectangle(cornerRadius: AppRadius.md)
                         )
-                    ) {
-                        ForEach(availableGuardKinds) { kind in
-                            Text(kind.title).tag(kind)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: AppRadius.md)
+                                .stroke(
+                                    viewModel.selectedGuardKind == choice.guardKind
+                                        ? AppColors.grass
+                                        : AppColors.stroke.opacity(0.45),
+                                    lineWidth: 2
+                                )
                         }
                     }
-                    .pickerStyle(.menu)
+                    .buttonStyle(.plain)
                 }
-                Text(viewModel.selectedGuardKind.detail)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
 
                 if viewModel.selectedGuardKind == .nfcTag {
                     Divider()
@@ -321,42 +341,28 @@ struct FocusRunSetupView: View {
                 }
 
                 Divider()
-                Toggle(
-                    "Shield selected apps during the two quiet windows",
-                    isOn: Binding(
-                        get: { viewModel.shieldingEnabled },
-                        set: viewModel.setShieldingEnabled
-                    )
-                )
-                .font(AppTypography.caption)
-                Text("The shield lifts overnight and returns for morning quiet. Ending Wind Down always opens your apps again.")
+                Text("Selected apps rest during both quiet windows. The shield lifts overnight and returns for morning quiet.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
 
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
-                if viewModel.shieldingEnabled {
-                    if viewModel.screenTimeAuthorization != .approved {
-                        Button("Allow Screen Time access", action: viewModel.connectScreenTime)
-                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    } else if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
-                        Button("Choose apps to rest", action: { showBedtimeAppPicker = true })
-                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    } else {
-                        Text(viewModel.bedtimeActivitySelection.phoneOtherSelectionSummary)
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.grass)
-                        Button("Change shielded apps", action: { showBedtimeAppPicker = true })
-                            .font(AppTypography.caption)
-                            .buttonStyle(.plain)
-                    }
+                if viewModel.screenTimeAuthorization != .approved {
+                    Button("Allow Screen Time access", action: viewModel.connectScreenTime)
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                } else if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
+                    Button("Choose apps to rest", action: { showBedtimeAppPicker = true })
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                } else {
+                    Text(viewModel.bedtimeActivitySelection.phoneOtherSelectionSummary)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.grass)
+                    Button("Change shielded apps", action: { showBedtimeAppPicker = true })
+                        .font(AppTypography.caption)
+                        .buttonStyle(.plain)
                 }
 #endif
             }
         }
-    }
-
-    private var availableGuardKinds: [SessionGuardKind] {
-        [.honorTimer, .watchPlacement, .qrCode, .nfcTag]
     }
 
     private func loadPurpose() {
@@ -376,14 +382,6 @@ struct FocusRunSetupView: View {
         )
     }
 
-    private func icon(for kind: SessionGuardKind) -> String {
-        switch kind {
-        case .honorTimer: return "moon.stars.fill"
-        case .watchPlacement: return "applewatch"
-        case .qrCode: return "qrcode.viewfinder"
-        case .nfcTag: return "dot.radiowaves.left.and.right"
-        }
-    }
 }
 
 #Preview("Wind Down setup") {
@@ -395,7 +393,7 @@ struct FocusRunSetupView: View {
 
 #Preview("Phone bed setup") {
     let viewModel = FocusRunViewModel()
-    viewModel.selectedGuardKind = .qrCode
+    viewModel.selectedGuardKind = .nfcTag
     return NavigationStack {
         FocusRunSetupView()
             .environmentObject(viewModel)

@@ -52,6 +52,7 @@
 		16A627C070EC4B2E61F0522E /* QuietTimeShieldSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */; };
 		18A633080F67D0857D232FF7 /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		18F2093A10D393AACA07AAE7 /* NightWatchGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE29836613BFD365670A422D /* NightWatchGuidance.swift */; };
+		19380974B054B81345E46B5D /* ShieldingReadinessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D680879F94FF3E85B2EFD703 /* ShieldingReadinessTests.swift */; };
 		1941CDDA71EE847524A3B75B /* FocusAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CB9D7F6CBF2FB36B03D2B /* FocusAnalytics.swift */; };
 		197411141A63E80355738EF3 /* PhoneInTheOtherRoomShieldConfiguration.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7069088917330301D9C04EFA /* PhoneInTheOtherRoomShieldConfiguration.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1AC01546472596D97D4A6AEC /* CompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F6F711960B149665B4E5B3 /* CompletionView.swift */; };
@@ -190,6 +191,7 @@
 		8AE121BA5F141048ECD0DC61 /* PixelComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B1C7F90F0227A8698B5810 /* PixelComponents.swift */; };
 		8B4DEC6550469552CDB1B1C1 /* ImpactDataSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A86147F5D5B2180BAA8BA8B /* ImpactDataSyncService.swift */; };
 		8C02F5FCB6CDD0EEED58B202 /* FocusSessionCoordinator+Placement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A59E63A5A08D69CE438ADC /* FocusSessionCoordinator+Placement.swift */; };
+		8C040AF0D9861E10FD7A51A3 /* OneTimeWindDownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26696537FFC9ED29A0E56EAC /* OneTimeWindDownView.swift */; };
 		8D1F57D53E73D6520D3D07B5 /* QuietTimeShielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F0FF354B369E470C16D40BB /* QuietTimeShielding.swift */; };
 		8D615D998EBD9CE46593E27D /* QuietTimeShielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F0FF354B369E470C16D40BB /* QuietTimeShielding.swift */; };
 		90449FB36FFEA4E6CF85A0F3 /* NightWatchHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 766D336119CCB55800F75535 /* NightWatchHistory.swift */; };
@@ -198,6 +200,7 @@
 		9231532DB21D8BA62B882180 /* FocusRunLiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5651C224C107445FDB3F11A9 /* FocusRunLiveActivityService.swift */; };
 		93EF975DB44538C09E74A8C4 /* AppFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984770912E1D1E0E0B021EAD /* AppFeedback.swift */; };
 		947B76D4DEB5EFC131A0B7C0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3DF58B2DAC7FE37451EAB87E /* Assets.xcassets */; };
+		94B52E74CBC9028BAA594252 /* WindDownTimingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC2F309C1511BAC0E1BAB3E /* WindDownTimingView.swift */; };
 		959369B16F5FE7DAC42714B7 /* AppFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984770912E1D1E0E0B021EAD /* AppFeedback.swift */; };
 		965610B95C3C084187C76393 /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		971F7DD50AAACE214B72185C /* ProximityClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2586E1A7522D7966AA2BC040 /* ProximityClassifierTests.swift */; };
@@ -233,6 +236,7 @@
 		B0376077510B42D6E6F87558 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = D8CEDD69B8BA8086BA8D14AF /* Supabase */; };
 		B0B7903882659D29B1B0B02F /* MonthlyNightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D900184B3424BC293A70642 /* MonthlyNightsView.swift */; };
 		B1C913224ABD7368AB62D6EA /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
+		B2CB6A205E0FD10033F7874A /* QuietAppearanceGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2648F8F243E1A0905362E325 /* QuietAppearanceGuideView.swift */; };
 		B3F593924D0C732409BA2DE3 /* WindDownGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B90812500022857C5B05D0 /* WindDownGuidance.swift */; };
 		B438091A3DFCCCAF64F23ED5 /* GameComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4AFA2769B1B9866001DB88D /* GameComponents.swift */; };
 		B46E8AAB04BE67F0ED9C42CB /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
@@ -432,6 +436,8 @@
 		22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepPosterBoard.swift; sourceTree = "<group>"; };
 		2586E1A7522D7966AA2BC040 /* ProximityClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityClassifierTests.swift; sourceTree = "<group>"; };
 		2620AED0BA47E2FAE4DEBE19 /* ScreenTimeAuthorizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeAuthorizationService.swift; sourceTree = "<group>"; };
+		2648F8F243E1A0905362E325 /* QuietAppearanceGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietAppearanceGuideView.swift; sourceTree = "<group>"; };
+		26696537FFC9ED29A0E56EAC /* OneTimeWindDownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OneTimeWindDownView.swift; sourceTree = "<group>"; };
 		29FA54459D95BF429B1EFE21 /* FocusRunLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunLiveActivityWidget.swift; sourceTree = "<group>"; };
 		2BB818D5B54187115526B4B5 /* FarmPresentationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmPresentationComponents.swift; sourceTree = "<group>"; };
 		2DC676E8259E7A18655B6986 /* PhoneInTheOtherRoomDeviceActivityMonitor.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneInTheOtherRoomDeviceActivityMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -536,6 +542,7 @@
 		D4113F19928774AB76ADD89B /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D44FA990E29BDE6E86D8D178 /* PhoneInTheOtherRoomWatchApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneInTheOtherRoomWatchApp.entitlements; sourceTree = "<group>"; };
 		D5B830DE525CC379D8E1929C /* WatchMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchMessage.swift; sourceTree = "<group>"; };
+		D680879F94FF3E85B2EFD703 /* ShieldingReadinessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldingReadinessTests.swift; sourceTree = "<group>"; };
 		D6F6F711960B149665B4E5B3 /* CompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionView.swift; sourceTree = "<group>"; };
 		D7A5B2FCF076AA7FED2F8CAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D7B90812500022857C5B05D0 /* WindDownGuidance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidance.swift; sourceTree = "<group>"; };
@@ -558,6 +565,7 @@
 		F600DE2E47379444ABD60760 /* RewardShelfViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardShelfViewModel.swift; sourceTree = "<group>"; };
 		F84A62CA21C3BA39AD9587BE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		FA6981F038801F2E19A264F5 /* NightWatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightWatchTests.swift; sourceTree = "<group>"; };
+		FCC2F309C1511BAC0E1BAB3E /* WindDownTimingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownTimingView.swift; sourceTree = "<group>"; };
 		FCE67F996AC2C3BDD00A1717 /* ActiveRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRunView.swift; sourceTree = "<group>"; };
 		FDF622225F600D7D4FE48BB2 /* QuietWindowDurationEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietWindowDurationEditor.swift; sourceTree = "<group>"; };
 		FE29836613BFD365670A422D /* NightWatchGuidance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightWatchGuidance.swift; sourceTree = "<group>"; };
@@ -659,6 +667,7 @@
 				D8A6A44FF65DC1B46C80557C /* QuietTimeShieldScheduleTests.swift */,
 				008E2862DEB041FA57F918F7 /* RewardEngineTests.swift */,
 				7A8A6295962D940E55C5992D /* SheepSearchTests.swift */,
+				D680879F94FF3E85B2EFD703 /* ShieldingReadinessTests.swift */,
 				5F762568D06F843D2FB6D7EF /* WindDownGuidanceTests.swift */,
 				01E1609869578CBA439CC5D9 /* WindDownSchedulingTests.swift */,
 			);
@@ -781,9 +790,12 @@
 				0D900184B3424BC293A70642 /* MonthlyNightsView.swift */,
 				986993A5FA41631E86B7C253 /* MoreView.swift */,
 				1475062F8198CD34FBC569B2 /* NotificationSettingsView.swift */,
+				26696537FFC9ED29A0E56EAC /* OneTimeWindDownView.swift */,
 				0B97166551A0616FC19980F1 /* PixelHomeDashboard.swift */,
+				2648F8F243E1A0905362E325 /* QuietAppearanceGuideView.swift */,
 				844AB1C45E211CDC829A1DCB /* RewardShelfView.swift */,
 				51FAF688D8A212C225F11384 /* WindDownScheduleView.swift */,
+				FCC2F309C1511BAC0E1BAB3E /* WindDownTimingView.swift */,
 				2FE380081A872D395BE61323 /* Components */,
 				D659BE7A19CFBF29D88A511C /* MVP */,
 				114A3BB936871B096EC20FBD /* Onboarding */,
@@ -1270,6 +1282,7 @@
 				092EFEC1B9BBB76919B70B0F /* OnboardingComponents.swift in Sources */,
 				65AE09A354BE88B1A243989E /* OnboardingFlowView.swift in Sources */,
 				F7290AE9C38CBD6A47A8F92D /* OnboardingStepViews.swift in Sources */,
+				8C040AF0D9861E10FD7A51A3 /* OneTimeWindDownView.swift in Sources */,
 				C1A85EF813C789BD7F99EE24 /* PersistenceService.swift in Sources */,
 				128169DDC1EF031A31A9A78B /* PhoneBedNFCService.swift in Sources */,
 				AB36BE09CAA40FBE05F747B4 /* PhoneBedTag.swift in Sources */,
@@ -1280,6 +1293,7 @@
 				4BF9A33D59F9294484ECFFBA /* PixelHomeDashboard.swift in Sources */,
 				0368E6CDF477802E1CB27BFE /* ProximityClassifier.swift in Sources */,
 				7F66FEEADED6A9FADED39DBD /* QRCodeScannerView.swift in Sources */,
+				B2CB6A205E0FD10033F7874A /* QuietAppearanceGuideView.swift in Sources */,
 				51A43E02843BD6E81D0FCB46 /* QuietTimeShieldSchedule.swift in Sources */,
 				8D615D998EBD9CE46593E27D /* QuietTimeShielding.swift in Sources */,
 				F48377902D560C8420220FC8 /* QuietTimeShieldingService.swift in Sources */,
@@ -1312,6 +1326,7 @@
 				BE6C24537600EBF99A5AC5ED /* WindDownPhaseProgressView.swift in Sources */,
 				26CD1CC386B3C3B0CA484E33 /* WindDownScheduleView.swift in Sources */,
 				B1C913224ABD7368AB62D6EA /* WindDownScheduling.swift in Sources */,
+				94B52E74CBC9028BAA594252 /* WindDownTimingView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1556,6 +1571,7 @@
 				06222F258AB04598CF778599 /* SheepPosterBoard.swift in Sources */,
 				CD6A523A3741BCA874E592BD /* SheepSearch.swift in Sources */,
 				0E8B87444B0FEA1FDB8EC9B9 /* SheepSearchTests.swift in Sources */,
+				19380974B054B81345E46B5D /* ShieldingReadinessTests.swift in Sources */,
 				D7408280A98EB7A1069D30A3 /* SleepIntervalMath.swift in Sources */,
 				F719DE4F31521670DCD32C67 /* WatchMessage.swift in Sources */,
 				10BD067878870884774F6DE9 /* WindDownGuidance.swift in Sources */,
@@ -1636,7 +1652,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 9;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 4KZQPZR47B;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -1729,7 +1745,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 9;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 4KZQPZR47B;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

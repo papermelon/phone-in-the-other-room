@@ -21,6 +21,7 @@ final class NightJourneyProgressTests: XCTestCase {
         XCTAssertEqual(midway.segment, .mountain)
         XCTAssertEqual(finished.fraction, 1, accuracy: 0.001)
         XCTAssertEqual(finished.segment, .sunrise)
+        XCTAssertEqual(finished.illustratedMiles, NightJourneyProgress.illustratedTrailMiles, accuracy: 0.001)
     }
 
     func testAdditionalQuietStartsAtItsOwnInterval() {
@@ -28,6 +29,7 @@ final class NightJourneyProgressTests: XCTestCase {
         let plan = NightWatchPlan.additionalQuiet(start: start, end: start.addingTimeInterval(60 * 60))
         let progress = NightJourneyProgress.resolve(plan: plan, at: start.addingTimeInterval(30 * 60))
         XCTAssertEqual(progress.fraction, 0.5, accuracy: 0.001)
+        XCTAssertEqual(progress.illustratedMiles, NightJourneyProgress.illustratedTrailMiles / 2, accuracy: 0.001)
     }
 
     func testMalformedZeroDurationPlanDoesNotProduceNaN() {

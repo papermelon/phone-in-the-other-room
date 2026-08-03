@@ -5,7 +5,6 @@ struct HomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var pingBannerVisible = false
     @State private var selectedTab: MainAppTab = .home
-    @State private var showMoreSheet = false
 
     var body: some View {
         NavigationStack {
@@ -13,7 +12,7 @@ struct HomeView: View {
                 AppColors.paper.ignoresSafeArea()
                 VStack(spacing: 0) {
                     if showChrome {
-                        CountingSheepTopBar { showMoreSheet = true }
+                        CountingSheepTopBar()
                             .padding(.horizontal, 18)
                             .padding(.top, 10)
                     }
@@ -57,6 +56,18 @@ struct HomeView: View {
             } message: {
                 Text("Counting Sheep can't turn on Sleep Focus for you. You can switch it on in Control Center, then continue.")
             }
+            .alert("App shielding needs a quick check", isPresented: Binding(
+                get: { viewModel.shieldingPreflightMessage != nil },
+                set: { if !$0 { viewModel.shieldingPreflightMessage = nil } }
+            )) {
+                Button("Keep phone-away mode", role: .cancel) {
+                    viewModel.shieldingEnabled = false
+                    UserDefaults.standard.set(false, forKey: QuietTimeShieldingService.enabledKey)
+                }
+                Button("OK") { viewModel.shieldingPreflightMessage = nil }
+            } message: {
+                Text(viewModel.shieldingPreflightMessage ?? "")
+            }
             .onAppear {
                 viewModel.applyShortcutPreparationIfNeeded()
                 routePendingNotificationIfNeeded()
@@ -80,12 +91,6 @@ struct HomeView: View {
                     status: viewModel.qrCodeStatus,
                     onCode: viewModel.acceptQRCode
                 )
-            }
-            .sheet(isPresented: $showMoreSheet) {
-                NavigationStack {
-                    MoreView()
-                        .environmentObject(viewModel)
-                }
             }
             .toolbar(.hidden, for: .navigationBar)
         }
@@ -119,6 +124,9 @@ struct HomeView: View {
                     .environmentObject(viewModel)
             case .farm:
                 FarmView()
+                    .environmentObject(viewModel)
+            case .settings:
+                SettingsView()
                     .environmentObject(viewModel)
             }
         }

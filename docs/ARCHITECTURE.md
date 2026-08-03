@@ -97,7 +97,9 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ FocusStatsView.swift                     concise seven-day Nights history + reports
 │  ├─ MonthlyNightsView.swift                  month calendar, day drill-down, period detail
 │  ├─ FarmView.swift                           shipping flock view backed by SheepSearchState
-│  ├─ MoreView.swift                           configuration, connections, privacy, help
+│  ├─ MoreView.swift                           Settings root: configuration, connections, privacy, help
+│  ├─ WindDownTimingView.swift                  compact saved schedule editor
+│  ├─ OneTimeWindDownView.swift                 bounded additional quiet editor
 │  ├─ FeedbackFormView.swift                   validated form + email fallback
 │  ├─ RewardShelfView.swift                    Debug internal preview only
 │  ├─ Components/QRCodeScannerView.swift       QR phone-bed scanner + manual fallback
@@ -198,7 +200,7 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    bookends, optional Apple Health sleep context, and an explicit Screen Time availability
    state. The separate Nights tab stays finite and observational: seven-day results, monthly
    drill-down, reflection, Health context, and consented selected-app results. Farm owns the
-   flock presentation; More owns plan and report configuration. Chosen report windows do not
+   flock presentation; Settings owns plan and report configuration. Chosen report windows do not
    alter Quiet Time. Missing data is never estimated.
 
 ### Backgrounding during a run
@@ -219,9 +221,10 @@ WidgetKit timeline for phase changes, so the optional backend sends bedtime and 
 updates in addition to the final end event. It is requested with `pushType: .token`, and
 `FocusRunLiveActivityService` observes every token rotation, associates it with the run and
 ActivityKit activity IDs, and emits only a short SHA-256 fingerprint to diagnostics. The
-feature is disabled by default while the widget target remains available for controlled A/B
-profiling; DEBUG can opt in with `-ollie.debug.enableLiveActivity YES`. The remote sink is also
-disabled in the local configurations. Without it, iOS can mark the activity stale at
+local Live Activity is enabled by default for new installs and can be turned off in Settings;
+DEBUG can force either state with `-ollie.debug.enableLiveActivity YES` or
+`-ollie.debug.disableLiveActivity YES`. The remote sink is also disabled in the local
+configurations. Without it, iOS can mark the activity stale at
 the planned end but cannot
 dismiss it until the app next finishes or restores the run; the local completion
 notification and app-reopen reconciliation remain the completion fallbacks. See

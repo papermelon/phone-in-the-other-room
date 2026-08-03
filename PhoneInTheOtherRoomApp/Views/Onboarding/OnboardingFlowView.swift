@@ -8,17 +8,24 @@ struct OnboardingFlowView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var draft: OnboardingDraft
     @State private var isRequestingPermission = false
-#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+    #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     @State private var showScreenTimePicker = false
-#endif
+    #endif
     let onComplete: () -> Void
+    let onCancel: (() -> Void)?
 
-    init(onComplete: @escaping () -> Void) {
+    init(
+        initialDraft: OnboardingDraft? = nil,
+        onComplete: @escaping () -> Void,
+        onCancel: (() -> Void)? = nil
+    ) {
         _draft = State(
-            initialValue: PersistenceService.shared.onboardingDraft
+            initialValue: initialDraft
+                ?? PersistenceService.shared.onboardingDraft
                 ?? OnboardingDraft.defaults()
         )
         self.onComplete = onComplete
+        self.onCancel = onCancel
     }
 
     var body: some View {
@@ -34,6 +41,7 @@ struct OnboardingFlowView: View {
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, AppSpacing.sm)
             }
+            .id(draft.step)
 
             OnboardingPrimaryButton(
                 title: draft.step == .ready ? "Save my Wind Down" : "Continue",
@@ -45,6 +53,13 @@ struct OnboardingFlowView: View {
             .padding(.bottom, AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
+        .toolbar {
+            if let onCancel {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", action: onCancel)
+                }
+            }
+        }
         .foregroundStyle(AppColors.ink)
         .onChange(of: draft) { _, updatedDraft in
             viewModel.saveOnboardingDraft(updatedDraft)
@@ -86,7 +101,8 @@ struct OnboardingFlowView: View {
 
     private var canContinue: Bool {
         guard draft.step == .protection else { return true }
-        return draft.protectionChoice != .nfcAndAppShielding || viewModel.hasRegisteredNFCTag
+        guard draft.protectionChoice != .nfcAndAppShielding || viewModel.hasRegisteredNFCTag else { return false }
+        return !draft.shieldingEnabled || viewModel.shieldingReadiness == .ready
     }
 
     private func previousStep() {
@@ -96,7 +112,7 @@ struct OnboardingFlowView: View {
 
     private func advance() {
         if draft.step == .protection {
-            draft.shieldingEnabled = viewModel.hasSelectedShieldingApps
+            draft.shieldingEnabled = draft.shieldingEnabled && viewModel.hasSelectedShieldingApps
         }
 
         if draft.step == .automaticStart, draft.remindersEnabled, draft.automaticStartEnabled {

@@ -4,6 +4,8 @@ struct PixelHomeDashboard: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @ObservedObject private var watch: WatchConnectivityManager
     @State private var showRunSetup = false
+    @State private var showTimingEditor = false
+    @State private var showOneTimeWindDown = false
 
     init(watch: WatchConnectivityManager = .shared) {
         self._watch = ObservedObject(initialValue: watch)
@@ -17,6 +19,7 @@ struct PixelHomeDashboard: View {
             watchReachable: watch.isReachable,
             canBeginNow: viewModel.canBeginNightWatchNow,
             isNFCTagReady: viewModel.hasRegisteredNFCTag,
+            hasOneTimeWindDown: viewModel.nextWindDownOverride?.role == .additionalQuiet,
             onPrimaryAction: {
                 let methodIsReady = viewModel.selectedGuardKind != .nfcTag
                     || viewModel.hasRegisteredNFCTag
@@ -28,10 +31,19 @@ struct PixelHomeDashboard: View {
                     showRunSetup = true
                 }
             },
-            onAdjust: { showRunSetup = true }
+            onEditTiming: { showTimingEditor = true },
+            onOneTimeWindDown: { showOneTimeWindDown = true }
         )
         .navigationDestination(isPresented: $showRunSetup) {
             FocusRunSetupView()
+                .environmentObject(viewModel)
+        }
+        .navigationDestination(isPresented: $showTimingEditor) {
+            WindDownTimingView()
+                .environmentObject(viewModel)
+        }
+        .navigationDestination(isPresented: $showOneTimeWindDown) {
+            OneTimeWindDownView()
                 .environmentObject(viewModel)
         }
     }
@@ -44,14 +56,20 @@ private struct PixelHomeDashboardContent: View {
     var watchReachable: Bool
     var canBeginNow: Bool
     var isNFCTagReady: Bool
+    var hasOneTimeWindDown: Bool
     var onPrimaryAction: () -> Void
-    var onAdjust: () -> Void
+    var onEditTiming: () -> Void
+    var onOneTimeWindDown: () -> Void
 
     private var latestNight: DailyFocusRecord? { progress.recentFocusRecords.first }
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
-            NightWatchOverviewBlock(preferences: preferences, latestNight: latestNight)
+            NightWatchOverviewBlock(
+                preferences: preferences,
+                latestNight: latestNight,
+                onEdit: onEditTiming
+            )
 
             OllieRitualView(state: .ready, size: 152)
                 .accessibilityLabel("Ollie is ready for tonight's Wind Down")
@@ -74,10 +92,10 @@ private struct PixelHomeDashboardContent: View {
                 action: onPrimaryAction
             )
 
-            if preferences.isConfigured {
-                Button("Edit Plan", action: onAdjust)
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
-            }
+            OneTimeWindDownCard(
+                hasScheduledOverride: hasOneTimeWindDown,
+                action: onOneTimeWindDown
+            )
 
             if preferences.guardKind == .watchPlacement {
                 watchStatus
@@ -125,9 +143,11 @@ private struct PixelHomeDashboardContent: View {
 private struct NightWatchOverviewBlock: View {
     var preferences: NightWatchPreferences
     var latestNight: DailyFocusRecord?
+    var onEdit: () -> Void
 
     var body: some View {
-        PixelCard {
+        Button(action: onEdit) {
+            PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 HStack {
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
@@ -165,8 +185,11 @@ private struct NightWatchOverviewBlock: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }
+                }
             }
         }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens your Wind Down and sleep window")
     }
 
     private var scheduleLabel: String {
@@ -192,6 +215,36 @@ private struct NightWatchOverviewBlock: View {
     }
 }
 
+private struct OneTimeWindDownCard: View {
+    var hasScheduledOverride: Bool
+    var action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            PixelCard {
+                HStack(spacing: AppSpacing.md) {
+                    Image(systemName: "sparkles")
+                        .font(.title2.weight(.black))
+                        .foregroundStyle(AppColors.grass)
+                        .frame(width: 30)
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                        Text("One-Time Wind Down")
+                            .font(AppTypography.headline)
+                        Text(hasScheduledOverride ? "A quiet period is ready for today." : "Make room for quiet at another point in the day.")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .foregroundStyle(AppColors.muted)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens a one-time additional quiet period")
+    }
+}
+
 #Preview("Quiet home") {
     NavigationStack {
         ScrollView {
@@ -202,8 +255,10 @@ private struct NightWatchOverviewBlock: View {
                 watchReachable: false,
                 canBeginNow: false,
                 isNFCTagReady: false,
+                hasOneTimeWindDown: false,
                 onPrimaryAction: {},
-                onAdjust: {}
+                onEditTiming: {},
+                onOneTimeWindDown: {}
             )
             .padding(AppSpacing.md)
         }
@@ -233,8 +288,10 @@ private struct NightWatchOverviewBlock: View {
                 watchReachable: false,
                 canBeginNow: false,
                 isNFCTagReady: false,
+                hasOneTimeWindDown: false,
                 onPrimaryAction: {},
-                onAdjust: {}
+                onEditTiming: {},
+                onOneTimeWindDown: {}
             )
             .padding(AppSpacing.md)
         }

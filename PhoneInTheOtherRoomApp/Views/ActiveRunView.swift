@@ -38,7 +38,7 @@ struct ActiveRunView: View {
         .navigationTitle(run?.isNightWatch == true ? "Wind Down" : "Phone-away time")
         .navigationBarTitleDisplayMode(.inline)
         .alert(
-            "End Wind Down without the tag?",
+            "End Wind Down early?",
             isPresented: $showEmergencyExitConfirmation
         ) {
             Button("Keep Wind Down running", role: .cancel) {}
@@ -46,7 +46,7 @@ struct ActiveRunView: View {
                 viewModel.emergencyEndWindDown()
             }
         } message: {
-            Text("This immediately lifts any app shields and records that the tag was bypassed.")
+            Text("This immediately lifts any app shields and ends this Wind Down early.")
         }
         .alert(
             "Pair a new phone-bed tag?",
@@ -62,32 +62,38 @@ struct ActiveRunView: View {
     }
 
     private func nightWatchBody(run: FocusRun) -> some View {
-        VStack(spacing: AppSpacing.sm) {
-            NightJourneyView(run: run, reduceMotion: reduceMotion)
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(phase?.title.uppercased() ?? "OLLIE IS ON WATCH")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                Text(headline)
-                    .font(AppTypography.headline)
-                Text(timerInterval: countdownInterval, countsDown: true, showsHours: true)
-                    .font(.system(size: 34, weight: .black, design: .monospaced))
-                    .monospacedDigit()
-                    .accessibilityLabel(timerAccessibilityLabel)
-                Text(transitionCaption)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
+        ScrollView {
+            VStack(spacing: AppSpacing.md) {
+                NightJourneyView(run: run, reduceMotion: reduceMotion)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(phase?.title.uppercased() ?? "OLLIE IS ON WATCH")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    Text(headline)
+                        .font(AppTypography.headline)
+                    Text(timerInterval: countdownInterval, countsDown: true, showsHours: true)
+                        .font(.system(size: 34, weight: .black, design: .monospaced))
+                        .monospacedDigit()
+                        .accessibilityLabel(timerAccessibilityLabel)
+                    Text(transitionCaption)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                if run.placementStatus == .awaitingConfirmation {
+                    ritualStatus
+                } else if let message = viewModel.coordinator.backgroundReturnMessage {
+                    returnBanner(message)
+                }
+                if let message = viewModel.coordinator.shieldingMessage {
+                    shieldingBanner(message)
+                }
+                actions
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            if run.placementStatus == .awaitingConfirmation {
-                ritualStatus
-            } else if let message = viewModel.coordinator.backgroundReturnMessage {
-                returnBanner(message)
-            }
-            actions
+            .padding(AppSpacing.md)
         }
-        .padding(AppSpacing.md)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .scrollIndicators(.hidden)
+        .saturation(viewModel.quietAppearanceEnabled ? 0.15 : 1)
     }
 
     private var hero: some View {
@@ -277,45 +283,31 @@ struct ActiveRunView: View {
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
             }
 
-            if guardKind == .nfcTag, run?.isNightWatch == true {
-                Button {
-                    viewModel.requestEndWindDown()
-                } label: {
-                    Label("Tap tag to end Wind Down", systemImage: "dot.radiowaves.left.and.right")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(PixelPrimaryButtonStyle())
-                .accessibilityHint("Scans the registered phone-bed tag before ending Wind Down")
-
-                if !viewModel.nfcStatus.isEmpty {
-                    Text(viewModel.nfcStatus)
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(AppColors.secondaryText)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
+            if guardKind == .nfcTag,
+               run?.isNightWatch == true,
+               run?.placementStatus != .awaitingConfirmation {
                 DisclosureGroup(
-                    "Can't access your tag?",
+                    "Need your phone early?",
                     isExpanded: $emergencyExitExpanded
                 ) {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("The emergency exit is always available if the tag is lost or unreachable.")
-                            .font(pixelFont(.caption))
+                        Text("The tag has already confirmed the phone bed. Ollie keeps watch until the scheduled finish.")
+                            .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                         Button("Pair a replacement tag") {
                             showNFCTagReplacementConfirmation = true
                         }
-                        .font(pixelFont(.caption))
+                        .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
-                        Button("End without tag") {
+                        Button("End Wind Down early") {
                             showEmergencyExitConfirmation = true
                         }
-                        .font(pixelFont(.caption))
+                        .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                     }
                     .padding(.top, AppSpacing.xs)
                 }
-                .font(pixelFont(.caption))
+                .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
             } else {
                 Button(run?.isNightWatch == true ? "End Wind Down early" : "End early") {
@@ -328,12 +320,30 @@ struct ActiveRunView: View {
     }
 
     private func returnBanner(_ message: String) -> some View {
-        Text(message)
-            .font(pixelFont(.caption))
+        Label(message, systemImage: "arrow.uturn.backward.circle.fill")
+            .font(AppTypography.caption)
             .foregroundStyle(AppColors.secondaryText)
-            .padding(12)
+            .padding(AppSpacing.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.sky.opacity(0.18), in: RoundedRectangle(cornerRadius: AppRadius.md))
+            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
+    }
+
+    private func shieldingBanner(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Label(message, systemImage: "iphone.slash")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+            if viewModel.shieldingReadiness == .ready {
+                Button("Try app shielding again") {
+                    viewModel.retryShielding()
+                }
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.grass)
+            }
+        }
+        .padding(AppSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
     }
 
     private var headline: String {

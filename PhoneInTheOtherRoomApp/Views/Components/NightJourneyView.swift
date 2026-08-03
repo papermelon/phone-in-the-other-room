@@ -4,6 +4,10 @@ struct NightJourneyView: View {
     let run: FocusRun
     let reduceMotion: Bool
 
+    private let environmentAsset = "farm_hills_side_scroll_test"
+    private let environmentAspectRatio: CGFloat = 1983.0 / 793.0
+    private let scrollCycleDuration: TimeInterval = 18
+
     private func journey(at date: Date) -> NightJourneyProgress {
         guard let plan = run.nightWatchPlan else {
             return NightJourneyProgress(fraction: 0, segment: .prairie)
@@ -12,81 +16,178 @@ struct NightJourneyView: View {
     }
 
     var body: some View {
-        TimelineView(.periodic(from: Date(), by: 60)) { context in
+        TimelineView(.animation(minimumInterval: 0.14, paused: reduceMotion)) { context in
             let journey = journey(at: context.date)
             GeometryReader { proxy in
-                ZStack(alignment: .bottom) {
-                    sky(for: journey.segment)
-                    hills(for: journey.segment)
-                    PixelAssetImage(name: AssetSlot.Dog.focused)
-                        .frame(width: 76, height: 76)
-                        .offset(x: (reduceMotion ? 0 : CGFloat(journey.fraction) * proxy.size.width * 0.55) - proxy.size.width * 0.28, y: -18)
-                        .animation(reduceMotion ? nil : .easeInOut(duration: 1.2), value: journey.fraction)
-                        .accessibilityLabel("Ollie on the \(journey.segment.title.lowercased())")
-                    HStack {
-                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text(journey.segment.title.uppercased())
-                                .font(pixelFont(.caption2))
-                                .foregroundStyle(.white.opacity(0.86))
-                            Text("Ollie is \(Int(journey.fraction * 100))% along the quiet trail")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(.white)
+                let size = proxy.size
+                ZStack {
+                    sceneBackground(for: journey.segment, size: size, at: context.date)
+                    OllieWalkCycleView(
+                        state: ollieState(for: journey.segment),
+                        frame: reduceMotion ? 0 : walkFrame(at: context.date),
+                        size: min(112, size.width * 0.28)
+                    )
+                        .position(
+                            x: size.width * 0.38,
+                            y: ollieGroundY(for: size)
+                        )
+                    VStack {
+                        HStack(alignment: .top) {
+                            sceneBadge(
+                                title: journey.segment.title.uppercased(),
+                                detail: "Ollie is on watch"
+                            )
+                            Spacer()
+                            sceneBadge(
+                                title: String(format: "%.1f MI", journey.illustratedMiles),
+                                detail: "ILLUSTRATED TRAIL"
+                            )
                         }
                         Spacer()
+                        HStack {
+                            Text("A quiet trail, one step at a time.")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(.white.opacity(0.92))
+                                .padding(.horizontal, AppSpacing.sm)
+                                .padding(.vertical, AppSpacing.xs)
+                                .background(.black.opacity(0.28), in: Capsule())
+                            Spacer()
+                        }
                     }
                     .padding(AppSpacing.sm)
-                    .background(.black.opacity(0.25), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-                    .padding(AppSpacing.sm)
                 }
+                .frame(width: size.width, height: size.height)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                        .stroke(AppColors.stroke.opacity(0.48), lineWidth: 2)
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(
+                    "Ollie on the \(journey.segment.title.lowercased), \(Int(journey.fraction * 100)) percent along the illustrated quiet trail"
+                )
             }
         }
-        .frame(height: 190)
-        .accessibilityElement(children: .contain)
+        .aspectRatio(16.0 / 9.0, contentMode: .fit)
     }
 
-    private func sky(for segment: NightJourneySegment) -> some View {
+    private func sceneBackground(
+        for segment: NightJourneySegment,
+        size: CGSize,
+        at date: Date
+    ) -> some View {
         ZStack {
-            PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
-            LinearGradient(
-                colors: [overlayColor(for: segment).opacity(0.2), overlayColor(for: segment).opacity(0.64)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            scrollingEnvironment(size: size, at: date)
+            atmosphere(for: segment)
             if segment == .moonlit {
                 Circle()
-                    .fill(AppColors.wool.opacity(0.86))
-                    .frame(width: 42, height: 42)
-                    .overlay(Circle().fill(AppColors.ink).offset(x: 12, y: -6))
-                    .offset(x: 110, y: -48)
+                    .fill(AppColors.wool.opacity(0.9))
+                    .frame(width: 34, height: 34)
+                    .overlay(Circle().fill(AppColors.ink).offset(x: 10, y: -4))
+                    .offset(x: size.width * 0.29, y: -size.height * 0.22)
             } else if segment == .sunrise {
                 Circle()
-                    .fill(AppColors.amber.opacity(0.9))
-                    .frame(width: 48, height: 48)
-                    .offset(x: 112, y: -42)
+                    .fill(AppColors.amber.opacity(0.92))
+                    .frame(width: 38, height: 38)
+                    .offset(x: size.width * 0.30, y: -size.height * 0.20)
             }
         }
     }
 
-    private func hills(for segment: NightJourneySegment) -> some View {
-        VStack {
-            Spacer()
-            HStack(alignment: .bottom, spacing: -30) {
-                Ellipse().fill(segment == .mountain ? AppColors.lavender.opacity(0.82) : AppColors.bark.opacity(0.86)).frame(width: 260, height: segment == .mountain ? 128 : 90)
-                Ellipse().fill(AppColors.grass.opacity(0.88)).frame(width: 280, height: segment == .mountain ? 150 : 110)
-                Ellipse().fill(segment == .prairie ? AppColors.amber.opacity(0.6) : AppColors.bark.opacity(0.72)).frame(width: 240, height: segment == .mountain ? 112 : 88)
-            }
-            .offset(y: 42)
+    private func scrollingEnvironment(size: CGSize, at date: Date) -> some View {
+        let imageWidth = size.height * environmentAspectRatio
+        let cycle = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: scrollCycleDuration)
+        let progress = cycle >= 0 ? cycle / scrollCycleDuration : (cycle + scrollCycleDuration) / scrollCycleDuration
+        let offset = reduceMotion ? 0 : CGFloat(progress) * imageWidth
+
+        return HStack(spacing: 0) {
+            environmentImage(width: imageWidth, height: size.height)
+            environmentImage(width: imageWidth, height: size.height)
         }
+        .frame(width: imageWidth * 2, height: size.height, alignment: .leading)
+        .offset(x: -offset)
+        .frame(width: size.width, height: size.height, alignment: .leading)
+        .clipped()
+        .accessibilityHidden(true)
     }
 
-    private func overlayColor(for segment: NightJourneySegment) -> Color {
+    private func environmentImage(width: CGFloat, height: CGFloat) -> some View {
+        PixelAssetImage(name: environmentAsset, contentMode: .fill)
+            .frame(width: width, height: height)
+    }
+
+    private func atmosphere(for segment: NightJourneySegment) -> some View {
+        Rectangle()
+            .fill(atmosphereTint(for: segment))
+            .blendMode(.multiply)
+            .allowsHitTesting(false)
+    }
+
+    private func ollieGroundY(for size: CGSize) -> CGFloat {
+        let ollieSize = min(112, size.width * 0.28)
+        // The generated run frames place Ollie's feet at 330/360 of the canvas.
+        // The scene's black silhouette begins at roughly 78% of its height.
+        return size.height * 0.78 - ollieSize * 0.4167
+    }
+
+    private func sceneBadge(title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(pixelFont(.caption2))
+                .foregroundStyle(.white.opacity(0.92))
+            Text(detail)
+                .font(.system(size: 8, weight: .bold, design: .monospaced))
+                .foregroundStyle(.white.opacity(0.75))
+        }
+        .padding(.horizontal, AppSpacing.xs)
+        .padding(.vertical, 6)
+        .background(.black.opacity(0.30), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+    }
+
+    private func ollieState(for segment: NightJourneySegment) -> OllieRitualState {
         switch segment {
-        case .prairie: return AppColors.sky
-        case .mountain: return AppColors.lavender
-        case .moonlit: return AppColors.ink
-        case .sunrise: return AppColors.amber
+        case .prairie, .mountain: return .guarding
+        case .moonlit: return .overnight
+        case .sunrise: return .morningQuiet
         }
+    }
+
+    private func walkFrame(at date: Date) -> Int {
+        Int(date.timeIntervalSinceReferenceDate * 7.0).modulo(6)
+    }
+
+    private func atmosphereTint(for segment: NightJourneySegment) -> Color {
+        switch segment {
+        case .prairie: return .white.opacity(0.02)
+        case .mountain: return AppColors.lavender.opacity(0.10)
+        case .moonlit: return AppColors.ink.opacity(0.26)
+        case .sunrise: return AppColors.amber.opacity(0.10)
+        }
+    }
+}
+
+private extension Int {
+    func modulo(_ value: Int) -> Int {
+        let remainder = self % value
+        return remainder >= 0 ? remainder : remainder + value
+    }
+}
+
+private struct OllieWalkCycleView: View {
+    let state: OllieRitualState
+    let frame: Int
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if state == .completed {
+                OllieRitualView(state: state, size: size)
+            } else {
+                PixelAssetImage(name: "dog_run_frame_0\(frame + 1)")
+                    .frame(width: size, height: size)
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
 

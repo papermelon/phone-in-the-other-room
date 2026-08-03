@@ -32,10 +32,10 @@ warns later, or ends Night Watch because distance changed.
 
 ## What ships in the first release
 
-- Home, Nights, and Farm tabs, with More as a top-right utility sheet
+- Home, Nights, Farm, and Settings tabs
 - Saved Night Watch schedule and requested wind-down reminder
 - Wind-down, overnight, and morning-quiet phases
-- Honor timer plus optional Watch, QR, and NFC phone-bed starts
+- App Shielding or NFC + App Shielding starts; legacy Watch/QR/timer values remain decodable
 - Optional selected-app shielding during wind-down and morning quiet only
 - Optional read-only Apple Health sleep duration/stages and local outcome comparison
 - Separately consented, minimised impact sharing with stop/delete controls

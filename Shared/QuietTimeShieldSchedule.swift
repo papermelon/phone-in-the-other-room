@@ -75,6 +75,14 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
         return interval.contains(date)
     }
 
+    /// A repeating schedule is only allowed to act on or after the first window
+    /// it was installed for. This prevents a late callback from a superseded
+    /// DeviceActivity schedule from applying tomorrow's schedule today.
+    func isEligible(at date: Date) -> Bool {
+        let firstWindowStart = windDownInterval?.start ?? morningQuietInterval.start
+        return date >= firstWindowStart
+    }
+
     func hasSameWindows(as other: QuietTimeShieldScheduleSnapshot) -> Bool {
         runID == other.runID
             && windDownInterval == other.windDownInterval

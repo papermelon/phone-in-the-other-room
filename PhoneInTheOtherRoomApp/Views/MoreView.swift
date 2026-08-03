@@ -4,11 +4,12 @@ import SwiftUI
 import FamilyControls
 #endif
 
-struct MoreView: View {
+struct SettingsView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var showImpactConsent = false
     @State private var showImpactDeletion = false
     @State private var showLocalProgressReset = false
+    @State private var showReplaySetup = false
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     @State private var showScreenTimePicker = false
 #endif
@@ -61,7 +62,17 @@ struct MoreView: View {
             }
             Button("Keep my progress", role: .cancel) {}
         } message: {
-            Text("This clears your protected nights, flock, rewards, reflections, and local ritual history. Your Wind Down plan and NFC tag will stay paired.")
+            Text("This clears your protected nights, flock, rewards, reflections, and local ritual history. Your Wind Down plan and NFC tag stay paired; setup will not reopen.")
+        }
+        .sheet(isPresented: $showReplaySetup) {
+            NavigationStack {
+                OnboardingFlowView(
+                    initialDraft: OnboardingDraft.replay(from: viewModel.nightWatchPreferences),
+                    onComplete: { showReplaySetup = false },
+                    onCancel: { showReplaySetup = false }
+                )
+                .environmentObject(viewModel)
+            }
         }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
@@ -78,7 +89,7 @@ struct MoreView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("More")
+            Text("Settings")
                 .font(AppTypography.display(34))
             Text("Your Wind Down, connections, and a way to reach us.")
                 .font(AppTypography.body)
@@ -92,30 +103,29 @@ struct MoreView: View {
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     NavigationLink {
-                        WindDownScheduleView()
+                        FocusRunSetupView()
                             .environmentObject(viewModel)
                     } label: {
-                        Label("Wind Down periods", systemImage: "calendar.badge.clock")
+                        Label("Wind Down plan", systemImage: "slider.horizontal.3")
                             .font(AppTypography.headline)
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
                     .buttonStyle(.plain)
                     Divider()
-                    NavigationLink {
-                        FocusRunSetupView()
-                            .environmentObject(viewModel)
+                    Button {
+                        showReplaySetup = true
                     } label: {
-                        Label("Edit full Wind Down plan", systemImage: "slider.horizontal.3")
+                        Label("Review Wind Down setup", systemImage: "arrow.counterclockwise")
                             .font(AppTypography.headline)
                             .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     }
                     .buttonStyle(.plain)
                 }
             }
-            WindDownMethodPicker(
+            WindDownProtectionPicker(
                 selectedKind: viewModel.nightWatchPreferences.guardKind,
                 isNFCTagReady: viewModel.hasRegisteredNFCTag,
-                onSelect: viewModel.selectGuardKind
+                onSelect: viewModel.selectProtectionChoice
             )
         }
     }
@@ -137,6 +147,41 @@ struct MoreView: View {
                 actionTitle: viewModel.screenTimeAuthorization == .notDetermined ? "Connect" : nil,
                 action: viewModel.connectScreenTime
             )
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Toggle(
+                        "Show Wind Down on my Lock Screen",
+                        isOn: Binding(
+                            get: { viewModel.liveActivityEnabled },
+                            set: viewModel.setLiveActivityEnabled
+                        )
+                    )
+                    .font(AppTypography.headline)
+                    Text("A Live Activity is a glanceable reminder while Wind Down is active. Counting Sheep still works when it is off.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+            }
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Toggle(
+                        "Quiet appearance",
+                        isOn: Binding(
+                            get: { viewModel.quietAppearanceEnabled },
+                            set: viewModel.setQuietAppearanceEnabled
+                        )
+                    )
+                    .font(AppTypography.headline)
+                    Text("Use a softer, lower-saturation palette inside the active Wind Down screen. iOS does not provide a public API for changing the whole phone to grayscale.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    NavigationLink("How to use iOS Color Filters") {
+                        QuietAppearanceGuideView()
+                    }
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.grass)
+                }
+            }
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
             if viewModel.screenTimeAuthorization == .approved {
                 ScreenTimeBookendCard(
@@ -442,9 +487,13 @@ struct MoreView: View {
     )
 }
 
-#Preview("More") {
+#Preview("Settings") {
     NavigationStack {
-        MoreView()
+        SettingsView()
             .environmentObject(FocusRunViewModel())
     }
 }
+
+/// Compatibility name for previews and older internal references. The release
+/// navigation and copy use SettingsView.
+typealias MoreView = SettingsView

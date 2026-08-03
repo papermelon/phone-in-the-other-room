@@ -20,8 +20,8 @@ one is real, and it is the single strongest temptation for future agents to "fin
 DEBUG launch flag — until the milestone gates below are met.** They are not deleted, and
 they are never shipped as "coming soon" placeholders.
 
-The launch surface is Home, Nights, and Farm, with More as a utility sheet. Ordinary Debug navigation matches Release.
-Internal mock screens appear inside More only when launched with
+The launch surface is Home, Nights, Farm, and Settings. Ordinary Debug navigation matches Release.
+Internal mock screens appear inside Settings only when launched with
 `-ollie.debug.enableMockScreens YES` (ADR-0007).
 
 ## Reintroduction gates (all must pass, in order)
@@ -41,8 +41,8 @@ Internal mock screens appear inside More only when launched with
 ## Reintroduction order and method
 
 1. **Farm first.** Farm visualizes the cumulative flock from `totalCompletedRuns`. If it
-   earns a root destination, Home/Nights/Farm remain the three tabs and More becomes a
-   top-right utility sheet.
+   earns a root destination, it remains a root destination alongside Home, Nights, and Settings.
+   Settings continues to hold configuration and utility actions.
 2. **Shop later, nested in Farm.** Shop is never a root tab and cannot revive a coin or
    scarcity economy. Its value and mechanics require a new reviewed scope.
 3. **Friends last — or never.** Requires a backend, accounts, and moderation, and is the
