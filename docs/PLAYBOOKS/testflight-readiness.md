@@ -26,7 +26,7 @@ Locally proven:
 - The exported app carries production Family Controls profiles for the containing app,
   report, monitor, shield configuration, and shield action targets.
 - The exported app contains the main and monitor privacy manifests.
-- Debug and Release navigation render Home, Nights, and More; internal previews require the
+- Debug and Release navigation render Home, Nights, and Farm; More is a utility sheet and internal previews require the
   explicit Debug launch argument.
 
 Read-only external audit:
@@ -95,7 +95,7 @@ xcodebuild archive \
 
 ## 3. Release scope and product identity
 
-- [ ] Debug and Release expose exactly Home, Nights, and More by default.
+- [ ] Debug and Release expose exactly Home, Nights, and Farm by default; More is outside the root tabs.
 - [ ] Farm, Friends, Shop, the legacy shelf, `MVPMockData`, manual analytics, and QA data are
       unreachable without `-ollie.debug.enableMockScreens YES`, and always unreachable in Release.
 - [ ] No customer surface calls the ritual a Focus Run or generic productivity session.

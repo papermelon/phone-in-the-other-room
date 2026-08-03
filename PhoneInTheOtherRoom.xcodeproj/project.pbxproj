@@ -242,6 +242,7 @@
 		BEA7391F437682C412F91A77 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556930E68BC87E851A8295A3 /* Formatting.swift */; };
 		C107E412664051996D3972B6 /* ImpactMeasurementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0774B703AAB7AA39ED6E9 /* ImpactMeasurementTests.swift */; };
 		C1A85EF813C789BD7F99EE24 /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 627A5DA42D08C5C40DA30548 /* PersistenceService.swift */; };
+		C29BB659ED7F068FB0ED4D92 /* FarmPresentationComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BB818D5B54187115526B4B5 /* FarmPresentationComponents.swift */; };
 		C29D295CAEAC83392CD3A9F4 /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		C2CE381ADC249C646303A830 /* ScreenTimeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */; };
 		C33FAA55CB5D0D476741BEE3 /* SupabaseClientProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B188DD7276B94E96A258798B /* SupabaseClientProvider.swift */; };
@@ -425,6 +426,7 @@
 		2586E1A7522D7966AA2BC040 /* ProximityClassifierTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityClassifierTests.swift; sourceTree = "<group>"; };
 		2620AED0BA47E2FAE4DEBE19 /* ScreenTimeAuthorizationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeAuthorizationService.swift; sourceTree = "<group>"; };
 		29FA54459D95BF429B1EFE21 /* FocusRunLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunLiveActivityWidget.swift; sourceTree = "<group>"; };
+		2BB818D5B54187115526B4B5 /* FarmPresentationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmPresentationComponents.swift; sourceTree = "<group>"; };
 		2DC676E8259E7A18655B6986 /* PhoneInTheOtherRoomDeviceActivityMonitor.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneInTheOtherRoomDeviceActivityMonitor.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		2E6D7736AF6FF5F49C26FC84 /* NightJourneyProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightJourneyProgressTests.swift; sourceTree = "<group>"; };
 		2EBF5AEECC8C11A24F9AC80C /* MorningCheckInCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInCard.swift; sourceTree = "<group>"; };
@@ -763,6 +765,7 @@
 				FCE67F996AC2C3BDD00A1717 /* ActiveRunView.swift */,
 				D6F6F711960B149665B4E5B3 /* CompletionView.swift */,
 				86474E30A0FD22942AB201DD /* EarlyEndView.swift */,
+				2BB818D5B54187115526B4B5 /* FarmPresentationComponents.swift */,
 				E965042A8DE4CCAE76137376 /* FarmView.swift */,
 				1F71861D5D292EA8E4A987B6 /* FeedbackFormView.swift */,
 				79A0FB5E7DC57798BBE4096D /* FocusRunSetupView.swift */,
@@ -1211,6 +1214,7 @@
 				1AC01546472596D97D4A6AEC /* CompletionView.swift in Sources */,
 				38603B4C747E6BABA61087E7 /* DistanceProvider.swift in Sources */,
 				2CA7DA7AAB76C165AB54BAD2 /* EarlyEndView.swift in Sources */,
+				C29BB659ED7F068FB0ED4D92 /* FarmPresentationComponents.swift in Sources */,
 				862D316BA42A0635BEEF4862 /* FarmView.swift in Sources */,
 				73FCA4077CC3CE3B18682F6A /* FeedbackFormView.swift in Sources */,
 				7C8F693BAECF50AEFA90F1E2 /* FeedbackService.swift in Sources */,

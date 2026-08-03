@@ -31,6 +31,9 @@ final class FocusSessionCoordinator: ObservableObject {
     var pairedWatchTokenData: Data?
     private var lastLiveActivityPhase: NightWatchPhase?
     var optionalSheepSearchBonusProvider: (() -> Int)?
+    /// Lets the owning view model advance the saved routine cursor after a
+    /// terminal run without making the coordinator own scheduling policy.
+    var onRunFinished: (() -> Void)?
 #if DEBUG
     let energyLogger = Logger(
         subsystem: "com.ngawangchime.countingsheep",
@@ -229,7 +232,8 @@ final class FocusSessionCoordinator: ObservableObject {
     }
 
     func endEarly(reason: EarlyEndReason = .userEnded) {
-        guard var run else { return }
+        guard var run,
+              ![.completed, .endedEarly, .setup].contains(run.state) else { return }
         run.state = .endedEarly
         run.endedAt = Date()
         run.actualDurationSeconds = min(run.plannedDurationSeconds, Date().timeIntervalSince(run.startedAt))
@@ -259,7 +263,8 @@ final class FocusSessionCoordinator: ObservableObject {
     }
 
     func applicationDidBecomeActive() {
-        guard run != nil else { return }
+        guard let currentRun = run,
+              ![.completed, .endedEarly, .setup].contains(currentRun.state) else { return }
         backgroundReturnMessage = "A quick check is okay. When you are ready, let the phone settle back into its bed."
         if run?.guardKind == .watchPlacement, run?.placementStatus == .awaitingConfirmation {
             ollieMessage = "Ollie can try the Watch placement check again, or you can continue without it."
@@ -425,6 +430,12 @@ final class FocusSessionCoordinator: ObservableObject {
     }
 
     private func finish(run: FocusRun) {
+        // A scene-activation callback, a boundary timer, or a repeated exit can
+        // converge on the same terminal run. Persisted rewards and sheep-search
+        // outcomes must be settled exactly once.
+        guard let currentRun = self.run,
+              currentRun.id == run.id,
+              ![.completed, .endedEarly, .setup].contains(currentRun.state) else { return }
         cancelBoundaryTimer(reason: "finish")
         stopWatchPlacement()
         UIApplication.shared.isIdleTimerDisabled = false
@@ -492,6 +503,7 @@ final class FocusSessionCoordinator: ObservableObject {
             ? "The phone slept away while both edges of the night stayed quiet."
             : "Ollie kept your spot warm."
         watch.send(WatchMessage(type: finalRun.completedSuccessfully ? .rewardEarned : .endFocusRunEarly, run: finalRun, proximity: proximityState, reward: reward))
+        onRunFinished?()
 #if DEBUG
         logResourceState(event: "finish complete")
 #endif

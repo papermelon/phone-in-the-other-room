@@ -20,7 +20,7 @@ one is real, and it is the single strongest temptation for future agents to "fin
 DEBUG launch flag — until the milestone gates below are met.** They are not deleted, and
 they are never shipped as "coming soon" placeholders.
 
-The launch surface is Home, Nights, and More. Ordinary Debug navigation matches Release.
+The launch surface is Home, Nights, and Farm, with More as a utility sheet. Ordinary Debug navigation matches Release.
 Internal mock screens appear inside More only when launched with
 `-ollie.debug.enableMockScreens YES` (ADR-0007).
 

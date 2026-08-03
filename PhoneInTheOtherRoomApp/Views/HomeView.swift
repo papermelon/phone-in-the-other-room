@@ -129,7 +129,11 @@ struct HomeView: View {
     }
 
     private var contentUsesOwnScroll: Bool {
-        guard showChrome else { return false }
+        // Active and terminal ritual screens own their compact layout/receipt
+        // scroll. Wrapping them in the shell ScrollView makes the live journey
+        // feel like a long document and can push the exit controls below the
+        // viewport on smaller phones.
+        guard showChrome else { return true }
         return selectedTab != .home
     }
 

@@ -20,7 +20,7 @@ struct FocusStatsView: View {
     }
     private var latestProtectedResult: NightWatchRecord? {
         viewModel.nightWatchRecords
-            .filter { $0.outcome == .completed }
+            .filter { $0.outcome == .completed && $0.occurrenceRole.isProgressionEligible }
             .max { resultDate($0) < resultDate($1) }
     }
 
@@ -152,16 +152,18 @@ struct FocusStatsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 sectionTitle("Latest Wind Down", icon: "moon.stars.fill")
                 if let result = latestQuietTimeResult {
-                    Text(result.outcome == .endedEarly ? "Ended early" : "Protected night")
+                    Text(result.outcome == .endedEarly
+                        ? "Ended early"
+                        : (result.occurrenceRole.isProgressionEligible ? "Protected night" : "Quiet period"))
                         .font(AppTypography.headline)
                         .foregroundStyle(AppColors.grass)
                     Text("\(quietMinutes(result)) min")
                         .font(AppTypography.display(32))
-                    Text(
-                        result.outcome == .endedEarly
-                            ? "Wind Down recorded before the session ended. Overnight hours are not counted."
-                            : "Phone-free time before bed and after waking. Overnight hours are not counted."
-                    )
+                    Text(result.outcome == .endedEarly
+                        ? "Wind Down recorded before the session ended. Overnight hours are not counted."
+                        : (result.occurrenceRole.isProgressionEligible
+                            ? "Phone-free time before bed and after waking. Overnight hours are not counted."
+                            : "A bounded quiet period. It is recorded here without making a sleep claim."))
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                     Text("Finished \(resultDateLabel(resultDate(result)))")
@@ -278,30 +280,23 @@ struct FocusStatsView: View {
                         quietMetric(value: wakeRangeLabel(wakeTimeRange), label: "wake range")
                     }
                 }
-                HStack(spacing: AppSpacing.sm) {
-                    ForEach(lastSevenDays, id: \.day) { record in
-                        VStack(spacing: AppSpacing.xs) {
+                VStack(spacing: AppSpacing.xs) {
+                    ForEach(lastSevenSummaries) { summary in
+                        HStack(spacing: AppSpacing.sm) {
                             Circle()
-                                .fill(record.successfulRuns > 0 ? AppColors.grass : AppColors.surfaceMuted)
-                                .frame(width: 18, height: 18)
-                                .overlay(Circle().stroke(AppColors.stroke.opacity(0.16), lineWidth: 1))
-                            Text(record.day.formatted(.dateTime.weekday(.narrow)))
+                                .fill(summary.occurrenceCount > 0 ? AppColors.grass : AppColors.surfaceMuted)
+                                .frame(width: 12, height: 12)
+                            Text(summary.day.formatted(.dateTime.weekday(.wide).month().day()))
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.muted)
-                            Text(record.day.formatted(.dateTime.day()))
+                            Spacer()
+                            Text(summary.occurrenceCount == 0 ? "No Wind Down" : "\(summary.quietMinutes)m quiet · \(summary.occurrenceCount) period\(summary.occurrenceCount == 1 ? "" : "s")")
                                 .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.muted)
+                                .foregroundStyle(summary.occurrenceCount > 0 ? AppColors.ink : AppColors.muted)
                         }
-                        .frame(maxWidth: .infinity)
-                        .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(
-                            record.day.formatted(.dateTime.weekday(.wide).month().day())
-                        )
-                        .accessibilityValue(
-                            record.successfulRuns > 0
-                                ? "\(record.completedFocusMinutes) quiet minutes"
-                                : "No protected night"
-                        )
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel(summary.day.formatted(.dateTime.weekday(.wide).month().day()))
+                        .accessibilityValue(summary.occurrenceCount == 0 ? "No Wind Down" : "\(summary.quietMinutes) quiet minutes, \(summary.occurrenceCount) periods")
                     }
                 }
                 Text("Blank nights are simply blank. Tonight can always be a fresh start.")
@@ -395,11 +390,32 @@ struct FocusStatsView: View {
     }
 
     private var lastSevenProtectedCount: Int {
-        lastSevenDays.filter { $0.successfulRuns > 0 }.count
+        lastSevenSummaries.reduce(0) { $0 + $1.protectedNightCount }
     }
 
     private var lastSevenMinutes: Int {
-        lastSevenDays.reduce(0) { $0 + $1.completedFocusMinutes }
+        lastSevenSummaries.reduce(0) { $0 + $1.quietMinutes }
+    }
+
+    private var lastSevenSummaries: [WindDownDaySummary] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let summaries = Dictionary(
+            WindDownHistoryAggregator.daySummaries(from: viewModel.nightWatchRecords, calendar: calendar)
+                .map { (calendar.startOfDay(for: $0.day), $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        return (0..<7).reversed().compactMap { offset in
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+            return summaries[day] ?? WindDownDaySummary(
+                day: day,
+                occurrenceCount: 0,
+                completedOccurrenceCount: 0,
+                earlyEndedOccurrenceCount: 0,
+                quietMinutes: 0,
+                protectedNightCount: 0
+            )
+        }
     }
 
     private var wakeTimeRange: WakeTimeRange? {

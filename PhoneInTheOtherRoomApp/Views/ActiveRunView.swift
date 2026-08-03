@@ -350,12 +350,13 @@ struct ActiveRunView: View {
     }
 
     private var subheadline: String {
+        let isAdditional = run?.nightWatchPlan?.role == .additionalQuiet
         if run?.placementStatus != .awaitingConfirmation {
             switch phase {
-            case .windDown: return "Phone-free time until bedtime."
+            case .windDown: return isAdditional ? "A bounded quiet period. Ollie is keeping the edges simple." : "Phone-free time until bedtime."
             case .overnight: return "Sleep time. Your phone stays tucked away."
             case .morningQuiet: return "Phone-free time after waking."
-            case .complete: return "Your phone-free night is ready."
+            case .complete: return isAdditional ? "Your bounded quiet period is recorded." : "Your phone-free night is ready."
             case nil: break
             }
         }
@@ -415,6 +416,9 @@ struct ActiveRunView: View {
             return "Ollie will check in when the phone-away time is done."
         }
         let time = transition.formatted(date: .omitted, time: .shortened)
+        if run?.nightWatchPlan?.role == .additionalQuiet {
+            return phase == .complete ? "Quiet period complete" : "Quiet period ends at \(time)"
+        }
         switch phase {
         case .windDown: return "Bedtime at \(time)"
         case .overnight: return "Phone-free morning begins at \(time)"
@@ -424,6 +428,9 @@ struct ActiveRunView: View {
     }
 
     private var phaseStatusText: String {
+        if run?.nightWatchPlan?.role == .additionalQuiet, phase == .complete {
+            return "This bounded quiet period is recorded."
+        }
         switch phase {
         case .windDown: return "Your phone is tucked away. Ollie is following the first trail."
         case .overnight: return "Sleep time is keeping. There is nothing else to do here."

@@ -95,9 +95,9 @@ completed habit before restoring access or granting the Night Watch receipt.
 
 ## Progress and the flock
 
-- The first three completed protected nights guarantee a sheep from the starter wanted posters.
+- Each completed primary sleep-bookend Wind Down settles one equal sheep; named field notes are optional.
 - Later completed nights resolve into a persisted search outcome: sheep found or trail advanced.
-- Encounter odds, rarity, streak momentum, and wanted posters make consistency meaningful.
+- Factual receipts and a calm flock record make consistency visible without currency, rarity, or locked collections.
 - Optional HealthKit, Screen Time, and self-reported signals only add bonuses; missing data never
   lowers the chance.
 - Only elapsed wind-down and morning-quiet minutes appear in the factual receipt. A separate
@@ -170,7 +170,7 @@ consented impact rows are relative-night, purpose-limited, and deletable; see
 - Background/relaunch restoration reaches the correct phase and completion state.
 - Quiet-minute accounting excludes overnight time, including late starts and DST changes.
 - Early end is always available and never uses failure haptics or guilt copy.
-- Debug and Release show exactly Home, Nights, and More. Mock UI requires the explicit Debug
+- Debug and Release show exactly Home, Nights, and Farm. More is a utility sheet; mock UI requires the explicit Debug
   internal-preview launch argument and is never reachable in Release.
 - Optional shields cover only the two selected quiet windows and always clear on early end.
 - HealthKit requests only read-only `sleepAnalysis` and labels available stage provenance.

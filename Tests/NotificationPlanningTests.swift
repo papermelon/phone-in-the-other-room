@@ -96,6 +96,18 @@ final class NotificationPlanningTests: XCTestCase {
         XCTAssertNil(NightWatchNotificationPlanBuilder.usageNotification(for: .complete))
     }
 
+    func testAdditionalQuietNotificationsNeverUseSleepBookendCues() {
+        let plan = NightWatchPlan.additionalQuiet(
+            start: start.addingTimeInterval(60 * 60),
+            end: start.addingTimeInterval(2 * 60 * 60)
+        )
+        let planned = planFor(.supportive, plan: plan)
+
+        XCTAssertFalse(planned.contains { $0.id == "night-watch-sleep-time" })
+        XCTAssertFalse(planned.contains { $0.id == "night-watch-phone-free-morning" })
+        XCTAssertTrue(planned.contains { $0.id == "night-watch-quiet-period-complete" })
+    }
+
     func testLegacyNotificationPreferencesKeepOptionalChannelsOff() throws {
         let legacy = Data("{\"remindersEnabled\":false}".utf8)
         let decoded = try JSONDecoder().decode(NotificationPreferences.self, from: legacy)

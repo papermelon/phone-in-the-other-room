@@ -132,7 +132,7 @@ execute without human sign-off mid-task (final merge review still applies per
   only optional bonuses, persisted trail progress, and cosmetic/story-only sheep identities.
 
 - **2026-08-01 · Codex + human-approved plan:** Replaced ordinary Debug and Release
-  navigation with Home/Nights/More; moved setup and connection controls into More; kept
+  navigation with Home/Nights/Farm and More as a utility sheet; moved setup and connection controls into More; kept
   Farm/Friends/Shop and the legacy shelf behind the explicit Debug preview argument; and
   made the release presentation one equal sheep per completed protected night, derived only
   from `totalCompletedRuns`. Added the validated feedback form, metadata-stripped screenshot

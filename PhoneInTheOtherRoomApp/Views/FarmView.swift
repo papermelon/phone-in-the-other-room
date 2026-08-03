@@ -27,13 +27,14 @@ struct FarmView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 FarmHeader(count: protectedNightCount)
-                FarmLandscape(flockCount: protectedNightCount)
+                ShippingFarmHeroScene(sheep: latestArrival, flockCount: protectedNightCount)
+                SettledFlockPreview(count: protectedNightCount)
 
                 if flock.isEmpty {
                     FarmEmptyState(protectedNightCount: protectedNightCount)
                 } else {
                     FarmArrivalNote(sheep: latestArrival)
-                    FarmFlockList(sheep: flock, settledCount: protectedNightCount)
+                    FarmFieldNotes(sheep: flock)
                 }
             }
             .padding(.horizontal, AppSpacing.md)
@@ -75,49 +76,6 @@ private struct FarmHeader: View {
     }
 }
 
-private struct FarmLandscape: View {
-    let flockCount: Int
-
-    var body: some View {
-        ZStack(alignment: .bottomLeading) {
-            PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
-                .frame(maxWidth: .infinity)
-                .frame(height: 190)
-                .clipped()
-
-            LinearGradient(
-                colors: [.clear, AppColors.bark.opacity(0.45)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-
-            HStack(alignment: .bottom, spacing: AppSpacing.sm) {
-                PixelAssetImage(name: AssetSlot.Dog.proud)
-                    .frame(width: 96, height: 96)
-                    .accessibilityLabel("Ollie, watching over the farm")
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("Ollie keeps watch")
-                        .font(AppTypography.headline)
-                        .foregroundStyle(.white)
-                    Text(flockCount == 0 ? "The pasture is waiting." : "Each sheep arrived after a protected night.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(.white.opacity(0.92))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.bottom, AppSpacing.sm)
-            }
-            .padding(.horizontal, AppSpacing.md)
-        }
-        .frame(maxWidth: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                .stroke(AppColors.stroke.opacity(0.24), lineWidth: 1.5)
-        }
-        .accessibilityElement(children: .contain)
-    }
-}
-
 private struct FarmArrivalNote: View {
     let sheep: SheepDefinition?
 
@@ -143,6 +101,43 @@ private struct FarmArrivalNote: View {
     }
 }
 
+private struct SettledFlockPreview: View {
+    let count: Int
+
+    private var visibleCount: Int { min(max(count, 0), 24) }
+
+    var body: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("THE FLOCK")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    Spacer()
+                    Text("\(count) settled")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: AppSpacing.xs), count: 6), spacing: AppSpacing.xs) {
+                    ForEach(0..<visibleCount, id: \.self) { index in
+                        PixelAssetImage(name: AssetSlot.Sheep.common)
+                            .frame(height: 34)
+                            .accessibilityHidden(true)
+                            .accessibilityIdentifier("settled-sheep-\(index)")
+                    }
+                }
+                if count > visibleCount {
+                    Text("and \(count - visibleCount) more in the pasture")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Flock of \(count) equal sheep")
+        }
+    }
+}
+
 private struct FarmEmptyState: View {
     let protectedNightCount: Int
 
@@ -162,26 +157,21 @@ private struct FarmEmptyState: View {
     }
 }
 
-private struct FarmFlockList: View {
+private struct FarmFieldNotes: View {
     let sheep: [SheepDefinition]
-    let settledCount: Int
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(alignment: .firstTextBaseline) {
-                Text("THE FLOCK")
+                Text("FIELD NOTES")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Spacer()
-                Text("\(settledCount) settled")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
             }
 
             LazyVStack(spacing: AppSpacing.sm) {
                 ForEach(sheep) { item in
                     NavigationLink(destination: FarmSheepDetailView(sheep: item)) {
-                        FarmSheepRow(sheep: item)
+                        FarmFieldNoteRow(sheep: item)
                     }
                     .buttonStyle(.plain)
                 }
@@ -190,7 +180,7 @@ private struct FarmFlockList: View {
     }
 }
 
-private struct FarmSheepRow: View {
+private struct FarmFieldNoteRow: View {
     let sheep: SheepDefinition
 
     var body: some View {

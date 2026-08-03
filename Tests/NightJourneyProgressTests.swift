@@ -29,4 +29,13 @@ final class NightJourneyProgressTests: XCTestCase {
         let progress = NightJourneyProgress.resolve(plan: plan, at: start.addingTimeInterval(30 * 60))
         XCTAssertEqual(progress.fraction, 0.5, accuracy: 0.001)
     }
+
+    func testMalformedZeroDurationPlanDoesNotProduceNaN() {
+        let instant = Date(timeIntervalSince1970: 1_000)
+        let plan = NightWatchPlan.additionalQuiet(start: instant, end: instant)
+        let progress = NightJourneyProgress.resolve(plan: plan, at: instant)
+
+        XCTAssertTrue(progress.fraction.isFinite)
+        XCTAssertEqual(progress.fraction, 0, accuracy: 0.001)
+    }
 }
