@@ -2,7 +2,6 @@ import SwiftUI
 
 struct CompletionView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
-    @State private var revealResult = false
 
     private var minutes: Int { viewModel.activeRun?.creditedQuietMinutes ?? 0 }
 
@@ -19,32 +18,12 @@ struct CompletionView: View {
                                     .foregroundStyle(AppColors.grass)
                                 Text("Ollie brought the trail home.")
                                     .font(pixelFont(.title2))
-                                Text("You kept \(minutes) minutes phone-free around sleep.")
+                                Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
+                                    ? "You kept \(minutes) minutes in a bounded quiet period."
+                                    : "You kept \(minutes) minutes phone-free around sleep.")
                                     .font(pixelFont(.body))
                                     .foregroundStyle(AppColors.secondaryText)
                             }
-                        }
-                    }
-                }
-
-                if let plan = viewModel.activeRun?.nightWatchPlan {
-                    PixelCard {
-                        VStack(alignment: .leading, spacing: 10) {
-                            Text("LAST NIGHT'S WIND DOWN")
-                                .font(pixelFont(.caption))
-                                .foregroundStyle(AppColors.grass)
-                            quietTimeRow(
-                                icon: "moon.zzz.fill",
-                                title: "Wind-down",
-                                value: "\(viewModel.activeRun?.creditedWindDownMinutes ?? 0) min",
-                                detail: plan.eveningActivity.shortTitle
-                            )
-                            quietTimeRow(
-                                icon: "sun.max.fill",
-                                title: "After waking",
-                                value: "\(viewModel.activeRun?.creditedMorningQuietMinutes ?? 0) min",
-                                detail: plan.morningActivity.shortTitle
-                            )
                         }
                     }
                 }
@@ -56,20 +35,16 @@ struct CompletionView: View {
                     screenTimeAuthorization: viewModel.screenTimeAuthorization
                 )
 
-                if revealResult {
-                    if let run = viewModel.activeRun,
-                       let outcome = viewModel.latestSheepSearchOutcome,
-                       outcome.runID == run.id {
-                        WindDownFindRevealCard(outcome: outcome)
-                    }
-                    flockArrivalCard
-                } else {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            revealResult = true
-                        }
+                if let run = viewModel.activeRun, run.isProgressionEligibleNightWatch {
+                    NavigationLink {
+                        WindDownRevealView(
+                            outcome: viewModel.latestSheepSearchOutcome?.runID == run.id
+                                ? viewModel.latestSheepSearchOutcome
+                                : nil,
+                            flockCount: viewModel.coordinator.progress.totalCompletedRuns
+                        )
                     } label: {
-                        Label("See what Ollie brought home", systemImage: "gift.fill")
+                        Label("Open Ollie's field note", systemImage: "gift.fill")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelPrimaryButtonStyle())
@@ -91,46 +66,74 @@ struct CompletionView: View {
         .onAppear(perform: viewModel.refreshSleepSummary)
     }
 
-    private var flockArrivalCard: some View {
-        PixelCard {
-            HStack(spacing: 14) {
-                PixelAssetImage(name: AssetSlot.Sheep.common)
-                    .frame(width: 70, height: 70)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 5) {
+}
+
+private struct WindDownRevealView: View {
+    let outcome: SheepSearchOutcome?
+    let flockCount: Int
+
+    var body: some View {
+        VStack(spacing: AppSpacing.lg) {
+            if let outcome {
+                WindDownFindRevealCard(outcome: outcome)
+            } else {
+                PixelCard {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("OLLIE KEPT THE TRAIL")
+                            .font(pixelFont(.caption))
+                            .foregroundStyle(AppColors.grass)
+                        Text("A quiet clue for another night")
+                            .font(AppTypography.headline)
+                        Text("Tonight's receipt is saved. Ollie will keep looking for a named arrival as the flock grows.")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                }
+            }
+
+            NavigationLink {
+                FlockSettlementView(count: flockCount)
+            } label: {
+                Text("Settle the flock")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(PixelPrimaryButtonStyle())
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.paper.ignoresSafeArea())
+        .navigationTitle("Ollie's field note")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+private struct FlockSettlementView: View {
+    let count: Int
+
+    var body: some View {
+        VStack(spacing: AppSpacing.lg) {
+            PixelCard {
+                VStack(spacing: AppSpacing.md) {
+                    PixelAssetImage(name: AssetSlot.Sheep.common)
+                        .frame(width: 120, height: 120)
+                        .accessibilityHidden(true)
                     Text("A SHEEP SETTLED IN")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("Your flock has \(viewModel.coordinator.progress.totalCompletedRuns) sheep.")
-                        .font(pixelFont(.title3))
+                    Text("Your flock has \(count) sheep.")
+                        .font(AppTypography.display(28))
                     Text("One equal sheep for one protected night.")
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(AppColors.secondaryText)
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.muted)
+                        .multilineTextAlignment(.center)
                 }
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity)
             }
-            .accessibilityElement(children: .combine)
         }
+        .padding(AppSpacing.md)
+        .background(AppColors.paper.ignoresSafeArea())
+        .navigationTitle("The flock")
+        .navigationBarTitleDisplayMode(.inline)
     }
-
-    private func quietTimeRow(icon: String, title: String, value: String, detail: String) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: icon)
-                .foregroundStyle(AppColors.grass)
-                .frame(width: 24)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(pixelFont(.body))
-                Text(detail)
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.secondaryText)
-            }
-            Spacer()
-            Text(value)
-                .font(pixelFont(.caption))
-        }
-    }
-
 }
 
 private struct WindDownFindRevealCard: View {

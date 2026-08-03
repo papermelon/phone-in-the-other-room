@@ -64,6 +64,26 @@ enum NightWatchNotificationPlanBuilder {
             )
         }
 
+        // Additional periods are bounded quiet records, not sleep bookends.
+        // Stop the plan here so they never receive bedtime, wake, or sleep
+        // language from the primary ritual notification set.
+        if plan.role == .additionalQuiet {
+            candidates.append(
+                PlannedNotification(
+                    id: "night-watch-quiet-period-complete",
+                    date: plan.protectedUntil,
+                    title: "Quiet period recorded",
+                    body: "Ollie kept this bounded quiet period. Your receipt is ready in Nights.",
+                    phase: .complete,
+                    importance: .active,
+                    playsSound: soundsEnabled,
+                    destination: .nights
+                )
+            )
+            return spaced(candidates.sorted { $0.date < $1.date })
+                .filter { $0.date > now }
+        }
+
         candidates.append(
             copy(
                 id: "night-watch-sleep-time",

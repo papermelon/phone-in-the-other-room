@@ -25,7 +25,8 @@ struct NightJourneyProgress: Equatable {
             ? plan.intendedBedtime
             : plan.intendedBedtime.addingTimeInterval(TimeInterval(-plan.windDownMinutes * 60))
         let end = max(start, plan.protectedUntil)
-        let fraction = min(1, max(0, date.timeIntervalSince(start) / end.timeIntervalSince(start)))
+        let duration = max(1, end.timeIntervalSince(start))
+        let fraction = min(1, max(0, date.timeIntervalSince(start) / duration))
         let segment: NightJourneySegment
         switch fraction {
         case ..<0.25: segment = .prairie

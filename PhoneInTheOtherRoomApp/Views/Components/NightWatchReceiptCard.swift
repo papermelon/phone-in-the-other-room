@@ -23,25 +23,29 @@ struct NightWatchReceiptCard: View {
                 if let run, run.isNightWatch {
                     receiptRow(
                         icon: "moon.zzz.fill",
-                        title: "Phone-free time",
+                        title: run.nightWatchPlan?.role == .additionalQuiet ? "Quiet time" : "Phone-free time",
                         value: "\(run.creditedQuietMinutes) min",
-                        detail: "Wind-down and after waking only"
+                        detail: run.nightWatchPlan?.role == .additionalQuiet
+                            ? "A bounded quiet period; no sleep claim"
+                            : "Wind-down and after waking only"
                     )
                 }
 
-                receiptRow(
-                    icon: "bed.double.fill",
-                    title: "Sleep from Apple Health",
-                    value: sleepValue,
-                    detail: sleepDetail
-                )
+                if run?.nightWatchPlan?.role != .additionalQuiet {
+                    receiptRow(
+                        icon: "bed.double.fill",
+                        title: "Sleep from Apple Health",
+                        value: sleepValue,
+                        detail: sleepDetail
+                    )
 
-                receiptRow(
-                    icon: "hourglass.bottomhalf.filled",
-                    title: "Screen time around sleep",
-                    value: screenTimeValue,
-                    detail: screenTimeDetail
-                )
+                    receiptRow(
+                        icon: "hourglass.bottomhalf.filled",
+                        title: "Screen time around sleep",
+                        value: screenTimeValue,
+                        detail: screenTimeDetail
+                    )
+                }
             }
         }
     }

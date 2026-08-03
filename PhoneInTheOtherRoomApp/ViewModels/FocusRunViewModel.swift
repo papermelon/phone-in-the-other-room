@@ -97,6 +97,10 @@ final class FocusRunViewModel: ObservableObject {
         self.coordinator.optionalSheepSearchBonusProvider = { [weak self] in
             self?.optionalSheepSearchBonusPoints() ?? 0
         }
+        self.coordinator.onRunFinished = { [weak self] in
+            guard let self else { return }
+            self.scheduleAutomaticWindDownIfNeeded()
+        }
         screenTimeAuthorization = screenTimeService.currentState()
         Task { @MainActor in
             notificationAuthorization = await notifications.authorizationStatus()
@@ -216,7 +220,6 @@ final class FocusRunViewModel: ObservableObject {
             preferences: notificationPreferences
         )
         usageMonitoring.schedule(for: plan, startedAt: startedAt)
-        scheduleNextAutomaticWindDown(after: (activeRun?.plannedEndAt ?? startedAt).addingTimeInterval(60))
         if selectedGuardKind == .qrCode {
             showQRCodeScanner = true
         } else if selectedGuardKind == .nfcTag {
@@ -229,24 +232,32 @@ final class FocusRunViewModel: ObservableObject {
         persistence.windDownRoutines = windDownRoutines
     }
 
+    func setWindDownRoutineAutomaticStart(_ enabled: Bool, for routineID: UUID) {
+        guard let index = windDownRoutines.firstIndex(where: { $0.id == routineID }) else { return }
+        windDownRoutines[index].automaticStartEnabled = enabled
+        saveWindDownRoutines()
+        scheduleAutomaticWindDownIfNeeded()
+    }
+
     @discardableResult
     func addAdditionalWindDown(title: String, start: WindDownClockTime, end: WindDownClockTime) -> Bool {
         let routine = WindDownRoutine(
             title: title,
             role: .additionalQuiet,
             start: start,
-            end: end
+            end: end,
+            automaticStartEnabled: true
         )
         let calendar = Calendar.current
         let existingOccurrences = windDownRoutines.flatMap { routine in
             (0...7).compactMap { offset -> WindDownOccurrence? in
                 guard let day = calendar.date(byAdding: .day, value: offset, to: Date()) else { return nil }
-                return WindDownScheduleEngine.occurrence(for: routine, on: day, calendar: calendar)
+                return expandedOccurrence(for: routine, on: day, calendar: calendar)
             }
         }
         let candidateOccurrences = existingOccurrences + (0...7).compactMap { offset -> WindDownOccurrence? in
             guard let day = calendar.date(byAdding: .day, value: offset, to: Date()) else { return nil }
-            return WindDownScheduleEngine.occurrence(for: routine, on: day, calendar: calendar)
+            return expandedOccurrence(for: routine, on: day, calendar: calendar)
         }
         guard (try? WindDownScheduleEngine.validateNoOverlaps(candidateOccurrences)) != nil else { return false }
         windDownRoutines.append(routine)
@@ -254,9 +265,59 @@ final class FocusRunViewModel: ObservableObject {
         return true
     }
 
-    func adjustNextWindDown(start: Date, end: Date, role: WindDownOccurrenceRole = .additionalQuiet) {
-        guard end > start else { return }
+    private func expandedOccurrence(
+        for routine: WindDownRoutine,
+        on day: Date,
+        calendar: Calendar
+    ) -> WindDownOccurrence? {
+        guard let occurrence = WindDownScheduleEngine.occurrence(for: routine, on: day, calendar: calendar) else {
+            return nil
+        }
+        guard routine.role == .primarySleepBookend else { return occurrence }
+        let end = calendar.date(
+            byAdding: .minute,
+            value: nightWatchPreferences.morningQuietMinutes,
+            to: occurrence.interval.end
+        ) ?? occurrence.interval.end
+        return WindDownOccurrence(
+            id: occurrence.id,
+            routineID: occurrence.routineID,
+            role: occurrence.role,
+            interval: DateInterval(start: occurrence.interval.start, end: end),
+            state: occurrence.state
+        )
+    }
+
+    @discardableResult
+    func adjustNextWindDown(start: Date, end: Date, role: WindDownOccurrenceRole = .additionalQuiet) -> Bool {
+        let now = Date()
+        guard start > now, end > start else { return false }
         let routineID = windDownRoutines.first(where: { $0.role == role })?.id ?? UUID()
+        let candidateEnd = role == .primarySleepBookend
+            ? (Calendar.current.date(byAdding: .minute, value: nightWatchPreferences.morningQuietMinutes, to: end) ?? end)
+            : end
+        let candidate = WindDownOccurrence(
+            routineID: routineID,
+            role: role,
+            interval: DateInterval(start: start, end: candidateEnd)
+        )
+        let calendar = Calendar.current
+        let savedOccurrences = windDownRoutines
+            .filter { $0.id != routineID }
+            .flatMap { routine in
+                (0...8).compactMap { offset -> WindDownOccurrence? in
+                    guard let day = calendar.date(byAdding: .day, value: offset, to: start) else { return nil }
+                    return expandedOccurrence(for: routine, on: day, calendar: calendar)
+                }
+            }
+        guard (try? WindDownScheduleEngine.validateNoOverlaps(savedOccurrences + [candidate])) != nil else {
+            return false
+        }
+        if let existing = nextWindDownOverride,
+           existing.isAvailable(at: now),
+           existing.interval.intersects(candidate.interval) {
+            return false
+        }
         let override = NextWindDownOverride(
             routineID: routineID,
             role: role,
@@ -266,6 +327,7 @@ final class FocusRunViewModel: ObservableObject {
         nextWindDownOverride = override
         persistence.nextWindDownOverride = override
         scheduleAutomaticWindDownIfNeeded()
+        return true
     }
 
     func clearNextWindDownOverride() {
@@ -434,6 +496,10 @@ final class FocusRunViewModel: ObservableObject {
 
     func setAutomaticStartEnabled(_ enabled: Bool) {
         nightWatchPreferences.automaticStartEnabled = enabled
+        if let index = windDownRoutines.firstIndex(where: { $0.role == .primarySleepBookend }) {
+            windDownRoutines[index].automaticStartEnabled = enabled
+            saveWindDownRoutines()
+        }
         guard nightWatchPreferences.isConfigured else { return }
         persistence.nightWatchPreferences = nightWatchPreferences
         scheduleAutomaticWindDownIfNeeded()
@@ -645,7 +711,7 @@ final class FocusRunViewModel: ObservableObject {
     func reconcileAutomaticWindDownIfNeeded() {
         guard !isRunning,
               nightWatchPreferences.isConfigured,
-              nightWatchPreferences.automaticStartEnabled,
+              hasAutomaticWindDownRoutine,
               let schedule = persistence.automaticWindDownSchedule else {
             return
         }
@@ -705,7 +771,7 @@ final class FocusRunViewModel: ObservableObject {
     private func scheduleAutomaticWindDownIfNeeded() {
         guard !isRunning else { return }
         guard nightWatchPreferences.isConfigured,
-              nightWatchPreferences.automaticStartEnabled else {
+              hasAutomaticWindDownRoutine else {
             persistence.automaticWindDownSchedule = nil
             notifications.cancelNightWatchReminder()
             quietTimeShielding.cancelAutomaticSchedule()
@@ -727,6 +793,11 @@ final class FocusRunViewModel: ObservableObject {
             return
         }
         scheduleNextAutomaticWindDown()
+    }
+
+    private var hasAutomaticWindDownRoutine: Bool {
+        if windDownRoutines.isEmpty { return nightWatchPreferences.automaticStartEnabled }
+        return windDownRoutines.contains { $0.enabled && $0.automaticStartEnabled }
     }
 
     private func scheduleNextAutomaticWindDown(after date: Date = Date()) {

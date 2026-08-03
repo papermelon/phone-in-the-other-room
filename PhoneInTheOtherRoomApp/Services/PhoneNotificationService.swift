@@ -18,6 +18,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         "night-watch-phone-free-morning",
         "night-watch-morning-midpoint",
         "focus-run-complete",
+        "night-watch-quiet-period-complete",
         "night-watch-morning-reflection",
         "night-watch-reminder",
         "night-watch-usage-windDown",

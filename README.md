@@ -32,7 +32,7 @@ warns later, or ends Night Watch because distance changed.
 
 ## What ships in the first release
 
-- Home, Nights, and More tabs
+- Home, Nights, and Farm tabs, with More as a top-right utility sheet
 - Saved Night Watch schedule and requested wind-down reminder
 - Wind-down, overnight, and morning-quiet phases
 - Honor timer plus optional Watch, QR, and NFC phone-bed starts

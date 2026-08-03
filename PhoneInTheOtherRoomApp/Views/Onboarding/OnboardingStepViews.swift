@@ -367,8 +367,8 @@ struct OnboardingReadyStep: View {
             OllieRitualView(state: .ready, size: 112)
             onboardingTitle(
                 eyebrow: "OLLIE HAS THE PLAN",
-                title: "Ollie has the first trail.",
-                detail: "Your first few completed Wind Downs are close-to-home searches. You can change any of this later in More."
+                title: "Ollie has the first night ready.",
+                detail: "Each completed sleep-bookend Wind Down settles one equal sheep. You can change the plan later in More."
             )
             OnboardingTimeline(draft: draft)
             PixelCard {
@@ -380,18 +380,15 @@ struct OnboardingReadyStep: View {
                     summaryRow("Protection", value: draft.protectionChoice.title)
                 }
             }
-            if let idea = WindDownGuidanceLibrary.items.first {
-                WindDownGuideCard(item: idea, compact: true)
-            }
             PixelCard {
                 HStack(alignment: .top, spacing: AppSpacing.sm) {
                     Image(systemName: "doc.text.image")
                         .foregroundStyle(AppColors.grass)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("OLLIE'S FIRST WANTED POSTERS")
+                        Text("ONE NIGHT, ONE SHEEP")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.grass)
-                        Text("Your first three completed Wind Downs bring a sheep home while Ollie learns the nearby trails. New posters appear as the search reaches farther fields.")
+                        Text("A protected night is the only progression unit. Ollie keeps the flock equal and the receipt factual.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                     }

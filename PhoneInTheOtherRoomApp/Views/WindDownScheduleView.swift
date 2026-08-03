@@ -9,6 +9,7 @@ struct WindDownScheduleView: View {
     @State private var routineStart = Date().addingTimeInterval(2 * 60 * 60)
     @State private var routineEnd = Date().addingTimeInterval(3 * 60 * 60)
     @State private var routineError: String?
+    @State private var overrideError: String?
 
     var body: some View {
         Form {
@@ -23,7 +24,8 @@ struct WindDownScheduleView: View {
                     Text("No additional periods saved.")
                         .foregroundStyle(AppColors.muted)
                 } else {
-                    ForEach(viewModel.windDownRoutines) { routine in
+                    ForEach(Array(viewModel.windDownRoutines.indices), id: \.self) { index in
+                        let routine = viewModel.windDownRoutines[index]
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(routine.title)
@@ -37,6 +39,13 @@ struct WindDownScheduleView: View {
                                 .font(AppTypography.caption)
                                 .foregroundStyle(routine.role == .primarySleepBookend ? AppColors.grass : AppColors.muted)
                         }
+                        Toggle("Automatic start", isOn: Binding(
+                            get: { viewModel.windDownRoutines[index].automaticStartEnabled },
+                            set: { enabled in
+                                viewModel.setWindDownRoutineAutomaticStart(enabled, for: routine.id)
+                            }
+                        ))
+                        .font(AppTypography.caption)
                     }
                 }
             }
@@ -57,10 +66,19 @@ struct WindDownScheduleView: View {
                     }
                 }
                 Button("Use this period once") {
-                    viewModel.adjustNextWindDown(start: overrideStart, end: overrideEnd, role: overrideRole)
+                    if viewModel.adjustNextWindDown(start: overrideStart, end: overrideEnd, role: overrideRole) {
+                        overrideError = nil
+                    } else {
+                        overrideError = "Choose a future period that does not overlap a saved Wind Down."
+                    }
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(overrideEnd <= overrideStart)
+                if let overrideError {
+                    Text(overrideError)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(.red)
+                }
             }
 
             Section("Add a recurring quiet period") {
@@ -89,7 +107,8 @@ struct WindDownScheduleView: View {
                     }
                 }
                 .buttonStyle(.bordered)
-                .disabled(routineEnd <= routineStart)
+                .disabled(Calendar.current.dateComponents([.hour, .minute], from: routineStart)
+                    == Calendar.current.dateComponents([.hour, .minute], from: routineEnd))
             }
         }
         .navigationTitle("Wind Down periods")
