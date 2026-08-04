@@ -207,7 +207,7 @@ struct OnboardingProtectionStep: View {
             onboardingTitle(
                 eyebrow: "PROTECT THE QUIET",
                 title: "Give the trail room to stay quiet.",
-                detail: "Shielding covers only the two quiet windows and lifts overnight. Counting Sheep stays available while Ollie searches."
+                detail: "Selected apps stay limited through Wind Down and sleep. Counting Sheep stays available while Ollie keeps watch."
             )
 
             OnboardingChoiceCard(

@@ -92,6 +92,12 @@ struct HomeView: View {
                     onCode: viewModel.acceptQRCode
                 )
             }
+            .sheet(isPresented: $viewModel.showNightWatchStartPrompt) {
+                WindDownStartSheet()
+                    .environmentObject(viewModel)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
             .toolbar(.hidden, for: .navigationBar)
         }
     }
@@ -153,6 +159,76 @@ struct HomeView: View {
             try? await Task.sleep(for: .seconds(1.8))
             withAnimation(reduceMotion ? AppMotion.reducedFade : AppMotion.exit) {
                 pingBannerVisible = false
+            }
+        }
+    }
+}
+
+private struct WindDownStartSheet: View {
+    @EnvironmentObject private var viewModel: FocusRunViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    private var usesNFC: Bool { viewModel.selectedGuardKind == .nfcTag }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    Text("START WIND DOWN")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    Text(usesNFC ? "Tap in when you are ready." : "Give the evening a little room.")
+                        .font(AppTypography.title)
+                    Text(
+                        usesNFC
+                            ? "Your selected apps will be limited after you tap your Wind Down tag. The countdown starts at that moment."
+                            : "Your selected apps will be limited as soon as Wind Down starts."
+                    )
+                    .font(AppTypography.body)
+                    .foregroundStyle(AppColors.muted)
+
+                    Toggle("Show progress on the Lock Screen", isOn: $viewModel.liveActivityChoiceForNextRun)
+                        .font(AppTypography.body)
+                        .tint(AppColors.grass)
+
+                    if !viewModel.nfcStatus.isEmpty {
+                        Text(viewModel.nfcStatus)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+
+                    Button {
+                        viewModel.confirmNightWatchStart()
+                    } label: {
+                        Label(
+                            viewModel.isScanningNFCForStart
+                                ? "Waiting for your tag…"
+                                : (usesNFC ? "Tap Wind Down tag to start" : "Start app limits"),
+                            systemImage: usesNFC ? "dot.radiowaves.left.and.right" : "iphone.slash"
+                        )
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(PixelPrimaryButtonStyle())
+                    .disabled(viewModel.isScanningNFCForStart)
+
+                    Button("Cancel") {
+                        viewModel.cancelNightWatchStart()
+                        dismiss()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .font(AppTypography.body)
+                    .foregroundStyle(AppColors.muted)
+                }
+                .padding(AppSpacing.lg)
+            }
+            .background(AppColors.paper.ignoresSafeArea())
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        viewModel.cancelNightWatchStart()
+                        dismiss()
+                    }
+                }
             }
         }
     }

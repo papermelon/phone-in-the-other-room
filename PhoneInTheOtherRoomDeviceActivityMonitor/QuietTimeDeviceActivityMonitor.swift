@@ -16,8 +16,13 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             _ = usage
             return
         }
-        guard let window = QuietTimeShieldWindow(activityName: activity),
-              let snapshot = loadSchedule() else { return }
+        guard let window = QuietTimeShieldWindow(activityName: activity) else { return }
+        guard let snapshot = loadSchedule() else {
+            // A stale callback after the app cancelled a schedule must not leave
+            // a ManagedSettings shield stranded on the device.
+            store.clearAllSettings()
+            return
+        }
         guard snapshot.isEligible(at: Date()),
               snapshot.contains(Date(), in: window),
               let selection = loadSelection(),
@@ -45,8 +50,19 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
     override func intervalDidEnd(for activity: DeviceActivityName) {
         super.intervalDidEnd(for: activity)
         guard let window = QuietTimeShieldWindow(activityName: activity) else { return }
+        guard let snapshot = loadSchedule() else {
+            store.clearAllSettings()
+            return
+        }
+        let now = Date()
+        // DeviceActivity can deliver an end callback for an older interval after
+        // a replacement schedule is already active. Only clear when no current
+        // schedule interval is protecting the phone.
+        let currentScheduleIsActive = QuietTimeShieldWindow.allCases.contains {
+            snapshot.contains(now, in: $0)
+        }
+        guard !currentScheduleIsActive else { return }
         store.clearAllSettings()
-        guard let snapshot = loadSchedule() else { return }
         writeStatus(
             .cleared,
             snapshot: snapshot,

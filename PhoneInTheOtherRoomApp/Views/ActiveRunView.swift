@@ -205,24 +205,24 @@ struct ActiveRunView: View {
 
     private var placementEyebrow: String {
         switch guardKind {
-        case .qrCode: return "TUCK-IN SCAN"
-        case .nfcTag: return "TUCK-IN TAP"
+        case .qrCode: return "START SCAN"
+        case .nfcTag: return "START TAG"
         default: return "WATCH TUCK-IN"
         }
     }
 
     private var placementInstructions: String {
         switch guardKind {
-        case .qrCode: return "Scan the little code where your phone will sleep."
-        case .nfcTag: return "Tap the little tag where your phone will sleep."
+        case .qrCode: return "Scan the code to begin Wind Down."
+        case .nfcTag: return "Tap your Wind Down tag to begin."
         default: return "Walk your phone away. Ollie only needs one quick tuck-in check."
         }
     }
 
     private var placementButtonTitle: String {
         switch guardKind {
-        case .qrCode: return "Scan phone bed"
-        case .nfcTag: return "Tap phone bed"
+        case .qrCode: return "Scan to start"
+        case .nfcTag: return "Tap to start"
         default: return "Check Watch placement"
         }
     }
@@ -291,7 +291,7 @@ struct ActiveRunView: View {
                     isExpanded: $emergencyExitExpanded
                 ) {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("The tag has already confirmed the phone bed. Ollie keeps watch until the scheduled finish.")
+                        Text("Your Wind Down tag is active. Ollie keeps watch until the scheduled finish.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                         Button("Pair a replacement tag") {
@@ -374,7 +374,7 @@ struct ActiveRunView: View {
         case .honorTimer: return "No Watch check needed. Take your phone to its bed."
         case .watchPlacement: return "The Watch helps only with tuck-in, then it can rest too."
         case .qrCode: return "A small scan marks the place your phone is resting."
-        case .nfcTag: return "A small tap marked the place your phone is resting."
+        case .nfcTag: return "Your Wind Down tag is the normal way to finish early."
         }
     }
 

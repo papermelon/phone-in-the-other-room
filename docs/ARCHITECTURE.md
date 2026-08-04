@@ -185,10 +185,11 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    The next app activation reconstructs the local run.
 5. If optional placement is unavailable, the run automatically continues as a simple
    phone-away timer. No later distance reading can warn or end a run.
-6. Optional shielding derives its two one-off DeviceActivity schedules from this same
-   `NightWatchPlan`. ManagedSettings applies during wind-down, clears overnight, returns
-   during morning quiet, and clears on terminal/reset/replacement. A bounded App Group
-   status history distinguishes observed shield time from a requested schedule.
+6. Optional shielding derives a protected-session DeviceActivity schedule from this same
+   `NightWatchPlan`. After an eligible start (or the registered NFC tag confirmation),
+   ManagedSettings applies through wind-down, overnight, and morning quiet, then clears
+   on terminal/reset/replacement. A bounded App Group status history distinguishes observed
+   shield time from a requested schedule; legacy two-bookend snapshots remain decodable.
 7. On finish, `RewardEngine` retains compatibility updates while crediting only elapsed
    wind-down and morning-quiet minutes. The release presentation reads only
    `totalCompletedRuns`: one completed protected night adds one equal visible sheep.
@@ -326,10 +327,11 @@ cloud boundaries.
    bypass remains available and is recorded locally.
 2. **Night Watch intentionally crosses midnight.** Date boundaries, daylight-saving
    changes, timezone changes, termination, and background restoration need physical-device
-   QA in addition to the pure scheduling tests. Only quiet bookends count as progress.
+   QA in addition to the pure scheduling tests. The continuous app barrier is not progression;
+   only quiet bookends count as progress.
 3. **Screen Time needs physical-device QA.** The report/monitor/configuration/action
    extensions are embedded locally, but the three new shield bundle IDs still need Family
-   Controls distribution assignment and all bookend transitions need physical proof.
+   Controls distribution assignment and continuous barrier transitions need physical proof.
    in the project, but authorization, picker persistence, report rendering, empty states,
    and distribution profiles must be exercised on a physical iPhone.
 4. **Legacy mock layer remains compiled in Debug.** Friends/Shop and the old Farm/reward shelf
