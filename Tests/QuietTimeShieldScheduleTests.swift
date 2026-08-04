@@ -29,6 +29,7 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
         XCTAssertEqual(snapshot?.revision, 2)
         XCTAssertEqual(snapshot?.windDownInterval?.duration, 20 * 60)
         XCTAssertEqual(snapshot?.morningQuietInterval.duration, 30 * 60)
+        XCTAssertEqual(snapshot?.protectedSessionInterval?.duration, 8.5 * 60 * 60)
         XCTAssertTrue(snapshot?.contains(start.addingTimeInterval(5 * 60), in: .windDown) == true)
         XCTAssertFalse(snapshot?.contains(start.addingTimeInterval(4 * 60 * 60), in: .windDown) == true)
     }
@@ -55,7 +56,9 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
         let snapshot = QuietTimeShieldScheduleBuilder.snapshot(for: run, revision: 1)
 
         XCTAssertNil(snapshot?.windDownInterval)
+        XCTAssertEqual(snapshot?.protectedSessionInterval?.start, start)
         XCTAssertNotNil(snapshot?.morningQuietInterval)
+        XCTAssertTrue(snapshot?.isEligible(at: start.addingTimeInterval(1)) == true)
     }
 
     func testAutomaticScheduleRepeatsAtTheSameLocalTimeEachDay() {

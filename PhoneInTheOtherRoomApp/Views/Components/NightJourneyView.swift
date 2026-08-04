@@ -1,10 +1,14 @@
 import SwiftUI
+import UIKit
 
 struct NightJourneyView: View {
     let run: FocusRun
     let reduceMotion: Bool
 
-    private let environmentAsset = "farm_hills_side_scroll_test"
+    // The dog/ and farm/ groups intentionally provide namespaces in the asset
+    // catalog. Keep the qualified names here so Release builds render the same
+    // assets as previews and Debug builds.
+    private let environmentAsset = "farm/farm_hills_side_scroll_test"
     private let environmentAspectRatio: CGFloat = 1983.0 / 793.0
     private let scrollCycleDuration: TimeInterval = 18
 
@@ -112,7 +116,7 @@ struct NightJourneyView: View {
     }
 
     private func environmentImage(width: CGFloat, height: CGFloat) -> some View {
-        PixelAssetImage(name: environmentAsset, contentMode: .fill)
+        JourneyAssetImage(name: environmentAsset, contentMode: .fill)
             .frame(width: width, height: height)
     }
 
@@ -183,11 +187,43 @@ private struct OllieWalkCycleView: View {
             if state == .completed {
                 OllieRitualView(state: state, size: size)
             } else {
-                PixelAssetImage(name: "dog_run_frame_0\(frame + 1)")
+                JourneyAssetImage(name: "dog/dog_run_frame_0\(frame + 1)")
                     .frame(width: size, height: size)
             }
         }
         .accessibilityHidden(true)
+    }
+}
+
+/// Journey art is optional content: a missing or miscompiled catalog member
+/// must never turn the active-run scene into an empty rectangle. The qualified
+/// catalog names are checked at runtime and the fallback remains legible in a
+/// TestFlight build while the rest of the run continues normally.
+private struct JourneyAssetImage: View {
+    let name: String
+    var contentMode: ContentMode = .fit
+
+    var body: some View {
+        if let image = UIImage(named: name) {
+            Image(uiImage: image)
+                .resizable()
+                .interpolation(.none)
+                .antialiased(false)
+                .aspectRatio(contentMode: contentMode)
+        } else {
+            ZStack {
+                LinearGradient(
+                    colors: [AppColors.sky, AppColors.grass.opacity(0.65)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                Image(systemName: name.hasPrefix("dog/") ? "figure.walk" : "mountain.2.fill")
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.8))
+            }
+            .aspectRatio(contentMode: contentMode)
+            .accessibilityLabel("Journey illustration unavailable")
+        }
     }
 }
 

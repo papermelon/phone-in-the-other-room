@@ -164,7 +164,7 @@ enum ShieldingReadiness: Equatable {
 
     var detail: String {
         switch self {
-        case .ready: return "Selected apps will rest during the two quiet windows."
+        case .ready: return "Selected apps will stay limited through Wind Down and sleep."
         case .authorizationRequired: return "Allow Screen Time access, then choose at least one app or category."
         case .denied: return "Wind Down can still run as phone-away time without app shielding."
         case .noSelection: return "Choose at least one app or category, or continue without app shielding."

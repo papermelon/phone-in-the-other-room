@@ -14,8 +14,8 @@ enum SessionGuardKind: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .honorTimer: return "Phone-away timer"
         case .watchPlacement: return "Apple Watch assist"
-        case .qrCode: return "Scan phone bed"
-        case .nfcTag: return "Tap phone bed"
+        case .qrCode: return "Wind Down code"
+        case .nfcTag: return "Wind Down tag"
         }
     }
 
@@ -23,8 +23,8 @@ enum SessionGuardKind: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .honorTimer: return "A simple timer for the walk to another room. No NFC tag needed."
         case .watchPlacement: return "Ollie watches the phone head away, then rests."
-        case .qrCode: return "Scan a code where your phone sleeps."
-        case .nfcTag: return "Tap the same tag to start and end Wind Down."
+        case .qrCode: return "Scan your Wind Down code to confirm the app-access barrier."
+        case .nfcTag: return "Tap your Wind Down tag to set the app-access barrier."
         }
     }
 
@@ -32,8 +32,8 @@ enum SessionGuardKind: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .honorTimer: return "Timer"
         case .watchPlacement: return "Watch"
-        case .qrCode: return "QR code"
-        case .nfcTag: return "NFC tag"
+        case .qrCode: return "Wind Down code"
+        case .nfcTag: return "Wind Down tag"
         }
     }
 
@@ -76,9 +76,9 @@ enum WindDownProtectionChoice: String, CaseIterable, Identifiable, Equatable {
     var detail: String {
         switch self {
         case .appShielding:
-            return "Selected apps rest during both quiet windows. No tag needed."
+            return "Selected apps are limited for the full Wind Down and sleep window."
         case .nfcAndAppShielding:
-            return "A phone-bed tag confirms the phone is away while selected apps rest."
+            return "Tap your Wind Down tag to set the barrier; selected apps stay limited until you finish."
         }
     }
 

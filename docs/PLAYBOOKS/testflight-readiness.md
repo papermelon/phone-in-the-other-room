@@ -102,8 +102,8 @@ xcodebuild archive \
 - [ ] Current setup exposes App Shielding or NFC + App Shielding. Legacy timer, Watch, and QR
       values remain decodable but are not offered to new configurations.
 - [ ] Automatic Wind Down sends 60/30/10-minute lead-ins; with shielding enabled, selected
-      apps rest at the saved start time while the main app is closed.
-- [ ] Shielding is separately optional, uses a user-selected set, lifts overnight, and
+      apps are limited at the saved start time while the main app is closed.
+- [ ] The selected-app barrier continues through Wind Down, sleep, and morning quiet, and
       never prevents opening Counting Sheep.
 - [ ] Sleep outcomes are described as context/association, never diagnosis or causation.
 
@@ -139,9 +139,11 @@ xcodebuild archive \
 ## 6. Shielding physical-device matrix
 
 - [ ] Select one disposable test app and one category; never select safety-critical apps.
-- [ ] Wind-down shield applies after honor, QR, NFC, and Watch-confirmed starts.
-- [ ] Wind-down shield clears at bedtime; morning shield returns at wake time and clears at
-      `protectedUntil`, while Counting Sheep is foregrounded, backgrounded, and terminated.
+- [ ] App Shielding applies immediately after an eligible App Shielding start; NFC + App
+      Shielding applies only after the registered Wind Down tag is read.
+- [ ] The selected-app barrier remains active through wind-down, overnight, and morning
+      quiet, and clears at `protectedUntil`, authenticated NFC exit, or emergency exit,
+      while Counting Sheep is foregrounded, backgrounded, and terminated.
 - [ ] The shield appearance is gentle and “Return to quiet” closes the shielded app.
 - [ ] Opening Counting Sheep and ending Wind Down through its configured method—or using
       the emergency exit—immediately clears shields.

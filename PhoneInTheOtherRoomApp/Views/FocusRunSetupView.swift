@@ -341,7 +341,7 @@ struct FocusRunSetupView: View {
                 }
 
                 Divider()
-                Text("Selected apps rest during both quiet windows. The shield lifts overnight and returns for morning quiet.")
+                Text("Selected apps stay limited through Wind Down and sleep. Counting Sheep remains available for an emergency exit.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
 

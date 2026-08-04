@@ -89,7 +89,8 @@ final class FocusSessionCoordinator: ObservableObject {
         configuration: FocusRunConfiguration,
         focusAccepted: Bool,
         startedAt: Date = Date(),
-        autoConfirmPlacement: Bool = false
+        autoConfirmPlacement: Bool = false,
+        liveActivityRequested: Bool = true
     ) {
         resetToSetup(clearPersistedRun: false, liveActivityCancellationReason: .replaced)
         let plannedDuration = configuration.nightWatchPlan.map {
@@ -102,7 +103,8 @@ final class FocusSessionCoordinator: ObservableObject {
             startedAt: startedAt,
             state: placementRequired ? .placementGrace : .running,
             guardKind: configuration.guardKind,
-            nightWatchPlan: configuration.nightWatchPlan
+            nightWatchPlan: configuration.nightWatchPlan,
+            liveActivityRequested: liveActivityRequested
         )
         if !configuration.guardKind.needsPlacementConfirmation || autoConfirmPlacement {
             newRun.phoneAwayValidatedAt = startedAt
@@ -133,9 +135,18 @@ final class FocusSessionCoordinator: ObservableObject {
                 idempotencyKey: "\(newRun.id.uuidString):session-started",
                 payload: ["startMethod": newRun.guardKind.rawValue]
             )
-            // App shielding protects the quiet window from the moment the user taps
-            // Start. NFC/QR are placement evidence for the receipt, not a prerequisite
-            // for the countdown or the shield.
+            if autoConfirmPlacement && newRun.guardKind == .nfcTag {
+                recordRitualEvent(
+                    .placementConfirmed,
+                    for: newRun,
+                    at: startedAt,
+                    idempotencyKey: "\(newRun.id.uuidString):placement-confirmed",
+                    payload: ["method": "nfcTag"]
+                )
+            }
+            // The start flow only calls this after the required preflight. For NFC,
+            // the tag tap is the barrier-confirming action, so the run and shield are
+            // both created together after that tap.
             reconcileShielding(for: newRun, at: Date())
         }
         liveActivity.start(for: newRun)
@@ -156,11 +167,11 @@ final class FocusSessionCoordinator: ObservableObject {
         case .nfcTag:
             addEvent(
                 autoConfirmPlacement
-                    ? "Automatic Wind Down started."
-                    : "Wind Down is running. Tap the phone-bed tag when it is ready.",
+                    ? "Wind Down tag confirmed."
+                    : "Wind Down is running. Tap the Wind Down tag when it is ready.",
                 detail: autoConfirmPlacement
-                    ? "The registered NFC tag is still required to end normally."
-                    : "The countdown and any selected app shield start immediately; the tap records the phone bed."
+                    ? "Selected apps are limited until the scheduled finish or another tap."
+                    : "The session has not started until the registered tag is tapped."
             )
         case .honorTimer:
             break
@@ -402,7 +413,8 @@ final class FocusSessionCoordinator: ObservableObject {
         plan: NightWatchPlan,
         guardKind: SessionGuardKind,
         startedAt: Date,
-        endedAt: Date
+        endedAt: Date,
+        liveActivityRequested: Bool = true
     ) {
         guard endedAt > startedAt else { return }
         if let run, ![.setup, .completed, .endedEarly].contains(run.state) {
@@ -418,7 +430,8 @@ final class FocusSessionCoordinator: ObservableObject {
             ),
             focusAccepted: false,
             startedAt: startedAt,
-            autoConfirmPlacement: true
+            autoConfirmPlacement: true,
+            liveActivityRequested: liveActivityRequested
         )
         reconcileSession(at: endedAt)
     }
@@ -566,7 +579,7 @@ final class FocusSessionCoordinator: ObservableObject {
                 payload: ["reason": "noSelection"]
             )
         case .scheduled:
-            shieldingMessage = "The selected apps will rest during the next quiet window."
+            shieldingMessage = "The selected apps will be limited for the next Wind Down."
             recordRitualEvent(
                 .shieldScheduleRequested,
                 for: run,
@@ -574,7 +587,7 @@ final class FocusSessionCoordinator: ObservableObject {
                 idempotencyKey: "\(run.id.uuidString):shield:scheduled"
             )
         case .applied:
-            shieldingMessage = "The selected apps are resting until this quiet window ends."
+            shieldingMessage = "The selected apps are limited until the scheduled finish."
             recordRitualEvent(
                 .shieldScheduleRequested,
                 for: run,
@@ -630,17 +643,14 @@ final class FocusSessionCoordinator: ObservableObject {
 
     func setLiveActivityEnabled(_ enabled: Bool) {
         liveActivity.setEnabled(enabled)
-        if enabled, let run {
-            liveActivity.start(for: run)
-        }
     }
 
     private func openingMessage(for guardKind: SessionGuardKind) -> String {
         switch guardKind {
         case .honorTimer: return "Carry the phone to its resting place. Ollie will keep the quiet."
         case .watchPlacement: return "Carry the phone away. Ollie will make one short tuck-in check."
-        case .qrCode: return "Scan the code where your phone will sleep."
-        case .nfcTag: return "Tap the phone bed tag when it is ready."
+        case .qrCode: return "Scan your Wind Down code to set the app-access barrier."
+        case .nfcTag: return "Tap your Wind Down tag to set the app-access barrier."
         }
     }
 

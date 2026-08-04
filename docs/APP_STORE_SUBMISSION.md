@@ -50,16 +50,16 @@ do something away from the screen.
 Counting Sheep includes:
 
 • A saved wind-down and morning-quiet plan
-• Optional app shielding during those two quiet windows
-• Honor-timer, QR, NFC-tag, and Apple Watch tuck-in choices
+• Optional selected-app shielding through Wind Down and sleep
+• App Shielding or NFC + App Shielding; legacy timer, QR, and Watch data remain compatible
 • A calm Lock Screen Live Activity while Wind Down is running
 • Quiet-minute history, a factual seven-night record, and one equal sheep settling after each protected Wind Down
 • Optional Apple Health sleep duration and available sleep stages
 • Private morning reflections and cautious sleep-context comparisons
 • A direct feedback and support path
 
-NFC tags and Apple Watch are optional. Wind Down always has a no-hardware path, and
-shielding always has a gentle early exit through Counting Sheep.
+NFC tags are optional. Wind Down always has a no-hardware path, and shielding always has a
+gentle early exit through the registered Wind Down tag or Counting Sheep.
 
 Detailed ritual and Health history stays on your device by default. Optional impact sharing
 is separately explained and consented to. Counting Sheep does not diagnose sleep conditions

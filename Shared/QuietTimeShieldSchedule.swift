@@ -1,16 +1,20 @@
 import Foundation
 
 enum QuietTimeShieldWindow: String, Codable, CaseIterable, Equatable {
+    case protectedSession
     case windDown
     case morningQuiet
 }
 
 struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     var schemaVersion: Int
     var runID: UUID
     var revision: Int
+    /// The actual app-limit interval. Unlike the two credited bookends, this
+    /// can span the overnight phase when the user chooses the NFC barrier.
+    var protectedSessionInterval: DateInterval?
     var windDownInterval: DateInterval?
     var morningQuietInterval: DateInterval
     var updatedAt: Date
@@ -20,6 +24,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
         schemaVersion: Int = currentSchemaVersion,
         runID: UUID,
         revision: Int,
+        protectedSessionInterval: DateInterval? = nil,
         windDownInterval: DateInterval?,
         morningQuietInterval: DateInterval,
         updatedAt: Date,
@@ -28,6 +33,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
         self.schemaVersion = schemaVersion
         self.runID = runID
         self.revision = max(1, revision)
+        self.protectedSessionInterval = protectedSessionInterval
         self.windDownInterval = windDownInterval
         self.morningQuietInterval = morningQuietInterval
         self.updatedAt = updatedAt
@@ -35,7 +41,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, runID, revision, windDownInterval, morningQuietInterval
+        case schemaVersion, runID, revision, protectedSessionInterval, windDownInterval, morningQuietInterval
         case updatedAt, repeatsDaily
     }
 
@@ -44,6 +50,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
         schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? Self.currentSchemaVersion
         runID = try container.decode(UUID.self, forKey: .runID)
         revision = max(1, try container.decodeIfPresent(Int.self, forKey: .revision) ?? 1)
+        protectedSessionInterval = try container.decodeIfPresent(DateInterval.self, forKey: .protectedSessionInterval)
         windDownInterval = try container.decodeIfPresent(DateInterval.self, forKey: .windDownInterval)
         morningQuietInterval = try container.decode(DateInterval.self, forKey: .morningQuietInterval)
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
@@ -52,6 +59,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
 
     func interval(for window: QuietTimeShieldWindow) -> DateInterval? {
         switch window {
+        case .protectedSession: return protectedSessionInterval
         case .windDown: return windDownInterval
         case .morningQuiet: return morningQuietInterval
         }
@@ -79,12 +87,18 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
     /// it was installed for. This prevents a late callback from a superseded
     /// DeviceActivity schedule from applying tomorrow's schedule today.
     func isEligible(at date: Date) -> Bool {
-        let firstWindowStart = windDownInterval?.start ?? morningQuietInterval.start
+        // A session that starts after bedtime can have no wind-down bookend.
+        // Its protected interval is still valid immediately; using morningQuiet
+        // as the fallback would make the monitor clear an overnight shield.
+        let firstWindowStart = protectedSessionInterval?.start
+            ?? windDownInterval?.start
+            ?? morningQuietInterval.start
         return date >= firstWindowStart
     }
 
     func hasSameWindows(as other: QuietTimeShieldScheduleSnapshot) -> Bool {
         runID == other.runID
+            && protectedSessionInterval == other.protectedSessionInterval
             && windDownInterval == other.windDownInterval
             && morningQuietInterval == other.morningQuietInterval
             && repeatsDaily == other.repeatsDaily
@@ -164,13 +178,13 @@ enum QuietTimeShieldEvidenceMath {
         let windDown = protectedSeconds(
             in: schedule.windDownInterval,
             window: .windDown,
-            statuses: relevant,
+            statuses: relevant.filter { $0.window == .windDown || $0.window == .protectedSession },
             endDate: endDate
         )
         let morning = protectedSeconds(
             in: schedule.morningQuietInterval,
             window: .morningQuiet,
-            statuses: relevant,
+            statuses: relevant.filter { $0.window == .morningQuiet || $0.window == .protectedSession },
             endDate: endDate
         )
         let appliedWindows = Set(
@@ -179,7 +193,10 @@ enum QuietTimeShieldEvidenceMath {
             }
         )
         let evidence: ShieldProtectionEvidence
-        if appliedWindows.count == QuietTimeShieldWindow.allCases.count {
+        let hasContinuousProtection = schedule.protectedSessionInterval != nil
+            && appliedWindows.contains(.protectedSession)
+        let hasLegacyBookendProtection = appliedWindows.isSuperset(of: [.windDown, .morningQuiet])
+        if hasContinuousProtection || hasLegacyBookendProtection {
             evidence = .observed
         } else if !appliedWindows.isEmpty {
             evidence = .partial
@@ -202,7 +219,9 @@ enum QuietTimeShieldEvidenceMath {
         endDate: Date
     ) -> TimeInterval {
         guard let interval else { return 0 }
-        let windowStatuses = statuses.filter { $0.window == window }
+        let windowStatuses = statuses.filter {
+            $0.window == window || $0.window == .protectedSession
+        }
         var start: Date?
         var protected: TimeInterval = 0
         for status in windowStatuses {
@@ -238,10 +257,22 @@ enum QuietTimeShieldScheduleBuilder {
         updatedAt: Date = Date()
     ) -> QuietTimeShieldScheduleSnapshot? {
         guard let plan = run.nightWatchPlan else { return nil }
+        let protectedStart: Date?
+        if run.guardKind == .nfcTag {
+            // An active NFC run cannot be scheduled before its barrier tap. A
+            // terminal legacy record may not have persisted placement metadata,
+            // but its factual receipt still needs to decode for history.
+            let terminal = [.setup, .completed, .endedEarly].contains(run.state)
+            guard run.placementStatus == .confirmed || terminal else { return nil }
+            protectedStart = run.phoneAwayValidatedAt ?? run.startedAt
+        } else {
+            protectedStart = run.startedAt
+        }
         return snapshot(
             runID: run.id,
             plan: plan,
-            startedAt: run.startedAt,
+            startedAt: protectedStart ?? run.startedAt,
+            protectedStart: protectedStart,
             revision: revision,
             updatedAt: updatedAt
         )
@@ -256,6 +287,7 @@ enum QuietTimeShieldScheduleBuilder {
             runID: schedule.id,
             plan: schedule.plan,
             startedAt: schedule.startedAt,
+            protectedStart: schedule.startedAt,
             revision: revision,
             updatedAt: updatedAt,
             repeatsDaily: true
@@ -266,6 +298,7 @@ enum QuietTimeShieldScheduleBuilder {
         runID: UUID,
         plan: NightWatchPlan,
         startedAt: Date,
+        protectedStart: Date?,
         revision: Int,
         updatedAt: Date,
         repeatsDaily: Bool = false
@@ -280,6 +313,9 @@ enum QuietTimeShieldScheduleBuilder {
         return QuietTimeShieldScheduleSnapshot(
             runID: runID,
             revision: revision,
+            protectedSessionInterval: protectedStart.map {
+                DateInterval(start: $0, end: plan.protectedUntil)
+            },
             windDownInterval: windDownInterval,
             morningQuietInterval: DateInterval(
                 start: plan.wakeTime,
@@ -295,6 +331,7 @@ enum QuietTimeShieldScheduleBuilder {
 import DeviceActivity
 
 extension DeviceActivityName {
+    static let ollieProtectedSession = Self("ollie.quietTime.protectedSession")
     static let ollieWindDown = Self("ollie.quietTime.windDown")
     static let ollieMorningQuiet = Self("ollie.quietTime.morningQuiet")
 }
@@ -302,6 +339,7 @@ extension DeviceActivityName {
 extension QuietTimeShieldWindow {
     var activityName: DeviceActivityName {
         switch self {
+        case .protectedSession: return .ollieProtectedSession
         case .windDown: return .ollieWindDown
         case .morningQuiet: return .ollieMorningQuiet
         }
@@ -309,6 +347,7 @@ extension QuietTimeShieldWindow {
 
     init?(activityName: DeviceActivityName) {
         switch activityName {
+        case .ollieProtectedSession: self = .protectedSession
         case .ollieWindDown: self = .windDown
         case .ollieMorningQuiet: self = .morningQuiet
         default: return nil

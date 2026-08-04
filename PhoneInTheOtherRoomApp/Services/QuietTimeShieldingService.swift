@@ -92,7 +92,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             writeStatus(
                 for: snapshot,
                 status: .applied,
-                window: run.nightWatchPhase(at: date)?.shieldWindow,
+                window: statusWindow(for: snapshot, run: run, at: date),
                 at: date
             )
             return .applied
@@ -158,14 +158,22 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             && loadSchedule()?.repeatsDaily == true
         clearStore()
         guard !preserveAutomaticSchedule else { return }
-        activityCenter.stopMonitoring([.ollieWindDown, .ollieMorningQuiet])
+        activityCenter.stopMonitoring([
+            .ollieProtectedSession,
+            .ollieWindDown,
+            .ollieMorningQuiet
+        ])
 #endif
         sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.scheduleKey)
     }
 
     func cancelAutomaticSchedule() {
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(ManagedSettings)
-        activityCenter.stopMonitoring([.ollieWindDown, .ollieMorningQuiet])
+        activityCenter.stopMonitoring([
+            .ollieProtectedSession,
+            .ollieWindDown,
+            .ollieMorningQuiet
+        ])
         clearStore()
 #endif
         sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.scheduleKey)
@@ -217,8 +225,15 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         _ snapshot: QuietTimeShieldScheduleSnapshot,
         at date: Date
     ) throws {
+        // New schedules use one continuous interval so the monitor cannot clear
+        // an overnight shield when the wind-down bookend ends. Snapshots written
+        // by older builds have no protected interval and retain the two-window
+        // compatibility path.
+        let windows: [QuietTimeShieldWindow] = snapshot.protectedSessionInterval != nil
+            ? [.protectedSession]
+            : [.windDown, .morningQuiet]
         let expectedActivities = Set<DeviceActivityName>(
-            QuietTimeShieldWindow.allCases.compactMap { window -> DeviceActivityName? in
+            windows.compactMap { window -> DeviceActivityName? in
                 guard let interval = snapshot.interval(for: window),
                       interval.end > date else { return nil }
                 return window.activityName
@@ -229,9 +244,22 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             return
         }
 
-        activityCenter.stopMonitoring([.ollieWindDown, .ollieMorningQuiet])
+        activityCenter.stopMonitoring([
+            .ollieProtectedSession,
+            .ollieWindDown,
+            .ollieMorningQuiet
+        ])
         clearStore()
-        for window in QuietTimeShieldWindow.allCases {
+
+        // Publish the snapshot before registering the interval. DeviceActivity
+        // may deliver an immediate start callback; the monitor must be able to
+        // validate that callback instead of treating it as a stale schedule.
+        guard let data = try? JSONEncoder().encode(snapshot) else {
+            throw QuietTimeShieldingError.encodingFailed
+        }
+        sharedDefaults?.set(data, forKey: QuietTimeShieldSharedStorage.scheduleKey)
+
+        for window in windows {
             guard let interval = snapshot.interval(for: window),
                   interval.end > date else { continue }
             let effectiveStart = max(
@@ -250,11 +278,6 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             )
             try activityCenter.startMonitoring(window.activityName, during: schedule)
         }
-
-        guard let data = try? JSONEncoder().encode(snapshot) else {
-            throw QuietTimeShieldingError.encodingFailed
-        }
-        sharedDefaults?.set(data, forKey: QuietTimeShieldSharedStorage.scheduleKey)
         writeStatus(for: snapshot, status: .scheduled, window: nil, at: Date())
     }
 
@@ -280,7 +303,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             writeStatus(
                 for: snapshot,
                 status: .applied,
-                window: run.nightWatchPhase(at: date)?.shieldWindow,
+                window: statusWindow(for: snapshot, run: run, at: date),
                 at: date
             )
             return .applied
@@ -297,6 +320,17 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         store.shield.applicationCategories = selection.categoryTokens.isEmpty
             ? nil
             : .specific(selection.categoryTokens)
+    }
+
+    private func statusWindow(
+        for snapshot: QuietTimeShieldScheduleSnapshot,
+        run: FocusRun,
+        at date: Date
+    ) -> QuietTimeShieldWindow? {
+        if snapshot.contains(date, in: .protectedSession) {
+            return .protectedSession
+        }
+        return run.nightWatchPhase(at: date)?.shieldWindow
     }
 
     private func clearStore() {

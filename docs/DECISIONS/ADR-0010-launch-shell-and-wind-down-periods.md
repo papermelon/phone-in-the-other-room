@@ -48,7 +48,9 @@ Active Wind Down presents a compact, scroll-safe wall-clock journey scene with O
 the first moment across farm, prairie, mountain, moonlit, and sunrise segments. Its illustrated
 trail-mile cue is derived from persisted plan dates, restores after relaunch, respects Reduce
 Motion, and never changes progression or reward value. NFC confirmation is a tuck-in action;
-ending early stays an explicit secondary emergency action.
+ending early stays an explicit secondary emergency action. When app shielding is enabled, the
+selected-app barrier begins with the eligible start (after the registered NFC tag for NFC mode)
+and remains through overnight until the scheduled morning-quiet finish.
 
 ## Compatibility
 

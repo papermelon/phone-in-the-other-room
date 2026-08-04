@@ -1,7 +1,7 @@
 import XCTest
 
 final class ProximityClassifierTests: XCTestCase {
-    func testShieldingOnlyAppliesToQuietBookends() {
+    func testShieldingCoversTheProtectedSessionUntilScheduledFinish() {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         let plan = NightWatchPlan(
             intendedBedtime: start.addingTimeInterval(30 * 60),
@@ -22,7 +22,7 @@ final class ProximityClassifierTests: XCTestCase {
         XCTAssertTrue(QuietTimeShieldingPolicy.shouldShield(
             run: run, at: start.addingTimeInterval(5 * 60), isEnabled: true
         ))
-        XCTAssertFalse(QuietTimeShieldingPolicy.shouldShield(
+        XCTAssertTrue(QuietTimeShieldingPolicy.shouldShield(
             run: run, at: start.addingTimeInterval(4 * 60 * 60), isEnabled: true
         ))
         XCTAssertTrue(QuietTimeShieldingPolicy.shouldShield(
@@ -31,6 +31,33 @@ final class ProximityClassifierTests: XCTestCase {
         run.state = .endedEarly
         XCTAssertFalse(QuietTimeShieldingPolicy.shouldShield(
             run: run, at: start.addingTimeInterval(5 * 60), isEnabled: true
+        ))
+    }
+
+    func testNFCShieldingWaitsForTheWindDownTag() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(30 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .stretch
+        )
+        var run = FocusRun(
+            plannedDurationSeconds: plan.protectedUntil.timeIntervalSince(start),
+            startedAt: start,
+            state: .running,
+            guardKind: .nfcTag,
+            nightWatchPlan: plan
+        )
+        XCTAssertFalse(QuietTimeShieldingPolicy.shouldShield(
+            run: run, at: start.addingTimeInterval(60), isEnabled: true
+        ))
+        run.placementStatus = .confirmed
+        XCTAssertTrue(QuietTimeShieldingPolicy.shouldShield(
+            run: run, at: start.addingTimeInterval(60), isEnabled: true
         ))
     }
     func testScreenTimeSharedStorageUsesStableAppGroupAndOllieKeys() {
@@ -224,6 +251,19 @@ final class ProximityClassifierTests: XCTestCase {
         XCTAssertEqual(run.guardKind, .watchPlacement)
         XCTAssertEqual(run.placementStatus, .awaitingConfirmation)
         XCTAssertNil(run.nightWatchPlan)
+        XCTAssertTrue(run.liveActivityRequested)
+    }
+
+    func testRunPersistsPerRunLiveActivityConsent() throws {
+        let original = FocusRun(
+            plannedDurationSeconds: 25 * 60,
+            startedAt: Date(timeIntervalSince1970: 1_800_000_000),
+            state: .running,
+            liveActivityRequested: false
+        )
+        let data = try JSONEncoder().encode(original)
+        let decoded = try JSONDecoder().decode(FocusRun.self, from: data)
+        XCTAssertFalse(decoded.liveActivityRequested)
     }
 
     func testRealtimeWatchMessageRequiresMatchingRunAndFreshSentAt() {

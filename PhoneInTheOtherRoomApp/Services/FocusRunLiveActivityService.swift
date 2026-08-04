@@ -32,6 +32,7 @@ final class FocusRunLiveActivityService {
     private var latestTokens: [String: Data] = [:]
     private var tokenGenerations: [String: Int] = [:]
     private let installationID: UUID
+    private let remotePushEnabled: Bool
     private let logger = Logger(subsystem: "com.ngawangchime.countingsheep", category: "LiveActivity")
 #if DEBUG
     private var debugStartCount = 0
@@ -54,6 +55,7 @@ final class FocusRunLiveActivityService {
     ) {
         let resolvedEnabled = enabled ?? Self.defaultEnabled
         self.enabled = resolvedEnabled
+        self.remotePushEnabled = (try? SupabaseConfiguration.load().liveActivityPushEnabled) ?? false
         // Keep the configured sink available if the user turns Live Activity on later
         // from Settings; the enabled preference gates all activity work, not sink setup.
         self.remoteSink = remoteSink ?? DisabledFocusRunLiveActivityRemoteSink()
@@ -81,6 +83,10 @@ final class FocusRunLiveActivityService {
     }
 
     func start(for run: FocusRun) {
+        // The Settings toggle is only the default. Each run records the explicit
+        // answer from its start sheet so relaunching cannot create an activity
+        // that the user declined.
+        guard run.liveActivityRequested else { return }
 #if DEBUG
         debugStartCount += 1
         logger.debug("start requested count=\(self.debugStartCount) run=\(run.id.uuidString, privacy: .public)")
@@ -100,7 +106,9 @@ final class FocusRunLiveActivityService {
         syncRun(run, status: .active)
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
         if let activity = activeActivity(for: run.id) {
-            observePushTokens(for: activity, run: run)
+            if remotePushEnabled {
+                observePushTokens(for: activity, run: run)
+            }
             synchronize(activity, with: run)
             return
         }
@@ -114,12 +122,17 @@ final class FocusRunLiveActivityService {
             let activity = try Activity.request(
                 attributes: attributes,
                 content: ActivityContent(state: content, staleDate: run.plannedEndAt),
-                pushType: .token
+                // A local Live Activity does not need an APNs token. Requesting
+                // token delivery while the backend flag is off exercised a
+                // separate extension/entitlement path and regressed Build 9.
+                pushType: remotePushEnabled ? .token : nil
             )
 #if DEBUG
             logger.debug("Live Activity created activity=\(activity.id, privacy: .public)")
 #endif
-            observePushTokens(for: activity, run: run)
+            if remotePushEnabled {
+                observePushTokens(for: activity, run: run)
+            }
         } catch {
             logger.error("Live Activity request failed: \(error.localizedDescription, privacy: .public)")
             // A Live Activity is a glanceable extra; a denied or unavailable system state
@@ -164,6 +177,7 @@ final class FocusRunLiveActivityService {
 #if DEBUG
         guard !liveActivitiesDisabledForEnergyProfiling else { return }
 #endif
+        guard run.liveActivityRequested else { return }
         guard enabled else { return }
         syncRun(run, status: .active)
         guard let activity = activeActivity(for: run.id) else { return }

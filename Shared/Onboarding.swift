@@ -55,7 +55,7 @@ enum OnboardingProtectionChoice: String, Codable, CaseIterable, Identifiable {
     var detail: String {
         switch self {
         case .appShielding:
-            return "Selected apps rest during both quiet windows. No NFC tag needed."
+            return "Selected apps stay limited through Wind Down and sleep. No NFC tag needed."
         case .nfcAndAppShielding:
             return "A phone-bed tag confirms where the phone is tucked away, while selected apps rest too."
         }

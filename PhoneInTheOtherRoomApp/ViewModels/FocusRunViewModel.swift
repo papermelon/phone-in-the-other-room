@@ -53,6 +53,10 @@ final class FocusRunViewModel: ObservableObject {
     @Published var nfcStatus = ""
     @Published var shieldingPreflightMessage: String?
     @Published var liveActivityEnabled = FocusRunLiveActivityService.preferenceEnabled
+    @Published var showNightWatchStartPrompt = false
+    @Published var liveActivityChoiceForNextRun = FocusRunLiveActivityService.preferenceEnabled
+    @Published var nightWatchStartStatus = ""
+    @Published var isScanningNFCForStart = false
     @Published var quietAppearanceEnabled = UserDefaults.standard.bool(forKey: "ollie.quietAppearance.enabled")
     @Published var isProvisioningNFCTag = false
     @Published var phoneBedTagRegistration: PhoneBedTagRegistration?
@@ -73,6 +77,8 @@ final class FocusRunViewModel: ObservableObject {
     private let screenTimeSelectionService = ScreenTimeSelectionService.shared
 #endif
     private var cancellables = Set<AnyCancellable>()
+    private var pendingNightWatchPlan: NightWatchPlan?
+    private var nightWatchStartInFlight = false
 
     init(coordinator: FocusSessionCoordinator? = nil) {
         let savedQuietTime = PersistenceService.shared.nightWatchPreferences
@@ -223,19 +229,64 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     func requestStartNightWatch() {
+        guard !isRunning, !nightWatchStartInFlight else { return }
         if shieldingEnabled && shieldingReadiness != .ready {
             shieldingPreflightMessage = shieldingReadiness.detail
             return
         }
+        // The release choices are both shielding choices. Recover a stale
+        // preference left by an older build once Family Controls and a bedtime
+        // selection are demonstrably ready, rather than starting an unshielded
+        // run with no visible explanation.
+        if shieldingReadiness == .ready && !shieldingEnabled {
+            shieldingEnabled = true
+            UserDefaults.standard.set(true, forKey: QuietTimeShieldingService.enabledKey)
+        }
         saveNightWatchPreferences()
+        pendingNightWatchPlan = makePlanForNextWindDown(startedAt: Date())
+        liveActivityChoiceForNextRun = liveActivityEnabled
+        nightWatchStartStatus = ""
+        showNightWatchStartPrompt = true
+    }
+
+    func cancelNightWatchStart() {
+        guard !nightWatchStartInFlight else { return }
+        isScanningNFCForStart = false
+        pendingNightWatchPlan = nil
+        nightWatchStartStatus = ""
+        showNightWatchStartPrompt = false
+    }
+
+    func confirmNightWatchStart() {
+        guard pendingNightWatchPlan != nil, !nightWatchStartInFlight else { return }
+        if selectedGuardKind == .nfcTag {
+            scanNFCTag()
+        } else {
+            startPendingNightWatch()
+        }
+    }
+
+    private func startPendingNightWatch() {
+        guard let plan = pendingNightWatchPlan, !nightWatchStartInFlight else { return }
+        nightWatchStartInFlight = true
+        let startedAt = Date()
+        let liveActivityRequested = liveActivityChoiceForNextRun
+        liveActivityEnabled = liveActivityRequested
+        UserDefaults.standard.set(
+            liveActivityRequested,
+            forKey: FocusRunLiveActivityService.preferenceKey
+        )
+        pendingNightWatchPlan = nil
+        showNightWatchStartPrompt = false
         notifications.cancelNightWatchReminder()
         persistence.automaticWindDownSchedule = nil
         quietTimeShielding.cancelAutomaticSchedule()
-        let startedAt = Date()
-        let plan = makePlanForNextWindDown(startedAt: startedAt)
         coordinator.start(
             configuration: FocusRunConfiguration(nightWatchPlan: plan, guardKind: selectedGuardKind),
-            focusAccepted: false
+            focusAccepted: false,
+            startedAt: startedAt,
+            autoConfirmPlacement: selectedGuardKind == .nfcTag,
+            liveActivityRequested: liveActivityRequested
         )
         notifications.scheduleNightWatchNotifications(
             for: plan,
@@ -245,12 +296,8 @@ final class FocusRunViewModel: ObservableObject {
             preferences: notificationPreferences
         )
         usageMonitoring.schedule(for: plan, startedAt: startedAt)
-        if selectedGuardKind == .qrCode {
-            showQRCodeScanner = true
-        } else if selectedGuardKind == .nfcTag {
-            scanNFCTag()
-        }
-        showFocusModePrompt = false
+        nightWatchStartInFlight = false
+        nightWatchStartStatus = ""
     }
 
     func saveWindDownRoutines() {
@@ -501,7 +548,9 @@ final class FocusRunViewModel: ObservableObject {
         selectedGuardKind = selectedGuardKind.releaseCompatibleKind
         nightWatchPreferences.guardKind = selectedGuardKind
         nightWatchPreferences.isConfigured = true
-        shieldingEnabled = shieldingReadiness == .ready
+        // Keep the user's explicit shielding choice. Readiness is checked before
+        // a run starts; saving a bedtime edit must not silently turn an enabled
+        // shield off just because Family Controls is temporarily refreshing.
         UserDefaults.standard.set(shieldingEnabled, forKey: QuietTimeShieldingService.enabledKey)
         persistence.nightWatchPreferences = nightWatchPreferences
         persistence.offlinePurpose = offlinePurpose
@@ -612,14 +661,32 @@ final class FocusRunViewModel: ObservableObject {
     func scanNFCTag() {
         nfcStatus = ""
         guard registeredNFCDigest != nil else {
-            nfcStatus = "Set up this phone-bed tag first, or continue without a placement check."
+            nfcStatus = "Set up a Wind Down tag in Settings before starting with NFC."
             return
         }
+        let isPendingStart = pendingNightWatchPlan != nil && activeRun == nil
+        isScanningNFCForStart = isPendingStart
         phoneBedNFCService.scan { [weak self] result in
             guard let self else { return }
+            self.isScanningNFCForStart = false
             switch result {
             case .read(let read):
                 let expectedDigest = self.registeredNFCDigest
+                if self.pendingNightWatchPlan != nil,
+                   self.activeRun == nil {
+                    guard read.digest == expectedDigest else {
+                        self.nfcStatus = "That is not your Wind Down tag. The session has not started."
+                        return
+                    }
+                    if var registration = self.phoneBedTagRegistration {
+                        registration.lastVerifiedAt = Date()
+                        self.phoneBedTagRegistration = registration
+                        self.persistence.phoneBedNFCTagRegistration = registration
+                    }
+                    self.nfcStatus = "Wind Down is starting."
+                    self.startPendingNightWatch()
+                    return
+                }
                 if self.coordinator.confirmNFCTag(
                     read.digest,
                     expectedFingerprint: expectedDigest
@@ -629,12 +696,14 @@ final class FocusRunViewModel: ObservableObject {
                         self.phoneBedTagRegistration = registration
                         self.persistence.phoneBedNFCTagRegistration = registration
                     }
-                    self.nfcStatus = "Ollie found the phone bed."
+                    self.nfcStatus = "Wind Down tag confirmed."
                 } else {
-                    self.nfcStatus = "That is not Ollie's phone-bed tag. Try the tag by the phone's resting place."
+                    self.nfcStatus = "That is not your Wind Down tag. Wind Down is still running."
                 }
             case .cancelled:
-                self.nfcStatus = "The tag can wait. Try again, or continue without a placement check."
+                self.nfcStatus = self.pendingNightWatchPlan != nil
+                    ? "No tag was read. Wind Down has not started."
+                    : "No tag was read. Wind Down is still running."
             case .unavailable(let message):
                 self.nfcStatus = message
             }
@@ -795,7 +864,8 @@ final class FocusRunViewModel: ObservableObject {
                 plan: schedule.plan,
                 guardKind: nightWatchPreferences.guardKind,
                 startedAt: schedule.startedAt,
-                endedAt: schedule.plan.protectedUntil
+                endedAt: schedule.plan.protectedUntil,
+                liveActivityRequested: liveActivityEnabled
             )
             scheduleNextAutomaticWindDown()
             return
@@ -814,7 +884,8 @@ final class FocusRunViewModel: ObservableObject {
             ),
             focusAccepted: false,
             startedAt: schedule.startedAt,
-            autoConfirmPlacement: true
+            autoConfirmPlacement: true,
+            liveActivityRequested: liveActivityEnabled
         )
         if let activeRun, let plan = activeRun.nightWatchPlan {
             notifications.scheduleNightWatchNotifications(

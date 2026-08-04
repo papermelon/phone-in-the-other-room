@@ -82,9 +82,9 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   a chosen Quiet, Balanced, or Supportive cadence and schedule selected-app shielding at the
   saved start time while the app is closed. Optional usage-aware reminders can send one
   generic cue after three minutes in selected apps in each phase, including overnight.
-  Optional shielding covers only the selected
-  apps during wind-down and morning quiet; it lifts overnight and always has an early exit
-  through Counting Sheep.
+  Optional shielding limits only the selected apps from an eligible Wind Down start through
+  morning quiet; the barrier spans overnight and always has an early exit through the
+  registered Wind Down tag or Counting Sheep's emergency exit.
   Home stays focused on the saved plan and one-tap start; its schedule block opens the timing editor
   and a compact One-Time Wind Down card handles bounded additional quiet.
 - **Nights (one finite scroll)**: latest Wind Down
