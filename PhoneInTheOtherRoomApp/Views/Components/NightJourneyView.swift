@@ -5,10 +5,6 @@ struct NightJourneyView: View {
     let run: FocusRun
     let reduceMotion: Bool
 
-    // The dog/ and farm/ groups intentionally provide namespaces in the asset
-    // catalog. Keep the qualified names here so Release builds render the same
-    // assets as previews and Debug builds.
-    private let environmentAsset = "farm/farm_hills_side_scroll_test"
     private let environmentAspectRatio: CGFloat = 1983.0 / 793.0
     private let scrollCycleDuration: TimeInterval = 18
 
@@ -116,7 +112,7 @@ struct NightJourneyView: View {
     }
 
     private func environmentImage(width: CGFloat, height: CGFloat) -> some View {
-        JourneyAssetImage(name: environmentAsset, contentMode: .fill)
+        JourneyAssetImage(name: NightJourneyAssets.environment, contentMode: .fill)
             .frame(width: width, height: height)
     }
 
@@ -187,7 +183,7 @@ private struct OllieWalkCycleView: View {
             if state == .completed {
                 OllieRitualView(state: state, size: size)
             } else {
-                JourneyAssetImage(name: "dog/dog_run_frame_0\(frame + 1)")
+            JourneyAssetImage(name: NightJourneyAssets.ollieRunFrames[frame])
                     .frame(width: size, height: size)
             }
         }

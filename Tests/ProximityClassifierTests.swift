@@ -98,6 +98,16 @@ final class ProximityClassifierTests: XCTestCase {
         XCTAssertFalse(SessionGuardKind.nfcTag.detail.localizedCaseInsensitiveContains("phone bed"))
         XCTAssertFalse(SessionGuardKind.nfcTag.detail.localizedCaseInsensitiveContains("placement check"))
     }
+
+    func testNightJourneyUsesTheQualifiedSixFrameRunCycle() {
+        XCTAssertEqual(NightJourneyAssets.environment, "farm/farm_hills_side_scroll_test")
+        XCTAssertEqual(NightJourneyAssets.ollieRunFrames.count, 6)
+        XCTAssertEqual(
+            NightJourneyAssets.ollieRunFrames,
+            (1...6).map { "dog/dog_run_frame_0\($0)" }
+        )
+        XCTAssertTrue(NightJourneyAssets.ollieRunFrames.allSatisfy { $0.hasPrefix("dog/") })
+    }
     func testScreenTimeSharedStorageUsesStableAppGroupAndOllieKeys() {
         XCTAssertEqual(
             ScreenTimeSharedStorage.appGroupIdentifier,

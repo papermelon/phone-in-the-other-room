@@ -110,6 +110,7 @@
 		48D8679E7F41137FF1560AC1 /* FocusAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CB9D7F6CBF2FB36B03D2B /* FocusAnalytics.swift */; };
 		491368D2800DD32CF6A74F6E /* NightWatchUsageMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4203FF55399C57FCA0A042D /* NightWatchUsageMonitoring.swift */; };
 		49180AF09142C37FE94D490A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3DF58B2DAC7FE37451EAB87E /* Assets.xcassets */; };
+		49A44BC0B84BBC21984D02C4 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		4B4060139BAF10FAE53EB40C /* WatchOllieIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7005D618AE83F9E9EFC62CAD /* WatchOllieIconView.swift */; };
 		4BBA92446A2BD51E8963F286 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556930E68BC87E851A8295A3 /* Formatting.swift */; };
 		4BF9A33D59F9294484ECFFBA /* PixelHomeDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B97166551A0616FC19980F1 /* PixelHomeDashboard.swift */; };
@@ -186,6 +187,7 @@
 		862D316BA42A0635BEEF4862 /* FarmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E965042A8DE4CCAE76137376 /* FarmView.swift */; };
 		877E987C02578F87EBCA0208 /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
 		884CF15B0C65BAC011618F96 /* RewardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F2F141C24516D082490195 /* RewardEngine.swift */; };
+		888E319EF2E7CA27ACC10AB7 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		897057BBDD47C09A3485DF9B /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
 		89F0C749E5AE2CFD76E139F4 /* FocusRunLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */; };
 		8AE121BA5F141048ECD0DC61 /* PixelComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36B1C7F90F0227A8698B5810 /* PixelComponents.swift */; };
@@ -194,6 +196,7 @@
 		8C040AF0D9861E10FD7A51A3 /* OneTimeWindDownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26696537FFC9ED29A0E56EAC /* OneTimeWindDownView.swift */; };
 		8D1F57D53E73D6520D3D07B5 /* QuietTimeShielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F0FF354B369E470C16D40BB /* QuietTimeShielding.swift */; };
 		8D615D998EBD9CE46593E27D /* QuietTimeShielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F0FF354B369E470C16D40BB /* QuietTimeShielding.swift */; };
+		8E1A4A4BEEEC870003DC9E68 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		90449FB36FFEA4E6CF85A0F3 /* NightWatchHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 766D336119CCB55800F75535 /* NightWatchHistory.swift */; };
 		91597D7F7DB74222C2868292 /* QuietTimeShieldSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */; };
 		915ED1BADFAE626CA8F386C1 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
@@ -255,6 +258,7 @@
 		C29D295CAEAC83392CD3A9F4 /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		C2CE381ADC249C646303A830 /* ScreenTimeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */; };
 		C33FAA55CB5D0D476741BEE3 /* SupabaseClientProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B188DD7276B94E96A258798B /* SupabaseClientProvider.swift */; };
+		C3B39C287883C672C7AE0E50 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		C442D7B21A8281A4C0434BC8 /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
 		C466BB4649F04B9D2E0872D3 /* WatchMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B830DE525CC379D8E1929C /* WatchMessage.swift */; };
 		C500303F220D95AB5D643911 /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
@@ -263,6 +267,7 @@
 		C717B8DB1D59C80C9A02982E /* NotificationPlanningTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94150EEEF9D0FB0010D157C /* NotificationPlanningTests.swift */; };
 		C75A9056849E551C6D6EBB2C /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		C7B8F63A0362C4103ADE8895 /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
+		C913E185B0625F7CDEC29C67 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		C9561D3882C7FFEAFD6A3AC2 /* PhoneBedTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */; };
 		CBE2CAFE4E587EB30315B923 /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		CC10F6B26D7D056B00819D34 /* PhoneInTheOtherRoomScreenTimeReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 9B2EA2B025D77BE05F1451EC /* PhoneInTheOtherRoomScreenTimeReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -319,6 +324,7 @@
 		F77086A7E70F0F472A676014 /* SupabaseLiveActivityRemoteSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE5317879F7E0CCCFFA07C10 /* SupabaseLiveActivityRemoteSink.swift */; };
 		F771741F41DCFD36EE158AAD /* SessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7A93AA462082036AB119D5 /* SessionGuard.swift */; };
 		F79EC70123FDC8FA131594F1 /* RewardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F2F141C24516D082490195 /* RewardEngine.swift */; };
+		F7D09980F0A747FE035BF831 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		F8487D073D156F361C650D26 /* RewardShelfViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F600DE2E47379444ABD60760 /* RewardShelfViewModel.swift */; };
 		F9E8C987498EA62985893D75 /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
 		FD05C854C652B0DE6B684FCC /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
@@ -547,6 +553,7 @@
 		D7A5B2FCF076AA7FED2F8CAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D7B90812500022857C5B05D0 /* WindDownGuidance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidance.swift; sourceTree = "<group>"; };
 		D8A6A44FF65DC1B46C80557C /* QuietTimeShieldScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldScheduleTests.swift; sourceTree = "<group>"; };
+		D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightJourneyAssets.swift; sourceTree = "<group>"; };
 		DC0813C86FDB60332218CA22 /* ImpactSharingConsentSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpactSharingConsentSheet.swift; sourceTree = "<group>"; };
 		DC3A915D13DD64111893BC53 /* AssetReadyScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetReadyScreens.swift; sourceTree = "<group>"; };
 		DCCFF516621464F444B1C666 /* WindDownGuideCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuideCard.swift; sourceTree = "<group>"; };
@@ -890,6 +897,7 @@
 				556930E68BC87E851A8295A3 /* Formatting.swift */,
 				E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */,
 				EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */,
+				D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */,
 				C72601B936190333C971123E /* NightJourneyProgress.swift */,
 				0017C31179B4E0FF551A79D4 /* NightWatch.swift */,
 				FE29836613BFD365670A422D /* NightWatchGuidance.swift */,
@@ -1264,6 +1272,7 @@
 				167567E4D871040D9DE32CB8 /* MorningCheckIn.swift in Sources */,
 				36DFFE64F22A9D5E69C9D2AB /* MorningCheckInCard.swift in Sources */,
 				102EEDF4C97841C7389559A8 /* NearbyInteractionDistanceProvider.swift in Sources */,
+				F7D09980F0A747FE035BF831 /* NightJourneyAssets.swift in Sources */,
 				11C7E3EC931CAB2C524A326E /* NightJourneyProgress.swift in Sources */,
 				66085F93130816DF94740FCE /* NightJourneyView.swift in Sources */,
 				46B9BD5A3E79836B73EB5C7F /* NightWatch.swift in Sources */,
@@ -1343,6 +1352,7 @@
 				BEA7391F437682C412F91A77 /* Formatting.swift in Sources */,
 				3E044B1F6F9F00F2A72F8EC4 /* ImpactMeasurement.swift in Sources */,
 				55ABC61716645893EDD05AF5 /* MorningCheckIn.swift in Sources */,
+				888E319EF2E7CA27ACC10AB7 /* NightJourneyAssets.swift in Sources */,
 				A2004564E7A1B2DBF90D2236 /* NightJourneyProgress.swift in Sources */,
 				E8FED9FC54C957DBEC1B9C25 /* NightWatch.swift in Sources */,
 				111C88B554F0F338B1F28BE1 /* NightWatchGuidance.swift in Sources */,
@@ -1386,6 +1396,7 @@
 				09B37744056AAC8ABD096A63 /* Formatting.swift in Sources */,
 				C442D7B21A8281A4C0434BC8 /* ImpactMeasurement.swift in Sources */,
 				9FF058C4BC2075946BC785CA /* MorningCheckIn.swift in Sources */,
+				C3B39C287883C672C7AE0E50 /* NightJourneyAssets.swift in Sources */,
 				AE663D22394EC73E02C633C0 /* NightJourneyProgress.swift in Sources */,
 				01D12FE136E18BBC87E0E5C7 /* NightWatch.swift in Sources */,
 				B8F3B35D15F95DCAEAD4E0D3 /* NightWatchGuidance.swift in Sources */,
@@ -1427,6 +1438,7 @@
 				A2051E6767C60E2DE6C5A4E1 /* Formatting.swift in Sources */,
 				E7C81829A27A3F201EF5D839 /* ImpactMeasurement.swift in Sources */,
 				69FA98FCA63048D31A258816 /* MorningCheckIn.swift in Sources */,
+				C913E185B0625F7CDEC29C67 /* NightJourneyAssets.swift in Sources */,
 				2F22D06A0264FFA4320BEE2F /* NightJourneyProgress.swift in Sources */,
 				76C2E53494AB0CEE2EA1387B /* NightWatch.swift in Sources */,
 				002D3EEB534841C29E3DE665 /* NightWatchGuidance.swift in Sources */,
@@ -1485,6 +1497,7 @@
 				0D16961804F0A1782D7E104E /* Formatting.swift in Sources */,
 				56FF302373E22AC6002EBD28 /* ImpactMeasurement.swift in Sources */,
 				3B0EB94A253EB131FD5005A7 /* MorningCheckIn.swift in Sources */,
+				8E1A4A4BEEEC870003DC9E68 /* NightJourneyAssets.swift in Sources */,
 				DBB4C32007F6102603D7D254 /* NightJourneyProgress.swift in Sources */,
 				4F6628CC4FA6EA3AC387C7DE /* NightWatch.swift in Sources */,
 				EB971264164D13BB707F1DD5 /* NightWatchGuidance.swift in Sources */,
@@ -1540,6 +1553,7 @@
 				C107E412664051996D3972B6 /* ImpactMeasurementTests.swift in Sources */,
 				5F3BF3BAB1BB152BFD67EF56 /* MorningCheckIn.swift in Sources */,
 				C57F065ACCBB7C41ABAFE18E /* MorningCheckInTests.swift in Sources */,
+				49A44BC0B84BBC21984D02C4 /* NightJourneyAssets.swift in Sources */,
 				574C6543C8D25D3ACF99B7FB /* NightJourneyProgress.swift in Sources */,
 				7035A00A82275D843EB42654 /* NightJourneyProgressTests.swift in Sources */,
 				A06AA5FC450B6ED23CC8F660 /* NightWatch.swift in Sources */,
