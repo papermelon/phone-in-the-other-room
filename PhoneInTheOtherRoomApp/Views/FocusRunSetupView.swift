@@ -59,7 +59,7 @@ struct FocusRunSetupView: View {
             if isRunning { dismiss() }
         }
         .alert(
-            "Replace phone-bed tag?",
+            "Replace Wind Down tag?",
             isPresented: $showTagReplacementConfirmation
         ) {
             Button("Keep current tag", role: .cancel) {}
@@ -252,13 +252,13 @@ struct FocusRunSetupView: View {
                     .foregroundStyle(AppColors.muted)
                 Text(
                     viewModel.selectedGuardKind == .nfcTag
-                        ? "The app cannot open itself from a notification, so open Counting Sheep whenever you want to see the active Wind Down. Your NFC tag is still required to end normally."
+                        ? "The app cannot open itself from a notification, so open Counting Sheep whenever you want to see the active Wind Down. Your Wind Down tag is still required to end normally."
                         : "The app cannot open itself from a notification, so open Counting Sheep whenever you want to see the active Wind Down."
                 )
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                 if viewModel.selectedGuardKind == .nfcTag && !viewModel.hasRegisteredNFCTag {
-                    Text("Pair a phone-bed NFC tag to use automatic NFC Wind Down.")
+                    Text("Pair a Wind Down NFC tag to use automatic NFC Wind Down.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
                 }
@@ -314,15 +314,15 @@ struct FocusRunSetupView: View {
                 if viewModel.selectedGuardKind == .nfcTag {
                     Divider()
                     if viewModel.phoneBedTagRegistration == nil {
-                        Text("Prepare one writable NFC tag where your phone will rest.")
+                        Text("Prepare one writable NFC tag to use as your Wind Down barrier.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
-                        Button("Set up phone-bed tag") {
+                        Button("Set up Wind Down tag") {
                             viewModel.provisionNFCTag()
                         }
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
                     } else {
-                        Label("Phone-bed tag is ready", systemImage: "checkmark.circle.fill")
+                        Label("Wind Down tag is ready", systemImage: "checkmark.circle.fill")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.grass)
                         HStack {

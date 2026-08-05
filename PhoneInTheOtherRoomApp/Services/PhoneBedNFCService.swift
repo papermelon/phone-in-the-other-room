@@ -36,7 +36,7 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
     func scan(completion: @escaping (ScanResult) -> Void) {
         guard beginSession(
             operation: .scan(completion),
-            message: "Hold the top of your iPhone near Ollie's phone-bed tag.",
+            message: "Hold the top of your iPhone near your Wind Down tag.",
             invalidateAfterFirstRead: false
         ) else {
             completion(.unavailable(unavailableMessage))
@@ -57,7 +57,7 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
     }
 
     private var unavailableMessage: String {
-        "NFC is not available on this iPhone. You can use the QR phone bed instead."
+        "NFC is not available on this iPhone. You can use a Wind Down code instead."
     }
 
     private func beginSession(
@@ -147,13 +147,13 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                 self.finishScan(
                     cancelled
                         ? .cancelled
-                        : .unavailable("Ollie could not read that tag. Try again, pair a replacement tag, or use the QR phone bed.")
+                        : .unavailable("Ollie could not read that tag. Try again, pair a replacement tag, or use a Wind Down code.")
                 )
             case .provision:
                 self.finishProvision(
                     cancelled
                         ? .cancelled
-                        : .unavailable("Ollie could not prepare that tag. Try another tag, or use the QR phone bed.")
+                        : .unavailable("Ollie could not prepare that tag. Try another tag, or use a Wind Down code.")
                 )
             case nil:
                 break
@@ -169,7 +169,7 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
             guard case .scan = self.operation,
                   let message = messages.first else { return }
             self.finishScan(.read(Self.readResult(from: message)))
-            session.alertMessage = "Ollie found the phone-bed tag."
+            session.alertMessage = "Wind Down tag found."
             session.invalidate()
         }
     }
@@ -208,14 +208,14 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
             context.tag.readNDEF { message, error in
                 guard let message, error == nil else {
                     context.session.invalidate(
-                        errorMessage: "Ollie could not read that tag. Try again, pair a replacement tag, or use the QR phone bed."
+                        errorMessage: "Ollie could not read that tag. Try again, pair a replacement tag, or use a Wind Down code."
                     )
                     return
                 }
                 let result = Self.readResult(from: message)
                 Task { @MainActor in
                     self.finishScan(.read(result))
-                    context.session.alertMessage = "Ollie found the phone-bed tag."
+                    context.session.alertMessage = "Wind Down tag found."
                     context.session.invalidate()
                 }
             }
@@ -263,7 +263,7 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                     )
                     Task { @MainActor in
                         self.finishProvision(.registered(registration))
-                        context.session.alertMessage = "Ollie saved this as your phone bed."
+                        context.session.alertMessage = "Wind Down tag saved."
                         context.session.invalidate()
                     }
                 }

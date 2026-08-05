@@ -141,7 +141,7 @@ struct WindDownHowItWorksView: View {
                     title: "Learn",
                     detail: "A small, optional guide offers sourced ideas about screens, light, timing, and settling. It never becomes a feed or a score."
                 )
-                Text("Change your schedule, apps, phone-bed method, and reminders in Your Wind Down.")
+                Text("Change your schedule, apps, Wind Down tag, and reminders in Your Wind Down.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }

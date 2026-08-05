@@ -49,7 +49,7 @@ struct ActiveRunView: View {
             Text("This immediately lifts any app shields and ends this Wind Down early.")
         }
         .alert(
-            "Pair a new phone-bed tag?",
+            "Pair a new Wind Down tag?",
             isPresented: $showNFCTagReplacementConfirmation
         ) {
             Button("Keep current tag", role: .cancel) {}
@@ -183,7 +183,7 @@ struct ActiveRunView: View {
                     }
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                    Button("Continue without a placement check") {
+                    Button("Continue without a tag check") {
                         viewModel.coordinator.continueWithoutWatch()
                     }
                     .font(pixelFont(.caption))
@@ -207,7 +207,7 @@ struct ActiveRunView: View {
         switch guardKind {
         case .qrCode: return "START SCAN"
         case .nfcTag: return "START TAG"
-        default: return "WATCH TUCK-IN"
+        default: return "WATCH CHECK"
         }
     }
 
@@ -215,7 +215,7 @@ struct ActiveRunView: View {
         switch guardKind {
         case .qrCode: return "Scan the code to begin Wind Down."
         case .nfcTag: return "Tap your Wind Down tag to begin."
-        default: return "Walk your phone away. Ollie only needs one quick tuck-in check."
+        default: return "Ollie only needs one short Watch check before the Wind Down continues."
         }
     }
 
@@ -372,8 +372,8 @@ struct ActiveRunView: View {
         }
         switch guardKind {
         case .honorTimer: return "No Watch check needed. Take your phone to its bed."
-        case .watchPlacement: return "The Watch helps only with tuck-in, then it can rest too."
-        case .qrCode: return "A small scan marks the place your phone is resting."
+        case .watchPlacement: return "The Watch helps with one short Wind Down check, then it can rest too."
+        case .qrCode: return "A Wind Down code confirms the app-access barrier."
         case .nfcTag: return "Your Wind Down tag is the normal way to finish early."
         }
     }

@@ -60,6 +60,44 @@ final class ProximityClassifierTests: XCTestCase {
             run: run, at: start.addingTimeInterval(60), isEnabled: true
         ))
     }
+
+    func testWindDownStartGateRejectsDuplicatePreflightAndNFCReads() {
+        XCTAssertTrue(WindDownStartGate.canPresentPreflight(isRunning: false, startInFlight: false))
+        XCTAssertFalse(WindDownStartGate.canPresentPreflight(isRunning: true, startInFlight: false))
+        XCTAssertFalse(WindDownStartGate.canPresentPreflight(isRunning: false, startInFlight: true))
+
+        XCTAssertTrue(WindDownStartGate.canBeginNFCRead(
+            forPendingStart: true,
+            hasActiveRun: false,
+            startInFlight: false,
+            scanInFlight: false
+        ))
+        XCTAssertFalse(WindDownStartGate.canBeginNFCRead(
+            forPendingStart: true,
+            hasActiveRun: false,
+            startInFlight: false,
+            scanInFlight: true
+        ))
+        XCTAssertFalse(WindDownStartGate.canBeginNFCRead(
+            forPendingStart: true,
+            hasActiveRun: true,
+            startInFlight: false,
+            scanInFlight: false
+        ))
+        XCTAssertTrue(WindDownStartGate.canBeginNFCRead(
+            forPendingStart: false,
+            hasActiveRun: true,
+            startInFlight: false,
+            scanInFlight: false
+        ))
+    }
+
+    func testReleaseGuardCopyUsesWindDownBarrierLanguage() {
+        XCTAssertTrue(SessionGuardKind.nfcTag.title.contains("Wind Down"))
+        XCTAssertTrue(SessionGuardKind.nfcTag.detail.contains("app-access barrier"))
+        XCTAssertFalse(SessionGuardKind.nfcTag.detail.localizedCaseInsensitiveContains("phone bed"))
+        XCTAssertFalse(SessionGuardKind.nfcTag.detail.localizedCaseInsensitiveContains("placement check"))
+    }
     func testScreenTimeSharedStorageUsesStableAppGroupAndOllieKeys() {
         XCTAssertEqual(
             ScreenTimeSharedStorage.appGroupIdentifier,

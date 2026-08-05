@@ -91,7 +91,7 @@ struct NightWatchGuidance {
             case 60:
                 return NightWatchNotificationCopy(
                     title: "Wind Down is coming",
-                    body: "In about an hour, Ollie will head out on the trail. Finish what you need, then find the phone's resting place."
+                    body: "In about an hour, Ollie will head out on the trail. Finish what you need, then tap into your Wind Down."
                 )
             case 30:
                 return NightWatchNotificationCopy(
@@ -160,8 +160,8 @@ struct NightWatchGuidance {
             switch phase {
             case .windDown:
                 return NightWatchNotificationCopy(
-                    title: "The phone bed is waiting",
-                    body: "That check can wait. Put the phone back to bed when you are ready."
+                    title: "Wind Down is waiting",
+                    body: "That check can wait. Return to your Wind Down when you are ready."
                 )
             case .overnight:
                 return NightWatchNotificationCopy(

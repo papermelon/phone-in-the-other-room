@@ -129,7 +129,7 @@ private struct PixelHomeDashboardContent: View {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(watchReachable ? "Watch check is ready" : "Open the Watch app for placement")
                     .font(AppTypography.body)
-                Text("The Watch is only used for the brief phone-bed check.")
+                Text("The Watch is only used for one brief Wind Down check.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }

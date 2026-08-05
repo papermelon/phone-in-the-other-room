@@ -57,7 +57,7 @@ enum OnboardingProtectionChoice: String, Codable, CaseIterable, Identifiable {
         case .appShielding:
             return "Selected apps stay limited through Wind Down and sleep. No NFC tag needed."
         case .nfcAndAppShielding:
-            return "A phone-bed tag confirms where the phone is tucked away, while selected apps rest too."
+            return "A Wind Down tag starts the app-access barrier, while selected apps stay limited until you finish."
         }
     }
 }

@@ -162,7 +162,7 @@ final class FocusSessionCoordinator: ObservableObject {
             }
         case .qrCode:
             if !autoConfirmPlacement {
-                addEvent("Phone bed scan needed.", detail: "Scan the code where your phone will rest.")
+                addEvent("Wind Down code needed.", detail: "Scan your Wind Down code to start the app-access barrier.")
             }
         case .nfcTag:
             addEvent(
@@ -181,11 +181,11 @@ final class FocusSessionCoordinator: ObservableObject {
     func confirmQRCode(_ code: String, expectedCode: String?) -> Bool {
         guard var run, run.guardKind == .qrCode else { return false }
         guard expectedCode == nil || expectedCode == code else {
-            ollieMessage = "That is not Ollie's phone bed code. Try the one by your phone's resting place."
+            ollieMessage = "That is not your Wind Down code. Try again."
             recordRitualEvent(.placementValidationFailed, for: run, payload: ["method": "qrCode"])
             return false
         }
-        confirmPlacement(&run, note: "QR code scanned at phone bed")
+        confirmPlacement(&run, note: "Wind Down code confirmed")
         recordRitualEvent(
             .placementConfirmed,
             for: run,
@@ -198,11 +198,11 @@ final class FocusSessionCoordinator: ObservableObject {
     func confirmNFCTag(_ fingerprint: String, expectedFingerprint: String?) -> Bool {
         guard var run, run.guardKind == .nfcTag else { return false }
         guard expectedFingerprint == nil || expectedFingerprint == fingerprint else {
-            ollieMessage = "That is not Ollie's phone-bed tag. Try the tag by your phone's resting place."
+            ollieMessage = "That is not your Wind Down tag. Try again."
             recordRitualEvent(.placementValidationFailed, for: run, payload: ["method": "nfcTag"])
             return false
         }
-        confirmPlacement(&run, note: "NFC tag tapped at phone bed")
+        confirmPlacement(&run, note: "Wind Down tag tapped")
         recordRitualEvent(
             .placementConfirmed,
             for: run,
@@ -217,12 +217,12 @@ final class FocusSessionCoordinator: ObservableObject {
         stopWatchPlacement()
         run.guardKind = .honorTimer
         run.placementStatus = .notRequired
-        run.placementEvidence = PlacementEvidence(guardKind: .honorTimer, confirmedAt: nil, note: "Continued as phone-away timer")
+        run.placementEvidence = PlacementEvidence(guardKind: .honorTimer, confirmedAt: nil, note: "Continued without a Wind Down tag")
         run.phoneAwayValidatedAt = Date()
         run.state = .running
         self.run = run
         ollieMessage = "Ollie will keep the quiet while your phone rests away."
-        addEvent("Wind Down continued without a placement check.")
+        addEvent("Wind Down continued without a tag check.")
         recordRitualEvent(
             .fallbackSelected,
             for: run,
@@ -279,7 +279,7 @@ final class FocusSessionCoordinator: ObservableObject {
               ![.completed, .endedEarly, .setup].contains(currentRun.state) else { return }
         backgroundReturnMessage = "Welcome back. Ollie is still on watch."
         if run?.guardKind == .watchPlacement, run?.placementStatus == .awaitingConfirmation {
-            ollieMessage = "Ollie can try the Watch placement check again, or you can continue without it."
+            ollieMessage = "Ollie can try the Watch check again, or you can continue without it."
         }
         reconcileSession()
 #if DEBUG
@@ -339,7 +339,7 @@ final class FocusSessionCoordinator: ObservableObject {
             finish(run: storedRun)
         } else {
             ollieMessage = storedRun.guardKind == .watchPlacement && storedRun.placementStatus == .awaitingConfirmation
-                ? "Ollie can try the Watch placement check again, or you can continue without it."
+                ? "Ollie can try the Watch check again, or you can continue without it."
                 : storedRun.isNightWatch ? "Ollie is still keeping the quiet." : "Your phone-away time is still resting."
             scheduleNextBoundaryTimer()
         }
@@ -648,7 +648,7 @@ final class FocusSessionCoordinator: ObservableObject {
     private func openingMessage(for guardKind: SessionGuardKind) -> String {
         switch guardKind {
         case .honorTimer: return "Carry the phone to its resting place. Ollie will keep the quiet."
-        case .watchPlacement: return "Carry the phone away. Ollie will make one short tuck-in check."
+        case .watchPlacement: return "Carry the phone away. Ollie will make one short Watch check."
         case .qrCode: return "Scan your Wind Down code to set the app-access barrier."
         case .nfcTag: return "Tap your Wind Down tag to set the app-access barrier."
         }
@@ -666,7 +666,7 @@ final class FocusSessionCoordinator: ObservableObject {
         case .endFocusRunEarly:
             guard run?.guardKind != .nfcTag else {
                 addEvent(
-                    "Phone-bed tag needed.",
+                    "Wind Down tag needed.",
                     detail: "Use the iPhone and tap the registered tag to end Wind Down."
                 )
                 if let run {

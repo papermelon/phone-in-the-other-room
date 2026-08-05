@@ -68,7 +68,7 @@ struct WindDownProtectionPicker: View {
 
     private var methodDetail: String {
         if selectedKind == .nfcTag, !isNFCTagReady {
-            return "NFC needs a registered phone-bed tag. Set one up below before your first night."
+            return "NFC needs a registered Wind Down tag. Set one up below before your first night."
         }
         return WindDownProtectionChoice.from(guardKind: selectedKind).detail
     }

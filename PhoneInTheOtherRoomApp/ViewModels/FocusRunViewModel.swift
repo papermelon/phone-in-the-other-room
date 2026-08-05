@@ -229,7 +229,10 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     func requestStartNightWatch() {
-        guard !isRunning, !nightWatchStartInFlight else { return }
+        guard WindDownStartGate.canPresentPreflight(
+            isRunning: isRunning,
+            startInFlight: nightWatchStartInFlight
+        ) else { return }
         if shieldingEnabled && shieldingReadiness != .ready {
             shieldingPreflightMessage = shieldingReadiness.detail
             return
@@ -648,13 +651,13 @@ final class FocusRunViewModel: ObservableObject {
         }
         if persistence.phoneBedQRCode == nil {
             persistence.phoneBedQRCode = normalizedCode
-            qrCodeStatus = "Ollie saved this as your phone bed."
+            qrCodeStatus = "Wind Down code saved."
         }
         if coordinator.confirmQRCode(normalizedCode, expectedCode: persistence.phoneBedQRCode) {
             showQRCodeScanner = false
             qrCodeStatus = ""
         } else {
-            qrCodeStatus = "That code belongs somewhere else. Try the code by your phone's resting place."
+            qrCodeStatus = "That is not your Wind Down code. Try again."
         }
     }
 
@@ -665,6 +668,12 @@ final class FocusRunViewModel: ObservableObject {
             return
         }
         let isPendingStart = pendingNightWatchPlan != nil && activeRun == nil
+        guard WindDownStartGate.canBeginNFCRead(
+            forPendingStart: isPendingStart,
+            hasActiveRun: activeRun != nil,
+            startInFlight: nightWatchStartInFlight,
+            scanInFlight: isScanningNFCForStart
+        ) else { return }
         isScanningNFCForStart = isPendingStart
         phoneBedNFCService.scan { [weak self] result in
             guard let self else { return }
@@ -728,7 +737,7 @@ final class FocusRunViewModel: ObservableObject {
                     .matches(scannedDigest: read.digest)
                     ?? (read.digest == expectedDigest)
                 guard matchesRegisteredTag else {
-                    self.nfcStatus = "That is not Ollie's phone-bed tag. Wind Down is still running."
+                    self.nfcStatus = "That is not your Wind Down tag. Wind Down is still running."
                     return
                 }
                 if var registration = self.phoneBedTagRegistration {
@@ -736,7 +745,7 @@ final class FocusRunViewModel: ObservableObject {
                     self.phoneBedTagRegistration = registration
                     self.persistence.phoneBedNFCTagRegistration = registration
                 }
-                self.nfcStatus = "Phone-bed tag confirmed."
+                self.nfcStatus = "Wind Down tag confirmed. Your selected apps can now be limited."
                 self.prepareForEarlyWindDownExit()
                 self.coordinator.endEarly(reason: .nfcTagAuthenticated)
             case .cancelled:
@@ -798,12 +807,12 @@ final class FocusRunViewModel: ObservableObject {
                         self.nfcStatus = "New tag paired. Tap it again to end Wind Down."
                     }
                 } else {
-                    self.nfcStatus = "Ollie saved this as your phone bed."
+                    self.nfcStatus = "Wind Down tag saved."
                 }
             case .cancelled:
                 self.nfcStatus = forActiveRun
                     ? "No changes made. Wind Down is still running with your current tag."
-                    : "No changes made. Your current phone-bed tag is still ready."
+                    : "No changes made. Your current Wind Down tag is still ready."
             case .unavailable(let message):
                 self.nfcStatus = message
             }
