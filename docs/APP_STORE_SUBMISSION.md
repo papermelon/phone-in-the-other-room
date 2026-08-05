@@ -10,7 +10,7 @@ Last read-only App Store Connect audit: **2026-07-30, Asia/Singapore**.
 - App: `Counting Sheep: Wind Down` (`6788186681`)
 - Version 1.0: **Prepare for Submission**
 - TestFlight build 2: **processed successfully** and selected for App Store version 1.0.
-- The current local candidate adds the Home/Nights/Farm/Settings shell;
+- Build 10 is the current local candidate and adds the Home/Nights/Farm/Settings shell;
   Farm includes a finite swipeable Missing Posters board while the shipping flock is counted from protected nights,
   NFC-authenticated ending, Live Activity layout fixes, and optional-sharing/feedback flows.
   Physical retest, screenshots, privacy updates, and upload remain pending.
@@ -96,13 +96,14 @@ REVIEW PATH
 4. Start Wind Down. The run moves through wind-down, overnight, and morning-quiet phases
    from one persisted schedule.
 5. App Shielding sessions have a direct early-end action. In NFC mode, the
-   registered phone-bed tag authenticates the normal end action; a multi-step emergency exit
+   registered Wind Down tag authenticates the normal end action; a multi-step emergency exit
    remains available and immediately clears the ManagedSettings store.
 
 FAMILY CONTROLS
 
 Shielding is separately optional and applies only to apps/categories the reviewer selects.
-It covers wind-down and morning quiet, clears overnight, and never shields Counting Sheep.
+It begins at the eligible start, continues through wind-down, overnight, and morning quiet,
+and never shields Counting Sheep.
 The embedded Device Activity monitor handles scheduled transitions while the containing app
 is suspended. The shield action closes the shielded app; the reviewer can open Counting
 Sheep to end Wind Down through the configured method or emergency exit.
@@ -125,7 +126,7 @@ data, calculate a medical score, or alter the flock when Health access is absent
 
 APPLE WATCH / NEARBY INTERACTION
 
-Apple Watch is an optional, short tuck-in assist. Unsupported or unreachable Watch hardware
+Apple Watch is an optional, short Wind Down check. Unsupported or unreachable Watch hardware
 falls back to the honor timer. Continuous distance monitoring is not required.
 
 DATA
@@ -140,7 +141,7 @@ flag is enabled. It accepts optional reply email, selected screenshots, and a na
 diagnostics opt-in. If that backend gate is off, the same validated draft opens in Mail.
 
 No sign-in or demo credentials are required. A short physical-device video showing NFC
-provisioning, bookend shielding, overnight clearing, and early exit should be attached if
+provisioning, continuous shielding through overnight, and early exit should be attached if
 App Review cannot reproduce the hardware path.
 
 ## App Privacy answers
@@ -184,7 +185,7 @@ visually ready and accurately represents the optional role.
 3. Complete physical NFC, shielding, HealthKit, background, and early-exit QA.
 4. Confirm final art rights and replace any public-repository placeholder assets.
 5. Confirm the configured `ITSAppUsesNonExemptEncryption = false` answer remains accurate.
-6. Upload build 3 after the physical NFC end-flow retest and wait for processing.
+6. Upload build 10 after the physical NFC and shielding retest and wait for processing.
 7. Upload screenshots; update description, review notes, category, content rights, age
    rating, regulated-device declaration, privacy policy, and App Privacy answers.
 8. Select the processed build, attach the device-demonstration video, and run the final

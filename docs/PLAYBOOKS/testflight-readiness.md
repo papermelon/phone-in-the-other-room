@@ -1,11 +1,11 @@
 # Playbook: App Store 1.0 Readiness
 
 Prepare Counting Sheep 1.0 for TestFlight and App Store review. Product scope is fixed by
-`PROJECT_BRIEF.md` and ADR-0003/0004/0006/0007: three Release tabs, one user-facing Wind Down
-ritual, optional NFC and bookend shielding, optional read-only sleep context, and no social
+`PROJECT_BRIEF.md` and ADR-0003/0004/0006/0007: four Release tabs, one user-facing Wind Down
+ritual, optional NFC and continuous shielding, optional read-only sleep context, and no social
 layer.
 
-Last reconciled with `project.yml`: 2026-08-01.
+Last reconciled with `project.yml`: 2026-08-05.
 
 For current App Store Connect status and submission-ready copy, see
 `docs/APP_STORE_SUBMISSION.md`.
@@ -19,8 +19,8 @@ Locally proven:
 - Debug and Release simulator builds succeed.
 - A Debug build targeted at the connected physical iPhone succeeds and the current
   development build is installed for NFC end-flow retesting.
-- The full unit suite passes; the latest run includes 74 tests.
-- A signed Release archive and App Store export succeed for build 3. The exported IPA has
+- The full unit suite passes; the latest run includes 128 tests.
+- A signed Release archive and App Store export succeed for build 10. The exported IPA has
   distribution profiles with `get-task-allow=false` for the app, Watch, report, monitor,
   shield configuration, and shield action targets.
 - The exported app carries production Family Controls profiles for the containing app,
@@ -33,10 +33,11 @@ Read-only external audit:
 
 - App Store Connect version 1.0 is Prepare for Submission.
 - TestFlight build 2 is processed and selected for App Store version 1.0.
-- Build 3 is prepared locally with NFC-authenticated ending and Wind Down presentation.
+- Build 10 is prepared locally with preflight start, NFC-authenticated app-access barriers,
+  continuous shielding, per-run Live Activity consent, and the qualified six-frame journey.
 - App Privacy and the public policy URL are not yet fully reconciled with the new feedback
   disclosures; screenshots, age rating, content rights, remaining legal declarations,
-  build-3 upload, and final review submission remain.
+  build-10 upload, and final review submission remain.
 - The production Supabase migrations, `live-activity-registration`, `submit-feedback`, and
   `feedback-email-delivery` Edge Functions are deployed and the linked schema is lint-clean.
 - Release/TestFlight configuration keeps feedback disabled (`SUPABASE_FEEDBACK_ENABLED=NO`)
@@ -122,7 +123,7 @@ xcodebuild archive \
 - [ ] Register a blank writable NDEF tag, confirm it on the next run, and verify only a
       digest is persisted.
 - [ ] Replace the tag; the old tag no longer confirms.
-- [ ] From the active NFC tuck-in recovery state, explicitly pair a replacement tag and
+- [ ] From the active NFC recovery state, explicitly pair a replacement tag and
       verify the same Wind Down continues; after a replacement during a running Wind Down,
       only the new tag can authenticate the normal end action.
 - [ ] Forget the tag; scanning does not silently re-enrol it.

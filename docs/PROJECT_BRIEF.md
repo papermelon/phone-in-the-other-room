@@ -40,8 +40,8 @@ Counting Sheep breaks the loop at "phone is within reach" and replaces the extra
 with a warmer loop:
 
 ```
-requested wind-down cue → carry phone to its bed in another room →
-optional QR/Watch tuck-in check → one offline evening cue → Ollie keeps the quiet →
+requested wind-down cue → open the app-access barrier →
+optional Wind Down check → one offline evening cue → Ollie keeps the quiet →
 one quiet morning cue → the phone wakes later → a small completion receipt
 ```
 
@@ -74,9 +74,8 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   Silent phase-change notices support bedtime and waking, followed by the requested audible
   completion. Setup also offers a private, optional reason for the quiet; custom wording stays
   in-app unless the person separately allows it in notifications.
-  NFC is the default phone-bed method for new plans; the honor timer remains the simplest
-  fallback. QR and the brief Watch placement check are optional ways to confirm the same
-  physical transition. A writable generic NDEF tag can be
+  NFC is the default Wind Down tag for new plans; App Shielding remains the simplest
+  no-hardware path. A writable generic NDEF tag can be
   registered, replaced, or forgotten in place; NFC mode requires that same tag to end
   normally while retaining a multi-step emergency exit. An automatic Wind Down can send
   a chosen Quiet, Balanced, or Supportive cadence and schedule selected-app shielding at the
@@ -127,7 +126,7 @@ Friends, Shop, and social features. They are not required to prove the 1.0 ritua
 - Social feeds, leaderboards, or competitive mechanics
 - Engagement for its own sake — success is the user returning for the phone-away ritual,
   then using selected distracting apps less around sleep
-- Android, iPad, or web versions (iPhone-first; Watch is an optional tuck-in assist)
+- Android, iPad, or web versions (iPhone-first; Watch is an optional Wind Down check)
 
 ## Success criteria for TestFlight
 

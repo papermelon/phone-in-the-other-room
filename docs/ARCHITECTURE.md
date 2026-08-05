@@ -102,7 +102,7 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ OneTimeWindDownView.swift                 bounded additional quiet editor
 │  ├─ FeedbackFormView.swift                   validated form + email fallback
 │  ├─ RewardShelfView.swift                    Debug internal preview only
-│  ├─ Components/QRCodeScannerView.swift       QR phone-bed scanner + manual fallback
+│  ├─ Components/QRCodeScannerView.swift       Wind Down code scanner + manual fallback
 │  ├─ Components/NightWatchReceiptCard.swift   elapsed/bookend/sleep/data-status receipt
 │  ├─ Components/MorningCheckInCard.swift       collapsed, optional morning reflection
 │  ├─ Components/GameComponents.swift          legacy UI retained outside run flow
@@ -173,10 +173,10 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    app is suspended.
 4. The honor-timer fallback completes without either device being foregrounded. The
    optional `.watchPlacement` guard uses Nearby Interaction for at most 30 seconds to
-   confirm the initial walk-away; it then stops. `.qrCode` records one phone-bed scan.
-   New plans default to `.nfcTag`; the honor timer remains the simplest fallback. `.nfcTag`
+   confirm one initial Wind Down check; it then stops. `.qrCode` records one Wind Down code scan.
+   New plans default to `.nfcTag`; App Shielding is the simplest no-hardware path. `.nfcTag`
    reads a provisioned NDEF record and compares its local token digest. A failed
-   tuck-in scan can explicitly pair a replacement writable tag without restarting the
+   tag scan can explicitly pair a replacement writable tag without restarting the
    current run; the new digest is committed only after a successful write, and supersedes
    the previous tag for normal ending. When automatic Wind Down is enabled, the saved plan
    schedules the selected local notification cadence and future DeviceActivity shielding
