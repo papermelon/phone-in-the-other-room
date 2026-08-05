@@ -239,17 +239,17 @@ struct OnboardingProtectionStep: View {
     private var nfcCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Label("Phone-bed tag", systemImage: "dot.radiowaves.left.and.right")
+                Label("Wind Down tag", systemImage: "dot.radiowaves.left.and.right")
                     .font(AppTypography.headline)
                 if viewModel.hasRegisteredNFCTag {
                     Label("Tag ready", systemImage: "checkmark.circle.fill")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
                 } else {
-                    Text("Pair one writable tag where your phone will sleep.")
+                    Text("Pair one writable tag to use as your Wind Down barrier.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
-                    Button("Pair phone-bed tag") {
+                    Button("Pair Wind Down tag") {
                         viewModel.provisionNFCTag()
                     }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))

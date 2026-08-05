@@ -25,7 +25,7 @@ enum OllieRitualState: String, CaseIterable, Identifiable {
     fileprivate var previewTitle: String {
         switch self {
         case .ready: return "Ready"
-        case .tuckingIn: return "Tuck-in"
+        case .tuckingIn: return "Wind Down"
         case .guarding: return "Guarding"
         case .overnight: return "Overnight"
         case .morningQuiet: return "Morning"

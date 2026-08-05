@@ -101,6 +101,25 @@ extension SessionGuardKind {
     }
 }
 
+/// Keeps manual Wind Down start actions idempotent while an NFC reader session
+/// is already in flight. The decision is pure so the UI start path can be tested
+/// without Core NFC or SwiftUI.
+enum WindDownStartGate {
+    static func canPresentPreflight(isRunning: Bool, startInFlight: Bool) -> Bool {
+        !isRunning && !startInFlight
+    }
+
+    static func canBeginNFCRead(
+        forPendingStart: Bool,
+        hasActiveRun: Bool,
+        startInFlight: Bool,
+        scanInFlight: Bool
+    ) -> Bool {
+        guard !startInFlight, !scanInFlight else { return false }
+        return forPendingStart ? !hasActiveRun : hasActiveRun
+    }
+}
+
 enum PlacementStatus: String, Codable, Equatable {
     case notRequired
     case awaitingConfirmation

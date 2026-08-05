@@ -59,7 +59,7 @@ extension FocusSessionCoordinator {
             source: reading.source,
             lastUpdated: reading.timestamp,
             statusText: "Ollie is checking the walk",
-            detailText: "A short placement check is all Ollie needs."
+            detailText: "One short Watch check is all Ollie needs."
         )
         if watchPlacementLooksAway(run.proximityHistory) {
             confirmPlacement(&run, note: "Watch saw the phone move away")
@@ -95,7 +95,7 @@ extension FocusSessionCoordinator {
             source: .nearbyInteraction,
             lastUpdated: Date(),
             statusText: "Phone is resting away",
-            detailText: "Ollie finished the short placement check."
+            detailText: "Ollie finished the short Watch check."
         )
         ollieMessage = "Ollie saw the phone head out. The quiet is now settled."
         addEvent("Phone placement confirmed.", severity: .success)

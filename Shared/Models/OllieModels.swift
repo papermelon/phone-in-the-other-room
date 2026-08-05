@@ -87,7 +87,7 @@ struct ProximityState: Codable, Equatable {
     var statusText: String
     var detailText: String
 
-    static let initial = ProximityState(bucket: .waitingForDistance, distanceMeters: nil, confidence: .low, source: .fallback, lastUpdated: Date(), statusText: ProximityBucket.waitingForDistance.label, detailText: "Phone distance appears during the optional Wind Down tuck-in check.")
+    static let initial = ProximityState(bucket: .waitingForDistance, distanceMeters: nil, confidence: .low, source: .fallback, lastUpdated: Date(), statusText: ProximityBucket.waitingForDistance.label, detailText: "Phone distance appears during the optional Watch check.")
 }
 
 struct ThresholdProfile: Codable, Equatable {
@@ -281,7 +281,7 @@ enum OllieDailyStatus: String, Codable, CaseIterable {
 
     var label: String {
         switch self {
-        case .waiting: return "Ollie is ready for tonight's phone tuck-in."
+        case .waiting: return "Ollie is ready for tonight's Wind Down."
         case .warmedUp: return "Ollie is warmed up by a little phone-free time."
         case .steady: return "Ollie is steady after a protected night."
         case .bright: return "Ollie is bright after a phone-free night."
