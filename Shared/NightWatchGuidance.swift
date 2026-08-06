@@ -11,6 +11,7 @@ enum NightWatchNotificationMoment {
     case complete
     case morningReflection
     case shieldingFailed
+    case quietPeriodComplete
 }
 
 struct NightWatchNotificationCopy: Equatable {
@@ -193,6 +194,11 @@ struct NightWatchGuidance {
             return NightWatchNotificationCopy(
                 title: "A quick protection note",
                 body: "Selected apps could not be tucked away this time. Your phone-away plan is still here."
+            )
+        case .quietPeriodComplete:
+            return NightWatchNotificationCopy(
+                title: "Quiet period recorded",
+                body: "Ollie kept this bounded quiet period. Your receipt is ready in Nights."
             )
         }
     }

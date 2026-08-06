@@ -46,70 +46,61 @@ struct OnboardingQuietStep: View {
                 detail: "Choose a gentle cue for each edge of the night. Nothing needs to be checked off."
             )
 
+            cueEditor(
+                title: "Tonight, I’d like to make room for…",
+                text: Binding(
+                    get: { draft.eveningCueText ?? "" },
+                    set: { draft.eveningCueText = PhoneFreeCue.normalized($0) }
+                ),
+                suggestions: PhoneFreeActivity.eveningChoices,
+                selectedActivity: $draft.eveningActivity
+            )
+            cueEditor(
+                title: "Tomorrow morning, I’d like to…",
+                text: Binding(
+                    get: { draft.morningCueText ?? "" },
+                    set: { draft.morningCueText = PhoneFreeCue.normalized($0) }
+                ),
+                suggestions: PhoneFreeActivity.morningChoices,
+                selectedActivity: $draft.morningActivity
+            )
             PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("A little reason to put the phone down")
-                        .font(AppTypography.headline)
-                    Picker("Purpose", selection: $draft.purposeCategory) {
-                        ForEach(OfflinePurposeCategory.allCases) { category in
-                            Text(category.title).tag(category)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    if draft.purposeCategory == .custom {
-                        TextField(
-                            "A book, project, person, or quiet moment",
-                            text: Binding(
-                                get: { draft.customPurpose ?? "" },
-                                set: { draft.customPurpose = $0 }
-                            )
-                        )
-                        .textFieldStyle(.roundedBorder)
-                        Toggle(
-                            "Use my words in reminders",
-                            isOn: $draft.allowsCustomTextInNotifications
-                        )
-                        .font(AppTypography.caption)
-                    }
-                }
+                Toggle("Let my words appear in reminders", isOn: $draft.allowsCustomTextInNotifications)
+                    .font(AppTypography.caption)
+                Text("Your words stay inside Counting Sheep unless you choose this. Lock Screen notifications can be visible to anyone near your phone.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
             }
-
-            cuePicker(
-                title: "Tonight",
-                icon: draft.eveningActivity.systemImage,
-                selection: $draft.eveningActivity,
-                choices: PhoneFreeActivity.eveningChoices
-            )
-            cuePicker(
-                title: "Tomorrow morning",
-                icon: draft.morningActivity.systemImage,
-                selection: $draft.morningActivity,
-                choices: PhoneFreeActivity.morningChoices
-            )
         }
     }
 
-    private func cuePicker(
+    private func cueEditor(
         title: String,
-        icon: String,
-        selection: Binding<PhoneFreeActivity>,
-        choices: [PhoneFreeActivity]
+        text: Binding<String>,
+        suggestions: [PhoneFreeActivity],
+        selectedActivity: Binding<PhoneFreeActivity>
     ) -> some View {
         PixelCard {
-            HStack(spacing: AppSpacing.sm) {
-                Image(systemName: icon)
-                    .foregroundStyle(AppColors.grass)
-                    .frame(width: 24)
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text(title)
                     .font(AppTypography.headline)
-                Spacer()
-                Picker(title, selection: selection) {
-                    ForEach(choices) { activity in
-                        Text(activity.title).tag(activity)
+                TextField("It can be simple, specific, or left blank", text: text)
+                    .textFieldStyle(.roundedBorder)
+                Text("A few ideas, if they help")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: AppSpacing.xs) {
+                        ForEach(suggestions) { activity in
+                            Button(activity.title) {
+                                selectedActivity.wrappedValue = activity
+                                text.wrappedValue = activity.title
+                            }
+                            .font(AppTypography.caption)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: text.wrappedValue == activity.title))
+                        }
                     }
                 }
-                .pickerStyle(.menu)
-                .labelsHidden()
             }
         }
     }
@@ -389,8 +380,8 @@ struct OnboardingReadyStep: View {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     summaryRow("Wind Down", value: timeLabel(hour: draft.bedtimeHour, minute: draft.bedtimeMinute))
                     summaryRow("Phone wakes", value: timeLabel(hour: draft.wakeHour, minute: draft.wakeMinute))
-                    summaryRow("Evening", value: draft.eveningActivity.shortTitle)
-                    summaryRow("Morning", value: draft.morningActivity.shortTitle)
+                    summaryRow("Evening", value: draft.eveningCueText ?? draft.eveningActivity.shortTitle)
+                    summaryRow("Morning", value: draft.morningCueText ?? draft.morningActivity.shortTitle)
                     summaryRow("Protection", value: draft.protectionChoice.title)
                 }
             }

@@ -220,5 +220,6 @@ private extension FocusRunLiveActivityAttributes.ContentState {
 struct CountingSheepLiveActivityBundle: WidgetBundle {
     var body: some Widget {
         FocusRunLiveActivityWidget()
+        QuietNoteWidget()
     }
 }

@@ -38,6 +38,20 @@ final class OnboardingTests: XCTestCase {
         XCTAssertFalse(purpose.allowsCustomTextInNotifications)
     }
 
+    func testOpenEndedCuesBecomeEditableNightWatchText() {
+        var draft = OnboardingDraft()
+        draft.eveningCueText = "Finish my watercolor"
+        draft.morningCueText = "Sit by the window"
+
+        let preferences = draft.makeNightWatchPreferences()
+        let purpose = draft.makeOfflinePurpose()
+
+        XCTAssertEqual(preferences.eveningCueText, "Finish my watercolor")
+        XCTAssertEqual(preferences.morningCueText, "Sit by the window")
+        XCTAssertEqual(purpose.customText, "Finish my watercolor")
+        XCTAssertFalse(purpose.allowsCustomTextInNotifications)
+    }
+
     func testDraftRoundTripsWithCodable() throws {
         var draft = OnboardingDraft()
         draft.step = .protection

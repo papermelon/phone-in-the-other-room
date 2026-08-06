@@ -423,7 +423,8 @@ final class FocusRunViewModel: ObservableObject {
             return NightWatchPlan.additionalQuiet(
                 start: override.interval.start,
                 end: override.interval.end,
-                activity: nightWatchPreferences.eveningActivity
+                activity: nightWatchPreferences.eveningActivity,
+                cueText: nightWatchPreferences.eveningCueText
             )
         }
         let bedtime = override.interval.end
@@ -439,6 +440,8 @@ final class FocusRunViewModel: ObservableObject {
             morningQuietMinutes: nightWatchPreferences.morningQuietMinutes,
             eveningActivity: nightWatchPreferences.eveningActivity,
             morningActivity: nightWatchPreferences.morningActivity,
+            eveningCueText: nightWatchPreferences.eveningCueText,
+            morningCueText: nightWatchPreferences.morningCueText,
             role: .primarySleepBookend
         )
     }
@@ -493,9 +496,14 @@ final class FocusRunViewModel: ObservableObject {
         screenTimeAuthorization == .approved && hasSelectedShieldingApps
     }
 
-    func updateNotificationPreferences(_ preferences: NotificationPreferences) {
+    func updateNotificationPreferences(
+        _ preferences: NotificationPreferences,
+        markCadenceChosen: Bool = true
+    ) {
         var updated = preferences
-        updated.hasChosenCadence = true
+        updated.hasChosenCadence = markCadenceChosen
+            ? true
+            : preferences.hasChosenCadence
         if !canUseUsageAwareReminders {
             updated.usageAwareRemindersEnabled = false
         }
@@ -509,6 +517,30 @@ final class FocusRunViewModel: ObservableObject {
         } else {
             usageMonitoring.cancel()
         }
+    }
+
+    func updateNotificationCopy(
+        for templateID: NotificationTemplateID,
+        title: String?,
+        body: String?
+    ) {
+        var updated = notificationPreferences
+        updated.setCopyOverride(
+            NotificationCopyOverride(id: templateID, title: title, body: body)
+        )
+        updateNotificationPreferences(updated, markCadenceChosen: false)
+    }
+
+    func resetNotificationCopy(for templateID: NotificationTemplateID) {
+        var updated = notificationPreferences
+        updated.resetCopy(for: templateID)
+        updateNotificationPreferences(updated, markCadenceChosen: false)
+    }
+
+    func resetAllNotificationCopies() {
+        var updated = notificationPreferences
+        updated.resetAllCopies()
+        updateNotificationPreferences(updated, markCadenceChosen: false)
     }
 
     func refreshNotificationAuthorization() {
@@ -623,6 +655,21 @@ final class FocusRunViewModel: ObservableObject {
             customText: customText,
             allowsCustomTextInNotifications: allowsCustomTextInNotifications
         )
+    }
+
+    func updatePhoneFreeCue(evening: Bool, text: String) {
+        let normalized = PhoneFreeCue.normalized(text)
+        if evening {
+            nightWatchPreferences.eveningCueText = normalized
+            updateOfflinePurpose(
+                category: normalized == nil ? offlinePurpose.category : .custom,
+                customText: normalized,
+                allowsCustomTextInNotifications: offlinePurpose.allowsCustomTextInNotifications
+            )
+        } else {
+            nightWatchPreferences.morningCueText = normalized
+        }
+        saveNightWatchPreferences()
     }
 
     func answerFocusPrompt(_ accepted: Bool) {
@@ -949,7 +996,8 @@ final class FocusRunViewModel: ObservableObject {
                 plan = NightWatchPlan.additionalQuiet(
                     start: override.interval.start,
                     end: override.interval.end,
-                    activity: nightWatchPreferences.eveningActivity
+                    activity: nightWatchPreferences.eveningActivity,
+                    cueText: nightWatchPreferences.eveningCueText
                 )
             } else {
                 let calendar = Calendar.current
@@ -964,7 +1012,9 @@ final class FocusRunViewModel: ObservableObject {
                     windDownMinutes: max(15, Int(override.interval.duration / 60)),
                     morningQuietMinutes: nightWatchPreferences.morningQuietMinutes,
                     eveningActivity: nightWatchPreferences.eveningActivity,
-                    morningActivity: nightWatchPreferences.morningActivity
+                    morningActivity: nightWatchPreferences.morningActivity,
+                    eveningCueText: nightWatchPreferences.eveningCueText,
+                    morningCueText: nightWatchPreferences.morningCueText
                 )
             }
             let schedule = AutomaticWindDownSchedule(startedAt: override.interval.start, plan: plan)
@@ -1011,7 +1061,8 @@ final class FocusRunViewModel: ObservableObject {
             plan = NightWatchPlan.additionalQuiet(
                 start: next.interval.start,
                 end: next.interval.end,
-                activity: nightWatchPreferences.eveningActivity
+                activity: nightWatchPreferences.eveningActivity,
+                cueText: nightWatchPreferences.eveningCueText
             )
         } else {
             plan = nightWatchPreferences.makePlan(startedAt: startDate)

@@ -162,6 +162,12 @@ struct SettingsView: View {
                         .foregroundStyle(AppColors.muted)
                 }
             }
+            NavigationLink {
+                LockScreenQuietNoteGuideView()
+            } label: {
+                settingsRow("Lock Screen Quiet Note", icon: "text.bubble.fill")
+            }
+            .buttonStyle(.plain)
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Toggle(

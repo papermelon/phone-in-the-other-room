@@ -11,6 +11,7 @@ enum NightWatchNotificationPlanBuilder {
         seed: UUID,
         educationalTipsEnabled: Bool,
         soundsEnabled: Bool,
+        copyOverrides: [NotificationCopyOverride] = [],
         now: Date = Date()
     ) -> [PlannedNotification] {
         let plannedStart = plan.intendedBedtime.addingTimeInterval(
@@ -28,7 +29,8 @@ enum NightWatchNotificationPlanBuilder {
                     moment: .windDownLeadIn(minutes: minutes),
                     importance: .passive,
                     playsSound: false,
-                    destination: .home
+                    destination: .home,
+                    copyOverrides: copyOverrides
                 )
             )
         }
@@ -40,9 +42,11 @@ enum NightWatchNotificationPlanBuilder {
                 phase: .windDown,
                 moment: .windDownReminder,
                 tip: purpose.reminderPhrase,
+                purposeText: purpose.reminderPhrase,
                 importance: .active,
                 playsSound: soundsEnabled,
-                destination: .home
+                destination: .home,
+                copyOverrides: copyOverrides
             )
         )
 
@@ -53,13 +57,17 @@ enum NightWatchNotificationPlanBuilder {
                     date: midpoint(from: windDownStart, to: plan.intendedBedtime),
                     phase: .windDown,
                     moment: .windDownMidpoint,
-                    activityTitle: plan.eveningActivity.shortTitle,
+                    activityTitle: plan.eveningNotificationActivityTitle(
+                        allowsPersonalText: purpose.allowsCustomTextInNotifications
+                    ),
                     tip: educationalTipsEnabled
                         ? NightWatchGuidance.tip(for: .windDown, seed: seed)
                         : purpose.reminderPhrase,
+                    purposeText: purpose.reminderPhrase,
                     importance: .passive,
                     playsSound: false,
-                    destination: .activeRun
+                    destination: .activeRun,
+                    copyOverrides: copyOverrides
                 )
             )
         }
@@ -69,15 +77,15 @@ enum NightWatchNotificationPlanBuilder {
         // language from the primary ritual notification set.
         if plan.role == .additionalQuiet {
             candidates.append(
-                PlannedNotification(
+                copy(
                     id: "night-watch-quiet-period-complete",
                     date: plan.protectedUntil,
-                    title: "Quiet period recorded",
-                    body: "Ollie kept this bounded quiet period. Your receipt is ready in Nights.",
                     phase: .complete,
+                    moment: .quietPeriodComplete,
                     importance: .active,
                     playsSound: soundsEnabled,
-                    destination: .nights
+                    destination: .nights,
+                    copyOverrides: copyOverrides
                 )
             )
             return spaced(candidates.sorted { $0.date < $1.date })
@@ -95,7 +103,8 @@ enum NightWatchNotificationPlanBuilder {
                     : nil,
                 importance: .passive,
                 playsSound: false,
-                destination: .activeRun
+                destination: .activeRun,
+                copyOverrides: copyOverrides
             )
         )
         candidates.append(
@@ -104,11 +113,15 @@ enum NightWatchNotificationPlanBuilder {
                 date: plan.wakeTime,
                 phase: .morningQuiet,
                 moment: .phoneFreeMorning,
-                activityTitle: plan.morningActivity.shortTitle,
+                activityTitle: plan.morningNotificationActivityTitle(
+                    allowsPersonalText: purpose.allowsCustomTextInNotifications
+                ),
                 tip: purpose.reminderPhrase,
+                purposeText: purpose.reminderPhrase,
                 importance: .passive,
                 playsSound: false,
-                destination: .activeRun
+                destination: .activeRun,
+                copyOverrides: copyOverrides
             )
         )
 
@@ -119,10 +132,14 @@ enum NightWatchNotificationPlanBuilder {
                     date: midpoint(from: plan.wakeTime, to: plan.protectedUntil),
                     phase: .morningQuiet,
                     moment: .morningMidpoint,
-                    activityTitle: plan.morningActivity.shortTitle,
+                    activityTitle: plan.morningNotificationActivityTitle(
+                        allowsPersonalText: purpose.allowsCustomTextInNotifications
+                    ),
+                    purposeText: purpose.reminderPhrase,
                     importance: .passive,
                     playsSound: false,
-                    destination: .activeRun
+                    destination: .activeRun,
+                    copyOverrides: copyOverrides
                 )
             )
         }
@@ -135,7 +152,8 @@ enum NightWatchNotificationPlanBuilder {
                 moment: .complete,
                 importance: .active,
                 playsSound: soundsEnabled,
-                destination: .nights
+                destination: .nights,
+                copyOverrides: copyOverrides
             )
         )
 
@@ -145,7 +163,8 @@ enum NightWatchNotificationPlanBuilder {
 
     static func usageNotification(
         for phase: NightWatchPhase,
-        date: Date = Date()
+        date: Date = Date(),
+        copyOverrides: [NotificationCopyOverride] = []
     ) -> PlannedNotification? {
         guard phase == .windDown || phase == .overnight || phase == .morningQuiet else {
             return nil
@@ -157,13 +176,15 @@ enum NightWatchNotificationPlanBuilder {
             moment: .usageCue(phase),
             importance: .active,
             playsSound: false,
-            destination: .activeRun
+            destination: .activeRun,
+            copyOverrides: copyOverrides
         )
     }
 
     static func reflectionNotification(
         at date: Date,
-        now: Date = Date()
+        now: Date = Date(),
+        copyOverrides: [NotificationCopyOverride] = []
     ) -> PlannedNotification? {
         guard date > now else { return nil }
         return copy(
@@ -173,7 +194,8 @@ enum NightWatchNotificationPlanBuilder {
             moment: .morningReflection,
             importance: .passive,
             playsSound: false,
-            destination: .morningReflection
+            destination: .morningReflection,
+            copyOverrides: copyOverrides
         )
     }
 
@@ -199,11 +221,27 @@ enum NightWatchNotificationPlanBuilder {
         moment: NightWatchNotificationMoment,
         activityTitle: String? = nil,
         tip: String? = nil,
+        purposeText: String? = nil,
         importance: NotificationImportance,
         playsSound: Bool,
-        destination: NotificationDestination
+        destination: NotificationDestination,
+        copyOverrides: [NotificationCopyOverride] = []
     ) -> PlannedNotification {
-        let copy = NightWatchGuidance.notificationCopy(
+        let templateID = NotificationTemplateID.from(notificationID: id)
+        let copy = templateID.map {
+            NotificationCopyResolver.resolve(
+                id: $0,
+                moment: moment,
+                context: NotificationCopyContext(
+                    activityTitle: activityTitle,
+                    purpose: purposeText ?? tip,
+                    tip: tip,
+                    date: date,
+                    minutes: $0.minutes
+                ),
+                overrides: copyOverrides
+            )
+        } ?? NightWatchGuidance.notificationCopy(
             for: moment,
             activityTitle: activityTitle,
             tip: tip
