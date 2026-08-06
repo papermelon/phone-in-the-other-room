@@ -99,6 +99,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                     for: plan,
                     purpose: purpose,
                     soundsEnabled: preferences.soundsEnabled,
+                    preferences: preferences,
                     center: center
                 )
                 return
@@ -110,14 +111,16 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                 purpose: purpose,
                 seed: seed,
                 educationalTipsEnabled: preferences.educationalTipsEnabled,
-                soundsEnabled: preferences.soundsEnabled
+                soundsEnabled: preferences.soundsEnabled,
+                copyOverrides: preferences.copyOverrides
             )
             for notification in planned {
                 await add(notification, to: center)
             }
             if preferences.morningReflectionReminderEnabled,
                let reflection = NightWatchNotificationPlanBuilder.reflectionNotification(
-                   at: plan.protectedUntil.addingTimeInterval(60 * 60)
+                   at: plan.protectedUntil.addingTimeInterval(60 * 60),
+                   copyOverrides: preferences.copyOverrides
                ) {
                 await add(reflection, to: center)
             }
@@ -137,7 +140,12 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
             let center = UNUserNotificationCenter.current()
             center.removePendingNotificationRequests(withIdentifiers: notificationIdentifiers)
             if !preferences.hasChosenCadence {
-                await addLegacyAutomaticReminders(at: startDate, purpose: purpose, center: center)
+                await addLegacyAutomaticReminders(
+                    at: startDate,
+                    purpose: purpose,
+                    preferences: preferences,
+                    center: center
+                )
                 return
             }
             let planned = NightWatchNotificationPlanBuilder.scheduledNotifications(
@@ -147,14 +155,16 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                 purpose: purpose,
                 seed: seed,
                 educationalTipsEnabled: preferences.educationalTipsEnabled,
-                soundsEnabled: preferences.soundsEnabled
+                soundsEnabled: preferences.soundsEnabled,
+                copyOverrides: preferences.copyOverrides
             )
             for notification in planned {
                 await add(notification, to: center)
             }
             if preferences.morningReflectionReminderEnabled,
                let reflection = NightWatchNotificationPlanBuilder.reflectionNotification(
-                   at: plan.protectedUntil.addingTimeInterval(60 * 60)
+                   at: plan.protectedUntil.addingTimeInterval(60 * 60),
+                   copyOverrides: preferences.copyOverrides
                ) {
                 await add(reflection, to: center)
             }
@@ -169,9 +179,15 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         guard preferences.remindersEnabled, date > Date() else { return }
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
-            let copy = NightWatchGuidance.notificationCopy(
-                for: .windDownReminder,
-                tip: purpose.reminderPhrase
+            let copy = NotificationCopyResolver.resolve(
+                id: .windDownStart,
+                moment: .windDownReminder,
+                context: NotificationCopyContext(
+                    purpose: purpose.reminderPhrase,
+                    tip: purpose.reminderPhrase,
+                    date: date
+                ),
+                overrides: preferences.copyOverrides
             )
             let notification = PlannedNotification(
                 id: "night-watch-reminder",
@@ -191,7 +207,12 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         guard remindersEnabled, let endDate, endDate > Date() else { return }
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
-            let copy = NightWatchGuidance.notificationCopy(for: .complete)
+            let copy = NotificationCopyResolver.resolve(
+                id: .complete,
+                moment: .complete,
+                context: NotificationCopyContext(date: endDate),
+                overrides: preferences.copyOverrides
+            )
             let notification = PlannedNotification(
                 id: "focus-run-complete",
                 date: endDate,
@@ -211,7 +232,8 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
               preferences.usageAwareRemindersEnabled,
               let notification = NightWatchNotificationPlanBuilder.usageNotification(
                   for: phase,
-                  date: date
+                  date: date,
+                  copyOverrides: preferences.copyOverrides
               ) else { return }
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
@@ -314,14 +336,21 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         for plan: NightWatchPlan,
         purpose: OfflinePurposeProfile,
         soundsEnabled: Bool,
+        preferences: NotificationPreferences,
         center: UNUserNotificationCenter
     ) async {
+        let sleepCopy = NotificationCopyResolver.resolve(
+            id: .sleepTime,
+            moment: .sleepTime,
+            context: NotificationCopyContext(date: plan.intendedBedtime),
+            overrides: preferences.copyOverrides
+        )
         await add(
             PlannedNotification(
                 id: "night-watch-sleep-time",
                 date: plan.intendedBedtime,
-                title: NightWatchGuidance.notificationCopy(for: .sleepTime).title,
-                body: NightWatchGuidance.notificationCopy(for: .sleepTime).body,
+                title: sleepCopy.title,
+                body: sleepCopy.body,
                 phase: .overnight,
                 importance: .passive,
                 playsSound: false,
@@ -329,10 +358,18 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
             ),
             to: center
         )
-        let morning = NightWatchGuidance.notificationCopy(
-            for: .phoneFreeMorning,
-            activityTitle: plan.morningActivity.shortTitle,
-            tip: purpose.reminderPhrase
+        let morning = NotificationCopyResolver.resolve(
+            id: .phoneFreeMorning,
+            moment: .phoneFreeMorning,
+            context: NotificationCopyContext(
+                activityTitle: plan.morningNotificationActivityTitle(
+                    allowsPersonalText: purpose.allowsCustomTextInNotifications
+                ),
+                purpose: purpose.reminderPhrase,
+                tip: purpose.reminderPhrase,
+                date: plan.wakeTime
+            ),
+            overrides: preferences.copyOverrides
         )
         await add(
             PlannedNotification(
@@ -347,7 +384,12 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
             ),
             to: center
         )
-        let complete = NightWatchGuidance.notificationCopy(for: .complete)
+        let complete = NotificationCopyResolver.resolve(
+            id: .complete,
+            moment: .complete,
+            context: NotificationCopyContext(date: plan.protectedUntil),
+            overrides: preferences.copyOverrides
+        )
         await add(
             PlannedNotification(
                 id: "focus-run-complete",
@@ -366,10 +408,25 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
     private func addLegacyAutomaticReminders(
         at startDate: Date,
         purpose: OfflinePurposeProfile,
+        preferences: NotificationPreferences,
         center: UNUserNotificationCenter
     ) async {
         for minutes in [60, 30, 10] {
-            let copy = NightWatchGuidance.notificationCopy(for: .windDownLeadIn(minutes: minutes))
+            let templateID: NotificationTemplateID
+            switch minutes {
+            case 60: templateID = .windDownLeadIn60
+            case 30: templateID = .windDownLeadIn30
+            default: templateID = .windDownLeadIn10
+            }
+            let copy = NotificationCopyResolver.resolve(
+                id: templateID,
+                moment: .windDownLeadIn(minutes: minutes),
+                context: NotificationCopyContext(
+                    date: startDate.addingTimeInterval(TimeInterval(-minutes * 60)),
+                    minutes: minutes
+                ),
+                overrides: preferences.copyOverrides
+            )
             await add(
                 PlannedNotification(
                     id: "night-watch-lead-in-\(minutes)",
@@ -384,7 +441,16 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                 to: center
             )
         }
-        let copy = NightWatchGuidance.notificationCopy(for: .windDownReminder, tip: purpose.reminderPhrase)
+        let copy = NotificationCopyResolver.resolve(
+            id: .windDownStart,
+            moment: .windDownReminder,
+            context: NotificationCopyContext(
+                purpose: purpose.reminderPhrase,
+                tip: purpose.reminderPhrase,
+                date: startDate
+            ),
+            overrides: preferences.copyOverrides
+        )
         await add(
             PlannedNotification(
                 id: "night-watch-reminder",

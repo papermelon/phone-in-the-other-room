@@ -23,7 +23,6 @@ struct FocusRunSetupView: View {
                 quietTimeCard
                 activityCard
                 automaticStartCard
-                purposeCard
                 guardCard
                 Button {
                     if viewModel.canBeginNightWatchNow {
@@ -159,18 +158,32 @@ struct FocusRunSetupView: View {
     private var activityCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text("What will fill the quiet?")
+                Text("What will the quiet make room for?")
                     .font(AppTypography.headline)
-                activityPicker(
-                    title: "Tonight",
-                    selection: $viewModel.nightWatchPreferences.eveningActivity,
-                    choices: PhoneFreeActivity.eveningChoices
+                cueEditor(
+                    title: "Tonight, I’d like to make room for…",
+                    text: Binding(
+                        get: { viewModel.nightWatchPreferences.eveningCueText ?? "" },
+                        set: { viewModel.updatePhoneFreeCue(evening: true, text: $0) }
+                    ),
+                    suggestions: PhoneFreeActivity.eveningChoices,
+                    evening: true
                 )
-                activityPicker(
-                    title: "Tomorrow morning",
-                    selection: $viewModel.nightWatchPreferences.morningActivity,
-                    choices: PhoneFreeActivity.morningChoices
+                cueEditor(
+                    title: "Tomorrow morning, I’d like to…",
+                    text: Binding(
+                        get: { viewModel.nightWatchPreferences.morningCueText ?? "" },
+                        set: { viewModel.updatePhoneFreeCue(evening: false, text: $0) }
+                    ),
+                    suggestions: PhoneFreeActivity.morningChoices,
+                    evening: false
                 )
+                Toggle("Let my words appear in reminders", isOn: $includePurposeInNotifications)
+                    .font(AppTypography.caption)
+                    .onChange(of: includePurposeInNotifications) { _, _ in savePurpose() }
+                Text("Suggestions are optional. Your words stay inside Counting Sheep unless you choose to show them in a Lock Screen reminder.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
                 Text("These are gentle cues, never tasks to prove or complete.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
@@ -178,25 +191,33 @@ struct FocusRunSetupView: View {
         }
     }
 
-    private func activityPicker(
+    private func cueEditor(
         title: String,
-        selection: Binding<PhoneFreeActivity>,
-        choices: [PhoneFreeActivity]
+        text: Binding<String>,
+        suggestions: [PhoneFreeActivity],
+        evening: Bool
     ) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Image(systemName: selection.wrappedValue.systemImage)
-                .frame(width: 24)
-                .foregroundStyle(AppColors.grass)
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(title)
-                .font(AppTypography.body)
-            Spacer()
-            Picker(title, selection: selection) {
-                ForEach(choices) { activity in
-                    Text(activity.title).tag(activity)
+                .font(AppTypography.body.weight(.semibold))
+            TextField("It can be simple, specific, or left blank", text: text)
+                .textFieldStyle(.roundedBorder)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: AppSpacing.xs) {
+                    ForEach(suggestions) { activity in
+                        Button(activity.title) {
+                            if evening {
+                                viewModel.nightWatchPreferences.eveningActivity = activity
+                            } else {
+                                viewModel.nightWatchPreferences.morningActivity = activity
+                            }
+                            text.wrappedValue = activity.title
+                        }
+                        .font(AppTypography.caption)
+                        .buttonStyle(PixelChipButtonStyle(isSelected: text.wrappedValue == activity.title))
+                    }
                 }
             }
-            .labelsHidden()
-            .pickerStyle(.menu)
         }
     }
 
@@ -367,18 +388,20 @@ struct FocusRunSetupView: View {
 
     private func loadPurpose() {
         purposeCategory = viewModel.offlinePurpose.category
-        customPurpose = viewModel.offlinePurpose.customText ?? ""
+        customPurpose = viewModel.nightWatchPreferences.eveningCueText
+            ?? viewModel.offlinePurpose.customText
+            ?? ""
         includePurposeInNotifications = viewModel.offlinePurpose.allowsCustomTextInNotifications
     }
 
     private func savePurpose() {
-        if purposeCategory != .custom {
-            includePurposeInNotifications = false
-        }
+        let normalized = PhoneFreeCue.normalized(
+            viewModel.nightWatchPreferences.eveningCueText ?? customPurpose
+        )
         viewModel.updateOfflinePurpose(
-            category: purposeCategory,
-            customText: purposeCategory == .custom ? customPurpose : nil,
-            allowsCustomTextInNotifications: purposeCategory == .custom && includePurposeInNotifications
+            category: normalized == nil ? purposeCategory : .custom,
+            customText: normalized,
+            allowsCustomTextInNotifications: normalized != nil && includePurposeInNotifications
         )
     }
 

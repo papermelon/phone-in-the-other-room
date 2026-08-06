@@ -235,12 +235,14 @@ struct ActiveRunView: View {
                 activityCue(
                     eyebrow: "PHONE-FREE WIND-DOWN",
                     activity: plan.eveningActivity,
+                    title: plan.eveningActivityTitle,
                     detail: guidanceTip ?? "Let the evening get a little quieter."
                 )
             case .morningQuiet:
                 activityCue(
                     eyebrow: "PHONE-FREE MORNING",
                     activity: plan.morningActivity,
+                    title: plan.morningActivityTitle,
                     detail: guidanceTip ?? "Let the phone wake after you do."
                 )
             case .overnight, .complete:
@@ -249,7 +251,12 @@ struct ActiveRunView: View {
         }
     }
 
-    private func activityCue(eyebrow: String, activity: PhoneFreeActivity, detail: String) -> some View {
+    private func activityCue(
+        eyebrow: String,
+        activity: PhoneFreeActivity,
+        title: String,
+        detail: String
+    ) -> some View {
         PixelCard {
             HStack(spacing: 12) {
                 Image(systemName: activity.systemImage)
@@ -260,7 +267,7 @@ struct ActiveRunView: View {
                     Text(eyebrow)
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text(activity.title)
+                    Text(title)
                         .font(pixelFont(.headline))
                     Text(detail)
                         .font(pixelFont(.caption))

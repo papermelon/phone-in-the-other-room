@@ -42,7 +42,7 @@ enum NotificationCadence: String, Codable, CaseIterable, Identifiable {
 }
 
 struct NotificationPreferences: Codable, Equatable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     var schemaVersion: Int
     var remindersEnabled: Bool
@@ -52,6 +52,7 @@ struct NotificationPreferences: Codable, Equatable {
     var educationalTipsEnabled: Bool
     var usageAwareRemindersEnabled: Bool
     var morningReflectionReminderEnabled: Bool
+    var copyOverrides: [NotificationCopyOverride]
 
     static let defaults = NotificationPreferences(
         remindersEnabled: true,
@@ -60,7 +61,8 @@ struct NotificationPreferences: Codable, Equatable {
         soundsEnabled: true,
         educationalTipsEnabled: false,
         usageAwareRemindersEnabled: false,
-        morningReflectionReminderEnabled: false
+        morningReflectionReminderEnabled: false,
+        copyOverrides: []
     )
 
     init(
@@ -71,7 +73,8 @@ struct NotificationPreferences: Codable, Equatable {
         soundsEnabled: Bool,
         educationalTipsEnabled: Bool,
         usageAwareRemindersEnabled: Bool,
-        morningReflectionReminderEnabled: Bool
+        morningReflectionReminderEnabled: Bool,
+        copyOverrides: [NotificationCopyOverride] = []
     ) {
         self.schemaVersion = schemaVersion
         self.remindersEnabled = remindersEnabled
@@ -81,11 +84,13 @@ struct NotificationPreferences: Codable, Equatable {
         self.educationalTipsEnabled = educationalTipsEnabled
         self.usageAwareRemindersEnabled = usageAwareRemindersEnabled
         self.morningReflectionReminderEnabled = morningReflectionReminderEnabled
+        self.copyOverrides = copyOverrides
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? Self.currentSchemaVersion
+        let savedSchemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? Self.currentSchemaVersion
+        schemaVersion = max(Self.currentSchemaVersion, savedSchemaVersion)
         remindersEnabled = try container.decodeIfPresent(Bool.self, forKey: .remindersEnabled) ?? true
         cadence = try container.decodeIfPresent(NotificationCadence.self, forKey: .cadence) ?? .balanced
         hasChosenCadence = try container.decodeIfPresent(Bool.self, forKey: .hasChosenCadence) ?? false
@@ -93,11 +98,13 @@ struct NotificationPreferences: Codable, Equatable {
         educationalTipsEnabled = try container.decodeIfPresent(Bool.self, forKey: .educationalTipsEnabled) ?? false
         usageAwareRemindersEnabled = try container.decodeIfPresent(Bool.self, forKey: .usageAwareRemindersEnabled) ?? false
         morningReflectionReminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .morningReflectionReminderEnabled) ?? false
+        copyOverrides = try container.decodeIfPresent([NotificationCopyOverride].self, forKey: .copyOverrides) ?? []
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, remindersEnabled, cadence, hasChosenCadence, soundsEnabled
         case educationalTipsEnabled, usageAwareRemindersEnabled, morningReflectionReminderEnabled
+        case copyOverrides
     }
 }
 

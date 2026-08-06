@@ -84,6 +84,31 @@ final class NotificationPlanningTests: XCTestCase {
         XCTAssertFalse(hidden.first { $0.id == "night-watch-wind-down-start" }?.body.contains("paint miniatures") == true)
     }
 
+    func testScheduledPlanUsesPerTemplateCopyOverrides() {
+        let plan = makePlan()
+        let planned = NightWatchNotificationPlanBuilder.scheduledNotifications(
+            for: plan,
+            startedAt: start,
+            cadence: .quiet,
+            purpose: .defaultProfile,
+            seed: UUID(),
+            educationalTipsEnabled: false,
+            soundsEnabled: true,
+            copyOverrides: [
+                NotificationCopyOverride(
+                    id: .windDownStart,
+                    title: "My quiet begins",
+                    body: "The phone can rest now."
+                )
+            ],
+            now: start.addingTimeInterval(-1)
+        )
+
+        let startNotification = planned.first { $0.id == "night-watch-wind-down-start" }
+        XCTAssertEqual(startNotification?.title, "My quiet begins")
+        XCTAssertEqual(startNotification?.body, "The phone can rest now.")
+    }
+
     func testUsageNotificationsAreStableAndNeverCompletePhase() {
         XCTAssertEqual(
             NightWatchNotificationPlanBuilder.usageNotification(for: .overnight)?.id,

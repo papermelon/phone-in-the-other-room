@@ -79,6 +79,17 @@ enum PhoneFreeActivity: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum PhoneFreeCue {
+    static let maximumTextLength = 80
+
+    static func normalized(_ text: String?) -> String? {
+        guard let text else { return nil }
+        let collapsed = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard !collapsed.isEmpty else { return nil }
+        return String(collapsed.prefix(maximumTextLength))
+    }
+}
+
 struct NightWatchPreferences: Codable, Equatable {
     var bedtimeHour: Int
     var bedtimeMinute: Int
@@ -88,6 +99,8 @@ struct NightWatchPreferences: Codable, Equatable {
     var morningQuietMinutes: Int
     var eveningActivity: PhoneFreeActivity
     var morningActivity: PhoneFreeActivity
+    var eveningCueText: String?
+    var morningCueText: String?
     var guardKind: SessionGuardKind
     var isConfigured: Bool
     var automaticStartEnabled: Bool
@@ -101,6 +114,8 @@ struct NightWatchPreferences: Codable, Equatable {
         morningQuietMinutes: 30,
         eveningActivity: .read,
         morningActivity: .openCurtains,
+        eveningCueText: nil,
+        morningCueText: nil,
         guardKind: .nfcTag,
         isConfigured: false,
         automaticStartEnabled: true
@@ -115,6 +130,8 @@ struct NightWatchPreferences: Codable, Equatable {
         morningQuietMinutes: Int,
         eveningActivity: PhoneFreeActivity,
         morningActivity: PhoneFreeActivity,
+        eveningCueText: String? = nil,
+        morningCueText: String? = nil,
         guardKind: SessionGuardKind,
         isConfigured: Bool,
         automaticStartEnabled: Bool = true
@@ -127,6 +144,8 @@ struct NightWatchPreferences: Codable, Equatable {
         self.morningQuietMinutes = min(180, max(15, morningQuietMinutes))
         self.eveningActivity = eveningActivity
         self.morningActivity = morningActivity
+        self.eveningCueText = PhoneFreeCue.normalized(eveningCueText)
+        self.morningCueText = PhoneFreeCue.normalized(morningCueText)
         self.guardKind = guardKind
         self.isConfigured = isConfigured
         self.automaticStartEnabled = automaticStartEnabled
@@ -135,6 +154,7 @@ struct NightWatchPreferences: Codable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case bedtimeHour, bedtimeMinute, wakeHour, wakeMinute
         case windDownMinutes, morningQuietMinutes, eveningActivity, morningActivity
+        case eveningCueText, morningCueText
         case guardKind, isConfigured, automaticStartEnabled
     }
 
@@ -148,6 +168,8 @@ struct NightWatchPreferences: Codable, Equatable {
         morningQuietMinutes = min(180, max(15, try container.decodeIfPresent(Int.self, forKey: .morningQuietMinutes) ?? Self.defaults.morningQuietMinutes))
         eveningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .eveningActivity) ?? Self.defaults.eveningActivity
         morningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .morningActivity) ?? Self.defaults.morningActivity
+        eveningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .eveningCueText))
+        morningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .morningCueText))
         guardKind = try container.decodeIfPresent(SessionGuardKind.self, forKey: .guardKind) ?? Self.defaults.guardKind
         isConfigured = try container.decodeIfPresent(Bool.self, forKey: .isConfigured) ?? false
         // Existing saved plans should not silently begin shielding or sessions after an update.
@@ -210,7 +232,9 @@ struct NightWatchPreferences: Codable, Equatable {
             windDownMinutes: windDownMinutes,
             morningQuietMinutes: morningQuietMinutes,
             eveningActivity: eveningActivity,
-            morningActivity: morningActivity
+            morningActivity: morningActivity,
+            eveningCueText: eveningCueText,
+            morningCueText: morningCueText
         )
     }
 
@@ -265,13 +289,15 @@ struct NightWatchPlan: Codable, Equatable {
     var morningQuietMinutes: Int
     var eveningActivity: PhoneFreeActivity
     var morningActivity: PhoneFreeActivity
+    var eveningCueText: String?
+    var morningCueText: String?
     /// Primary plans span the sleep bookends. Additional plans are standalone
     /// quiet intervals and must not advance protected-night progression.
     var role: WindDownOccurrenceRole
 
     private enum CodingKeys: String, CodingKey {
         case intendedBedtime, wakeTime, protectedUntil, windDownMinutes, morningQuietMinutes
-        case eveningActivity, morningActivity, role
+        case eveningActivity, morningActivity, eveningCueText, morningCueText, role
     }
 
     init(
@@ -282,6 +308,8 @@ struct NightWatchPlan: Codable, Equatable {
         morningQuietMinutes: Int,
         eveningActivity: PhoneFreeActivity,
         morningActivity: PhoneFreeActivity,
+        eveningCueText: String? = nil,
+        morningCueText: String? = nil,
         role: WindDownOccurrenceRole = .primarySleepBookend
     ) {
         self.intendedBedtime = intendedBedtime
@@ -291,6 +319,8 @@ struct NightWatchPlan: Codable, Equatable {
         self.morningQuietMinutes = max(0, morningQuietMinutes)
         self.eveningActivity = eveningActivity
         self.morningActivity = morningActivity
+        self.eveningCueText = PhoneFreeCue.normalized(eveningCueText)
+        self.morningCueText = PhoneFreeCue.normalized(morningCueText)
         self.role = role
     }
 
@@ -303,13 +333,16 @@ struct NightWatchPlan: Codable, Equatable {
         morningQuietMinutes = max(0, try container.decodeIfPresent(Int.self, forKey: .morningQuietMinutes) ?? 0)
         eveningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .eveningActivity) ?? .read
         morningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .morningActivity) ?? .openCurtains
+        eveningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .eveningCueText))
+        morningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .morningCueText))
         role = try container.decodeIfPresent(WindDownOccurrenceRole.self, forKey: .role) ?? .primarySleepBookend
     }
 
     static func additionalQuiet(
         start: Date,
         end: Date,
-        activity: PhoneFreeActivity = .read
+        activity: PhoneFreeActivity = .read,
+        cueText: String? = nil
     ) -> Self {
         let minutes = max(0, Int(end.timeIntervalSince(start) / 60))
         return Self(
@@ -320,6 +353,7 @@ struct NightWatchPlan: Codable, Equatable {
             morningQuietMinutes: 0,
             eveningActivity: activity,
             morningActivity: .openCurtains,
+            eveningCueText: cueText,
             role: .additionalQuiet
         )
     }
@@ -332,6 +366,24 @@ struct NightWatchPlan: Codable, Equatable {
         if date >= wakeTime { return .morningQuiet }
         if date >= intendedBedtime { return .overnight }
         return .windDown
+    }
+
+    var eveningActivityTitle: String {
+        eveningCueText ?? eveningActivity.shortTitle
+    }
+
+    var morningActivityTitle: String {
+        morningCueText ?? morningActivity.shortTitle
+    }
+
+    func eveningNotificationActivityTitle(allowsPersonalText: Bool) -> String? {
+        if eveningCueText != nil && !allowsPersonalText { return nil }
+        return eveningActivityTitle
+    }
+
+    func morningNotificationActivityTitle(allowsPersonalText: Bool) -> String? {
+        if morningCueText != nil && !allowsPersonalText { return nil }
+        return morningActivityTitle
     }
 
     func nextTransition(after date: Date) -> Date? {

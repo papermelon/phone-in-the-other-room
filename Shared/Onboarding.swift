@@ -72,6 +72,8 @@ struct OnboardingDraft: Codable, Equatable {
     var morningQuietMinutes = 30
     var eveningActivity: PhoneFreeActivity = .read
     var morningActivity: PhoneFreeActivity = .openCurtains
+    var eveningCueText: String?
+    var morningCueText: String?
     var purposeCategory: OfflinePurposeCategory = .rest
     var customPurpose: String?
     var allowsCustomTextInNotifications = false
@@ -97,6 +99,8 @@ struct OnboardingDraft: Codable, Equatable {
             morningQuietMinutes: morningQuietMinutes,
             eveningActivity: eveningActivity,
             morningActivity: morningActivity,
+            eveningCueText: eveningCueText,
+            morningCueText: morningCueText,
             guardKind: selectedGuardKind,
             isConfigured: true,
             automaticStartEnabled: automaticStartEnabled
@@ -104,10 +108,12 @@ struct OnboardingDraft: Codable, Equatable {
     }
 
     func makeOfflinePurpose() -> OfflinePurposeProfile {
-        OfflinePurposeProfile(
-            category: purposeCategory,
-            customText: purposeCategory == .custom ? customPurpose : nil,
-            allowsCustomTextInNotifications: purposeCategory == .custom
+        let openEndedPurpose = PhoneFreeCue.normalized(eveningCueText) ?? customPurpose
+        let category = openEndedPurpose == nil ? purposeCategory : .custom
+        return OfflinePurposeProfile(
+            category: category,
+            customText: openEndedPurpose,
+            allowsCustomTextInNotifications: category == .custom
                 && allowsCustomTextInNotifications
         )
     }
@@ -135,6 +141,8 @@ struct OnboardingDraft: Codable, Equatable {
             morningQuietMinutes: preferences.morningQuietMinutes,
             eveningActivity: preferences.eveningActivity,
             morningActivity: preferences.morningActivity,
+            eveningCueText: preferences.eveningCueText,
+            morningCueText: preferences.morningCueText,
             // A first-run user should understand the no-hardware path before being
             // invited to add an NFC tag. Existing plans are not routed through onboarding.
             protectionChoice: .appShielding,

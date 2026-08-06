@@ -269,8 +269,8 @@ final class FocusRunLiveActivityService {
             bedtimeAt: run.nightWatchPlan?.intendedBedtime,
             wakeAt: run.nightWatchPlan?.wakeTime,
             morningQuietEndsAt: run.nightWatchPlan?.protectedUntil,
-            eveningActivityTitle: run.nightWatchPlan?.eveningActivity.title,
-            morningActivityTitle: run.nightWatchPlan?.morningActivity.title
+            eveningActivityTitle: run.nightWatchPlan?.eveningActivityTitle,
+            morningActivityTitle: run.nightWatchPlan?.morningActivityTitle
         )
         await remoteSink.upsert(registration)
     }
@@ -371,8 +371,8 @@ final class FocusRunLiveActivityService {
             bedtimeAt: run.nightWatchPlan?.intendedBedtime,
             wakeAt: run.nightWatchPlan?.wakeTime,
             morningQuietEndsAt: run.nightWatchPlan?.protectedUntil,
-            eveningActivityTitle: run.nightWatchPlan?.eveningActivity.title,
-            morningActivityTitle: run.nightWatchPlan?.morningActivity.title
+            eveningActivityTitle: run.nightWatchPlan?.eveningActivityTitle,
+            morningActivityTitle: run.nightWatchPlan?.morningActivityTitle
         )
     }
 }

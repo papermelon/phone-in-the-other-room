@@ -9,6 +9,22 @@ Field legend — **Mode**: Codex / Cursor Plan→Build / Cursor Build / Cursor M
 execute without human sign-off mid-task (final merge review still applies per
 `docs/PLAYBOOKS/pre-merge-review.md`).
 
+## Recently completed
+
+- **2026-08-06 · Codex:** Added local, versioned notification copy overrides with a complete
+  message library, next-Wind-Down instance preview, optional `{activity}`, `{purpose}`,
+  `{time}`, and `{minutes}` placeholders, fixed shielding-failure copy, and legacy-safe
+  scheduling. Wind Down setup and onboarding now use separate open-ended evening and morning
+  cues with editable suggestions. Physical Lock Screen privacy/truncation and notification
+  rescheduling QA remain follow-ups.
+
+- **2026-08-06 · Codex:** Added the static, user-configurable Quiet Note accessory-rectangular
+  Lock Screen widget to the existing WidgetKit extension. The note is explicitly entered
+  through the widget configuration, normalized and privacy-sensitive; it does not read the
+  private Wind Down purpose or duplicate Live Activity state. Settings includes a short setup
+  guide. Physical Lock Screen, privacy-redaction, Always-On, and coexistence checks remain
+  device QA items.
+
 ---
 
 ## A. Immediate TestFlight blockers (in order)

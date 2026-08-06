@@ -119,6 +119,7 @@ PhoneInTheOtherRoomWatchApp/   watchOS companion
 
 PhoneInTheOtherRoomLiveActivity/ iOS WidgetKit extension
 ├─ FocusRunLiveActivityWidget.swift              Lock Screen + Dynamic Island layouts
+├─ QuietNoteWidget.swift                          configurable Lock Screen cue below the clock
 └─ Info.plist                                    Widget extension declaration
 
 PhoneInTheOtherRoomScreenTimeReport/
@@ -183,6 +184,11 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    while the app is closed; optional usage-aware monitoring is installed independently for
    wind-down, overnight, and morning quiet, with one generic three-minute cue per phase.
    The next app activation reconstructs the local run.
+   Notification copy is resolved by the shared `NotificationCopyResolver` from a stable
+   template ID, the current plan context, and local overrides. Settings previews call the
+   same resolver before pending `UNNotificationRequest` values are rebuilt. Supported
+   placeholders are optional (`{activity}`, `{purpose}`, `{time}`, and `{minutes}`); fixed
+   protection notices bypass overrides.
 5. If optional placement is unavailable, the run automatically continues as a simple
    phone-away timer. No later distance reading can warn or end a run.
 6. Optional shielding derives a protected-session DeviceActivity schedule from this same
@@ -230,6 +236,13 @@ the planned end but cannot
 dismiss it until the app next finishes or restores the run; the local completion
 notification and app-reopen reconciliation remain the completion fallbacks. See
 `ACTIVITYKIT_PUSH_BACKEND.md` for the server lifecycle contract.
+
+The same WidgetKit extension also exposes a static `QuietNoteWidget` in the
+`accessoryRectangular` family. Its text comes only from the person's explicit App Intent
+widget configuration, is normalized to a short Unicode-safe value, and is not copied from
+the private `OfflinePurposeProfile`. The widget uses a `.never` timeline because it is a
+persistent ritual cue; active phase and countdown state remain exclusive to the Live
+Activity.
 
 Energy-specific implementation notes and the physical-device profiling matrix live in
 [`ENERGY_AUDIT.md`](ENERGY_AUDIT.md).
@@ -279,7 +292,7 @@ by the iPhone.
 | `ollie.morningCheckIns` | `MorningCheckInHistory` | up to 45 days of private optional morning reflections |
 | `ollie.onboarding.version` | `Int` | completed first-run onboarding version |
 | `ollie.onboarding.draft` | `OnboardingDraft` | resumable first-run setup choices |
-| `ollie.notifications.preferences` | `NotificationPreferences` | cadence, authorization choices, sounds, and separately opted-in optional channels |
+| `ollie.notifications.preferences` | `NotificationPreferences` | cadence, authorization choices, sounds, optional channels, and versioned local message overrides |
 | `ollie.notifications.remindersEnabled` | `Bool` | backwards-compatible mirror of the notification master switch |
 | `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes, trail distance, no-find protection, odds preference |
 | `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
