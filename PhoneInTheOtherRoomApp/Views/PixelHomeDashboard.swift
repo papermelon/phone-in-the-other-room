@@ -5,7 +5,7 @@ struct PixelHomeDashboard: View {
     @ObservedObject private var watch: WatchConnectivityManager
     @State private var showRunSetup = false
     @State private var showTimingEditor = false
-    @State private var showOneTimeWindDown = false
+    @State private var showQuietTimeSchedule = false
 
     init(watch: WatchConnectivityManager = .shared) {
         self._watch = ObservedObject(initialValue: watch)
@@ -16,10 +16,13 @@ struct PixelHomeDashboard: View {
             progress: viewModel.coordinator.progress,
             preferences: viewModel.nightWatchPreferences,
             purpose: viewModel.offlinePurpose,
+            orientationState: viewModel.orientationState,
             watchReachable: watch.isReachable,
             canBeginNow: viewModel.canBeginNightWatchNow,
             isNFCTagReady: viewModel.hasRegisteredNFCTag,
-            hasOneTimeWindDown: viewModel.nextWindDownOverride?.role == .additionalQuiet,
+            nextUpcoming: viewModel.nextUpcomingQuietPeriod,
+            upcomingAdditionalCount: viewModel.upcomingAdditionalQuietPeriods.count,
+            mappedBonusPercentagePoints: viewModel.sheepSearchState.trailMap.availableBonusPercentagePoints,
             onPrimaryAction: {
                 let methodIsReady = viewModel.selectedGuardKind != .nfcTag
                     || viewModel.hasRegisteredNFCTag
@@ -32,8 +35,20 @@ struct PixelHomeDashboard: View {
                 }
             },
             onEditTiming: { showTimingEditor = true },
-            onOneTimeWindDown: { showOneTimeWindDown = true }
+            onQuietTimeSchedule: { showQuietTimeSchedule = true },
+            onReviewWindDown: { showRunSetup = true },
+            onStartPractice: { _ = viewModel.startOrientationPractice() },
+            onSeeNights: {
+                viewModel.focusNightsRecord(viewModel.orientationState.practiceRunID)
+                NotificationCenter.default.post(name: .countingSheepShowNights, object: nil)
+            },
+            onVisitFarm: {
+                NotificationCenter.default.post(name: .countingSheepShowFarm, object: nil)
+            },
+            onDismissOrientation: viewModel.dismissOrientation,
+            onSkipOrientation: viewModel.skipOrientationPermanently
         )
+        .onAppear { viewModel.markOrientation(.homeExplained) }
         .navigationDestination(isPresented: $showRunSetup) {
             FocusRunSetupView()
                 .environmentObject(viewModel)
@@ -42,8 +57,8 @@ struct PixelHomeDashboard: View {
             WindDownTimingView()
                 .environmentObject(viewModel)
         }
-        .navigationDestination(isPresented: $showOneTimeWindDown) {
-            OneTimeWindDownView()
+        .navigationDestination(isPresented: $showQuietTimeSchedule) {
+            WindDownScheduleView()
                 .environmentObject(viewModel)
         }
     }
@@ -53,18 +68,39 @@ private struct PixelHomeDashboardContent: View {
     var progress: UserProgress
     var preferences: NightWatchPreferences
     var purpose: OfflinePurposeProfile
+    var orientationState: CountingSheepOrientationState
     var watchReachable: Bool
     var canBeginNow: Bool
     var isNFCTagReady: Bool
-    var hasOneTimeWindDown: Bool
+    var nextUpcoming: WindDownSchedulePeriod?
+    var upcomingAdditionalCount: Int
+    var mappedBonusPercentagePoints: Int
     var onPrimaryAction: () -> Void
     var onEditTiming: () -> Void
-    var onOneTimeWindDown: () -> Void
+    var onQuietTimeSchedule: () -> Void
+    var onReviewWindDown: () -> Void
+    var onStartPractice: () -> Void
+    var onSeeNights: () -> Void
+    var onVisitFarm: () -> Void
+    var onDismissOrientation: () -> Void
+    var onSkipOrientation: () -> Void
 
     private var latestNight: DailyFocusRecord? { progress.recentFocusRecords.first }
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
+            if orientationState.isVisibleOnHome {
+                CountingSheepOrientationCard(
+                    state: orientationState,
+                    onReviewWindDown: onReviewWindDown,
+                    onStartPractice: onStartPractice,
+                    onSeeNights: onSeeNights,
+                    onVisitFarm: onVisitFarm,
+                    onDismiss: onDismissOrientation,
+                    onSkip: onSkipOrientation
+                )
+            }
+
             NightWatchOverviewBlock(
                 preferences: preferences,
                 latestNight: latestNight,
@@ -86,15 +122,27 @@ private struct PixelHomeDashboardContent: View {
 
             PrimaryGreenCTA(
                 title: primaryTitle,
-                subtitle: preferences.isConfigured ? scheduleLabel : "Choose when your phone rests",
+                subtitle: preferences.isConfigured ? scheduleLabel : "Choose when Wind Down runs",
                 icon: "door.left.hand.open",
                 assetName: AssetSlot.Home.door,
                 action: onPrimaryAction
             )
 
-            OneTimeWindDownCard(
-                hasScheduledOverride: hasOneTimeWindDown,
-                action: onOneTimeWindDown
+            if mappedBonusPercentagePoints > 0 {
+                Label(
+                    "Ollie has \(mappedBonusPercentagePoints) mapped clue\(mappedBonusPercentagePoints == 1 ? "" : "s") ready for tonight.",
+                    systemImage: "map.fill"
+                )
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.grass)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityLabel("Up to plus \(mappedBonusPercentagePoints) percentage points mapped for the next search")
+            }
+
+            UpcomingQuietTimesCard(
+                nextPeriod: nextUpcoming,
+                additionalCount: upcomingAdditionalCount,
+                action: onQuietTimeSchedule
             )
 
             if preferences.guardKind == .watchPlacement {
@@ -104,11 +152,11 @@ private struct PixelHomeDashboardContent: View {
     }
 
     private var primaryTitle: String {
-        if !preferences.isConfigured { return "Set Wind Down" }
+        if !preferences.isConfigured { return "Set up Wind Down" }
         if preferences.guardKind == .nfcTag, !isNFCTagReady {
-            return "Set up NFC tag"
+            return "Set up Wind Down tag"
         }
-        return canBeginNow ? "Start Wind Down" : "Adjust Wind Down"
+        return canBeginNow ? "Start Wind Down" : "Review Wind Down"
     }
 
     private var scheduleLabel: String {
@@ -177,11 +225,11 @@ private struct NightWatchOverviewBlock: View {
                 }
 
                 if let latestNight {
-                    Text("Latest night · \(latestNight.completedFocusMinutes) phone-free minutes")
+                    Text("Latest protected night · \(latestNight.completedFocusMinutes) quiet minutes")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 } else {
-                    Text("Your first protected night will appear in Nights.")
+                    Text("Your first protected night will appear in Nights after you complete Wind Down.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }
@@ -215,22 +263,23 @@ private struct NightWatchOverviewBlock: View {
     }
 }
 
-private struct OneTimeWindDownCard: View {
-    var hasScheduledOverride: Bool
+private struct UpcomingQuietTimesCard: View {
+    var nextPeriod: WindDownSchedulePeriod?
+    var additionalCount: Int
     var action: () -> Void
 
     var body: some View {
         Button(action: action) {
             PixelCard {
                 HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "sparkles")
+                    Image(systemName: "moon.zzz.fill")
                         .font(.title2.weight(.black))
                         .foregroundStyle(AppColors.grass)
                         .frame(width: 30)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("One-Time Wind Down")
+                        Text("Upcoming quiet times")
                             .font(AppTypography.headline)
-                        Text(hasScheduledOverride ? "A quiet period is ready for today." : "Make room for quiet at another point in the day.")
+                        Text(summary)
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
                     }
@@ -241,7 +290,18 @@ private struct OneTimeWindDownCard: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Opens a one-time additional quiet period")
+        .accessibilityHint("Opens your finite list of once and repeating quiet times")
+    }
+
+    private var summary: String {
+        guard let nextPeriod else {
+            return additionalCount == 0
+                ? "Add a one-time quiet period outside your usual Wind Down."
+                : "Your next quiet time is being tended by Ollie."
+        }
+        let start = nextPeriod.occurrence.interval.start.formatted(date: .abbreviated, time: .shortened)
+        let count = additionalCount == 1 ? "1 one-time quiet period" : "\(additionalCount) one-time quiet periods"
+        return "Next: \(start) · \(count)"
     }
 }
 
@@ -252,13 +312,18 @@ private struct OneTimeWindDownCard: View {
                 progress: .empty,
                 preferences: .defaults,
                 purpose: OfflinePurposeProfile(category: .read),
+                orientationState: .fresh,
                 watchReachable: false,
                 canBeginNow: false,
                 isNFCTagReady: false,
-                hasOneTimeWindDown: false,
+                nextUpcoming: nil,
+                upcomingAdditionalCount: 0,
+                mappedBonusPercentagePoints: 0,
                 onPrimaryAction: {},
                 onEditTiming: {},
-                onOneTimeWindDown: {}
+                onQuietTimeSchedule: {},
+                onReviewWindDown: {}, onStartPractice: {}, onSeeNights: {}, onVisitFarm: {},
+                onDismissOrientation: {}, onSkipOrientation: {}
             )
             .padding(AppSpacing.md)
         }
@@ -285,13 +350,18 @@ private struct OneTimeWindDownCard: View {
                 progress: .empty,
                 preferences: preferences,
                 purpose: OfflinePurposeProfile(category: .read),
+                orientationState: .fresh,
                 watchReachable: false,
                 canBeginNow: false,
                 isNFCTagReady: false,
-                hasOneTimeWindDown: false,
+                nextUpcoming: nil,
+                upcomingAdditionalCount: 0,
+                mappedBonusPercentagePoints: 3,
                 onPrimaryAction: {},
                 onEditTiming: {},
-                onOneTimeWindDown: {}
+                onQuietTimeSchedule: {},
+                onReviewWindDown: {}, onStartPractice: {}, onSeeNights: {}, onVisitFarm: {},
+                onDismissOrientation: {}, onSkipOrientation: {}
             )
             .padding(AppSpacing.md)
         }

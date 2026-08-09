@@ -11,6 +11,31 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Recently completed
 
+- **2026-08-08 · Codex:** Shipped the completion receipt and field-note reveal redesign. The
+  factual receipt now comes first; the single reveal action reads the persisted outcome by run ID
+  without resolving again, and the field note remains fully scrollable with found and trail-only
+  branches. Reworked the shipping Farm into pasture/flock overview, latest-arrival or quiet state,
+  compact trail map, and finite field board with “Still searching” / “Home” language. Added
+  idempotent outcome-reopen coverage and Dynamic Type / Reduce Motion previews. Physical-device
+  VoiceOver and smallest-device QA remain follow-ups.
+
+- **2026-08-08 · Codex:** Consolidated Upcoming quiet times into a versioned persisted schedule
+  with legacy plural/singular migration, multiple dated one-time periods, daily/weekday/custom
+  recurrence, finite editing and cancellation, eligible manual claiming, overlap validation,
+  passed-period pruning, earliest-occurrence resolution, and notification reconciliation that
+  preserves active-run alerts and the iOS pending limit. Additional quiet remains outside
+  protected-night and sheep outcomes. Physical-device notification and timezone QA remains part
+  of B1.
+
+- **2026-08-08 · Codex:** Added bounded Brief Access for selected apps/categories. The
+  shield action persists a versioned pending grant before scheduling a one-shot restore,
+  clamps the expiry to the current protected interval, and only then clears the named
+  ManagedSettings store. Delayed callbacks restore only for the same run/revision; pending
+  or stale callbacks reconcile the current schedule and reapply its shield if still eligible.
+  Extension cleanup archives a bounded per-run count for later main-app import. Web-domain
+  shields do not advertise Brief Access. Physical-device action routing, termination,
+  restore timing, and refreshed Shield Action provisioning remain D1 checks.
+
 - **2026-08-06 · Codex:** Added local, versioned notification copy overrides with a complete
   message library, next-Wind-Down instance preview, optional `{activity}`, `{purpose}`,
   `{time}`, and `{minutes}` placeholders, fixed shielding-failure copy, and legacy-safe

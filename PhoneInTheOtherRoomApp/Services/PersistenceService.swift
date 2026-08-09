@@ -16,6 +16,7 @@ final class PersistenceService {
     private let installationIDKey = "ollie.installationID"
     private let nightWatchPreferencesKey = "ollie.nightWatch.preferences"
     private let automaticWindDownScheduleKey = "ollie.nightWatch.automaticSchedule"
+    private let windDownScheduleKey = "ollie.nightWatch.schedule"
     private let windDownRoutinesKey = "ollie.nightWatch.routines"
     private let nextWindDownOverrideKey = "ollie.nightWatch.nextOverride"
     private let offlinePurposeKey = "ollie.offlinePurpose"
@@ -25,6 +26,7 @@ final class PersistenceService {
     private let impactSharingPreferencesKey = "ollie.impactSharing.preferences"
     private let impactUploadRecordsKey = "ollie.impactSharing.records"
     private let sheepSearchStateKey = "ollie.sheepSearch.state"
+    private let orientationStateKey = "ollie.orientation.state"
 #if DEBUG
     private let energyLogger = Logger(
         subsystem: "com.ngawangchime.countingsheep",
@@ -89,22 +91,94 @@ final class PersistenceService {
         set { save(newValue, key: automaticWindDownScheduleKey) }
     }
 
+    /// The versioned schedule is the source of truth. The two older keys are
+    /// read only as a migration path so a saved routine or one-time adjustment
+    /// survives the first launch after this schema change.
+    var windDownSchedule: WindDownScheduleState {
+        get {
+            if let stored = load(WindDownScheduleState.self, key: windDownScheduleKey) {
+                return stored
+            }
+
+            let legacyRoutines = load([WindDownRoutine].self, key: windDownRoutinesKey)
+                ?? (nightWatchPreferences.isConfigured
+                    ? [WindDownRoutine.primary(from: nightWatchPreferences)]
+                    : [])
+            let migrated = WindDownScheduleState.migrated(
+                routines: legacyRoutines,
+                nextOverride: load(NextWindDownOverride.self, key: nextWindDownOverrideKey)
+            )
+            save(migrated, key: windDownScheduleKey)
+            return migrated
+        }
+        set {
+            save(newValue, key: windDownScheduleKey)
+            // Keep legacy readers harmlessly in sync for rollback and old
+            // extensions. New code reads only the versioned state above.
+            save(newValue.routines, key: windDownRoutinesKey)
+            if let first = newValue.oneTimePeriods
+                .filter(\.isAvailable)
+                .sorted(by: { $0.interval.start < $1.interval.start })
+                .first {
+                let override = NextWindDownOverride(
+                    id: first.id,
+                    routineID: first.role == .primarySleepBookend
+                        ? (newValue.routines.first(where: { $0.role == .primarySleepBookend })?.id ?? first.id)
+                        : first.id,
+                    role: first.role,
+                    interval: first.interval,
+                    createdAt: Date(),
+                    expiresAt: first.interval.end
+                )
+                save(override, key: nextWindDownOverrideKey)
+            } else {
+                defaults.removeObject(forKey: nextWindDownOverrideKey)
+            }
+        }
+    }
+
     /// The plural schedule is additive. Existing installs migrate their saved
     /// primary preferences into one routine without rewriting the legacy key.
     var windDownRoutines: [WindDownRoutine] {
-        get {
-            if let routines = load([WindDownRoutine].self, key: windDownRoutinesKey) {
-                return routines
-            }
-            guard nightWatchPreferences.isConfigured else { return [] }
-            return [WindDownRoutine.primary(from: nightWatchPreferences)]
+        get { windDownSchedule.routines }
+        set {
+            var state = windDownSchedule
+            state.routines = newValue
+            windDownSchedule = state
         }
-        set { save(newValue, key: windDownRoutinesKey) }
     }
 
     var nextWindDownOverride: NextWindDownOverride? {
-        get { load(NextWindDownOverride.self, key: nextWindDownOverrideKey) }
-        set { save(newValue, key: nextWindDownOverrideKey) }
+        get {
+            if let legacy = load(NextWindDownOverride.self, key: nextWindDownOverrideKey) {
+                return legacy
+            }
+            guard let first = windDownSchedule.oneTimePeriods
+                .filter(\.isAvailable)
+                .sorted(by: { $0.interval.start < $1.interval.start })
+                .first else { return nil }
+            return NextWindDownOverride(
+                id: first.id,
+                routineID: first.id,
+                role: first.role,
+                interval: first.interval,
+                expiresAt: first.interval.end
+            )
+        }
+        set {
+            var state = windDownSchedule
+            state.oneTimePeriods.removeAll()
+            if let newValue {
+                state.oneTimePeriods = [WindDownOneTimePeriod(
+                    id: newValue.id,
+                    title: newValue.role == .primarySleepBookend ? "Adjusted Wind Down" : "One-time quiet period",
+                    role: newValue.role,
+                    interval: newValue.interval,
+                    enabled: newValue.consumedAt == nil
+                )]
+            }
+            windDownSchedule = state
+        }
     }
 
     var offlinePurpose: OfflinePurposeProfile {
@@ -213,6 +287,11 @@ final class PersistenceService {
     var onboardingDraft: OnboardingDraft? {
         get { load(OnboardingDraft.self, key: CountingSheepOnboarding.draftKey) }
         set { save(newValue, key: CountingSheepOnboarding.draftKey) }
+    }
+
+    var orientationState: CountingSheepOrientationState {
+        get { load(CountingSheepOrientationState.self, key: orientationStateKey) ?? .fresh }
+        set { save(newValue, key: orientationStateKey) }
     }
 
     func completeOnboarding() {

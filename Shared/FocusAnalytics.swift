@@ -176,7 +176,7 @@ enum FocusAnalyticsEngine {
     static func correlations(for records: [AnalyticsDayRecord]) -> [AnalyticsCorrelation] {
         [
             AnalyticsCorrelation(
-                title: "Quiet Bookends vs Screen Time",
+                title: "Quiet time vs Screen Time",
                 xLabel: "Phone-free minutes around sleep",
                 yLabel: "Screen time minutes",
                 coefficient: pearson(records.compactMap { pair($0.focusMinutes, $0.screenTimeMinutes) }),
@@ -184,7 +184,7 @@ enum FocusAnalyticsEngine {
                 placeholderSampleCount: records.filter { $0.screenTimeSource == .screenTimePlaceholder }.count
             ),
             AnalyticsCorrelation(
-                title: "Quiet Bookends vs Sleep",
+                title: "Quiet time vs Sleep",
                 xLabel: "Phone-free minutes around sleep",
                 yLabel: "Sleep minutes",
                 coefficient: pearson(records.compactMap { pair($0.focusMinutes, $0.sleepMinutes) }),

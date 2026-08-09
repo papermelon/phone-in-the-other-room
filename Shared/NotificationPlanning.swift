@@ -258,3 +258,51 @@ enum NightWatchNotificationPlanBuilder {
         )
     }
 }
+
+enum UpcomingWindDownNotificationPlanBuilder {
+    static let maximumPendingCount = 64
+    static let identifierPrefix = "upcoming-wind-down-"
+
+    static func scheduledNotifications(
+        for schedule: WindDownScheduleState,
+        after date: Date,
+        calendar: Calendar = .current,
+        primaryExtensionMinutes: Int,
+        purpose: OfflinePurposeProfile,
+        copyOverrides: [NotificationCopyOverride] = [],
+        limit: Int = maximumPendingCount
+    ) -> [PlannedNotification] {
+        schedule.upcomingPeriods(
+            after: date,
+            calendar: calendar,
+            primaryExtensionMinutes: primaryExtensionMinutes,
+            limit: limit
+        ).map { period in
+            let start = period.occurrence.interval.start
+            let copy = NotificationCopyResolver.resolve(
+                id: .windDownStart,
+                moment: .windDownReminder,
+                context: NotificationCopyContext(
+                    purpose: purpose.reminderPhrase,
+                    tip: purpose.reminderPhrase,
+                    date: start
+                ),
+                overrides: copyOverrides
+            )
+            return PlannedNotification(
+                id: identifier(for: period, date: start),
+                date: start,
+                title: copy.title,
+                body: copy.body,
+                phase: .windDown,
+                importance: .active,
+                playsSound: false,
+                destination: .home
+            )
+        }
+    }
+
+    static func identifier(for period: WindDownSchedulePeriod, date: Date) -> String {
+        "\(identifierPrefix)\(period.occurrence.routineID.uuidString)-\(Int(date.timeIntervalSince1970))"
+    }
+}

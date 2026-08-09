@@ -3,51 +3,50 @@ import SwiftUI
 struct CompletionView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
 
-    private var minutes: Int { viewModel.activeRun?.creditedQuietMinutes ?? 0 }
+    private var run: FocusRun? { viewModel.activeRun }
+    private var minutes: Int { run?.creditedQuietMinutes ?? 0 }
+    private var persistedOutcome: SheepSearchOutcome? {
+        guard let run, run.isProgressionEligibleNightWatch else { return nil }
+        return viewModel.sheepSearchOutcome(for: run.id)
+    }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
-                PixelCard {
-                    VStack(alignment: .leading, spacing: 14) {
-                        HStack(spacing: 14) {
-                            OllieRitualView(state: .completed)
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("A SHEPHERDING NIGHT")
-                                    .font(pixelFont(.caption))
-                                    .foregroundStyle(AppColors.grass)
-                                Text("Ollie brought the trail home.")
-                                    .font(pixelFont(.title2))
-                                Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
-                                    ? "You kept \(minutes) minutes in a bounded quiet period."
-                                    : "You kept \(minutes) minutes phone-free around sleep.")
-                                    .font(pixelFont(.body))
-                                    .foregroundStyle(AppColors.secondaryText)
-                            }
-                        }
-                    }
-                }
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                CompletionHeader(run: run, quietMinutes: minutes)
 
                 NightWatchReceiptCard(
-                    run: viewModel.activeRun,
+                    run: run,
                     sleepSummary: viewModel.lastNightSleep,
                     sleepAuthorization: viewModel.sleepAuthorization,
                     screenTimeAuthorization: viewModel.screenTimeAuthorization
                 )
 
-                if let run = viewModel.activeRun, run.isProgressionEligibleNightWatch {
+                if run?.nightWatchPlan?.role == .additionalQuiet {
+                    AdditionalQuietMapReceipt(map: viewModel.sheepSearchState.trailMap, minutes: minutes)
+                } else if run?.isProgressionEligibleNightWatch == true {
                     NavigationLink {
                         WindDownRevealView(
-                            outcome: viewModel.latestSheepSearchOutcome?.runID == run.id
-                                ? viewModel.latestSheepSearchOutcome
-                                : nil,
-                            flockCount: viewModel.coordinator.progress.totalCompletedRuns
+                            outcome: persistedOutcome,
+                            showExactOdds: viewModel.sheepSearchState.showExactOdds,
+                            onReturnToFarm: returnToFarm
                         )
                     } label: {
-                        Label("Open Ollie's field note", systemImage: "gift.fill")
+                        Label("Open Ollie's field note", systemImage: "note.text")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelPrimaryButtonStyle())
+                    .accessibilityHint("Shows the saved sheep search result for this Wind Down")
+                }
+
+                if run?.id == viewModel.orientationState.practiceRunID,
+                   run?.completedSuccessfully == true,
+                   !viewModel.orientationState.milestones.contains(.practiceRecordViewed) {
+                    OrientationRecordPrompt {
+                        viewModel.resetSetup()
+                        viewModel.focusNightsRecord(viewModel.orientationState.practiceRunID)
+                        NotificationCenter.default.post(name: .countingSheepShowNights, object: nil)
+                    }
                 }
 
                 NavigationLink("See your nights") {
@@ -60,111 +59,320 @@ struct CompletionView: View {
                     .frame(maxWidth: .infinity)
                     .buttonStyle(PixelPrimaryButtonStyle())
             }
-            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.top, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.xxl)
         }
+        .scrollBounceBehavior(.basedOnSize)
         .background(AppColors.paper.ignoresSafeArea())
         .onAppear(perform: viewModel.refreshSleepSummary)
     }
 
+    private func returnToFarm() {
+        NotificationCenter.default.post(name: .countingSheepShowFarm, object: nil)
+        viewModel.resetSetup()
+    }
 }
 
-private struct WindDownRevealView: View {
-    let outcome: SheepSearchOutcome?
-    let flockCount: Int
+private struct CompletionHeader: View {
+    let run: FocusRun?
+    let quietMinutes: Int
 
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            if let outcome {
-                WindDownFindRevealCard(outcome: outcome)
-            } else {
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("OLLIE KEPT THE TRAIL")
-                            .font(pixelFont(.caption))
-                            .foregroundStyle(AppColors.grass)
-                        Text("A quiet clue for another night")
-                            .font(AppTypography.headline)
-                        Text("Tonight's receipt is saved. Ollie will keep looking for a named arrival as the flock grows.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    }
+        PixelCard {
+            HStack(alignment: .top, spacing: AppSpacing.md) {
+                OllieRitualView(state: .completed, size: 76)
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(run?.nightWatchPlan?.role == .additionalQuiet ? "QUIET TIME COMPLETE" : "WIND DOWN COMPLETE")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    Text(run?.nightWatchPlan?.role == .additionalQuiet ? "A quiet stretch is on the map." : "The phone slept in the other room.")
+                        .font(AppTypography.title)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(run?.nightWatchPlan?.role == .additionalQuiet
+                        ? quietMinutes.description + " quiet minutes recorded."
+                        : quietMinutes.description + " quiet minutes around sleep recorded.")
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
             }
-
-            NavigationLink {
-                FlockSettlementView(count: flockCount)
-            } label: {
-                Text("Settle the flock")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(PixelPrimaryButtonStyle())
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(run?.nightWatchPlan?.role == .additionalQuiet
+                ? "Quiet time complete. " + quietMinutes.description + " quiet minutes recorded."
+                : "Wind Down complete. The phone slept in the other room. " + quietMinutes.description + " quiet minutes around sleep recorded.")
         }
-        .padding(AppSpacing.md)
+    }
+}
+
+private struct AdditionalQuietMapReceipt: View {
+    let map: SheepTrailMapState
+    let minutes: Int
+
+    var body: some View {
+        PixelCard {
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image(systemName: "map.fill")
+                    .font(.title2)
+                    .foregroundStyle(AppColors.grass)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("TRAIL MAP UPDATED")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    Text(map.pendingMappedMinutes >= SheepTrailMapState.maximumMappedMinutes
+                        ? "The trail map is ready for a future search."
+                        : minutes.description + " quiet minutes are mapped for a future search.")
+                        .font(AppTypography.body)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+}
+
+struct WindDownRevealView: View {
+    let outcome: SheepSearchOutcome?
+    let showExactOdds: Bool
+    let onReturnToFarm: () -> Void
+
+    init(
+        outcome: SheepSearchOutcome?,
+        showExactOdds: Bool = false,
+        onReturnToFarm: @escaping () -> Void = {}
+    ) {
+        self.outcome = outcome
+        self.showExactOdds = showExactOdds
+        self.onReturnToFarm = onReturnToFarm
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                FieldNoteTitle()
+
+                if let outcome {
+                    FieldNotePaper(outcome: outcome, showExactOdds: showExactOdds)
+                } else {
+                    PixelCard {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                            Text("NO FIELD NOTE SAVED")
+                                .font(pixelFont(.caption))
+                                .foregroundStyle(AppColors.grass)
+                            Text("This Wind Down has no saved search note.")
+                                .font(AppTypography.headline)
+                            Text("Your quiet-time receipt is still saved in Nights.")
+                                .font(AppTypography.body)
+                                .foregroundStyle(AppColors.secondaryText)
+                        }
+                    }
+                }
+
+                Button("Back to the Farm", action: onReturnToFarm)
+                    .frame(maxWidth: .infinity)
+                    .buttonStyle(PixelPrimaryButtonStyle())
+                    .accessibilityHint("Returns to the Farm field board")
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.top, AppSpacing.sm)
+            .padding(.bottom, AppSpacing.xxl)
+        }
+        .scrollBounceBehavior(.basedOnSize)
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Ollie's field note")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
 
-private struct FlockSettlementView: View {
-    let count: Int
-
+private struct FieldNoteTitle: View {
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
-            PixelCard {
-                VStack(spacing: AppSpacing.md) {
-                    PixelAssetImage(name: AssetSlot.Sheep.common)
-                        .frame(width: 120, height: 120)
-                        .accessibilityHidden(true)
-                    Text("A SHEEP SETTLED IN")
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(AppColors.grass)
-                    Text("Your flock has \(count) sheep.")
-                        .font(AppTypography.display(28))
-                    Text("One equal sheep for one protected night.")
-                        .font(AppTypography.body)
-                        .foregroundStyle(AppColors.muted)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-            }
+        HStack(alignment: .center, spacing: AppSpacing.sm) {
+            Image(systemName: "leaf.fill")
+                .foregroundStyle(AppColors.grass)
+                .accessibilityHidden(true)
+            Text("OLLIE'S FIELD NOTE")
+                .font(pixelFont(.title3))
+                .foregroundStyle(AppColors.ink)
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("The flock")
-        .navigationBarTitleDisplayMode(.inline)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+        .background(AppColors.panel, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .stroke(AppColors.stroke.opacity(0.55), lineWidth: 1.5)
+        }
     }
 }
 
-private struct WindDownFindRevealCard: View {
+private struct FieldNotePaper: View {
     let outcome: SheepSearchOutcome
+    let showExactOdds: Bool
 
     private var sheep: SheepDefinition? {
-        outcome.sheepID.flatMap(SheepCatalog.definition)
+        guard outcome.result == .found else { return nil }
+        return outcome.sheepID.flatMap(SheepCatalog.definition)
     }
 
     var body: some View {
-        PixelCard {
-            HStack(alignment: .top, spacing: AppSpacing.md) {
-                PixelAssetImage(name: sheep?.assetName ?? AssetSlot.Dog.proud)
-                    .frame(width: 76, height: 76)
-                    .accessibilityLabel(sheep?.name ?? "Ollie")
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(sheep == nil ? "OLLIE FOUND THE TRAIL" : "A SHEEP FOUND ITS WAY HOME")
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            if let sheep {
+                PixelAssetImage(name: sheep.assetName)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 150, maxHeight: 230)
+                    .accessibilityLabel(sheep.name)
+
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("A SHEEP FOUND ITS WAY HOME")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text(sheep.map { "Meet \($0.name)" } ?? "The trail is still growing")
-                        .font(AppTypography.headline)
-                    Text(sheep?.story ?? "Ollie left a quiet clue for another night.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                    Text("Trail: \(String(format: "%.1f km", outcome.trailDistance))")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.grass)
+                    Text(sheep.name)
+                        .font(AppTypography.display(32))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(sheep.story)
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Spacer(minLength: 0)
+
+                FieldNoteMetric(title: "Habitat", value: outcome.habitat?.title ?? sheep.habitat.title)
+                FieldNoteTrailDetails(outcome: outcome, showExactOdds: showExactOdds)
+            } else {
+                TrailOnlyNote(outcome: outcome, showExactOdds: showExactOdds)
             }
-            .accessibilityElement(children: .combine)
+        }
+        .padding(AppSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .foregroundStyle(AppColors.ink)
+        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .stroke(AppColors.stroke.opacity(0.45), lineWidth: 1.5)
         }
     }
+}
+
+private struct TrailOnlyNote: View {
+    let outcome: SheepSearchOutcome
+    let showExactOdds: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                PixelAssetImage(name: AssetSlot.Dog.proud)
+                    .frame(width: 72, height: 72)
+                    .accessibilityLabel("Ollie following the trail")
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("OLLIE KEPT TO THE TRAIL")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    Text("The trail continues.")
+                        .font(AppTypography.title)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Ollie didn't find a sheep on this trail. The clue is saved for another quiet night.")
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            FieldNoteTrailDetails(outcome: outcome, showExactOdds: showExactOdds)
+        }
+    }
+}
+
+private struct FieldNoteTrailDetails: View {
+    let outcome: SheepSearchOutcome
+    let showExactOdds: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("TRAIL DETAILS")
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.grass)
+            FieldNoteMetric(title: "Distance", value: String(format: "%.1f km", outcome.trailDistance))
+            FieldNoteMetric(title: "Trail strength", value: strengthLabel)
+            if outcome.trailMapBonusPercentagePoints > 0 {
+                FieldNoteMetric(
+                    title: "Mapped bonus applied",
+                    value: "+" + outcome.trailMapBonusPercentagePoints.description + " percentage points"
+                )
+            }
+            if showExactOdds {
+                FieldNoteMetric(
+                    title: "Encounter odds",
+                    value: Int((outcome.encounterOdds * 100).rounded()).description + "%"
+                )
+            }
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.paper.opacity(0.72), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+    }
+
+    private var strengthLabel: String {
+        switch outcome.trailStrength {
+        case 0..<35: return "Faint"
+        case 35..<60: return "Promising"
+        case 60..<80: return "Strong"
+        default: return "Very strong"
+        }
+    }
+}
+
+private struct FieldNoteMetric: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+            Text(title)
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+            Spacer(minLength: AppSpacing.xs)
+            Text(value)
+                .font(AppTypography.caption.weight(.bold))
+                .multilineTextAlignment(.trailing)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+extension Notification.Name {
+    static let countingSheepShowFarm = Notification.Name("countingSheep.showFarm")
+    static let countingSheepShowNights = Notification.Name("countingSheep.showNights")
+    static let countingSheepShowHome = Notification.Name("countingSheep.showHome")
+}
+
+#Preview("Field note found") {
+    NavigationStack {
+        WindDownRevealView(
+            outcome: SheepSearchOutcome(
+                id: UUID(), runID: UUID(), protectedNightNumber: 3, result: .found,
+                sheepID: "mabel", rarity: .common, habitat: .starterPasture,
+                trailStrength: 72, encounterOdds: 0.68, trailDistance: 4.2,
+                consecutiveNoFinds: 0, bonusPoints: 2, trailMapBonusPercentagePoints: 2,
+                createdAt: Date()
+            ),
+            showExactOdds: false
+        )
+    }
+}
+
+#Preview("Field note trail only · Reduce Motion") {
+    NavigationStack {
+        WindDownRevealView(
+            outcome: SheepSearchOutcome(
+                id: UUID(), runID: UUID(), protectedNightNumber: 8, result: .trailOnly,
+                sheepID: nil, rarity: nil, habitat: nil,
+                trailStrength: 42, encounterOdds: 0.46, trailDistance: 3.1,
+                consecutiveNoFinds: 1, bonusPoints: 0, createdAt: Date()
+            )
+        )
+    }
+    .transaction { transaction in
+        transaction.disablesAnimations = true
+    }
+    .environment(\.sizeCategory, .accessibilityExtraExtraExtraLarge)
 }

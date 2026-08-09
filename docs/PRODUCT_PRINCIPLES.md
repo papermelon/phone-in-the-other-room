@@ -25,6 +25,9 @@ phone-away choice feel warm, rewarding, and worth repeating.
    After that, each completed night advances Ollie's search and may find a sheep. Encounter
    odds, rarity, streak momentum, and wanted posters are allowed when clearly explained and
    never sold. Search outcomes are persisted once and protected by a bad-luck guarantee.
+   Completed additional-quiet periods may map up to 75 quiet minutes for a future,
+   non-guaranteed search: each 15 minutes can add one percentage point, up to five.
+   Guaranteed searches and early endings consume none; additional quiet never finds a sheep.
 2. **Pressure must be constructive.** A streak or wanted poster may make returning feel
    meaningful, but missed nights never delete found sheep, block essential access, or use
    humiliation. A fresh start is always available.
@@ -81,9 +84,11 @@ milestones (see ADR-0003) rather than half-shipping it.
   Configuration lives elsewhere, not in the bedtime path.
 - **Wind down, don't rev up.** The pre-sleep flow should get *quieter* as it progresses.
   The completion moment belongs to the morning, not to a late-night celebration.
-- **Never make the phone more interesting at night.** No content to browse while a run is
-  active. The active-run screen is a status, not a destination — the phone is in another
-  room anyway.
+- **Never make the phone more interesting at night.** The journey remains the default and
+  offers no interactive clues or autoplay reveal. During a run, the four finite utility
+  roots remain reachable so a person can adjust preferences or inspect their own records;
+  a persistent return control leads directly back to Wind Down. This access exception must
+  not become a feed, game loop, sheep teaser, or reason to keep holding the phone.
 - **Respect the morning.** Morning is when rewards land, stats are glanced at, and streak
   warmth is felt. Keep the chosen morning-quiet window calm; do not turn it into a routine
   checklist or an app-browsing session.

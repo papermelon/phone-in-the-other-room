@@ -171,6 +171,49 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         }
     }
 
+    /// Reconciles the finite upcoming list without disturbing an active run's
+    /// phase notifications. The system permits at most 64 pending local
+    /// notifications, so existing non-scheduler requests keep their slots.
+    func reconcileUpcomingWindDownNotifications(
+        for schedule: WindDownScheduleState,
+        primaryExtensionMinutes: Int,
+        purpose: OfflinePurposeProfile,
+        preferences: NotificationPreferences = PhoneNotificationService.shared.preferences,
+        now: Date = Date()
+    ) {
+        guard preferences.remindersEnabled else { return }
+        Task {
+            guard await requestAuthorizationIfNeeded() else { return }
+            let center = UNUserNotificationCenter.current()
+            let pending = await center.pendingNotificationRequests()
+            let owned = pending.filter {
+                $0.identifier.hasPrefix(UpcomingWindDownNotificationPlanBuilder.identifierPrefix)
+            }
+            let planned = UpcomingWindDownNotificationPlanBuilder.scheduledNotifications(
+                for: schedule,
+                after: now,
+                primaryExtensionMinutes: primaryExtensionMinutes,
+                purpose: purpose,
+                copyOverrides: preferences.copyOverrides,
+                limit: UpcomingWindDownNotificationPlanBuilder.maximumPendingCount
+            )
+            let availableSlots = max(
+                0,
+                UpcomingWindDownNotificationPlanBuilder.maximumPendingCount
+                    - (pending.count - owned.count)
+            )
+            let retainedPlan = Array(planned.prefix(availableSlots))
+            // Replace owned requests even when their stable identifier stays
+            // the same so edited copy and purpose text take effect.
+            center.removePendingNotificationRequests(
+                withIdentifiers: owned.map(\.identifier)
+            )
+            for notification in retainedPlan {
+                await add(notification, to: center)
+            }
+        }
+    }
+
     func scheduleNextWindDownReminder(
         at date: Date,
         purpose: OfflinePurposeProfile,

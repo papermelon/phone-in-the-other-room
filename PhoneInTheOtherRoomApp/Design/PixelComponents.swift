@@ -429,7 +429,7 @@ struct WeeklyComparisonCard: View {
             Text("This Week")
                 .font(pixelFont(.headline))
             HStack(alignment: .top, spacing: 14) {
-                chartBlock(icon: "moon.stars.fill", title: "Quiet Bookends (avg.)", value: focusAverage, tint: AppColors.grass, values: focusValues)
+                chartBlock(icon: "moon.stars.fill", title: "Quiet time (avg.)", value: focusAverage, tint: AppColors.grass, values: focusValues)
                 Rectangle()
                     .fill(AppColors.stroke.opacity(0.12))
                     .frame(width: 1, height: 130)

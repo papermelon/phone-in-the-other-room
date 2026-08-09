@@ -197,7 +197,7 @@ struct MonthlyNightsView: View {
     }
 
     private var explanation: some View {
-        Text("Tap a recorded day to see each Wind Down. Overlapping quiet periods are counted once, and additional quiet stays separate from protected-night progress.")
+        Text("Tap a recorded day to see each Wind Down. Overlapping quiet periods are counted once, and one-time quiet periods stay separate from protected-night progress.")
             .font(AppTypography.caption)
             .foregroundStyle(AppColors.muted)
             .padding(.horizontal, AppSpacing.xs)
@@ -311,7 +311,7 @@ private struct WindDownOccurrenceRow: View {
                     .foregroundStyle(record.outcome == .completed ? AppColors.grass : AppColors.warning)
                     .frame(width: 28)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(record.occurrenceRole == .additionalQuiet ? "Additional quiet" : "Primary Wind Down")
+                    Text(record.occurrenceRole == .additionalQuiet ? "One-time quiet period" : "Wind Down")
                         .font(AppTypography.headline)
                     Text(intervalLabel)
                         .font(AppTypography.caption)
@@ -348,14 +348,19 @@ private struct WindDownOccurrenceRow: View {
 }
 
 private struct WindDownRecordDetailView: View {
+    @EnvironmentObject private var viewModel: FocusRunViewModel
     let record: NightWatchRecord
+
+    private var searchOutcome: SheepSearchOutcome? {
+        viewModel.sheepSearchState.outcomes.first { $0.runID == record.id }
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text(record.occurrenceRole == .additionalQuiet ? "Additional quiet" : "Primary Wind Down")
+                        Text(record.occurrenceRole == .additionalQuiet ? "One-time quiet period" : "Wind Down")
                             .font(AppTypography.display(26))
                         Text(record.outcome == .completed ? "Completed" : "Ended early")
                             .font(AppTypography.headline)
@@ -365,11 +370,33 @@ private struct WindDownRecordDetailView: View {
                             .foregroundStyle(AppColors.muted)
                     }
                 }
+                if let outcome = searchOutcome {
+                    PixelCard {
+                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                            Text("OLLIE'S FIELD NOTE")
+                                .font(pixelFont(.caption))
+                                .foregroundStyle(AppColors.grass)
+                            Text(outcome.sheepID.flatMap(SheepCatalog.definition).map { "Found \($0.name)" } ?? "Trail clue saved")
+                                .font(AppTypography.headline)
+                            if outcome.trailMapBonusPercentagePoints > 0 {
+                                Text("+\(outcome.trailMapBonusPercentagePoints) mapped percentage points applied")
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.muted)
+                            }
+                        }
+                    }
+                }
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         detailMetric("Quiet before bed", value: "\(record.creditedWindDownMinutes) min")
                         detailMetric("Quiet after waking", value: "\(record.creditedMorningQuietMinutes) min")
                         detailMetric("Total quiet", value: "\(record.creditedWindDownMinutes + record.creditedMorningQuietMinutes) min")
+                        if record.briefAccessUseCount > 0 {
+                            detailMetric(
+                                "Short breaks",
+                                value: "\(record.briefAccessUseCount) short break\(record.briefAccessUseCount == 1 ? "" : "s")"
+                            )
+                        }
                     }
                 }
             }

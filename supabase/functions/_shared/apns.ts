@@ -1,9 +1,20 @@
 type Environment = "sandbox" | "production";
+export type APNsTerminalStatus = "completed" | "endedEarly";
+
+export const ACTIVITYKIT_REFERENCE_EPOCH_SECONDS = 978307200;
+export const COMPLETION_DISMISSAL_SECONDS = 15 * 60;
 
 export interface APNsEndEvent {
   pushToken: string;
   environment: Environment;
   plannedEndAt: string;
+  phase: string | null;
+  bedtimeAt: string | null;
+  wakeAt: string | null;
+  morningQuietEndsAt: string | null;
+  eveningActivityTitle: string | null;
+  morningActivityTitle: string | null;
+  terminalStatus?: APNsTerminalStatus;
 }
 
 export interface APNsResult {
@@ -52,6 +63,49 @@ function privateKeyBytes(pem: string): Uint8Array {
     .replaceAll(/\s/g, "");
   const binary = atob(encoded);
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
+}
+
+export function activityKitReferenceSeconds(value: string): number {
+  const milliseconds = new Date(value).getTime();
+  if (!Number.isFinite(milliseconds)) throw new Error("Invalid ActivityKit date");
+  return milliseconds / 1000 - ACTIVITYKIT_REFERENCE_EPOCH_SECONDS;
+}
+
+function optionalActivityKitReferenceSeconds(value: string | null): number | null {
+  return value === null ? null : activityKitReferenceSeconds(value);
+}
+
+export function buildLiveActivityEndPayload(
+  event: Omit<APNsEndEvent, "pushToken" | "environment">,
+  now = new Date(),
+) {
+  const timestamp = Math.floor(now.getTime() / 1000);
+  if (!Number.isFinite(timestamp)) throw new Error("Invalid APNs timestamp");
+  const terminalStatus = event.terminalStatus ?? "completed";
+  const completed = terminalStatus === "completed";
+
+  return {
+    aps: {
+      timestamp,
+      event: "end" as const,
+      "dismissal-date": completed
+        ? timestamp + COMPLETION_DISMISSAL_SECONDS
+        : timestamp,
+      "content-state": {
+        plannedEndAt: activityKitReferenceSeconds(event.plannedEndAt),
+        isComplete: completed,
+        phase: completed ? "complete" : null,
+        terminalStatus,
+        bedtimeAt: optionalActivityKitReferenceSeconds(event.bedtimeAt),
+        wakeAt: optionalActivityKitReferenceSeconds(event.wakeAt),
+        morningQuietEndsAt: optionalActivityKitReferenceSeconds(
+          event.morningQuietEndsAt,
+        ),
+        eveningActivityTitle: event.eveningActivityTitle,
+        morningActivityTitle: event.morningActivityTitle,
+      },
+    },
+  };
 }
 
 async function providerToken(): Promise<string> {
@@ -113,11 +167,6 @@ export async function sendLiveActivityEnd(
   if (host !== expectedHost) {
     throw new Error("Server configuration has invalid APNS_HOST");
   }
-  const plannedEnd = new Date(event.plannedEndAt);
-  // ActivityKit uses Codable's default Date representation inside content-state:
-  // seconds since Apple's 2001 reference date, not the APNs envelope's Unix timestamps.
-  const plannedEndReferenceSeconds = plannedEnd.getTime() / 1000 - 978307200;
-  const now = Math.floor(Date.now() / 1000);
   const response = await fetch(`${host}/3/device/${event.pushToken}`, {
     method: "POST",
     headers: {
@@ -127,17 +176,7 @@ export async function sendLiveActivityEnd(
       "apns-priority": "10",
       "content-type": "application/json",
     },
-    body: JSON.stringify({
-      aps: {
-        timestamp: now,
-        event: "end",
-        "dismissal-date": now,
-        "content-state": {
-          plannedEndAt: plannedEndReferenceSeconds,
-          isComplete: true,
-        },
-      },
-    }),
+    body: JSON.stringify(buildLiveActivityEndPayload(event)),
   });
 
   let reason = response.statusText || "Unknown";

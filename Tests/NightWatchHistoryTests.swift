@@ -118,6 +118,7 @@ final class NightWatchHistoryTests: XCTestCase {
         object.removeValue(forKey: "shieldedWindDownMinutes")
         object.removeValue(forKey: "shieldedMorningQuietMinutes")
         object.removeValue(forKey: "shieldProtectionEvidence")
+        object.removeValue(forKey: "briefAccessUseCount")
         let legacyData = try JSONSerialization.data(withJSONObject: object)
 
         let decoded = try JSONDecoder().decode(NightWatchRecord.self, from: legacyData)
@@ -125,6 +126,7 @@ final class NightWatchHistoryTests: XCTestCase {
         XCTAssertEqual(decoded.shieldedWindDownMinutes, 0)
         XCTAssertEqual(decoded.shieldedMorningQuietMinutes, 0)
         XCTAssertEqual(decoded.shieldProtectionEvidence, .notRequested)
+        XCTAssertEqual(decoded.briefAccessUseCount, 0)
     }
 
     private func makeRun(startedAt: Date) -> FocusRun {

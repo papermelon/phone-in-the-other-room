@@ -23,12 +23,21 @@ struct NightWatchReceiptCard: View {
                 if let run, run.isNightWatch {
                     receiptRow(
                         icon: "moon.zzz.fill",
-                        title: run.nightWatchPlan?.role == .additionalQuiet ? "Quiet time" : "Phone-free time",
+                        title: run.nightWatchPlan?.role == .additionalQuiet ? "One-time quiet period" : "Phone-free time",
                         value: "\(run.creditedQuietMinutes) min",
                         detail: run.nightWatchPlan?.role == .additionalQuiet
                             ? "A bounded quiet period; no sleep claim"
                             : "Wind-down and after waking only"
                     )
+
+                    if run.briefAccessUseCount > 0 {
+                        receiptRow(
+                            icon: "arrow.triangle.2.circlepath",
+                            title: "Short breaks",
+                            value: "\(run.briefAccessUseCount) short break\(run.briefAccessUseCount == 1 ? "" : "s")",
+                            detail: "Selected apps were available for about five minutes"
+                        )
+                    }
                 }
 
                 if run?.nightWatchPlan?.role != .additionalQuiet {

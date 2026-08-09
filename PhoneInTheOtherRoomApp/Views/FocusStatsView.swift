@@ -1,518 +1,95 @@
 import SwiftUI
 
-#if SCREEN_TIME_REPORTS && canImport(DeviceActivity)
-import DeviceActivity
-#endif
+/// The shipping Nights tab is intentionally one finite document. Its first
+/// section answers what happened; optional context is progressively disclosed
+/// below the recent ritual record.
 struct FocusStatsView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
 
-    private var progress: UserProgress { viewModel.coordinator.progress }
-    private var completedRecords: [DailyFocusRecord] {
-        progress.dailyFocusRecords
-            .filter { $0.successfulRuns > 0 }
-            .sorted { $0.day > $1.day }
-    }
-    private var recentNight: DailyFocusRecord? { completedRecords.first }
-    private var latestQuietTimeResult: NightWatchRecord? {
-        viewModel.nightWatchRecords
-            .filter { $0.outcome != .active }
-            .max { resultDate($0) < resultDate($1) }
-    }
-    private var latestProtectedResult: NightWatchRecord? {
-        viewModel.nightWatchRecords
-            .filter { $0.outcome == .completed && $0.occurrenceRole.isProgressionEligible }
-            .max { resultDate($0) < resultDate($1) }
-    }
-
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                header
-                recentNightCard
-                sevenNightCard
-                monthlyLink
-                sleepCard
-                screenTimeCard
-                MorningCheckInCard()
-                    .environmentObject(viewModel)
-            }
-            .padding(AppSpacing.md)
-        }
-        .background(AppColors.paper.ignoresSafeArea())
-        .task {
-            if viewModel.sleepAuthorization == .requested {
-                viewModel.refreshSleepSummary()
-            }
-        }
-    }
-
-    private var monthlyLink: some View {
-        NavigationLink {
-            MonthlyNightsView()
-                .environmentObject(viewModel)
-        } label: {
-            HStack(spacing: AppSpacing.sm) {
-                Image(systemName: "calendar")
-                    .foregroundStyle(AppColors.grass)
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("View month")
-                        .font(AppTypography.headline)
-                    Text("See quiet time and Wind Downs day by day.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(AppColors.muted)
-            }
-            .padding(AppSpacing.md)
-            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous).stroke(AppColors.stroke.opacity(0.14), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var sleepOutcomeCard: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                sectionTitle("Wind Down & sleep", icon: "chart.xyaxis.line")
-                if let comparison = viewModel.sleepOutcomeComparison {
-                    Text(
-                        comparison.differenceMinutes >= 0
-                            ? "\(comparison.differenceMinutes) min more sleep on average"
-                            : "\(abs(comparison.differenceMinutes)) min less sleep on average"
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    NightsHeader()
+                    NightsRecordSection(
+                        viewModel: viewModel,
+                        focusedRecordID: viewModel.nightsRecordFocusID
                     )
-                        .font(AppTypography.headline)
-                    Text(
-                        "Protected nights averaged \(sleepMinutesLabel(comparison.protectedAverageSleepMinutes)); other measured nights averaged \(sleepMinutesLabel(comparison.baselineAverageSleepMinutes))."
-                    )
-                        .font(AppTypography.body)
-                    Text(
-                        "Based on \(comparison.protectedNightCount) protected and \(comparison.baselineNightCount) other nights. This is an association in your own history, not proof that Wind Down caused the change."
-                    )
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                } else if viewModel.sleepAuthorization == .requested {
-                    let protectedCount = viewModel.impactSamples.filter {
-                        $0.completedRitual && $0.sleepMinutes != nil
-                    }.count
-                    let baselineCount = viewModel.impactSamples.filter {
-                        !$0.completedRitual && $0.sleepMinutes != nil
-                    }.count
-                    Text("A little more history will make this comparison useful.")
-                        .font(AppTypography.body)
-                    Text("Counting Sheep waits for at least two protected nights and two other nights with Apple Health sleep data. Right now: \(protectedCount) protected, \(baselineCount) other.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                } else {
-                    Text("Connect Apple Health to compare completed Wind Down with measured sleep duration and available stages.")
-                        .font(AppTypography.body)
-                    Text("The comparison is calculated on this iPhone.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
+                    NightsSevenDaySection(viewModel: viewModel)
+                    NightsMonthLink(viewModel: viewModel)
+                    NightsHealthContext(viewModel: viewModel)
+                    NightsScreenTimeContext(viewModel: viewModel)
+                }
+                .padding(AppSpacing.md)
+            }
+            .background(AppColors.paper.ignoresSafeArea())
+            .onAppear {
+                viewModel.markOrientation(.nightsExplored)
+                focusRecord(using: proxy)
+            }
+            .onChange(of: viewModel.nightsRecordFocusID) { _, _ in
+                focusRecord(using: proxy)
+            }
+            .task {
+                if viewModel.sleepAuthorization == .requested {
+                    viewModel.refreshSleepSummary()
                 }
             }
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("Nights")
-                .font(AppTypography.display(34))
-            Text("A simple record of the quiet you protected around sleep.")
-                .font(AppTypography.body)
-                .foregroundStyle(AppColors.muted)
-        }
-    }
-
-    private var flockCard: some View {
-        PixelCard {
-            HStack(spacing: AppSpacing.md) {
-                PixelAssetImage(name: AssetSlot.Sheep.common)
-                    .frame(width: 70, height: 70)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("YOUR FLOCK")
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(AppColors.grass)
-                    Text("\(viewModel.sheepSearchState.foundSheepIDs.count) sheep found")
-                        .font(AppTypography.headline)
-                    Text("Ollie has followed \(String(format: "%.1f", viewModel.sheepSearchState.totalTrailDistance)) trail kilometres. Every found sheep has its own story.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-                Spacer(minLength: 0)
+    private func focusRecord(using proxy: ScrollViewProxy) {
+        guard let recordID = viewModel.nightsRecordFocusID else { return }
+        Task { @MainActor in
+            await Task.yield()
+            withAnimation(AppMotion.navigation) {
+                proxy.scrollTo(NightsRecordSection.anchor(for: recordID), anchor: .top)
             }
-            .accessibilityElement(children: .combine)
+            viewModel.markOrientationPracticeRecordViewedIfPresent()
+            viewModel.clearNightsRecordFocus()
         }
-    }
-
-    private var recentNightCard: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                sectionTitle("Latest Wind Down", icon: "moon.stars.fill")
-                if let result = latestQuietTimeResult {
-                    Text(result.outcome == .endedEarly
-                        ? "Ended early"
-                        : (result.occurrenceRole.isProgressionEligible ? "Protected night" : "Quiet period"))
-                        .font(AppTypography.headline)
-                        .foregroundStyle(AppColors.grass)
-                    Text("\(quietMinutes(result)) min")
-                        .font(AppTypography.display(32))
-                    Text(result.outcome == .endedEarly
-                        ? "Wind Down recorded before the session ended. Overnight hours are not counted."
-                        : (result.occurrenceRole.isProgressionEligible
-                            ? "Phone-free time before bed and after waking. Overnight hours are not counted."
-                            : "A bounded quiet period. It is recorded here without making a sleep claim."))
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                    Text("Finished \(resultDateLabel(resultDate(result)))")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.grass)
-                    if result.outcome == .endedEarly {
-                        latestProtectedNightSummary
-                    }
-                } else if let recentNight {
-                    Text("Protected night")
-                        .font(AppTypography.headline)
-                        .foregroundStyle(AppColors.grass)
-                    Text("\(recentNight.completedFocusMinutes) min")
-                        .font(AppTypography.display(32))
-                    Text("Phone-free time before bed and after waking. Overnight hours are not counted.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                    Text("Night beginning \(nightDateLabel(recentNight.day))")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.grass)
-                } else {
-                    Text("Your first Wind Down will appear here.")
-                        .font(AppTypography.body)
-                    Text("Counting Sheep records quiet minutes before bed and after waking.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var sleepCard: some View {
-        switch viewModel.sleepAuthorization {
-        case .unavailable:
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    sectionTitle("Sleep from Apple Health", icon: "bed.double.fill")
-                    Text("Apple Health sleep data is unavailable on this device.")
-                        .font(AppTypography.body)
-                }
-            }
-        case .notRequested:
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    sectionTitle("Sleep from Apple Health", icon: "bed.double.fill")
-                    Text("Connect Apple Health in More to show sleep context beside your nights.")
-                        .font(AppTypography.body)
-                }
-            }
-        case .error:
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    sectionTitle("Sleep from Apple Health", icon: "bed.double.fill")
-                    Text("Apple Health could not complete the request. You can try again from the Health app or Settings.")
-                        .font(AppTypography.body)
-                }
-            }
-        case .requested:
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    sectionTitle("Sleep from Apple Health", icon: "bed.double.fill")
-                    if let sleep = viewModel.lastNightSleep {
-                        Text(nightEndingLabel(for: sleep))
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.grass)
-                        Text(sleep.durationLabel)
-                            .font(AppTypography.display(32))
-                        if let start = sleep.startDate, let end = sleep.endDate {
-                            Text("\(start.formatted(date: .omitted, time: .shortened))–\(end.formatted(date: .omitted, time: .shortened))")
-                                .font(AppTypography.body)
-                        }
-                        if sleep.stages.hasStages {
-                            HStack(spacing: AppSpacing.sm) {
-                                sleepStageMetric("Core", seconds: sleep.stages.coreSeconds)
-                                sleepStageMetric("Deep", seconds: sleep.stages.deepSeconds)
-                                sleepStageMetric("REM", seconds: sleep.stages.remSeconds)
-                            }
-                        }
-                        Text(sleepSourceDetail(sleep))
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    } else {
-                        Text("No sleep sample was found for \(expectedNightEndingLabel).")
-                            .font(AppTypography.body)
-                        if let olderSleep = viewModel.recentNightSleeps.first {
-                            Divider()
-                            Text("Latest available Apple Health sample")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.muted)
-                            Text(olderSleep.durationLabel)
-                                .font(AppTypography.headline)
-                            Text(nightEndingLabel(for: olderSleep))
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.grass)
-                        }
-                    }
-                    Text("Apple's Sleep Score can be viewed in the Health app, but Apple does not currently expose that score through HealthKit.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-            }
-        }
-    }
-
-    private var sevenNightCard: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                sectionTitle("Last 7 nights", icon: "calendar")
-                HStack(alignment: .top, spacing: AppSpacing.sm) {
-                    quietMetric(value: "\(lastSevenProtectedCount)", label: "protected")
-                    quietMetric(value: "\(lastSevenMinutes)m", label: "Wind Down")
-                    if let wakeTimeRange {
-                        quietMetric(value: wakeRangeLabel(wakeTimeRange), label: "wake range")
-                    }
-                }
-                VStack(spacing: AppSpacing.xs) {
-                    ForEach(lastSevenSummaries) { summary in
-                        HStack(spacing: AppSpacing.sm) {
-                            Circle()
-                                .fill(summary.occurrenceCount > 0 ? AppColors.grass : AppColors.surfaceMuted)
-                                .frame(width: 12, height: 12)
-                            Text(summary.day.formatted(.dateTime.weekday(.wide).month().day()))
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.muted)
-                            Spacer()
-                            Text(summary.occurrenceCount == 0 ? "No Wind Down" : "\(summary.quietMinutes)m quiet · \(summary.occurrenceCount) period\(summary.occurrenceCount == 1 ? "" : "s")")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(summary.occurrenceCount > 0 ? AppColors.ink : AppColors.muted)
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel(summary.day.formatted(.dateTime.weekday(.wide).month().day()))
-                        .accessibilityValue(summary.occurrenceCount == 0 ? "No Wind Down" : "\(summary.quietMinutes) quiet minutes, \(summary.occurrenceCount) periods")
-                    }
-                }
-                Text("Blank nights are simply blank. Tonight can always be a fresh start.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                if let wakeTimeRange {
-                    Text("Wake range uses \(wakeTimeRange.sampleCount) nights returned by Apple Health. It is context, not a grade.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var screenTimeCard: some View {
-        switch viewModel.screenTimeAuthorization {
-        case .unavailable:
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    sectionTitle("Late evening & morning screen time", icon: "iphone.slash")
-                    Text("Screen Time reports are unavailable on this device.")
-                        .font(AppTypography.body)
-                    Text("On a supported iPhone, both reports appear here in Nights.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-            }
-        case .notDetermined:
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    sectionTitle("Late evening & morning screen time", icon: "iphone.slash")
-                    Text("Connect Screen Time and choose report windows in More.")
-                        .font(AppTypography.body)
-                }
-            }
-        case .denied:
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    sectionTitle("Late evening & morning screen time", icon: "iphone.slash")
-                    Text("Screen Time access is off. Counting Sheep will keep working without it.")
-                        .font(AppTypography.body)
-                    Text("You can change permission later in Settings.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-            }
-        case .approved:
-            approvedScreenTimeCard
-        }
-    }
-
-    @ViewBuilder
-    private var approvedScreenTimeCard: some View {
-#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
-        ScreenTimeBookendCard(showAppPicker: .constant(false), mode: .reports)
-            .environmentObject(viewModel)
-#else
-        EmptyView()
-#endif
-    }
-
-    private func sectionTitle(_ title: String, icon: String) -> some View {
-        Label(title, systemImage: icon)
-            .font(AppTypography.headline)
-            .foregroundStyle(AppColors.ink)
-    }
-
-    private func quietMetric(value: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            Text(value)
-                .font(AppTypography.display(28))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(label)
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private var lastSevenDays: [DailyFocusRecord] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return (0..<7).reversed().compactMap { offset in
-            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else {
-                return nil
-            }
-            return progress.record(for: day, calendar: calendar) ?? DailyFocusRecord(day: day)
-        }
-    }
-
-    private var lastSevenProtectedCount: Int {
-        lastSevenSummaries.reduce(0) { $0 + $1.protectedNightCount }
-    }
-
-    private var lastSevenMinutes: Int {
-        lastSevenSummaries.reduce(0) { $0 + $1.quietMinutes }
-    }
-
-    private var lastSevenSummaries: [WindDownDaySummary] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let summaries = Dictionary(
-            WindDownHistoryAggregator.daySummaries(from: viewModel.nightWatchRecords, calendar: calendar)
-                .map { (calendar.startOfDay(for: $0.day), $0) },
-            uniquingKeysWith: { first, _ in first }
-        )
-        return (0..<7).reversed().compactMap { offset in
-            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
-            return summaries[day] ?? WindDownDaySummary(
-                day: day,
-                occurrenceCount: 0,
-                completedOccurrenceCount: 0,
-                earlyEndedOccurrenceCount: 0,
-                quietMinutes: 0,
-                protectedNightCount: 0
-            )
-        }
-    }
-
-    private var wakeTimeRange: WakeTimeRange? {
-        SleepIntervalMath.wakeTimeRange(for: viewModel.recentNightSleeps)
-    }
-
-    private func wakeRangeLabel(_ range: WakeTimeRange) -> String {
-        if range.minutes >= 60 {
-            return "\(range.minutes / 60)h \(range.minutes % 60)m"
-        }
-        return "\(range.minutes)m"
-    }
-
-    @ViewBuilder
-    private var latestProtectedNightSummary: some View {
-        if let protectedResult = latestProtectedResult,
-           protectedResult.id != latestQuietTimeResult?.id {
-            Divider()
-            Text("Latest protected night")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-            Text("\(quietMinutes(protectedResult)) min · finished \(resultDateLabel(resultDate(protectedResult)))")
-                .font(AppTypography.body)
-        } else if let recentNight {
-            Divider()
-            Text("Latest protected night")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-            Text("\(recentNight.completedFocusMinutes) min · \(nightDateLabel(recentNight.day))")
-                .font(AppTypography.body)
-        }
-    }
-
-    private var expectedNightEndingLabel: String {
-        "the night ending \(nightDateLabel(Date()))"
-    }
-
-    private func nightEndingLabel(for sleep: SleepSummary) -> String {
-        let date = sleep.nightEndingDate ?? sleep.endDate ?? Date()
-        return "Night ending \(nightDateLabel(date))"
-    }
-
-    private func sleepStageMetric(
-        _ title: String,
-        seconds: TimeInterval
-    ) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title)
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-            Text(sleepDurationLabel(seconds))
-                .font(AppTypography.body)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func sleepSourceDetail(_ sleep: SleepSummary) -> String {
-        let source = sleep.sourceName.map { " from \($0)" } ?? ""
-        if sleep.stages.hasStages {
-            return "Sleep duration and available stages recorded in Apple Health\(source)."
-        }
-        return "Time asleep recorded in Apple Health\(source). Stages were not available for this night."
-    }
-
-    private func sleepDurationLabel(_ seconds: TimeInterval) -> String {
-        let minutes = max(0, Int(seconds / 60))
-        return sleepMinutesLabel(minutes)
-    }
-
-    private func sleepMinutesLabel(_ minutes: Int) -> String {
-        minutes >= 60
-            ? "\(minutes / 60)h \(minutes % 60)m"
-            : "\(minutes)m"
-    }
-
-    private func nightDateLabel(_ date: Date) -> String {
-        date.formatted(.dateTime.weekday(.wide).month(.wide).day())
-    }
-
-    private func resultDateLabel(_ date: Date) -> String {
-        date.formatted(
-            .dateTime.weekday(.wide).month(.wide).day().hour().minute()
-        )
-    }
-
-    private func resultDate(_ record: NightWatchRecord) -> Date {
-        record.endedAt ?? record.updatedAt
-    }
-
-    private func quietMinutes(_ record: NightWatchRecord) -> Int {
-        record.creditedWindDownMinutes + record.creditedMorningQuietMinutes
     }
 }
 
-#Preview("Empty nights") {
+struct NightsHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("Nights")
+                .font(AppTypography.display(34))
+            Text("See what your phone-away ritual recorded around sleep.")
+                .font(AppTypography.body)
+                .foregroundStyle(AppColors.muted)
+        }
+    }
+}
+
+#Preview("Nights · empty · light") {
     NavigationStack {
         FocusStatsView()
             .environmentObject(FocusRunViewModel())
     }
+    .preferredColorScheme(.light)
+}
+
+#Preview("Nights · optional context unavailable · dark") {
+    let viewModel = FocusRunViewModel()
+    viewModel.screenTimeAuthorization = .unavailable
+    viewModel.sleepAuthorization = .unavailable
+    return NavigationStack {
+        FocusStatsView()
+            .environmentObject(viewModel)
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Nights · denied and large type") {
+    let viewModel = FocusRunViewModel()
+    viewModel.screenTimeAuthorization = .denied("Preview")
+    viewModel.sleepAuthorization = .error("Preview")
+    return NavigationStack {
+        FocusStatsView()
+            .environmentObject(viewModel)
+    }
+    .environment(\.dynamicTypeSize, .accessibility2)
+    .preferredColorScheme(.light)
 }

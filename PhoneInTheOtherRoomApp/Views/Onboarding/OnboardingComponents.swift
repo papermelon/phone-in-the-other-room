@@ -5,29 +5,34 @@ struct OnboardingProgressHeader: View {
     let onBack: () -> Void
 
     var body: some View {
-        HStack(spacing: AppSpacing.sm) {
-            Button(action: onBack) {
-                Image(systemName: "chevron.left")
-                    .font(.headline.weight(.bold))
-                    .frame(width: 44, height: 44)
-            }
-            .opacity(step == .welcome ? 0 : 1)
-            .disabled(step == .welcome)
+        ZStack {
+            HStack {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.headline.weight(.bold))
+                        .frame(width: 44, height: 44)
+                }
+                .opacity(step == .welcome ? 0 : 1)
+                .disabled(step == .welcome)
 
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Spacer()
+
+                Text("\(step.visibleIndex + 1) / \(CountingSheepOnboardingStep.visibleSteps.count)")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                    .monospacedDigit()
+            }
+
+            VStack(alignment: .center, spacing: AppSpacing.xxs) {
                 Text("COUNTING SHEEP")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
                 ProgressView(value: step.progress)
                     .tint(AppColors.grass)
+                    .frame(maxWidth: 220)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text("\(step.rawValue + 1) / \(CountingSheepOnboardingStep.allCases.count)")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-                .monospacedDigit()
         }
+        .frame(maxWidth: .infinity)
         .foregroundStyle(AppColors.ink)
     }
 }
@@ -117,19 +122,44 @@ struct OnboardingTimeline: View {
     let draft: OnboardingDraft
 
     var body: some View {
-        HStack(spacing: 0) {
-            timelineItem(icon: "moon.zzz.fill", title: "Wind down", detail: "\(draft.windDownMinutes)m")
-            Image(systemName: "arrow.right")
-                .foregroundStyle(AppColors.muted)
-                .padding(.horizontal, AppSpacing.xs)
-            timelineItem(icon: "bed.double.fill", title: "Phone rests", detail: "Overnight")
-            Image(systemName: "arrow.right")
-                .foregroundStyle(AppColors.muted)
-                .padding(.horizontal, AppSpacing.xs)
-            timelineItem(icon: "sun.max.fill", title: "Morning quiet", detail: "\(draft.morningQuietMinutes)m")
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 0) {
+                timelineItem(icon: "moon.zzz.fill", title: "Quiet before bed", detail: "\(draft.windDownMinutes)m")
+                timelineArrow
+                timelineItem(icon: "bed.double.fill", title: "Phone away", detail: "Overnight")
+                timelineArrow
+                timelineItem(icon: "sun.max.fill", title: "Quiet after waking", detail: "\(draft.morningQuietMinutes)m")
+            }
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                timelineRow(icon: "moon.zzz.fill", title: "Quiet before bed", detail: "\(draft.windDownMinutes)m")
+                timelineRow(icon: "bed.double.fill", title: "Phone away", detail: "Overnight")
+                timelineRow(icon: "sun.max.fill", title: "Quiet after waking", detail: "\(draft.morningQuietMinutes)m")
+            }
         }
         .padding(AppSpacing.sm)
         .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.lg))
+    }
+
+    private var timelineArrow: some View {
+        Image(systemName: "arrow.right")
+            .foregroundStyle(AppColors.muted)
+            .padding(.horizontal, AppSpacing.xs)
+            .accessibilityHidden(true)
+    }
+
+    private func timelineRow(icon: String, title: String, detail: String) -> some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .foregroundStyle(AppColors.grass)
+                .frame(width: 24)
+            Text(title)
+                .font(AppTypography.caption)
+            Spacer(minLength: AppSpacing.sm)
+            Text(detail)
+                .font(.system(.caption2, design: .rounded).weight(.medium))
+                .foregroundStyle(AppColors.muted)
+        }
+        .frame(minHeight: 44)
     }
 
     private func timelineItem(icon: String, title: String, detail: String) -> some View {
@@ -139,10 +169,11 @@ struct OnboardingTimeline: View {
             Text(title)
                 .font(AppTypography.caption)
                 .multilineTextAlignment(.center)
+                .lineLimit(2)
             Text(detail)
                 .font(.system(.caption2, design: .rounded).weight(.medium))
                 .foregroundStyle(AppColors.muted)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, minHeight: 70)
     }
 }

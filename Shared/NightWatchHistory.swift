@@ -86,6 +86,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
     var shieldedWindDownMinutes: Int
     var shieldedMorningQuietMinutes: Int
     var shieldProtectionEvidence: ShieldProtectionEvidence
+    var briefAccessUseCount: Int
     var role: WindDownOccurrenceRole
     var updatedAt: Date
 
@@ -102,6 +103,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         shieldedWindDownMinutes: Int = 0,
         shieldedMorningQuietMinutes: Int = 0,
         shieldProtectionEvidence: ShieldProtectionEvidence = .notRequested,
+        briefAccessUseCount: Int = 0,
         role: WindDownOccurrenceRole = .primarySleepBookend,
         updatedAt: Date = Date()
     ) {
@@ -117,6 +119,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         self.shieldedWindDownMinutes = max(0, shieldedWindDownMinutes)
         self.shieldedMorningQuietMinutes = max(0, shieldedMorningQuietMinutes)
         self.shieldProtectionEvidence = shieldProtectionEvidence
+        self.briefAccessUseCount = max(0, briefAccessUseCount)
         self.role = role
         self.updatedAt = updatedAt
     }
@@ -134,6 +137,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         case shieldedWindDownMinutes
         case shieldedMorningQuietMinutes
         case shieldProtectionEvidence
+        case briefAccessUseCount
         case role
         case updatedAt
     }
@@ -168,6 +172,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
             ShieldProtectionEvidence.self,
             forKey: .shieldProtectionEvidence
         ) ?? .notRequested
+        briefAccessUseCount = max(0, try container.decodeIfPresent(Int.self, forKey: .briefAccessUseCount) ?? 0)
         role = try container.decodeIfPresent(WindDownOccurrenceRole.self, forKey: .role)
             ?? .primarySleepBookend
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
@@ -267,7 +272,8 @@ extension FocusRun {
         updatedAt: Date = Date(),
         shieldedWindDownMinutes: Int = 0,
         shieldedMorningQuietMinutes: Int = 0,
-        shieldProtectionEvidence: ShieldProtectionEvidence = .notRequested
+        shieldProtectionEvidence: ShieldProtectionEvidence = .notRequested,
+        briefAccessUseCount: Int? = nil
     ) -> NightWatchRecord? {
         guard let nightWatchPlan else { return nil }
         let outcome: NightWatchOutcome
@@ -291,6 +297,7 @@ extension FocusRun {
             shieldedWindDownMinutes: shieldedWindDownMinutes,
             shieldedMorningQuietMinutes: shieldedMorningQuietMinutes,
             shieldProtectionEvidence: shieldProtectionEvidence,
+            briefAccessUseCount: max(self.briefAccessUseCount, briefAccessUseCount ?? 0),
             role: nightWatchPlan.role,
             updatedAt: updatedAt
         )

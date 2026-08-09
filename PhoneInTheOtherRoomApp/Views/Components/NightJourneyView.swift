@@ -4,144 +4,231 @@ import UIKit
 struct NightJourneyView: View {
     let run: FocusRun
     let reduceMotion: Bool
-
-    private let environmentAspectRatio: CGFloat = 1983.0 / 793.0
-    private let scrollCycleDuration: TimeInterval = 18
-
-    private func journey(at date: Date) -> NightJourneyProgress {
-        guard let plan = run.nightWatchPlan else {
-            return NightJourneyProgress(fraction: 0, segment: .prairie)
-        }
-        return NightJourneyProgress.resolve(plan: plan, at: date)
-    }
+    var mappedBonusPercentagePoints = 0
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 0.14, paused: reduceMotion)) { context in
-            let journey = journey(at: context.date)
-            GeometryReader { proxy in
-                let size = proxy.size
-                ZStack {
-                    sceneBackground(for: journey.segment, size: size, at: context.date)
-                    OllieWalkCycleView(
-                        state: ollieState(for: journey.segment),
-                        frame: reduceMotion ? 0 : walkFrame(at: context.date),
-                        size: min(112, size.width * 0.28)
-                    )
-                        .position(
-                            x: size.width * 0.38,
-                            y: ollieGroundY(for: size)
-                        )
-                    VStack {
-                        HStack(alignment: .top) {
-                            sceneBadge(
-                                title: journey.segment.title.uppercased(),
-                                detail: "Ollie is on watch"
-                            )
-                            Spacer()
-                            sceneBadge(
-                                title: String(format: "%.1f MI", journey.illustratedMiles),
-                                detail: "ILLUSTRATED TRAIL"
-                            )
-                        }
-                        Spacer()
-                        HStack {
-                            Text("A quiet trail, one step at a time.")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(.white.opacity(0.92))
-                                .padding(.horizontal, AppSpacing.sm)
-                                .padding(.vertical, AppSpacing.xs)
-                                .background(.black.opacity(0.28), in: Capsule())
-                            Spacer()
-                        }
-                    }
-                    .padding(AppSpacing.sm)
-                }
-                .frame(width: size.width, height: size.height)
-                .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
-                        .stroke(AppColors.stroke.opacity(0.48), lineWidth: 2)
+        TimelineView(.periodic(from: .now, by: reduceMotion ? 1 : 1.0 / 30.0)) { context in
+            if let journey = NightJourneyProgress.resolve(run: run, at: context.date) {
+                GeometryReader { proxy in
+                    scene(journey: journey, date: context.date, size: proxy.size)
                 }
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(
-                    "Ollie on the \(journey.segment.title.lowercased), \(Int(journey.fraction * 100)) percent along the illustrated quiet trail"
-                )
+                .accessibilityLabel(accessibilityLabel(for: journey, at: context.date))
             }
         }
         .aspectRatio(16.0 / 9.0, contentMode: .fit)
     }
 
-    private func sceneBackground(
-        for segment: NightJourneySegment,
-        size: CGSize,
-        at date: Date
-    ) -> some View {
-        ZStack {
-            scrollingEnvironment(size: size, at: date)
-            atmosphere(for: segment)
-            if segment == .moonlit {
-                Circle()
-                    .fill(AppColors.wool.opacity(0.9))
-                    .frame(width: 34, height: 34)
-                    .overlay(Circle().fill(AppColors.ink).offset(x: 10, y: -4))
-                    .offset(x: size.width * 0.29, y: -size.height * 0.22)
-            } else if segment == .sunrise {
-                Circle()
-                    .fill(AppColors.amber.opacity(0.92))
-                    .frame(width: 38, height: 38)
-                    .offset(x: size.width * 0.30, y: -size.height * 0.20)
+    private func scene(journey: NightJourneyProgress, date: Date, size: CGSize) -> some View {
+        let profile = NightJourneyTerrainProfile.profile(for: journey.segment)
+        let tileWidth = max(320, size.width * 1.15)
+        let elapsedSinceStart = date.timeIntervalSince(run.startedAt)
+        let travelled = reduceMotion
+            ? 0
+            : NightJourneyGait.foregroundDistance(elapsedSinceStart: elapsedSinceStart)
+        let ollieX = size.width * CGFloat(0.30 + journey.phaseFraction * 0.08)
+        let worldPosition = (Double(ollieX) + travelled) / Double(tileWidth)
+        let groundY = CGFloat(profile.normalizedHeight(at: worldPosition)) * size.height
+        let slope = profile.normalizedSlope(at: worldPosition) * Double(size.height) / Double(tileWidth)
+        let rotation = min(12, max(-12, atan(slope) * 180 / .pi))
+        let ollieSize = min(112, size.width * 0.28)
+        let frame = NightJourneyGait.frame(
+            forForegroundDistance: travelled,
+            reduceMotion: reduceMotion
+        )
+
+        return ZStack {
+            backdrops(for: journey, size: size)
+            terrain(profile: profile, travelled: travelled, tileWidth: tileWidth, size: size)
+            clueLayer(journey: journey, profile: profile, travelled: travelled, tileWidth: tileWidth, size: size)
+            OllieWalkCycleView(
+                state: ollieState(for: journey.segment),
+                frame: frame,
+                size: ollieSize
+            )
+            .rotationEffect(.degrees(rotation), anchor: .bottom)
+            .position(x: ollieX, y: groundY - ollieSize * 0.4167)
+
+            VStack {
+                HStack(alignment: .top) {
+                    sceneBadge(
+                        title: journey.segment.title.uppercased(),
+                        detail: "OLLIE IS FOLLOWING THE TRAIL"
+                    )
+                    Spacer()
+                    sceneBadge(
+                        title: remainingText(journey: journey, at: date),
+                        detail: destinationText(for: journey)
+                    )
+                }
+                Spacer()
+                HStack {
+                    Text(narrativeText(for: journey))
+                        .font(AppTypography.caption)
+                        .foregroundStyle(.white.opacity(0.94))
+                        .padding(.horizontal, AppSpacing.sm)
+                        .padding(.vertical, AppSpacing.xs)
+                        .background(.black.opacity(0.32), in: Capsule())
+                    Spacer()
+                    if mappedBonusPercentagePoints > 0 {
+                        Text("UP TO +\(mappedBonusPercentagePoints) MAPPED")
+                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            .foregroundStyle(.white.opacity(0.88))
+                            .padding(7)
+                            .background(.black.opacity(0.28), in: Capsule())
+                    }
+                }
+            }
+            .padding(AppSpacing.sm)
+        }
+        .frame(width: size.width, height: size.height)
+        .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
+                .stroke(AppColors.stroke.opacity(0.48), lineWidth: 2)
+        }
+    }
+
+    private func backdrops(for journey: NightJourneyProgress, size: CGSize) -> some View {
+        let windDownBlend = min(1, max(0, (journey.phaseFraction - 0.45) / 0.10))
+        return ZStack {
+            if journey.phase == .windDown {
+                backdrop(.prairie, size: size, progress: journey.phaseFraction)
+                    .opacity(1 - windDownBlend)
+                backdrop(.mountain, size: size, progress: journey.phaseFraction)
+                    .opacity(windDownBlend)
+            } else {
+                backdrop(journey.segment, size: size, progress: journey.phaseFraction)
             }
         }
     }
 
-    private func scrollingEnvironment(size: CGSize, at date: Date) -> some View {
-        let imageWidth = size.height * environmentAspectRatio
-        let cycle = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: scrollCycleDuration)
-        let progress = cycle >= 0 ? cycle / scrollCycleDuration : (cycle + scrollCycleDuration) / scrollCycleDuration
-        let offset = reduceMotion ? 0 : CGFloat(progress) * imageWidth
+    private func backdrop(_ segment: NightJourneySegment, size: CGSize, progress: Double) -> some View {
+        JourneyAssetImage(name: NightJourneyAssets.backdrops[segment] ?? "", contentMode: .fill)
+            .frame(width: size.width, height: size.height)
+            .scaleEffect(1.08 + progress * 0.04)
+            .offset(x: -size.width * CGFloat(progress) * 0.018)
+            .clipped()
+            .overlay(atmosphereTint(for: segment).blendMode(.multiply))
+            .accessibilityHidden(true)
+    }
 
-        return HStack(spacing: 0) {
-            environmentImage(width: imageWidth, height: size.height)
-            environmentImage(width: imageWidth, height: size.height)
+    private func terrain(
+        profile: NightJourneyTerrainProfile,
+        travelled: Double,
+        tileWidth: CGFloat,
+        size: CGSize
+    ) -> some View {
+        Canvas { context, canvasSize in
+            let top = terrainPath(profile: profile, travelled: travelled, tileWidth: tileWidth, size: canvasSize)
+            context.fill(top, with: .color(AppColors.grass))
+
+            var path = Path()
+            path.move(to: CGPoint(x: 0, y: canvasSize.height))
+            for x in stride(from: CGFloat(0), through: canvasSize.width + 4, by: 4) {
+                let position = (Double(x) + travelled + 18) / Double(tileWidth)
+                let y = CGFloat(profile.normalizedHeight(at: position)) * canvasSize.height + 12
+                path.addLine(to: CGPoint(x: x, y: y))
+            }
+            path.addLine(to: CGPoint(x: canvasSize.width, y: canvasSize.height))
+            path.closeSubpath()
+            context.fill(path, with: .color(AppColors.floor.opacity(0.78)))
         }
-        .frame(width: imageWidth * 2, height: size.height, alignment: .leading)
-        .offset(x: -offset)
-        .frame(width: size.width, height: size.height, alignment: .leading)
-        .clipped()
+        .frame(width: size.width, height: size.height)
         .accessibilityHidden(true)
     }
 
-    private func environmentImage(width: CGFloat, height: CGFloat) -> some View {
-        JourneyAssetImage(name: NightJourneyAssets.environment, contentMode: .fill)
-            .frame(width: width, height: height)
+    private func terrainPath(
+        profile: NightJourneyTerrainProfile,
+        travelled: Double,
+        tileWidth: CGFloat,
+        size: CGSize
+    ) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: size.height))
+        for x in stride(from: CGFloat(0), through: size.width + 4, by: 4) {
+            let position = (Double(x) + travelled) / Double(tileWidth)
+            let y = CGFloat(profile.normalizedHeight(at: position)) * size.height
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        path.addLine(to: CGPoint(x: size.width, y: size.height))
+        path.closeSubpath()
+        return path
     }
 
-    private func atmosphere(for segment: NightJourneySegment) -> some View {
-        Rectangle()
-            .fill(atmosphereTint(for: segment))
-            .blendMode(.multiply)
-            .allowsHitTesting(false)
+    private func clueLayer(
+        journey: NightJourneyProgress,
+        profile: NightJourneyTerrainProfile,
+        travelled: Double,
+        tileWidth: CGFloat,
+        size: CGSize
+    ) -> some View {
+        let count = reachedClueCount(journey.overallFraction)
+        return ZStack {
+            ForEach(0..<count, id: \.self) { index in
+                let x = size.width * [0.18, 0.70, 0.84][index]
+                let position = (Double(x) + (reduceMotion ? 0 : travelled * 0.22)) / Double(tileWidth)
+                let y = CGFloat(profile.normalizedHeight(at: position)) * size.height
+                JourneyAssetImage(
+                    name: NightJourneyAssets.clueAssets[stableClueIndex(index)],
+                    contentMode: .fit
+                )
+                .frame(width: index == 2 ? 58 : 42, height: index == 2 ? 58 : 42)
+                .position(x: x, y: y - 18)
+                .opacity(0.88)
+            }
+        }
+        .accessibilityHidden(true)
     }
 
-    private func ollieGroundY(for size: CGSize) -> CGFloat {
-        let ollieSize = min(112, size.width * 0.28)
-        // The generated run frames place Ollie's feet at 330/360 of the canvas.
-        // The scene's black silhouette begins at roughly 78% of its height.
-        return size.height * 0.78 - ollieSize * 0.4167
+    private func stableClueIndex(_ index: Int) -> Int {
+        let seed = run.id.uuidString.unicodeScalars.reduce(0) { $0 + Int($1.value) }
+        return (seed + index) % NightJourneyAssets.clueAssets.count
+    }
+
+    private func reachedClueCount(_ fraction: Double) -> Int {
+        [0.20, 0.55, 0.82].filter { fraction >= $0 }.count
+    }
+
+    private func narrativeText(for journey: NightJourneyProgress) -> String {
+        let count = reachedClueCount(journey.overallFraction)
+        if journey.phaseFraction >= 0.82 { return "The gate is just ahead." }
+        if count > 0 { return "\(count) clue\(count == 1 ? "" : "s") mapped." }
+        return "A quiet trail, one step at a time."
+    }
+
+    private func remainingText(journey: NightJourneyProgress, at date: Date) -> String {
+        guard let transition = journey.nextTransition else { return "TRAIL COMPLETE" }
+        let seconds = max(0, Int(transition.timeIntervalSince(date)))
+        if seconds >= 3600 {
+            return "\(seconds / 3600)H \((seconds % 3600) / 60)M"
+        }
+        return "\(max(1, Int(ceil(Double(seconds) / 60)))) MIN"
+    }
+
+    private func destinationText(for journey: NightJourneyProgress) -> String {
+        guard let plan = run.nightWatchPlan else { return "QUIET LEFT" }
+        if plan.role == .additionalQuiet { return "QUIET LEFT" }
+        switch journey.phase {
+        case .windDown: return "TO BEDTIME"
+        case .overnight: return "TO MORNING"
+        case .morningQuiet: return "QUIET LEFT"
+        case .complete: return "FIELD NOTE READY"
+        }
     }
 
     private func sceneBadge(title: String, detail: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(pixelFont(.caption2))
-                .foregroundStyle(.white.opacity(0.92))
+                .foregroundStyle(.white.opacity(0.94))
             Text(detail)
                 .font(.system(size: 8, weight: .bold, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.white.opacity(0.78))
         }
         .padding(.horizontal, AppSpacing.xs)
         .padding(.vertical, 6)
-        .background(.black.opacity(0.30), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
+        .background(.black.opacity(0.32), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
     }
 
     private func ollieState(for segment: NightJourneySegment) -> OllieRitualState {
@@ -152,17 +239,18 @@ struct NightJourneyView: View {
         }
     }
 
-    private func walkFrame(at date: Date) -> Int {
-        Int(date.timeIntervalSinceReferenceDate * 7.0).modulo(6)
-    }
-
     private func atmosphereTint(for segment: NightJourneySegment) -> Color {
         switch segment {
-        case .prairie: return .white.opacity(0.02)
-        case .mountain: return AppColors.lavender.opacity(0.10)
-        case .moonlit: return AppColors.ink.opacity(0.26)
-        case .sunrise: return AppColors.amber.opacity(0.10)
+        case .prairie: return .white.opacity(0.01)
+        case .mountain: return AppColors.lavender.opacity(0.08)
+        case .moonlit: return AppColors.ink.opacity(0.16)
+        case .sunrise: return AppColors.amber.opacity(0.06)
         }
+    }
+
+    private func accessibilityLabel(for journey: NightJourneyProgress, at date: Date) -> String {
+        let clues = reachedClueCount(journey.overallFraction)
+        return "Ollie is following the \(journey.segment.title.lowercased()). \(Int(journey.phaseFraction * 100)) percent through this part. \(clues) clues mapped. \(remainingText(journey: journey, at: date)) \(destinationText(for: journey).lowercased())."
     }
 }
 
@@ -179,22 +267,12 @@ private struct OllieWalkCycleView: View {
     let size: CGFloat
 
     var body: some View {
-        Group {
-            if state == .completed {
-                OllieRitualView(state: state, size: size)
-            } else {
-            JourneyAssetImage(name: NightJourneyAssets.ollieRunFrames[frame])
-                    .frame(width: size, height: size)
-            }
-        }
-        .accessibilityHidden(true)
+        JourneyAssetImage(name: NightJourneyAssets.ollieRunFrames[frame])
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
     }
 }
 
-/// Journey art is optional content: a missing or miscompiled catalog member
-/// must never turn the active-run scene into an empty rectangle. The qualified
-/// catalog names are checked at runtime and the fallback remains legible in a
-/// TestFlight build while the rest of the run continues normally.
 private struct JourneyAssetImage: View {
     let name: String
     var contentMode: ContentMode = .fit
@@ -203,22 +281,14 @@ private struct JourneyAssetImage: View {
         if let image = UIImage(named: name) {
             Image(uiImage: image)
                 .resizable()
-                .interpolation(.none)
-                .antialiased(false)
+                .interpolation(.high)
                 .aspectRatio(contentMode: contentMode)
         } else {
             ZStack {
-                LinearGradient(
-                    colors: [AppColors.sky, AppColors.grass.opacity(0.65)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+                LinearGradient(colors: [AppColors.sky, AppColors.grass], startPoint: .top, endPoint: .bottom)
                 Image(systemName: name.hasPrefix("dog/") ? "figure.walk" : "mountain.2.fill")
-                    .font(.system(size: 34, weight: .bold))
                     .foregroundStyle(.white.opacity(0.8))
             }
-            .aspectRatio(contentMode: contentMode)
-            .accessibilityLabel("Journey illustration unavailable")
         }
     }
 }
@@ -231,7 +301,8 @@ private struct JourneyAssetImage: View {
             state: .running,
             nightWatchPlan: NightWatchPreferences.defaults.makePlan()
         ),
-        reduceMotion: true
+        reduceMotion: true,
+        mappedBonusPercentagePoints: 3
     )
     .padding()
     .background(AppColors.paper)

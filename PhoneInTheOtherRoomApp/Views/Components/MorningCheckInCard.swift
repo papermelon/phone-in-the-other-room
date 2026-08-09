@@ -2,7 +2,20 @@ import SwiftUI
 
 struct MorningCheckInCard: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    var record: NightWatchRecord?
     @State private var isExpanded = false
+
+    init(record: NightWatchRecord? = nil) {
+        self.record = record
+    }
+
+    private var noteDate: Date {
+        record?.plan.wakeTime ?? Date()
+    }
+
+    private var note: MorningCheckIn {
+        viewModel.morningCheckIn(for: noteDate)
+    }
 
     var body: some View {
         PixelCard {
@@ -35,10 +48,10 @@ struct MorningCheckInCard: View {
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                         Text("A quick morning note")
                             .font(AppTypography.headline)
-                        Text("For \(Date().formatted(.dateTime.weekday(.wide).month().day()))")
+                        Text("For \(noteDate.formatted(.dateTime.weekday(.wide).month().day()))")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.grass)
-                        Text(viewModel.todayMorningCheckIn.summary)
+                        Text(note.summary)
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
                     }
@@ -50,22 +63,22 @@ struct MorningCheckInCard: View {
 
     private var sleepOnsetBinding: Binding<SleepOnsetEstimate?> {
         Binding(
-            get: { viewModel.todayMorningCheckIn.sleepOnset },
-            set: viewModel.updateMorningSleepOnset
+            get: { note.sleepOnset },
+            set: { viewModel.updateMorningSleepOnset($0, for: noteDate) }
         )
     }
 
     private var restfulnessBinding: Binding<MorningRestfulness?> {
         Binding(
-            get: { viewModel.todayMorningCheckIn.restfulness },
-            set: viewModel.updateMorningRestfulness
+            get: { note.restfulness },
+            set: { viewModel.updateMorningRestfulness($0, for: noteDate) }
         )
     }
 
     private var bedtimeSleepinessBinding: Binding<BedtimeSleepiness?> {
         Binding(
-            get: { viewModel.todayMorningCheckIn.bedtimeSleepiness },
-            set: viewModel.updateBedtimeSleepiness
+            get: { note.bedtimeSleepiness },
+            set: { viewModel.updateBedtimeSleepiness($0, for: noteDate) }
         )
     }
 

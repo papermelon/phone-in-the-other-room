@@ -17,30 +17,72 @@ enum NightJourneySegment: String, Codable, CaseIterable, Equatable {
 }
 
 struct NightJourneyProgress: Equatable {
-    /// A visual trail marker, not physical-distance or reward accounting.
-    static let illustratedTrailMiles = 1.2
-
-    let fraction: Double
+    let overallFraction: Double
+    let phaseFraction: Double
+    let segmentFraction: Double
     let segment: NightJourneySegment
+    let phase: NightWatchPhase
+    let nextTransition: Date?
 
-    var illustratedMiles: Double {
-        fraction * Self.illustratedTrailMiles
+    /// Compatibility for existing callers while progress is now phase-aware.
+    var fraction: Double { overallFraction }
+
+    static func resolve(run: FocusRun, at date: Date) -> Self? {
+        guard let plan = run.nightWatchPlan else { return nil }
+        let overallStart = plan.role == .additionalQuiet
+            ? max(run.startedAt, plan.intendedBedtime)
+            : max(run.startedAt, plan.intendedBedtime.addingTimeInterval(TimeInterval(-plan.windDownMinutes * 60)))
+        let overall = normalized(date, from: overallStart, to: plan.protectedUntil)
+        let phase = plan.phase(at: date)
+
+        let phaseBounds: (Date, Date)
+        switch phase {
+        case .windDown:
+            let plannedStart = plan.role == .additionalQuiet
+                ? plan.intendedBedtime
+                : plan.intendedBedtime.addingTimeInterval(TimeInterval(-plan.windDownMinutes * 60))
+            phaseBounds = (max(run.startedAt, plannedStart), plan.role == .additionalQuiet ? plan.protectedUntil : plan.intendedBedtime)
+        case .overnight:
+            phaseBounds = (max(run.startedAt, plan.intendedBedtime), plan.wakeTime)
+        case .morningQuiet:
+            phaseBounds = (max(run.startedAt, plan.wakeTime), plan.protectedUntil)
+        case .complete:
+            phaseBounds = (plan.protectedUntil, plan.protectedUntil)
+        }
+        let phaseProgress = phase == .complete ? 1 : normalized(date, from: phaseBounds.0, to: phaseBounds.1)
+
+        let segment: NightJourneySegment
+        let segmentProgress: Double
+        switch phase {
+        case .windDown:
+            if phaseProgress < 0.5 {
+                segment = .prairie
+                segmentProgress = phaseProgress / 0.5
+            } else {
+                segment = .mountain
+                segmentProgress = (phaseProgress - 0.5) / 0.5
+            }
+        case .overnight:
+            segment = .moonlit
+            segmentProgress = phaseProgress
+        case .morningQuiet, .complete:
+            segment = .sunrise
+            segmentProgress = phaseProgress
+        }
+
+        return Self(
+            overallFraction: overall,
+            phaseFraction: phaseProgress,
+            segmentFraction: min(1, max(0, segmentProgress)),
+            segment: segment,
+            phase: phase,
+            nextTransition: plan.nextTransition(after: date)
+        )
     }
 
-    static func resolve(plan: NightWatchPlan, at date: Date) -> Self {
-        let start = plan.role == .additionalQuiet
-            ? plan.intendedBedtime
-            : plan.intendedBedtime.addingTimeInterval(TimeInterval(-plan.windDownMinutes * 60))
-        let end = max(start, plan.protectedUntil)
-        let duration = max(1, end.timeIntervalSince(start))
-        let fraction = min(1, max(0, date.timeIntervalSince(start) / duration))
-        let segment: NightJourneySegment
-        switch fraction {
-        case ..<0.25: segment = .prairie
-        case ..<0.55: segment = .mountain
-        case ..<0.82: segment = .moonlit
-        default: segment = .sunrise
-        }
-        return Self(fraction: fraction, segment: segment)
+    private static func normalized(_ date: Date, from start: Date, to end: Date) -> Double {
+        let duration = end.timeIntervalSince(start)
+        guard duration > 0 else { return date > start ? 1 : 0 }
+        return min(1, max(0, date.timeIntervalSince(start) / duration))
     }
 }

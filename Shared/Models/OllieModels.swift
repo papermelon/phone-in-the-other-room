@@ -121,6 +121,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
     var placementStatus: PlacementStatus
     var placementEvidence: PlacementEvidence
     var nightWatchPlan: NightWatchPlan?
+    var briefAccessUseCount: Int
     /// Whether this specific run was allowed to create a Live Activity. This
     /// remains separate from the Settings default so a relaunch cannot surprise
     /// someone by creating an activity they declined at start time.
@@ -152,6 +153,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         self.placementStatus = guardKind.needsPlacementConfirmation ? .awaitingConfirmation : .notRequired
         self.placementEvidence = .notRequired(for: guardKind)
         self.nightWatchPlan = nightWatchPlan
+        self.briefAccessUseCount = 0
         self.liveActivityRequested = liveActivityRequested
     }
 
@@ -159,7 +161,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         case id, plannedDurationSeconds, actualDurationSeconds, startedAt, plannedEndAt, endedAt
         case state, phoneAwayValidatedAt, proximityHistory, warningCount, completedSuccessfully
         case endedEarlyReason, earnedRewardIDs, guardKind, placementStatus, placementEvidence, nightWatchPlan
-        case liveActivityRequested
+        case briefAccessUseCount, liveActivityRequested
     }
 
     init(from decoder: Decoder) throws {
@@ -183,6 +185,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         placementEvidence = try container.decodeIfPresent(PlacementEvidence.self, forKey: .placementEvidence)
             ?? .notRequired(for: guardKind)
         nightWatchPlan = try container.decodeIfPresent(NightWatchPlan.self, forKey: .nightWatchPlan)
+        briefAccessUseCount = max(0, try container.decodeIfPresent(Int.self, forKey: .briefAccessUseCount) ?? 0)
         liveActivityRequested = try container.decodeIfPresent(Bool.self, forKey: .liveActivityRequested) ?? true
     }
 }

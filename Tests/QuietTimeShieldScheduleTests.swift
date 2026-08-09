@@ -106,6 +106,36 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
         XCTAssertTrue(snapshot.isEligible(at: start))
     }
 
+    func testStaleCallbackWindowStillReconcilesTheCurrentActiveWindow() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let snapshot = QuietTimeShieldScheduleSnapshot(
+            runID: UUID(),
+            revision: 4,
+            protectedSessionInterval: DateInterval(
+                start: start,
+                end: start.addingTimeInterval(8 * 60 * 60)
+            ),
+            windDownInterval: DateInterval(
+                start: start,
+                end: start.addingTimeInterval(30 * 60)
+            ),
+            morningQuietInterval: DateInterval(
+                start: start.addingTimeInterval(8 * 60 * 60),
+                end: start.addingTimeInterval(8.5 * 60 * 60)
+            ),
+            updatedAt: start,
+            repeatsDaily: false
+        )
+
+        XCTAssertEqual(
+            QuietTimeShieldSchedulePolicy.activeWindow(
+                in: snapshot,
+                at: start.addingTimeInterval(45 * 60)
+            ),
+            .protectedSession
+        )
+    }
+
     func testProtectionSummaryUsesObservedStatusWindows() {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         let plan = NightWatchPlan(

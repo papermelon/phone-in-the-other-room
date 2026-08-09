@@ -76,6 +76,13 @@ Deno.serve(async (request) => {
           pushToken: event.push_token,
           environment: event.environment,
           plannedEndAt: eventPayload.planned_end_at,
+          phase: null,
+          bedtimeAt: eventPayload.bedtime_at,
+          wakeAt: eventPayload.wake_at,
+          morningQuietEndsAt: eventPayload.morning_quiet_ends_at,
+          eveningActivityTitle: eventPayload.evening_activity_title,
+          morningActivityTitle: eventPayload.morning_activity_title,
+          terminalStatus: "completed",
         })
         : await sendLiveActivityUpdate({
           pushToken: event.push_token,

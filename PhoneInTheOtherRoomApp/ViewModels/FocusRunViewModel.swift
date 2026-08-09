@@ -9,6 +9,8 @@ import FamilyControls
 @MainActor
 final class FocusRunViewModel: ObservableObject {
     @Published var nightWatchPreferences: NightWatchPreferences = .defaults
+    @Published var windDownSchedule: WindDownScheduleState = WindDownScheduleState()
+    @Published var windDownScheduleError: String?
     @Published var windDownRoutines: [WindDownRoutine] = []
     @Published var nextWindDownOverride: NextWindDownOverride?
     @Published var offlinePurpose: OfflinePurposeProfile = .defaultProfile
@@ -26,6 +28,7 @@ final class FocusRunViewModel: ObservableObject {
     @Published var sleepAuthorization: HealthSleepService.AuthorizationState = .notRequested
     @Published var lastNightSleep: SleepSummary?
     @Published var recentNightSleeps: [SleepSummary] = []
+    @Published var isRefreshingSleep = false
     @Published var morningCheckIns: MorningCheckInHistory = MorningCheckInHistory()
     @Published var analyticsExportURL: URL?
     @Published var analyticsExportError: String?
@@ -60,6 +63,10 @@ final class FocusRunViewModel: ObservableObject {
     @Published var quietAppearanceEnabled = UserDefaults.standard.bool(forKey: "ollie.quietAppearance.enabled")
     @Published var isProvisioningNFCTag = false
     @Published var phoneBedTagRegistration: PhoneBedTagRegistration?
+    @Published var orientationState: CountingSheepOrientationState
+    /// Ephemeral navigation intent used by the orientation card; it is not
+    /// persisted and does not change the meaning of any recorded night.
+    @Published var nightsRecordFocusID: UUID?
     @Published var shieldingEnabled = UserDefaults.standard.bool(
         forKey: QuietTimeShieldingService.enabledKey
     )
@@ -78,10 +85,12 @@ final class FocusRunViewModel: ObservableObject {
 #endif
     private var cancellables = Set<AnyCancellable>()
     private var pendingNightWatchPlan: NightWatchPlan?
+    private var pendingNightWatchSourceOccurrenceID: UUID?
     private var nightWatchStartInFlight = false
 
     init(coordinator: FocusSessionCoordinator? = nil) {
         let savedQuietTime = PersistenceService.shared.nightWatchPreferences
+        let savedSchedule = PersistenceService.shared.windDownSchedule
         let savedReportPreferences = PersistenceService.shared.screenTimeReportPreferences
         let initialReportPreferences = savedReportPreferences
             ?? ScreenTimeReportPreferences.defaults(for: savedQuietTime)
@@ -90,13 +99,28 @@ final class FocusRunViewModel: ObservableObject {
         }
         self.coordinator = coordinator ?? FocusSessionCoordinator()
         impactSharingPreferences = PersistenceService.shared.impactSharingPreferences
+        orientationState = PersistenceService.shared.orientationState
+        nightsRecordFocusID = nil
         impactSharingAvailable = (try? SupabaseConfiguration.load()) != nil
         notificationPreferences = notifications.preferences
         var normalizedQuietTime = savedQuietTime
         normalizedQuietTime.guardKind = savedQuietTime.guardKind.releaseCompatibleKind
         nightWatchPreferences = normalizedQuietTime
-        windDownRoutines = PersistenceService.shared.windDownRoutines
-        nextWindDownOverride = PersistenceService.shared.nextWindDownOverride
+        self.windDownSchedule = savedSchedule
+        self.windDownRoutines = savedSchedule.routines
+        self.nextWindDownOverride = savedSchedule.oneTimePeriods
+            .filter(\.isAvailable)
+            .sorted { $0.interval.start < $1.interval.start }
+            .first
+            .map { period in
+                NextWindDownOverride(
+                    id: period.id,
+                    routineID: period.id,
+                    role: period.role,
+                    interval: period.interval,
+                    expiresAt: period.interval.end
+                )
+            }
         screenTimeReportPreferences = initialReportPreferences
         offlinePurpose = persistence.offlinePurpose
         morningCheckIns = persistence.morningCheckIns
@@ -113,6 +137,7 @@ final class FocusRunViewModel: ObservableObject {
         }
         self.coordinator.onRunFinished = { [weak self] in
             guard let self else { return }
+            self.reconcileOrientationAfterRun()
             self.scheduleAutomaticWindDownIfNeeded()
         }
         screenTimeAuthorization = screenTimeService.currentState()
@@ -133,12 +158,41 @@ final class FocusRunViewModel: ObservableObject {
         if sleepAuthorization == .requested {
             refreshSleepSummary()
         }
+        reconcileOrientationAfterRun()
     }
 
     var activeRun: FocusRun? { coordinator.run }
     var hasConfiguredNightWatch: Bool { nightWatchPreferences.isConfigured }
     var hasRegisteredNFCTag: Bool { registeredNFCDigest != nil }
-    var canBeginNightWatchNow: Bool { nightWatchPreferences.isStartWindowOpen() }
+    var canBeginNightWatchNow: Bool {
+        nightWatchPreferences.isStartWindowOpen()
+            || WindDownScheduleEngine.eligibleOccurrence(
+                in: windDownSchedule,
+                at: Date(),
+                primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+            ) != nil
+    }
+    var upcomingQuietPeriods: [WindDownSchedulePeriod] {
+        windDownSchedule.upcomingPeriods(
+            after: Date(),
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes,
+            limit: 64
+        )
+    }
+    var nextUpcomingQuietPeriod: WindDownSchedulePeriod? { upcomingQuietPeriods.first }
+    var upcomingAdditionalQuietPeriods: [WindDownSchedulePeriod] {
+        upcomingQuietPeriods.filter { $0.occurrence.role == .additionalQuiet }
+    }
+    var nextUpcomingAdditionalQuietPeriod: WindDownSchedulePeriod? {
+        upcomingAdditionalQuietPeriods.first
+    }
+    var readyOneTimeQuietPeriodID: UUID? {
+        WindDownScheduleEngine.eligibleOccurrence(
+            in: windDownSchedule,
+            at: Date(),
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        )?.sourceID
+    }
     var hasSelectedShieldingApps: Bool {
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         return !bedtimeActivitySelection.phoneOtherIsEmpty
@@ -166,6 +220,119 @@ final class FocusRunViewModel: ObservableObject {
 
     var sheepSearchState: SheepSearchState { coordinator.sheepSearchState }
     var latestSheepSearchOutcome: SheepSearchOutcome? { coordinator.latestSheepSearchOutcome }
+
+    var isOrientationActive: Bool { orientationState.isVisibleOnHome }
+
+    var pendingNightWatchIsAdditionalQuiet: Bool {
+        pendingNightWatchPlan?.role == .additionalQuiet
+    }
+
+    var pendingNightWatchEndsAt: Date? {
+        pendingNightWatchPlan?.protectedUntil
+    }
+
+    var pendingNightWatchTitle: String? {
+        guard let sourceID = pendingNightWatchSourceOccurrenceID else { return nil }
+        return WindDownScheduleEngine.eligibleOccurrence(
+            in: windDownSchedule,
+            at: Date(),
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        ).flatMap { $0.sourceID == sourceID ? $0.title : nil }
+    }
+
+    var willShieldPendingNightWatch: Bool {
+        shieldingEnabled && shieldingReadiness == .ready
+    }
+
+    func markOrientation(_ milestone: CountingSheepOrientationMilestone) {
+        orientationState.mark(milestone)
+        persistence.orientationState = orientationState
+    }
+
+    func dismissOrientation() {
+        orientationState.dismiss()
+        persistence.orientationState = orientationState
+    }
+
+    func resumeOrientation() {
+        orientationState.resume()
+        persistence.orientationState = orientationState
+    }
+
+    func skipOrientationPermanently() {
+        orientationState.skipPermanently()
+        persistence.orientationState = orientationState
+    }
+
+    func replayOrientation() {
+        orientationState.replay()
+        persistence.orientationState = orientationState
+    }
+
+    @discardableResult
+    func startOrientationPractice() -> Bool {
+        guard !isRunning, activeRun == nil else { return false }
+        let now = Date()
+
+        // A person may cancel the normal start confirmation or return after a
+        // preflight issue. Reuse the still-valid practice period instead of
+        // leaving an unstartable duplicate in the finite schedule.
+        if let existingID = orientationState.practicePeriodID,
+           let existing = windDownSchedule.oneTimePeriods.first(where: { $0.id == existingID }) {
+            if existing.isEligible(at: now) {
+                requestStartNightWatch()
+                return showNightWatchStartPrompt
+            }
+            cancelOneTimeQuiet(id: existingID)
+        }
+
+        let window = QuietPeriodScheduling.defaultWindow(
+            now: now,
+            preset: .startNowPractice
+        )
+        let periodID = UUID()
+        guard addOneTimeAdditionalQuiet(
+            id: periodID,
+            title: "Practice quiet",
+            start: window.start,
+            end: window.end,
+            now: now
+        ) else { return false }
+        orientationState.recordPracticePeriod(periodID)
+        persistence.orientationState = orientationState
+        requestStartNightWatch()
+        return showNightWatchStartPrompt
+    }
+
+    private func reconcileOrientationAfterRun() {
+        guard let run = activeRun,
+              let practiceRunID = orientationState.practiceRunID,
+              run.id == practiceRunID,
+              run.completedSuccessfully else { return }
+        markOrientation(.practiceCompleted)
+    }
+
+    func markOrientationPracticeRecordViewedIfPresent() {
+        guard orientationState.milestones.contains(.practiceCompleted),
+              let practiceRunID = orientationState.practiceRunID,
+              nightWatchRecords.contains(where: { $0.id == practiceRunID }) else { return }
+        markOrientation(.practiceRecordViewed)
+    }
+
+    func focusNightsRecord(_ recordID: UUID?) {
+        nightsRecordFocusID = recordID
+    }
+
+    func clearNightsRecordFocus() {
+        nightsRecordFocusID = nil
+    }
+
+    /// Reads the terminal field note by its persisted run identity. The search
+    /// engine resolves outcomes in the coordinator; terminal views only reveal
+    /// the saved record and never calculate a new one.
+    func sheepSearchOutcome(for runID: UUID) -> SheepSearchOutcome? {
+        persistence.sheepSearchState.outcomes.first { $0.runID == runID }
+    }
 
     func setSheepSearchExactOddsEnabled(_ enabled: Bool) {
         var state = coordinator.sheepSearchState
@@ -237,16 +404,14 @@ final class FocusRunViewModel: ObservableObject {
             shieldingPreflightMessage = shieldingReadiness.detail
             return
         }
-        // The release choices are both shielding choices. Recover a stale
-        // preference left by an older build once Family Controls and a bedtime
-        // selection are demonstrably ready, rather than starting an unshielded
-        // run with no visible explanation.
-        if shieldingReadiness == .ready && !shieldingEnabled {
-            shieldingEnabled = true
-            UserDefaults.standard.set(true, forKey: QuietTimeShieldingService.enabledKey)
-        }
         saveNightWatchPreferences()
-        pendingNightWatchPlan = makePlanForNextWindDown(startedAt: Date())
+        let requestedAt = Date()
+        pendingNightWatchSourceOccurrenceID = WindDownScheduleEngine.eligibleOccurrence(
+            in: windDownSchedule,
+            at: requestedAt,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        )?.sourceID
+        pendingNightWatchPlan = makePlanForNextWindDown(startedAt: requestedAt)
         liveActivityChoiceForNextRun = liveActivityEnabled
         nightWatchStartStatus = ""
         showNightWatchStartPrompt = true
@@ -256,6 +421,7 @@ final class FocusRunViewModel: ObservableObject {
         guard !nightWatchStartInFlight else { return }
         isScanningNFCForStart = false
         pendingNightWatchPlan = nil
+        pendingNightWatchSourceOccurrenceID = nil
         nightWatchStartStatus = ""
         showNightWatchStartPrompt = false
     }
@@ -270,16 +436,34 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     private func startPendingNightWatch() {
-        guard let plan = pendingNightWatchPlan, !nightWatchStartInFlight else { return }
+        guard let requestedPlan = pendingNightWatchPlan, !nightWatchStartInFlight else { return }
         nightWatchStartInFlight = true
         let startedAt = Date()
+        let plan: NightWatchPlan
+        if let sourceID = pendingNightWatchSourceOccurrenceID {
+            guard let eligible = WindDownScheduleEngine.eligibleOccurrence(
+                in: windDownSchedule,
+                at: startedAt,
+                primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+            ), eligible.sourceID == sourceID else {
+                nightWatchStartInFlight = false
+                nightWatchStartStatus = "That quiet window has passed or is too short to start now."
+                nfcStatus = nightWatchStartStatus
+                return
+            }
+            plan = makePlanForNextWindDown(startedAt: startedAt)
+        } else {
+            plan = requestedPlan
+        }
         let liveActivityRequested = liveActivityChoiceForNextRun
         liveActivityEnabled = liveActivityRequested
         UserDefaults.standard.set(
             liveActivityRequested,
             forKey: FocusRunLiveActivityService.preferenceKey
         )
+        let sourceID = pendingNightWatchSourceOccurrenceID
         pendingNightWatchPlan = nil
+        pendingNightWatchSourceOccurrenceID = nil
         showNightWatchStartPrompt = false
         notifications.cancelNightWatchReminder()
         persistence.automaticWindDownSchedule = nil
@@ -291,6 +475,13 @@ final class FocusRunViewModel: ObservableObject {
             autoConfirmPlacement: selectedGuardKind == .nfcTag,
             liveActivityRequested: liveActivityRequested
         )
+        if let sourceID,
+           sourceID == orientationState.practicePeriodID,
+           let runID = activeRun?.id {
+            orientationState.recordPracticeRun(runID)
+            persistence.orientationState = orientationState
+        }
+        consumeScheduledOccurrence(sourceID)
         notifications.scheduleNightWatchNotifications(
             for: plan,
             startedAt: startedAt,
@@ -304,10 +495,32 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     func saveWindDownRoutines() {
-        persistence.windDownRoutines = windDownRoutines
+        windDownSchedule.routines = windDownRoutines
+        persistence.windDownSchedule = windDownSchedule
+    }
+
+    func saveWindDownSchedule() {
+        guard !isRunning else { return }
+        windDownRoutines = windDownSchedule.routines
+        persistence.windDownSchedule = windDownSchedule
+        nextWindDownOverride = windDownSchedule.oneTimePeriods
+            .filter(\.isAvailable)
+            .sorted { $0.interval.start < $1.interval.start }
+            .first
+            .map { period in
+                NextWindDownOverride(
+                    id: period.id,
+                    routineID: period.id,
+                    role: period.role,
+                    interval: period.interval,
+                    expiresAt: period.interval.end
+                )
+            }
+        scheduleAutomaticWindDownIfNeeded()
     }
 
     func setWindDownRoutineAutomaticStart(_ enabled: Bool, for routineID: UUID) {
+        guard !isRunning else { return }
         guard let index = windDownRoutines.firstIndex(where: { $0.id == routineID }) else { return }
         windDownRoutines[index].automaticStartEnabled = enabled
         saveWindDownRoutines()
@@ -315,28 +528,29 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     @discardableResult
-    func addAdditionalWindDown(title: String, start: WindDownClockTime, end: WindDownClockTime) -> Bool {
+    func addAdditionalWindDown(
+        title: String,
+        start: WindDownClockTime,
+        end: WindDownClockTime,
+        recurrence: WindDownRecurrence = .daily
+    ) -> Bool {
+        guard !isRunning, recurrence.isValid else {
+            windDownScheduleError = "Choose at least one day for this repeating quiet time."
+            return false
+        }
         let routine = WindDownRoutine(
             title: title,
             role: .additionalQuiet,
             start: start,
             end: end,
+            recurrence: recurrence,
             automaticStartEnabled: true
         )
-        let calendar = Calendar.current
-        let existingOccurrences = windDownRoutines.flatMap { routine in
-            (0...7).compactMap { offset -> WindDownOccurrence? in
-                guard let day = calendar.date(byAdding: .day, value: offset, to: Date()) else { return nil }
-                return expandedOccurrence(for: routine, on: day, calendar: calendar)
-            }
-        }
-        let candidateOccurrences = existingOccurrences + (0...7).compactMap { offset -> WindDownOccurrence? in
-            guard let day = calendar.date(byAdding: .day, value: offset, to: Date()) else { return nil }
-            return expandedOccurrence(for: routine, on: day, calendar: calendar)
-        }
-        guard (try? WindDownScheduleEngine.validateNoOverlaps(candidateOccurrences)) != nil else { return false }
-        windDownRoutines.append(routine)
-        saveWindDownRoutines()
+        var candidate = windDownSchedule
+        candidate.routines.append(routine)
+        guard acceptsSchedule(candidate) else { return false }
+        windDownSchedule = candidate
+        saveWindDownSchedule()
         return true
     }
 
@@ -364,90 +578,301 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     @discardableResult
-    func adjustNextWindDown(start: Date, end: Date, role: WindDownOccurrenceRole = .additionalQuiet) -> Bool {
-        let now = Date()
-        guard start > now, end > start else { return false }
-        let routineID = windDownRoutines.first(where: { $0.role == role })?.id ?? UUID()
-        let candidateEnd = role == .primarySleepBookend
-            ? (Calendar.current.date(byAdding: .minute, value: nightWatchPreferences.morningQuietMinutes, to: end) ?? end)
-            : end
-        let candidate = WindDownOccurrence(
-            routineID: routineID,
-            role: role,
-            interval: DateInterval(start: start, end: candidateEnd)
+    func addOneTimeAdditionalQuiet(
+        title: String,
+        start: Date,
+        end: Date,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Bool {
+        addOneTimeAdditionalQuiet(
+            id: UUID(),
+            title: title,
+            start: start,
+            end: end,
+            now: now,
+            calendar: calendar
         )
-        let calendar = Calendar.current
-        let savedOccurrences = windDownRoutines
-            .filter { $0.id != routineID }
-            .flatMap { routine in
-                (0...8).compactMap { offset -> WindDownOccurrence? in
-                    guard let day = calendar.date(byAdding: .day, value: offset, to: start) else { return nil }
-                    return expandedOccurrence(for: routine, on: day, calendar: calendar)
-                }
-            }
-        guard (try? WindDownScheduleEngine.validateNoOverlaps(savedOccurrences + [candidate])) != nil else {
+    }
+
+    @discardableResult
+    private func addOneTimeAdditionalQuiet(
+        id: UUID,
+        title: String,
+        start: Date,
+        end: Date,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard !isRunning else { return false }
+        guard let interval = normalizedOneTimeInterval(start: start, end: end, now: now, calendar: calendar) else {
             return false
         }
-        if let existing = nextWindDownOverride,
-           existing.isAvailable(at: now),
-           existing.interval.intersects(candidate.interval) {
-            return false
-        }
-        let override = NextWindDownOverride(
-            routineID: routineID,
-            role: role,
-            interval: DateInterval(start: start, end: end),
-            expiresAt: end
+        let item = WindDownOneTimePeriod(
+            id: id,
+            title: title,
+            role: .additionalQuiet,
+            interval: interval
         )
-        nextWindDownOverride = override
-        persistence.nextWindDownOverride = override
-        scheduleAutomaticWindDownIfNeeded()
+        var candidate = windDownSchedule
+        candidate.oneTimePeriods.append(item)
+        guard acceptsSchedule(candidate) else { return false }
+        windDownSchedule = candidate
+        saveWindDownSchedule()
         return true
     }
 
+    @discardableResult
+    private func addOneTimePeriod(
+        title: String,
+        start: Date,
+        end: Date,
+        role: WindDownOccurrenceRole,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard !isRunning else { return false }
+        guard let interval = normalizedOneTimeInterval(start: start, end: end, now: now, calendar: calendar) else {
+            return false
+        }
+        let item = WindDownOneTimePeriod(
+            title: title,
+            role: role,
+            interval: interval
+        )
+        var candidate = windDownSchedule
+        candidate.oneTimePeriods.append(item)
+        guard acceptsSchedule(candidate) else { return false }
+        windDownSchedule = candidate
+        saveWindDownSchedule()
+        return true
+    }
+
+    @discardableResult
+    func updateOneTimeQuiet(
+        id: UUID,
+        title: String,
+        start: Date,
+        end: Date,
+        enabled: Bool = true,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Bool {
+        guard !isRunning,
+              let index = windDownSchedule.oneTimePeriods.firstIndex(where: { $0.id == id }),
+              let interval = normalizedOneTimeInterval(start: start, end: end, now: now, calendar: calendar) else {
+            return false
+        }
+        var candidate = windDownSchedule
+        candidate.oneTimePeriods[index].title = title
+        candidate.oneTimePeriods[index].interval = interval
+        candidate.oneTimePeriods[index].enabled = enabled
+        if enabled { candidate.oneTimePeriods[index].cancelledAt = nil }
+        guard acceptsSchedule(candidate) else { return false }
+        windDownSchedule = candidate
+        saveWindDownSchedule()
+        return true
+    }
+
+    func setOneTimeQuietEnabled(_ enabled: Bool, id: UUID) {
+        guard !isRunning, let index = windDownSchedule.oneTimePeriods.firstIndex(where: { $0.id == id }) else { return }
+        windDownSchedule.oneTimePeriods[index].enabled = enabled
+        if enabled { windDownSchedule.oneTimePeriods[index].cancelledAt = nil }
+        saveWindDownSchedule()
+    }
+
+    func cancelOneTimeQuiet(id: UUID) {
+        guard !isRunning else { return }
+        windDownSchedule.oneTimePeriods.removeAll { $0.id == id }
+        saveWindDownSchedule()
+    }
+
+    @discardableResult
+    func updateAdditionalRoutine(
+        id: UUID,
+        title: String,
+        start: WindDownClockTime,
+        end: WindDownClockTime,
+        recurrence: WindDownRecurrence,
+        enabled: Bool
+    ) -> Bool {
+        guard !isRunning, recurrence.isValid,
+              let index = windDownSchedule.routines.firstIndex(where: { $0.id == id && $0.role == .additionalQuiet }) else {
+            if !recurrence.isValid {
+                windDownScheduleError = "Choose at least one day for this repeating quiet time."
+            }
+            return false
+        }
+        var candidate = windDownSchedule
+        candidate.routines[index].title = title
+        candidate.routines[index].start = start
+        candidate.routines[index].end = end
+        candidate.routines[index].recurrence = recurrence
+        candidate.routines[index].enabled = enabled
+        guard acceptsSchedule(candidate) else { return false }
+        windDownSchedule = candidate
+        saveWindDownSchedule()
+        return true
+    }
+
+    func setAdditionalRoutineEnabled(_ enabled: Bool, id: UUID) {
+        guard !isRunning, let index = windDownSchedule.routines.firstIndex(where: { $0.id == id }) else { return }
+        windDownSchedule.routines[index].enabled = enabled
+        saveWindDownSchedule()
+    }
+
+    func cancelAdditionalRoutine(id: UUID) {
+        guard !isRunning else { return }
+        windDownSchedule.routines.removeAll { $0.id == id && $0.role == .additionalQuiet }
+        saveWindDownSchedule()
+    }
+
+    private func validateSchedule(_ schedule: WindDownScheduleState) throws {
+        guard schedule.routines.allSatisfy({ $0.recurrence.isValid }) else {
+            throw WindDownScheduleError.invalidRecurrence
+        }
+        guard schedule.oneTimePeriods.allSatisfy({ $0.interval.end > $0.interval.start }) else {
+            throw WindDownScheduleError.invalidInterval
+        }
+        let calendar = Calendar.current
+        let start = calendar.date(byAdding: .day, value: -1, to: Date()) ?? Date()
+        let routines = schedule.routines.flatMap { routine in
+            (0...370).compactMap { offset -> WindDownOccurrence? in
+                guard let day = calendar.date(byAdding: .day, value: offset, to: start),
+                      let occurrence = WindDownScheduleEngine.occurrence(for: routine, on: day, calendar: calendar) else {
+                    return nil
+                }
+                return WindDownScheduleEngine.expandedOccurrence(
+                    occurrence,
+                    routine: routine,
+                    primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes,
+                    calendar: calendar
+                )
+            }
+        }
+        let oneTimes = schedule.oneTimePeriods.compactMap { $0.occurrence() }
+        let routineOccurrences = routines.filter { routineOccurrence in
+            guard routineOccurrence.role == .primarySleepBookend else { return true }
+            return !oneTimes.contains {
+                $0.role == .primarySleepBookend && $0.interval.intersects(routineOccurrence.interval)
+            }
+        }
+        try WindDownScheduleEngine.validateNoOverlaps(routineOccurrences + oneTimes)
+    }
+
+    private func acceptsSchedule(_ candidate: WindDownScheduleState) -> Bool {
+        do {
+            try validateSchedule(candidate)
+            windDownScheduleError = nil
+            return true
+        } catch let error as WindDownScheduleError {
+            switch error {
+            case let .overlappingOccurrences(first, second):
+                let firstTitle = scheduleTitle(for: first, in: candidate)
+                let secondTitle = scheduleTitle(for: second, in: candidate)
+                windDownScheduleError = "“\(firstTitle)” and “\(secondTitle)” overlap. Choose a different window."
+            case .invalidInterval:
+                windDownScheduleError = "Choose a future quiet window with an ending time after its start."
+            case .invalidRecurrence:
+                windDownScheduleError = "Choose at least one day for this repeating quiet time."
+            }
+            return false
+        } catch {
+            windDownScheduleError = "Choose a future quiet window that does not overlap another period."
+            return false
+        }
+    }
+
+    private func scheduleTitle(for id: UUID, in schedule: WindDownScheduleState) -> String {
+        if let period = schedule.oneTimePeriods.first(where: { $0.id == id }) {
+            return period.title
+        }
+        if let routine = schedule.routines.first(where: { $0.id == id }) {
+            return routine.title
+        }
+        return "Quiet time"
+    }
+
+    private func normalizedOneTimeInterval(
+        start: Date,
+        end: Date,
+        now: Date,
+        calendar: Calendar
+    ) -> DateInterval? {
+        do {
+            let interval = try QuietPeriodScheduling.normalizedInterval(
+                requestedStart: start,
+                end: end,
+                now: now,
+                minimumRemainingDuration: FocusRunRules.minimumMeaningfulDurationSeconds
+            )
+            windDownScheduleError = nil
+            return interval
+        } catch let error as QuietPeriodSchedulingError {
+            switch error {
+            case .invalidInterval:
+                windDownScheduleError = "Choose a quiet window with an ending time after its start."
+            case .expired:
+                windDownScheduleError = "That quiet window has already ended."
+            case .insufficientRemainingDuration:
+                windDownScheduleError = "Leave at least one minute for Ollie to keep the quiet."
+            }
+        } catch {
+            windDownScheduleError = "Choose a valid quiet window."
+        }
+        return nil
+    }
+
+    @discardableResult
+    func adjustNextWindDown(start: Date, end: Date, role: WindDownOccurrenceRole = .additionalQuiet) -> Bool {
+        if let existing = windDownSchedule.oneTimePeriods.first(where: { $0.role == role }) {
+            return updateOneTimeQuiet(
+                id: existing.id,
+                title: existing.title,
+                start: start,
+                end: end,
+                enabled: true
+            )
+        }
+        return addOneTimePeriod(
+            title: role == .primarySleepBookend ? "Adjusted Wind Down" : "One-time quiet period",
+            start: start,
+            end: end,
+            role: role
+        )
+    }
+
     func clearNextWindDownOverride() {
-        nextWindDownOverride = nil
-        persistence.nextWindDownOverride = nil
-        scheduleAutomaticWindDownIfNeeded()
+        guard !isRunning else { return }
+        if let legacyOverride = nextWindDownOverride {
+            windDownSchedule.oneTimePeriods.removeAll { $0.id == legacyOverride.id }
+        }
+        saveWindDownSchedule()
     }
 
     private func makePlanForNextWindDown(startedAt: Date) -> NightWatchPlan {
-        guard var override = nextWindDownOverride,
-              override.isAvailable(at: startedAt) else {
+        let calendar = Calendar.current
+        guard let eligible = WindDownScheduleEngine.eligibleOccurrence(
+            in: windDownSchedule,
+            at: startedAt,
+            calendar: calendar,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        ) else {
+            // A saved period in the future is informational only. Starting now
+            // always uses the normal Wind Down plan.
             return nightWatchPreferences.makePlan(startedAt: startedAt)
         }
-        _ = override.consume(at: startedAt)
-        nextWindDownOverride = nil
-        persistence.nextWindDownOverride = nil
-        if override.role == .additionalQuiet {
-            return NightWatchPlan.additionalQuiet(
-                start: override.interval.start,
-                end: override.interval.end,
-                activity: nightWatchPreferences.eveningActivity,
-                cueText: nightWatchPreferences.eveningCueText
-            )
-        }
-        let bedtime = override.interval.end
-        let wakeComponents = DateComponents(hour: nightWatchPreferences.wakeHour, minute: nightWatchPreferences.wakeMinute)
-        let calendar = Calendar.current
-        let wake = calendar.nextDate(after: bedtime, matching: wakeComponents, matchingPolicy: .nextTime) ?? bedtime.addingTimeInterval(8 * 60 * 60)
-        let protectedUntil = calendar.date(byAdding: .minute, value: nightWatchPreferences.morningQuietMinutes, to: wake) ?? wake.addingTimeInterval(30 * 60)
-        return NightWatchPlan(
-            intendedBedtime: bedtime,
-            wakeTime: wake,
-            protectedUntil: protectedUntil,
-            windDownMinutes: max(15, Int(override.interval.duration / 60)),
-            morningQuietMinutes: nightWatchPreferences.morningQuietMinutes,
-            eveningActivity: nightWatchPreferences.eveningActivity,
-            morningActivity: nightWatchPreferences.morningActivity,
-            eveningCueText: nightWatchPreferences.eveningCueText,
-            morningCueText: nightWatchPreferences.morningCueText,
-            role: .primarySleepBookend
+        return WindDownScheduleEngine.plan(
+            for: eligible,
+            preferences: nightWatchPreferences,
+            startedAt: startedAt,
+            calendar: calendar
         )
     }
 
     func saveNightWatchPlanForTonight() {
         saveNightWatchPreferences()
+        markOrientation(.windDownSaved)
         scheduleAutomaticWindDownIfNeeded()
     }
 
@@ -455,10 +880,14 @@ final class FocusRunViewModel: ObservableObject {
         persistence.onboardingDraft = draft
     }
 
-    func applyOnboardingDraft(_ draft: OnboardingDraft) {
-        nightWatchPreferences = draft.makeNightWatchPreferences()
+    func applyOnboardingDraft(
+        _ draft: OnboardingDraft,
+        preserveAdvancedNotifications: Bool = false
+    ) {
+        let updatedPreferences = draft.makeNightWatchPreferences()
+        nightWatchPreferences = updatedPreferences
         offlinePurpose = draft.makeOfflinePurpose()
-        selectedGuardKind = nightWatchPreferences.guardKind
+        selectedGuardKind = updatedPreferences.guardKind
         persistence.nightWatchPreferences = nightWatchPreferences
         persistence.offlinePurpose = offlinePurpose
         persistence.screenTimeReportPreferences = ScreenTimeReportPreferences.defaults(
@@ -471,11 +900,34 @@ final class FocusRunViewModel: ObservableObject {
             shieldingEnabled,
             forKey: QuietTimeShieldingService.enabledKey
         )
-        var updatedNotificationPreferences = draft.makeNotificationPreferences()
-        updatedNotificationPreferences.usageAwareRemindersEnabled =
-            draft.usageAwareRemindersEnabled && canUseUsageAwareReminders
+        var updatedNotificationPreferences = preserveAdvancedNotifications
+            ? notificationPreferences
+            : draft.makeNotificationPreferences()
+        if !preserveAdvancedNotifications {
+            updatedNotificationPreferences.usageAwareRemindersEnabled =
+                draft.usageAwareRemindersEnabled && canUseUsageAwareReminders
+        }
         notificationPreferences = updatedNotificationPreferences
         notifications.preferences = updatedNotificationPreferences
+
+        // Keep the Home schedule and the legacy preferences in sync. Reusing the
+        // primary routine identity preserves edits made from Settings and keeps
+        // additional quiet periods beside the saved sleep-bookend plan.
+        var updatedSchedule = windDownSchedule
+        let existingPrimaryID = updatedSchedule.routines.first(where: {
+            $0.role == .primarySleepBookend
+        })?.id
+        let primaryRoutine = draft.makePrimaryWindDownRoutine(existingID: existingPrimaryID)
+        if let primaryIndex = updatedSchedule.routines.firstIndex(where: {
+            $0.role == .primarySleepBookend
+        }) {
+            updatedSchedule.routines[primaryIndex] = primaryRoutine
+        } else {
+            updatedSchedule.routines.insert(primaryRoutine, at: 0)
+        }
+        windDownSchedule = updatedSchedule
+        windDownRoutines = updatedSchedule.routines
+        persistence.windDownSchedule = updatedSchedule
         persistence.completeOnboarding()
         scheduleAutomaticWindDownIfNeeded()
     }
@@ -486,8 +938,10 @@ final class FocusRunViewModel: ObservableObject {
         notificationPreferences = updated
         notifications.preferences = updated
         if enabled {
-            scheduleAutomaticWindDownIfNeeded()
+            if isRunning { reschedulePendingActiveRunNotifications() }
+            else { scheduleAutomaticWindDownIfNeeded() }
         } else {
+            notifications.cancelAllNightWatchNotifications()
             usageMonitoring.cancel()
         }
     }
@@ -510,13 +964,31 @@ final class FocusRunViewModel: ObservableObject {
         notificationPreferences = updated
         notifications.preferences = updated
         if updated.remindersEnabled {
-            scheduleAutomaticWindDownIfNeeded()
-            if let activeRun, let plan = activeRun.nightWatchPlan {
-                usageMonitoring.schedule(for: plan, startedAt: activeRun.startedAt)
-            }
+            if isRunning { reschedulePendingActiveRunNotifications() }
+            else { scheduleAutomaticWindDownIfNeeded() }
         } else {
+            notifications.cancelAllNightWatchNotifications()
             usageMonitoring.cancel()
         }
+    }
+
+    /// Rebuilds only future alerts from the immutable plan captured by the
+    /// active run. Timing and protection edits remain next-run preferences.
+    func reschedulePendingActiveRunNotifications() {
+        guard let activeRun, let plan = activeRun.nightWatchPlan else { return }
+        guard notificationPreferences.remindersEnabled else {
+            notifications.cancelAllNightWatchNotifications()
+            usageMonitoring.cancel()
+            return
+        }
+        notifications.scheduleNightWatchNotifications(
+            for: plan,
+            startedAt: activeRun.startedAt,
+            purpose: offlinePurpose,
+            seed: activeRun.id,
+            preferences: notificationPreferences
+        )
+        usageMonitoring.schedule(for: plan, startedAt: activeRun.startedAt)
     }
 
     func updateNotificationCopy(
@@ -792,7 +1264,7 @@ final class FocusRunViewModel: ObservableObject {
                     self.phoneBedTagRegistration = registration
                     self.persistence.phoneBedNFCTagRegistration = registration
                 }
-                self.nfcStatus = "Wind Down tag confirmed. Your selected apps can now be limited."
+                self.nfcStatus = "Wind Down tag confirmed. Apps to rest can now be limited."
                 self.prepareForEarlyWindDownExit()
                 self.coordinator.endEarly(reason: .nfcTagAuthenticated)
             case .cancelled:
@@ -880,6 +1352,14 @@ final class FocusRunViewModel: ObservableObject {
     func setShieldingEnabled(_ enabled: Bool) {
         shieldingEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: QuietTimeShieldingService.enabledKey)
+        // The active run owns an immutable protection plan. Settings changes
+        // are saved now but must not apply or lift its existing shields.
+        if isRunning {
+            if enabled, screenTimeAuthorization != .approved {
+                connectScreenTime()
+            }
+            return
+        }
         if enabled {
             if screenTimeAuthorization != .approved {
                 connectScreenTime()
@@ -902,6 +1382,16 @@ final class FocusRunViewModel: ObservableObject {
         }
 
         let now = Date()
+        if let sourceID = schedule.sourceOccurrenceID,
+           windDownSchedule.oneTimePeriods.contains(where: { $0.id == sourceID }) {
+            // One-time windows are manual even when an older build persisted
+            // them as automatic schedules. Clear the stale callback without
+            // materializing a run or applying shielding.
+            persistence.automaticWindDownSchedule = nil
+            quietTimeShielding.cancelAutomaticSchedule()
+            scheduleNextAutomaticWindDown(after: now)
+            return
+        }
         guard now >= schedule.startedAt else {
             if shieldingEnabled {
                 quietTimeShielding.scheduleAutomatic(for: schedule, at: now)
@@ -912,27 +1402,21 @@ final class FocusRunViewModel: ObservableObject {
         guard now < schedule.plan.protectedUntil else {
             notifications.cancelNightWatchReminder()
             persistence.automaticWindDownSchedule = nil
-            if let override = nextWindDownOverride, override.expiresAt <= now {
-                nextWindDownOverride = nil
-                persistence.nextWindDownOverride = nil
-            }
+            consumeScheduledOccurrence(schedule.sourceOccurrenceID)
             coordinator.reconcileExpiredAutomaticNightWatch(
                 plan: schedule.plan,
                 guardKind: nightWatchPreferences.guardKind,
                 startedAt: schedule.startedAt,
                 endedAt: schedule.plan.protectedUntil,
-                liveActivityRequested: liveActivityEnabled
+                liveActivityRequested: liveActivityEnabled,
+                runID: schedule.id
             )
             scheduleNextAutomaticWindDown()
             return
         }
 
         notifications.cancelNightWatchReminder()
-        if let override = nextWindDownOverride,
-           override.interval.start == schedule.startedAt {
-            nextWindDownOverride = nil
-            persistence.nextWindDownOverride = nil
-        }
+        consumeScheduledOccurrence(schedule.sourceOccurrenceID)
         coordinator.start(
             configuration: FocusRunConfiguration(
                 nightWatchPlan: schedule.plan,
@@ -941,7 +1425,8 @@ final class FocusRunViewModel: ObservableObject {
             focusAccepted: false,
             startedAt: schedule.startedAt,
             autoConfirmPlacement: true,
-            liveActivityRequested: liveActivityEnabled
+            liveActivityRequested: liveActivityEnabled,
+            runID: schedule.id
         )
         if let activeRun, let plan = activeRun.nightWatchPlan {
             notifications.scheduleNightWatchNotifications(
@@ -977,97 +1462,67 @@ final class FocusRunViewModel: ObservableObject {
                 preferences: notificationPreferences
             )
             usageMonitoring.cancel()
+            notifications.reconcileUpcomingWindDownNotifications(
+                for: windDownSchedule,
+                primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes,
+                purpose: offlinePurpose,
+                preferences: notificationPreferences
+            )
             return
         }
         scheduleNextAutomaticWindDown()
+        notifications.reconcileUpcomingWindDownNotifications(
+            for: windDownSchedule,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes,
+            purpose: offlinePurpose,
+            preferences: notificationPreferences
+        )
     }
 
     private var hasAutomaticWindDownRoutine: Bool {
-        if windDownRoutines.isEmpty { return nightWatchPreferences.automaticStartEnabled }
-        return windDownRoutines.contains {
-            $0.role == .primarySleepBookend && $0.enabled && $0.automaticStartEnabled
+        let hasRepeating = windDownSchedule.routines.contains {
+            $0.enabled && $0.automaticStartEnabled
         }
+        // A saved one-time period is a manual invitation. It must not create a
+        // background run or shielding schedule merely because it was saved.
+        return hasRepeating || (windDownRoutines.isEmpty && nightWatchPreferences.automaticStartEnabled)
     }
 
     private func scheduleNextAutomaticWindDown(after date: Date = Date()) {
-        if let override = nextWindDownOverride, override.isAvailable(at: date) {
-            let plan: NightWatchPlan
-            if override.role == .additionalQuiet {
-                plan = NightWatchPlan.additionalQuiet(
-                    start: override.interval.start,
-                    end: override.interval.end,
-                    activity: nightWatchPreferences.eveningActivity,
-                    cueText: nightWatchPreferences.eveningCueText
-                )
-            } else {
-                let calendar = Calendar.current
-                let bedtime = override.interval.end
-                let wakeComponents = DateComponents(hour: nightWatchPreferences.wakeHour, minute: nightWatchPreferences.wakeMinute)
-                let wake = calendar.nextDate(after: bedtime, matching: wakeComponents, matchingPolicy: .nextTime) ?? bedtime.addingTimeInterval(8 * 60 * 60)
-                let protectedUntil = calendar.date(byAdding: .minute, value: nightWatchPreferences.morningQuietMinutes, to: wake) ?? wake.addingTimeInterval(30 * 60)
-                plan = NightWatchPlan(
-                    intendedBedtime: bedtime,
-                    wakeTime: wake,
-                    protectedUntil: protectedUntil,
-                    windDownMinutes: max(15, Int(override.interval.duration / 60)),
-                    morningQuietMinutes: nightWatchPreferences.morningQuietMinutes,
-                    eveningActivity: nightWatchPreferences.eveningActivity,
-                    morningActivity: nightWatchPreferences.morningActivity,
-                    eveningCueText: nightWatchPreferences.eveningCueText,
-                    morningCueText: nightWatchPreferences.morningCueText
-                )
-            }
-            let schedule = AutomaticWindDownSchedule(startedAt: override.interval.start, plan: plan)
-            persistence.automaticWindDownSchedule = schedule
+        var state = windDownSchedule
+        state.prunePassedOneTimePeriods(at: date)
+        windDownSchedule = state
+        persistence.windDownSchedule = state
+
+        let automaticState = WindDownScheduleState(
+            oneTimePeriods: [],
+            routines: state.routines.filter { $0.enabled && $0.automaticStartEnabled }
+        )
+        let next = automaticState.upcomingPeriods(
+            after: date,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes,
+            limit: 1
+        ).first
+        let startDate = next?.occurrence.interval.start ?? nightWatchPreferences.nextStart(after: date)
+        guard startDate > date else {
+            persistence.automaticWindDownSchedule = nil
             notifications.cancelNightWatchReminder()
-            notifications.scheduleAutomaticWindDownNotifications(
-                at: schedule.startedAt,
-                plan: plan,
-                purpose: offlinePurpose,
-                seed: schedule.id,
-                preferences: notificationPreferences
-            )
-            usageMonitoring.schedule(
-                for: plan,
-                startedAt: schedule.startedAt,
-                repeatsDaily: false
-            )
-            if shieldingEnabled && plan.role == .primarySleepBookend {
-                quietTimeShielding.scheduleAutomatic(for: schedule)
-            }
+            quietTimeShielding.cancelAutomaticSchedule()
+            usageMonitoring.cancel()
             return
         }
-        let routines = windDownRoutines.isEmpty
-            ? [WindDownRoutine.primary(from: nightWatchPreferences)]
-            : windDownRoutines.filter { $0.role == .primarySleepBookend }
-        let next = routines
-            .filter { $0.automaticStartEnabled }
-            .compactMap { routine -> WindDownOccurrence? in
-                guard let occurrence = WindDownScheduleEngine.nextOccurrence(for: routine, after: date) else {
-                    return nil
-                }
-                if occurrence.interval.start > date {
-                    return occurrence
-                }
-                return WindDownScheduleEngine.nextOccurrence(
-                    for: routine,
-                    after: occurrence.interval.end.addingTimeInterval(1)
-                )
-            }
-            .min { $0.interval.start < $1.interval.start }
-        let startDate = next?.interval.start ?? nightWatchPreferences.nextStart(after: date)
-        let plan: NightWatchPlan
-        if let next, next.role == .additionalQuiet {
-            plan = NightWatchPlan.additionalQuiet(
-                start: next.interval.start,
-                end: next.interval.end,
-                activity: nightWatchPreferences.eveningActivity,
-                cueText: nightWatchPreferences.eveningCueText
+        let plan = next.map {
+            WindDownScheduleEngine.plan(
+                for: $0,
+                preferences: nightWatchPreferences,
+                startedAt: startDate
             )
-        } else {
-            plan = nightWatchPreferences.makePlan(startedAt: startDate)
-        }
-        let schedule = AutomaticWindDownSchedule(startedAt: startDate, plan: plan)
+        } ?? nightWatchPreferences.makePlan(startedAt: startDate)
+        let schedule = AutomaticWindDownSchedule(
+            startedAt: startDate,
+            plan: plan,
+            sourceOccurrenceID: next?.sourceID
+        )
         persistence.automaticWindDownSchedule = schedule
         notifications.cancelNightWatchReminder()
         notifications.scheduleAutomaticWindDownNotifications(
@@ -1077,10 +1532,29 @@ final class FocusRunViewModel: ObservableObject {
             seed: schedule.id,
             preferences: notificationPreferences
         )
-        usageMonitoring.schedule(for: plan, startedAt: startDate, repeatsDaily: plan.role == .primarySleepBookend)
+        usageMonitoring.schedule(for: plan, startedAt: startDate, repeatsDaily: false)
         if shieldingEnabled && plan.role == .primarySleepBookend {
             quietTimeShielding.scheduleAutomatic(for: schedule)
         }
+    }
+
+    private func consumeScheduledOccurrence(_ id: UUID?) {
+        guard let id else { return }
+        guard windDownSchedule.consumeOneTimePeriod(id: id) else { return }
+        persistence.windDownSchedule = windDownSchedule
+        nextWindDownOverride = windDownSchedule.oneTimePeriods
+            .filter(\.isAvailable)
+            .sorted { $0.interval.start < $1.interval.start }
+            .first
+            .map { period in
+                NextWindDownOverride(
+                    id: period.id,
+                    routineID: period.id,
+                    role: period.role,
+                    interval: period.interval,
+                    expiresAt: period.interval.end
+                )
+            }
     }
 
     func resetSetup() {
@@ -1231,8 +1705,12 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     var todayMorningCheckIn: MorningCheckIn {
-        morningCheckIns.entry(for: Date()) ?? MorningCheckIn(
-            day: Date(),
+        morningCheckIn(for: Date())
+    }
+
+    func morningCheckIn(for date: Date) -> MorningCheckIn {
+        morningCheckIns.entry(for: date) ?? MorningCheckIn(
+            day: date,
             sleepOnset: nil,
             restfulness: nil,
             bedtimeSleepiness: nil
@@ -1240,24 +1718,38 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     func updateMorningSleepOnset(_ value: SleepOnsetEstimate?) {
-        var entry = todayMorningCheckIn
+        updateMorningSleepOnset(value, for: Date())
+    }
+
+    func updateMorningSleepOnset(_ value: SleepOnsetEstimate?, for date: Date) {
+        var entry = morningCheckIn(for: date)
         entry.sleepOnset = value
         saveMorningCheckIn(entry)
     }
 
     func updateMorningRestfulness(_ value: MorningRestfulness?) {
-        var entry = todayMorningCheckIn
+        updateMorningRestfulness(value, for: Date())
+    }
+
+    func updateMorningRestfulness(_ value: MorningRestfulness?, for date: Date) {
+        var entry = morningCheckIn(for: date)
         entry.restfulness = value
         saveMorningCheckIn(entry)
     }
 
     func updateBedtimeSleepiness(_ value: BedtimeSleepiness?) {
-        var entry = todayMorningCheckIn
+        updateBedtimeSleepiness(value, for: Date())
+    }
+
+    func updateBedtimeSleepiness(_ value: BedtimeSleepiness?, for date: Date) {
+        var entry = morningCheckIn(for: date)
         entry.bedtimeSleepiness = value
         saveMorningCheckIn(entry)
     }
 
     private func loadRecentSleepSummaries() async {
+        isRefreshingSleep = true
+        defer { isRefreshingSleep = false }
         recentNightSleeps = await healthSleepService.recentNightSleeps(days: 30)
         let calendar = Calendar.current
         lastNightSleep = recentNightSleeps.first { summary in

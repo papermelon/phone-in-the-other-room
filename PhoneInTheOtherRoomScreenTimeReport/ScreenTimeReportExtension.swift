@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 #if canImport(DeviceActivity)
 import DeviceActivity
@@ -108,21 +109,21 @@ struct PhoneOtherScreenTimeReportView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text(formattedDuration(configuration.totalDuration))
                     .font(.system(.title3, design: .monospaced).weight(.black))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.primary)
                 Spacer(minLength: 8)
                 Text(configuration.title)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.secondary)
             }
 
             if configuration.totalDuration <= 0 {
                 Text(configuration.emptyCaption)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.secondary)
             } else {
                 Text(windowShareLabel)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.secondary)
 
                 ScrollView(.horizontal) {
                     HStack(alignment: .bottom, spacing: 8) {
@@ -137,18 +138,20 @@ struct PhoneOtherScreenTimeReportView: View {
                     Text(
                         "\(timeRange(selectedBucket)): \(formattedDuration(selectedBucket.selectedAppDuration)) in selected apps"
                     )
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(.white)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.primary)
                 }
 
                 activityTiming
 
                 Text("Bars show selected-app time within each hour. Tap an hour for its exact time.")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.56))
+                    .foregroundStyle(.tertiary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .padding(.vertical, 2)
     }
 
@@ -160,7 +163,7 @@ struct PhoneOtherScreenTimeReportView: View {
             VStack(spacing: 4) {
                 ZStack(alignment: .bottom) {
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .fill(.white.opacity(0.08))
+                        .fill(Color.secondary.opacity(0.16))
                         .frame(width: 34, height: 54)
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .fill(Color(red: 0.96, green: 0.72, blue: 0.18))
@@ -171,11 +174,11 @@ struct PhoneOtherScreenTimeReportView: View {
                 }
                 .overlay {
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
-                        .stroke(.white.opacity(isSelected ? 0.9 : 0), lineWidth: 2)
+                        .stroke(.primary.opacity(isSelected ? 0.9 : 0), lineWidth: 2)
                 }
                 Text(bucket.startDate.formatted(.dateTime.hour()))
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.68))
+                    .foregroundStyle(.secondary)
             }
         }
         .frame(minWidth: 44, minHeight: 72)
@@ -195,7 +198,7 @@ struct PhoneOtherScreenTimeReportView: View {
             }
         }
         .font(.caption2.weight(.semibold))
-        .foregroundStyle(.white.opacity(0.68))
+        .foregroundStyle(.secondary)
     }
 
     private var selectedBucket: ScreenTimeActivityBucket? {
@@ -227,5 +230,44 @@ struct PhoneOtherScreenTimeReportView: View {
         }
         return "\(minutes)m"
     }
+}
+
+#Preview("Screen Time report · empty") {
+    PhoneOtherScreenTimeReportView(
+        configuration: PhoneOtherScreenTimeConfiguration(
+            title: "Late evening",
+            emptyCaption: "No selected app use in this evening window",
+            totalDuration: 0,
+            windowDuration: 3 * 60 * 60,
+            firstPickup: nil,
+            buckets: []
+        )
+    )
+    .padding()
+    .preferredColorScheme(.light)
+}
+
+#Preview("Screen Time report · active") {
+    let start = Date().addingTimeInterval(-3 * 60 * 60)
+    let buckets = (0..<3).map { index in
+        let bucketStart = start.addingTimeInterval(TimeInterval(index * 60 * 60))
+        return ScreenTimeActivityBucket(
+            startDate: bucketStart,
+            endDate: bucketStart.addingTimeInterval(60 * 60),
+            selectedAppDuration: TimeInterval((index + 1) * 8 * 60)
+        )
+    }
+    return PhoneOtherScreenTimeReportView(
+        configuration: PhoneOtherScreenTimeConfiguration(
+            title: "After waking",
+            emptyCaption: "No selected app use after waking",
+            totalDuration: 48 * 60,
+            windowDuration: 3 * 60 * 60,
+            firstPickup: Date().addingTimeInterval(-2 * 60 * 60),
+            buckets: buckets
+        )
+    )
+    .padding()
+    .preferredColorScheme(.dark)
 }
 #endif

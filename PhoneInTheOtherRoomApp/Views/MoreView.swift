@@ -18,6 +18,7 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
+                orientationSection
                 windDownSection
                 guidanceSection
                 connectionsSection
@@ -33,6 +34,7 @@ struct SettingsView: View {
             .padding(AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
+        .onAppear { viewModel.markOrientation(.settingsExplored) }
         .sheet(isPresented: $showImpactConsent) {
             ImpactSharingConsentSheet {
                 viewModel.setImpactSharingEnabled(true)
@@ -94,6 +96,37 @@ struct SettingsView: View {
             Text("Your Wind Down, connections, and a way to reach us.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.muted)
+        }
+    }
+
+    private var orientationSection: some View {
+        VStack(spacing: AppSpacing.md) {
+            sectionHeader("Getting settled", icon: "map.fill")
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text(viewModel.orientationState.canResume ? "Your orientation is resting." : "A gentle map of Counting Sheep")
+                        .font(AppTypography.headline)
+                    Text("Home starts Wind Down, Nights keeps your records, Farm shows Ollie’s sheep search, and Settings holds your plan and connections. Try a short practice quiet too; it is real quiet time, but not a protected night.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    Button(viewModel.orientationState.canResume ? "Resume orientation" : "Replay orientation") {
+                        if viewModel.orientationState.canResume {
+                            viewModel.resumeOrientation()
+                        } else {
+                            viewModel.replayOrientation()
+                        }
+                        NotificationCenter.default.post(name: .countingSheepShowHome, object: nil)
+                    }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    .frame(minHeight: 44, alignment: .leading)
+                    .disabled(viewModel.isRunning)
+                    if viewModel.isRunning {
+                        Text("You can return to this after the active Wind Down ends.")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                }
+            }
         }
     }
 
@@ -220,10 +253,10 @@ struct SettingsView: View {
                         )
                     )
                     .font(AppTypography.headline)
-                    Text("By default, Ollie shows Faint, Promising, Strong, or Very strong trail conditions. Turn this on to see the percentage and the bonuses behind it.")
+                    Text("A sheep search happens only after an eligible completed protected night. Turn this on to see the search percentage and what can shape it.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
-                    Text("Optional Health, Screen Time, and habit signals can add bonuses. Missing data never lowers the trail.")
+                    Text("Optional signals can shape an eligible search. Missing data never lowers it.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }
@@ -498,6 +531,20 @@ struct SettingsView: View {
         SettingsView()
             .environmentObject(FocusRunViewModel())
     }
+}
+
+#Preview("Settings · replay orientation") {
+    let viewModel = FocusRunViewModel()
+    viewModel.orientationState = CountingSheepOrientationState(
+        status: .dismissed,
+        milestones: [.homeExplained, .windDownSaved]
+    )
+    return NavigationStack {
+        SettingsView()
+            .environmentObject(viewModel)
+    }
+    .environment(\.dynamicTypeSize, .accessibility2)
+    .preferredColorScheme(.dark)
 }
 
 /// Compatibility name for previews and older internal references. The release

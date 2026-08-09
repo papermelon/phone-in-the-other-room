@@ -90,15 +90,17 @@ final class FocusSessionCoordinator: ObservableObject {
         focusAccepted: Bool,
         startedAt: Date = Date(),
         autoConfirmPlacement: Bool = false,
-        liveActivityRequested: Bool = true
+        liveActivityRequested: Bool = true,
+        runID: UUID? = nil
     ) {
         resetToSetup(clearPersistedRun: false, liveActivityCancellationReason: .replaced)
         let plannedDuration = configuration.nightWatchPlan.map {
-            max(60, $0.protectedUntil.timeIntervalSince(startedAt))
+            max(FocusRunRules.minimumMeaningfulDurationSeconds, $0.protectedUntil.timeIntervalSince(startedAt))
         } ?? configuration.duration
         let placementRequired = configuration.guardKind.needsPlacementConfirmation
             && !autoConfirmPlacement
         var newRun = FocusRun(
+            id: runID ?? UUID(),
             plannedDurationSeconds: plannedDuration,
             startedAt: startedAt,
             state: placementRequired ? .placementGrace : .running,
@@ -169,8 +171,8 @@ final class FocusSessionCoordinator: ObservableObject {
                 autoConfirmPlacement
                     ? "Wind Down tag confirmed."
                     : "Wind Down is running. Tap the Wind Down tag when it is ready.",
-                detail: autoConfirmPlacement
-                    ? "Selected apps are limited until the scheduled finish or another tap."
+                    detail: autoConfirmPlacement
+                        ? "Apps to rest are limited until morning quiet ends or you use the emergency exit."
                     : "The session has not started until the registered tag is tapped."
             )
         case .honorTimer:
@@ -414,7 +416,8 @@ final class FocusSessionCoordinator: ObservableObject {
         guardKind: SessionGuardKind,
         startedAt: Date,
         endedAt: Date,
-        liveActivityRequested: Bool = true
+        liveActivityRequested: Bool = true,
+        runID: UUID? = nil
     ) {
         guard endedAt > startedAt else { return }
         if let run, ![.setup, .completed, .endedEarly].contains(run.state) {
@@ -431,7 +434,8 @@ final class FocusSessionCoordinator: ObservableObject {
             focusAccepted: false,
             startedAt: startedAt,
             autoConfirmPlacement: true,
-            liveActivityRequested: liveActivityRequested
+            liveActivityRequested: liveActivityRequested,
+            runID: runID
         )
         reconcileSession(at: endedAt)
     }
@@ -455,6 +459,10 @@ final class FocusSessionCoordinator: ObservableObject {
         notifications.cancelRunCompletion()
         liveActivity.finish(for: run)
         var finalRun = run
+        finalRun.briefAccessUseCount = max(
+            finalRun.briefAccessUseCount,
+            shielding.briefAccessUseCount(for: finalRun)
+        )
         let protection = shielding.protectionSummary(
             for: finalRun,
             at: finalRun.endedAt ?? Date()
@@ -470,6 +478,14 @@ final class FocusSessionCoordinator: ObservableObject {
         persistence.progress = progress
         persistence.rewards = rewards
         persistence.lastRun = finalRun
+        if finalRun.completedSuccessfully,
+           finalRun.nightWatchPlan?.role == .additionalQuiet {
+            sheepSearchState.trailMap.credit(
+                runID: finalRun.id,
+                minutes: finalRun.creditedQuietMinutes
+            )
+            persistence.sheepSearchState = sheepSearchState
+        }
         if finalRun.completedSuccessfully && finalRun.isProgressionEligibleNightWatch {
             let plan = finalRun.nightWatchPlan
             let evidence = SheepSearchEvidence(
@@ -483,7 +499,8 @@ final class FocusSessionCoordinator: ObservableObject {
                 shieldingObserved: protection.evidence == .observed,
                 placementConfirmed: finalRun.placementStatus == .confirmed,
                 recentProtectedNights: min(12, sheepSearchState.outcomes.suffix(7).filter { $0.result == .found }.count),
-                optionalBonusPoints: optionalSheepSearchBonusProvider?() ?? 0
+                optionalBonusPoints: optionalSheepSearchBonusProvider?() ?? 0,
+                trailMapBonusPercentagePoints: sheepSearchState.trailMap.availableBonusPercentagePoints
             )
             let calculation = SheepSearchEngine.calculate(
                 runID: finalRun.id,
@@ -579,7 +596,7 @@ final class FocusSessionCoordinator: ObservableObject {
                 payload: ["reason": "noSelection"]
             )
         case .scheduled:
-            shieldingMessage = "The selected apps will be limited for the next Wind Down."
+            shieldingMessage = "Apps to rest will be limited for the next Wind Down."
             recordRitualEvent(
                 .shieldScheduleRequested,
                 for: run,
@@ -587,7 +604,7 @@ final class FocusSessionCoordinator: ObservableObject {
                 idempotencyKey: "\(run.id.uuidString):shield:scheduled"
             )
         case .applied:
-            shieldingMessage = "The selected apps are limited until the scheduled finish."
+            shieldingMessage = "Apps to rest are limited until morning quiet ends. Use the emergency exit if you need your phone back sooner."
             recordRitualEvent(
                 .shieldScheduleRequested,
                 for: run,
@@ -626,12 +643,22 @@ final class FocusSessionCoordinator: ObservableObject {
             for: run,
             at: date
         )
+        var reconciledRun = run
+        reconciledRun.briefAccessUseCount = max(
+            reconciledRun.briefAccessUseCount,
+            shielding.briefAccessUseCount(for: reconciledRun)
+        )
+        if reconciledRun.briefAccessUseCount != run.briefAccessUseCount {
+            self.run = reconciledRun
+            persistence.lastRun = reconciledRun
+        }
         let protection = shielding.protectionSummary(for: run, at: date)
-        if let record = run.nightWatchRecord(
+        if let record = reconciledRun.nightWatchRecord(
             updatedAt: date,
             shieldedWindDownMinutes: protection.windDownMinutes,
             shieldedMorningQuietMinutes: protection.morningQuietMinutes,
-            shieldProtectionEvidence: protection.evidence
+            shieldProtectionEvidence: protection.evidence,
+            briefAccessUseCount: reconciledRun.briefAccessUseCount
         ) {
             persistence.upsertNightWatchRecord(record, now: date)
         }

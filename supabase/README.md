@@ -24,7 +24,9 @@ npx deno check \
   supabase/functions/live-activity-dispatch/index.ts \
   supabase/functions/submit-feedback/index.ts \
   supabase/functions/feedback-email-delivery/index.ts
-npx deno test --allow-env supabase/functions/_shared/feedback_test.ts
+npx deno test --allow-env \
+  supabase/functions/_shared/apns_test.ts \
+  supabase/functions/_shared/feedback_test.ts
 ```
 
 ## Hosted development project

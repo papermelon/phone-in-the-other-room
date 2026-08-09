@@ -1,6 +1,22 @@
 import XCTest
 
 final class OnboardingTests: XCTestCase {
+    func testFirstRunUsesFiveVisibleStepsAndKeepsLegacyReminderCaseDecodable() throws {
+        XCTAssertEqual(
+            CountingSheepOnboardingStep.visibleSteps,
+            [.welcome, .schedule, .quiet, .protection, .ready]
+        )
+        XCTAssertEqual(CountingSheepOnboardingStep.ready.progress, 1)
+
+        var legacyDraft = OnboardingDraft()
+        legacyDraft.step = .automaticStart
+        let decoded = try JSONDecoder().decode(
+            OnboardingDraft.self,
+            from: JSONEncoder().encode(legacyDraft)
+        )
+        XCTAssertEqual(decoded.step, .automaticStart)
+    }
+
     func testDefaultsLeadWithAppShieldingAndScheduledStart() {
         let draft = OnboardingDraft.defaults()
 
@@ -36,6 +52,23 @@ final class OnboardingTests: XCTestCase {
         XCTAssertEqual(purpose.category, .custom)
         XCTAssertEqual(purpose.customText, "Read a few pages")
         XCTAssertFalse(purpose.allowsCustomTextInNotifications)
+    }
+
+    func testDraftCreatesThePrimaryRoutineForTheSavedHomePlan() {
+        var draft = OnboardingDraft()
+        draft.bedtimeHour = 22
+        draft.bedtimeMinute = 45
+        draft.windDownMinutes = 45
+        draft.automaticStartEnabled = false
+        let routineID = UUID()
+
+        let routine = draft.makePrimaryWindDownRoutine(existingID: routineID)
+
+        XCTAssertEqual(routine.id, routineID)
+        XCTAssertEqual(routine.role, .primarySleepBookend)
+        XCTAssertEqual(routine.start, WindDownClockTime(hour: 22, minute: 0))
+        XCTAssertEqual(routine.end, WindDownClockTime(hour: 7, minute: 0))
+        XCTAssertFalse(routine.automaticStartEnabled)
     }
 
     func testOpenEndedCuesBecomeEditableNightWatchText() {
