@@ -64,7 +64,11 @@ struct ActiveRunView: View {
     private func nightWatchBody(run: FocusRun) -> some View {
         ScrollView {
             VStack(spacing: AppSpacing.md) {
-                NightJourneyView(run: run, reduceMotion: reduceMotion)
+                NightJourneyView(
+                    run: run,
+                    reduceMotion: reduceMotion,
+                    mappedBonusPercentagePoints: viewModel.sheepSearchState.trailMap.availableBonusPercentagePoints
+                )
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(phase?.title.uppercased() ?? "OLLIE IS ON WATCH")
                         .font(pixelFont(.caption))
@@ -80,6 +84,9 @@ struct ActiveRunView: View {
                         .foregroundStyle(AppColors.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                if run.briefAccessUseCount > 0 {
+                    briefAccessNotice(count: run.briefAccessUseCount)
+                }
                 if run.placementStatus == .awaitingConfirmation {
                     ritualStatus
                 } else if let message = viewModel.coordinator.backgroundReturnMessage {
@@ -298,7 +305,7 @@ struct ActiveRunView: View {
                     isExpanded: $emergencyExitExpanded
                 ) {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("Your Wind Down tag is active. Ollie keeps watch until the scheduled finish.")
+                        Text("Your Wind Down tag is active. Ollie keeps watch until the scheduled finish. Use the emergency exit if you need your phone back sooner.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                         Button("Pair a replacement tag") {
@@ -353,12 +360,31 @@ struct ActiveRunView: View {
         .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
     }
 
+    private func briefAccessNotice(count: Int) -> some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text("SHORT BREAKS")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Text("\(count) short break\(count == 1 ? "" : "s")")
+                    .font(AppTypography.body)
+                Text("A little distance can make room for rest.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+            }
+            .accessibilityElement(children: .combine)
+        }
+    }
+
     private var headline: String {
         if run?.placementStatus == .awaitingConfirmation {
             return "A calm start"
         }
         switch phase {
-        case .windDown: return "The evening can get quieter now."
+        case .windDown:
+            return run?.nightWatchPlan?.role == .additionalQuiet
+                ? "A quieter moment starts here."
+                : "The evening can get quieter now."
         case .overnight: return "Phone resting. You can too."
         case .morningQuiet: return "Wake up before your phone does."
         case .complete: return "A protected night."

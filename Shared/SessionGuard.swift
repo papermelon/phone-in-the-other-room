@@ -68,17 +68,17 @@ enum WindDownProtectionChoice: String, CaseIterable, Identifiable, Equatable {
 
     var title: String {
         switch self {
-        case .appShielding: return "App Shielding"
-        case .nfcAndAppShielding: return "NFC + App Shielding"
+        case .appShielding: return "Apps to rest"
+        case .nfcAndAppShielding: return "NFC + apps to rest"
         }
     }
 
     var detail: String {
         switch self {
         case .appShielding:
-            return "Selected apps are limited for the full Wind Down and sleep window."
+            return "Apps to rest are limited from Wind Down start through morning quiet. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
         case .nfcAndAppShielding:
-            return "Tap your Wind Down tag to set the barrier; selected apps stay limited until you finish."
+            return "Tap your Wind Down tag to start the barrier; apps to rest stay limited through morning quiet. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
         }
     }
 
@@ -143,7 +143,7 @@ struct FocusRunConfiguration: Equatable {
     var nightWatchPlan: NightWatchPlan?
 
     init(duration: TimeInterval, guardKind: SessionGuardKind) {
-        self.duration = max(60, duration)
+        self.duration = max(FocusRunRules.minimumMeaningfulDurationSeconds, duration)
         self.guardKind = guardKind
         self.nightWatchPlan = nil
     }

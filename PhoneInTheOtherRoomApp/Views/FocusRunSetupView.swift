@@ -19,13 +19,23 @@ struct FocusRunSetupView: View {
         ScrollView {
             VStack(spacing: AppSpacing.lg) {
                 hero
+                if viewModel.isRunning {
+                    PixelCard {
+                        Label(
+                            "Your current Wind Down stays unchanged. These choices begin with the next one.",
+                            systemImage: "calendar.badge.clock"
+                        )
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    }
+                }
                 scheduleCard
                 quietTimeCard
                 activityCard
                 automaticStartCard
                 guardCard
                 Button {
-                    if viewModel.canBeginNightWatchNow {
+                    if viewModel.canBeginNightWatchNow && !viewModel.isRunning {
                         viewModel.requestStartNightWatch()
                     } else {
                         viewModel.saveNightWatchPlanForTonight()
@@ -34,7 +44,9 @@ struct FocusRunSetupView: View {
                 } label: {
                     HStack {
                         Image(systemName: "door.left.hand.open")
-                        Text(viewModel.canBeginNightWatchNow ? "Start Wind Down" : "Save Wind Down")
+                        Text(viewModel.isRunning
+                            ? "Save for next Wind Down"
+                            : (viewModel.canBeginNightWatchNow ? "Start Wind Down" : "Save Wind Down"))
                         Spacer()
                         Text(viewModel.nightWatchScheduleLabel)
                             .font(AppTypography.caption)
@@ -43,7 +55,7 @@ struct FocusRunSetupView: View {
                 }
                 .buttonStyle(PixelPrimaryButtonStyle())
                 .accessibilityHint(
-                    viewModel.canBeginNightWatchNow
+                    viewModel.canBeginNightWatchNow && !viewModel.isRunning
                         ? "Starts tonight's phone-away ritual through the phone-free morning"
                         : "Saves the plan and asks Ollie to remind you at wind-down time"
                 )
@@ -268,7 +280,7 @@ struct FocusRunSetupView: View {
                     )
                 )
                 .font(AppTypography.headline)
-                Text("Ollie will let you know 60, 30, and 10 minutes before the phone rests. At the scheduled time, selected apps can rest automatically when shielding is enabled.")
+                Text("Ollie will let you know 60, 30, and 10 minutes before Wind Down. At the scheduled time, apps to rest can be limited automatically when shielding is enabled.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                 Text(
@@ -362,7 +374,7 @@ struct FocusRunSetupView: View {
                 }
 
                 Divider()
-                Text("Selected apps stay limited through Wind Down and sleep. Counting Sheep remains available for an emergency exit.")
+                Text("Apps to rest stay limited from Wind Down start through morning quiet. Counting Sheep stays available, and the emergency exit lifts the limits immediately.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
 

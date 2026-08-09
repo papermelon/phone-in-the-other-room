@@ -11,9 +11,9 @@ enum SheepPosterFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .missing: return "Missing"
+        case .missing: return "Still searching"
         case .home: return "Home"
-        case .all: return "All"
+        case .all: return "Field book"
         }
     }
 }

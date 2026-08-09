@@ -1,6 +1,9 @@
 import Foundation
 
 enum FocusRunRules {
+    /// The coordinator never creates a run with less than one meaningful
+    /// minute. Schedule validation uses the same floor for late starts.
+    static let minimumMeaningfulDurationSeconds: TimeInterval = 60
     static let startupDistanceCheckWindowSeconds: TimeInterval = 30
     static let closeReturnCheckDelaySeconds: TimeInterval = 20
     static let scheduledDistanceCheckWindowSeconds: TimeInterval = 10

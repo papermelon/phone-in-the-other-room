@@ -105,6 +105,32 @@ final class SheepSearchTests: XCTestCase {
         XCTAssertEqual(state.foundSheepIDs, ["mabel"])
     }
 
+    func testSearchCalculationReusesThePersistedOutcomeForTheSameRun() {
+        let runID = UUID(uuidString: "00000000-0000-0000-0000-000000000123")!
+        var state = SheepSearchState.empty
+        let first = SheepSearchEngine.calculate(
+            runID: runID,
+            protectedNightNumber: 4,
+            evidence: .empty,
+            state: state,
+            now: Date(timeIntervalSince1970: 100),
+            seed: 1
+        ).outcome
+        state.append(first)
+
+        let reopened = SheepSearchEngine.calculate(
+            runID: runID,
+            protectedNightNumber: 4,
+            evidence: .empty,
+            state: state,
+            now: Date(timeIntervalSince1970: 200),
+            seed: 999
+        ).outcome
+
+        XCTAssertEqual(reopened, first)
+        XCTAssertEqual(state.outcomes.count, 1)
+    }
+
     func testCatalogueIncludesDistinctFarmBreeds() {
         let breeds = Set(SheepCatalog.all.map(\.breed))
 
@@ -160,5 +186,82 @@ final class SheepSearchTests: XCTestCase {
         )
 
         XCTAssertTrue(home.isEmpty)
+    }
+
+    func testFieldBoardFilterTitlesUseKindSearchLanguage() {
+        XCTAssertEqual(SheepPosterFilter.missing.title, "Still searching")
+        XCTAssertEqual(SheepPosterFilter.home.title, "Home")
+        XCTAssertEqual(SheepPosterFilter.all.title, "Field book")
+    }
+
+    func testTrailMapAccumulatesInFifteenMinutePointsAndCapsAtSeventyFive() {
+        let cases = [(14, 0), (15, 1), (30, 2), (74, 4), (75, 5), (120, 5)]
+        for (minutes, expectedPoints) in cases {
+            var map = SheepTrailMapState()
+            map.credit(runID: UUID(), minutes: minutes)
+            XCTAssertEqual(map.pendingMappedMinutes, min(75, minutes))
+            XCTAssertEqual(map.availableBonusPercentagePoints, expectedPoints)
+        }
+    }
+
+    func testTrailMapRejectsDuplicateRuns() {
+        var map = SheepTrailMapState()
+        let runID = UUID()
+        XCTAssertEqual(map.credit(runID: runID, minutes: 30), 30)
+        XCTAssertEqual(map.credit(runID: runID, minutes: 30), 0)
+        XCTAssertEqual(map.pendingMappedMinutes, 30)
+    }
+
+    func testGuaranteedSearchRetainsMappedMinutes() {
+        var state = SheepSearchState.empty
+        state.trailMap.credit(runID: UUID(), minutes: 45)
+        var evidence = SheepSearchEvidence.empty
+        evidence.trailMapBonusPercentagePoints = 3
+        let result = SheepSearchEngine.calculate(
+            runID: runIDs[0], protectedNightNumber: 1, evidence: evidence, state: state, seed: 0
+        )
+        XCTAssertEqual(result.outcome.trailMapBonusPercentagePoints, 0)
+        state.append(result.outcome)
+        XCTAssertEqual(state.trailMap.pendingMappedMinutes, 45)
+    }
+
+    func testNonGuaranteedSearchConsumesOnlyAppliedWholePoints() {
+        var state = SheepSearchState.empty
+        state.trailMap.credit(runID: UUID(), minutes: 75)
+        var evidence = SheepSearchEvidence.empty
+        evidence.windDownMinutes = 30
+        evidence.morningQuietMinutes = 30
+        evidence.startedNearSchedule = true
+        evidence.shieldingObserved = true
+        evidence.placementConfirmed = true
+        evidence.recentProtectedNights = 12
+        evidence.optionalBonusPoints = 10
+        evidence.trailMapBonusPercentagePoints = 5
+        let result = SheepSearchEngine.calculate(
+            runID: UUID(), protectedNightNumber: 8, evidence: evidence, state: state, seed: 5
+        )
+        XCTAssertLessThanOrEqual(result.outcome.encounterOdds, 0.92)
+        state.append(result.outcome)
+        XCTAssertEqual(
+            state.trailMap.pendingMappedMinutes,
+            75 - result.outcome.trailMapBonusPercentagePoints * 15
+        )
+    }
+
+    func testLegacyOutcomeAndStateDecodeWithoutTrailMapFields() throws {
+        let outcomeJSON = """
+        {"id":"00000000-0000-0000-0000-000000000001","runID":"00000000-0000-0000-0000-000000000002","protectedNightNumber":4,"result":"trailOnly","trailStrength":20,"encounterOdds":0.3,"trailDistance":1.0,"consecutiveNoFinds":0,"bonusPoints":0,"createdAt":0}
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .secondsSince1970
+        let outcome = try decoder.decode(SheepSearchOutcome.self, from: outcomeJSON)
+        XCTAssertEqual(outcome.trailMapBonusPercentagePoints, 0)
+
+        let stateJSON = """
+        {"schemaVersion":1,"outcomes":[],"foundSheepIDs":[],"consecutiveNoFinds":0,"totalTrailDistance":0,"showExactOdds":false}
+        """.data(using: .utf8)!
+        let state = try decoder.decode(SheepSearchState.self, from: stateJSON)
+        XCTAssertEqual(state.trailMap, SheepTrailMapState())
+        XCTAssertEqual(state.schemaVersion, SheepSearchState.currentSchemaVersion)
     }
 }

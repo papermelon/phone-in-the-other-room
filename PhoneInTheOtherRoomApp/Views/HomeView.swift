@@ -3,112 +3,156 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @State private var pingBannerVisible = false
     @State private var selectedTab: MainAppTab = .home
+    @State private var navigationIdentity = UUID()
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                AppColors.paper.ignoresSafeArea()
-                VStack(spacing: 0) {
-                    if showChrome {
-                        CountingSheepTopBar()
-                            .padding(.horizontal, 18)
-                            .padding(.top, 10)
-                    }
-
-                    if contentUsesOwnScroll {
-                        content
-                    } else {
-                        ScrollView {
-                            VStack(spacing: 18) {
-                                content
+        ZStack {
+            AppColors.paper.ignoresSafeArea()
+            VStack(spacing: 0) {
+                NavigationStack {
+                    ZStack {
+                        VStack(spacing: 0) {
+                            if showChrome {
+                                CountingSheepTopBar()
+                                    .padding(.horizontal, 18)
+                                    .padding(.top, 10)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.top, showChrome ? 20 : 12)
-                            .padding(.bottom, 18)
+
+                            if contentUsesOwnScroll {
+                                content
+                            } else {
+                                ScrollView {
+                                    VStack(spacing: 18) {
+                                        content
+                                    }
+                                    .padding(.horizontal, 16)
+                                    .padding(.top, showChrome ? 20 : 12)
+                                    .padding(.bottom, 18)
+                                }
+                            }
+                        }
+
+                        if pingBannerVisible {
+                            PingPulseOverlay()
+                                .transition(
+                                    reduceMotion
+                                        ? .opacity
+                                        : .opacity.combined(with: .scale(scale: 0.96))
+                                )
+                                .zIndex(10)
                         }
                     }
-
-                    if showChrome {
-                        CountingSheepBottomBar(selectedTab: $selectedTab)
-                            .padding(.horizontal, 12)
-                            .padding(.bottom, 6)
+                    .alert("Turn on Sleep Focus?", isPresented: $viewModel.showFocusModePrompt) {
+                        Button("Skip", role: .cancel) {
+                            viewModel.startRun(focusAccepted: false)
+                        }
+                        Button("I've Turned It On") {
+                            viewModel.startRun(focusAccepted: true)
+                        }
+                    } message: {
+                        Text("Counting Sheep can't turn on Sleep Focus for you. You can switch it on in Control Center, then continue.")
                     }
-                }
-                if pingBannerVisible {
-                    PingPulseOverlay()
-                        .transition(
-                            reduceMotion
-                                ? .opacity
-                                : .opacity.combined(with: .scale(scale: 0.96))
+                    .alert("App shielding needs a quick check", isPresented: Binding(
+                        get: { viewModel.shieldingPreflightMessage != nil },
+                        set: { if !$0 { viewModel.shieldingPreflightMessage = nil } }
+                    )) {
+                        Button("Keep phone-away mode", role: .cancel) {
+                            viewModel.shieldingEnabled = false
+                            UserDefaults.standard.set(false, forKey: QuietTimeShieldingService.enabledKey)
+                        }
+                        Button("OK") { viewModel.shieldingPreflightMessage = nil }
+                    } message: {
+                        Text(viewModel.shieldingPreflightMessage ?? "")
+                    }
+                    .onAppear {
+                        viewModel.applyShortcutPreparationIfNeeded()
+                        routePendingNotificationIfNeeded()
+                        returnToActiveWindDownIfNeeded()
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .countingSheepNotificationDestination)) { notification in
+                        guard let destination = notification.object as? NotificationDestination else { return }
+                        switch destination {
+                        case .home, .activeRun:
+                            select(.home)
+                        case .nights, .morningReflection:
+                            if viewModel.isRunning { select(.home) } else { select(.nights) }
+                        }
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowFarm)) { _ in
+                        select(.farm)
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNights)) { _ in
+                        if viewModel.activeRun?.state == .completed || viewModel.activeRun?.state == .endedEarly {
+                            viewModel.resetSetup()
+                        }
+                        select(.nights)
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowHome)) { _ in
+                        select(.home)
+                    }
+                    .onChange(of: viewModel.isRunning) { _, isRunning in
+                        if isRunning { select(.home) }
+                    }
+                    .onChange(of: scenePhase) { _, phase in
+                        if phase == .active, viewModel.isRunning { select(.home) }
+                    }
+                    .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
+                        guard count > 0 else { return }
+                        showPingBanner()
+                    }
+                    .sheet(isPresented: $viewModel.showQRCodeScanner) {
+                        PhoneBedScannerSheet(
+                            isPresented: $viewModel.showQRCodeScanner,
+                            status: viewModel.qrCodeStatus,
+                            onCode: viewModel.acceptQRCode
                         )
-                        .zIndex(10)
+                    }
+                    .sheet(isPresented: $viewModel.showNightWatchStartPrompt) {
+                        WindDownStartSheet()
+                            .environmentObject(viewModel)
+                            .presentationDetents([.medium])
+                            .presentationDragIndicator(.visible)
+                    }
+                    .toolbar(.hidden, for: .navigationBar)
+                }
+                .id(navigationIdentity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if showChrome {
+                    shellFooter
                 }
             }
-            .alert("Turn on Sleep Focus?", isPresented: $viewModel.showFocusModePrompt) {
-                Button("Skip", role: .cancel) {
-                    viewModel.startRun(focusAccepted: false)
-                }
-                Button("I've Turned It On") {
-                    viewModel.startRun(focusAccepted: true)
-                }
-            } message: {
-                Text("Counting Sheep can't turn on Sleep Focus for you. You can switch it on in Control Center, then continue.")
-            }
-            .alert("App shielding needs a quick check", isPresented: Binding(
-                get: { viewModel.shieldingPreflightMessage != nil },
-                set: { if !$0 { viewModel.shieldingPreflightMessage = nil } }
-            )) {
-                Button("Keep phone-away mode", role: .cancel) {
-                    viewModel.shieldingEnabled = false
-                    UserDefaults.standard.set(false, forKey: QuietTimeShieldingService.enabledKey)
-                }
-                Button("OK") { viewModel.shieldingPreflightMessage = nil }
-            } message: {
-                Text(viewModel.shieldingPreflightMessage ?? "")
-            }
-            .onAppear {
-                viewModel.applyShortcutPreparationIfNeeded()
-                routePendingNotificationIfNeeded()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: .countingSheepNotificationDestination)) { notification in
-                guard let destination = notification.object as? NotificationDestination else { return }
-                switch destination {
-                case .home, .activeRun:
-                    selectedTab = .home
-                case .nights, .morningReflection:
-                    selectedTab = .nights
-                }
-            }
-            .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
-                guard count > 0 else { return }
-                showPingBanner()
-            }
-            .sheet(isPresented: $viewModel.showQRCodeScanner) {
-                PhoneBedScannerSheet(
-                    isPresented: $viewModel.showQRCodeScanner,
-                    status: viewModel.qrCodeStatus,
-                    onCode: viewModel.acceptQRCode
-                )
-            }
-            .sheet(isPresented: $viewModel.showNightWatchStartPrompt) {
-                WindDownStartSheet()
-                    .environmentObject(viewModel)
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
-            }
-            .toolbar(.hidden, for: .navigationBar)
         }
+    }
+
+    private var shellFooter: some View {
+        VStack(spacing: AppSpacing.xs) {
+            if viewModel.isRunning, selectedTab != .home {
+                ActiveWindDownReturnBar(run: viewModel.activeRun) {
+                    select(.home)
+                }
+            }
+            CountingSheepBottomBar(selectedTab: Binding(
+                get: { selectedTab },
+                set: { select($0) }
+            ))
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 6)
+        .frame(maxWidth: .infinity)
+        .background(AppColors.paper.opacity(0.98))
     }
 
     private func routePendingNotificationIfNeeded() {
         guard let destination = PhoneNotificationService.shared.consumePendingDestination() else { return }
         switch destination {
         case .home, .activeRun:
-            selectedTab = .home
+            select(.home)
         case .nights, .morningReflection:
-            selectedTab = .nights
+            if viewModel.isRunning { select(.home) } else { select(.nights) }
         }
     }
 
@@ -118,7 +162,7 @@ struct HomeView: View {
             CompletionView()
         } else if let run = viewModel.activeRun, run.state == .endedEarly {
             EarlyEndView()
-        } else if viewModel.isRunning {
+        } else if viewModel.isRunning && (selectedTab == .home || viewModel.activeRun?.isNightWatch != true) {
             ActiveRunView()
         } else {
             switch selectedTab {
@@ -139,7 +183,9 @@ struct HomeView: View {
     }
 
     private var showChrome: Bool {
-        viewModel.activeRun == nil && !viewModel.isRunning
+        guard viewModel.activeRun?.state != .completed,
+              viewModel.activeRun?.state != .endedEarly else { return false }
+        return !viewModel.isRunning || viewModel.activeRun?.isNightWatch == true
     }
 
     private var contentUsesOwnScroll: Bool {
@@ -147,8 +193,19 @@ struct HomeView: View {
         // scroll. Wrapping them in the shell ScrollView makes the live journey
         // feel like a long document and can push the exit controls below the
         // viewport on smaller phones.
-        guard showChrome else { return true }
+        if viewModel.activeRun?.state == .completed || viewModel.activeRun?.state == .endedEarly { return true }
+        if viewModel.isRunning && selectedTab == .home { return true }
         return selectedTab != .home
+    }
+
+    private func select(_ tab: MainAppTab) {
+        selectedTab = tab
+        navigationIdentity = UUID()
+    }
+
+    private func returnToActiveWindDownIfNeeded() {
+        guard viewModel.isRunning, selectedTab != .home else { return }
+        select(.home)
     }
 
     private func showPingBanner() {
@@ -164,11 +221,67 @@ struct HomeView: View {
     }
 }
 
+private struct ActiveWindDownReturnBar: View {
+    let run: FocusRun?
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: AppSpacing.xs) {
+                Image(systemName: "moon.stars.fill")
+                    .foregroundStyle(AppColors.lavender)
+                Text("Wind Down")
+                    .font(AppTypography.caption.weight(.bold))
+                if let end = run?.nightWatchPlan?.nextTransition(after: Date()) ?? run?.plannedEndAt {
+                    Text(timerInterval: Date()...max(Date(), end), countsDown: true, showsHours: true)
+                        .font(.system(.caption, design: .monospaced).weight(.bold))
+                        .monospacedDigit()
+                    Text("left")
+                        .font(AppTypography.caption)
+                }
+                Spacer()
+                Text("Return")
+                    .font(AppTypography.caption.weight(.bold))
+                Image(systemName: "arrow.right")
+            }
+            .foregroundStyle(AppColors.ink)
+            .padding(.horizontal, AppSpacing.sm)
+            .frame(minHeight: 42)
+            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Returns to the live Wind Down journey")
+    }
+}
+
 private struct WindDownStartSheet: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dismiss) private var dismiss
 
     private var usesNFC: Bool { viewModel.selectedGuardKind == .nfcTag }
+
+    private var heading: String {
+        if viewModel.pendingNightWatchIsAdditionalQuiet {
+            return viewModel.pendingNightWatchTitle ?? "A little one-time quiet."
+        }
+        return usesNFC ? "Tap in when you are ready." : "Give the evening a little room."
+    }
+
+    private var explanation: String {
+        if viewModel.pendingNightWatchIsAdditionalQuiet {
+            let end = viewModel.pendingNightWatchEndsAt?.formatted(date: .omitted, time: .shortened) ?? "the saved end time"
+            let protection = viewModel.willShieldPendingNightWatch
+                ? " Your apps to rest will be limited until then."
+                : " No apps will be limited."
+            return "This quiet time ends at \(end). Only the time from when you start is counted. It stays separate from protected nights and Ollie’s sheep search.\(protection)"
+        }
+        guard viewModel.willShieldPendingNightWatch else {
+            return "Wind Down will keep time and record your quiet. No apps will be limited."
+        }
+        return usesNFC
+            ? "Your apps to rest will be limited after you tap your Wind Down tag and through morning quiet. Counting Sheep stays available."
+            : "Your apps to rest will be limited from Wind Down start through morning quiet. Counting Sheep stays available."
+    }
 
     var body: some View {
         NavigationStack {
@@ -177,13 +290,9 @@ private struct WindDownStartSheet: View {
                     Text("START WIND DOWN")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text(usesNFC ? "Tap in when you are ready." : "Give the evening a little room.")
+                    Text(heading)
                         .font(AppTypography.title)
-                    Text(
-                        usesNFC
-                            ? "Your selected apps will be limited after you tap your Wind Down tag. The countdown starts at that moment."
-                            : "Your selected apps will be limited as soon as Wind Down starts."
-                    )
+                    Text(explanation)
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.muted)
 
@@ -203,7 +312,7 @@ private struct WindDownStartSheet: View {
                         Label(
                             viewModel.isScanningNFCForStart
                                 ? "Waiting for your tag…"
-                                : (usesNFC ? "Tap Wind Down tag to start" : "Start app limits"),
+                                : (usesNFC ? "Tap Wind Down tag to start" : "Start now"),
                             systemImage: usesNFC ? "dot.radiowaves.left.and.right" : "iphone.slash"
                         )
                         .frame(maxWidth: .infinity)

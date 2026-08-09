@@ -108,8 +108,8 @@ struct NotificationSettingsView: View {
                 )
                 .disabled(!viewModel.canUseUsageAwareReminders)
                 Text(viewModel.canUseUsageAwareReminders
-                    ? "After three accumulated minutes in selected apps, Ollie can send one quiet cue in each phase."
-                    : "Usage-aware reminders need approved Screen Time access and at least one selected app or category.")
+                    ? "After three accumulated minutes in apps to rest, Ollie can send one quiet cue in each phase."
+                    : "Usage-aware reminders need approved Screen Time access and at least one app or category to rest.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }

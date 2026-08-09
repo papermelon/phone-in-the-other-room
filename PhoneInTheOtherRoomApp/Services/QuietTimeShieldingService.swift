@@ -21,6 +21,7 @@ protocol QuietTimeShieldingProviding {
     func reconcile(for run: FocusRun?, at date: Date) -> QuietTimeShieldingOutcome
     func clear()
     func protectionSummary(for run: FocusRun, at date: Date) -> QuietTimeShieldProtectionSummary
+    func briefAccessUseCount(for run: FocusRun) -> Int
 }
 
 @MainActor
@@ -65,6 +66,18 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         }
 
         if let automaticSnapshot = loadSchedule(), automaticSnapshot.repeatsDaily {
+            prepareBriefAccessState(for: automaticSnapshot, at: date)
+            switch reconcileBriefAccess(
+                for: run,
+                snapshot: automaticSnapshot,
+                at: date,
+                currentRunID: automaticSnapshot.runID
+            ) {
+            case .active:
+                return .scheduled
+            case .restored, .none:
+                break
+            }
             return reconcileRepeatingAutomatic(
                 run: run,
                 snapshot: automaticSnapshot,
@@ -72,6 +85,8 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
                 at: date
             )
         }
+
+        prepareBriefAccessState(for: snapshot, at: date)
 
         do {
             try installMonitoringIfNeeded(snapshot, at: date)
@@ -85,6 +100,13 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             )
             clearStore()
             return .failed("monitoring")
+        }
+
+        switch reconcileBriefAccess(for: run, snapshot: snapshot, at: date) {
+        case .active:
+            return .scheduled
+        case .restored, .none:
+            break
         }
 
         if QuietTimeShieldingPolicy.shouldShield(run: run, at: date, isEnabled: true) {
@@ -133,6 +155,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             clear()
             return .noSelection
         }
+        prepareBriefAccessState(for: snapshot, at: date)
         do {
             try installMonitoringIfNeeded(snapshot, at: date)
             // Scheduling a future repeating window must never leave a shield from
@@ -157,6 +180,8 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         let preserveAutomaticSchedule = defaults.bool(forKey: Self.enabledKey)
             && loadSchedule()?.repeatsDaily == true
         clearStore()
+        activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+        archiveBriefAccessState(at: Date())
         guard !preserveAutomaticSchedule else { return }
         activityCenter.stopMonitoring([
             .ollieProtectedSession,
@@ -172,11 +197,22 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         activityCenter.stopMonitoring([
             .ollieProtectedSession,
             .ollieWindDown,
-            .ollieMorningQuiet
+            .ollieMorningQuiet,
+            .ollieBriefAccessRestore
         ])
         clearStore()
+        archiveBriefAccessState(at: Date())
 #endif
         sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.scheduleKey)
+    }
+
+    func briefAccessUseCount(for run: FocusRun) -> Int {
+        var count = run.briefAccessUseCount
+        if let data = sharedDefaults?.data(forKey: QuietTimeShieldSharedStorage.briefAccessStateKey),
+           let state = try? JSONDecoder().decode(QuietTimeBriefAccessState.self, from: data) {
+            count = max(count, state.durableCount(for: run.id))
+        }
+        return count
     }
 
     func protectionSummary(
@@ -221,6 +257,129 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     }
 
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
+    private enum BriefAccessReconcileResult {
+        case none
+        case active
+        case restored
+    }
+
+    private func prepareBriefAccessState(
+        for snapshot: QuietTimeShieldScheduleSnapshot,
+        at date: Date
+    ) {
+        var state: QuietTimeBriefAccessState
+        if let existing = loadBriefAccessState() {
+            state = existing
+            if state.runID != snapshot.runID || state.scheduleRevision != snapshot.revision {
+                activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+                state.carryingLedgerForward(
+                    to: snapshot.runID,
+                    revision: snapshot.revision,
+                    at: date
+                )
+            }
+        } else {
+            state = QuietTimeBriefAccessState(
+                runID: snapshot.runID,
+                scheduleRevision: snapshot.revision,
+                updatedAt: date
+            )
+        }
+        saveBriefAccessState(state)
+    }
+
+    private func reconcileBriefAccess(
+        for run: FocusRun,
+        snapshot: QuietTimeShieldScheduleSnapshot,
+        at date: Date,
+        currentRunID: UUID? = nil
+    ) -> BriefAccessReconcileResult {
+        let state = loadBriefAccessState()
+        switch QuietTimeBriefAccessPolicy.reconciliation(
+            state: state,
+            schedule: snapshot,
+            currentRunID: currentRunID ?? run.id,
+            currentRevision: snapshot.revision,
+            at: date
+        ) {
+        case .noActiveGrant:
+            activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+            return .none
+        case .discardStaleGrant:
+            if state?.activeGrant != nil {
+                activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+                archiveBriefAccessState(at: date)
+            }
+            return .none
+        case .rejectPendingGrant:
+            guard var state, let grant = state.activeGrant else {
+                activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+                return .none
+            }
+            state.rejectPendingGrant(nonce: grant.nonce, at: date)
+            saveBriefAccessState(state)
+            activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+            return .none
+        case .keepShieldClear:
+            guard let grant = state?.activeGrant,
+                  ensureBriefAccessRestoreScheduled(for: grant, at: date) else {
+                activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+                archiveBriefAccessState(at: date)
+                return .restored
+            }
+            clearStore()
+            return .active
+        case .restoreShield:
+            activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+            archiveBriefAccessState(at: date)
+            return .restored
+        }
+    }
+
+    private func ensureBriefAccessRestoreScheduled(
+        for grant: QuietTimeBriefAccessGrant,
+        at date: Date
+    ) -> Bool {
+        guard grant.expiresAt > date.addingTimeInterval(QuietTimeBriefAccessConstants.minimumSchedulingLead),
+              !activityCenter.activities.contains(.ollieBriefAccessRestore) else {
+            return grant.expiresAt > date.addingTimeInterval(QuietTimeBriefAccessConstants.minimumSchedulingLead)
+        }
+        guard let restorePlan = QuietTimeBriefAccessRestorePlan.make(
+            requestedAt: date,
+            expiresAt: grant.expiresAt
+        ) else { return false }
+        let schedule = DeviceActivitySchedule(
+            intervalStart: dateComponents(for: restorePlan.intervalStart),
+            intervalEnd: dateComponents(for: restorePlan.intervalEnd),
+            repeats: false,
+            warningTime: restorePlan.warningTime
+        )
+        do {
+            try activityCenter.startMonitoring(.ollieBriefAccessRestore, during: schedule)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    private func loadBriefAccessState() -> QuietTimeBriefAccessState? {
+        guard let data = sharedDefaults?.data(
+            forKey: QuietTimeShieldSharedStorage.briefAccessStateKey
+        ) else { return nil }
+        return try? JSONDecoder().decode(QuietTimeBriefAccessState.self, from: data)
+    }
+
+    private func saveBriefAccessState(_ state: QuietTimeBriefAccessState) {
+        guard let data = try? JSONEncoder().encode(state) else { return }
+        sharedDefaults?.set(data, forKey: QuietTimeShieldSharedStorage.briefAccessStateKey)
+    }
+
+    private func archiveBriefAccessState(at date: Date) {
+        guard var state = loadBriefAccessState() else { return }
+        state.archiveCurrentRun(at: date)
+        saveBriefAccessState(state)
+    }
+
     private func installMonitoringIfNeeded(
         _ snapshot: QuietTimeShieldScheduleSnapshot,
         at date: Date
@@ -247,7 +406,8 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         activityCenter.stopMonitoring([
             .ollieProtectedSession,
             .ollieWindDown,
-            .ollieMorningQuiet
+            .ollieMorningQuiet,
+            .ollieBriefAccessRestore
         ])
         clearStore()
 

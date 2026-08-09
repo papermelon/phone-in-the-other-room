@@ -65,7 +65,7 @@ struct SheepSearchOutcomeCard: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 } else {
-                    Text("Trail strength is shown without exact odds. You can turn them on in More.")
+                    Text("Trail strength is shown without exact odds. You can turn them on in Settings.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }
@@ -105,7 +105,7 @@ struct SheepWantedPostersCard: View {
         SheepPosterCarousel(
             searchState: searchState,
             protectedNightNumber: protectedNightNumber,
-            title: "OLLIE'S MISSING SHEEP"
+            title: "OLLIE'S SEARCHING TRAILS"
         )
     }
 }

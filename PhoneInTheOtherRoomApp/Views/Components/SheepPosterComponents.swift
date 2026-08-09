@@ -5,7 +5,7 @@ enum SheepPosterStatus: Equatable {
     case found
 }
 
-struct SheepPosterBoard: View {
+struct SheepFieldBoard: View {
     let searchState: SheepSearchState
     let protectedNightNumber: Int
 
@@ -13,19 +13,19 @@ struct SheepPosterBoard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Picker("Poster board", selection: $filter) {
+            Picker("Field board", selection: $filter) {
                 ForEach(SheepPosterFilter.allCases) { option in
                     Text(option.title).tag(option)
                 }
             }
             .pickerStyle(.segmented)
-            .accessibilityLabel("Sheep poster board filter")
+            .accessibilityLabel("Field board filter")
 
             SheepPosterCarousel(
                 searchState: searchState,
                 protectedNightNumber: protectedNightNumber,
                 filter: filter,
-                title: filter == .missing ? "OLLIE'S MISSING POSTERS" : "OLLIE'S POSTER BOARD"
+                title: filter == .missing ? "OLLIE'S SEARCHING TRAILS" : "OLLIE'S FIELD BOARD"
             )
         }
     }
@@ -35,7 +35,7 @@ struct SheepPosterCarousel: View {
     let searchState: SheepSearchState
     let protectedNightNumber: Int
     var filter: SheepPosterFilter = .missing
-    var title = "OLLIE'S MISSING POSTERS"
+    var title = "OLLIE'S SEARCHING TRAILS"
 
     @State private var availableWidth: CGFloat = 0
 
@@ -65,7 +65,7 @@ struct SheepPosterCarousel: View {
                 } else {
                     ScrollView(.horizontal, showsIndicators: false) {
                         LazyHStack(spacing: AppSpacing.sm) {
-                            ForEach(posters) { sheep in
+                        ForEach(posters) { sheep in
                                 SheepPosterCard(
                                     sheep: sheep,
                                     status: status(for: sheep),
@@ -81,7 +81,7 @@ struct SheepPosterCarousel: View {
                     .scrollTargetBehavior(.viewAligned)
                     .scrollIndicators(.hidden)
                     .contentMargins(.horizontal, 2, for: .scrollContent)
-                    .accessibilityLabel("Sheep posters")
+                    .accessibilityLabel("Sheep field notes")
 
                     Text(browseLabel)
                         .font(AppTypography.caption)
@@ -108,14 +108,14 @@ struct SheepPosterCarousel: View {
 
     private var footerCount: String {
         switch filter {
-        case .missing: return String(posters.count) + " to find"
+        case .missing: return String(posters.count) + " searching"
         case .home: return String(posters.count) + " home"
-        case .all: return String(posters.count) + " shown"
+        case .all: return String(posters.count) + " in field book"
         }
     }
 
     private var browseLabel: String {
-        "Swipe to browse " + String(posters.count) + " " + (posters.count == 1 ? "poster" : "posters")
+        "Swipe to browse " + String(posters.count) + " " + (posters.count == 1 ? "field note" : "field notes")
     }
 
     private var emptyState: some View {
@@ -125,11 +125,11 @@ struct SheepPosterCarousel: View {
                 .foregroundStyle(AppColors.grass)
             Text(
                 filter == .home
-                    ? "Ollie has not brought a sheep home yet."
-                    : "The pasture is quiet for now. New posters arrive as Ollie follows more trails."
+                    ? "No sheep are home yet."
+                    : "The pasture is quiet for now. Ollie is still following the trails."
             )
                 .font(AppTypography.body)
-            Text("Every completed Wind Down gives the search another night to move forward.")
+            Text("Each completed Wind Down gives the search another night to move forward.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.muted)
         }
@@ -171,19 +171,19 @@ struct SheepPosterCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(alignment: .firstTextBaseline) {
-                Text(status == .found ? "FOUND" : "MISSING")
+                Text(status == .found ? "HOME" : "STILL SEARCHING")
                     .font(pixelFont(.title3))
                     .tracking(1.2)
                     .foregroundStyle(AppColors.bark)
                 Spacer(minLength: AppSpacing.xs)
                 if isNew {
-                    Text("NEW POSTER")
+                    Text("NEW TRAIL")
                         .font(pixelFont(.caption2))
                         .foregroundStyle(AppColors.berry)
                 }
             }
 
-            Text("OLLIE'S NIGHT RUN")
+            Text("OLLIE'S TRAIL NOTE")
                 .font(pixelFont(.caption2))
                 .foregroundStyle(AppColors.bark.opacity(0.8))
 
@@ -196,13 +196,14 @@ struct SheepPosterCard: View {
                     }
                 PixelAssetImage(name: sheep.assetName)
                     .padding(AppSpacing.sm)
-                    .frame(maxWidth: .infinity, maxHeight: 190)
+                    .frame(maxWidth: .infinity)
                 Image(systemName: status == .found ? "checkmark.seal.fill" : "pawprint.fill")
                     .font(.title2.weight(.black))
                     .foregroundStyle(status == .found ? AppColors.success : AppColors.grass)
                     .padding(AppSpacing.sm)
             }
-            .frame(height: 190)
+            .frame(maxWidth: .infinity)
+            .aspectRatio(1.25, contentMode: .fit)
 
             Text(sheep.name)
                 .font(pixelFont(.title2))
@@ -215,7 +216,7 @@ struct SheepPosterCard: View {
             }
 
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text("LAST SEEN")
+                Text("TRAIL CLUE")
                     .font(pixelFont(.caption2))
                     .foregroundStyle(AppColors.bark.opacity(0.75))
                 Text(sheep.posterClue.replacingOccurrences(of: "Last seen ", with: ""))
@@ -235,7 +236,7 @@ struct SheepPosterCard: View {
 
             HStack(alignment: .bottom, spacing: AppSpacing.sm) {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(status == .found ? "RETURNED HOME" : "TRAIL")
+                    Text(status == .found ? "HOME IN THE FLOCK" : "TRAIL")
                         .font(pixelFont(.caption2))
                         .foregroundStyle(AppColors.bark.opacity(0.75))
                     Text(trailValue)
@@ -244,12 +245,12 @@ struct SheepPosterCard: View {
                 }
                 Spacer(minLength: 0)
                 if status == .missing {
-                    Text("BRING THEM HOME")
+                    Text("STILL ON THE TRAIL")
                         .font(pixelFont(.caption2))
                         .multilineTextAlignment(.trailing)
                         .foregroundStyle(AppColors.grass)
                 } else {
-                    Text("OLLIE FOUND THEM")
+                    Text("HOME WITH THE FLOCK")
                         .font(pixelFont(.caption2))
                         .multilineTextAlignment(.trailing)
                         .foregroundStyle(AppColors.success)
@@ -257,7 +258,7 @@ struct SheepPosterCard: View {
             }
 
             if status == .found {
-                Text("FOUND — HOME")
+                Text("HOME IN THE FLOCK")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.success)
                     .padding(.horizontal, AppSpacing.xs)
@@ -296,8 +297,8 @@ struct SheepPosterCard: View {
     }
 
     private var accessibilityLabel: String {
-        let state = status == .found ? "found and home" : "missing"
-        return state + " sheep poster for " + sheep.name + ", " + sheep.breed.title + " breed, " + sheep.rarity.title + " rarity. " + sheep.posterClue
+        let state = status == .found ? "home" : "still searching"
+        return state + " field note for " + sheep.name + ", " + sheep.breed.title + " breed, " + sheep.rarity.title + " rarity. " + sheep.posterClue
     }
 
     private func posterChip(_ value: String) -> some View {
@@ -323,7 +324,7 @@ struct SheepPosterCard: View {
     }
 }
 
-#Preview("Missing poster carousel") {
+#Preview("Searching field board") {
     SheepPosterCarousel(
         searchState: .empty,
         protectedNightNumber: 1
@@ -332,7 +333,7 @@ struct SheepPosterCard: View {
     .background(AppColors.paper)
 }
 
-#Preview("Found poster") {
+#Preview("Home field note") {
     SheepPosterCard(
         sheep: SheepCatalog.all[0],
         status: .found,

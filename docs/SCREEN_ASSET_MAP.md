@@ -4,7 +4,7 @@ This map follows the product blueprint and asset inventory. Current placeholders
 
 | Screen | Components | Required assets | Current placeholder | Future asset name |
 |---|---|---|---|---|
-| Onboarding | OnboardingFlowView, OnboardingStepViews, OnboardingComponents | welcome Ollie, quiet/schedule choices, shielding and NFC setup, automatic-start consent | Pixel Theme cards, Ollie ritual art | existing Ollie/pixel assets with placeholder fallback |
+| Onboarding | OnboardingFlowView, split Onboarding*StepView files, OnboardingComponents | promise and three phases first, schedule and optional cues, optional shielding primer, saved-plan handoff; NFC and advanced reminders remain in Settings | Pixel Theme cards, Ollie ritual art | existing Ollie/pixel assets with placeholder fallback |
 | Home Dashboard | PixelDailyProgress, PixelRoomScene, PixelShortcutTile, OllieRitualView | Ollie idle/happy, home room, dog bed, phone-away motif | brown-fur pixel Ollie + current room assets | `dog_idle`, `dog_happy`, `home_room_day`, `home_bed`, `home_phone_away` |
 | Night Watch Setup | FocusRunSetupView, schedule/bookend/activity cards | ready Ollie, moon/sun bookends, phone-bed choices | `OllieRitualView(.ready)` + pixel cards | `dog_idle`, `home_bedtime_moon`, `home_phone_away`, `icon_device_watch_connected` |
 | Tuck Phone In | Night Watch placement flow | phone-bed instruction, optional Watch/QR assist, door/path | pixel cards + QR scanner | `home_phone_away`, `icon_device_phone_away`, `icon_device_watch_connected` |

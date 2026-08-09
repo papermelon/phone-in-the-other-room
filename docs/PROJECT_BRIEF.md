@@ -85,7 +85,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   morning quiet; the barrier spans overnight and always has an early exit through the
   registered Wind Down tag or Counting Sheep's emergency exit.
   Home stays focused on the saved plan and one-tap start; its schedule block opens the timing editor
-  and a compact One-Time Wind Down card handles bounded additional quiet.
+  and an Upcoming quiet times card opens a finite Once / Repeats / Usual Wind Down editor for bounded additional quiet.
 - **Nights (one finite scroll)**: latest Wind Down
   result with its finish date, latest protected night, dated seven-night view, optional
   monthly calendar and per-day Wind Down detail,

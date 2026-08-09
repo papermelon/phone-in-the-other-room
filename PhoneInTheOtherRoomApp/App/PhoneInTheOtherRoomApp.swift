@@ -51,6 +51,9 @@ struct PhoneInTheOtherRoomApp: App {
     }
 
     private var prefersNightPresentation: Bool {
-        runViewModel.isRunning || runViewModel.canBeginNightWatchNow
+        // The default schedule is only a decoding-safe placeholder. It must
+        // not make first-run onboarding inherit Wind Down's dark presentation.
+        runViewModel.isRunning
+            || (runViewModel.hasConfiguredNightWatch && runViewModel.canBeginNightWatchNow)
     }
 }

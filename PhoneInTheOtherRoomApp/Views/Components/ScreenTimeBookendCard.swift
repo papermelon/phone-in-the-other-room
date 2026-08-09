@@ -13,46 +13,88 @@ struct ScreenTimeBookendCard: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Binding var showAppPicker: Bool
     var mode: Mode = .reports
+    @State private var selectedWindow: ScreenTimeReportPreferences.Window = .evening
+    @State private var reportsExpanded = false
 
     var body: some View {
         PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Label("Late evening & morning screen time", systemImage: "iphone.slash")
-                    .font(AppTypography.headline)
-                    .foregroundStyle(AppColors.ink)
+            if mode == .reports {
+                reportsDisclosure
+            } else {
+                settingsContent
+            }
+        }
+    }
 
+    private var reportsDisclosure: some View {
+        DisclosureGroup(isExpanded: $reportsExpanded) {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
                 if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
-                    Text(
-                        mode == .settings
-                            ? "Choose the apps or categories you want included in both reports."
-                            : "Choose the apps and report windows in More to see them here."
-                    )
+                    Text("Choose the apps or categories you want included in both reports in Settings.")
                         .font(AppTypography.body)
-                    if mode == .settings {
-                        Button("Choose apps", action: { showAppPicker = true })
-                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    }
                 } else {
-                    if mode == .reports {
-                        reportSection(
-                            title: "Late evening",
-                            window: .evening,
-                            context: .phoneOtherLateNight
-                        )
-                        Divider()
-                        reportSection(
-                            title: "After waking",
-                            window: .morning,
-                            context: .phoneOtherMorningQuiet
-                        )
-                    } else {
-                        reportWindowSettings
-                        Divider()
-                        selectedAppsSection
-                    }
+                    windowPicker
+                    reportSection(
+                        title: selectedWindow == .evening ? "Late evening" : "After waking",
+                        window: selectedWindow,
+                        context: selectedWindow == .evening
+                            ? .phoneOtherLateNight
+                            : .phoneOtherMorningQuiet
+                    )
+                }
+            }
+            .padding(.top, AppSpacing.sm)
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "iphone.slash")
+                    .foregroundStyle(AppColors.grass)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("Screen Time context")
+                        .font(AppTypography.headline)
+                    Text(viewModel.bedtimeActivitySelection.phoneOtherIsEmpty ? "Choose apps in Settings" : "Optional · one window at a time")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
                 }
             }
         }
+        .tint(AppColors.grass)
+    }
+
+    private var settingsContent: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Label("Apps to rest and Screen Time", systemImage: "iphone.slash")
+                .font(AppTypography.headline)
+                .foregroundStyle(AppColors.ink)
+            if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
+                Text("Choose the apps or categories you want included in both reports.")
+                    .font(AppTypography.body)
+                Button("Choose apps", action: { showAppPicker = true })
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+            } else {
+                reportWindowSettings
+                Divider()
+                selectedAppsSection
+            }
+        }
+    }
+
+    private var windowPicker: some View {
+        HStack(spacing: AppSpacing.xs) {
+            windowButton(.evening, title: "Late evening")
+            windowButton(.morning, title: "After waking")
+        }
+    }
+
+    private func windowButton(
+        _ window: ScreenTimeReportPreferences.Window,
+        title: String
+    ) -> some View {
+        Button(title) {
+            selectedWindow = window
+        }
+        .buttonStyle(PixelChipButtonStyle(isSelected: selectedWindow == window))
+        .frame(maxWidth: .infinity)
+        .accessibilityLabel("Show \(title) Screen Time window")
     }
 
     private func reportSection(
@@ -68,15 +110,14 @@ struct ScreenTimeBookendCard: View {
             Text(reportDateLabel(for: window))
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.grass)
-            Text("Only activity from the apps and categories you selected is counted. This window is separate from Wind Down.")
+                Text("Only activity from the apps and categories you selected is counted. Reports are separate from Wind Down.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.muted)
             DeviceActivityReport(context, filter: screenTimeFilter(for: window))
                 .frame(maxWidth: .infinity)
-                .frame(height: 250)
+                .frame(minHeight: 250, alignment: .topLeading)
                 .padding(AppSpacing.sm)
                 .background(AppColors.background.opacity(0.42), in: PixelPanelShape(cut: 6))
-                .clipped()
         }
     }
 

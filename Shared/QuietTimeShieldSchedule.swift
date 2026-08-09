@@ -80,7 +80,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
             }
             return currentSeconds >= startSeconds || currentSeconds < endSeconds
         }
-        return interval.contains(date)
+        return date >= interval.start && date < interval.end
     }
 
     /// A repeating schedule is only allowed to act on or after the first window
@@ -102,6 +102,17 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
             && windDownInterval == other.windDownInterval
             && morningQuietInterval == other.morningQuietInterval
             && repeatsDaily == other.repeatsDaily
+    }
+}
+
+enum QuietTimeShieldSchedulePolicy {
+    static func activeWindow(
+        in snapshot: QuietTimeShieldScheduleSnapshot,
+        at date: Date
+    ) -> QuietTimeShieldWindow? {
+        QuietTimeShieldWindow.allCases.first {
+            snapshot.isEligible(at: date) && snapshot.contains(date, in: $0)
+        }
     }
 }
 
@@ -146,6 +157,7 @@ enum QuietTimeShieldSharedStorage {
     static let scheduleKey = "ollie.screenTime.shieldSchedule"
     static let statusKey = "ollie.screenTime.shieldStatus"
     static let statusHistoryKey = "ollie.screenTime.shieldStatusHistory"
+    static let briefAccessStateKey = "ollie.screenTime.briefAccessState"
 }
 
 struct QuietTimeShieldProtectionSummary: Equatable {
@@ -334,6 +346,7 @@ extension DeviceActivityName {
     static let ollieProtectedSession = Self("ollie.quietTime.protectedSession")
     static let ollieWindDown = Self("ollie.quietTime.windDown")
     static let ollieMorningQuiet = Self("ollie.quietTime.morningQuiet")
+    static let ollieBriefAccessRestore = Self(QuietTimeBriefAccessConstants.restoreActivityIdentifier)
 }
 
 extension QuietTimeShieldWindow {

@@ -153,6 +153,7 @@ struct SheepSearchEvidence: Codable, Equatable {
     var placementConfirmed: Bool
     var recentProtectedNights: Int
     var optionalBonusPoints: Int
+    var trailMapBonusPercentagePoints: Int
 
     static let empty = SheepSearchEvidence(
         windDownMinutes: 0,
@@ -163,65 +164,9 @@ struct SheepSearchEvidence: Codable, Equatable {
         shieldingObserved: false,
         placementConfirmed: false,
         recentProtectedNights: 0,
-        optionalBonusPoints: 0
+        optionalBonusPoints: 0,
+        trailMapBonusPercentagePoints: 0
     )
-}
-
-struct SheepSearchOutcome: Codable, Equatable, Identifiable {
-    enum Result: String, Codable {
-        case found
-        case trailOnly
-    }
-
-    let id: UUID
-    let runID: UUID
-    let protectedNightNumber: Int
-    let result: Result
-    let sheepID: String?
-    let rarity: SheepRarity?
-    let habitat: SheepHabitat?
-    let trailStrength: Int
-    let encounterOdds: Double
-    let trailDistance: Double
-    let consecutiveNoFinds: Int
-    let bonusPoints: Int
-    let createdAt: Date
-}
-
-struct SheepSearchState: Codable, Equatable {
-    static let currentSchemaVersion = 1
-
-    var schemaVersion: Int
-    var outcomes: [SheepSearchOutcome]
-    var foundSheepIDs: [String]
-    var consecutiveNoFinds: Int
-    var totalTrailDistance: Double
-    var showExactOdds: Bool
-
-    static let empty = SheepSearchState(
-        schemaVersion: currentSchemaVersion,
-        outcomes: [],
-        foundSheepIDs: [],
-        consecutiveNoFinds: 0,
-        totalTrailDistance: 0,
-        showExactOdds: false
-    )
-
-    var lastOutcome: SheepSearchOutcome? { outcomes.last }
-
-    mutating func append(_ outcome: SheepSearchOutcome) {
-        guard !outcomes.contains(where: { $0.runID == outcome.runID }) else { return }
-        outcomes.append(outcome)
-        if let sheepID = outcome.sheepID {
-            if !foundSheepIDs.contains(sheepID) {
-                foundSheepIDs.append(sheepID)
-            }
-            consecutiveNoFinds = 0
-        } else {
-            consecutiveNoFinds += 1
-        }
-        totalTrailDistance += outcome.trailDistance
-    }
 }
 
 struct SheepSearchCalculation: Equatable {
@@ -260,9 +205,13 @@ enum SheepSearchEngine {
 
         let baseOdds = 0.20 + Double(score) * 0.006
         let droughtBonus = Double(min(state.consecutiveNoFinds, hardGuaranteeAfterNoFinds)) * 0.08
-        let encounterOdds = min(0.92, baseOdds + droughtBonus)
+        let oddsBeforeMap = min(0.92, baseOdds + droughtBonus)
         let guaranteed = protectedNightNumber <= starterGuaranteeRuns
             || state.consecutiveNoFinds >= hardGuaranteeAfterNoFinds
+        let availableMapPoints = min(5, max(0, evidence.trailMapBonusPercentagePoints))
+        let wholePointHeadroom = max(0, Int(floor((0.92 - oddsBeforeMap) * 100 + 0.000_001)))
+        let appliedMapPoints = guaranteed ? 0 : min(availableMapPoints, wholePointHeadroom)
+        let encounterOdds = min(0.92, oddsBeforeMap + Double(appliedMapPoints) / 100)
         let generator = DeterministicSheepRandom(seed: seed ?? stableSeed(runID: runID, protectedNightNumber: protectedNightNumber))
         let shouldFind = guaranteed || generator.value() < encounterOdds
 
@@ -287,6 +236,7 @@ enum SheepSearchEngine {
             trailDistance: max(0.1, distance),
             consecutiveNoFinds: state.consecutiveNoFinds,
             bonusPoints: optionalBonus,
+            trailMapBonusPercentagePoints: appliedMapPoints,
             createdAt: now
         )
         return SheepSearchCalculation(outcome: outcome, score: score)

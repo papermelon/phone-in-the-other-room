@@ -129,7 +129,7 @@ struct WindDownHowItWorksView: View {
                 howCard(
                     icon: "iphone.slash",
                     title: "Protect",
-                    detail: "App Shielding can limit the apps you choose through Wind Down and sleep. Counting Sheep stays available."
+                    detail: "Apps to rest can be limited from Wind Down start through morning quiet. Counting Sheep stays available."
                 )
                 howCard(
                     icon: "book.closed.fill",

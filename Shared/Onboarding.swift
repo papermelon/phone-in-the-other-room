@@ -16,19 +16,27 @@ enum CountingSheepOnboardingStep: Int, CaseIterable, Codable, Identifiable {
 
     var id: Int { rawValue }
 
+    /// Advanced notification choices remain in Settings. Keep the legacy case so an
+    /// older saved draft still decodes, then normalize it in the flow to the plan screen.
+    static let visibleSteps: [Self] = [.welcome, .schedule, .quiet, .protection, .ready]
+
+    var visibleIndex: Int {
+        Self.visibleSteps.firstIndex(of: self) ?? Self.visibleSteps.count - 1
+    }
+
     var title: String {
         switch self {
         case .welcome: return "Welcome"
-        case .quiet: return "Make room for quiet"
-        case .schedule: return "Shape your night"
-        case .protection: return "Protect the quiet"
-        case .automaticStart: return "Let Ollie begin"
-        case .ready: return "Tonight's plan"
+        case .quiet: return "Optional cues"
+        case .schedule: return "Your night"
+        case .protection: return "Optional shielding"
+        case .automaticStart: return "Advanced reminders"
+        case .ready: return "Saved plan"
         }
     }
 
     var progress: Double {
-        Double(rawValue + 1) / Double(Self.allCases.count)
+        Double(visibleIndex + 1) / Double(Self.visibleSteps.count)
     }
 }
 
@@ -47,17 +55,17 @@ enum OnboardingProtectionChoice: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .appShielding: return "App Shielding"
-        case .nfcAndAppShielding: return "NFC + App Shielding"
+        case .appShielding: return "Apps to rest"
+        case .nfcAndAppShielding: return "NFC + apps to rest"
         }
     }
 
     var detail: String {
         switch self {
         case .appShielding:
-            return "Selected apps stay limited through Wind Down and sleep. No NFC tag needed."
+            return "Choose apps to rest from Wind Down start through your morning quiet window. No tag needed. Counting Sheep stays available."
         case .nfcAndAppShielding:
-            return "A Wind Down tag starts the app-access barrier, while selected apps stay limited until you finish."
+            return "A Wind Down tag starts the app barrier; selected apps stay limited through your morning quiet window. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
         }
     }
 }
@@ -104,6 +112,13 @@ struct OnboardingDraft: Codable, Equatable {
             guardKind: selectedGuardKind,
             isConfigured: true,
             automaticStartEnabled: automaticStartEnabled
+        )
+    }
+
+    func makePrimaryWindDownRoutine(existingID: UUID? = nil) -> WindDownRoutine {
+        WindDownRoutine.primary(
+            from: makeNightWatchPreferences(),
+            id: existingID ?? UUID()
         )
     }
 

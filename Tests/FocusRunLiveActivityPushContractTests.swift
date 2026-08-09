@@ -1,6 +1,23 @@
 import XCTest
 
 final class FocusRunLiveActivityPushContractTests: XCTestCase {
+    func testTerminalPresentationsStayFactualAndDistinct() {
+        let completed = FocusRunLiveActivityTerminalStatus.completed.presentation
+        let endedEarly = FocusRunLiveActivityTerminalStatus.endedEarly.presentation
+
+        XCTAssertEqual(completed.headline, "QUIET TIME COMPLETE")
+        XCTAssertEqual(completed.message, "Ollie kept the quiet. Nice work.")
+        XCTAssertEqual(endedEarly.headline, "QUIET TIME ENDED")
+        XCTAssertNotEqual(endedEarly, completed)
+
+        for copy in [completed.headline, completed.message, endedEarly.headline, endedEarly.message] {
+            let lowercased = copy.lowercased()
+            XCTAssertFalse(lowercased.contains("sheep found"))
+            XCTAssertFalse(lowercased.contains("found a sheep"))
+            XCTAssertFalse(lowercased.contains("reward resolved"))
+        }
+    }
+
     func testRunSyncRoundTripsWithoutActivityKitToken() throws {
         let sync = FocusRunCloudSync(
             runID: UUID(),
@@ -92,4 +109,30 @@ final class FocusRunLiveActivityPushContractTests: XCTestCase {
         XCTAssertNil(decoded.installationID)
         XCTAssertNil(decoded.idempotencyKey)
     }
+
+#if canImport(ActivityKit)
+    func testLegacyContentStateStillDecodesWithoutTerminalStatus() throws {
+        let json = """
+        {
+          "plannedEndAt": 800000000,
+          "isComplete": false,
+          "phase": "windDown",
+          "bedtimeAt": 800000100,
+          "wakeAt": 800028900,
+          "morningQuietEndsAt": 800030700,
+          "eveningActivityTitle": "Read",
+          "morningActivityTitle": "Open curtains"
+        }
+        """
+
+        let decoded = try JSONDecoder().decode(
+            FocusRunLiveActivityAttributes.ContentState.self,
+            from: Data(json.utf8)
+        )
+
+        XCTAssertFalse(decoded.isComplete)
+        XCTAssertEqual(decoded.phase, .windDown)
+        XCTAssertNil(decoded.terminalStatus)
+    }
+#endif
 }

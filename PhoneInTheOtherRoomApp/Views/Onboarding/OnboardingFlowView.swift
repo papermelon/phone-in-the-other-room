@@ -7,25 +7,33 @@ import FamilyControls
 struct OnboardingFlowView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var draft: OnboardingDraft
-    @State private var isRequestingPermission = false
     #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     @State private var showScreenTimePicker = false
     #endif
     let onComplete: () -> Void
     let onCancel: (() -> Void)?
+    private let isReplay: Bool
 
     init(
         initialDraft: OnboardingDraft? = nil,
         onComplete: @escaping () -> Void,
         onCancel: (() -> Void)? = nil
     ) {
+        let restoredDraft = initialDraft
+            ?? PersistenceService.shared.onboardingDraft
+            ?? OnboardingDraft.defaults()
+        var normalizedDraft = restoredDraft
+        // Raw values are preserved for Codable compatibility with the previous flow.
+        // The removed advanced-reminders page now lands on the saved-plan screen.
+        if normalizedDraft.step == .automaticStart {
+            normalizedDraft.step = .ready
+        }
         _draft = State(
-            initialValue: initialDraft
-                ?? PersistenceService.shared.onboardingDraft
-                ?? OnboardingDraft.defaults()
+            initialValue: normalizedDraft
         )
         self.onComplete = onComplete
         self.onCancel = onCancel
+        self.isReplay = initialDraft != nil
     }
 
     var body: some View {
@@ -46,7 +54,7 @@ struct OnboardingFlowView: View {
             OnboardingPrimaryButton(
                 title: draft.step == .ready ? "Save my Wind Down" : "Continue",
                 action: advance,
-                isEnabled: canContinue && !isRequestingPermission
+                isEnabled: canContinue
             )
             .padding(.horizontal, AppSpacing.md)
             .padding(.top, AppSpacing.sm)
@@ -66,8 +74,8 @@ struct OnboardingFlowView: View {
         }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
-            headerText: "Choose the apps or categories that can rest during Wind Down.",
-            footerText: "Counting Sheep uses this selection only for the two quiet windows. Websites are ignored.",
+            headerText: "Choose 1–3 apps or categories to rest during Wind Down, from the start through your morning quiet window.",
+            footerText: "Counting Sheep limits this selection during Wind Down and always stays available. Websites are ignored.",
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection
         )
@@ -82,20 +90,21 @@ struct OnboardingFlowView: View {
         switch draft.step {
         case .welcome:
             OnboardingWelcomeStep()
-        case .quiet:
-            OnboardingQuietStep(draft: $draft)
         case .schedule:
             OnboardingScheduleStep(draft: $draft)
+        case .quiet:
+            OnboardingQuietStep(draft: $draft)
         case .protection:
             OnboardingProtectionStep(
                 draft: $draft,
                 viewModel: viewModel,
-                onChooseApps: chooseShieldedApps
+                onChooseApps: chooseShieldedApps,
+                showsNFCChoice: isReplay
             )
         case .automaticStart:
-            OnboardingAutomaticStartStep(draft: $draft)
+            OnboardingReadyStep(draft: draft, viewModel: viewModel)
         case .ready:
-            OnboardingReadyStep(draft: draft)
+            OnboardingReadyStep(draft: draft, viewModel: viewModel)
         }
     }
 
@@ -106,8 +115,10 @@ struct OnboardingFlowView: View {
     }
 
     private func previousStep() {
-        guard let previous = CountingSheepOnboardingStep(rawValue: draft.step.rawValue - 1) else { return }
-        draft.step = previous
+        guard let index = CountingSheepOnboardingStep.visibleSteps.firstIndex(of: draft.step), index > 0 else {
+            return
+        }
+        draft.step = CountingSheepOnboardingStep.visibleSteps[index - 1]
     }
 
     private func advance() {
@@ -115,18 +126,31 @@ struct OnboardingFlowView: View {
             draft.shieldingEnabled = draft.shieldingEnabled && viewModel.hasSelectedShieldingApps
         }
 
-        if draft.step == .automaticStart, draft.remindersEnabled, draft.automaticStartEnabled {
-            isRequestingPermission = true
-            Task { @MainActor in
-                _ = await viewModel.requestNotificationPermission()
-                isRequestingPermission = false
-                moveForward()
-            }
-            return
-        }
-
         if draft.step == .ready {
-            viewModel.applyOnboardingDraft(draft)
+            var completedDraft = draft
+            if !isReplay {
+                // Reminders, automatic start, cadence, and sounds are chosen later in Settings.
+                completedDraft.automaticStartEnabled = false
+                completedDraft.remindersEnabled = false
+            }
+            if isReplay {
+                // Settings replay edits the ritual plan without silently resetting
+                // notification choices or the person's private reason for quiet.
+                let existingNotifications = viewModel.notificationPreferences
+                completedDraft.remindersEnabled = existingNotifications.remindersEnabled
+                completedDraft.notificationCadence = existingNotifications.cadence
+                completedDraft.notificationSoundsEnabled = existingNotifications.soundsEnabled
+                completedDraft.educationalTipsEnabled = existingNotifications.educationalTipsEnabled
+                completedDraft.usageAwareRemindersEnabled = existingNotifications.usageAwareRemindersEnabled
+                completedDraft.morningReflectionReminderEnabled = existingNotifications.morningReflectionReminderEnabled
+                completedDraft.purposeCategory = viewModel.offlinePurpose.category
+                completedDraft.customPurpose = viewModel.offlinePurpose.customText
+                completedDraft.allowsCustomTextInNotifications = viewModel.offlinePurpose.allowsCustomTextInNotifications
+            }
+            viewModel.applyOnboardingDraft(
+                completedDraft,
+                preserveAdvancedNotifications: isReplay
+            )
             onComplete()
             return
         }
@@ -135,8 +159,11 @@ struct OnboardingFlowView: View {
     }
 
     private func moveForward() {
-        guard let next = CountingSheepOnboardingStep(rawValue: draft.step.rawValue + 1) else { return }
-        draft.step = next
+        guard let index = CountingSheepOnboardingStep.visibleSteps.firstIndex(of: draft.step),
+              index + 1 < CountingSheepOnboardingStep.visibleSteps.count else {
+            return
+        }
+        draft.step = CountingSheepOnboardingStep.visibleSteps[index + 1]
     }
 
     private func chooseShieldedApps() {
@@ -149,4 +176,11 @@ struct OnboardingFlowView: View {
 #Preview {
     OnboardingFlowView(onComplete: {})
         .environmentObject(FocusRunViewModel())
+}
+
+#Preview("Onboarding · dark · large type") {
+    OnboardingFlowView(onComplete: {})
+        .environmentObject(FocusRunViewModel())
+        .environment(\.dynamicTypeSize, .accessibility3)
+        .preferredColorScheme(.dark)
 }

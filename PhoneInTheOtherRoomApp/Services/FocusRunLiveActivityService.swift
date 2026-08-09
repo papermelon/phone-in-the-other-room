@@ -26,6 +26,7 @@ final class DisabledFocusRunLiveActivityRemoteSink: FocusRunLiveActivityRemoteSi
 @available(iOS 16.1, *)
 @MainActor
 final class FocusRunLiveActivityService {
+    private static let completionDismissalInterval: TimeInterval = 15 * 60
     private let remoteSink: FocusRunLiveActivityRemoteSink
     private var enabled: Bool
     private var tokenObservationTasks: [String: Task<Void, Never>] = [:]
@@ -117,7 +118,7 @@ final class FocusRunLiveActivityService {
             runID: run.id,
             plannedDurationSeconds: run.plannedDurationSeconds
         )
-        let content = contentState(for: run, isComplete: false)
+        let content = contentState(for: run, terminalStatus: nil)
         do {
             let activity = try Activity.request(
                 attributes: attributes,
@@ -152,15 +153,21 @@ final class FocusRunLiveActivityService {
             return
         }
         syncRun(run, status: run.completedSuccessfully ? .completed : .endedEarly)
-        let finalContent = contentState(for: run, isComplete: true)
+        let terminalStatus: FocusRunLiveActivityTerminalStatus = run.completedSuccessfully
+            ? .completed
+            : .endedEarly
+        let finalContent = contentState(for: run, terminalStatus: terminalStatus)
         let content = ActivityContent(state: finalContent, staleDate: nil)
         let activities = Activity<FocusRunLiveActivityAttributes>.activities
             .filter { $0.attributes.runID == run.id }
         let reason: FocusRunLiveActivityCancellationReason = run.completedSuccessfully ? .completed : .endedEarly
+        let dismissalPolicy: ActivityUIDismissalPolicy = reason == .completed
+            ? .after(Date().addingTimeInterval(Self.completionDismissalInterval))
+            : .immediate
 
         Task {
             for activity in activities {
-                await activity.end(content, dismissalPolicy: .immediate)
+                await activity.end(content, dismissalPolicy: dismissalPolicy)
 #if DEBUG
                 self.debugEndCount += 1
                 self.logger.debug(
@@ -181,7 +188,7 @@ final class FocusRunLiveActivityService {
         guard enabled else { return }
         syncRun(run, status: .active)
         guard let activity = activeActivity(for: run.id) else { return }
-        let state = contentState(for: run, isComplete: false)
+        let state = contentState(for: run, terminalStatus: nil)
 #if DEBUG
         logActivityUpdate(reason: "phase transition")
 #endif
@@ -211,7 +218,7 @@ final class FocusRunLiveActivityService {
         _ activity: Activity<FocusRunLiveActivityAttributes>,
         with run: FocusRun
     ) {
-        let state = contentState(for: run, isComplete: false)
+        let state = contentState(for: run, terminalStatus: nil)
 #if DEBUG
         logActivityUpdate(reason: "reconciliation")
 #endif
@@ -363,11 +370,24 @@ final class FocusRunLiveActivityService {
         Activity<FocusRunLiveActivityAttributes>.activities.first { $0.attributes.runID == runID }
     }
 
-    private func contentState(for run: FocusRun, isComplete: Bool) -> FocusRunLiveActivityAttributes.ContentState {
-        FocusRunLiveActivityAttributes.ContentState(
+    private func contentState(
+        for run: FocusRun,
+        terminalStatus: FocusRunLiveActivityTerminalStatus?
+    ) -> FocusRunLiveActivityAttributes.ContentState {
+        let isComplete = terminalStatus == .completed
+        let phase: NightWatchPhase? = switch terminalStatus {
+        case .completed:
+            .complete
+        case .endedEarly:
+            nil
+        case nil:
+            run.nightWatchPhase(at: Date())
+        }
+        return FocusRunLiveActivityAttributes.ContentState(
             plannedEndAt: run.plannedEndAt,
             isComplete: isComplete,
-            phase: isComplete ? .complete : run.nightWatchPhase(at: Date()),
+            phase: phase,
+            terminalStatus: terminalStatus,
             bedtimeAt: run.nightWatchPlan?.intendedBedtime,
             wakeAt: run.nightWatchPlan?.wakeTime,
             morningQuietEndsAt: run.nightWatchPlan?.protectedUntil,

@@ -267,17 +267,33 @@ struct AutomaticWindDownSchedule: Codable, Equatable {
     let id: UUID
     let startedAt: Date
     let plan: NightWatchPlan
+    let sourceOccurrenceID: UUID?
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, id, startedAt, plan, sourceOccurrenceID
+    }
 
     init(
         schemaVersion: Int = currentSchemaVersion,
         id: UUID = UUID(),
         startedAt: Date,
-        plan: NightWatchPlan
+        plan: NightWatchPlan,
+        sourceOccurrenceID: UUID? = nil
     ) {
         self.schemaVersion = schemaVersion
         self.id = id
         self.startedAt = startedAt
         self.plan = plan
+        self.sourceOccurrenceID = sourceOccurrenceID
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? Self.currentSchemaVersion
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        startedAt = try container.decode(Date.self, forKey: .startedAt)
+        plan = try container.decode(NightWatchPlan.self, forKey: .plan)
+        sourceOccurrenceID = try container.decodeIfPresent(UUID.self, forKey: .sourceOccurrenceID)
     }
 }
 
@@ -387,6 +403,9 @@ struct NightWatchPlan: Codable, Equatable {
     }
 
     func nextTransition(after date: Date) -> Date? {
+        if role == .additionalQuiet {
+            return date < protectedUntil ? protectedUntil : nil
+        }
         switch phase(at: date) {
         case .windDown: return intendedBedtime
         case .overnight: return wakeTime

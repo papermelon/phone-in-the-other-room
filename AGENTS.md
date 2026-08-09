@@ -64,7 +64,7 @@ Eight targets (defined in `project.yml`):
 | `PhoneInTheOtherRoomWatchApp` | watchOS app | Sources: `Shared/` + `PhoneInTheOtherRoomWatchApp/`. Optional companion and one-time Watch placement assist. |
 | `PhoneInTheOtherRoomLiveActivity` | iOS Widget extension | Lock Screen, Dynamic Island, and paired-Watch Smart Stack run status. Embedded in the iOS app. |
 | `PhoneInTheOtherRoomScreenTimeReport` | iOS app extension | Embedded DeviceActivity report extension. Main app + extension compile with `SCREEN_TIME_REPORTS`, share scoped selections through the approved App Group, and carry Family Controls entitlements. |
-| `PhoneInTheOtherRoomDeviceActivityMonitor` | iOS app extension | Starts and clears the two scheduled quiet-window shields while the app is suspended. |
+| `PhoneInTheOtherRoomDeviceActivityMonitor` | iOS app extension | Enforces the consented selected-app barrier through the protected session while the app is suspended. |
 | `PhoneInTheOtherRoomShieldConfiguration` | iOS app extension | Supplies the gentle, bedtime-specific shield appearance. |
 | `PhoneInTheOtherRoomShieldAction` | iOS app extension | Closes the shielded app when the shield button is pressed; Counting Sheep remains available as the emergency exit. |
 | `PhoneInTheOtherRoomTests` | unit tests | Compiles `Shared/` + `Tests/`, including Night Watch schedule and legacy-decode coverage. |
@@ -96,8 +96,10 @@ flowchart LR
 4. The plan moves through `.windDown`, `.overnight`, and `.morningQuiet`. Optional placement
    can always become a simple timer; no later Watch distance can warn or end Night Watch.
 5. If the user opted into shielding, the same consented Screen Time selection is shielded
-   during wind-down and morning quiet, never the overnight phase. The monitor extension
-   records observed apply/clear evidence in the App Group.
+   from the eligible Wind Down start through the end of morning quiet, including overnight
+   separation. Counting Sheep and its fail-open emergency exit remain available. The monitor
+   extension records observed apply/clear evidence in the App Group. This barrier is not
+   progression: only the two quiet bookends are credited (ADR-0012).
 6. On finish, `Shared/RewardEngine.swift` credits only the two quiet bookends—not the
    overnight hours—then grants one completion reward. `PersistenceService` saves JSON in
    `UserDefaults` under `ollie.*`, including a 90-day session-and-event history. Detailed
@@ -181,7 +183,7 @@ skills/                        ← portable agent skills (see skills/README.md)
 - Services are singletons (`PersistenceService.shared`, `WatchConnectivityManager.shared`, ...). Do not add new singletons without a strong reason — prefer passing dependencies into the coordinator/view model.
 - Prefer `async/await` over Combine. Combine exists only for the `objectWillChange` forwarding.
 - UI mutations must happen on the main actor (`Task { @MainActor in ... }` is the existing pattern in connectivity/proximity callbacks).
-- `HomeView` is the navigation shell: it routes between the tab UI and the run-state views based on `activeRun.state`. New screens hook into that routing, not parallel navigation stacks.
+- `HomeView` is the navigation shell: during an active Night Watch Home becomes the live journey while Nights, Farm, and Settings remain reachable; terminal receipts temporarily override the shell. New screens hook into that routing, not parallel navigation stacks.
 - Every new view gets a `#Preview` with representative state (including at least one non-happy-path state where relevant).
 
 ## 7. File organisation rules
@@ -212,6 +214,9 @@ skills/                        ← portable agent skills (see skills/README.md)
   unreasonable bad luck. Missing data never lowers the search chance.
 - Rewards never affect essential access. An early-ended run advances no sheep search but keeps
   its factual trail receipt; a missed night is recoverable and never deletes found sheep.
+- Successfully completed additional-quiet periods map up to 75 minutes toward a future
+  non-guaranteed search. They never resolve sheep; guaranteed or early-ended primary runs
+  consume no mapped minutes.
 - Every feature must pass the belonging test in `docs/PRODUCT_PRINCIPLES.md` §"Does this feature belong?".
 
 ## 10. Validation — commands to run
@@ -264,8 +269,9 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 - **"Finishing" the mock screens.** `Views/MVP/AssetReadyScreens.swift` + `MockData/` look like unfinished features begging to be wired up. They are deliberately gated. Don't.
 - **Adding entitlement keys without portal setup.** HealthKit and Family Controls require capabilities in the Apple Developer portal and (for Family Controls distribution) Apple's approval. Adding plist/entitlement text alone breaks signing.
 - **Expanding shielding beyond its consented boundary.** Reporting/pickers and optional
-  shielding are enabled; shielding must use the consented selection, cover only the two
-  quiet bookends, preserve the early exit, and fail open.
+  shielding are enabled; shielding must use the consented selection, run only from an
+  eligible Wind Down start through morning quiet, preserve the early exit, and fail open.
+  Overnight shielding is the accepted ADR-0012 barrier; it still never earns quiet credit.
 - **Breaking the unsupported-device path.** Not all devices have UWB. `unsupported` state and fallback providers must keep working.
 - **Breaking persisted-data decoding.** `UserProgress` etc. are stored as JSON. Changing Codable models needs backwards-compatible decoding (there is a legacy-decode test — keep it passing).
 - **Adding dark-pattern gamification.** See §9 and `docs/PRODUCT_PRINCIPLES.md`. This is a hard product boundary, not a style preference.
@@ -291,7 +297,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 3. Re-run a signed archive with the configured bundle IDs, Team ID, and version numbers.
 4. App Store 1.0 stays four tabs (Home + Nights + Farm + Settings), with mock UI gated behind the
    explicit Debug preview flag. NFC, read-only HealthKit sleep, Screen Time reports, and
-   optional bookend shielding serve that ritual.
+   optional continuous selected-app shielding serve that ritual.
 5. Manual QA per `docs/PLAYBOOKS/testflight-readiness.md`.
 6. Confirm the embedded Screen Time report extension signs and renders on a physical device.
 7. Confirm the monitor, shield configuration, and shield action App IDs have Family Controls

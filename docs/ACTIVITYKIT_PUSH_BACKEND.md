@@ -88,7 +88,19 @@ when an event already ran, was cancelled, or never existed.
   com.ngawangchime.countingsheep.push-type.liveactivity`, and priority 10.
 - Phase payloads include `aps.timestamp`, `aps.event = "update"`, and the full
   `content-state` needed to switch the Live Activity from wind-down to sleep time and
-  then morning quiet. The terminal payload uses `aps.event = "end"` and a dismissal date.
+  then morning quiet. The normal terminal payload uses `aps.event = "end"`, the full
+  ActivityKit-compatible terminal `content-state`, and a dismissal date roughly 15 minutes
+  in the future. An early end is a factual non-completion state; reset and replacement
+  cancellation cancels the scheduled row and does not send completion copy.
+- `staleDate` is only a freshness marker. It does not deliver a content-state transition,
+  end an activity, or dismiss it. The exact background phase and terminal transitions require
+  the existing optional `pushType: .token` ActivityKit path: the remote sink, deployed Edge
+  Functions, APNs credentials, and scheduler must all be enabled and healthy. Without that
+  path, local completion remains authoritative and the activity is reconciled when the app
+  next runs; a stale activity is not itself evidence that completion was delivered.
+- On the iPhone, successful completion ends locally with the final content state and a
+  roughly 15-minute dismissal policy. Early endings use distinct factual content and end
+  immediately; reset and replacement use immediate nil-content cancellation.
 - Treat 2xx as delivered; 400 invalid/expired token responses as terminal; 429 and 5xx as
   retryable. Retry with jittered exponential backoff, capped before token/run retention.
 - Check the row generation immediately before send. A stale generation exits without APNs.

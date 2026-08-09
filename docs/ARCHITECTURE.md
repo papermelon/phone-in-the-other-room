@@ -43,8 +43,9 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ FocusRunRules.swift           timing and completion eligibility
 ├─ SessionGuard.swift            honor timer / Watch placement / QR / NFC guard metadata
 ├─ NightWatch.swift              saved sleep-bookend plan, phases, activities, quiet credit
-├─ WindDownScheduling.swift      recurring roles, one-time overrides, overlap rules, aggregation
-├─ NightJourneyProgress.swift    wall-clock journey segment reducer
+├─ WindDownScheduling.swift      versioned schedule state, recurrence, one-time periods, overlap rules, aggregation
+├─ NightJourneyProgress.swift    run/phase-aware wall-clock journey reducer
+├─ NightJourneyTerrain.swift     periodic terrain height and slope profiles
 ├─ OfflinePurpose.swift          private offline intention + notification privacy choice
 ├─ RewardEngine.swift            protected-night progress + legacy reward updates
 ├─ FocusAnalytics.swift          day records, correlations, CSV/JSON export
@@ -59,6 +60,8 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ Onboarding.swift              first-run Wind Down setup draft and protection choices
 ├─ WindDownGuidance.swift         finite, source-linked screen-time and sleep-habit ideas
 ├─ SheepSearch.swift               deterministic search outcomes, posters, rarity, habitats
+├─ SheepSearchState.swift          versioned outcomes, trail-map credit, and persisted state
+├─ Orientation.swift                versioned, resumable first-run orientation milestones
 ├─ AppFeedback.swift             validated feedback draft/attachment/receipt protocol
 ├─ DistanceProvider.swift        protocol: async stream of distance readings
 └─ Formatting.swift              OllieFormat timer/minute formatting
@@ -91,6 +94,7 @@ PhoneInTheOtherRoomApp/        iOS app
 ├─ Views/
 │  ├─ HomeView.swift                           navigation shell + run-state routing
 │  ├─ PixelHomeDashboard.swift                 home tab
+│  ├─ Components/OrientationCard.swift         compact contextual orientation + previews
 │  ├─ FocusRunSetupView.swift                  bedtime/wake, bookends, purpose + guard
 │  ├─ ActiveRunView.swift                      in-run UI + non-scrolling journey state
 │  ├─ CompletionView.swift / EarlyEndView.swift
@@ -99,7 +103,7 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ FarmView.swift                           shipping flock view backed by SheepSearchState
 │  ├─ MoreView.swift                           Settings root: configuration, connections, privacy, help
 │  ├─ WindDownTimingView.swift                  compact saved schedule editor
-│  ├─ OneTimeWindDownView.swift                 bounded additional quiet editor
+│  ├─ WindDownScheduleView.swift                 finite Once / Repeats / Usual Wind Down editor
 │  ├─ FeedbackFormView.swift                   validated form + email fallback
 │  ├─ RewardShelfView.swift                    Debug internal preview only
 │  ├─ Components/QRCodeScannerView.swift       Wind Down code scanner + manual fallback
@@ -196,6 +200,13 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    ManagedSettings applies through wind-down, overnight, and morning quiet, then clears
    on terminal/reset/replacement. A bounded App Group status history distinguishes observed
    shield time from a requested schedule; legacy two-bookend snapshots remain decodable.
+   The app/category-only Brief Access action stores a versioned pending/scheduled grant
+   record with run ID, schedule revision, nonce, clamped expiry, and one-shot restore
+   activity name. Its bounded per-run ledger survives extension-only cleanup until the
+   main app imports the factual count into the active run/history record. Restore callbacks
+   accept a grant only for the same run/revision; a pending or stale callback instead
+   reconciles the current schedule and reapplies its existing shield when that phase is
+   still eligible. Web domains never advertise or receive Brief Access.
 7. On finish, `RewardEngine` retains compatibility updates while crediting only elapsed
    wind-down and morning-quiet minutes. The release presentation reads only
    `totalCompletedRuns`: one completed protected night adds one equal visible sheep.
@@ -209,6 +220,25 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    drill-down, reflection, Health context, and consented selected-app results. Farm owns the
    flock presentation; Settings owns plan and report configuration. Chosen report windows do not
    alter Quiet Time. Missing data is never estimated.
+9. During an active Night Watch, Home is replaced by the live journey while Nights, Farm,
+   and Settings remain mounted in the same four-tab shell. A persistent return strip resets
+   nested navigation and returns to Home. Run start, app activation, and active-run notification
+   routing make Home the default. Terminal receipts temporarily replace the shell.
+10. `NightJourneyProgress` resolves overall, phase, and segment progress from the active
+    `FocusRun`; `NightJourneyTerrainProfile` supplies a periodic height and derivative used by
+    both the Canvas foreground and Ollie's foot alignment. Backdrops pan/zoom only within safe
+    crop bounds, and deterministic clues at 20/55/82 percent never affect search resolution.
+11. Successful additional-quiet runs atomically credit their actual quiet minutes to the
+    versioned `SheepTrailMapState` nested in `SheepSearchState`. The state caps pending minutes
+    at 75 and retains bounded credited run IDs for idempotency. A non-guaranteed protected-night
+    search applies only whole percentage points that fit below the 92% cap; appending the
+    persisted outcome consumes exactly 15 mapped minutes per applied point.
+12. After first-run setup, `PixelHomeDashboard` presents a finite contextual orientation
+    persisted as `ollie.orientation.state`. Real setup saves, tab visits, practice starts,
+    practice completion, and the factual Nights record advance its milestones. The optional
+    five-minute practice uses the normal additional-quiet path, so it is recorded without
+    protected-night progress or sheep resolution. Dismissal preserves progress; "Explore on
+    my own" permanently skips it, and Settings can resume or replay it.
 
 ### Backgrounding during a run
 
@@ -232,9 +262,12 @@ local Live Activity is enabled by default for new installs and can be turned off
 DEBUG can force either state with `-ollie.debug.enableLiveActivity YES` or
 `-ollie.debug.disableLiveActivity YES`. The remote sink is also disabled in the local
 configurations. Without it, iOS can mark the activity stale at
-the planned end but cannot
-dismiss it until the app next finishes or restores the run; the local completion
-notification and app-reopen reconciliation remain the completion fallbacks. See
+the planned end but cannot deliver an exact phase or terminal transition, end it, or dismiss
+it until the app next finishes or restores the run; `staleDate` alone is not an update
+mechanism. Exact background transitions require the existing optional `pushType: .token`
+ActivityKit path, including the remote sink, deployed functions, APNs credentials, and
+scheduler. The local completion notification and app-reopen reconciliation remain the
+completion fallbacks. See
 `ACTIVITYKIT_PUSH_BACKEND.md` for the server lifecycle contract.
 
 The same WidgetKit extension also exposes a static `QuietNoteWidget` in the
@@ -262,7 +295,8 @@ by the iPhone.
 
 ## 5. View / component organisation
 
-- `HomeView` is the single navigation shell: tab UI when idle, run-state views during a run.
+- `HomeView` is the single navigation shell: its four tabs remain available during an active
+  Night Watch, Home becomes the live journey, and terminal receipts temporarily override it.
 - One root `@StateObject` per platform (`FocusRunViewModel` / `WatchRunViewModel`),
   distributed via `.environmentObject`. Views are thin; intents go to the view model.
 - `OllieRitualView` maps the existing setup, placement, Night Watch phase, completion, and
@@ -285,16 +319,19 @@ by the iPhone.
 | `ollie.lastRun` | `FocusRun?` | last run snapshot |
 | `ollie.analytics.manualEntries` | `[ManualAnalyticsEntry]` | manual stat entries |
 | `ollie.nightWatch.preferences` | `NightWatchPreferences` | bedtime, wake time, bookends, offline cues, placement guard |
+| `ollie.nightWatch.schedule` | `WindDownScheduleState` | versioned dated one-time periods and recurring routines; migrated from the two legacy schedule keys |
 | `ollie.nightWatch.routines` | `[WindDownRoutine]` | migrated primary routine plus optional additional bounded periods |
-| `ollie.nightWatch.nextOverride` | `NextWindDownOverride?` | one-time next-period adjustment; consumed once |
+| `ollie.nightWatch.nextOverride` | `NextWindDownOverride?` | legacy compatibility mirror; migrated into the versioned schedule and consumed once |
 | `ollie.offlinePurpose` | `OfflinePurposeProfile` | optional in-app intention and explicit custom-notification opt-in |
 | `ollie.screenTime.reportPreferences` | `ScreenTimeReportPreferences` | independent evening and morning Screen Time report windows |
+| `ollie.screenTime.briefAccessState` (App Group) | `QuietTimeBriefAccessState` | active temporary grant plus bounded per-run completed-use ledger |
 | `ollie.morningCheckIns` | `MorningCheckInHistory` | up to 45 days of private optional morning reflections |
 | `ollie.onboarding.version` | `Int` | completed first-run onboarding version |
 | `ollie.onboarding.draft` | `OnboardingDraft` | resumable first-run setup choices |
+| `ollie.orientation.state` | `CountingSheepOrientationState` | versioned orientation status, real-action milestones, and practice run identity |
 | `ollie.notifications.preferences` | `NotificationPreferences` | cadence, authorization choices, sounds, optional channels, and versioned local message overrides |
 | `ollie.notifications.remindersEnabled` | `Bool` | backwards-compatible mirror of the notification master switch |
-| `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes, trail distance, no-find protection, odds preference |
+| `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes including applied map bonus, trail-map minutes/run IDs, trail distance, no-find protection, odds preference |
 | `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
 | `ollie.phoneBedNFCTag.registration` | `PhoneBedTagRegistration` | local tag UUID + digest metadata; raw token is not retained |
 | `ollie.impactSharing.preferences` | `ImpactSharingPreferences` | explicit optional-sharing state and consent date |

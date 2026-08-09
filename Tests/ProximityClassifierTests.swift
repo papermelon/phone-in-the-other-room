@@ -100,7 +100,9 @@ final class ProximityClassifierTests: XCTestCase {
     }
 
     func testNightJourneyUsesTheQualifiedSixFrameRunCycle() {
-        XCTAssertEqual(NightJourneyAssets.environment, "farm/farm_hills_side_scroll_test")
+        XCTAssertEqual(Set(NightJourneyAssets.backdrops.keys), Set(NightJourneySegment.allCases))
+        XCTAssertTrue(NightJourneyAssets.backdrops.values.allSatisfy { $0.hasPrefix("farm/farm_journey_") })
+        XCTAssertEqual(NightJourneyAssets.clueAssets.count, 4)
         XCTAssertEqual(NightJourneyAssets.ollieRunFrames.count, 6)
         XCTAssertEqual(
             NightJourneyAssets.ollieRunFrames,
@@ -538,7 +540,7 @@ final class ProximityClassifierTests: XCTestCase {
             AnalyticsDayRecord(day: day.addingTimeInterval(86_400), focusMinutes: 20, screenTimeMinutes: 240)
         ]
 
-        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Quiet Bookends vs Screen Time" }
+        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Quiet time vs Screen Time" }
         XCTAssertNil(correlation?.coefficient)
         XCTAssertEqual(correlation?.sampleSize, 2)
     }
@@ -552,7 +554,7 @@ final class ProximityClassifierTests: XCTestCase {
             AnalyticsDayRecord(day: day.addingTimeInterval(86_400 * 3), focusMinutes: 40, screenTimeMinutes: 120)
         ]
 
-        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Quiet Bookends vs Screen Time" }
+        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Quiet time vs Screen Time" }
         XCTAssertEqual(correlation?.sampleSize, 4)
         XCTAssertEqual(correlation?.coefficient ?? 0, -1, accuracy: 0.0001)
     }
@@ -565,7 +567,7 @@ final class ProximityClassifierTests: XCTestCase {
             AnalyticsDayRecord(day: day.addingTimeInterval(86_400 * 2), focusMinutes: 20, screenTimeMinutes: 240)
         ]
 
-        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Quiet Bookends vs Screen Time" }
+        let correlation = FocusAnalyticsEngine.correlations(for: records).first { $0.title == "Quiet time vs Screen Time" }
         XCTAssertNil(correlation?.coefficient)
         XCTAssertEqual(correlation?.strengthLabel, "Needs data")
     }

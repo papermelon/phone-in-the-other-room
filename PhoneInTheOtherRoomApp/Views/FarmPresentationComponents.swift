@@ -1,62 +1,33 @@
 import SwiftUI
 
-/// Shipping extraction of the useful Debug Farm presentation: the landscape,
-/// featured sheep treatment, and restrained pagination affordance remain, while
-/// economy/capacity data is deliberately absent.
+/// The pasture scene is decorative context for the real-data Farm. Flock count,
+/// arrivals, and trail evidence stay in separate, scalable SwiftUI content.
 struct ShippingFarmHeroScene: View {
     let sheep: SheepDefinition?
-    let flockCount: Int
 
     private let artworkAspectRatio: CGFloat = 1784.0 / 882.0
 
     var body: some View {
-        GeometryReader { proxy in
-            let size = proxy.size
+        ZStack {
+            PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
+                .accessibilityHidden(true)
 
-            ZStack {
-                PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
-                    .frame(width: size.width, height: size.height)
-                    .clipped()
+            LinearGradient(
+                colors: [.clear, AppColors.bark.opacity(0.42)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
 
-                LinearGradient(
-                    colors: [.clear, AppColors.bark.opacity(0.58)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-
-                VStack {
-                    HStack(alignment: .top) {
-                        arrivalBadge
-                        Spacer(minLength: 0)
-                    }
-                    Spacer()
-                }
-                .padding(AppSpacing.sm)
-
-                if let sheep {
-                    ShippingFarmSheepFigure(sheep: sheep, size: min(142, size.width * 0.38))
-                        .offset(x: -size.width * 0.07, y: size.height * 0.13)
-                } else {
-                    PixelAssetImage(name: AssetSlot.Dog.proud)
-                        .frame(width: min(112, size.width * 0.30), height: min(112, size.width * 0.30))
-                        .offset(x: -size.width * 0.06, y: size.height * 0.13)
-                        .accessibilityLabel("Ollie watching the pasture")
-                }
-
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Text("\(flockCount) settled")
-                            .font(pixelFont(.caption2))
-                            .foregroundStyle(AppColors.ink)
-                            .padding(.horizontal, AppSpacing.sm)
-                            .padding(.vertical, AppSpacing.xs)
-                            .background(AppColors.panel.opacity(0.94), in: RoundedRectangle(cornerRadius: AppRadius.sm, style: .continuous))
-                    }
-                    .padding(.trailing, AppSpacing.md)
-                    .padding(.bottom, AppSpacing.md)
-                }
+            if let sheep {
+                PixelAssetImage(name: sheep.assetName)
+                    .frame(width: 132, height: 132)
+                    .offset(x: -52, y: 34)
+                    .accessibilityLabel(sheep.name)
+            } else {
+                PixelAssetImage(name: AssetSlot.Dog.proud)
+                    .frame(width: 112, height: 112)
+                    .offset(x: -42, y: 34)
+                    .accessibilityLabel("Ollie watching the pasture")
             }
         }
         .aspectRatio(artworkAspectRatio, contentMode: .fit)
@@ -66,36 +37,54 @@ struct ShippingFarmHeroScene: View {
             RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .stroke(AppColors.stroke.opacity(0.24), lineWidth: 1)
         }
-        .accessibilityElement(children: .contain)
-    }
-
-    private var arrivalBadge: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            Text(sheep?.name ?? "Ollie's pasture")
-                .font(.system(size: 18, weight: .black, design: .monospaced))
-                .lineLimit(1)
-                .minimumScaleFactor(0.72)
-            Text(sheep == nil ? "A QUIET PLACE" : "A QUIET ARRIVAL")
-                .font(pixelFont(.caption2))
-                .foregroundStyle(AppColors.grass)
-        }
-        .padding(AppSpacing.sm)
-        .frame(width: 142, alignment: .leading)
-        .background(AppColors.panel.opacity(0.92), in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                .stroke(AppColors.stroke.opacity(0.35), lineWidth: 1)
-        }
     }
 }
 
-private struct ShippingFarmSheepFigure: View {
-    let sheep: SheepDefinition
-    let size: CGFloat
+struct FarmArrivalCard: View {
+    let sheep: SheepDefinition?
+    let outcome: SheepSearchOutcome?
 
     var body: some View {
-        PixelAssetImage(name: sheep.assetName)
-            .frame(width: size, height: size)
-            .accessibilityLabel(sheep.name)
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text(sheep == nil ? "A QUIET PASTURE" : "LATEST ARRIVAL")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+
+                if let sheep {
+                    HStack(alignment: .top, spacing: AppSpacing.sm) {
+                        PixelAssetImage(name: sheep.assetName)
+                            .frame(width: 72, height: 72)
+                            .accessibilityLabel(sheep.name)
+                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                            Text(sheep.name)
+                                .font(AppTypography.title)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text(sheep.story)
+                                .font(AppTypography.body)
+                                .foregroundStyle(AppColors.secondaryText)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    if let outcome {
+                        let habitat = outcome.habitat?.title ?? sheep.habitat.title
+                        let distance = String(format: "%.1f km", outcome.trailDistance)
+                        Text("Home from " + habitat + " · " + distance + " trail")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                } else {
+                    Text("The pasture is quiet for now.")
+                        .font(AppTypography.title)
+                    Text("No sheep have come home yet. Ollie’s search moves only after eligible completed protected nights.")
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .contain)
     }
 }
