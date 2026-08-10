@@ -20,22 +20,22 @@ struct OnboardingProtectionStep: View {
 
             OnboardingChoiceCard(
                 title: "Apps to rest",
-                detail: "Choose 1–3 apps or categories to rest from Wind Down start through your morning quiet window.",
+                detail: "Choose 1–3 apps or categories to rest through your full Wind Down.",
                 icon: "iphone.slash",
-                isSelected: draft.protectionChoice == .appShielding
+                isSelected: draft.shieldingEnabled && draft.protectionChoice == .appShielding
             ) {
                 draft.protectionChoice = .appShielding
                 draft.shieldingEnabled = true
             }
 
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Label("Start small", systemImage: "hand.tap.fill")
-                        .font(AppTypography.headline)
-                    Text("Pick the 1–3 apps you reach for around bedtime or waking. You can change them later in Settings.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
+            OnboardingChoiceCard(
+                title: "No app limits for now",
+                detail: "Keep the phone-away ritual without shielding. You can add apps later in Settings.",
+                icon: "moon.stars.fill",
+                isSelected: !draft.shieldingEnabled
+            ) {
+                draft.protectionChoice = .appShielding
+                draft.shieldingEnabled = false
             }
 
             if showsNFCChoice {
@@ -43,7 +43,7 @@ struct OnboardingProtectionStep: View {
                     title: OnboardingProtectionChoice.nfcAndAppShielding.title,
                     detail: "Your saved Wind Down tag stays available. Manage this advanced choice in Settings.",
                     icon: "dot.radiowaves.left.and.right",
-                    isSelected: draft.protectionChoice == .nfcAndAppShielding
+                    isSelected: draft.shieldingEnabled && draft.protectionChoice == .nfcAndAppShielding
                 ) {
                     draft.protectionChoice = .nfcAndAppShielding
                     draft.shieldingEnabled = true
@@ -54,7 +54,9 @@ struct OnboardingProtectionStep: View {
                 }
             }
 
-            shieldingCard
+            if draft.shieldingEnabled {
+                shieldingCard
+            }
         }
     }
 
@@ -124,22 +126,13 @@ struct OnboardingProtectionStep: View {
                         .foregroundStyle(AppColors.muted)
                 }
 
-                if draft.shieldingEnabled {
-                    Button("Continue without shielding") {
-                        draft.shieldingEnabled = false
-                    }
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.grass)
-                } else {
-                    Text("Wind Down without apps to rest for now. You can add them later in Settings.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.grass)
-                }
-
                 if viewModel.shieldingReadiness != .ready {
                     Text(viewModel.shieldingReadiness.detail)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
+                    Text("Finish this choice, or choose no app limits, to continue.")
+                        .font(AppTypography.caption.weight(.bold))
+                        .foregroundStyle(AppColors.grass)
                 }
             }
         }

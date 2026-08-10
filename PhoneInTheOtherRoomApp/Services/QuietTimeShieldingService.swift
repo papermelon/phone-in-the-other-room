@@ -48,6 +48,10 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
 
     @discardableResult
     func reconcile(for run: FocusRun?, at date: Date = Date()) -> QuietTimeShieldingOutcome {
+        guard run?.appShieldingRequested != false else {
+            clear()
+            return .disabled
+        }
         guard defaults.bool(forKey: Self.enabledKey) else {
             clear()
             return .disabled
@@ -206,6 +210,25 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.scheduleKey)
     }
 
+    /// Clears all shield runtime artifacts, including extension evidence. This
+    /// is intentionally separate from `clear()`, which preserves a repeating
+    /// automatic schedule during ordinary run reconciliation.
+    func resetLocalState() {
+#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
+        activityCenter.stopMonitoring([
+            .ollieProtectedSession,
+            .ollieWindDown,
+            .ollieMorningQuiet,
+            .ollieBriefAccessRestore
+        ])
+        clearStore()
+#endif
+        sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.scheduleKey)
+        sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.statusKey)
+        sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.statusHistoryKey)
+        sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.briefAccessStateKey)
+    }
+
     func briefAccessUseCount(for run: FocusRun) -> Int {
         var count = run.briefAccessUseCount
         if let data = sharedDefaults?.data(forKey: QuietTimeShieldSharedStorage.briefAccessStateKey),
@@ -219,6 +242,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         for run: FocusRun,
         at date: Date
     ) -> QuietTimeShieldProtectionSummary {
+        guard run.appShieldingRequested else { return .none }
         let automaticScheduleID = loadSchedule().flatMap { snapshot in
             snapshot.repeatsDaily ? snapshot.runID : nil
         }

@@ -34,7 +34,12 @@ struct ActiveRunView: View {
                 }
             }
         }
-        .background(AppColors.paper.ignoresSafeArea())
+        .background(
+            (run?.isNightWatch == true
+                ? AppColors.activeWindDownBackground
+                : AppColors.paper
+            ).ignoresSafeArea()
+        )
         .navigationTitle(run?.isNightWatch == true ? "Wind Down" : "Phone-away time")
         .navigationBarTitleDisplayMode(.inline)
         .alert(
@@ -100,7 +105,7 @@ struct ActiveRunView: View {
             .padding(AppSpacing.md)
         }
         .scrollIndicators(.hidden)
-        .saturation(viewModel.quietAppearanceEnabled ? 0.15 : 1)
+        .background(AppColors.activeWindDownBackground.ignoresSafeArea())
     }
 
     private var hero: some View {

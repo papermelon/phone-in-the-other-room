@@ -8,7 +8,7 @@ struct OnboardingQuietStep: View {
             onboardingTitle(
                 eyebrow: "OPTIONAL CUES",
                 title: "What should the quiet make room for?",
-                detail: "Choose one small evening cue and one morning cue. You can skip either one. Nothing is a checklist."
+                detail: "Choose one small evening cue and one morning cue. Both are optional—leave either blank to skip it. Nothing is a checklist."
             )
 
             cueEditor(

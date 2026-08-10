@@ -8,6 +8,7 @@ final class OrientationTests: XCTestCase {
 
         XCTAssertEqual(state.schemaVersion, CountingSheepOrientationState.currentSchemaVersion)
         XCTAssertEqual(state.status, .inProgress)
+        XCTAssertEqual(state.currentStep, .navigation)
         XCTAssertTrue(state.milestones.contains(.homeExplained))
         XCTAssertTrue(state.milestones.contains(.windDownSaved))
         XCTAssertTrue(state.milestones.contains(.practiceStarted))
@@ -27,7 +28,7 @@ final class OrientationTests: XCTestCase {
         XCTAssertTrue(state.milestones.isEmpty)
     }
 
-    func testMilestonesFollowRealOrientationTransitions() {
+    func testPracticeMilestonesDoNotGateTheThreeStepTour() {
         var state = CountingSheepOrientationState.fresh
         let periodID = UUID()
         let runID = UUID()
@@ -49,8 +50,16 @@ final class OrientationTests: XCTestCase {
         state.mark(.farmExplored)
         state.mark(.settingsExplored)
 
-        XCTAssertEqual(state.status, .completed)
-        XCTAssertTrue(state.requiredMilestones.isSubset(of: state.milestones))
+        XCTAssertFalse(state.isComplete)
+
+        state.advanceTour()
+        XCTAssertEqual(state.currentStep, .start)
+        XCTAssertEqual(state.status, .inProgress)
+        state.advanceTour()
+        XCTAssertEqual(state.currentStep, .navigation)
+        XCTAssertEqual(state.status, .inProgress)
+        state.advanceTour()
+        XCTAssertTrue(state.isComplete)
     }
 
     func testDismissalIsResumableAndDoesNotEraseProgress() {
@@ -64,6 +73,34 @@ final class OrientationTests: XCTestCase {
         state.resume()
         XCTAssertEqual(state.status, .inProgress)
         XCTAssertTrue(state.milestones.contains(.homeExplained))
+    }
+
+    func testTourCanMoveBackAndReplayFromTheBeginning() {
+        var state = CountingSheepOrientationState.fresh
+
+        state.advanceTour()
+        XCTAssertEqual(state.currentStep, .start)
+        state.advanceTour()
+        XCTAssertEqual(state.currentStep, .navigation)
+        state.moveBack()
+        XCTAssertEqual(state.currentStep, .start)
+        state.moveBack()
+        XCTAssertEqual(state.currentStep, .home)
+        state.completeTour()
+        XCTAssertTrue(state.isComplete)
+
+        state.replay()
+        XCTAssertEqual(state.status, .inProgress)
+        XCTAssertEqual(state.currentStep, .home)
+    }
+
+    func testVersionTwoNavigationStepRemainsAtNavigation() throws {
+        let data = Data(#"{"schemaVersion":2,"status":"inProgress","currentStep":"navigation","milestones":[]}"#.utf8)
+
+        let state = try JSONDecoder().decode(CountingSheepOrientationState.self, from: data)
+
+        XCTAssertEqual(state.schemaVersion, CountingSheepOrientationState.currentSchemaVersion)
+        XCTAssertEqual(state.currentStep, .navigation)
     }
 
     func testPassiveTabVisitsDoNotSilentlyResumeDismissedOrientation() {

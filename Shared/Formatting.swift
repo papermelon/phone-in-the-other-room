@@ -1,6 +1,18 @@
 import Foundation
 
 enum OllieFormat {
+    static func time(_ date: Date) -> String {
+        date.formatted(date: .omitted, time: .shortened)
+    }
+
+    static func dateAndTime(_ date: Date) -> String {
+        date.formatted(date: .abbreviated, time: .shortened)
+    }
+
+    static func timeRange(from start: Date, to end: Date) -> String {
+        "\(time(start))–\(time(end))"
+    }
+
     static func timer(_ seconds: TimeInterval) -> String {
         let remaining = max(0, Int(seconds.rounded()))
         if remaining >= 60 * 60 {

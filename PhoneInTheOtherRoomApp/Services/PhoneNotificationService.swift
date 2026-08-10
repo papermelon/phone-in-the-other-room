@@ -117,7 +117,8 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
             for notification in planned {
                 await add(notification, to: center)
             }
-            if preferences.morningReflectionReminderEnabled,
+            if plan.role == .primarySleepBookend,
+               preferences.morningReflectionReminderEnabled,
                let reflection = NightWatchNotificationPlanBuilder.reflectionNotification(
                    at: plan.protectedUntil.addingTimeInterval(60 * 60),
                    copyOverrides: preferences.copyOverrides
@@ -161,7 +162,8 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
             for notification in planned {
                 await add(notification, to: center)
             }
-            if preferences.morningReflectionReminderEnabled,
+            if plan.role == .primarySleepBookend,
+               preferences.morningReflectionReminderEnabled,
                let reflection = NightWatchNotificationPlanBuilder.reflectionNotification(
                    at: plan.protectedUntil.addingTimeInterval(60 * 60),
                    copyOverrides: preferences.copyOverrides
@@ -304,9 +306,20 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
     }
 
     func cancelAllNightWatchNotifications() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(
-            withIdentifiers: notificationIdentifiers
-        )
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: notificationIdentifiers)
+        center.removeDeliveredNotifications(withIdentifiers: notificationIdentifiers)
+        cancelUpcomingWindDownNotifications(on: center)
+    }
+
+    /// Cancels Counting Sheep's pending and delivered notification requests and
+    /// removes the local notification preferences/click destination. It never
+    /// enumerates or removes requests belonging to another app.
+    func resetLocalState() {
+        cancelAllNightWatchNotifications()
+        UserDefaults.standard.removeObject(forKey: Self.preferencesKey)
+        UserDefaults.standard.removeObject(forKey: Self.remindersEnabledKey)
+        UserDefaults.standard.removeObject(forKey: Self.pendingDestinationKey)
     }
 
     func cancelRunCompletion() {
@@ -328,6 +341,22 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         UNUserNotificationCenter.current().removePendingNotificationRequests(
             withIdentifiers: ["night-watch-morning-reflection"]
         )
+    }
+
+    private func cancelUpcomingWindDownNotifications(on center: UNUserNotificationCenter) {
+        Task {
+            let pending = await center.pendingNotificationRequests()
+            let delivered = await center.deliveredNotifications()
+            let ownedIdentifiers = Set(
+                pending.map(\.identifier) + delivered.map(\.request.identifier)
+            ).filter {
+                $0.hasPrefix(UpcomingWindDownNotificationPlanBuilder.identifierPrefix)
+            }
+            guard !ownedIdentifiers.isEmpty else { return }
+            let identifiers = Array(ownedIdentifiers)
+            center.removePendingNotificationRequests(withIdentifiers: identifiers)
+            center.removeDeliveredNotifications(withIdentifiers: identifiers)
+        }
     }
 
     func consumePendingDestination() -> NotificationDestination? {

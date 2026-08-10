@@ -2,48 +2,21 @@ import SwiftUI
 
 struct NotificationSettingsView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
-    @State private var editingTemplate: NotificationTemplateID?
+    @State private var optionalSupportExpanded = false
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("Notifications")
-                        .font(AppTypography.display(32))
-                    Text("Choose how Ollie keeps the edges of your night in view. The overnight period stays quiet unless usage-aware support is enabled.")
-                        .font(AppTypography.body)
-                        .foregroundStyle(AppColors.muted)
-                }
-
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Toggle("Wind Down reminders", isOn: preferenceBinding(\.remindersEnabled))
-                            .font(AppTypography.headline)
-                        Text("Scheduled cues are local to this iPhone and can be changed whenever your night changes.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    }
-                }
+                header
+                remindersCard
 
                 if viewModel.notificationPreferences.remindersEnabled {
-                    if !viewModel.notificationPreferences.hasChosenCadence {
-                        PixelCard {
-                            Label("Choose your notification rhythm", systemImage: "sparkles")
-                                .font(AppTypography.headline)
-                            Text("Your existing reminder schedule is still in place. Pick a cadence below when you are ready; optional tips, usage-aware reminders, and reflection reminders stay off until you enable them.")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.muted)
-                        }
-                    }
-                    cadenceSection
-                    optionalChannelsSection
-                    upcomingSection
-                    timelineSection
+                    cadenceCard
+                    optionalSupportCard
+                    scheduleCard
                 }
 
-                messageLibrarySection
-
-                authorizationSection
+                messageWordingCard
             }
             .padding(AppSpacing.md)
         }
@@ -51,254 +24,210 @@ struct NotificationSettingsView: View {
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { viewModel.refreshNotificationAuthorization() }
-        .sheet(item: $editingTemplate) { templateID in
-            NotificationMessageEditorView(templateID: templateID)
-                .environmentObject(viewModel)
+    }
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("Notifications")
+                .font(AppTypography.display(32))
+            Text("Choose how Ollie keeps the edges of your night in view.")
+                .font(AppTypography.body)
+                .foregroundStyle(AppColors.muted)
         }
     }
 
-    private var cadenceSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Your notification rhythm")
-                .font(AppTypography.headline)
-            ForEach(NotificationCadence.allCases) { cadence in
-                Button {
-                    var updated = viewModel.notificationPreferences
-                    updated.cadence = cadence
-                    viewModel.updateNotificationPreferences(updated)
-                } label: {
-                    HStack(alignment: .top, spacing: AppSpacing.sm) {
-                        Image(systemName: cadence == .quiet ? "bell.slash" : "bell")
-                            .foregroundStyle(AppColors.grass)
-                            .frame(width: 24)
-                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text("\(cadence.title) · \(cadence.scheduledTouchpointCount) cues")
-                                .font(AppTypography.headline)
-                            Text(cadence.detail)
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.muted)
-                        }
-                        Spacer(minLength: 0)
-                        Image(systemName: viewModel.notificationPreferences.cadence == cadence ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(viewModel.notificationPreferences.cadence == cadence ? AppColors.grass : AppColors.muted)
-                    }
-                    .padding(AppSpacing.md)
-                    .background(AppColors.surface)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: AppRadius.md)
-                            .stroke(viewModel.notificationPreferences.cadence == cadence ? AppColors.grass : AppColors.stroke.opacity(0.15), lineWidth: 1)
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    private var optionalChannelsSection: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text("Optional support")
-                    .font(AppTypography.headline)
-                Toggle("Sounds at start and completion", isOn: preferenceBinding(\.soundsEnabled))
-                Toggle("One gentle sleep tip per night", isOn: preferenceBinding(\.educationalTipsEnabled))
-                Toggle("Morning reflection reminder", isOn: preferenceBinding(\.morningReflectionReminderEnabled))
-                Toggle(
-                    "Usage-aware reminders",
-                    isOn: preferenceBinding(\.usageAwareRemindersEnabled)
-                )
-                .disabled(!viewModel.canUseUsageAwareReminders)
-                Text(viewModel.canUseUsageAwareReminders
-                    ? "After three accumulated minutes in apps to rest, Ollie can send one quiet cue in each phase."
-                    : "Usage-aware reminders need approved Screen Time access and at least one app or category to rest.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-            }
-            .font(AppTypography.caption)
-        }
-    }
-
-    private var timelineSection: some View {
+    private var remindersCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Label("Tonight's timeline", systemImage: "timeline.selection")
+                Toggle("Wind Down reminders", isOn: remindersBinding)
                     .font(AppTypography.headline)
-                ForEach(timelineRows, id: \.self) { row in
-                    HStack(spacing: AppSpacing.sm) {
-                        Circle()
-                            .fill(AppColors.grass)
-                            .frame(width: 7, height: 7)
-                        Text(row)
+                    .tint(AppColors.grass)
+
+                HStack(alignment: .top, spacing: AppSpacing.sm) {
+                    Image(systemName: authorizationIcon)
+                        .foregroundStyle(authorizationColor)
+                        .frame(width: 22, height: 22)
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                        Text(authorizationText)
                             .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.secondaryText)
+                        if viewModel.notificationAuthorization == .denied {
+                            Button("Open System Settings") {
+                                viewModel.openNotificationSettings()
+                            }
+                            .font(AppTypography.caption)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        } else if viewModel.notificationAuthorization == .notDetermined {
+                            Button("Allow notifications") {
+                                Task { @MainActor in
+                                    _ = await viewModel.requestNotificationPermission()
+                                }
+                            }
+                            .font(AppTypography.caption)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        }
                     }
                 }
-                Text("Tips replace a midpoint cue; they never add another scheduled notification. Usage cues are event-based and may appear overnight only after selected-app activity.")
+
+                Text("Cues stay on this iPhone and can be changed whenever your night changes.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
         }
     }
 
-    private var upcomingSection: some View {
+    private var cadenceCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Label("Next Wind Down", systemImage: "calendar.badge.clock")
+                Text("Notification rhythm")
                     .font(AppTypography.headline)
-                Text("This is the complete set of ritual notifications currently scheduled for the next Wind Down.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-
-                if upcomingNotifications.isEmpty {
-                    Text("There are no future notifications with the current settings.")
+                PixelSegmentedPicker(
+                    title: "Notification rhythm",
+                    selection: cadenceBinding,
+                    label: { $0.title }
+                )
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(viewModel.notificationPreferences.cadence.detail)
+                        .font(AppTypography.body)
+                    Text(String(viewModel.notificationPreferences.cadence.scheduledTouchpointCount) + " rhythm cues")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.grass)
+                    if viewModel.notificationPreferences.morningReflectionReminderEnabled {
+                        Text("Morning reflection adds one more cue.")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                }
+                if !viewModel.notificationPreferences.hasChosenCadence {
+                    Text("Your existing reminder schedule stays in place until you choose a rhythm.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
-                } else {
-                    ForEach(upcomingNotifications) { notification in
-                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            HStack(alignment: .firstTextBaseline) {
-                                Text(notification.date.formatted(date: .abbreviated, time: .shortened))
-                                    .font(AppTypography.caption.weight(.semibold))
-                                    .foregroundStyle(AppColors.grass)
-                                Spacer()
-                                Text(notification.importance == .active ? "Active" : "Quiet")
-                                    .font(AppTypography.caption)
-                                    .foregroundStyle(AppColors.muted)
-                            }
-                            Text(notification.title)
-                                .font(AppTypography.body.weight(.semibold))
-                            Text(notification.body)
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.secondaryText)
-                        }
-                        .padding(.vertical, AppSpacing.xs)
-                        if notification.id != upcomingNotifications.last?.id {
-                            Divider()
-                        }
-                    }
                 }
             }
         }
     }
 
-    private var messageLibrarySection: some View {
+    private var optionalSupportCard: some View {
         PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack(alignment: .firstTextBaseline) {
-                    Label("Message library", systemImage: "text.bubble")
+            DisclosureGroup(isExpanded: $optionalSupportExpanded) {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    Toggle("Sounds at start and completion", isOn: preferenceBinding(\.soundsEnabled))
+                    Toggle("One gentle sleep tip per night", isOn: preferenceBinding(\.educationalTipsEnabled))
+                    Toggle("Morning reflection reminder", isOn: preferenceBinding(\.morningReflectionReminderEnabled))
+                    Toggle(
+                        "Usage-aware reminders",
+                        isOn: preferenceBinding(\.usageAwareRemindersEnabled)
+                    )
+                    .disabled(!viewModel.canUseUsageAwareReminders)
+
+                    Text(viewModel.canUseUsageAwareReminders
+                        ? "After three minutes in selected apps, Ollie can send one quiet cue in each phase."
+                        : "Usage-aware reminders need Screen Time access and at least one selected app or category.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+                .padding(.top, AppSpacing.sm)
+            } label: {
+                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                    Label("Optional support", systemImage: "sparkles")
                         .font(AppTypography.headline)
-                    Spacer()
-                    Button("Reset all") {
-                        viewModel.resetAllNotificationCopies()
-                    }
-                    .font(AppTypography.caption)
-                    .disabled(viewModel.notificationPreferences.copyOverrides.isEmpty)
-                }
-                Text("Edit the words Ollie uses. Messages marked fixed stay read-only so protection notices remain accurate.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-
-                ForEach(NotificationTemplateID.allCases) { templateID in
-                    Button {
-                        editingTemplate = templateID
-                    } label: {
-                        HStack(alignment: .top, spacing: AppSpacing.sm) {
-                            Image(systemName: templateID.isEditable ? "pencil" : "lock.fill")
-                                .foregroundStyle(templateID.isEditable ? AppColors.grass : AppColors.muted)
-                                .frame(width: 22)
-                            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                                Text(templateID.title)
-                                    .font(AppTypography.body.weight(.semibold))
-                                Text(templateID.detail)
-                                    .font(AppTypography.caption)
-                                    .foregroundStyle(AppColors.muted)
-                            }
-                            Spacer(minLength: 0)
-                            if viewModel.notificationPreferences.copyOverride(for: templateID) != nil {
-                                Text("Custom")
-                                    .font(AppTypography.caption)
-                                    .foregroundStyle(AppColors.grass)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(!templateID.isEditable)
+                    Spacer(minLength: AppSpacing.xs)
+                    Text(optionalSupportSummary)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                        .multilineTextAlignment(.trailing)
                 }
             }
+            .tint(AppColors.ink)
         }
     }
 
-    private var upcomingNotifications: [PlannedNotification] {
-        let now = Date()
-        let start = viewModel.activeRun?.startedAt ?? viewModel.nightWatchPreferences.nextStart(after: now)
-        let plan = viewModel.activeRun?.nightWatchPlan
-            ?? viewModel.nightWatchPreferences.makePlan(startedAt: start)
-        var notifications = NightWatchNotificationPlanBuilder.scheduledNotifications(
-            for: plan,
-            startedAt: start,
-            cadence: viewModel.notificationPreferences.cadence,
-            purpose: viewModel.offlinePurpose,
-            seed: viewModel.activeRun?.id ?? UUID(),
-            educationalTipsEnabled: viewModel.notificationPreferences.educationalTipsEnabled,
-            soundsEnabled: viewModel.notificationPreferences.soundsEnabled,
-            copyOverrides: viewModel.notificationPreferences.copyOverrides,
-            now: now
+    private var scheduleCard: some View {
+        let preview = NotificationPreviewData.preview(for: viewModel)
+        let notifications = preview.notifications
+        return NavigationLink {
+            NotificationSchedulePreviewView()
+                .environmentObject(viewModel)
+        } label: {
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    HStack {
+                        Label(preview.title, systemImage: "calendar.badge.clock")
+                            .font(AppTypography.headline)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(AppColors.muted)
+                    }
+                    Text(OllieFormat.dateAndTime(preview.startDate))
+                        .font(AppTypography.body)
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(String(notifications.count) + " scheduled " + (notifications.count == 1 ? "cue" : "cues"))
+                            .font(AppTypography.caption)
+                        Spacer(minLength: AppSpacing.sm)
+                        Text(cueSummary(notifications))
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.grass)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    if preview.includesMorningReflection {
+                        Text("Includes morning reflection")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                    Text("See scheduled cues")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.grass)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Shows the finite cues planned for this quiet time")
+    }
+
+    private var messageWordingCard: some View {
+        NavigationLink {
+            NotificationMessageLibraryView()
+                .environmentObject(viewModel)
+        } label: {
+            PixelCard {
+                HStack(spacing: AppSpacing.sm) {
+                    Image(systemName: "text.bubble")
+                        .foregroundStyle(AppColors.grass)
+                        .frame(width: 24, height: 24)
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                        Text("Notification messages")
+                            .font(AppTypography.headline)
+                        Text(messageWordingSummary)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                    Spacer(minLength: AppSpacing.xs)
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(AppColors.muted)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens notification message settings")
+    }
+
+    private var remindersBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.notificationPreferences.remindersEnabled },
+            set: { viewModel.setRemindersEnabled($0) }
         )
-        if viewModel.notificationPreferences.morningReflectionReminderEnabled,
-           let reflection = NightWatchNotificationPlanBuilder.reflectionNotification(
-               at: plan.protectedUntil.addingTimeInterval(60 * 60),
-               now: now,
-               copyOverrides: viewModel.notificationPreferences.copyOverrides
-           ) {
-            notifications.append(reflection)
-        }
-        return notifications.sorted { $0.date < $1.date }
     }
 
-    private var authorizationSection: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Label("Apple notification access", systemImage: "checkmark.shield")
-                    .font(AppTypography.headline)
-                Text(authorizationText)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                if viewModel.notificationAuthorization == .denied {
-                    Button("Open System Settings") {
-                        viewModel.openNotificationSettings()
-                    }
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                } else if viewModel.notificationAuthorization == .notDetermined {
-                    Button("Allow notifications") {
-                        Task { @MainActor in
-                            _ = await viewModel.requestNotificationPermission()
-                        }
-                    }
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                }
+    private var cadenceBinding: Binding<NotificationCadence> {
+        Binding(
+            get: { viewModel.notificationPreferences.cadence },
+            set: { cadence in
+                var updated = viewModel.notificationPreferences
+                updated.cadence = cadence
+                viewModel.updateNotificationPreferences(updated)
             }
-        }
-    }
-
-    private var timelineRows: [String] {
-        let cadence = viewModel.notificationPreferences.cadence
-        var rows = cadence.leadInMinutes.map { "\($0) minutes before Wind Down" }
-        rows.append("Wind Down begins")
-        if cadence.includesWindDownMidpoint { rows.append("Wind-down midpoint") }
-        rows.append("Configured bedtime")
-        rows.append("Configured wake time")
-        if cadence.includesMorningMidpoint { rows.append("Morning-quiet midpoint") }
-        rows.append("Morning quiet completes")
-        return rows
-    }
-
-    private var authorizationText: String {
-        switch viewModel.notificationAuthorization {
-        case .authorized, .provisional, .ephemeral: return "Notifications are available."
-        case .denied: return "Notifications are blocked by iPhone settings."
-        case .notDetermined: return "Counting Sheep has not asked for permission yet."
-        @unknown default: return "Notification access is unavailable."
-        }
+        )
     }
 
     private func preferenceBinding<T>(_ keyPath: WritableKeyPath<NotificationPreferences, T>) -> Binding<T> {
@@ -311,133 +240,161 @@ struct NotificationSettingsView: View {
             }
         )
     }
+
+    private var optionalSupportSummary: String {
+        let preferences = viewModel.notificationPreferences
+        var enabled: [String] = []
+        if preferences.soundsEnabled { enabled.append("sound") }
+        if preferences.educationalTipsEnabled { enabled.append("tips") }
+        if preferences.morningReflectionReminderEnabled { enabled.append("reflection") }
+        if preferences.usageAwareRemindersEnabled { enabled.append("usage") }
+        return enabled.isEmpty ? "None selected" : enabled.joined(separator: " · ")
+    }
+
+    private var messageWordingSummary: String {
+        let count = viewModel.notificationPreferences.copyOverrides.count
+        return count == 0 ? "Ollie’s defaults" : "\(count) customized"
+    }
+
+    private func cueSummary(_ notifications: [PlannedNotification]) -> String {
+        guard let first = notifications.first, let last = notifications.last else {
+            return "No future cues"
+        }
+        if first.id == last.id {
+            return OllieFormat.time(first.date)
+        }
+        return OllieFormat.timeRange(from: first.date, to: last.date)
+    }
+
+    private var authorizationText: String {
+        switch viewModel.notificationAuthorization {
+        case .authorized, .provisional, .ephemeral: return "Apple notifications are available."
+        case .denied: return "Apple notifications are blocked in iPhone settings."
+        case .notDetermined: return "Counting Sheep has not asked for permission yet."
+        @unknown default: return "Notification access is unavailable."
+        }
+    }
+
+    private var authorizationIcon: String {
+        switch viewModel.notificationAuthorization {
+        case .authorized, .provisional, .ephemeral: return "checkmark.shield.fill"
+        case .denied: return "bell.slash"
+        default: return "bell.badge"
+        }
+    }
+
+    private var authorizationColor: Color {
+        switch viewModel.notificationAuthorization {
+        case .authorized, .provisional, .ephemeral: return AppColors.grass
+        case .denied: return AppColors.warning
+        default: return AppColors.muted
+        }
+    }
 }
 
-private struct NotificationMessageEditorView: View {
-    @EnvironmentObject private var viewModel: FocusRunViewModel
-    @Environment(\.dismiss) private var dismiss
-    let templateID: NotificationTemplateID
-    @State private var title: String
-    @State private var messageBody: String
+/// View-layer preview support shared by the compact landing screen and the
+/// schedule detail. The planner remains the single source of notification truth.
+@MainActor
+enum NotificationPreviewData {
+    private static let fallbackSeed = UUID(uuid: (
+        0x3A, 0x77, 0x8D, 0x45, 0x24, 0xCB, 0x46, 0x5F,
+        0x91, 0x6E, 0xF0, 0x6E, 0xA5, 0x0D, 0xE3, 0x31
+    ))
 
-    init(templateID: NotificationTemplateID) {
-        self.templateID = templateID
-        let override = PhoneNotificationService.shared.preferences.copyOverride(for: templateID)
-        let defaults = Self.defaultCopy(for: templateID)
-        _title = State(initialValue: override?.title ?? defaults.title)
-        _messageBody = State(initialValue: override?.body ?? defaults.body)
+    struct Preview {
+        let title: String
+        let startDate: Date
+        let notifications: [PlannedNotification]
+        let includesMorningReflection: Bool
+        let isAdditionalQuiet: Bool
     }
 
-    var bodyView: some View {
-        Form {
-            Section {
-                TextField("Title", text: $title)
-                    .onChange(of: title) { _, value in
-                        title = String(value.prefix(NotificationCopyOverride.maximumTitleLength))
-                    }
-                Text("\(title.count)/\(NotificationCopyOverride.maximumTitleLength)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } header: {
-                Text("Title")
+    static func preview(
+        for viewModel: FocusRunViewModel,
+        now: Date = Date()
+    ) -> Preview {
+        let activePlan = viewModel.activeRun?.nightWatchPlan
+        let nextPeriod = activePlan == nil ? viewModel.nextUpcomingQuietPeriod : nil
+        let start = viewModel.activeRun?.startedAt
+            ?? nextPeriod?.occurrence.interval.start
+            ?? viewModel.nightWatchPreferences.nextStart(after: now)
+        let plan = activePlan
+            ?? nextPeriod.map {
+                WindDownScheduleEngine.plan(
+                    for: $0,
+                    preferences: viewModel.nightWatchPreferences,
+                    startedAt: start
+                )
             }
-
-            Section {
-                TextEditor(text: $messageBody)
-                    .frame(minHeight: 140)
-                    .onChange(of: messageBody) { _, value in
-                        messageBody = String(value.prefix(NotificationCopyOverride.maximumBodyLength))
-                    }
-                Text("\(messageBody.count)/\(NotificationCopyOverride.maximumBodyLength)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } header: {
-                Text("Message")
-            }
-
-            Section("Optional placeholders") {
-                Text("You can write freely. These helpers are optional: {activity}, {purpose}, {time}, and {minutes}.")
-                    .font(.caption)
-                Text(Self.previewCopy(templateID: templateID, title: title, body: messageBody).body)
-                    .font(.body)
-                    .padding(.vertical, 4)
-            }
-
-            if !NotificationCopyRenderer.unresolvedPlaceholders(in: title + " " + messageBody).isEmpty {
-                Section {
-                    Text("Remove unsupported placeholders before saving.")
-                        .foregroundStyle(.red)
-                }
-            }
-
-            Section {
-                Button("Save message") {
-                    viewModel.updateNotificationCopy(for: templateID, title: title, body: messageBody)
-                    dismiss()
-                }
-                .disabled(!NotificationCopyRenderer.unresolvedPlaceholders(in: title + " " + messageBody).isEmpty)
-                Button("Restore Ollie’s wording") {
-                    viewModel.resetNotificationCopy(for: templateID)
-                    dismiss()
-                }
-                .foregroundStyle(.secondary)
-            }
+            ?? viewModel.nightWatchPreferences.makePlan(startedAt: start)
+        let seed = viewModel.activeRun?.id
+            ?? nextPeriod?.occurrence.id
+            ?? fallbackSeed
+        var notifications = NightWatchNotificationPlanBuilder.scheduledNotifications(
+            for: plan,
+            startedAt: start,
+            cadence: viewModel.notificationPreferences.cadence,
+            purpose: viewModel.offlinePurpose,
+            seed: seed,
+            educationalTipsEnabled: viewModel.notificationPreferences.educationalTipsEnabled,
+            soundsEnabled: viewModel.notificationPreferences.soundsEnabled,
+            copyOverrides: viewModel.notificationPreferences.copyOverrides,
+            now: now
+        )
+        var includesReflection = false
+        if plan.role == .primarySleepBookend,
+           viewModel.notificationPreferences.morningReflectionReminderEnabled,
+           let reflection = NightWatchNotificationPlanBuilder.reflectionNotification(
+               at: plan.protectedUntil.addingTimeInterval(60 * 60),
+               now: now,
+               copyOverrides: viewModel.notificationPreferences.copyOverrides
+           ) {
+            notifications.append(reflection)
+            includesReflection = true
         }
-        .navigationTitle(templateID.title)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    var body: some View {
-        NavigationStack { bodyView }
-    }
-
-    private static func defaultCopy(for id: NotificationTemplateID) -> NightWatchNotificationCopy {
-        previewCopy(templateID: id, title: nil, body: nil)
-    }
-
-    private static func previewCopy(
-        templateID: NotificationTemplateID,
-        title: String?,
-        body: String?
-    ) -> NightWatchNotificationCopy {
-        let moment: NightWatchNotificationMoment
-        switch templateID {
-        case .windDownLeadIn60: moment = .windDownLeadIn(minutes: 60)
-        case .windDownLeadIn30: moment = .windDownLeadIn(minutes: 30)
-        case .windDownLeadIn10: moment = .windDownLeadIn(minutes: 10)
-        case .windDownStart: moment = .windDownReminder
-        case .windDownMidpoint: moment = .windDownMidpoint
-        case .sleepTime: moment = .sleepTime
-        case .phoneFreeMorning: moment = .phoneFreeMorning
-        case .morningMidpoint: moment = .morningMidpoint
-        case .complete: moment = .complete
-        case .morningReflection: moment = .morningReflection
-        case .usageWindDown: moment = .usageCue(.windDown)
-        case .usageOvernight: moment = .usageCue(.overnight)
-        case .usageMorningQuiet: moment = .usageCue(.morningQuiet)
-        case .quietPeriodComplete: moment = .quietPeriodComplete
-        case .shieldingFailed: moment = .shieldingFailed
+        let isAdditional = plan.role == .additionalQuiet
+        let title: String
+        if activePlan != nil {
+            title = isAdditional ? "Current quiet time" : "Current Wind Down"
+        } else {
+            title = isAdditional ? "Next quiet time" : "Next Wind Down"
         }
-        return NotificationCopyResolver.resolve(
-            id: templateID,
-            moment: moment,
-            context: NotificationCopyContext(
-                activityTitle: "Read",
-                purpose: "quiet time",
-                tip: "Make a little room for quiet.",
-                date: Date(timeIntervalSince1970: 1_700_000_000),
-                minutes: templateID.minutes
-            ),
-            overrides: title == nil && body == nil
-                ? []
-                : [NotificationCopyOverride(id: templateID, title: title, body: body)]
+        return Preview(
+            title: title,
+            startDate: start,
+            notifications: notifications.sorted { $0.date < $1.date },
+            includesMorningReflection: includesReflection,
+            isAdditionalQuiet: isAdditional
         )
     }
+
+    static func upcomingNotifications(
+        for viewModel: FocusRunViewModel,
+        now: Date = Date()
+    ) -> [PlannedNotification] {
+        preview(for: viewModel, now: now).notifications
+    }
 }
 
-#Preview {
+#Preview("Notifications · enabled") {
     NavigationStack {
         NotificationSettingsView()
             .environmentObject(FocusRunViewModel())
     }
+}
+
+#Preview("Notifications · disabled or denied") {
+    NavigationStack {
+        NotificationSettingsView()
+            .environmentObject(makeDeniedNotificationViewModel())
+    }
+    .preferredColorScheme(.dark)
+}
+
+@MainActor
+private func makeDeniedNotificationViewModel() -> FocusRunViewModel {
+    let viewModel = FocusRunViewModel()
+    viewModel.notificationPreferences.remindersEnabled = false
+    viewModel.notificationAuthorization = .denied
+    return viewModel
 }

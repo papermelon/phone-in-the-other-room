@@ -15,7 +15,9 @@ a Wind Down ritual, not a productivity tool or sleep-quality tracker. The establ
 First-run onboarding makes the promise legible: app shielding is the simplest no-hardware
 starting point, NFC is an optional second layer, and Wind Down also offers a finite, locally
 bundled set of cautious screen-time and sleep-habit ideas. These ideas are invitations, not
-medical treatment, scores, or a feed.
+medical treatment, scores, or a feed. Its final save action explicitly hands off to a short,
+dismissible app tour that spotlights the real Home plan, start action, and bottom navigation. A real
+five-minute practice is offered afterward but never gates finishing the tour.
 
 ## Target user
 
@@ -73,7 +75,10 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   Active runs label those phases as phone-free wind-down, sleep time, and phone-free morning.
   Silent phase-change notices support bedtime and waking, followed by the requested audible
   completion. Setup also offers a private, optional reason for the quiet; custom wording stays
-  in-app unless the person separately allows it in notifications.
+  in-app unless the person separately allows it in notifications. Home names the exact
+  eligible ritual before it starts: the usual Wind Down, a bounded one-time quiet, or the
+  optional five-minute practice. App limits can be skipped for one run without changing
+  the saved shielding preference.
   NFC is the default Wind Down tag for new plans; App Shielding remains the simplest
   no-hardware path. A writable generic NDEF tag can be
   registered, replaced, or forgotten in place; NFC mode requires that same tag to end
@@ -104,10 +109,11 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   Once there are at least two protected and two other measured nights, a local comparison
   shows how sleep duration differs between them, explicitly as association rather than
   causation. Detailed behavioural and HealthKit history stays on the phone.
-- **Settings**: Wind Down schedule, bookends, App Shielding or NFC + App Shielding, automatic Wind Down and shielding;
+- **Settings**: Appearance, Wind Down schedule, bookends, App Shielding or NFC + App Shielding, automatic Wind Down and shielding;
   a replayable “How Wind Down works” explanation and a finite, source-linked guidance guide;
   Apple Health, Screen Time, and notification connections; optional impact-sharing controls;
-  a local-progress reset that preserves the saved Wind Down plan and NFC pairing;
+  a destructive local reset that erases the saved Wind Down plan, NFC pairing, selections, and local history
+  before returning to Welcome; system permissions and remote impact records remain outside that reset;
   privacy information; feedback and support; and app version information. Optional feedback
   can use private Supabase delivery only after its release gates pass, and otherwise uses a
   prefilled email fallback.

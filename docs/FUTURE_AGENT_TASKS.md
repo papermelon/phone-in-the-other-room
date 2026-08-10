@@ -11,6 +11,31 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Recently completed
 
+- **2026-08-10 · Codex:** Tightened the Home orientation into three precise spotlights for
+  the complete Tonight card, the actual start action, and bottom navigation using one geometry
+  space and collision-aware coach placement. Home and confirmation now preserve the identity
+  of practice and additional-quiet periods, and optional app limits can be skipped per run
+  without changing the saved preference. Notification settings now preview the next real
+  schedule occurrence with stable dates/counts and clearer “Notification messages” language.
+
+- **2026-08-10 · Codex:** Replaced the dashboard-like orientation card with a distinct,
+  two-step shell-level spotlight over the real Tonight plan and bottom navigation. First-run
+  onboarding now names the Home handoff, offers an explicit tour skip, makes no-shielding an
+  equal protection choice, and keeps the five-minute practice optional and separate from tour
+  completion. The version-two orientation state migrates legacy milestones without requiring
+  tab visits or real quiet-time actions to finish the tour.
+
+- **2026-08-10 · Codex:** Fixed late-night Wind Down restart anchoring by binding a restart
+  to the current calendar-built ritual window through `protectedUntil`, preserved independent
+  navigation paths for all four active-run tabs, removed the superseded Quiet Appearance
+  runtime/UI, and moved the live journey to a canonical matte-black background. Shield copy now
+  keeps the initial reflection uncluttered, uses the iOS 26.4 submenu confirmation when
+  available, opens Counting Sheep from Continue Wind Down on iOS 26.5+, and bundles full-colour
+  running Ollie in the Shield Configuration extension. Simulator build/tests cover the shared
+  schedule behavior; physical proof remains required for app/category/web shields, submenu and
+  older-OS behavior, approximately-five-minute restoration, cold/background launch routing,
+  fixed-size Ollie rendering, and repeated tab navigation in each phase.
+
 - **2026-08-08 · Codex:** Shipped the completion receipt and field-note reveal redesign. The
   factual receipt now comes first; the single reveal action reads the persisted outcome by run ID
   without resolving again, and the field note remains fully scrollable with found and trail-only
@@ -49,6 +74,12 @@ execute without human sign-off mid-task (final merge review still applies per
   private Wind Down purpose or duplicate Live Activity state. Settings includes a short setup
   guide. Physical Lock Screen, privacy-redaction, Always-On, and coexistence checks remain
   device QA items.
+
+- **2026-08-10 · Codex:** Repaired Quiet Note setup sequencing and connected the installed
+  widget to the existing Settings guide/editor. The widget now opens Counting Sheep through
+  its deep link; the editor saves the normalized explicit note to the existing App Group and
+  reloads the same widget kind. Physical Lock Screen, privacy-redaction, Always-On,
+  coexistence, cold-launch routing, and App Group provisioning remain device QA items.
 
 ---
 

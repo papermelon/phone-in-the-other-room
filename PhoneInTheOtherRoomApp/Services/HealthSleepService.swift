@@ -39,6 +39,10 @@ final class HealthSleepService {
         UserDefaults.standard.bool(forKey: requestedAccessKey)
     }
 
+    func resetLocalState() {
+        UserDefaults.standard.removeObject(forKey: requestedAccessKey)
+    }
+
     func requestSleepAccess() async -> AuthorizationState {
 #if canImport(HealthKit)
         guard isAvailable, let sleepType else { return .unavailable }

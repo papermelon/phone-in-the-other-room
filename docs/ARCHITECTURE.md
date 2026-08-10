@@ -25,8 +25,8 @@ Last verified against code: 1 August 2026.
 | `PhoneInTheOtherRoomLiveActivity` | iOS Widget extension | `Shared/` + `PhoneInTheOtherRoomLiveActivity/` + assets | Embedded Live Activity for Lock Screen, Dynamic Island, and paired-Watch Smart Stack status. |
 | `PhoneInTheOtherRoomScreenTimeReport` | iOS app extension | `Shared/` + `PhoneInTheOtherRoomScreenTimeReport/` | Embedded DeviceActivity report extension. Main app and extension compile the `SCREEN_TIME_REPORTS` paths and share scoped selections through the App Group. |
 | `PhoneInTheOtherRoomDeviceActivityMonitor` | iOS app extension | `Shared/` + `PhoneInTheOtherRoomDeviceActivityMonitor/` | Applies and clears scheduled wind-down/morning shields while the app is suspended. |
-| `PhoneInTheOtherRoomShieldConfiguration` | iOS app extension | `PhoneInTheOtherRoomShieldConfiguration/` | Gentle Quiet Time shield appearance. |
-| `PhoneInTheOtherRoomShieldAction` | iOS app extension | `PhoneInTheOtherRoomShieldAction/` | Closes the shielded app; the main app remains the emergency exit. |
+| `PhoneInTheOtherRoomShieldConfiguration` | iOS app extension | `PhoneInTheOtherRoomShieldConfiguration/` + local asset catalog | Gentle Wind Down shield appearance with full-colour running Ollie. |
+| `PhoneInTheOtherRoomShieldAction` | iOS app extension | `PhoneInTheOtherRoomShieldAction/` | Opens Counting Sheep from Continue Wind Down on iOS 26.5+; safely closes the shielded app on older OS versions. |
 | `PhoneInTheOtherRoomTests` | unit tests | `Shared/` + `Tests/` | Shared-domain coverage, including Night Watch schedule and legacy decoding. |
 
 Schemes: `PhoneInTheOtherRoom` (builds iOS + Watch, runs tests) and
@@ -61,7 +61,7 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ WindDownGuidance.swift         finite, source-linked screen-time and sleep-habit ideas
 ├─ SheepSearch.swift               deterministic search outcomes, posters, rarity, habitats
 ├─ SheepSearchState.swift          versioned outcomes, trail-map credit, and persisted state
-├─ Orientation.swift                versioned, resumable first-run orientation milestones
+├─ Orientation.swift                versioned two-step app tour + legacy milestone migration
 ├─ AppFeedback.swift             validated feedback draft/attachment/receipt protocol
 ├─ DistanceProvider.swift        protocol: async stream of distance readings
 └─ Formatting.swift              OllieFormat timer/minute formatting
@@ -94,7 +94,7 @@ PhoneInTheOtherRoomApp/        iOS app
 ├─ Views/
 │  ├─ HomeView.swift                           navigation shell + run-state routing
 │  ├─ PixelHomeDashboard.swift                 home tab
-│  ├─ Components/OrientationCard.swift         compact contextual orientation + previews
+│  ├─ Components/OrientationTourOverlay.swift  two-step shell spotlight + practice offer
 │  ├─ FocusRunSetupView.swift                  bedtime/wake, bookends, purpose + guard
 │  ├─ ActiveRunView.swift                      in-run UI + non-scrolling journey state
 │  ├─ CompletionView.swift / EarlyEndView.swift
@@ -196,7 +196,9 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
 5. If optional placement is unavailable, the run automatically continues as a simple
    phone-away timer. No later distance reading can warn or end a run.
 6. Optional shielding derives a protected-session DeviceActivity schedule from this same
-   `NightWatchPlan`. After an eligible start (or the registered NFC tag confirmation),
+   `NightWatchPlan`. The start confirmation carries a per-run shielding choice, so a person
+   can continue one practice or quiet period without app limits while preserving their saved
+   preference. After an eligible start (or the registered NFC tag confirmation),
    ManagedSettings applies through wind-down, overnight, and morning quiet, then clears
    on terminal/reset/replacement. A bounded App Group status history distinguishes observed
    shield time from a requested schedule; legacy two-bookend snapshots remain decodable.
@@ -229,16 +231,21 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
     both the Canvas foreground and Ollie's foot alignment. Backdrops pan/zoom only within safe
     crop bounds, and deterministic clues at 20/55/82 percent never affect search resolution.
 11. Successful additional-quiet runs atomically credit their actual quiet minutes to the
-    versioned `SheepTrailMapState` nested in `SheepSearchState`. The state caps pending minutes
-    at 75 and retains bounded credited run IDs for idempotency. A non-guaranteed protected-night
-    search applies only whole percentage points that fit below the 92% cap; appending the
-    persisted outcome consumes exactly 15 mapped minutes per applied point.
-12. After first-run setup, `PixelHomeDashboard` presents a finite contextual orientation
-    persisted as `ollie.orientation.state`. Real setup saves, tab visits, practice starts,
-    practice completion, and the factual Nights record advance its milestones. The optional
-    five-minute practice uses the normal additional-quiet path, so it is recorded without
-    protected-night progress or sheep resolution. Dismissal preserves progress; "Explore on
-    my own" permanently skips it, and Settings can resume or replay it.
+   versioned `SheepTrailMapState` nested in `SheepSearchState`. The state caps pending minutes
+   at 75 and retains bounded credited run IDs for idempotency. A non-guaranteed protected-night
+   search applies only whole percentage points that fit below the 92% cap; appending the
+   persisted outcome consumes exactly 15 mapped minutes per applied point.
+   The one-time quiet editor can also create a bounded 15, 30, 45, or 60 minute occurrence
+   from the current clock time and immediately reuse the standard start confirmation. If that
+   confirmation cannot be prepared, the newly created occurrence is rolled back; starting or
+   completing it never changes protected-night or sheep-search progress.
+12. After first-run setup, the `HomeView` shell presents a finite two-step app tour persisted
+    as `ollie.orientation.state`. A dimmed modal layer spotlights the real Tonight plan and
+    bottom navigation without becoming part of Home's scroll. Finishing or dismissing the
+    tour is independent of tab visits and real Wind Down actions. The optional five-minute
+    practice is offered only after the tour and uses the normal additional-quiet path, so it
+    is recorded without protected-night progress or sheep resolution. Settings can resume or
+    replay the tour and start practice separately. Version-one milestone data remains decodable.
 
 ### Backgrounding during a run
 
@@ -271,11 +278,12 @@ completion fallbacks. See
 `ACTIVITYKIT_PUSH_BACKEND.md` for the server lifecycle contract.
 
 The same WidgetKit extension also exposes a static `QuietNoteWidget` in the
-`accessoryRectangular` family. Its text comes only from the person's explicit App Intent
-widget configuration, is normalized to a short Unicode-safe value, and is not copied from
-the private `OfflinePurposeProfile`. The widget uses a `.never` timeline because it is a
-persistent ritual cue; active phase and countdown state remain exclusive to the Live
-Activity.
+`accessoryRectangular` family. Its text comes from the person's explicit Quiet Note
+editor value in the existing App Group, with the App Intent widget configuration retained
+as the first-install fallback. It is normalized to a short Unicode-safe value and is not
+copied from the private `OfflinePurposeProfile`. The widget uses a `.never` timeline and
+reloads after an in-app save; active phase and countdown state remain exclusive to the
+Live Activity. Tapping it opens `countingsheep://quiet-note` in the app.
 
 Energy-specific implementation notes and the physical-device profiling matrix live in
 [`ENERGY_AUDIT.md`](ENERGY_AUDIT.md).
@@ -336,6 +344,7 @@ by the iPhone.
 | `ollie.phoneBedNFCTag.registration` | `PhoneBedTagRegistration` | local tag UUID + digest metadata; raw token is not retained |
 | `ollie.impactSharing.preferences` | `ImpactSharingPreferences` | explicit optional-sharing state and consent date |
 | `ollie.impactSharing.records` | `[ImpactUploadRecord]` | date-free retry cache for consented impact rows |
+| `ollie.appearance.preference` | `AppAppearancePreference` | Automatic, Light, or Dark app appearance choice |
 
 - No CoreData / SwiftData. Core state stays in standard defaults. The App Group is limited
   to Screen Time selections plus shield schedule/status contracts needed by extensions;
@@ -343,6 +352,16 @@ by the iPhone.
 - Codable models are the schema. Changing them requires backwards-compatible decoding;
   a legacy-decode test exists in `Tests/` and must keep passing.
 - Watch and phone do not share persistence; the Watch is rehydrated over WatchConnectivity.
+
+`FocusRunViewModel.eraseLocalDataAndStartOver()` is the scoped local reset boundary. It clears
+the explicit standard-default key list in `Shared/CountingSheepStorage.swift`, asks the owning
+notification, HealthKit, NFC, usage-monitoring, shielding, and Live Activity services to clear
+their runtime state, and clears the explicit Screen Time/Brief Access App Group keys. It resets
+the coordinator and root route in memory, then opens a fresh Welcome draft in the same process.
+The installation transport identifier is intentionally retained so previously uploaded optional
+Live Activity delivery records are not re-identified by a local reset; remote impact records are
+also never deleted by this operation. iOS notification, Family Controls, and HealthKit grants
+cannot be revoked programmatically here.
 
 ### Optional hosted backend
 
@@ -382,8 +401,11 @@ cloud boundaries.
 3. **Screen Time needs physical-device QA.** The report/monitor/configuration/action
    extensions are embedded locally, but the three new shield bundle IDs still need Family
    Controls distribution assignment and continuous barrier transitions need physical proof.
-   in the project, but authorization, picker persistence, report rendering, empty states,
-   and distribution profiles must be exercised on a physical iPhone.
+   App/category shields use the iOS 26.4+ system submenu for Brief Access; older OS versions
+   use the direct five-minute button, and web domains never advertise Brief Access. Continue
+   Wind Down opens Counting Sheep on iOS 26.5+ and keeps the close fallback on older systems.
+   Authorization, picker persistence, report rendering, empty states, and distribution
+   profiles must still be exercised on a physical iPhone.
 4. **Legacy mock layer remains compiled in Debug.** Friends/Shop and the old Farm/reward shelf
    still render `MVPMockData`; they appear only inside More with
    `-ollie.debug.enableMockScreens YES`. The shipping Farm is a separate real-data surface.

@@ -8,8 +8,9 @@ struct SettingsView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var showImpactConsent = false
     @State private var showImpactDeletion = false
-    @State private var showLocalProgressReset = false
+    @State private var showStartOver = false
     @State private var showReplaySetup = false
+    @State private var showAppShieldInfo = false
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     @State private var showScreenTimePicker = false
 #endif
@@ -19,10 +20,12 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
                 orientationSection
+                appearanceSection
                 windDownSection
                 guidanceSection
                 connectionsSection
                 dataAndPrivacySection
+                startOverSection
                 helpSection
                 aboutSection
 #if DEBUG
@@ -55,16 +58,16 @@ struct SettingsView: View {
             Text("This removes optional impact records from Counting Sheep's backend. Your detailed history stays on this iPhone.")
         }
         .confirmationDialog(
-            "Reset local progress?",
-            isPresented: $showLocalProgressReset,
+            "Start over from the beginning?",
+            isPresented: $showStartOver,
             titleVisibility: .visible
         ) {
-            Button("Reset local progress", role: .destructive) {
-                viewModel.resetLocalProgress()
+            Button("Erase and start over", role: .destructive) {
+                viewModel.eraseLocalDataAndStartOver()
             }
-            Button("Keep my progress", role: .cancel) {}
+            Button("Keep my data", role: .cancel) {}
         } message: {
-            Text("This clears your protected nights, flock, rewards, reflections, and local ritual history. Your Wind Down plan and NFC tag stay paired; setup will not reopen.")
+            Text("This erases your Wind Down plan, protected nights, flock, rewards, reflections, local history, app selection, and paired NFC tag. Counting Sheep will return to the Welcome screen. System permissions already granted by iOS cannot be revoked here.")
         }
         .sheet(isPresented: $showReplaySetup) {
             NavigationStack {
@@ -75,6 +78,13 @@ struct SettingsView: View {
                 )
                 .environmentObject(viewModel)
             }
+        }
+        .sheet(isPresented: $showAppShieldInfo) {
+            AppShieldExplainerSheet {
+                showAppShieldInfo = false
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
@@ -104,12 +114,12 @@ struct SettingsView: View {
             sectionHeader("Getting settled", icon: "map.fill")
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text(viewModel.orientationState.canResume ? "Your orientation is resting." : "A gentle map of Counting Sheep")
+                    Text(viewModel.orientationState.canResume ? "Your app tour is paused." : "A quick map of Counting Sheep")
                         .font(AppTypography.headline)
-                    Text("Home starts Wind Down, Nights keeps your records, Farm shows Ollie’s sheep search, and Settings holds your plan and connections. Try a short practice quiet too; it is real quiet time, but not a protected night.")
+                    Text("Take a two-step tour that points to the real Home plan and bottom navigation.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
-                    Button(viewModel.orientationState.canResume ? "Resume orientation" : "Replay orientation") {
+                    Button(viewModel.orientationState.canResume ? "Resume app tour" : "Show app tour") {
                         if viewModel.orientationState.canResume {
                             viewModel.resumeOrientation()
                         } else {
@@ -125,8 +135,33 @@ struct SettingsView: View {
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
                     }
+
+                    Divider()
+
+                    Text("Want to test Wind Down first?")
+                        .font(AppTypography.headline)
+                    Text("A real five-minute practice appears in Nights, but never counts as a protected night or starts a sheep search.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    Button("Try 5 minutes") {
+                        NotificationCenter.default.post(name: .countingSheepShowHome, object: nil)
+                        _ = viewModel.startOrientationPractice()
+                    }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    .frame(minHeight: 44, alignment: .leading)
+                    .disabled(viewModel.isRunning)
                 }
             }
+        }
+    }
+
+    private var appearanceSection: some View {
+        VStack(spacing: AppSpacing.md) {
+            sectionHeader("Appearance", icon: "circle.lefthalf.filled")
+            AppearancePreferenceCard(
+                preference: viewModel.appearancePreference,
+                onSelect: viewModel.setAppearancePreference
+            )
         }
     }
 
@@ -158,9 +193,32 @@ struct SettingsView: View {
             WindDownProtectionPicker(
                 selectedKind: viewModel.nightWatchPreferences.guardKind,
                 isNFCTagReady: viewModel.hasRegisteredNFCTag,
-                onSelect: viewModel.selectProtectionChoice
+                shieldingReadiness: viewModel.shieldingReadiness,
+                selectedAppsSummary: selectedShieldingAppsSummary,
+                onSelect: viewModel.selectProtectionChoice,
+                onAllowScreenTime: viewModel.connectScreenTime,
+                onChooseApps: chooseShieldingAppsAction,
+                onSetUpNFCTag: { viewModel.provisionNFCTag() },
+                onShowAppShieldInfo: { showAppShieldInfo = true }
             )
         }
+    }
+
+    private var chooseShieldingAppsAction: () -> Void {
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        return { showScreenTimePicker = true }
+#else
+        return {}
+#endif
+    }
+
+    private var selectedShieldingAppsSummary: String? {
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        guard viewModel.hasSelectedShieldingApps else { return nil }
+        return viewModel.bedtimeActivitySelection.phoneOtherSelectionSummary
+#else
+        return nil
+#endif
     }
 
     private var connectionsSection: some View {
@@ -201,26 +259,6 @@ struct SettingsView: View {
                 settingsRow("Lock Screen Quiet Note", icon: "text.bubble.fill")
             }
             .buttonStyle(.plain)
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Toggle(
-                        "Quiet appearance",
-                        isOn: Binding(
-                            get: { viewModel.quietAppearanceEnabled },
-                            set: viewModel.setQuietAppearanceEnabled
-                        )
-                    )
-                    .font(AppTypography.headline)
-                    Text("Use a softer, lower-saturation palette inside the active Wind Down screen. iOS does not provide a public API for changing the whole phone to grayscale.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                    NavigationLink("How to use iOS Color Filters") {
-                        QuietAppearanceGuideView()
-                    }
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.grass)
-                }
-            }
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
             if viewModel.screenTimeAuthorization == .approved {
                 ScreenTimeBookendCard(
@@ -332,24 +370,30 @@ struct SettingsView: View {
                     }
                 }
             }
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("Start over locally")
-                        .font(AppTypography.headline)
-                    Text("Clear your protected nights, flock, rewards, reflections, and local ritual history. Your Wind Down plan and NFC tag stay ready.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                    Button("Reset local progress", role: .destructive) {
-                        showLocalProgressReset = true
-                    }
-                    .buttonStyle(.bordered)
-                }
-            }
             if let privacyURL = Self.privacyURL {
                 Link(destination: privacyURL) {
                     settingsRow("Privacy policy", icon: "lock.shield.fill")
                 }
                 .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private var startOverSection: some View {
+        VStack(spacing: AppSpacing.md) {
+            sectionHeader("Start over", icon: "arrow.counterclockwise")
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("Erase local data and start over")
+                        .font(AppTypography.headline)
+                    Text("Return Counting Sheep to the Welcome screen and begin with a clean local ritual.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    Button("Erase local data and start over", role: .destructive) {
+                        showStartOver = true
+                    }
+                    .buttonStyle(.bordered)
+                }
             }
         }
     }
@@ -527,10 +571,32 @@ struct SettingsView: View {
 }
 
 #Preview("Settings") {
-    NavigationStack {
+    let viewModel = FocusRunViewModel()
+    viewModel.appearancePreference = .automatic
+    return NavigationStack {
         SettingsView()
-            .environmentObject(FocusRunViewModel())
+            .environmentObject(viewModel)
     }
+}
+
+#Preview("Settings · explicit dark") {
+    let viewModel = FocusRunViewModel()
+    viewModel.appearancePreference = .dark
+    return NavigationStack {
+        SettingsView()
+            .environmentObject(viewModel)
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Settings · explicit light") {
+    let viewModel = FocusRunViewModel()
+    viewModel.appearancePreference = .light
+    return NavigationStack {
+        SettingsView()
+            .environmentObject(viewModel)
+    }
+    .preferredColorScheme(.light)
 }
 
 #Preview("Settings · replay orientation") {

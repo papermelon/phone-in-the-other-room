@@ -59,6 +59,78 @@ final class NightWatchTests: XCTestCase {
         XCTAssertEqual(plan.phase(at: startedAt), .overnight)
     }
 
+    func testRestartAfterEarlyEndKeepsTheCurrentOvernightWindow() throws {
+        let preferences = makePreferences()
+        let firstStart = try date(2026, 7, 18, 22, 30)
+        let firstPlan = preferences.makePlan(startedAt: firstStart, calendar: calendar)
+        let earlyEnd = try date(2026, 7, 18, 23, 15)
+        let restartedAt = try date(2026, 7, 19, 5, 14)
+
+        XCTAssertEqual(firstPlan.intendedBedtime, try date(2026, 7, 18, 23, 0))
+        XCTAssertLessThan(earlyEnd, firstPlan.protectedUntil)
+
+        let restartedPlan = preferences.makePlan(startedAt: restartedAt, calendar: calendar)
+
+        XCTAssertEqual(restartedPlan.intendedBedtime, firstPlan.intendedBedtime)
+        XCTAssertEqual(restartedPlan.phase(at: restartedAt), .overnight)
+        XCTAssertEqual(restartedPlan.nextTransition(after: restartedAt), try date(2026, 7, 19, 7, 0))
+        XCTAssertEqual(restartedPlan.creditedWindDownMinutes(startedAt: restartedAt), 0)
+        XCTAssertEqual(restartedPlan.creditedMorningQuietMinutes(startedAt: restartedAt), 30)
+    }
+
+    func testRestartImmediatelyBeforeWakeUsesTheRemainingCurrentWindow() throws {
+        let preferences = makePreferences()
+        let restartedAt = try date(2026, 7, 19, 6, 59)
+
+        let plan = preferences.makePlan(startedAt: restartedAt, calendar: calendar)
+
+        XCTAssertEqual(plan.intendedBedtime, try date(2026, 7, 18, 23, 0))
+        XCTAssertEqual(plan.phase(at: restartedAt), .overnight)
+        XCTAssertEqual(plan.nextTransition(after: restartedAt), try date(2026, 7, 19, 7, 0))
+    }
+
+    func testRestartExactlyAtWakeStartsMorningQuiet() throws {
+        let preferences = makePreferences()
+        let restartedAt = try date(2026, 7, 19, 7, 0)
+
+        let plan = preferences.makePlan(startedAt: restartedAt, calendar: calendar)
+
+        XCTAssertEqual(plan.intendedBedtime, try date(2026, 7, 18, 23, 0))
+        XCTAssertEqual(plan.phase(at: restartedAt), .morningQuiet)
+        XCTAssertEqual(plan.nextTransition(after: restartedAt), try date(2026, 7, 19, 7, 30))
+    }
+
+    func testRestartDuringMorningQuietCreditsOnlyRemainingMinutes() throws {
+        let preferences = makePreferences()
+        let restartedAt = try date(2026, 7, 19, 7, 14)
+
+        let plan = preferences.makePlan(startedAt: restartedAt, calendar: calendar)
+
+        XCTAssertEqual(plan.intendedBedtime, try date(2026, 7, 18, 23, 0))
+        XCTAssertEqual(plan.phase(at: restartedAt), .morningQuiet)
+        XCTAssertEqual(plan.creditedQuietMinutes(startedAt: restartedAt), 16)
+    }
+
+    func testRestartAtProtectedUntilMovesToTheNextEvening() throws {
+        let preferences = makePreferences()
+        let restartedAt = try date(2026, 7, 19, 7, 30)
+
+        let plan = preferences.makePlan(startedAt: restartedAt, calendar: calendar)
+
+        XCTAssertEqual(plan.intendedBedtime, try date(2026, 7, 19, 23, 0))
+        XCTAssertEqual(plan.phase(at: restartedAt), .windDown)
+    }
+
+    func testRestartAfterProtectedUntilMovesToTheNextEvening() throws {
+        let preferences = makePreferences()
+        let restartedAt = try date(2026, 7, 19, 8, 0)
+
+        let plan = preferences.makePlan(startedAt: restartedAt, calendar: calendar)
+
+        XCTAssertEqual(plan.intendedBedtime, try date(2026, 7, 19, 23, 0))
+        XCTAssertEqual(plan.phase(at: restartedAt), .windDown)
+    }
+
     func testStartWindowOpensAtWindDownRatherThanAllDay() throws {
         let preferences = makePreferences()
 
@@ -207,6 +279,68 @@ final class NightWatchTests: XCTestCase {
         XCTAssertEqual(wakeComponents.hour, 7)
         XCTAssertEqual(wakeComponents.minute, 0)
         XCTAssertEqual(plan.protectedUntil.timeIntervalSince(plan.wakeTime), 30 * 60, accuracy: 1)
+    }
+
+    func testLateRestartKeepsLocalBedtimeAcrossSpringDSTChange() throws {
+        var losAngeles = Calendar(identifier: .gregorian)
+        losAngeles.timeZone = try XCTUnwrap(TimeZone(identifier: "America/Los_Angeles"))
+        let restartedAt = try XCTUnwrap(losAngeles.date(from: DateComponents(
+            timeZone: losAngeles.timeZone,
+            year: 2026,
+            month: 3,
+            day: 8,
+            hour: 5,
+            minute: 14
+        )))
+
+        let plan = makePreferences().makePlan(startedAt: restartedAt, calendar: losAngeles)
+        let bedtimeComponents = losAngeles.dateComponents([.year, .month, .day, .hour, .minute], from: plan.intendedBedtime)
+        let wakeComponents = losAngeles.dateComponents([.year, .month, .day, .hour, .minute], from: plan.wakeTime)
+
+        XCTAssertEqual(bedtimeComponents.year, 2026)
+        XCTAssertEqual(bedtimeComponents.month, 3)
+        XCTAssertEqual(bedtimeComponents.day, 7)
+        XCTAssertEqual(bedtimeComponents.hour, 23)
+        XCTAssertEqual(bedtimeComponents.minute, 0)
+        XCTAssertEqual(wakeComponents.day, 8)
+        XCTAssertEqual(wakeComponents.hour, 7)
+        XCTAssertEqual(plan.phase(at: restartedAt), .overnight)
+    }
+
+    func testLateRestartUsesNonDefaultTimeZoneAndCrossingMidnightWake() throws {
+        var tokyo = Calendar(identifier: .gregorian)
+        tokyo.timeZone = try XCTUnwrap(TimeZone(identifier: "Asia/Tokyo"))
+        let preferences = NightWatchPreferences(
+            bedtimeHour: 23,
+            bedtimeMinute: 0,
+            wakeHour: 1,
+            wakeMinute: 0,
+            windDownMinutes: 30,
+            morningQuietMinutes: 45,
+            eveningActivity: .read,
+            morningActivity: .openCurtains,
+            guardKind: .honorTimer,
+            isConfigured: true
+        )
+        let restartedAt = try XCTUnwrap(tokyo.date(from: DateComponents(
+            timeZone: tokyo.timeZone,
+            year: 2026,
+            month: 8,
+            day: 4,
+            hour: 0,
+            minute: 40
+        )))
+
+        let plan = preferences.makePlan(startedAt: restartedAt, calendar: tokyo)
+        let bedtimeComponents = tokyo.dateComponents([.year, .month, .day, .hour, .minute], from: plan.intendedBedtime)
+        let wakeComponents = tokyo.dateComponents([.year, .month, .day, .hour, .minute], from: plan.wakeTime)
+
+        XCTAssertEqual(bedtimeComponents.day, 3)
+        XCTAssertEqual(bedtimeComponents.hour, 23)
+        XCTAssertEqual(wakeComponents.day, 4)
+        XCTAssertEqual(wakeComponents.hour, 1)
+        XCTAssertEqual(plan.phase(at: restartedAt), .overnight)
+        XCTAssertEqual(plan.nextTransition(after: restartedAt), plan.wakeTime)
     }
 
     private func makePreferences() -> NightWatchPreferences {

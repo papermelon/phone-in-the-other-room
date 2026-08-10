@@ -57,9 +57,11 @@ New Night Watch UI uses the pixel/paper design layer. `GameComponents.swift` is 
 layer and should not receive new features. `AssetSlot` remains the central registry for
 catalog names and all missing artwork must keep its placeholder fallback.
 
-`AppColors` supplies adaptive warm-light and night palettes. The app respects system
-appearance during the day and requests the night palette while a Night Watch is active or
-its bedtime start window is open. Morning completion may return to the system appearance.
+`AppColors` supplies adaptive warm-light and night palettes. The Appearance setting is
+centralized at the app root: Automatic follows system appearance during ordinary use and
+requests the night palette while a Night Watch is active or its bedtime start window is open;
+Light and Dark remain explicit through Wind Down and onboarding. Morning completion may return
+to the system appearance only in Automatic.
 
 ## Targets and build generation
 

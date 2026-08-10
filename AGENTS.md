@@ -108,8 +108,8 @@ flowchart LR
 
 The iPhone is the **authoritative** side of a run. The Watch displays state and reports a brief optional placement distance only.
 Persistence is UserDefaults + Codable JSON only — no CoreData or SwiftData. Core app
-state remains in standard defaults; only scoped Screen Time selections use the
-`group.com.ngawangchime.countingsheep` App Group.
+state remains in standard defaults; scoped Screen Time selections and the explicit Quiet
+Note widget value use the `group.com.ngawangchime.countingsheep` App Group.
 
 Full detail: `docs/ARCHITECTURE.md`.
 

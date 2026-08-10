@@ -16,12 +16,13 @@ struct OnboardingFlowView: View {
 
     init(
         initialDraft: OnboardingDraft? = nil,
+        startsFresh: Bool = false,
         onComplete: @escaping () -> Void,
         onCancel: (() -> Void)? = nil
     ) {
-        let restoredDraft = initialDraft
-            ?? PersistenceService.shared.onboardingDraft
-            ?? OnboardingDraft.defaults()
+        let restoredDraft = startsFresh
+            ? OnboardingDraft.defaults()
+            : (initialDraft ?? PersistenceService.shared.onboardingDraft ?? OnboardingDraft.defaults())
         var normalizedDraft = restoredDraft
         // Raw values are preserved for Codable compatibility with the previous flow.
         // The removed advanced-reminders page now lands on the saved-plan screen.
@@ -33,7 +34,7 @@ struct OnboardingFlowView: View {
         )
         self.onComplete = onComplete
         self.onCancel = onCancel
-        self.isReplay = initialDraft != nil
+        self.isReplay = initialDraft != nil && !startsFresh
     }
 
     var body: some View {
@@ -52,13 +53,25 @@ struct OnboardingFlowView: View {
             .id(draft.step)
 
             OnboardingPrimaryButton(
-                title: draft.step == .ready ? "Save my Wind Down" : "Continue",
+                title: primaryButtonTitle,
                 action: advance,
                 isEnabled: canContinue
             )
             .padding(.horizontal, AppSpacing.md)
             .padding(.top, AppSpacing.sm)
-            .padding(.bottom, AppSpacing.md)
+
+            if draft.step == .ready, !isReplay {
+                Button("Save and skip the tour") {
+                    finish(showTour: false)
+                }
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.muted)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .padding(.horizontal, AppSpacing.md)
+            }
+
+            Color.clear
+                .frame(height: AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
         .toolbar {
@@ -102,9 +115,17 @@ struct OnboardingFlowView: View {
                 showsNFCChoice: isReplay
             )
         case .automaticStart:
-            OnboardingReadyStep(draft: draft, viewModel: viewModel)
+            OnboardingReadyStep(draft: draft, showsTourHandoff: !isReplay)
         case .ready:
-            OnboardingReadyStep(draft: draft, viewModel: viewModel)
+            OnboardingReadyStep(draft: draft, showsTourHandoff: !isReplay)
+        }
+    }
+
+    private var primaryButtonTitle: String {
+        switch draft.step {
+        case .welcome: return "Set up my Wind Down"
+        case .ready: return isReplay ? "Save changes" : "Save and show me Home"
+        default: return "Continue"
         }
     }
 
@@ -127,31 +148,7 @@ struct OnboardingFlowView: View {
         }
 
         if draft.step == .ready {
-            var completedDraft = draft
-            if !isReplay {
-                // Reminders, automatic start, cadence, and sounds are chosen later in Settings.
-                completedDraft.automaticStartEnabled = false
-                completedDraft.remindersEnabled = false
-            }
-            if isReplay {
-                // Settings replay edits the ritual plan without silently resetting
-                // notification choices or the person's private reason for quiet.
-                let existingNotifications = viewModel.notificationPreferences
-                completedDraft.remindersEnabled = existingNotifications.remindersEnabled
-                completedDraft.notificationCadence = existingNotifications.cadence
-                completedDraft.notificationSoundsEnabled = existingNotifications.soundsEnabled
-                completedDraft.educationalTipsEnabled = existingNotifications.educationalTipsEnabled
-                completedDraft.usageAwareRemindersEnabled = existingNotifications.usageAwareRemindersEnabled
-                completedDraft.morningReflectionReminderEnabled = existingNotifications.morningReflectionReminderEnabled
-                completedDraft.purposeCategory = viewModel.offlinePurpose.category
-                completedDraft.customPurpose = viewModel.offlinePurpose.customText
-                completedDraft.allowsCustomTextInNotifications = viewModel.offlinePurpose.allowsCustomTextInNotifications
-            }
-            viewModel.applyOnboardingDraft(
-                completedDraft,
-                preserveAdvancedNotifications: isReplay
-            )
-            onComplete()
+            finish(showTour: true)
             return
         }
 
@@ -164,6 +161,35 @@ struct OnboardingFlowView: View {
             return
         }
         draft.step = CountingSheepOnboardingStep.visibleSteps[index + 1]
+    }
+
+    private func finish(showTour: Bool) {
+        var completedDraft = draft
+        if !isReplay {
+            // Reminders, automatic start, cadence, and sounds are chosen later in Settings.
+            completedDraft.automaticStartEnabled = false
+            completedDraft.remindersEnabled = false
+        }
+        if isReplay {
+            // Settings replay edits the ritual plan without silently resetting
+            // notification choices or the person's private reason for quiet.
+            let existingNotifications = viewModel.notificationPreferences
+            completedDraft.remindersEnabled = existingNotifications.remindersEnabled
+            completedDraft.notificationCadence = existingNotifications.cadence
+            completedDraft.notificationSoundsEnabled = existingNotifications.soundsEnabled
+            completedDraft.educationalTipsEnabled = existingNotifications.educationalTipsEnabled
+            completedDraft.usageAwareRemindersEnabled = existingNotifications.usageAwareRemindersEnabled
+            completedDraft.morningReflectionReminderEnabled = existingNotifications.morningReflectionReminderEnabled
+            completedDraft.purposeCategory = viewModel.offlinePurpose.category
+            completedDraft.customPurpose = viewModel.offlinePurpose.customText
+            completedDraft.allowsCustomTextInNotifications = viewModel.offlinePurpose.allowsCustomTextInNotifications
+        }
+        viewModel.applyOnboardingDraft(
+            completedDraft,
+            preserveAdvancedNotifications: isReplay,
+            showTourAfterOnboarding: isReplay ? nil : showTour
+        )
+        onComplete()
     }
 
     private func chooseShieldedApps() {

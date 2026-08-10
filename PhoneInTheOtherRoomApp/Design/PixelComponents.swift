@@ -292,6 +292,7 @@ struct CountingSheepBottomBar: View {
         )
         .overlay(RoundedRectangle(cornerRadius: 16).stroke(AppColors.stroke.opacity(0.10), lineWidth: 1))
         .shadow(color: AppColors.stroke.opacity(0.10), radius: 10, x: 0, y: -2)
+        .orientationTourTarget(.navigation)
     }
 }
 
@@ -316,6 +317,7 @@ struct ProgressStarBar: View {
 }
 
 struct PrimaryGreenCTA: View {
+    var eyebrow: String? = nil
     var title: String
     var subtitle: String
     var icon: String
@@ -335,6 +337,11 @@ struct PrimaryGreenCTA: View {
                         .frame(width: 54, height: 54)
                 }
                 VStack(alignment: .leading, spacing: 5) {
+                    if let eyebrow {
+                        Text(eyebrow)
+                            .font(pixelFont(.caption2))
+                            .foregroundStyle(.white.opacity(0.84))
+                    }
                     Text(title)
                         .font(AppTypography.title)
                         .foregroundStyle(.white)
@@ -363,6 +370,7 @@ struct PrimaryGreenCTA: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
+        .orientationTourTarget(.startAction)
     }
 }
 
