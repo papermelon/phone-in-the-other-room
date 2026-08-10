@@ -2,26 +2,30 @@ import SwiftUI
 
 struct AppRootView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
-    @State private var didCompleteOnboarding = false
+    @State private var showQuietNoteEditor = false
 
     var body: some View {
         Group {
-            if shouldShowOnboarding {
-                OnboardingFlowView {
-                    didCompleteOnboarding = true
-                }
-            } else {
+            switch viewModel.rootRoute {
+            case .freshOnboarding:
+                OnboardingFlowView(startsFresh: true, onComplete: {})
+            case .resumeOnboarding:
+                OnboardingFlowView(onComplete: {})
+            case .home:
                 HomeView()
             }
         }
-        .animation(AppMotion.navigation, value: shouldShowOnboarding)
-    }
-
-    private var shouldShowOnboarding: Bool {
-        guard viewModel.activeRun == nil else { return false }
-        guard !didCompleteOnboarding else { return false }
-        guard !viewModel.hasConfiguredNightWatch else { return false }
-        return PersistenceService.shared.onboardingVersion < CountingSheepOnboarding.currentVersion
+        .animation(AppMotion.navigation, value: viewModel.rootRoute)
+        .onOpenURL { url in
+            guard QuietNoteText.isEditorURL(url) else { return }
+            showQuietNoteEditor = true
+        }
+        .sheet(isPresented: $showQuietNoteEditor) {
+            NavigationStack {
+                LockScreenQuietNoteGuideView()
+                    .environmentObject(viewModel)
+            }
+        }
     }
 }
 

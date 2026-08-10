@@ -48,9 +48,11 @@ occurrence across both sources; a future additional period cannot replace a norm
 started now. Additional quiet remains factual history only and never creates protected-night or
 sheep progress.
 
-Settings includes a non-destructive Review Wind Down setup action. Reset local progress intentionally keeps
-the saved plan, NFC pairing, and onboarding completion marker; it clears progress only and does
-not reopen onboarding.
+Settings includes a non-destructive Review Wind Down setup action and a separate destructive
+"Erase local data and start over" action. The latter clears the saved plan, NFC pairing,
+onboarding marker, local history, selections, and runtime state, then opens fresh Welcome
+onboarding in the same process. It does not revoke iOS permissions or delete remotely uploaded
+impact records.
 
 Completion shows a short factual receipt first. One explicit “Open Ollie's field note” action
 reveals the already persisted outcome matched to that run ID. The top-aligned, finite field note

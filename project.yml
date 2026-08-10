@@ -113,6 +113,7 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.liveactivity
         PRODUCT_NAME: Counting Sheep Live Activity
         INFOPLIST_FILE: PhoneInTheOtherRoomLiveActivity/Info.plist
+        CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomLiveActivity/PhoneInTheOtherRoomLiveActivity.entitlements
   PhoneInTheOtherRoomScreenTimeReport:
     # Embedded DeviceActivity report extension. Family Controls distribution is assigned
     # to this target and the containing app; both share only scoped Screen Time selections.
@@ -146,6 +147,8 @@ targets:
     platform: iOS
     sources:
       - path: PhoneInTheOtherRoomShieldConfiguration
+      - path: PhoneInTheOtherRoomShieldConfiguration/Assets.xcassets
+        buildPhase: resources
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.ShieldConfiguration

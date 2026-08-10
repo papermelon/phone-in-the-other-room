@@ -29,7 +29,7 @@ struct QuietNoteProvider: AppIntentTimelineProvider {
     ) async -> QuietNoteEntry {
         QuietNoteEntry(
             date: Date(),
-            text: QuietNoteText.normalized(configuration.note)
+            text: QuietNoteText.savedText ?? QuietNoteText.normalized(configuration.note)
         )
     }
 
@@ -39,18 +39,16 @@ struct QuietNoteProvider: AppIntentTimelineProvider {
     ) async -> Timeline<QuietNoteEntry> {
         let entry = QuietNoteEntry(
             date: Date(),
-            text: QuietNoteText.normalized(configuration.note)
+            text: QuietNoteText.savedText ?? QuietNoteText.normalized(configuration.note)
         )
         return Timeline(entries: [entry], policy: .never)
     }
 }
 
 struct QuietNoteWidget: Widget {
-    private static let kind = "com.ngawangchime.countingsheep.quiet-note"
-
     var body: some WidgetConfiguration {
         AppIntentConfiguration(
-            kind: Self.kind,
+            kind: QuietNoteText.widgetKind,
             intent: QuietNoteConfigurationIntent.self,
             provider: QuietNoteProvider()
         ) { entry in
@@ -73,6 +71,7 @@ private struct QuietNoteWidgetView: View {
             .privacySensitive()
             .accessibilityLabel("Quiet Note")
             .accessibilityValue(entry.text)
+            .widgetURL(QuietNoteText.editorURL)
             .containerBackground(for: .widget) {}
     }
 }

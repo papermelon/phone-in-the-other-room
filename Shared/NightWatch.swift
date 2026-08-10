@@ -240,23 +240,50 @@ struct NightWatchPreferences: Codable, Equatable {
 
     private func nextIntendedBedtime(after date: Date, calendar: Calendar) -> Date {
         let todayBedtime = bedtimeDate(on: date, calendar: calendar)
-        if todayBedtime >= date {
-            let previousBedtime = calendar.date(byAdding: .day, value: -1, to: todayBedtime)
-                ?? todayBedtime.addingTimeInterval(-24 * 60 * 60)
-            if date.timeIntervalSince(previousBedtime) <= 6 * 60 * 60 {
-                return previousBedtime
+        let candidateBedtimes = [
+            calendar.date(byAdding: .day, value: -1, to: todayBedtime) ?? todayBedtime,
+            todayBedtime,
+            calendar.date(byAdding: .day, value: 1, to: todayBedtime) ?? todayBedtime
+        ]
+
+        // A run restarted after an early end belongs to the same local bedtime
+        // until its protected morning window has ended. Comparing complete,
+        // calendar-built windows avoids guessing based on elapsed hours, which
+        // can cross a DST boundary or leave a late-morning restart ambiguous.
+        for bedtime in candidateBedtimes {
+            guard let window = ritualWindow(around: bedtime, calendar: calendar) else { continue }
+            if date >= window.start && date < window.protectedUntil {
+                return bedtime
             }
-            return todayBedtime
         }
 
-        // A start shortly after the chosen bedtime is a late tuck-in for this night,
-        // not a session that should wait almost a full day to enter its overnight phase.
-        if date.timeIntervalSince(todayBedtime) <= 6 * 60 * 60 {
-            return todayBedtime
-        }
+        // No preceding window is active. The next bedtime after the current date
+        // is the only valid anchor for a new evening ritual.
+        return candidateBedtimes.first(where: { $0 >= date })
+            ?? calendar.date(byAdding: .day, value: 2, to: todayBedtime)
+            ?? todayBedtime.addingTimeInterval(2 * 24 * 60 * 60)
+    }
 
-        return calendar.date(byAdding: .day, value: 1, to: todayBedtime)
-            ?? todayBedtime.addingTimeInterval(24 * 60 * 60)
+    private func ritualWindow(
+        around bedtime: Date,
+        calendar: Calendar
+    ) -> (start: Date, wake: Date, protectedUntil: Date)? {
+        let start = calendar.date(byAdding: .minute, value: -windDownMinutes, to: bedtime)
+            ?? bedtime.addingTimeInterval(TimeInterval(-windDownMinutes * 60))
+        let wakeComponents = DateComponents(hour: wakeHour, minute: wakeMinute, second: 0)
+        guard let wake = calendar.nextDate(
+            after: bedtime,
+            matching: wakeComponents,
+            matchingPolicy: .nextTime,
+            repeatedTimePolicy: .first,
+            direction: .forward
+        ) else { return nil }
+        let protectedUntil = calendar.date(
+            byAdding: .minute,
+            value: morningQuietMinutes,
+            to: wake
+        ) ?? wake.addingTimeInterval(TimeInterval(morningQuietMinutes * 60))
+        return (start, wake, protectedUntil)
     }
 }
 

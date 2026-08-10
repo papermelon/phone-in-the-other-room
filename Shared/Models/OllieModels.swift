@@ -122,6 +122,9 @@ struct FocusRun: Codable, Identifiable, Equatable {
     var placementEvidence: PlacementEvidence
     var nightWatchPlan: NightWatchPlan?
     var briefAccessUseCount: Int
+    /// A per-run choice. This prevents "start without app limits" from
+    /// changing the person's saved shielding preference.
+    var appShieldingRequested: Bool
     /// Whether this specific run was allowed to create a Live Activity. This
     /// remains separate from the Settings default so a relaunch cannot surprise
     /// someone by creating an activity they declined at start time.
@@ -134,6 +137,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         state: FocusRunState = .placementGrace,
         guardKind: SessionGuardKind = .honorTimer,
         nightWatchPlan: NightWatchPlan? = nil,
+        appShieldingRequested: Bool = true,
         liveActivityRequested: Bool = true
     ) {
         self.id = id
@@ -154,6 +158,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         self.placementEvidence = .notRequired(for: guardKind)
         self.nightWatchPlan = nightWatchPlan
         self.briefAccessUseCount = 0
+        self.appShieldingRequested = appShieldingRequested
         self.liveActivityRequested = liveActivityRequested
     }
 
@@ -161,7 +166,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         case id, plannedDurationSeconds, actualDurationSeconds, startedAt, plannedEndAt, endedAt
         case state, phoneAwayValidatedAt, proximityHistory, warningCount, completedSuccessfully
         case endedEarlyReason, earnedRewardIDs, guardKind, placementStatus, placementEvidence, nightWatchPlan
-        case briefAccessUseCount, liveActivityRequested
+        case briefAccessUseCount, appShieldingRequested, liveActivityRequested
     }
 
     init(from decoder: Decoder) throws {
@@ -186,6 +191,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
             ?? .notRequired(for: guardKind)
         nightWatchPlan = try container.decodeIfPresent(NightWatchPlan.self, forKey: .nightWatchPlan)
         briefAccessUseCount = max(0, try container.decodeIfPresent(Int.self, forKey: .briefAccessUseCount) ?? 0)
+        appShieldingRequested = try container.decodeIfPresent(Bool.self, forKey: .appShieldingRequested) ?? true
         liveActivityRequested = try container.decodeIfPresent(Bool.self, forKey: .liveActivityRequested) ?? true
     }
 }

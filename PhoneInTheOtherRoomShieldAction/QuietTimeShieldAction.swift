@@ -17,7 +17,7 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
         for webDomain: WebDomainToken,
         completionHandler: @escaping (ShieldActionResponse) -> Void
     ) {
-        completionHandler(.close)
+        completionHandler(action == .primaryButtonPressed ? continueWindDownResponse() : .none)
     }
 
     override func handle(
@@ -37,10 +37,29 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
         for action: ShieldAction,
         route: Route
     ) -> ShieldActionResponse {
-        guard action == .secondaryButtonPressed else { return .close }
+        if action == .primaryButtonPressed {
+            return continueWindDownResponse()
+        }
+
+        if #available(iOS 26.4, *) {
+            // The system submenu is the confirmation on newer OS versions. Only
+            // its first item is affirmative; canceling or keeping Wind Down
+            // leaves the shield in place without entering the grant ledger.
+            guard action == .firstSecondarySubmenuItemPressed else { return .none }
+        } else {
+            guard action == .secondaryButtonPressed else { return .none }
+        }
+
         // A scheduling failure must leave the user in the protected app state.
         guard grantBriefAccess(route: route) else { return .none }
         return .none
+    }
+
+    private func continueWindDownResponse() -> ShieldActionResponse {
+        if #available(iOS 26.5, *) {
+            return .openParentalControlsApp
+        }
+        return .close
     }
 
     private func grantBriefAccess(route: Route) -> Bool {

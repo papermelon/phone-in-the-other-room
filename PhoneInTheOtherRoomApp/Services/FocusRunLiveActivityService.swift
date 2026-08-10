@@ -83,6 +83,12 @@ final class FocusRunLiveActivityService {
         if !enabled { endAll(reason: .reset) }
     }
 
+    func resetToFreshInstallDefaults() {
+        UserDefaults.standard.removeObject(forKey: Self.preferenceKey)
+        enabled = Self.defaultEnabled
+        endAll(reason: .reset)
+    }
+
     func start(for run: FocusRun) {
         // The Settings toggle is only the default. Each run records the explicit
         // answer from its start sheet so relaunching cannot create an activity
@@ -401,6 +407,7 @@ final class FocusRunLiveActivityService {
 final class FocusRunLiveActivityService {
     static let preferenceKey = "ollie.liveActivity.enabled"
     static var preferenceEnabled: Bool { true }
+    func resetToFreshInstallDefaults() {}
     func setEnabled(_ enabled: Bool) {}
     func start(for run: FocusRun) {}
     func update(for run: FocusRun) {}

@@ -11,28 +11,14 @@ struct OnboardingWelcomeStep: View {
 
             OnboardingTimeline(draft: OnboardingDraft())
 
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Label("Ollie has a trail to follow", systemImage: "pawprint.fill")
-                        .font(AppTypography.headline)
-                    Text("Only an eligible completed protected night can move Ollie’s sheep search forward. Practice quiet and one-time quiet periods are recorded separately.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
+            VStack(spacing: AppSpacing.sm) {
+                OllieRitualView(state: .ready, size: 112)
+                Text("Ollie keeps watch while the phone rests somewhere else.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                    .multilineTextAlignment(.center)
             }
-
-            HStack(alignment: .center, spacing: AppSpacing.sm) {
-                OllieRitualView(state: .ready, size: 92)
-                if let starterSheep = SheepCatalog.all.first {
-                    SheepPosterCard(
-                        sheep: starterSheep,
-                        status: .missing,
-                        outcome: nil,
-                        showExactOdds: false
-                    )
-                }
-            }
-            .frame(maxWidth: 340)
+            .frame(maxWidth: 320)
         }
     }
 }

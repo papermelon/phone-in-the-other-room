@@ -90,6 +90,7 @@ final class FocusSessionCoordinator: ObservableObject {
         focusAccepted: Bool,
         startedAt: Date = Date(),
         autoConfirmPlacement: Bool = false,
+        appShieldingRequested: Bool = true,
         liveActivityRequested: Bool = true,
         runID: UUID? = nil
     ) {
@@ -106,6 +107,7 @@ final class FocusSessionCoordinator: ObservableObject {
             state: placementRequired ? .placementGrace : .running,
             guardKind: configuration.guardKind,
             nightWatchPlan: configuration.nightWatchPlan,
+            appShieldingRequested: appShieldingRequested,
             liveActivityRequested: liveActivityRequested
         )
         if !configuration.guardKind.needsPlacementConfirmation || autoConfirmPlacement {
@@ -306,10 +308,15 @@ final class FocusSessionCoordinator: ObservableObject {
         notifications.cancelRunCompletion()
         liveActivity.endAll(reason: liveActivityCancellationReason)
         shielding.clear()
+        watch.send(WatchMessage(type: .focusRunStateUpdate, run: nil, proximity: proximityState))
         if clearPersistedRun { persistence.lastRun = nil }
 #if DEBUG
         logResourceState(event: "reset complete")
 #endif
+    }
+
+    func resetLiveActivityToFreshInstallDefaults() {
+        liveActivity.resetToFreshInstallDefaults()
     }
 
     private func restoreActiveRunIfNeeded() {

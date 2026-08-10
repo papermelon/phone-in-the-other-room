@@ -233,6 +233,13 @@ final class PersistenceService {
         ].forEach { defaults.removeObject(forKey: $0) }
     }
 
+    /// Removes every user-facing Counting Sheep value stored in the standard
+    /// defaults suite. App Group values and runtime side effects are cleared by
+    /// their owning services so each boundary remains explicit and testable.
+    func resetLocalProductData() {
+        CountingSheepOwnedStorage.clearStandardDefaults(defaults)
+    }
+
     var impactSharingPreferences: ImpactSharingPreferences {
         get {
             load(ImpactSharingPreferences.self, key: impactSharingPreferencesKey)
@@ -244,6 +251,18 @@ final class PersistenceService {
     var impactUploadRecords: [ImpactUploadRecord] {
         get { load([ImpactUploadRecord].self, key: impactUploadRecordsKey) ?? [] }
         set { save(newValue, key: impactUploadRecordsKey) }
+    }
+
+    var appearancePreference: AppAppearancePreference {
+        get {
+            guard let rawValue = defaults.string(forKey: AppAppearancePreference.key) else {
+                return .automatic
+            }
+            return AppAppearancePreference(rawValue: rawValue) ?? .automatic
+        }
+        set {
+            defaults.set(newValue.rawValue, forKey: AppAppearancePreference.key)
+        }
     }
 
     var sheepSearchState: SheepSearchState {

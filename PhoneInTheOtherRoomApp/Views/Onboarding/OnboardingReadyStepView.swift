@@ -2,7 +2,7 @@ import SwiftUI
 
 struct OnboardingReadyStep: View {
     let draft: OnboardingDraft
-    @ObservedObject var viewModel: FocusRunViewModel
+    let showsTourHandoff: Bool
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
@@ -27,11 +27,18 @@ struct OnboardingReadyStep: View {
                 }
             }
 
-            Text("Next: Home will show the saved plan and your one-tap Wind Down.")
+            Text(handoffMessage)
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
                 .multilineTextAlignment(.center)
         }
+    }
+
+    private var handoffMessage: String {
+        if showsTourHandoff {
+            return "Next: Home will show your saved plan, followed by a short two-step tour of the real app."
+        }
+        return "Your saved changes will appear on Home."
     }
 
     private var shieldingSummary: String {
@@ -61,7 +68,7 @@ struct OnboardingReadyStep: View {
 }
 
 #Preview("Saved plan") {
-    OnboardingReadyStep(draft: OnboardingDraft(), viewModel: FocusRunViewModel())
+    OnboardingReadyStep(draft: OnboardingDraft(), showsTourHandoff: true)
         .padding()
         .background(AppColors.paper)
 }

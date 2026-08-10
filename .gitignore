@@ -11,6 +11,7 @@ xcuserdata/
 # Build output
 build/
 DerivedData/
+tmp/
 *.ipa
 *.dSYM.zip
 *.dSYM

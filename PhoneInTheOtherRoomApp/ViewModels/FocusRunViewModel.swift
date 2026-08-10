@@ -54,17 +54,19 @@ final class FocusRunViewModel: ObservableObject {
     @Published var showQRCodeScanner = false
     @Published var qrCodeStatus = ""
     @Published var nfcStatus = ""
-    @Published var shieldingPreflightMessage: String?
     @Published var liveActivityEnabled = FocusRunLiveActivityService.preferenceEnabled
     @Published var showNightWatchStartPrompt = false
     @Published var liveActivityChoiceForNextRun = FocusRunLiveActivityService.preferenceEnabled
+    @Published var appShieldingChoiceForNextRun = false
+    @Published private(set) var pendingWindDownStartContext: WindDownStartContext?
     @Published var nightWatchStartStatus = ""
     @Published var isScanningNFCForStart = false
-    @Published var quietAppearanceEnabled = UserDefaults.standard.bool(forKey: "ollie.quietAppearance.enabled")
     @Published var isProvisioningNFCTag = false
     @Published var phoneBedTagRegistration: PhoneBedTagRegistration?
     @Published var orientationState: CountingSheepOrientationState
-    /// Ephemeral navigation intent used by the orientation card; it is not
+    @Published var appearancePreference: AppAppearancePreference = .automatic
+    @Published private(set) var rootRoute: CountingSheepRootRoute = .freshOnboarding
+    /// Ephemeral navigation intent used by the practice-record handoff; it is not
     /// persisted and does not change the meaning of any recorded night.
     @Published var nightsRecordFocusID: UUID?
     @Published var shieldingEnabled = UserDefaults.standard.bool(
@@ -100,6 +102,7 @@ final class FocusRunViewModel: ObservableObject {
         self.coordinator = coordinator ?? FocusSessionCoordinator()
         impactSharingPreferences = PersistenceService.shared.impactSharingPreferences
         orientationState = PersistenceService.shared.orientationState
+        appearancePreference = PersistenceService.shared.appearancePreference
         nightsRecordFocusID = nil
         impactSharingAvailable = (try? SupabaseConfiguration.load()) != nil
         notificationPreferences = notifications.preferences
@@ -153,6 +156,13 @@ final class FocusRunViewModel: ObservableObject {
         productiveActivitySelection = screenTimeSelectionService.load(.productive)
         bedtimeActivitySelection = screenTimeSelectionService.load(.bedtime)
 #endif
+        rootRoute = CountingSheepRootRoute.resolve(
+            onboardingVersion: persistence.onboardingVersion,
+            currentOnboardingVersion: CountingSheepOnboarding.currentVersion,
+            hasOnboardingDraft: persistence.onboardingDraft != nil,
+            hasConfiguredNightWatch: savedQuietTime.isConfigured,
+            hasActiveRun: self.coordinator.run != nil
+        )
         applyShortcutPreparationIfNeeded()
         reconcileAutomaticWindDownIfNeeded()
         if sleepAuthorization == .requested {
@@ -185,6 +195,18 @@ final class FocusRunViewModel: ObservableObject {
     }
     var nextUpcomingAdditionalQuietPeriod: WindDownSchedulePeriod? {
         upcomingAdditionalQuietPeriods.first
+    }
+    var currentWindDownStartContext: WindDownStartContext? {
+        let now = Date()
+        guard let period = WindDownScheduleEngine.eligibleOccurrence(
+            in: windDownSchedule,
+            at: now,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        ) else { return nil }
+        return WindDownStartContext(
+            period: period,
+            practicePeriodID: orientationState.practicePeriodID
+        )
     }
     var readyOneTimeQuietPeriodID: UUID? {
         WindDownScheduleEngine.eligibleOccurrence(
@@ -223,8 +245,16 @@ final class FocusRunViewModel: ObservableObject {
 
     var isOrientationActive: Bool { orientationState.isVisibleOnHome }
 
+    var isWindDownAppearanceActive: Bool {
+        isRunning || (hasConfiguredNightWatch && canBeginNightWatchNow)
+    }
+
+    var appearanceResolution: AppAppearanceResolution {
+        appearancePreference.resolution(isWindDownReadyOrActive: isWindDownAppearanceActive)
+    }
+
     var pendingNightWatchIsAdditionalQuiet: Bool {
-        pendingNightWatchPlan?.role == .additionalQuiet
+        pendingWindDownStartContext?.isAdditionalQuiet == true
     }
 
     var pendingNightWatchEndsAt: Date? {
@@ -232,16 +262,15 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     var pendingNightWatchTitle: String? {
-        guard let sourceID = pendingNightWatchSourceOccurrenceID else { return nil }
-        return WindDownScheduleEngine.eligibleOccurrence(
-            in: windDownSchedule,
-            at: Date(),
-            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
-        ).flatMap { $0.sourceID == sourceID ? $0.title : nil }
+        pendingWindDownStartContext?.title
     }
 
     var willShieldPendingNightWatch: Bool {
-        shieldingEnabled && shieldingReadiness == .ready
+        appShieldingChoiceForNextRun && shieldingReadiness == .ready
+    }
+
+    var pendingStartNeedsShieldingSetup: Bool {
+        shieldingEnabled && shieldingReadiness != .ready
     }
 
     func markOrientation(_ milestone: CountingSheepOrientationMilestone) {
@@ -254,18 +283,36 @@ final class FocusRunViewModel: ObservableObject {
         persistence.orientationState = orientationState
     }
 
+    func advanceOrientationTour() {
+        orientationState.advanceTour()
+        persistence.orientationState = orientationState
+    }
+
+    func moveBackInOrientationTour() {
+        orientationState.moveBack()
+        persistence.orientationState = orientationState
+    }
+
+    func completeOrientationTour() {
+        orientationState.completeTour()
+        persistence.orientationState = orientationState
+    }
+
     func resumeOrientation() {
         orientationState.resume()
         persistence.orientationState = orientationState
     }
 
-    func skipOrientationPermanently() {
-        orientationState.skipPermanently()
+    func replayOrientation() {
+        orientationState.replay()
         persistence.orientationState = orientationState
     }
 
-    func replayOrientation() {
-        orientationState.replay()
+    private func prepareOrientationTour(showAfterOnboarding: Bool) {
+        orientationState = .fresh
+        if !showAfterOnboarding {
+            orientationState.dismiss()
+        }
         persistence.orientationState = orientationState
     }
 
@@ -304,6 +351,42 @@ final class FocusRunViewModel: ObservableObject {
         return showNightWatchStartPrompt
     }
 
+    /// Creates a bounded additional-quiet period and prepares the same start
+    /// confirmation used by every other Wind Down entry point. The schedule
+    /// mutation is rolled back when the confirmation cannot be prepared.
+    @discardableResult
+    func startNewOneTimeAdditionalQuietNow(
+        duration: TimeInterval,
+        title: String = "One-time quiet period",
+        now: Date = Date()
+    ) -> Bool {
+        guard !isRunning else {
+            windDownScheduleError = "Finish the current quiet time before starting another one."
+            return false
+        }
+
+        let periodID = UUID()
+        let end = now.addingTimeInterval(duration)
+        guard addOneTimeAdditionalQuiet(
+            id: periodID,
+            title: title,
+            start: now,
+            end: end,
+            now: now
+        ) else {
+            return false
+        }
+
+        requestStartNightWatch()
+        guard showNightWatchStartPrompt else {
+            windDownSchedule.oneTimePeriods.removeAll { $0.id == periodID }
+            saveWindDownSchedule()
+            windDownScheduleError = "Quiet time could not be prepared just now."
+            return false
+        }
+        return true
+    }
+
     private func reconcileOrientationAfterRun() {
         guard let run = activeRun,
               let practiceRunID = orientationState.practiceRunID,
@@ -339,6 +422,11 @@ final class FocusRunViewModel: ObservableObject {
         state.showExactOdds = enabled
         coordinator.sheepSearchState = state
         persistence.sheepSearchState = state
+    }
+
+    func setAppearancePreference(_ preference: AppAppearancePreference) {
+        appearancePreference = preference
+        persistence.appearancePreference = preference
     }
 
     private func optionalSheepSearchBonusPoints() -> Int {
@@ -400,19 +488,23 @@ final class FocusRunViewModel: ObservableObject {
             isRunning: isRunning,
             startInFlight: nightWatchStartInFlight
         ) else { return }
-        if shieldingEnabled && shieldingReadiness != .ready {
-            shieldingPreflightMessage = shieldingReadiness.detail
-            return
-        }
         saveNightWatchPreferences()
         let requestedAt = Date()
-        pendingNightWatchSourceOccurrenceID = WindDownScheduleEngine.eligibleOccurrence(
+        let eligible = WindDownScheduleEngine.eligibleOccurrence(
             in: windDownSchedule,
             at: requestedAt,
             primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
-        )?.sourceID
+        )
+        pendingNightWatchSourceOccurrenceID = eligible?.sourceID
+        pendingWindDownStartContext = eligible.map {
+            WindDownStartContext(
+                period: $0,
+                practicePeriodID: orientationState.practicePeriodID
+            )
+        }
         pendingNightWatchPlan = makePlanForNextWindDown(startedAt: requestedAt)
         liveActivityChoiceForNextRun = liveActivityEnabled
+        appShieldingChoiceForNextRun = shieldingEnabled && shieldingReadiness == .ready
         nightWatchStartStatus = ""
         showNightWatchStartPrompt = true
     }
@@ -422,6 +514,7 @@ final class FocusRunViewModel: ObservableObject {
         isScanningNFCForStart = false
         pendingNightWatchPlan = nil
         pendingNightWatchSourceOccurrenceID = nil
+        pendingWindDownStartContext = nil
         nightWatchStartStatus = ""
         showNightWatchStartPrompt = false
     }
@@ -456,6 +549,7 @@ final class FocusRunViewModel: ObservableObject {
             plan = requestedPlan
         }
         let liveActivityRequested = liveActivityChoiceForNextRun
+        let appShieldingRequested = willShieldPendingNightWatch
         liveActivityEnabled = liveActivityRequested
         UserDefaults.standard.set(
             liveActivityRequested,
@@ -464,6 +558,7 @@ final class FocusRunViewModel: ObservableObject {
         let sourceID = pendingNightWatchSourceOccurrenceID
         pendingNightWatchPlan = nil
         pendingNightWatchSourceOccurrenceID = nil
+        pendingWindDownStartContext = nil
         showNightWatchStartPrompt = false
         notifications.cancelNightWatchReminder()
         persistence.automaticWindDownSchedule = nil
@@ -473,6 +568,7 @@ final class FocusRunViewModel: ObservableObject {
             focusAccepted: false,
             startedAt: startedAt,
             autoConfirmPlacement: selectedGuardKind == .nfcTag,
+            appShieldingRequested: appShieldingRequested,
             liveActivityRequested: liveActivityRequested
         )
         if let sourceID,
@@ -882,7 +978,8 @@ final class FocusRunViewModel: ObservableObject {
 
     func applyOnboardingDraft(
         _ draft: OnboardingDraft,
-        preserveAdvancedNotifications: Bool = false
+        preserveAdvancedNotifications: Bool = false,
+        showTourAfterOnboarding: Bool? = nil
     ) {
         let updatedPreferences = draft.makeNightWatchPreferences()
         nightWatchPreferences = updatedPreferences
@@ -929,6 +1026,10 @@ final class FocusRunViewModel: ObservableObject {
         windDownRoutines = updatedSchedule.routines
         persistence.windDownSchedule = updatedSchedule
         persistence.completeOnboarding()
+        if let showTourAfterOnboarding {
+            prepareOrientationTour(showAfterOnboarding: showTourAfterOnboarding)
+        }
+        rootRoute = .home
         scheduleAutomaticWindDownIfNeeded()
     }
 
@@ -1560,6 +1661,11 @@ final class FocusRunViewModel: ObservableObject {
     func resetSetup() {
         coordinator.resetToSetup()
         usageMonitoring.cancel()
+        phoneBedNFCService.cancel()
+        resetTransientSetupState()
+    }
+
+    private func resetTransientSetupState() {
         showCustomDurationPicker = false
         showFocusModePrompt = false
         focusPromptAnswered = false
@@ -1570,52 +1676,106 @@ final class FocusRunViewModel: ObservableObject {
         showQRCodeScanner = false
         qrCodeStatus = ""
         nfcStatus = ""
+        showNightWatchStartPrompt = false
+        nightWatchStartStatus = ""
+        isScanningNFCForStart = false
+        isProvisioningNFCTag = false
+        pendingNightWatchPlan = nil
+        pendingNightWatchSourceOccurrenceID = nil
+        pendingWindDownStartContext = nil
+        nightWatchStartInFlight = false
     }
 
-    func resetLocalProgress() {
-        resetSetup()
-        notifications.cancelAllNightWatchNotifications()
-        usageMonitoring.cancel()
-        persistence.automaticWindDownSchedule = nil
-        quietTimeShielding.cancelAutomaticSchedule()
+    func eraseLocalDataAndStartOver() {
+        // Publish the non-forced appearance before changing the run route so a
+        // reset out of a dark active Wind Down settles in one coherent update.
+        appearancePreference = .automatic
+        persistence.appearancePreference = .automatic
 
-        persistence.resetLocalProgress()
+        phoneBedNFCService.cancel()
+        coordinator.resetToSetup(clearPersistedRun: false)
+        coordinator.resetLiveActivityToFreshInstallDefaults()
+        resetTransientSetupState()
+        usageMonitoring.cancel()
+        notifications.resetLocalState()
+        quietTimeShielding.resetLocalState()
+        healthSleepService.resetLocalState()
+        FocusRunShortcutStore.clearPendingDuration()
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        screenTimeSelectionService.clearAllSelections()
+#endif
+
+        persistence.resetLocalProductData()
+
+        nightWatchPreferences = .defaults
+        windDownSchedule = WindDownScheduleState()
+        windDownRoutines = []
+        nextWindDownOverride = nil
+        offlinePurpose = .defaultProfile
+        screenTimeReportPreferences = ScreenTimeReportPreferences.defaults(
+            for: nightWatchPreferences
+        )
+        morningCheckIns = MorningCheckInHistory()
+        manualAnalyticsEntries = []
+        impactSharingPreferences = ImpactSharingPreferences()
+        impactDataSyncState = .idle
+        notificationPreferences = notifications.preferences
+        notificationAuthorization = .notDetermined
+        screenTimeAuthorization = screenTimeService.currentState()
+        sleepAuthorization = healthSleepService.isAvailable ? .notRequested : .unavailable
+        lastNightSleep = nil
+        recentNightSleeps = []
+        isRefreshingSleep = false
+        analyticsExportURL = nil
+        analyticsExportError = nil
+        shieldingEnabled = false
+        liveActivityEnabled = FocusRunLiveActivityService.preferenceEnabled
+        liveActivityChoiceForNextRun = liveActivityEnabled
+        selectedGuardKind = .nfcTag
+        phoneBedTagRegistration = nil
+        orientationState = .fresh
+        nightsRecordFocusID = nil
+        selectedDuration = 25 * 60
+        durationMinutes = 25
+        durationSeconds = 0
+
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        distractingActivitySelection = FamilyActivitySelection()
+        productiveActivitySelection = FamilyActivitySelection()
+        bedtimeActivitySelection = FamilyActivitySelection()
+#endif
+
         coordinator.progress = .empty
         coordinator.rewards = []
         coordinator.sheepSearchState = .empty
         coordinator.latestSheepSearchOutcome = nil
         coordinator.events = []
-        morningCheckIns = persistence.morningCheckIns
-        manualAnalyticsEntries = persistence.manualAnalyticsEntries
-        analyticsExportURL = nil
-        analyticsExportError = nil
-        impactDataSyncState = .idle
-
-        // Keep the saved bedtime plan, but rebuild its next requested reminder if
-        // automatic Wind Down was enabled before the reset.
-        scheduleAutomaticWindDownIfNeeded()
+        coordinator.latestReward = nil
+        coordinator.pingPulseCount = 0
+        rootRoute = .freshOnboarding
     }
 
     func connectScreenTime() {
         Task { @MainActor in
-            screenTimeAuthorization = await screenTimeService.requestAuthorization()
-#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
-            if screenTimeAuthorization == .approved {
-                bedtimeActivitySelection = screenTimeSelectionService.load(.bedtime)
-            }
-#endif
+            _ = await requestScreenTimeAuthorization()
         }
+    }
+
+    @discardableResult
+    func requestScreenTimeAuthorization() async -> Bool {
+        screenTimeAuthorization = await screenTimeService.requestAuthorization()
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        if screenTimeAuthorization == .approved {
+            bedtimeActivitySelection = screenTimeSelectionService.load(.bedtime)
+        }
+#endif
+        return screenTimeAuthorization == .approved
     }
 
     func setLiveActivityEnabled(_ enabled: Bool) {
         liveActivityEnabled = enabled
         UserDefaults.standard.set(enabled, forKey: FocusRunLiveActivityService.preferenceKey)
         coordinator.setLiveActivityEnabled(enabled)
-    }
-
-    func setQuietAppearanceEnabled(_ enabled: Bool) {
-        quietAppearanceEnabled = enabled
-        UserDefaults.standard.set(enabled, forKey: "ollie.quietAppearance.enabled")
     }
 
     func retryShielding() {

@@ -92,6 +92,50 @@ final class WindDownSchedulingTests: XCTestCase {
         XCTAssertEqual(confirmed.sourceID, requested.sourceID)
     }
 
+    func testRecurringPrimaryRestartIgnoresConsumedOccurrenceStateWithinProtectedWindow() throws {
+        let preferences = NightWatchPreferences(
+            bedtimeHour: 23,
+            bedtimeMinute: 0,
+            wakeHour: 7,
+            wakeMinute: 0,
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains,
+            guardKind: .honorTimer,
+            isConfigured: true
+        )
+        let routine = WindDownRoutine.primary(from: preferences)
+        let state = WindDownScheduleState(routines: [routine])
+        let restartedAt = try date(2026, 8, 4, 5, 14)
+        let eligible = try XCTUnwrap(
+            WindDownScheduleEngine.eligibleOccurrence(
+                in: state,
+                at: restartedAt,
+                calendar: calendar,
+                primaryExtensionMinutes: preferences.morningQuietMinutes
+            )
+        )
+        var consumedOccurrence = eligible.occurrence
+        consumedOccurrence.state = .endedEarly
+        let period = WindDownSchedulePeriod(
+            occurrence: consumedOccurrence,
+            title: eligible.title,
+            recurring: eligible.recurring
+        )
+
+        let plan = WindDownScheduleEngine.plan(
+            for: period,
+            preferences: preferences,
+            startedAt: restartedAt,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(plan.intendedBedtime, try date(2026, 8, 3, 23, 0))
+        XCTAssertEqual(plan.phase(at: restartedAt), .overnight)
+        XCTAssertEqual(plan.nextTransition(after: restartedAt), try date(2026, 8, 4, 7, 0))
+    }
+
     func testOneTimeSourceIdentityUsesThePersistedPeriodID() throws {
         let now = try date(2026, 8, 3, 20, 15)
         let period = WindDownOneTimePeriod(

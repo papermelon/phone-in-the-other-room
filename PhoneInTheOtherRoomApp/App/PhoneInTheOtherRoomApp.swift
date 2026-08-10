@@ -33,7 +33,7 @@ struct PhoneInTheOtherRoomApp: App {
         WindowGroup {
             AppRootView()
                 .environmentObject(runViewModel)
-                .preferredColorScheme(prefersNightPresentation ? .dark : nil)
+                .preferredColorScheme(preferredColorScheme)
                 .onChange(of: scenePhase) { _, newPhase in
                     switch newPhase {
                     case .background:
@@ -50,10 +50,11 @@ struct PhoneInTheOtherRoomApp: App {
         }
     }
 
-    private var prefersNightPresentation: Bool {
-        // The default schedule is only a decoding-safe placeholder. It must
-        // not make first-run onboarding inherit Wind Down's dark presentation.
-        runViewModel.isRunning
-            || (runViewModel.hasConfiguredNightWatch && runViewModel.canBeginNightWatchNow)
+    private var preferredColorScheme: ColorScheme? {
+        switch runViewModel.appearanceResolution {
+        case .system: return nil
+        case .light: return .light
+        case .dark: return .dark
+        }
     }
 }

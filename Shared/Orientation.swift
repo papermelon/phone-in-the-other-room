@@ -8,6 +8,22 @@ enum CountingSheepOrientationStatus: String, Codable, Equatable {
     case completed
 }
 
+enum CountingSheepOrientationStep: String, Codable, Equatable {
+    case home
+    case start
+    case navigation
+
+    var number: Int {
+        switch self {
+        case .home: return 1
+        case .start: return 2
+        case .navigation: return 3
+        }
+    }
+
+    static let count = 3
+}
+
 enum CountingSheepOrientationMilestone: String, Codable, CaseIterable, Hashable {
     case homeExplained
     case nightsExplored
@@ -19,14 +35,15 @@ enum CountingSheepOrientationMilestone: String, Codable, CaseIterable, Hashable 
     case practiceRecordViewed
 }
 
-/// The small, resumable orientation state is separate from the Wind Down state
-/// machine. It records what the person has genuinely done in the app, not which
-/// orientation control they happened to tap.
+/// The small, resumable app tour is separate from the Wind Down state machine.
+/// Legacy milestones remain decodable because practice records and development
+/// installs may still refer to them, but they no longer gate finishing the tour.
 struct CountingSheepOrientationState: Codable, Equatable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 3
 
     var schemaVersion: Int
     var status: CountingSheepOrientationStatus
+    var currentStep: CountingSheepOrientationStep
     var milestones: Set<CountingSheepOrientationMilestone>
     var practicePeriodID: UUID?
     var practiceRunID: UUID?
@@ -34,6 +51,7 @@ struct CountingSheepOrientationState: Codable, Equatable {
     static let fresh = Self(
         schemaVersion: currentSchemaVersion,
         status: .notStarted,
+        currentStep: .home,
         milestones: [],
         practicePeriodID: nil,
         practiceRunID: nil
@@ -42,12 +60,14 @@ struct CountingSheepOrientationState: Codable, Equatable {
     init(
         schemaVersion: Int = currentSchemaVersion,
         status: CountingSheepOrientationStatus = .notStarted,
+        currentStep: CountingSheepOrientationStep = .home,
         milestones: Set<CountingSheepOrientationMilestone> = [],
         practicePeriodID: UUID? = nil,
         practiceRunID: UUID? = nil
     ) {
         self.schemaVersion = max(schemaVersion, Self.currentSchemaVersion)
         self.status = status
+        self.currentStep = currentStep
         self.milestones = milestones
         self.practicePeriodID = practicePeriodID
         self.practiceRunID = practiceRunID
@@ -59,14 +79,10 @@ struct CountingSheepOrientationState: Codable, Equatable {
 
     var canResume: Bool { status == .dismissed }
 
-    var requiredMilestones: Set<CountingSheepOrientationMilestone> {
-        Set(CountingSheepOrientationMilestone.allCases)
-    }
-
     var isComplete: Bool { status == .completed }
 
     mutating func mark(_ milestone: CountingSheepOrientationMilestone) {
-        guard status != .skipped, status != .completed else { return }
+        guard status != .skipped else { return }
         milestones.insert(milestone)
 
         if milestone == .practiceCompleted {
@@ -76,21 +92,45 @@ struct CountingSheepOrientationState: Codable, Equatable {
             milestones.insert(.practiceCompleted)
             milestones.insert(.practiceStarted)
         }
-        if requiredMilestones.isSubset(of: milestones) {
-            status = .completed
-        } else if status == .notStarted {
+    }
+
+    mutating func advanceTour() {
+        guard isVisibleOnHome else { return }
+        switch currentStep {
+        case .home:
+            currentStep = .start
             status = .inProgress
+        case .start:
+            currentStep = .navigation
+            status = .inProgress
+        case .navigation:
+            completeTour()
         }
     }
 
+    mutating func moveBack() {
+        guard isVisibleOnHome else { return }
+        switch currentStep {
+        case .home:
+            return
+        case .start:
+            currentStep = .home
+        case .navigation:
+            currentStep = .start
+        }
+        status = .inProgress
+    }
+
+    mutating func completeTour() {
+        guard status != .skipped else { return }
+        status = .completed
+    }
+
     mutating func recordPracticePeriod(_ periodID: UUID) {
-        guard status != .skipped, status != .completed else { return }
         practicePeriodID = periodID
-        if status == .notStarted || status == .dismissed { status = .inProgress }
     }
 
     mutating func recordPracticeRun(_ runID: UUID) {
-        guard status != .skipped, status != .completed else { return }
         practiceRunID = runID
         mark(.practiceStarted)
     }
@@ -118,6 +158,7 @@ struct CountingSheepOrientationState: Codable, Equatable {
     private enum CodingKeys: String, CodingKey {
         case schemaVersion
         case status
+        case currentStep
         case milestones
         case practicePeriodID
         case practiceRunID
@@ -171,23 +212,30 @@ struct CountingSheepOrientationState: Codable, Equatable {
             decodedMilestones.insert(milestone)
         }
 
+        if decodedStatus == .notStarted, !decodedMilestones.isEmpty {
+            decodedStatus = .inProgress
+        }
+
         schemaVersion = max(storedVersion, Self.currentSchemaVersion)
         status = decodedStatus
+        if storedVersion < 2 {
+            currentStep = decodedMilestones.contains(.homeExplained) ? .navigation : .home
+        } else {
+            currentStep = try container.decodeIfPresent(
+                CountingSheepOrientationStep.self,
+                forKey: .currentStep
+            ) ?? .home
+        }
         milestones = decodedMilestones
         practicePeriodID = try container.decodeIfPresent(UUID.self, forKey: .practicePeriodID)
         practiceRunID = try container.decodeIfPresent(UUID.self, forKey: .practiceRunID)
-        if status == .notStarted && !milestones.isEmpty {
-            status = .inProgress
-        }
-        if requiredMilestones.isSubset(of: milestones), status != .skipped {
-            status = .completed
-        }
     }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(Self.currentSchemaVersion, forKey: .schemaVersion)
         try container.encode(status, forKey: .status)
+        try container.encode(currentStep, forKey: .currentStep)
         try container.encode(milestones, forKey: .milestones)
         try container.encodeIfPresent(practicePeriodID, forKey: .practicePeriodID)
         try container.encodeIfPresent(practiceRunID, forKey: .practiceRunID)

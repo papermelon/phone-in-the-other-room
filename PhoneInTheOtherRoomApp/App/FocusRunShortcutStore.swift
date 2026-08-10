@@ -24,4 +24,9 @@ enum FocusRunShortcutStore {
         }
         return TimeInterval(UserDefaults.standard.integer(forKey: pendingDurationKey))
     }
+
+    static func clearPendingDuration() {
+        UserDefaults.standard.removeObject(forKey: pendingDurationKey)
+        UserDefaults.standard.removeObject(forKey: pendingDateKey)
+    }
 }

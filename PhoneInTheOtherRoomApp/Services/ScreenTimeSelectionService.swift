@@ -33,6 +33,13 @@ final class ScreenTimeSelectionService {
         sharedDefaults.set(data, forKey: ScreenTimeSharedStorage.selectionKey(for: scope))
     }
 
+    func clearAllSelections() {
+        for scope in ScreenTimeSelectionScope.allCases {
+            sharedDefaults.removeObject(forKey: ScreenTimeSharedStorage.selectionKey(for: scope))
+            legacyDefaults.removeObject(forKey: ScreenTimeSharedStorage.legacySelectionKey(for: scope))
+        }
+    }
+
     private func migrateLegacySelectionsIfNeeded() {
         for scope in ScreenTimeSelectionScope.allCases {
             let sharedKey = ScreenTimeSharedStorage.selectionKey(for: scope)

@@ -5,14 +5,18 @@ struct HomeView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @State private var pingBannerVisible = false
+    @State private var showOrientationPracticeOffer = false
     @State private var selectedTab: MainAppTab = .home
-    @State private var navigationIdentity = UUID()
+    @State private var homeNavigationPath = NavigationPath()
+    @State private var nightsNavigationPath = NavigationPath()
+    @State private var farmNavigationPath = NavigationPath()
+    @State private var settingsNavigationPath = NavigationPath()
 
     var body: some View {
         ZStack {
-            AppColors.paper.ignoresSafeArea()
+            shellBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                NavigationStack {
+                NavigationStack(path: selectedNavigationPath) {
                     ZStack {
                         VStack(spacing: 0) {
                             if showChrome {
@@ -55,22 +59,9 @@ struct HomeView: View {
                     } message: {
                         Text("Counting Sheep can't turn on Sleep Focus for you. You can switch it on in Control Center, then continue.")
                     }
-                    .alert("App shielding needs a quick check", isPresented: Binding(
-                        get: { viewModel.shieldingPreflightMessage != nil },
-                        set: { if !$0 { viewModel.shieldingPreflightMessage = nil } }
-                    )) {
-                        Button("Keep phone-away mode", role: .cancel) {
-                            viewModel.shieldingEnabled = false
-                            UserDefaults.standard.set(false, forKey: QuietTimeShieldingService.enabledKey)
-                        }
-                        Button("OK") { viewModel.shieldingPreflightMessage = nil }
-                    } message: {
-                        Text(viewModel.shieldingPreflightMessage ?? "")
-                    }
                     .onAppear {
                         viewModel.applyShortcutPreparationIfNeeded()
                         routePendingNotificationIfNeeded()
-                        returnToActiveWindDownIfNeeded()
                     }
                     .onReceive(NotificationCenter.default.publisher(for: .countingSheepNotificationDestination)) { notification in
                         guard let destination = notification.object as? NotificationDestination else { return }
@@ -94,10 +85,10 @@ struct HomeView: View {
                         select(.home)
                     }
                     .onChange(of: viewModel.isRunning) { _, isRunning in
-                        if isRunning { select(.home) }
+                        if isRunning { routeToHome() }
                     }
                     .onChange(of: scenePhase) { _, phase in
-                        if phase == .active, viewModel.isRunning { select(.home) }
+                        if phase == .active, viewModel.isRunning { routeToHome() }
                     }
                     .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
                         guard count > 0 else { return }
@@ -118,13 +109,86 @@ struct HomeView: View {
                     }
                     .toolbar(.hidden, for: .navigationBar)
                 }
-                .id(navigationIdentity)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if showChrome {
                     shellFooter
                 }
             }
+            .accessibilityHidden(isOrientationTourPresented)
+        }
+        .overlayPreferenceValue(OrientationTourTargetPreferenceKey.self) { targets in
+            GeometryReader { proxy in
+                if isOrientationTourPresented,
+                   let anchor = targets[activeOrientationTarget] {
+                    CountingSheepOrientationTourOverlay(
+                        step: viewModel.orientationState.currentStep,
+                        targetFrame: proxy[anchor],
+                        onBack: viewModel.moveBackInOrientationTour,
+                        onNext: advanceOrientationTour,
+                        onSkip: viewModel.dismissOrientation
+                    )
+                    .zIndex(50)
+                }
+            }
+        }
+        .sheet(isPresented: $showOrientationPracticeOffer) {
+            CountingSheepPracticeOfferSheet(
+                onStartPractice: startOrientationPractice,
+                onMaybeLater: { showOrientationPracticeOffer = false }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+    }
+
+    private var isOrientationTourPresented: Bool {
+        viewModel.isOrientationActive
+            && !viewModel.isRunning
+            && selectedTab == .home
+    }
+
+    private var activeOrientationTarget: OrientationTourTarget {
+        switch viewModel.orientationState.currentStep {
+        case .home: return .homePlan
+        case .start: return .startAction
+        case .navigation: return .navigation
+        }
+    }
+
+    private func advanceOrientationTour() {
+        if viewModel.orientationState.currentStep == .navigation {
+            viewModel.completeOrientationTour()
+            showOrientationPracticeOffer = true
+        } else {
+            viewModel.advanceOrientationTour()
+        }
+    }
+
+    private func startOrientationPractice() {
+        showOrientationPracticeOffer = false
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(350))
+            _ = viewModel.startOrientationPractice()
+        }
+    }
+
+    private var shellBackground: Color {
+        isActiveWindDown && selectedTab == .home
+            ? AppColors.activeWindDownBackground
+            : AppColors.paper
+    }
+
+    private var isActiveWindDown: Bool {
+        viewModel.isRunning && viewModel.activeRun?.isNightWatch == true
+    }
+
+    private var selectedNavigationPath: Binding<NavigationPath> {
+        switch selectedTab {
+        case .home: return $homeNavigationPath
+        case .nights: return $nightsNavigationPath
+        case .farm: return $farmNavigationPath
+        case .settings: return $settingsNavigationPath
         }
     }
 
@@ -143,7 +207,12 @@ struct HomeView: View {
         .padding(.horizontal, 12)
         .padding(.bottom, 6)
         .frame(maxWidth: .infinity)
-        .background(AppColors.paper.opacity(0.98))
+        .background(
+            (isActiveWindDown && selectedTab == .home
+                ? AppColors.activeWindDownBackground
+                : AppColors.paper
+            ).opacity(0.98)
+        )
     }
 
     private func routePendingNotificationIfNeeded() {
@@ -199,13 +268,26 @@ struct HomeView: View {
     }
 
     private func select(_ tab: MainAppTab) {
+        let isReselection = selectedTab == tab
         selectedTab = tab
-        navigationIdentity = UUID()
+        if tab == .home || isReselection {
+            resetNavigation(for: tab)
+        }
     }
 
-    private func returnToActiveWindDownIfNeeded() {
-        guard viewModel.isRunning, selectedTab != .home else { return }
-        select(.home)
+    private func routeToHome() {
+        guard viewModel.isRunning else { return }
+        selectedTab = .home
+        resetNavigation(for: .home)
+    }
+
+    private func resetNavigation(for tab: MainAppTab) {
+        switch tab {
+        case .home: homeNavigationPath = NavigationPath()
+        case .nights: nightsNavigationPath = NavigationPath()
+        case .farm: farmNavigationPath = NavigationPath()
+        case .settings: settingsNavigationPath = NavigationPath()
+        }
     }
 
     private func showPingBanner() {
@@ -251,94 +333,5 @@ private struct ActiveWindDownReturnBar: View {
         }
         .buttonStyle(.plain)
         .accessibilityHint("Returns to the live Wind Down journey")
-    }
-}
-
-private struct WindDownStartSheet: View {
-    @EnvironmentObject private var viewModel: FocusRunViewModel
-    @Environment(\.dismiss) private var dismiss
-
-    private var usesNFC: Bool { viewModel.selectedGuardKind == .nfcTag }
-
-    private var heading: String {
-        if viewModel.pendingNightWatchIsAdditionalQuiet {
-            return viewModel.pendingNightWatchTitle ?? "A little one-time quiet."
-        }
-        return usesNFC ? "Tap in when you are ready." : "Give the evening a little room."
-    }
-
-    private var explanation: String {
-        if viewModel.pendingNightWatchIsAdditionalQuiet {
-            let end = viewModel.pendingNightWatchEndsAt?.formatted(date: .omitted, time: .shortened) ?? "the saved end time"
-            let protection = viewModel.willShieldPendingNightWatch
-                ? " Your apps to rest will be limited until then."
-                : " No apps will be limited."
-            return "This quiet time ends at \(end). Only the time from when you start is counted. It stays separate from protected nights and Ollie’s sheep search.\(protection)"
-        }
-        guard viewModel.willShieldPendingNightWatch else {
-            return "Wind Down will keep time and record your quiet. No apps will be limited."
-        }
-        return usesNFC
-            ? "Your apps to rest will be limited after you tap your Wind Down tag and through morning quiet. Counting Sheep stays available."
-            : "Your apps to rest will be limited from Wind Down start through morning quiet. Counting Sheep stays available."
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    Text("START WIND DOWN")
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(AppColors.grass)
-                    Text(heading)
-                        .font(AppTypography.title)
-                    Text(explanation)
-                    .font(AppTypography.body)
-                    .foregroundStyle(AppColors.muted)
-
-                    Toggle("Show progress on the Lock Screen", isOn: $viewModel.liveActivityChoiceForNextRun)
-                        .font(AppTypography.body)
-                        .tint(AppColors.grass)
-
-                    if !viewModel.nfcStatus.isEmpty {
-                        Text(viewModel.nfcStatus)
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    }
-
-                    Button {
-                        viewModel.confirmNightWatchStart()
-                    } label: {
-                        Label(
-                            viewModel.isScanningNFCForStart
-                                ? "Waiting for your tag…"
-                                : (usesNFC ? "Tap Wind Down tag to start" : "Start now"),
-                            systemImage: usesNFC ? "dot.radiowaves.left.and.right" : "iphone.slash"
-                        )
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(PixelPrimaryButtonStyle())
-                    .disabled(viewModel.isScanningNFCForStart)
-
-                    Button("Cancel") {
-                        viewModel.cancelNightWatchStart()
-                        dismiss()
-                    }
-                    .frame(maxWidth: .infinity)
-                    .font(AppTypography.body)
-                    .foregroundStyle(AppColors.muted)
-                }
-                .padding(AppSpacing.lg)
-            }
-            .background(AppColors.paper.ignoresSafeArea())
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        viewModel.cancelNightWatchStart()
-                        dismiss()
-                    }
-                }
-            }
-        }
     }
 }

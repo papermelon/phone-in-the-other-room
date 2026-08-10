@@ -56,6 +56,12 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
         }
     }
 
+    func cancel() {
+        operation = nil
+        session?.invalidate()
+        session = nil
+    }
+
     private var unavailableMessage: String {
         "NFC is not available on this iPhone. You can use a Wind Down code instead."
     }
