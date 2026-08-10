@@ -41,8 +41,8 @@ struct OnboardingFlowView: View {
         VStack(spacing: 0) {
             OnboardingProgressHeader(step: draft.step, onBack: previousStep)
                 .padding(.horizontal, AppSpacing.md)
-                .padding(.top, AppSpacing.sm)
-                .padding(.bottom, AppSpacing.md)
+                .padding(.top, AppSpacing.xs)
+                .padding(.bottom, AppSpacing.sm)
 
             ScrollView {
                 stepContent

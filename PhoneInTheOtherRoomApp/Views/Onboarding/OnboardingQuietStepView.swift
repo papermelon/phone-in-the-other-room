@@ -42,21 +42,29 @@ struct OnboardingQuietStep: View {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text(title)
                     .font(AppTypography.headline)
-                TextField("Optional: a book, a stretch, or a quiet moment", text: text)
+                TextField("Add your own cue (optional)", text: text)
                     .textFieldStyle(.roundedBorder)
                 Text("A few ideas, if they help")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: AppSpacing.xs) {
-                        ForEach(suggestions) { activity in
-                            Button(activity.title) {
-                                selectedActivity.wrappedValue = activity
-                                text.wrappedValue = activity.title
-                            }
-                            .font(AppTypography.caption)
-                            .buttonStyle(PixelChipButtonStyle(isSelected: text.wrappedValue == activity.title))
+
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 124), spacing: AppSpacing.xs)],
+                    alignment: .leading,
+                    spacing: AppSpacing.xs
+                ) {
+                    ForEach(suggestions) { activity in
+                        Button {
+                            selectedActivity.wrappedValue = activity
+                            text.wrappedValue = activity.title
+                        } label: {
+                            Text(activity.title)
+                                .font(AppTypography.caption)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.85)
                         }
+                        .buttonStyle(PixelChipButtonStyle(isSelected: text.wrappedValue == activity.title))
                     }
                 }
             }

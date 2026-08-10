@@ -4,36 +4,61 @@ struct OnboardingProgressHeader: View {
     let step: CountingSheepOnboardingStep
     let onBack: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var stepNumber: Int { step.visibleIndex + 1 }
+    private var stepCount: Int { CountingSheepOnboardingStep.visibleSteps.count }
+
     var body: some View {
-        ZStack {
-            HStack {
-                Button(action: onBack) {
-                    Image(systemName: "chevron.left")
-                        .font(.headline.weight(.bold))
-                        .frame(width: 44, height: 44)
-                }
-                .opacity(step == .welcome ? 0 : 1)
-                .disabled(step == .welcome)
-
-                Spacer()
-
-                Text("\(step.visibleIndex + 1) / \(CountingSheepOnboardingStep.visibleSteps.count)")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                    .monospacedDigit()
-            }
-
-            VStack(alignment: .center, spacing: AppSpacing.xxs) {
+        ZStack(alignment: .leading) {
+            VStack(spacing: AppSpacing.xs) {
                 Text("COUNTING SHEEP")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                ProgressView(value: step.progress)
-                    .tint(AppColors.grass)
-                    .frame(maxWidth: 220)
+
+                HStack(spacing: 6) {
+                    ForEach(Array(CountingSheepOnboardingStep.visibleSteps.enumerated()), id: \.element.id) { index, _ in
+                        Capsule()
+                            .fill(index <= step.visibleIndex ? AppColors.grass : AppColors.surfaceMuted)
+                            .frame(maxWidth: .infinity, minHeight: 5, maxHeight: 5)
+                    }
+                }
+                .frame(maxWidth: 224)
+                .animation(reduceMotion ? nil : AppMotion.progress, value: step)
+                .accessibilityHidden(true)
+
+                Text("STEP \(stepNumber) OF \(stepCount)")
+                    .font(pixelFont(.caption2))
+                    .foregroundStyle(AppColors.muted)
+                    .monospacedDigit()
+            }
+            .frame(maxWidth: .infinity)
+
+            if step != .welcome {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.subheadline.weight(.black))
+                        .frame(width: 40, height: 40)
+                        .background(AppColors.surface, in: Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(AppColors.stroke.opacity(0.18), lineWidth: 1.5)
+                        }
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(AppColors.ink)
+                .accessibilityLabel("Back to \(previousStepTitle)")
             }
         }
         .frame(maxWidth: .infinity)
-        .foregroundStyle(AppColors.ink)
+        .frame(minHeight: 64)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Counting Sheep setup, step \(stepNumber) of \(stepCount), \(step.title)")
+    }
+
+    private var previousStepTitle: String {
+        guard step.visibleIndex > 0 else { return "the previous step" }
+        return CountingSheepOnboardingStep.visibleSteps[step.visibleIndex - 1].title
     }
 }
 
@@ -176,4 +201,14 @@ struct OnboardingTimeline: View {
         }
         .frame(maxWidth: .infinity, minHeight: 70)
     }
+}
+
+#Preview("Onboarding progress") {
+    VStack(spacing: AppSpacing.xl) {
+        OnboardingProgressHeader(step: .welcome, onBack: {})
+        OnboardingProgressHeader(step: .quiet, onBack: {})
+        OnboardingProgressHeader(step: .ready, onBack: {})
+    }
+    .padding()
+    .background(AppColors.paper)
 }
