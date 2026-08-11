@@ -22,8 +22,8 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
     }
 
     private enum Operation {
-        case scan((ScanResult) -> Void)
-        case provision(UUID, (ProvisionResult) -> Void)
+        case scan(isAdditionalQuiet: Bool, (ScanResult) -> Void)
+        case provision(isAdditionalQuiet: Bool, UUID, (ProvisionResult) -> Void)
     }
 
     nonisolated private static let externalType = Data(
@@ -33,25 +33,32 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
     private var session: NFCNDEFReaderSession?
     private var operation: Operation?
 
-    func scan(completion: @escaping (ScanResult) -> Void) {
+    func scan(
+        isAdditionalQuiet: Bool = false,
+        completion: @escaping (ScanResult) -> Void
+    ) {
+        let tagLabel = tagName(isAdditionalQuiet: isAdditionalQuiet)
         guard beginSession(
-            operation: .scan(completion),
-            message: "Hold the top of your iPhone near your Wind Down tag.",
+            operation: .scan(isAdditionalQuiet: isAdditionalQuiet, completion),
+            message: "Hold the top of your iPhone near your \(tagLabel).",
             invalidateAfterFirstRead: false
         ) else {
-            completion(.unavailable(unavailableMessage))
+            completion(.unavailable(unavailableMessage(isAdditionalQuiet: isAdditionalQuiet)))
             return
         }
     }
 
-    func provision(completion: @escaping (ProvisionResult) -> Void) {
+    func provision(
+        isAdditionalQuiet: Bool = false,
+        completion: @escaping (ProvisionResult) -> Void
+    ) {
         let registrationID = UUID()
         guard beginSession(
-            operation: .provision(registrationID, completion),
+            operation: .provision(isAdditionalQuiet: isAdditionalQuiet, registrationID, completion),
             message: "Hold the top of your iPhone near the tag you want Ollie to remember.",
             invalidateAfterFirstRead: false
         ) else {
-            completion(.unavailable(unavailableMessage))
+            completion(.unavailable(unavailableMessage(isAdditionalQuiet: isAdditionalQuiet)))
             return
         }
     }
@@ -62,8 +69,18 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
         session = nil
     }
 
-    private var unavailableMessage: String {
-        "NFC is not available on this iPhone. You can use a Wind Down code instead."
+    private func tagName(isAdditionalQuiet: Bool) -> String {
+        isAdditionalQuiet ? "phone-bed tag" : "Wind Down tag"
+    }
+
+    private func unavailableMessage(isAdditionalQuiet: Bool) -> String {
+        let codeName = isAdditionalQuiet ? "phone-bed" : "Wind Down"
+        return "NFC is not available on this iPhone. You can use a \(codeName) code instead."
+    }
+
+    private func readFailureMessage(isAdditionalQuiet: Bool) -> String {
+        let codeName = isAdditionalQuiet ? "phone-bed" : "Wind Down"
+        return "Ollie could not read that tag. Try again, pair a replacement tag, or use a \(codeName) code."
     }
 
     private func beginSession(
@@ -126,14 +143,14 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
     }
 
     private func finishScan(_ result: ScanResult) {
-        guard case .scan(let completion) = operation else { return }
+        guard case .scan(_, let completion) = operation else { return }
         operation = nil
         session = nil
         completion(result)
     }
 
     private func finishProvision(_ result: ProvisionResult) {
-        guard case .provision(_, let completion) = operation else { return }
+        guard case .provision(_, _, let completion) = operation else { return }
         operation = nil
         session = nil
         completion(result)
@@ -149,17 +166,17 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
             let cancelled = (error as? NFCReaderError)?.code
                 == .readerSessionInvalidationErrorUserCanceled
             switch self.operation {
-            case .scan:
+            case .scan(let isAdditionalQuiet, _):
                 self.finishScan(
                     cancelled
                         ? .cancelled
-                        : .unavailable("Ollie could not read that tag. Try again, pair a replacement tag, or use a Wind Down code.")
+                        : .unavailable(self.readFailureMessage(isAdditionalQuiet: isAdditionalQuiet))
                 )
             case .provision:
                 self.finishProvision(
                     cancelled
                         ? .cancelled
-                        : .unavailable("Ollie could not prepare that tag. Try another tag, or use a Wind Down code.")
+                        : .unavailable("Ollie could not prepare that tag. Try another tag, or use a code instead.")
                 )
             case nil:
                 break
@@ -172,10 +189,11 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
         didDetectNDEFs messages: [NFCNDEFMessage]
     ) {
         Task { @MainActor in
-            guard case .scan = self.operation,
+            guard case .scan(let isAdditionalQuiet, _) = self.operation,
                   let message = messages.first else { return }
             self.finishScan(.read(Self.readResult(from: message)))
-            session.alertMessage = "Wind Down tag found."
+            let tagLabel = self.tagName(isAdditionalQuiet: isAdditionalQuiet).capitalized
+            session.alertMessage = "\(tagLabel) found."
             session.invalidate()
         }
     }
@@ -194,17 +212,17 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
             }
 
             switch self.operation {
-            case .scan:
-                self.read(context)
-            case .provision(let registrationID, _):
-                self.write(context, registrationID: registrationID)
+            case .scan(let isAdditionalQuiet, _):
+                self.read(context, isAdditionalQuiet: isAdditionalQuiet)
+            case .provision(let isAdditionalQuiet, let registrationID, _):
+                self.write(context, registrationID: registrationID, isAdditionalQuiet: isAdditionalQuiet)
             case nil:
                 break
             }
         }
     }
 
-    private func read(_ context: NFCWriteContext) {
+    private func read(_ context: NFCWriteContext, isAdditionalQuiet: Bool) {
         context.session.connect(to: context.tag) { error in
             guard error == nil else {
                 context.session.alertMessage = "Ollie could not reach that tag. Try again."
@@ -214,14 +232,15 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
             context.tag.readNDEF { message, error in
                 guard let message, error == nil else {
                     context.session.invalidate(
-                        errorMessage: "Ollie could not read that tag. Try again, pair a replacement tag, or use a Wind Down code."
+                        errorMessage: self.readFailureMessage(isAdditionalQuiet: isAdditionalQuiet)
                     )
                     return
                 }
                 let result = Self.readResult(from: message)
                 Task { @MainActor in
                     self.finishScan(.read(result))
-                    context.session.alertMessage = "Wind Down tag found."
+                    let tagLabel = self.tagName(isAdditionalQuiet: isAdditionalQuiet).capitalized
+                    context.session.alertMessage = "\(tagLabel) found."
                     context.session.invalidate()
                 }
             }
@@ -230,7 +249,8 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
 
     private func write(
         _ context: NFCWriteContext,
-        registrationID: UUID
+        registrationID: UUID,
+        isAdditionalQuiet: Bool
     ) {
         context.session.connect(to: context.tag) { error in
             guard error == nil else {
@@ -269,7 +289,9 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                     )
                     Task { @MainActor in
                         self.finishProvision(.registered(registration))
-                        context.session.alertMessage = "Wind Down tag saved."
+                        context.session.alertMessage = isAdditionalQuiet
+                            ? "Phone-bed tag saved."
+                            : "Wind Down tag saved."
                         context.session.invalidate()
                     }
                 }

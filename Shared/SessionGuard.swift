@@ -68,17 +68,17 @@ enum WindDownProtectionChoice: String, CaseIterable, Identifiable, Equatable {
 
     var title: String {
         switch self {
-        case .appShielding: return "Apps to rest"
-        case .nfcAndAppShielding: return "NFC + apps to rest"
+        case .appShielding: return "App limits"
+        case .nfcAndAppShielding: return "NFC + app limits"
         }
     }
 
     var detail: String {
         switch self {
         case .appShielding:
-            return "Apps to rest are limited from Wind Down start through morning quiet. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
+            return "App limits run from Wind Down start through morning quiet. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
         case .nfcAndAppShielding:
-            return "Tap your Wind Down tag to start the barrier; apps to rest stay limited through morning quiet. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
+            return "Tap your Wind Down tag to start the barrier; app limits stay active through morning quiet. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
         }
     }
 

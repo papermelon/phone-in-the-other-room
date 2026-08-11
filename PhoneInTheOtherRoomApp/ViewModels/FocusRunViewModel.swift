@@ -69,13 +69,13 @@ final class FocusRunViewModel: ObservableObject {
     /// Ephemeral navigation intent used by the practice-record handoff; it is not
     /// persisted and does not change the meaning of any recorded night.
     @Published var nightsRecordFocusID: UUID?
-    @Published var shieldingEnabled = UserDefaults.standard.bool(
-        forKey: QuietTimeShieldingService.enabledKey
-    )
+    @Published var shieldingEnabled: Bool
+    @Published var farmActionMessage: String?
 
     private let focusService = FocusModeSuggestionService()
     private let notifications = PhoneNotificationService.shared
-    private let persistence = PersistenceService.shared
+    let persistence: PersistenceService
+    private let nowProvider: () -> Date
     private let screenTimeService = ScreenTimeAuthorizationService()
     private let healthSleepService = HealthSleepService()
     private let phoneBedNFCService = PhoneBedNFCService()
@@ -88,24 +88,43 @@ final class FocusRunViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var pendingNightWatchPlan: NightWatchPlan?
     private var pendingNightWatchSourceOccurrenceID: UUID?
+    private var pendingAdHocQuietTransaction: WindDownStartTransaction?
     private var nightWatchStartInFlight = false
 
-    init(coordinator: FocusSessionCoordinator? = nil) {
-        let savedQuietTime = PersistenceService.shared.nightWatchPreferences
-        let savedSchedule = PersistenceService.shared.windDownSchedule
-        let savedReportPreferences = PersistenceService.shared.screenTimeReportPreferences
+    private var activeRunIsAdditionalQuiet: Bool {
+        activeRun?.nightWatchPlan?.role == .additionalQuiet
+    }
+
+    private var pendingRunIsAdditionalQuiet: Bool {
+        pendingNightWatchPlan?.role == .additionalQuiet
+    }
+
+    init(
+        coordinator: FocusSessionCoordinator? = nil,
+        persistence: PersistenceService = .shared,
+        nowProvider: @escaping () -> Date = Date.init,
+        startsExternalServices: Bool = true
+    ) {
+        self.persistence = persistence
+        self.nowProvider = nowProvider
+        let savedQuietTime = persistence.nightWatchPreferences
+        let savedSchedule = persistence.windDownSchedule
+        let savedReportPreferences = persistence.screenTimeReportPreferences
         let initialReportPreferences = savedReportPreferences
             ?? ScreenTimeReportPreferences.defaults(for: savedQuietTime)
         if savedReportPreferences == nil {
-            PersistenceService.shared.screenTimeReportPreferences = initialReportPreferences
+            persistence.screenTimeReportPreferences = initialReportPreferences
         }
-        self.coordinator = coordinator ?? FocusSessionCoordinator()
-        impactSharingPreferences = PersistenceService.shared.impactSharingPreferences
-        orientationState = PersistenceService.shared.orientationState
-        appearancePreference = PersistenceService.shared.appearancePreference
+        self.coordinator = coordinator ?? FocusSessionCoordinator(persistence: persistence)
+        impactSharingPreferences = persistence.impactSharingPreferences
+        orientationState = persistence.orientationState
+        appearancePreference = persistence.appearancePreference
+        shieldingEnabled = startsExternalServices
+            ? UserDefaults.standard.bool(forKey: QuietTimeShieldingService.enabledKey)
+            : false
         nightsRecordFocusID = nil
-        impactSharingAvailable = (try? SupabaseConfiguration.load()) != nil
-        notificationPreferences = notifications.preferences
+        impactSharingAvailable = startsExternalServices && (try? SupabaseConfiguration.load()) != nil
+        notificationPreferences = startsExternalServices ? notifications.preferences : .defaults
         var normalizedQuietTime = savedQuietTime
         normalizedQuietTime.guardKind = savedQuietTime.guardKind.releaseCompatibleKind
         nightWatchPreferences = normalizedQuietTime
@@ -130,7 +149,7 @@ final class FocusRunViewModel: ObservableObject {
         phoneBedTagRegistration = persistence.phoneBedNFCTagRegistration
         selectedGuardKind = normalizedQuietTime.guardKind
         if normalizedQuietTime.guardKind != savedQuietTime.guardKind {
-            PersistenceService.shared.nightWatchPreferences = normalizedQuietTime
+            persistence.nightWatchPreferences = normalizedQuietTime
         }
         self.coordinator.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
@@ -143,13 +162,17 @@ final class FocusRunViewModel: ObservableObject {
             self.reconcileOrientationAfterRun()
             self.scheduleAutomaticWindDownIfNeeded()
         }
-        screenTimeAuthorization = screenTimeService.currentState()
-        Task { @MainActor in
-            notificationAuthorization = await notifications.authorizationStatus()
+        screenTimeAuthorization = startsExternalServices ? screenTimeService.currentState() : .notDetermined
+        if startsExternalServices {
+            Task { @MainActor in
+                notificationAuthorization = await notifications.authorizationStatus()
+            }
         }
-        sleepAuthorization = healthSleepService.isAvailable
-            ? (healthSleepService.hasRequestedAccess ? .requested : .notRequested)
-            : .unavailable
+        sleepAuthorization = startsExternalServices
+            ? (healthSleepService.isAvailable
+                ? (healthSleepService.hasRequestedAccess ? .requested : .notRequested)
+                : .unavailable)
+            : .notRequested
         manualAnalyticsEntries = persistence.manualAnalyticsEntries
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         distractingActivitySelection = screenTimeSelectionService.load(.distracting)
@@ -163,28 +186,30 @@ final class FocusRunViewModel: ObservableObject {
             hasConfiguredNightWatch: savedQuietTime.isConfigured,
             hasActiveRun: self.coordinator.run != nil
         )
-        applyShortcutPreparationIfNeeded()
-        reconcileAutomaticWindDownIfNeeded()
-        if sleepAuthorization == .requested {
-            refreshSleepSummary()
+        if startsExternalServices {
+            applyShortcutPreparationIfNeeded()
+            reconcileAutomaticWindDownIfNeeded()
+            if sleepAuthorization == .requested {
+                refreshSleepSummary()
+            }
+            reconcileOrientationAfterRun()
         }
-        reconcileOrientationAfterRun()
     }
 
     var activeRun: FocusRun? { coordinator.run }
     var hasConfiguredNightWatch: Bool { nightWatchPreferences.isConfigured }
     var hasRegisteredNFCTag: Bool { registeredNFCDigest != nil }
     var canBeginNightWatchNow: Bool {
-        nightWatchPreferences.isStartWindowOpen()
+        nightWatchPreferences.isStartWindowOpen(at: nowProvider())
             || WindDownScheduleEngine.eligibleOccurrence(
                 in: windDownSchedule,
-                at: Date(),
+                at: nowProvider(),
                 primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
             ) != nil
     }
     var upcomingQuietPeriods: [WindDownSchedulePeriod] {
         windDownSchedule.upcomingPeriods(
-            after: Date(),
+            after: nowProvider(),
             primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes,
             limit: 64
         )
@@ -197,7 +222,7 @@ final class FocusRunViewModel: ObservableObject {
         upcomingAdditionalQuietPeriods.first
     }
     var currentWindDownStartContext: WindDownStartContext? {
-        let now = Date()
+        let now = nowProvider()
         guard let period = WindDownScheduleEngine.eligibleOccurrence(
             in: windDownSchedule,
             at: now,
@@ -209,11 +234,12 @@ final class FocusRunViewModel: ObservableObject {
         )
     }
     var readyOneTimeQuietPeriodID: UUID? {
-        WindDownScheduleEngine.eligibleOccurrence(
+        guard let eligible = WindDownScheduleEngine.eligibleOccurrence(
             in: windDownSchedule,
-            at: Date(),
+            at: nowProvider(),
             primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
-        )?.sourceID
+        ), !eligible.recurring else { return nil }
+        return eligible.sourceID
     }
     var hasSelectedShieldingApps: Bool {
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
@@ -242,6 +268,7 @@ final class FocusRunViewModel: ObservableObject {
 
     var sheepSearchState: SheepSearchState { coordinator.sheepSearchState }
     var latestSheepSearchOutcome: SheepSearchOutcome? { coordinator.latestSheepSearchOutcome }
+    var farmState: FarmState { coordinator.farmState }
 
     var isOrientationActive: Bool { orientationState.isVisibleOnHome }
 
@@ -356,7 +383,7 @@ final class FocusRunViewModel: ObservableObject {
     /// mutation is rolled back when the confirmation cannot be prepared.
     @discardableResult
     func startNewOneTimeAdditionalQuietNow(
-        duration: TimeInterval,
+        duration: TimeInterval = 30 * 60,
         title: String = "One-time quiet period",
         now: Date = Date()
     ) -> Bool {
@@ -377,10 +404,10 @@ final class FocusRunViewModel: ObservableObject {
             return false
         }
 
-        requestStartNightWatch()
+        pendingAdHocQuietTransaction = WindDownStartTransaction(createdOneTimePeriodID: periodID)
+        requestStartNightWatch(sourceID: periodID)
         guard showNightWatchStartPrompt else {
-            windDownSchedule.oneTimePeriods.removeAll { $0.id == periodID }
-            saveWindDownSchedule()
+            rollbackPendingAdHocQuiet()
             windDownScheduleError = "Quiet time could not be prepared just now."
             return false
         }
@@ -410,7 +437,7 @@ final class FocusRunViewModel: ObservableObject {
         nightsRecordFocusID = nil
     }
 
-    /// Reads the terminal field note by its persisted run identity. The search
+    /// Reads the terminal Trail Note by its persisted run identity. The search
     /// engine resolves outcomes in the coordinator; terminal views only reveal
     /// the saved record and never calculate a new one.
     func sheepSearchOutcome(for runID: UUID) -> SheepSearchOutcome? {
@@ -483,18 +510,32 @@ final class FocusRunViewModel: ObservableObject {
         showFocusModePrompt = true
     }
 
-    func requestStartNightWatch() {
+    func requestStartNightWatch(sourceID: UUID? = nil) {
         guard WindDownStartGate.canPresentPreflight(
             isRunning: isRunning,
             startInFlight: nightWatchStartInFlight
         ) else { return }
         saveNightWatchPreferences()
         let requestedAt = Date()
-        let eligible = WindDownScheduleEngine.eligibleOccurrence(
-            in: windDownSchedule,
-            at: requestedAt,
-            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
-        )
+        let eligible: WindDownSchedulePeriod?
+        if let sourceID {
+            eligible = WindDownScheduleEngine.eligibleOccurrence(
+                in: windDownSchedule,
+                at: requestedAt,
+                sourceID: sourceID,
+                primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+            )
+            guard eligible != nil else {
+                nightWatchStartStatus = "That quiet window has passed or is too short to start now."
+                return
+            }
+        } else {
+            eligible = WindDownScheduleEngine.eligibleOccurrence(
+                in: windDownSchedule,
+                at: requestedAt,
+                primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+            )
+        }
         pendingNightWatchSourceOccurrenceID = eligible?.sourceID
         pendingWindDownStartContext = eligible.map {
             WindDownStartContext(
@@ -502,7 +543,13 @@ final class FocusRunViewModel: ObservableObject {
                 practicePeriodID: orientationState.practicePeriodID
             )
         }
-        pendingNightWatchPlan = makePlanForNextWindDown(startedAt: requestedAt)
+        pendingNightWatchPlan = eligible.map {
+            WindDownScheduleEngine.plan(
+                for: $0,
+                preferences: nightWatchPreferences,
+                startedAt: requestedAt
+            )
+        } ?? makePlanForNextWindDown(startedAt: requestedAt)
         liveActivityChoiceForNextRun = liveActivityEnabled
         appShieldingChoiceForNextRun = shieldingEnabled && shieldingReadiness == .ready
         nightWatchStartStatus = ""
@@ -512,6 +559,7 @@ final class FocusRunViewModel: ObservableObject {
     func cancelNightWatchStart() {
         guard !nightWatchStartInFlight else { return }
         isScanningNFCForStart = false
+        rollbackPendingAdHocQuiet()
         pendingNightWatchPlan = nil
         pendingNightWatchSourceOccurrenceID = nil
         pendingWindDownStartContext = nil
@@ -537,14 +585,20 @@ final class FocusRunViewModel: ObservableObject {
             guard let eligible = WindDownScheduleEngine.eligibleOccurrence(
                 in: windDownSchedule,
                 at: startedAt,
+                sourceID: sourceID,
                 primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
             ), eligible.sourceID == sourceID else {
+                rollbackPendingAdHocQuiet()
                 nightWatchStartInFlight = false
                 nightWatchStartStatus = "That quiet window has passed or is too short to start now."
                 nfcStatus = nightWatchStartStatus
                 return
             }
-            plan = makePlanForNextWindDown(startedAt: startedAt)
+            plan = WindDownScheduleEngine.plan(
+                for: eligible,
+                preferences: nightWatchPreferences,
+                startedAt: startedAt
+            )
         } else {
             plan = requestedPlan
         }
@@ -578,6 +632,7 @@ final class FocusRunViewModel: ObservableObject {
             persistence.orientationState = orientationState
         }
         consumeScheduledOccurrence(sourceID)
+        pendingAdHocQuietTransaction = nil
         notifications.scheduleNightWatchNotifications(
             for: plan,
             startedAt: startedAt,
@@ -779,7 +834,14 @@ final class FocusRunViewModel: ObservableObject {
 
     func cancelOneTimeQuiet(id: UUID) {
         guard !isRunning else { return }
-        windDownSchedule.oneTimePeriods.removeAll { $0.id == id }
+        _ = windDownSchedule.removeOneTimePeriod(id: id)
+        saveWindDownSchedule()
+    }
+
+    private func rollbackPendingAdHocQuiet() {
+        guard let transaction = pendingAdHocQuietTransaction else { return }
+        _ = transaction.cancel(in: &windDownSchedule)
+        pendingAdHocQuietTransaction = nil
         saveWindDownSchedule()
     }
 
@@ -1269,22 +1331,27 @@ final class FocusRunViewModel: ObservableObject {
             qrCodeStatus = "Ollie could not read that code. Try again."
             return
         }
+        let isAdditionalQuiet = pendingRunIsAdditionalQuiet || activeRunIsAdditionalQuiet
         if persistence.phoneBedQRCode == nil {
             persistence.phoneBedQRCode = normalizedCode
-            qrCodeStatus = "Wind Down code saved."
+            qrCodeStatus = isAdditionalQuiet ? "Phone-bed code saved." : "Wind Down code saved."
         }
         if coordinator.confirmQRCode(normalizedCode, expectedCode: persistence.phoneBedQRCode) {
             showQRCodeScanner = false
             qrCodeStatus = ""
         } else {
-            qrCodeStatus = "That is not your Wind Down code. Try again."
+            qrCodeStatus = isAdditionalQuiet
+                ? "That is not your phone-bed code. Try again."
+                : "That is not your Wind Down code. Try again."
         }
     }
 
     func scanNFCTag() {
         nfcStatus = ""
         guard registeredNFCDigest != nil else {
-            nfcStatus = "Set up a Wind Down tag in Settings before starting with NFC."
+            nfcStatus = pendingRunIsAdditionalQuiet || activeRunIsAdditionalQuiet
+                ? "Set up a phone-bed tag in Settings before starting with NFC."
+                : "Set up a Wind Down tag in Settings before starting with NFC."
             return
         }
         let isPendingStart = pendingNightWatchPlan != nil && activeRun == nil
@@ -1295,7 +1362,9 @@ final class FocusRunViewModel: ObservableObject {
             scanInFlight: isScanningNFCForStart
         ) else { return }
         isScanningNFCForStart = isPendingStart
-        phoneBedNFCService.scan { [weak self] result in
+        phoneBedNFCService.scan(
+            isAdditionalQuiet: pendingRunIsAdditionalQuiet || activeRunIsAdditionalQuiet
+        ) { [weak self] result in
             guard let self else { return }
             self.isScanningNFCForStart = false
             switch result {
@@ -1304,7 +1373,9 @@ final class FocusRunViewModel: ObservableObject {
                 if self.pendingNightWatchPlan != nil,
                    self.activeRun == nil {
                     guard read.digest == expectedDigest else {
-                        self.nfcStatus = "That is not your Wind Down tag. The session has not started."
+                        self.nfcStatus = self.pendingRunIsAdditionalQuiet
+                            ? "That is not your phone-bed tag. Quiet time has not started."
+                            : "That is not your Wind Down tag. The session has not started."
                         return
                     }
                     if var registration = self.phoneBedTagRegistration {
@@ -1312,7 +1383,9 @@ final class FocusRunViewModel: ObservableObject {
                         self.phoneBedTagRegistration = registration
                         self.persistence.phoneBedNFCTagRegistration = registration
                     }
-                    self.nfcStatus = "Wind Down is starting."
+                    self.nfcStatus = self.pendingRunIsAdditionalQuiet
+                        ? "Quiet time is starting."
+                        : "Wind Down is starting."
                     self.startPendingNightWatch()
                     return
                 }
@@ -1325,14 +1398,24 @@ final class FocusRunViewModel: ObservableObject {
                         self.phoneBedTagRegistration = registration
                         self.persistence.phoneBedNFCTagRegistration = registration
                     }
-                    self.nfcStatus = "Wind Down tag confirmed."
+                    self.nfcStatus = self.activeRunIsAdditionalQuiet
+                        ? "Phone-bed tag confirmed."
+                        : "Wind Down tag confirmed."
                 } else {
-                    self.nfcStatus = "That is not your Wind Down tag. Wind Down is still running."
+                    self.nfcStatus = self.activeRunIsAdditionalQuiet
+                        ? "That is not your phone-bed tag. Quiet time is still running."
+                        : "That is not your Wind Down tag. Wind Down is still running."
                 }
             case .cancelled:
-                self.nfcStatus = self.pendingNightWatchPlan != nil
-                    ? "No tag was read. Wind Down has not started."
-                    : "No tag was read. Wind Down is still running."
+                if self.pendingNightWatchPlan != nil {
+                    self.nfcStatus = self.pendingRunIsAdditionalQuiet
+                        ? "No tag was read. Quiet time has not started."
+                        : "No tag was read. Wind Down has not started."
+                } else {
+                    self.nfcStatus = self.activeRunIsAdditionalQuiet
+                        ? "No tag was read. Quiet time is still running."
+                        : "No tag was read. Wind Down is still running."
+                }
             case .unavailable(let message):
                 self.nfcStatus = message
             }
@@ -1346,7 +1429,7 @@ final class FocusRunViewModel: ObservableObject {
         }
         nfcStatus = ""
         guard let expectedDigest = registeredNFCDigest else {
-            nfcStatus = "The saved tag is missing. Use the emergency exit if you need your apps now."
+            nfcStatus = "The saved tag is missing. Use the emergency exit if you need your selected apps now."
             return
         }
         phoneBedNFCService.scan { [weak self] result in
@@ -1357,7 +1440,9 @@ final class FocusRunViewModel: ObservableObject {
                     .matches(scannedDigest: read.digest)
                     ?? (read.digest == expectedDigest)
                 guard matchesRegisteredTag else {
-                    self.nfcStatus = "That is not your Wind Down tag. Wind Down is still running."
+                    self.nfcStatus = self.activeRunIsAdditionalQuiet
+                        ? "That is not your phone-bed tag. Quiet time is still running."
+                        : "That is not your Wind Down tag. Wind Down is still running."
                     return
                 }
                 if var registration = self.phoneBedTagRegistration {
@@ -1365,11 +1450,15 @@ final class FocusRunViewModel: ObservableObject {
                     self.phoneBedTagRegistration = registration
                     self.persistence.phoneBedNFCTagRegistration = registration
                 }
-                self.nfcStatus = "Wind Down tag confirmed. Apps to rest can now be limited."
+                self.nfcStatus = self.activeRunIsAdditionalQuiet
+                    ? "Phone-bed tag confirmed. App limits are being cleared."
+                    : "Wind Down tag confirmed. App limits are being cleared."
                 self.prepareForEarlyWindDownExit()
                 self.coordinator.endEarly(reason: .nfcTagAuthenticated)
             case .cancelled:
-                self.nfcStatus = "No tag was read. Wind Down is still running."
+                self.nfcStatus = self.activeRunIsAdditionalQuiet
+                    ? "No tag was read. Quiet time is still running."
+                    : "No tag was read. Wind Down is still running."
             case .unavailable(let message):
                 self.nfcStatus = message
             }
@@ -1405,7 +1494,9 @@ final class FocusRunViewModel: ObservableObject {
     func provisionNFCTag(forActiveRun: Bool = false) {
         isProvisioningNFCTag = true
         nfcStatus = ""
-        phoneBedNFCService.provision { [weak self] result in
+        phoneBedNFCService.provision(
+            isAdditionalQuiet: forActiveRun && activeRunIsAdditionalQuiet
+        ) { [weak self] result in
             guard let self else { return }
             self.isProvisioningNFCTag = false
             switch result {
@@ -1422,16 +1513,22 @@ final class FocusRunViewModel: ObservableObject {
                             registration.tokenDigest,
                             expectedFingerprint: registration.tokenDigest
                         )
-                        self.nfcStatus = "New tag paired. Wind Down is starting."
+                        self.nfcStatus = self.activeRunIsAdditionalQuiet
+                            ? "New tag paired. Quiet time is starting."
+                            : "New tag paired. Wind Down is starting."
                     } else {
-                        self.nfcStatus = "New tag paired. Tap it again to end Wind Down."
+                        self.nfcStatus = self.activeRunIsAdditionalQuiet
+                            ? "New tag paired. Tap it again to end quiet time."
+                            : "New tag paired. Tap it again to end Wind Down."
                     }
                 } else {
                     self.nfcStatus = "Wind Down tag saved."
                 }
             case .cancelled:
                 self.nfcStatus = forActiveRun
-                    ? "No changes made. Wind Down is still running with your current tag."
+                    ? (self.activeRunIsAdditionalQuiet
+                        ? "No changes made. Quiet time is still running with your current tag."
+                        : "No changes made. Wind Down is still running with your current tag.")
                     : "No changes made. Your current Wind Down tag is still ready."
             case .unavailable(let message):
                 self.nfcStatus = message
@@ -1683,6 +1780,7 @@ final class FocusRunViewModel: ObservableObject {
         pendingNightWatchPlan = nil
         pendingNightWatchSourceOccurrenceID = nil
         pendingWindDownStartContext = nil
+        pendingAdHocQuietTransaction = nil
         nightWatchStartInFlight = false
     }
 
@@ -1749,6 +1847,8 @@ final class FocusRunViewModel: ObservableObject {
         coordinator.rewards = []
         coordinator.sheepSearchState = .empty
         coordinator.latestSheepSearchOutcome = nil
+        coordinator.farmState = .empty
+        farmActionMessage = nil
         coordinator.events = []
         coordinator.latestReward = nil
         coordinator.pingPulseCount = 0

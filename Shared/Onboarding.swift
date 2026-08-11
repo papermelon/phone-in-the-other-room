@@ -55,17 +55,17 @@ enum OnboardingProtectionChoice: String, Codable, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .appShielding: return "Apps to rest"
-        case .nfcAndAppShielding: return "NFC + apps to rest"
+        case .appShielding: return "App limits"
+        case .nfcAndAppShielding: return "NFC + app limits"
         }
     }
 
     var detail: String {
         switch self {
         case .appShielding:
-            return "Choose apps to rest from Wind Down start through your morning quiet window. No tag needed. Counting Sheep stays available."
+            return "Choose apps to limit from Wind Down start through your morning quiet window. No tag needed. Counting Sheep stays available."
         case .nfcAndAppShielding:
-            return "A Wind Down tag starts the app barrier; selected apps stay limited through your morning quiet window. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
+            return "A Wind Down tag starts the app limits; selected apps stay limited through your morning quiet window. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
         }
     }
 }

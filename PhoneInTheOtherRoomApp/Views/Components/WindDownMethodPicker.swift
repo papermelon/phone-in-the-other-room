@@ -27,9 +27,9 @@ struct WindDownProtectionPicker: View {
     private var header: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text("App Shield")
+                Text("App limits")
                     .font(AppTypography.headline)
-                Text("Selected apps rest until morning quiet ends.")
+                Text("Selected apps are limited through morning quiet.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
@@ -42,8 +42,8 @@ struct WindDownProtectionPicker: View {
                     .background(AppColors.surfaceMuted, in: Circle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("About App Shield")
-            .accessibilityHint("Learn how selected apps rest during Wind Down.")
+            .accessibilityLabel("About app limits")
+            .accessibilityHint("Learn how selected apps are limited during Wind Down.")
         }
     }
 
@@ -134,7 +134,7 @@ struct WindDownProtectionPicker: View {
         case .noSelection:
             statusActionRow(
                 icon: "square.stack.3d.up",
-                title: "Choose apps to rest",
+                title: "Choose apps to limit",
                 actionLabel: "Choose",
                 action: onChooseApps
             )
@@ -142,12 +142,12 @@ struct WindDownProtectionPicker: View {
             statusTextRow(
                 icon: "lock.open",
                 title: "Screen Time access is off.",
-                detail: "Wind Down still works without App Shield."
+                detail: "Wind Down still works without app limits."
             )
         case .unavailable:
             statusTextRow(
                 icon: "iphone.slash",
-                title: "App Shield is unavailable here.",
+                title: "App limits are unavailable here.",
                 detail: "Wind Down still works without it."
             )
         }
@@ -240,12 +240,12 @@ struct AppShieldExplainerSheet: View {
             ScrollView {
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                        Text("About App Shield")
+                        Text("About app limits")
                             .font(AppTypography.display(30))
                         explainerRow(
                             icon: "square.stack.3d.up.fill",
-                            title: "Selected apps rest",
-                            detail: "App Shield limits only the apps and categories you choose, from Wind Down until morning quiet ends."
+                            title: "Selected apps",
+                            detail: "App limits cover only the apps and categories you choose, from Wind Down through morning quiet."
                         )
                         explainerRow(
                             icon: "pawprint.fill",
@@ -255,7 +255,7 @@ struct AppShieldExplainerSheet: View {
                         explainerRow(
                             icon: "door.left.hand.open",
                             title: "You’re never locked in",
-                            detail: "Emergency exit lifts App Shield immediately and ends that Wind Down early."
+                            detail: "Emergency exit lifts app limits immediately and ends that Wind Down early."
                         )
                         explainerRow(
                             icon: "dot.radiowaves.left.and.right",
@@ -267,7 +267,7 @@ struct AppShieldExplainerSheet: View {
                 .padding(AppSpacing.md)
             }
             .background(AppColors.paper.ignoresSafeArea())
-            .navigationTitle("About App Shield")
+            .navigationTitle("About app limits")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -295,7 +295,7 @@ struct AppShieldExplainerSheet: View {
     }
 }
 
-#Preview("App Shield · ready") {
+#Preview("App limits · ready") {
     WindDownProtectionPicker(
         selectedKind: .honorTimer,
         isNFCTagReady: true,
@@ -343,7 +343,7 @@ struct AppShieldExplainerSheet: View {
     .background(AppColors.paper)
 }
 
-#Preview("App Shield · dark mode") {
+#Preview("App limits · dark mode") {
     WindDownProtectionPicker(
         selectedKind: .honorTimer,
         isNFCTagReady: true,
@@ -360,7 +360,7 @@ struct AppShieldExplainerSheet: View {
     .preferredColorScheme(.dark)
 }
 
-#Preview("App Shield · accessibility text") {
+#Preview("App limits · accessibility text") {
     WindDownProtectionPicker(
         selectedKind: .honorTimer,
         isNFCTagReady: true,
@@ -377,7 +377,7 @@ struct AppShieldExplainerSheet: View {
     .environment(\.dynamicTypeSize, .accessibility2)
 }
 
-#Preview("About App Shield") {
+#Preview("About app limits") {
     AppShieldExplainerSheet(onDone: {})
         .presentationDetents([.medium, .large])
 }

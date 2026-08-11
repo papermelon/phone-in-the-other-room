@@ -93,22 +93,26 @@ struct SheepDefinition: Codable, Equatable, Identifiable {
     let accessory: String?
     let posterClue: String
     let story: String
+
+    func assetName(for woolState: SheepWoolVisualState) -> String {
+        "sheep/sheep_\(id)_\(woolState.rawValue)"
+    }
 }
 
 enum SheepCatalog {
     static let all: [SheepDefinition] = [
-        SheepDefinition(id: "mabel", name: "Mabel", rarity: .common, habitat: .starterPasture, breed: .commonWhite, assetName: "sheep/sheep_common", accessory: "a blue ribbon", posterClue: "Last seen beside the water trough.", story: "Mabel likes a quiet path and a warm barn corner."),
-        SheepDefinition(id: "pippin", name: "Pippin", rarity: .common, habitat: .starterPasture, breed: .spotted, assetName: "sheep/sheep_spotted", accessory: "round glasses", posterClue: "Last seen with a mouthful of clover.", story: "Pippin always stops to read the field signs."),
-        SheepDefinition(id: "bramble", name: "Bramble", rarity: .common, habitat: .starterPasture, breed: .fluffy, assetName: "sheep/sheep_fluffy", accessory: "a green neckerchief", posterClue: "Last seen near the low fence.", story: "Bramble knows every friendly gate in the pasture."),
-        SheepDefinition(id: "clementine", name: "Clementine", rarity: .common, habitat: .sunriseHill, breed: .cream, assetName: "sheep/sheep_cream", accessory: "a sunflower pin", posterClue: "Last seen where the first light reaches the grass.", story: "Clementine follows the morning light home."),
-        SheepDefinition(id: "oat", name: "Oat", rarity: .common, habitat: .storybookBarn, breed: .merino, assetName: "sheep/sheep_merino", accessory: "a little book satchel", posterClue: "Last seen outside the storybook barn.", story: "Oat settles whenever someone makes room for a page or two."),
-        SheepDefinition(id: "midnight", name: "Midnight", rarity: .uncommon, habitat: .moonMeadow, breed: .black, assetName: "sheep/sheep_black", accessory: "a silver bell", posterClue: "Last seen under the moon meadow gate.", story: "Midnight travels quietly when the evening grows still."),
-        SheepDefinition(id: "juniper", name: "Juniper", rarity: .uncommon, habitat: .fenceLine, breed: .cream, assetName: "sheep/sheep_cream", accessory: "a pair of amber spectacles", posterClue: "Last seen following the fence-line trail.", story: "Juniper likes a clear boundary and a patient shepherd."),
-        SheepDefinition(id: "hazel", name: "Hazel", rarity: .uncommon, habitat: .sunflowerField, breed: .spotted, assetName: "sheep/sheep_spotted", accessory: "a yellow hat", posterClue: "Last seen beyond the sunflower field.", story: "Hazel wanders farther when the day begins gently."),
-        SheepDefinition(id: "ramsey", name: "Ramsey", rarity: .uncommon, habitat: .farField, breed: .guardian, assetName: "sheep/sheep_guardian", accessory: "a red wool scarf", posterClue: "Last seen past the far-field marker.", story: "Ramsey is brave about long trails and quiet rooms."),
-        SheepDefinition(id: "luna", name: "Luna", rarity: .rare, habitat: .moonMeadow, breed: .merino, assetName: "sheep/sheep_merino", accessory: "a crescent-moon necklace", posterClue: "Last seen where the grass turns blue at dusk.", story: "Luna only comes close when the night has been given room."),
-        SheepDefinition(id: "marigold", name: "Marigold", rarity: .rare, habitat: .sunriseHill, breed: .fluffy, assetName: "sheep/sheep_fluffy", accessory: "a flower crown", posterClue: "Last seen on the highest sunrise path.", story: "Marigold follows a steady morning all the way home."),
-        SheepDefinition(id: "wisp", name: "Wisp", rarity: .legendary, habitat: .highMoor, breed: .night, assetName: "sheep/sheep_night", accessory: "a starry cape", posterClue: "Last seen above the high moor.", story: "Wisp appears when Ollie has followed a very long, patient trail."),
+        SheepDefinition(id: "mabel", name: "Mabel", rarity: .common, habitat: .starterPasture, breed: .commonWhite, assetName: "sheep/sheep_mabel_wool_ready", accessory: "a blue ribbon", posterClue: "Last seen beside the water trough.", story: "Mabel likes a quiet path and a warm barn corner."),
+        SheepDefinition(id: "pippin", name: "Pippin", rarity: .common, habitat: .starterPasture, breed: .spotted, assetName: "sheep/sheep_pippin_wool_ready", accessory: "round glasses", posterClue: "Last seen with a mouthful of clover.", story: "Pippin always stops to read the field signs."),
+        SheepDefinition(id: "bramble", name: "Bramble", rarity: .common, habitat: .starterPasture, breed: .fluffy, assetName: "sheep/sheep_bramble_wool_ready", accessory: "a green neckerchief", posterClue: "Last seen near the low fence.", story: "Bramble knows every friendly gate in the pasture."),
+        SheepDefinition(id: "clementine", name: "Clementine", rarity: .common, habitat: .sunriseHill, breed: .cream, assetName: "sheep/sheep_clementine_wool_ready", accessory: "a sunflower pin", posterClue: "Last seen where the first light reaches the grass.", story: "Clementine follows the morning light home."),
+        SheepDefinition(id: "oat", name: "Oat", rarity: .common, habitat: .storybookBarn, breed: .merino, assetName: "sheep/sheep_oat_wool_ready", accessory: "a little book satchel", posterClue: "Last seen outside the storybook barn.", story: "Oat settles whenever someone makes room for a page or two."),
+        SheepDefinition(id: "midnight", name: "Midnight", rarity: .uncommon, habitat: .moonMeadow, breed: .black, assetName: "sheep/sheep_midnight_wool_ready", accessory: "a silver bell", posterClue: "Last seen under the moon meadow gate.", story: "Midnight travels quietly when the evening grows still."),
+        SheepDefinition(id: "juniper", name: "Juniper", rarity: .uncommon, habitat: .fenceLine, breed: .cream, assetName: "sheep/sheep_juniper_wool_ready", accessory: "a pair of amber spectacles", posterClue: "Last seen following the fence-line trail.", story: "Juniper likes a clear boundary and a patient shepherd."),
+        SheepDefinition(id: "hazel", name: "Hazel", rarity: .uncommon, habitat: .sunflowerField, breed: .spotted, assetName: "sheep/sheep_hazel_wool_ready", accessory: "a yellow hat", posterClue: "Last seen beyond the sunflower field.", story: "Hazel wanders farther when the day begins gently."),
+        SheepDefinition(id: "ramsey", name: "Ramsey", rarity: .uncommon, habitat: .farField, breed: .guardian, assetName: "sheep/sheep_ramsey_wool_ready", accessory: "a red wool scarf", posterClue: "Last seen past the far-field marker.", story: "Ramsey is brave about long trails and quiet rooms."),
+        SheepDefinition(id: "luna", name: "Luna", rarity: .rare, habitat: .moonMeadow, breed: .merino, assetName: "sheep/sheep_luna_wool_ready", accessory: "a crescent-moon necklace", posterClue: "Last seen where the grass turns blue at dusk.", story: "Luna only comes close when the night has been given room."),
+        SheepDefinition(id: "marigold", name: "Marigold", rarity: .rare, habitat: .sunriseHill, breed: .fluffy, assetName: "sheep/sheep_marigold_wool_ready", accessory: "a flower crown", posterClue: "Last seen on the highest sunrise path.", story: "Marigold follows a steady morning all the way home."),
+        SheepDefinition(id: "wisp", name: "Wisp", rarity: .legendary, habitat: .highMoor, breed: .night, assetName: "sheep/sheep_wisp_wool_ready", accessory: "a starry cape", posterClue: "Last seen above the high moor.", story: "Wisp appears when Ollie has followed a very long, patient trail."),
     ]
 
     static let starterIDs: Set<String> = ["mabel", "pippin", "bramble", "clementine", "oat"]
@@ -183,6 +187,7 @@ enum SheepSearchEngine {
         protectedNightNumber: Int,
         evidence: SheepSearchEvidence,
         state: SheepSearchState,
+        trackedSheepID: String? = nil,
         now: Date = Date(),
         seed: UInt64? = nil
     ) -> SheepSearchCalculation {
@@ -218,13 +223,22 @@ enum SheepSearchEngine {
         let eligible = SheepCatalog.eligible(for: protectedNightNumber)
             .filter { !state.foundSheepIDs.contains($0.id) }
         let candidatePool = eligible.isEmpty ? SheepCatalog.eligible(for: protectedNightNumber) : eligible
-        let selected = shouldFind ? weightedSheep(from: candidatePool, score: score, random: generator) : nil
+        let selected = shouldFind
+            ? weightedSheep(
+                from: candidatePool,
+                score: score,
+                trackedSheepID: trackedSheepID,
+                random: generator
+            )
+            : nil
         let result: SheepSearchOutcome.Result = selected == nil ? .trailOnly : .found
         let distance = (Double(evidence.windDownMinutes + evidence.morningQuietMinutes) * 0.08)
             + Double(score) * 0.015
 
         let outcome = SheepSearchOutcome(
-            id: UUID(),
+            // New outcomes use the run identity so reconciliation remains stable even if
+            // settlement is retried before the first persistence write completes.
+            id: runID,
             runID: runID,
             protectedNightNumber: protectedNightNumber,
             result: result,
@@ -250,13 +264,15 @@ enum SheepSearchEngine {
     private static func weightedSheep(
         from candidates: [SheepDefinition],
         score: Int,
+        trackedSheepID: String?,
         random: DeterministicSheepRandom
     ) -> SheepDefinition? {
         guard !candidates.isEmpty else { return nil }
         let weights = candidates.map { sheep -> Double in
             let rarityPenalty = Double(sheep.rarity.rank) * 0.28
             let strengthBonus = Double(score) / 100 * Double(sheep.rarity.rank) * 0.32
-            return max(0.08, 1 - rarityPenalty + strengthBonus)
+            let baseWeight = max(0.08, 1 - rarityPenalty + strengthBonus)
+            return sheep.id == trackedSheepID ? baseWeight * 3 : baseWeight
         }
         let total = weights.reduce(0, +)
         var cursor = random.value() * total

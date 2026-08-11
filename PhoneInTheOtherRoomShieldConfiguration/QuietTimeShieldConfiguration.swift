@@ -26,8 +26,18 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
     }
 
     private func quietTimeConfiguration(allowsBriefAccess: Bool) -> ShieldConfiguration {
-        let quote = ShieldQuoteCatalog.quote(for: Date())
-        let reflection = "“\(quote.quote)”\n— \(quote.author), \(quote.source)"
+        let now = Date()
+        let snapshot = presentationSnapshot
+        let role = snapshot?.role ?? .primaryWindDown
+        let group = snapshot?.cueGroup(at: now) ?? .windDown
+        let cue = ShieldCueCatalog.cue(
+            for: group,
+            runID: snapshot?.runID,
+            date: now
+        )
+        let subtitleText = snapshot?.protectedEndDate.map {
+            "\(cue)\nEnds at \($0.formatted(date: .omitted, time: .shortened))"
+        } ?? cue
         let secondaryLabel = allowsBriefAccess
             ? ShieldConfiguration.Label(
                 text: secondaryButtonTitle,
@@ -35,15 +45,15 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
             )
             : nil
         let title = ShieldConfiguration.Label(
-            text: "Ollie is keeping watch",
+            text: "Ollie is keeping the flock quiet.",
             color: UIColor(red: 0.92, green: 0.89, blue: 0.79, alpha: 1)
         )
         let subtitle = ShieldConfiguration.Label(
-            text: reflection,
+            text: subtitleText,
             color: UIColor(red: 0.78, green: 0.77, blue: 0.71, alpha: 1)
         )
         let primary = ShieldConfiguration.Label(
-            text: primaryButtonTitle,
+            text: primaryButtonTitle(for: role),
             color: UIColor(red: 0.10, green: 0.11, blue: 0.09, alpha: 1)
         )
         let background = UIColor(red: 0.035, green: 0.043, blue: 0.039, alpha: 1)
@@ -61,7 +71,7 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
                 secondaryButtonLabel: secondaryLabel,
                 secondaryButtonSubmenuItems: [
                     "Use for about 5 minutes",
-                    "Keep Wind Down"
+                    keepRunningButtonTitle(for: role)
                 ]
             )
         }
@@ -78,9 +88,25 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
         )
     }
 
+    private var presentationSnapshot: QuietTimeShieldPresentationSnapshot? {
+        guard let defaults = UserDefaults(
+            suiteName: QuietTimeShieldPresentationStorage.appGroupIdentifier
+        ) else {
+            return nil
+        }
+        return QuietTimeShieldPresentationSnapshot.load(from: defaults)
+    }
+
     private var ollieIcon: UIImage {
         if let image = UIImage(
-            named: "dog_storybook_run_frame_01",
+            named: "ollie_sheep_storybook_shield",
+            in: Bundle(for: QuietTimeShieldConfiguration.self),
+            compatibleWith: nil
+        ) {
+            return image.withRenderingMode(.alwaysOriginal)
+        }
+        if let image = UIImage(
+            named: "dog_run_frame_01",
             in: Bundle(for: QuietTimeShieldConfiguration.self),
             compatibleWith: nil
         ) {
@@ -90,11 +116,12 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
             ?? UIImage()
     }
 
-    private var primaryButtonTitle: String {
-        if #available(iOS 26.5, *) {
-            return "Continue Wind Down"
-        }
-        return "Close this app"
+    private func primaryButtonTitle(for role: QuietTimeShieldRole) -> String {
+        role == .additionalQuiet ? "Return to Quiet Time" : "Return to Wind Down"
+    }
+
+    private func keepRunningButtonTitle(for role: QuietTimeShieldRole) -> String {
+        role == .additionalQuiet ? "Keep quiet time running" : "Keep Wind Down"
     }
 
     private var secondaryButtonTitle: String {

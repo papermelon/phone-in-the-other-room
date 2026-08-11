@@ -38,7 +38,8 @@ The first release contains four tabs:
 - **Home:** understand tonight's saved plan and purpose, then set/start Wind Down or edit it.
 - **Nights:** see protected nights, quiet-bookend minutes, recent history, optional sleep
   duration/stages, selected-app Screen Time, and cautious local outcome comparisons.
-- **Farm:** see the equal protected-night flock and browse the finite Missing Posters carousel
+- **Farm:** tend the living flock, manage The Barn, follow the Trail Board, revisit Ollie's Trail
+  Notes, and use wool for capacity and local customization
   for cosmetic/story context; posters do not change progression value.
 - **Settings:** configure Wind Down, manage connections and privacy, send feedback, and see app
   information.
@@ -98,10 +99,11 @@ completed habit before restoring access or granting the Night Watch receipt.
 
 ## Progress and the flock
 
-- Each completed primary sleep-bookend Wind Down settles one equal sheep; Farm's Missing Posters
-  provide optional cosmetic/story context for named sheep.
+- Each completed primary sleep-bookend Wind Down resolves one persisted search; Farm's Trail Board
+  provides clues and catalogue context for named sheep.
 - Later completed nights resolve into a persisted search outcome: sheep found or trail advanced.
-- Factual receipts and a calm flock record make consistency visible without currency, rarity, or locked collections.
+- Factual receipts keep the ritual honest; rarity and the wool economy begin only after a
+  sheep arrives and never change essential access or quiet-time credit.
 - Optional HealthKit, Screen Time, and self-reported signals only add bonuses; missing data never
   lowers the chance.
 - Only elapsed wind-down and morning-quiet minutes appear in the factual receipt. A separate

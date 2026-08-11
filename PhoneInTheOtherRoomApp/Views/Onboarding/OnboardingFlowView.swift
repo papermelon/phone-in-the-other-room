@@ -87,7 +87,7 @@ struct OnboardingFlowView: View {
         }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
-            headerText: "Choose 1–3 apps or categories to rest during Wind Down, from the start through your morning quiet window.",
+            headerText: "Choose 1–3 apps or categories to limit during Wind Down, from the start through your morning quiet window.",
             footerText: "Counting Sheep limits this selection during Wind Down and always stays available. Websites are ignored.",
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection

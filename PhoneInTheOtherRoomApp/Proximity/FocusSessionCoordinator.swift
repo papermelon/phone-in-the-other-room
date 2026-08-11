@@ -13,13 +13,14 @@ final class FocusSessionCoordinator: ObservableObject {
     @Published var pingPulseCount = 0
     @Published var ollieMessage = "Ollie is ready when your phone is."
     @Published var backgroundReturnMessage: String?
-    @Published var shieldingMessage: String?
+    @Published var shieldingState: ActiveRunShieldingState = .notRequested
     @Published var sheepSearchState: SheepSearchState
     @Published var latestSheepSearchOutcome: SheepSearchOutcome?
+    @Published var farmState: FarmState
 
     private let persistence: PersistenceService
     private let rewardEngine = RewardEngine()
-    let watch = WatchConnectivityManager.shared
+    let watch: WatchConnectivityManager
     private let ping = PingService()
     private let notifications = PhoneNotificationService.shared
     private let liveActivity: FocusRunLiveActivityService
@@ -45,15 +46,19 @@ final class FocusSessionCoordinator: ObservableObject {
     init(
         persistence: PersistenceService = .shared,
         liveActivity: FocusRunLiveActivityService? = nil,
-        shielding: QuietTimeShieldingProviding? = nil
+        shielding: QuietTimeShieldingProviding? = nil,
+        watch: WatchConnectivityManager = .shared
     ) {
         self.persistence = persistence
         self.liveActivity = liveActivity ?? FocusRunLiveActivityService()
         self.shielding = shielding ?? QuietTimeShieldingService()
+        self.watch = watch
         self.progress = persistence.progress
         self.rewards = persistence.rewards
-        self.sheepSearchState = persistence.sheepSearchState
-        self.latestSheepSearchOutcome = persistence.sheepSearchState.lastOutcome
+        let savedSearchState = persistence.sheepSearchState
+        self.sheepSearchState = savedSearchState
+        self.latestSheepSearchOutcome = savedSearchState.lastOutcome
+        self.farmState = persistence.farmState
         watch.onMessage = { [weak self] message in
             Task { @MainActor in self?.handle(message) }
         }
@@ -110,6 +115,7 @@ final class FocusSessionCoordinator: ObservableObject {
             appShieldingRequested: appShieldingRequested,
             liveActivityRequested: liveActivityRequested
         )
+        let isAdditionalQuiet = newRun.nightWatchPlan?.role == .additionalQuiet
         if !configuration.guardKind.needsPlacementConfirmation || autoConfirmPlacement {
             newRun.phoneAwayValidatedAt = startedAt
         }
@@ -118,15 +124,22 @@ final class FocusSessionCoordinator: ObservableObject {
             newRun.placementEvidence = PlacementEvidence(
                 guardKind: configuration.guardKind,
                 confirmedAt: startedAt,
-                note: "Automatic Wind Down schedule started"
+                note: isAdditionalQuiet
+                    ? "Automatic quiet-time schedule started"
+                    : "Automatic Wind Down schedule started"
             )
         }
         run = newRun
         latestReward = nil
         proximityState = .initial
-        ollieMessage = openingMessage(for: configuration.guardKind)
+        ollieMessage = openingMessage(
+            for: configuration.guardKind,
+            role: newRun.nightWatchPlan?.role ?? .primarySleepBookend
+        )
         addEvent(
-            newRun.isNightWatch ? "Wind Down started." : "Phone-away time started.",
+            isAdditionalQuiet
+                ? "Quiet time started."
+                : (newRun.isNightWatch ? "Wind Down started." : "Phone-away time started."),
             detail: focusAccepted ? "System Focus was turned on." : nil
         )
         persistActiveRun()
@@ -166,15 +179,30 @@ final class FocusSessionCoordinator: ObservableObject {
             }
         case .qrCode:
             if !autoConfirmPlacement {
-                addEvent("Wind Down code needed.", detail: "Scan your Wind Down code to start the app-access barrier.")
+                addEvent(
+                    isAdditionalQuiet ? "Phone-bed code needed." : "Wind Down code needed.",
+                    detail: isAdditionalQuiet
+                        ? "Scan your phone-bed code to start quiet time."
+                        : "Scan your Wind Down code to start the app-access barrier."
+                )
             }
         case .nfcTag:
+            let protectionDetail: String
+            if isAdditionalQuiet {
+                protectionDetail = "Selected apps are limited until \(OllieFormat.time(newRun.plannedEndAt))."
+            } else {
+                protectionDetail = "Selected apps are limited until \(OllieFormat.time(newRun.plannedEndAt)) or you use the emergency exit."
+            }
             addEvent(
-                autoConfirmPlacement
-                    ? "Wind Down tag confirmed."
-                    : "Wind Down is running. Tap the Wind Down tag when it is ready.",
-                    detail: autoConfirmPlacement
-                        ? "Apps to rest are limited until morning quiet ends or you use the emergency exit."
+                isAdditionalQuiet
+                    ? (autoConfirmPlacement
+                        ? "Phone-bed tag confirmed."
+                        : "Quiet time is waiting. Tap the phone-bed tag when it is ready.")
+                    : (autoConfirmPlacement
+                        ? "Wind Down tag confirmed."
+                        : "Wind Down is running. Tap the Wind Down tag when it is ready."),
+                detail: autoConfirmPlacement
+                        ? protectionDetail
                     : "The session has not started until the registered tag is tapped."
             )
         case .honorTimer:
@@ -185,11 +213,18 @@ final class FocusSessionCoordinator: ObservableObject {
     func confirmQRCode(_ code: String, expectedCode: String?) -> Bool {
         guard var run, run.guardKind == .qrCode else { return false }
         guard expectedCode == nil || expectedCode == code else {
-            ollieMessage = "That is not your Wind Down code. Try again."
+            ollieMessage = run.nightWatchPlan?.role == .additionalQuiet
+                ? "That is not your phone-bed code. Try again."
+                : "That is not your Wind Down code. Try again."
             recordRitualEvent(.placementValidationFailed, for: run, payload: ["method": "qrCode"])
             return false
         }
-        confirmPlacement(&run, note: "Wind Down code confirmed")
+        confirmPlacement(
+            &run,
+            note: run.nightWatchPlan?.role == .additionalQuiet
+                ? "Phone-bed code confirmed"
+                : "Wind Down code confirmed"
+        )
         recordRitualEvent(
             .placementConfirmed,
             for: run,
@@ -202,11 +237,18 @@ final class FocusSessionCoordinator: ObservableObject {
     func confirmNFCTag(_ fingerprint: String, expectedFingerprint: String?) -> Bool {
         guard var run, run.guardKind == .nfcTag else { return false }
         guard expectedFingerprint == nil || expectedFingerprint == fingerprint else {
-            ollieMessage = "That is not your Wind Down tag. Try again."
+            ollieMessage = run.nightWatchPlan?.role == .additionalQuiet
+                ? "That is not your phone-bed tag. Try again."
+                : "That is not your Wind Down tag. Try again."
             recordRitualEvent(.placementValidationFailed, for: run, payload: ["method": "nfcTag"])
             return false
         }
-        confirmPlacement(&run, note: "Wind Down tag tapped")
+        confirmPlacement(
+            &run,
+            note: run.nightWatchPlan?.role == .additionalQuiet
+                ? "Phone-bed tag tapped"
+                : "Wind Down tag tapped"
+        )
         recordRitualEvent(
             .placementConfirmed,
             for: run,
@@ -221,12 +263,17 @@ final class FocusSessionCoordinator: ObservableObject {
         stopWatchPlacement()
         run.guardKind = .honorTimer
         run.placementStatus = .notRequired
-        run.placementEvidence = PlacementEvidence(guardKind: .honorTimer, confirmedAt: nil, note: "Continued without a Wind Down tag")
+        let isAdditionalQuiet = run.nightWatchPlan?.role == .additionalQuiet
+        run.placementEvidence = PlacementEvidence(
+            guardKind: .honorTimer,
+            confirmedAt: nil,
+            note: isAdditionalQuiet ? "Continued without a phone-bed tag" : "Continued without a Wind Down tag"
+        )
         run.phoneAwayValidatedAt = Date()
         run.state = .running
         self.run = run
         ollieMessage = "Ollie will keep the quiet while your phone rests away."
-        addEvent("Wind Down continued without a tag check.")
+        addEvent(isAdditionalQuiet ? "Quiet time continued without a tag check." : "Wind Down continued without a tag check.")
         recordRitualEvent(
             .fallbackSelected,
             for: run,
@@ -302,7 +349,7 @@ final class FocusSessionCoordinator: ObservableObject {
         latestReward = nil
         proximityState = .initial
         backgroundReturnMessage = nil
-        shieldingMessage = nil
+        shieldingState = .notRequested
         lastLiveActivityPhase = nil
         ollieMessage = "Ollie is ready when your phone is."
         notifications.cancelRunCompletion()
@@ -511,13 +558,16 @@ final class FocusSessionCoordinator: ObservableObject {
             )
             let calculation = SheepSearchEngine.calculate(
                 runID: finalRun.id,
-                protectedNightNumber: progress.totalCompletedRuns + 1,
+                protectedNightNumber: progress.totalCompletedRuns,
                 evidence: evidence,
                 state: sheepSearchState,
+                trackedSheepID: farmState.trackedSheepDefinitionID,
                 now: finalRun.endedAt ?? Date()
             )
             sheepSearchState.append(calculation.outcome)
             persistence.sheepSearchState = sheepSearchState
+            farmState.recordArrival(calculation.outcome)
+            persistence.farmState = farmState
             latestSheepSearchOutcome = calculation.outcome
         }
         if let record = finalRun.nightWatchRecord(
@@ -536,9 +586,15 @@ final class FocusSessionCoordinator: ObservableObject {
             )
         }
         self.run = finalRun
-        ollieMessage = finalRun.completedSuccessfully
-            ? "The phone slept away while both edges of the night stayed quiet."
-            : "Ollie kept your spot warm."
+        if finalRun.nightWatchPlan?.role == .additionalQuiet {
+            ollieMessage = finalRun.completedSuccessfully
+                ? "Quiet time is complete."
+                : "Ollie kept your quiet spot warm."
+        } else {
+            ollieMessage = finalRun.completedSuccessfully
+                ? "The phone slept away while both edges of the night stayed quiet."
+                : "Ollie kept your spot warm."
+        }
         watch.send(WatchMessage(type: finalRun.completedSuccessfully ? .rewardEarned : .endFocusRunEarly, run: finalRun, proximity: proximityState, reward: reward))
         onRunFinished?()
 #if DEBUG
@@ -589,12 +645,11 @@ final class FocusSessionCoordinator: ObservableObject {
         for run: FocusRun,
         at date: Date = Date()
     ) {
+        shieldingState = .from(outcome)
         switch outcome {
         case .disabled:
-            shieldingMessage = nil
             break
         case .noSelection:
-            shieldingMessage = "No apps were selected, so Wind Down is continuing without a shield."
             recordRitualEvent(
                 .shieldActivationFailed,
                 for: run,
@@ -603,7 +658,6 @@ final class FocusSessionCoordinator: ObservableObject {
                 payload: ["reason": "noSelection"]
             )
         case .scheduled:
-            shieldingMessage = "Apps to rest will be limited for the next Wind Down."
             recordRitualEvent(
                 .shieldScheduleRequested,
                 for: run,
@@ -611,7 +665,6 @@ final class FocusSessionCoordinator: ObservableObject {
                 idempotencyKey: "\(run.id.uuidString):shield:scheduled"
             )
         case .applied:
-            shieldingMessage = "Apps to rest are limited until morning quiet ends. Use the emergency exit if you need your phone back sooner."
             recordRitualEvent(
                 .shieldScheduleRequested,
                 for: run,
@@ -625,7 +678,6 @@ final class FocusSessionCoordinator: ObservableObject {
                 idempotencyKey: "\(run.id.uuidString):shield:applied:\(run.nightWatchPhase(at: date)?.rawValue ?? "unknown")"
             )
         case .cleared:
-            shieldingMessage = "The app shield is resting for now."
             recordRitualEvent(
                 .shieldCleared,
                 for: run,
@@ -633,7 +685,6 @@ final class FocusSessionCoordinator: ObservableObject {
                 idempotencyKey: "\(run.id.uuidString):shield:cleared:\(run.nightWatchPhase(at: date)?.rawValue ?? "terminal")"
             )
         case .failed(let reason):
-            shieldingMessage = "The app shield could not start. Wind Down is still running, and you can try again next time."
             recordRitualEvent(
                 .shieldActivationFailed,
                 for: run,
@@ -679,7 +730,18 @@ final class FocusSessionCoordinator: ObservableObject {
         liveActivity.setEnabled(enabled)
     }
 
-    private func openingMessage(for guardKind: SessionGuardKind) -> String {
+    private func openingMessage(
+        for guardKind: SessionGuardKind,
+        role: WindDownOccurrenceRole
+    ) -> String {
+        if role == .additionalQuiet {
+            switch guardKind {
+            case .honorTimer: return "Carry the phone to its resting place. Ollie will keep the quiet."
+            case .watchPlacement: return "Carry the phone away. Ollie will make one short Watch check."
+            case .qrCode: return "Scan your phone-bed code to set the app limits."
+            case .nfcTag: return "Tap your phone-bed tag to start quiet time."
+            }
+        }
         switch guardKind {
         case .honorTimer: return "Carry the phone to its resting place. Ollie will keep the quiet."
         case .watchPlacement: return "Carry the phone away. Ollie will make one short Watch check."
@@ -700,8 +762,10 @@ final class FocusSessionCoordinator: ObservableObject {
         case .endFocusRunEarly:
             guard run?.guardKind != .nfcTag else {
                 addEvent(
-                    "Wind Down tag needed.",
-                    detail: "Use the iPhone and tap the registered tag to end Wind Down."
+                    run?.nightWatchPlan?.role == .additionalQuiet ? "Phone-bed tag needed." : "Wind Down tag needed.",
+                    detail: run?.nightWatchPlan?.role == .additionalQuiet
+                        ? "Use the iPhone and tap the registered tag to end quiet time."
+                        : "Use the iPhone and tap the registered tag to end Wind Down."
                 )
                 if let run {
                     watch.send(

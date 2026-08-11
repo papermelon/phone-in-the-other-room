@@ -10,6 +10,14 @@ struct WindDownStartSheet: View {
 
     private var usesNFC: Bool { viewModel.selectedGuardKind == .nfcTag }
 
+    private var isAdHocQuiet: Bool {
+        viewModel.pendingWindDownStartContext?.kind == .oneTimeQuiet
+    }
+
+    private var adHocEndTime: String {
+        viewModel.pendingNightWatchEndsAt.map(OllieFormat.time) ?? "later"
+    }
+
     private var eyebrow: String {
         switch viewModel.pendingWindDownStartContext?.kind {
         case .practice:
@@ -22,6 +30,7 @@ struct WindDownStartSheet: View {
 
     private var startButtonTitle: String {
         if viewModel.isScanningNFCForStart { return "Waiting for your tag…" }
+        if isAdHocQuiet { return "Start quiet time" }
         if viewModel.pendingWindDownStartContext?.isPractice == true {
             let minutes = viewModel.pendingWindDownStartContext?.durationMinutes ?? 5
             return usesNFC ? "Tap tag to start practice" : "Start \(minutes)-minute practice"
@@ -33,6 +42,9 @@ struct WindDownStartSheet: View {
     }
 
     private var heading: String {
+        if isAdHocQuiet {
+            return "Quiet time until \(adHocEndTime)"
+        }
         if viewModel.pendingWindDownStartContext?.isPractice == true {
             return "Your practice quiet is ready."
         }
@@ -43,10 +55,13 @@ struct WindDownStartSheet: View {
     }
 
     private var explanation: String {
+        if isAdHocQuiet {
+            return "Only the minutes after you start count. This appears in Nights, but it isn’t a protected night and won’t find a sheep."
+        }
         if viewModel.pendingNightWatchIsAdditionalQuiet {
             let end = viewModel.pendingNightWatchEndsAt.map(OllieFormat.time) ?? "the saved end time"
             let protection = viewModel.willShieldPendingNightWatch
-                ? " Your apps to rest will be limited until then."
+                ? " Selected apps will be limited until then."
                 : " No apps will be limited."
             if viewModel.pendingWindDownStartContext?.isPractice == true {
                 return "This practice ends at \(end). It will appear in Nights, but it stays separate from protected nights and Ollie’s sheep search.\(protection)"
@@ -57,8 +72,8 @@ struct WindDownStartSheet: View {
             return "Wind Down will keep time and record your quiet. No apps will be limited."
         }
         return usesNFC
-            ? "Your apps to rest will be limited after you tap your Wind Down tag and through morning quiet. Counting Sheep stays available."
-            : "Your apps to rest will be limited from Wind Down start through morning quiet. Counting Sheep stays available."
+            ? "Selected apps will be limited after you tap your Wind Down tag and through morning quiet. Counting Sheep stays available."
+            : "Selected apps will be limited from Wind Down start through morning quiet. Counting Sheep stays available."
     }
 
     var body: some View {
@@ -74,9 +89,18 @@ struct WindDownStartSheet: View {
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
 
+                    if isAdHocQuiet, usesNFC {
+                        Text("Tap your registered phone-bed tag after choosing Start quiet time.")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+
                     shieldingChoice
 
-                    Toggle("Show progress on the Lock Screen", isOn: $viewModel.liveActivityChoiceForNextRun)
+                    Toggle(
+                        isAdHocQuiet ? "Show on the Lock Screen" : "Show progress on the Lock Screen",
+                        isOn: $viewModel.liveActivityChoiceForNextRun
+                    )
                         .font(AppTypography.body)
                         .tint(AppColors.grass)
 
@@ -98,7 +122,7 @@ struct WindDownStartSheet: View {
                     .buttonStyle(PixelPrimaryButtonStyle())
                     .disabled(viewModel.isScanningNFCForStart)
 
-                    Button("Cancel") {
+                    Button("Not now") {
                         viewModel.cancelNightWatchStart()
                         dismiss()
                     }
@@ -109,18 +133,13 @@ struct WindDownStartSheet: View {
                 .padding(AppSpacing.lg)
             }
             .background(AppColors.paper.ignoresSafeArea())
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        viewModel.cancelNightWatchStart()
-                        dismiss()
-                    }
-                }
-            }
+        }
+        .onDisappear {
+            viewModel.cancelNightWatchStart()
         }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
-            headerText: "Choose the apps or categories you want to rest during this quiet time.",
+            headerText: "Choose apps to limit during this quiet time.",
             footerText: "Counting Sheep stays available. Websites are ignored.",
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection
@@ -137,17 +156,27 @@ struct WindDownStartSheet: View {
         if viewModel.pendingStartNeedsShieldingSetup {
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Label("Apps to rest aren’t set up", systemImage: "apps.iphone")
+                    Label(
+                        "Selected apps aren’t set up",
+                        systemImage: "apps.iphone"
+                    )
                         .font(AppTypography.headline)
-                    Text("You can start this quiet time without app limits, or choose apps first.")
+                    Text(
+                        isAdHocQuiet
+                            ? "You can start without app limits, or choose apps and categories first."
+                            : "You can start this quiet time without app limits, or choose apps first."
+                    )
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
-                    Button("Choose apps to rest", action: chooseAppsToRest)
+                    Button("Choose apps to limit", action: chooseAppsToRest)
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 }
             }
         } else if viewModel.shieldingEnabled, viewModel.shieldingReadiness == .ready {
-            Toggle("Limit my apps to rest", isOn: $viewModel.appShieldingChoiceForNextRun)
+            Toggle(
+                "Limit selected apps",
+                isOn: $viewModel.appShieldingChoiceForNextRun
+            )
                 .font(AppTypography.body)
                 .tint(AppColors.grass)
         }
@@ -166,4 +195,19 @@ struct WindDownStartSheet: View {
 #Preview("Start without app limits") {
     WindDownStartSheet()
         .environmentObject(FocusRunViewModel())
+}
+
+#Preview("One-time quiet start · Dynamic Type") {
+    let viewModel = FocusRunViewModel()
+    let now = Date()
+    viewModel.windDownSchedule = WindDownScheduleState(oneTimePeriods: [
+        WindDownOneTimePeriod(
+            title: "One-time quiet period",
+            interval: DateInterval(start: now, end: now.addingTimeInterval(30 * 60))
+        )
+    ])
+    viewModel.requestStartNightWatch()
+    return WindDownStartSheet()
+        .environmentObject(viewModel)
+        .environment(\.dynamicTypeSize, .accessibility2)
 }

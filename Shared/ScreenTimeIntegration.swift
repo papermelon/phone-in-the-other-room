@@ -154,21 +154,21 @@ enum ShieldingReadiness: Equatable {
 
     var title: String {
         switch self {
-        case .ready: return "Apps to rest are ready"
+        case .ready: return "Selected apps are ready"
         case .authorizationRequired: return "Screen Time access is needed"
         case .denied: return "Screen Time access is off"
-        case .noSelection: return "Choose apps to rest"
-        case .unavailable: return "Apps to rest are unavailable"
+        case .noSelection: return "Choose apps to limit"
+        case .unavailable: return "App limits are unavailable"
         }
     }
 
     var detail: String {
         switch self {
-        case .ready: return "Apps to rest will stay limited from Wind Down start through morning quiet. Counting Sheep stays available."
+        case .ready: return "App limits will run from Wind Down start through morning quiet. Counting Sheep stays available."
         case .authorizationRequired: return "Allow Screen Time access, then choose at least one app or category."
-        case .denied: return "Wind Down can still run as phone-away time without apps to rest."
-        case .noSelection: return "Choose at least one app or category to rest, or continue without apps to rest."
-        case .unavailable: return "This device cannot provide the optional apps-to-rest feature."
+        case .denied: return "Wind Down can still run as phone-away time without app limits."
+        case .noSelection: return "Choose at least one app or category for app limits, or continue without app limits."
+        case .unavailable: return "This device cannot provide optional app limits."
         }
     }
 }

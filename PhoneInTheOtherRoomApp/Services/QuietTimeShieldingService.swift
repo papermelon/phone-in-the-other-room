@@ -6,15 +6,6 @@ import FamilyControls
 import ManagedSettings
 #endif
 
-enum QuietTimeShieldingOutcome: Equatable {
-    case disabled
-    case noSelection
-    case scheduled
-    case applied
-    case cleared
-    case failed(String)
-}
-
 @MainActor
 protocol QuietTimeShieldingProviding {
     @discardableResult

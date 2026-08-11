@@ -2,23 +2,27 @@ import SwiftUI
 
 struct MonthlyNightsView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var month: Date
 
     private let calendar = Calendar.current
+
     init(month: Date = Date()) {
         _month = State(initialValue: Calendar.current.date(
             from: Calendar.current.dateComponents([.year, .month], from: month)
         ) ?? month)
     }
-    private var summaries: [WindDownDaySummary] {
-        WindDownHistoryAggregator.monthSummaries(
+
+    private var monthSummary: NightsHistoryRange {
+        NightsHistoryAggregator.monthSummary(
             from: viewModel.nightWatchRecords,
             containing: month,
             calendar: calendar
         )
     }
-    private var summaryByDay: [Date: WindDownDaySummary] {
-        Dictionary(uniqueKeysWithValues: summaries.map { (calendar.startOfDay(for: $0.day), $0) })
+
+    private var summaryByDay: [Date: NightsHistoryDay] {
+        Dictionary(uniqueKeysWithValues: monthSummary.days.map { (calendar.startOfDay(for: $0.day), $0) })
     }
 
     private var monthInterval: DateInterval {
@@ -38,16 +42,11 @@ struct MonthlyNightsView: View {
         return (weekday - calendar.firstWeekday + 7) % 7
     }
 
-    private var quietMinutes: Int {
-        summaries.reduce(0) { $0 + $1.quietMinutes }
-    }
-
-    private var protectedNights: Int {
-        summaries.reduce(0) { $0 + $1.protectedNightCount }
-    }
-
-    private var completedOccurrences: Int {
-        summaries.reduce(0) { $0 + $1.completedOccurrenceCount }
+    private var canMoveToNextMonth: Bool {
+        let currentMonth = calendar.date(
+            from: calendar.dateComponents([.year, .month], from: Date())
+        ) ?? Date()
+        return month < currentMonth
     }
 
     var body: some View {
@@ -61,7 +60,7 @@ struct MonthlyNightsView: View {
             .padding(AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Monthly nights")
+        .navigationTitle("All nights")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -70,16 +69,16 @@ struct MonthlyNightsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(month.formatted(.dateTime.month(.wide).year()))
                     .font(AppTypography.display(28))
-                Text("A month at a glance")
+                Text("Recorded quiet at a glance")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
             Spacer(minLength: 0)
             HStack(spacing: AppSpacing.xs) {
-                monthButton(systemName: "chevron.left", label: "Previous month") {
+                monthButton(systemName: "chevron.left", label: "Previous month", isEnabled: true) {
                     shiftMonth(by: -1)
                 }
-                monthButton(systemName: "chevron.right", label: "Next month") {
+                monthButton(systemName: "chevron.right", label: "Next month", isEnabled: canMoveToNextMonth) {
                     shiftMonth(by: 1)
                 }
             }
@@ -89,47 +88,75 @@ struct MonthlyNightsView: View {
     private var totalsCard: some View {
         PixelCard {
             HStack(spacing: 0) {
-                totalMetric(value: quietMinutesLabel, label: "quiet minutes")
+                totalMetric(value: "\(monthSummary.protectedNightCount)", label: "protected")
                 Divider()
-                    .frame(height: 42)
+                    .frame(height: AppSpacing.xxl + AppSpacing.xs)
                     .padding(.horizontal, AppSpacing.sm)
-                totalMetric(value: "\(protectedNights)", label: protectedNights == 1 ? "protected night" : "protected nights")
+                totalMetric(value: monthSummary.recordedQuietMinutes.formatted(), label: "recorded quiet")
                 Divider()
-                    .frame(height: 42)
+                    .frame(height: AppSpacing.xxl + AppSpacing.xs)
                     .padding(.horizontal, AppSpacing.sm)
-                totalMetric(value: "\(completedOccurrences)", label: completedOccurrences == 1 ? "Wind Down" : "Wind Downs")
+                totalMetric(
+                    value: "\(monthSummary.totalOccurrenceCount)",
+                    label: monthSummary.totalOccurrenceCount == 1 ? "period" : "periods"
+                )
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(quietMinutesLabel) quiet minutes, \(protectedNights) protected nights, \(completedOccurrences) completed Wind Downs")
+            .accessibilityLabel("\(monthSummary.protectedNightCount) protected nights, \(monthSummary.recordedQuietMinutes) recorded quiet minutes, \(monthSummary.totalOccurrenceCount) periods")
         }
     }
 
     private var calendarCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                HStack {
-                    Text("RECORDED DAYS")
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(AppColors.grass)
-                    Spacer()
-                    HStack(spacing: AppSpacing.xs) {
-                        legendDot(color: AppColors.grass, label: "protected")
-                        legendDot(color: AppColors.warning, label: "ended early")
-                    }
+                Text("RECORDED DAYS")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                legend
+                calendarLayout
+            }
+        }
+    }
+
+    private var legend: some View {
+        HStack(spacing: AppSpacing.sm) {
+            legendItem("Protected", systemImage: "shield.fill", color: AppColors.grass)
+            legendItem("Ended early", systemImage: "moon.stars.fill", color: AppColors.warning)
+            legendItem("One-time", systemImage: "sparkles", color: AppColors.lavender)
+        }
+    }
+
+    @ViewBuilder
+    private var calendarLayout: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            ScrollView(.horizontal, showsIndicators: false) {
+                calendarGrid
+                    .frame(width: AppSpacing.xxl * 12)
+            }
+            .accessibilityLabel("Calendar for \(month.formatted(.dateTime.month(.wide).year()))")
+        } else {
+            calendarGrid
+        }
+    }
+
+    private var calendarGrid: some View {
+        VStack(spacing: AppSpacing.sm) {
+            weekdayHeader
+            LazyVGrid(
+                columns: Array(
+                    repeating: GridItem(.flexible(), spacing: AppSpacing.xs),
+                    count: 7
+                ),
+                spacing: AppSpacing.sm
+            ) {
+                ForEach(0..<leadingEmptyDays, id: \.self) { _ in
+                    Color.clear
+                        .frame(height: AppSpacing.xxl + AppSpacing.lg)
+                        .accessibilityHidden(true)
                 }
-
-                weekdayHeader
-
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: AppSpacing.xs), count: 7), spacing: AppSpacing.sm) {
-                    ForEach(0..<leadingEmptyDays, id: \.self) { _ in
-                        Color.clear
-                            .frame(height: 42)
-                            .accessibilityHidden(true)
-                    }
-                    ForEach(daysInMonth, id: \.self) { day in
-                        dayCell(day)
-                    }
+                ForEach(daysInMonth, id: \.self) { day in
+                    dayCell(day)
                 }
             }
         }
@@ -137,7 +164,8 @@ struct MonthlyNightsView: View {
 
     private var weekdayHeader: some View {
         let symbols = calendar.shortStandaloneWeekdaySymbols
-        let ordered = Array(symbols[(calendar.firstWeekday - 1)...]) + Array(symbols[..<(calendar.firstWeekday - 1)])
+        let ordered = Array(symbols[(calendar.firstWeekday - 1)...])
+            + Array(symbols[..<(calendar.firstWeekday - 1)])
         return HStack(spacing: 0) {
             ForEach(Array(ordered.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
@@ -154,7 +182,14 @@ struct MonthlyNightsView: View {
         let key = calendar.startOfDay(for: day)
         if let summary = summaryByDay[key] {
             NavigationLink {
-                WindDownDayDetailView(day: day, records: records(for: day))
+                WindDownDayDetailView(
+                    day: day,
+                    records: NightsHistoryAggregator.records(
+                        for: day,
+                        from: viewModel.nightWatchRecords,
+                        calendar: calendar
+                    )
+                )
             } label: {
                 dayCellLabel(day: day, summary: summary)
             }
@@ -164,40 +199,63 @@ struct MonthlyNightsView: View {
         }
     }
 
-    private func dayCellLabel(day: Date, summary: WindDownDaySummary?) -> some View {
+    private func dayCellLabel(day: Date, summary: NightsHistoryDay?) -> some View {
         VStack(spacing: AppSpacing.xxs) {
             Text(day.formatted(.dateTime.day()))
                 .font(AppTypography.headline)
                 .foregroundStyle(summary == nil ? AppColors.muted : AppColors.ink)
-            HStack(spacing: 3) {
-                if let summary {
-                    if summary.protectedNightCount > 0 {
-                        Circle().fill(AppColors.grass).frame(width: 6, height: 6)
-                    }
-                    if summary.earlyEndedOccurrenceCount > 0 {
-                        Circle().fill(AppColors.warning).frame(width: 6, height: 6)
-                    }
-                    if summary.occurrenceCount > 2 {
-                        Text("+\(summary.occurrenceCount - 2)")
-                            .font(AppTypography.monoCaption)
-                            .foregroundStyle(AppColors.muted)
-                    }
-                } else {
-                    Circle().fill(Color.clear).frame(width: 6, height: 6)
-                }
-            }
-            .frame(height: 10)
+            dayMarkers(summary)
+                .frame(minHeight: AppSpacing.lg)
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 42)
+        .frame(minHeight: AppSpacing.xxl + AppSpacing.lg)
+        .background(cellBackground(summary), in: RoundedRectangle(cornerRadius: AppRadius.sm))
+        .overlay(alignment: .topTrailing) {
+            if let summary, summary.totalOccurrenceCount > 1 {
+                Text("\(summary.totalOccurrenceCount)×")
+                    .font(AppTypography.monoCaption)
+                    .foregroundStyle(AppColors.ink)
+                    .padding(AppSpacing.xxs)
+            }
+        }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(dayAccessibilityLabel(day: day, summary: summary))
-        .accessibilityHint(summary == nil ? "No recorded Wind Down" : "Double tap to see this day's Wind Downs")
+        .accessibilityHint(summary == nil ? "No recorded quiet" : "Opens this day’s records")
+    }
+
+    private func dayMarkers(_ summary: NightsHistoryDay?) -> some View {
+        HStack(spacing: AppSpacing.xxs) {
+            if let summary {
+                switch summary.primaryOutcome {
+                case .protected:
+                    Image(systemName: "shield.fill")
+                        .foregroundStyle(AppColors.grass)
+                    if summary.earlyEndedPrimaryCount > 0 {
+                        Image(systemName: "moon.stars.fill")
+                            .foregroundStyle(AppColors.warning)
+                    }
+                case .endedEarly:
+                    Image(systemName: "moon.stars.fill")
+                        .foregroundStyle(AppColors.warning)
+                case nil:
+                    if summary.additionalCount > 0 {
+                        Image(systemName: "sparkles")
+                            .foregroundStyle(AppColors.lavender)
+                    }
+                }
+                if summary.additionalCount > 0, summary.primaryOutcome != nil {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(AppColors.lavender)
+                }
+            }
+        }
+        .font(AppTypography.monoCaption)
+        .accessibilityHidden(true)
     }
 
     private var explanation: some View {
-        Text("Tap a recorded day to see each Wind Down. Overlapping quiet periods are counted once, and one-time quiet periods stay separate from protected-night progress.")
+        Text("Tap a recorded day for its periods. Recorded quiet counts overlapping time once.")
             .font(AppTypography.caption)
             .foregroundStyle(AppColors.muted)
             .padding(.horizontal, AppSpacing.xs)
@@ -209,7 +267,7 @@ struct MonthlyNightsView: View {
                 .font(AppTypography.headline)
                 .foregroundStyle(AppColors.grass)
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .minimumScaleFactor(0.7)
             Text(label)
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.muted)
@@ -219,25 +277,37 @@ struct MonthlyNightsView: View {
         .frame(maxWidth: .infinity)
     }
 
-    private func legendDot(color: Color, label: String) -> some View {
-        HStack(spacing: 3) {
-            Circle().fill(color).frame(width: 6, height: 6)
-            Text(label)
-                .font(AppTypography.monoCaption)
-                .foregroundStyle(AppColors.muted)
-        }
-        .accessibilityElement(children: .combine)
+    private func legendItem(_ label: String, systemImage: String, color: Color) -> some View {
+        Label(label, systemImage: systemImage)
+            .font(AppTypography.monoCaption)
+            .foregroundStyle(color)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
     }
 
-    private func monthButton(systemName: String, label: String, action: @escaping () -> Void) -> some View {
+    private func cellBackground(_ summary: NightsHistoryDay?) -> Color {
+        summary == nil ? Color.clear : AppColors.surfaceMuted.opacity(0.48)
+    }
+
+    private func monthButton(
+        systemName: String,
+        label: String,
+        isEnabled: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
                 .font(AppTypography.headline)
-                .frame(width: 34, height: 34)
+                .frame(
+                    width: AppSpacing.xxl + AppSpacing.xs,
+                    height: AppSpacing.xxl + AppSpacing.xs
+                )
                 .foregroundStyle(AppColors.ink)
                 .background(AppColors.surfaceMuted)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
         }
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.4)
         .accessibilityLabel(label)
     }
 
@@ -247,181 +317,41 @@ struct MonthlyNightsView: View {
         }
     }
 
-    private func records(for day: Date) -> [NightWatchRecord] {
-        viewModel.nightWatchRecords
-            .filter { record in
-                record.outcome != .active
-                    && calendar.isDate(record.plan.intendedBedtime, equalTo: day, toGranularity: .day)
-            }
-            .sorted { ($0.startedAt, $0.id) < ($1.startedAt, $1.id) }
-    }
-
-    private var quietMinutesLabel: String {
-        quietMinutes.formatted()
-    }
-
-    private func dayAccessibilityLabel(day: Date, summary: WindDownDaySummary?) -> String {
+    private func dayAccessibilityLabel(day: Date, summary: NightsHistoryDay?) -> String {
         let date = day.formatted(.dateTime.month(.wide).day())
-        guard let summary else { return date }
-        return "\(date), \(summary.occurrenceCount) Wind Downs, \(summary.quietMinutes) quiet minutes"
+        guard let summary else { return "\(date), no recorded quiet" }
+        var parts = ["\(date), \(summary.totalOccurrenceCount) period\(summary.totalOccurrenceCount == 1 ? "" : "s")"]
+        switch summary.primaryOutcome {
+        case .protected:
+            parts.append("protected night")
+        case .endedEarly:
+            parts.append("ended early")
+        case nil:
+            break
+        }
+        if summary.primaryOutcome == .protected, summary.earlyEndedPrimaryCount > 0 {
+            parts.append("\(summary.earlyEndedPrimaryCount) other usual Wind Down attempt\(summary.earlyEndedPrimaryCount == 1 ? "" : "s") ended early")
+        }
+        if summary.additionalCount > 0 {
+            parts.append("\(summary.additionalCount) one-time")
+        }
+        parts.append("\(summary.recordedQuietMinutes) recorded quiet minutes")
+        return parts.joined(separator: ", ")
     }
 }
 
-private struct WindDownDayDetailView: View {
-    let day: Date
-    let records: [NightWatchRecord]
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text(day.formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
-                    .font(AppTypography.display(28))
-                if records.isEmpty {
-                    PixelCard {
-                        Text("No completed Wind Downs were recorded for this day.")
-                            .font(AppTypography.body)
-                    }
-                } else {
-                    ForEach(records) { record in
-                        NavigationLink {
-                            WindDownRecordDetailView(record: record)
-                        } label: {
-                            WindDownOccurrenceRow(record: record)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-            }
-            .padding(AppSpacing.md)
-        }
-        .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Wind Downs")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-private struct WindDownOccurrenceRow: View {
-    let record: NightWatchRecord
-
-    var body: some View {
-        PixelCard {
-            HStack(spacing: AppSpacing.sm) {
-                Image(systemName: record.occurrenceRole == .additionalQuiet ? "sparkles" : "moon.stars.fill")
-                    .font(AppTypography.title)
-                    .foregroundStyle(record.outcome == .completed ? AppColors.grass : AppColors.warning)
-                    .frame(width: 28)
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(record.occurrenceRole == .additionalQuiet ? "One-time quiet period" : "Wind Down")
-                        .font(AppTypography.headline)
-                    Text(intervalLabel)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                    Text(statusLabel)
-                        .font(AppTypography.monoCaption)
-                        .foregroundStyle(record.outcome == .completed ? AppColors.grass : AppColors.warning)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private var intervalLabel: String {
-        let intervals = record.creditedIntervals
-        guard let first = intervals.first, let last = intervals.last else {
-            return record.startedAt.formatted(date: .omitted, time: .shortened)
-        }
-        let end = last.end
-        return "\(first.start.formatted(date: .omitted, time: .shortened))–\(end.formatted(date: .omitted, time: .shortened)) · \(quietMinutes) min"
-    }
-
-    private var quietMinutes: Int {
-        record.creditedWindDownMinutes + record.creditedMorningQuietMinutes
-    }
-
-    private var statusLabel: String {
-        record.outcome == .completed ? "Completed" : "Ended early"
-    }
-}
-
-private struct WindDownRecordDetailView: View {
-    @EnvironmentObject private var viewModel: FocusRunViewModel
-    let record: NightWatchRecord
-
-    private var searchOutcome: SheepSearchOutcome? {
-        viewModel.sheepSearchState.outcomes.first { $0.runID == record.id }
-    }
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text(record.occurrenceRole == .additionalQuiet ? "One-time quiet period" : "Wind Down")
-                            .font(AppTypography.display(26))
-                        Text(record.outcome == .completed ? "Completed" : "Ended early")
-                            .font(AppTypography.headline)
-                            .foregroundStyle(record.outcome == .completed ? AppColors.grass : AppColors.warning)
-                        Text("Started \(record.startedAt.formatted(date: .abbreviated, time: .shortened))")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    }
-                }
-                if let outcome = searchOutcome {
-                    PixelCard {
-                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text("OLLIE'S FIELD NOTE")
-                                .font(pixelFont(.caption))
-                                .foregroundStyle(AppColors.grass)
-                            Text(outcome.sheepID.flatMap(SheepCatalog.definition).map { "Found \($0.name)" } ?? "Trail clue saved")
-                                .font(AppTypography.headline)
-                            if outcome.trailMapBonusPercentagePoints > 0 {
-                                Text("+\(outcome.trailMapBonusPercentagePoints) mapped percentage points applied")
-                                    .font(AppTypography.caption)
-                                    .foregroundStyle(AppColors.muted)
-                            }
-                        }
-                    }
-                }
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        detailMetric("Quiet before bed", value: "\(record.creditedWindDownMinutes) min")
-                        detailMetric("Quiet after waking", value: "\(record.creditedMorningQuietMinutes) min")
-                        detailMetric("Total quiet", value: "\(record.creditedWindDownMinutes + record.creditedMorningQuietMinutes) min")
-                        if record.briefAccessUseCount > 0 {
-                            detailMetric(
-                                "Short breaks",
-                                value: "\(record.briefAccessUseCount) short break\(record.briefAccessUseCount == 1 ? "" : "s")"
-                            )
-                        }
-                    }
-                }
-            }
-            .padding(AppSpacing.md)
-        }
-        .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Wind Down")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func detailMetric(_ label: String, value: String) -> some View {
-        HStack {
-            Text(label)
-                .font(AppTypography.body)
-            Spacer(minLength: AppSpacing.sm)
-            Text(value)
-                .font(AppTypography.headline)
-                .foregroundStyle(AppColors.grass)
-        }
-    }
-}
-
-#Preview {
+#Preview("All nights · empty") {
     NavigationStack {
         MonthlyNightsView()
             .environmentObject(FocusRunViewModel())
     }
+}
+
+#Preview("All nights · accessibility · dark") {
+    NavigationStack {
+        MonthlyNightsView()
+            .environmentObject(FocusRunViewModel())
+    }
+    .environment(\.dynamicTypeSize, .accessibility2)
+    .preferredColorScheme(.dark)
 }

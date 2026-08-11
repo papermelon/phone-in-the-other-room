@@ -1,6 +1,6 @@
 import Foundation
 
-/// The poster board is a presentation of the persisted search field book. It
+/// The Trail Board is a presentation of the persisted search history. It
 /// deliberately has no progression or economy side effects.
 enum SheepPosterFilter: String, CaseIterable, Identifiable {
     case missing
@@ -13,7 +13,7 @@ enum SheepPosterFilter: String, CaseIterable, Identifiable {
         switch self {
         case .missing: return "Still searching"
         case .home: return "Home"
-        case .all: return "Field book"
+        case .all: return "All trails"
         }
     }
 }

@@ -86,7 +86,7 @@ struct NightWatchReceiptCard: View {
         case .unavailable:
             return "Apple Health sleep data is unavailable on this device"
         case .notRequested:
-            return "Connect Apple Health in Stats to add this context"
+            return "Connect Apple Health in Nights to add this context"
         case .requested where matchingSleepSummary == nil:
             return "No matching sleep sample was returned for last night"
         case .requested:

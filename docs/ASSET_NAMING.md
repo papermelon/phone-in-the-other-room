@@ -23,6 +23,7 @@ Recommended categories:
 - `ui`
 - `icon`
 - `reward`
+- `shop`
 - `badge`
 - `sfx`
 
@@ -53,6 +54,7 @@ Assets.xcassets/missions
 Assets.xcassets/stats
 Assets.xcassets/ui
 Assets.xcassets/icons
+Assets.xcassets/shop
 ```
 
 Use the closest group for final PNG/SVG/PDF assets. If Xcode namespace lookup is used later, keep code references centralized in `AssetSlot` inside `PhoneInTheOtherRoomApp/Design/Theme.swift`.
@@ -65,6 +67,24 @@ Use the closest group for final PNG/SVG/PDF assets. If Xcode namespace lookup is
 - Keep environment backgrounds opaque unless they are foreground/depth layers.
 - Export pixel art at exact integer scale. Avoid fractional scaling in source art.
 
+## Shop thumbnails and equipped render art
+
+Keep Shop inventory artwork separate from production character rendering:
+
+- Inventory thumbnails use the `shop/` namespace, explicit `shop_` names, and the 384×384
+  transparent illustration canvas. These are displayed in catalogue cards and may also be used
+  as standalone Farm decoration or keepsake art when the item is not attached to a character.
+- Equipped Ollie accessories use the `dog/` namespace with an explicit
+  `farm_..._equipped_overlay` suffix. The neutral Ollie base and every accessory overlay share
+  the exact same transparent full-body canvas and alignment origin.
+- Equipped Shepherd accessories use the `farm/` namespace with an explicit
+  `..._equipped_overlay` suffix. If hairstyles have different silhouettes, create one fitted
+  same-canvas overlay per hairstyle rather than forcing one cropped asset over every head.
+- Character render code must choose the equipped render asset from the persisted item ID and
+  must never resize or position a 384×384 Shop thumbnail over a character. Missing render art
+  should leave the owner/equipment state intact and show the base character or a code-native
+  fallback.
+
 ## Recommended Sizes
 
 Initial target sizes:
@@ -74,6 +94,7 @@ Initial target sizes:
 - Sheep variant: `256x256` minimum; generated full-body sprites may be larger and are scaled
   by the image set at runtime.
 - Farm prop: `256x256` to `512x512`
+- Farm Shop inventory object: `384x384` with a transparent background
 - Home prop: `256x256` to `512x512`
 - Full background: `1290x2796` for iPhone portrait source, with safe-area bleed
 - Mission/reward/stat icon: `96x96` or vector PDF

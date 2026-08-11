@@ -34,6 +34,8 @@ struct FocusRunLiveActivityAttributes: ActivityAttributes {
         var plannedEndAt: Date
         var isComplete: Bool
         var phase: NightWatchPhase? = nil
+        /// Optional so existing ActivityKit states decode as the primary ritual.
+        var role: WindDownOccurrenceRole? = nil
         var terminalStatus: FocusRunLiveActivityTerminalStatus? = nil
         var bedtimeAt: Date? = nil
         var wakeAt: Date? = nil

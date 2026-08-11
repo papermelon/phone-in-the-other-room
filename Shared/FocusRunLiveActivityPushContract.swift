@@ -41,6 +41,7 @@ struct FocusRunLiveActivityPushRegistration: Codable, Hashable {
     var tokenGeneration: Int? = nil
     var idempotencyKey: String? = nil
     var phase: NightWatchPhase? = nil
+    var role: WindDownOccurrenceRole? = nil
     var bedtimeAt: Date? = nil
     var wakeAt: Date? = nil
     var morningQuietEndsAt: Date? = nil

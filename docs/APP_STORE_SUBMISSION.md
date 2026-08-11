@@ -11,7 +11,7 @@ Last read-only App Store Connect audit: **2026-07-30, Asia/Singapore**.
 - Version 1.0: **Prepare for Submission**
 - TestFlight build 2: **processed successfully** and selected for App Store version 1.0.
 - Build 10 is the current local candidate and adds the Home/Nights/Farm/Settings shell;
-  Farm includes a finite swipeable Missing Posters board while the shipping flock is counted from protected nights,
+  Farm includes a living flock, The Barn, Trail Board, Trail Notes, and local customization,
   NFC-authenticated ending, Live Activity layout fixes, and optional-sharing/feedback flows.
   Physical retest, screenshots, privacy updates, and upload remain pending.
 - No iPhone or Watch screenshots are uploaded.
@@ -53,7 +53,7 @@ Counting Sheep includes:
 • Optional selected-app shielding through Wind Down and sleep
 • App Shielding or NFC + App Shielding; legacy timer, QR, and Watch data remain compatible
 • A calm Lock Screen Live Activity while Wind Down is running
-• Quiet-minute history, a factual seven-night record, and one equal sheep settling after each protected Wind Down
+• Quiet-minute history, a factual seven-night record, and Ollie's persisted sheep-search Trail Notes
 • Optional Apple Health sleep duration and available sleep stages
 • Private morning reflections and cautious sleep-context comparisons
 • A direct feedback and support path

@@ -13,16 +13,27 @@ struct ScreenTimeBookendCard: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Binding var showAppPicker: Bool
     var mode: Mode = .reports
+    var isEmbedded = false
     @State private var selectedWindow: ScreenTimeReportPreferences.Window = .evening
     @State private var reportsExpanded = false
 
     var body: some View {
-        PixelCard {
-            if mode == .reports {
-                reportsDisclosure
+        Group {
+            if isEmbedded {
+                content
+                    .padding(.vertical, AppSpacing.sm)
             } else {
-                settingsContent
+                PixelCard { content }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if mode == .reports {
+            reportsDisclosure
+        } else {
+            settingsContent
         }
     }
 
@@ -51,7 +62,7 @@ struct ScreenTimeBookendCard: View {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text("Screen Time context")
                         .font(AppTypography.headline)
-                    Text(viewModel.bedtimeActivitySelection.phoneOtherIsEmpty ? "Choose apps in Settings" : "Optional · one window at a time")
+                    Text(viewModel.bedtimeActivitySelection.phoneOtherIsEmpty ? "Choose apps to limit in Settings" : "Optional · one window at a time")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }
@@ -62,13 +73,13 @@ struct ScreenTimeBookendCard: View {
 
     private var settingsContent: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Label("Apps to rest and Screen Time", systemImage: "iphone.slash")
+            Label("Selected apps and Screen Time", systemImage: "iphone.slash")
                 .font(AppTypography.headline)
                 .foregroundStyle(AppColors.ink)
             if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
                 Text("Choose the apps or categories you want included in both reports.")
                     .font(AppTypography.body)
-                Button("Choose apps", action: { showAppPicker = true })
+                Button("Choose apps to limit", action: { showAppPicker = true })
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
             } else {
                 reportWindowSettings

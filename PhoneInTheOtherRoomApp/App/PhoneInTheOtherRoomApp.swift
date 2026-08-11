@@ -4,8 +4,21 @@ import SwiftUI
 struct PhoneInTheOtherRoomApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var runViewModel: FocusRunViewModel
+#if DEBUG
+    private let screenbookRequest: ScreenbookLaunchRequest?
+#endif
 
     init() {
+#if DEBUG
+        let request = ScreenbookLaunchRequest.current
+        screenbookRequest = request
+        if let request {
+            _runViewModel = StateObject(
+                wrappedValue: ScreenbookFixtures.makeViewModel(for: request.kind)
+            )
+            return
+        }
+#endif
         PhoneNotificationService.shared.configure()
         let liveActivityService: FocusRunLiveActivityService
         do {
@@ -31,10 +44,13 @@ struct PhoneInTheOtherRoomApp: App {
 
     var body: some Scene {
         WindowGroup {
-            AppRootView()
+            rootView
                 .environmentObject(runViewModel)
                 .preferredColorScheme(preferredColorScheme)
                 .onChange(of: scenePhase) { _, newPhase in
+#if DEBUG
+                    guard screenbookRequest == nil else { return }
+#endif
                     switch newPhase {
                     case .background:
                         runViewModel.coordinator.applicationDidEnterBackground()
@@ -48,6 +64,19 @@ struct PhoneInTheOtherRoomApp: App {
                     }
                 }
         }
+    }
+
+    @ViewBuilder
+    private var rootView: some View {
+#if DEBUG
+        if let screenbookRequest {
+            ScreenbookRootView(request: screenbookRequest)
+        } else {
+            AppRootView()
+        }
+#else
+        AppRootView()
+#endif
     }
 
     private var preferredColorScheme: ColorScheme? {

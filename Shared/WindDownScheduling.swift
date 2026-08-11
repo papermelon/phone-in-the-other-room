@@ -280,6 +280,13 @@ struct WindDownScheduleState: Codable, Equatable {
         return true
     }
 
+    @discardableResult
+    mutating func removeOneTimePeriod(id: UUID) -> Bool {
+        guard let index = oneTimePeriods.firstIndex(where: { $0.id == id }) else { return false }
+        oneTimePeriods.remove(at: index)
+        return true
+    }
+
     func upcomingPeriods(
         after date: Date,
         calendar: Calendar = .current,
@@ -483,6 +490,43 @@ enum WindDownScheduleEngine {
         calendar: Calendar = .current,
         primaryExtensionMinutes: Int = 0
     ) -> WindDownSchedulePeriod? {
+        eligibleOccurrences(
+            in: state,
+            at: date,
+            calendar: calendar,
+            primaryExtensionMinutes: primaryExtensionMinutes
+        ).min {
+            if $0.occurrence.interval.start == $1.occurrence.interval.start {
+                return $0.title < $1.title
+            }
+            return $0.occurrence.interval.start < $1.occurrence.interval.start
+        }
+    }
+
+    /// Resolves the occurrence represented by a previously rendered start
+    /// action. Recurring occurrences get a new occurrence ID when recalculated,
+    /// so the stable source ID is the identity that must survive confirmation.
+    static func eligibleOccurrence(
+        in state: WindDownScheduleState,
+        at date: Date,
+        sourceID: UUID,
+        calendar: Calendar = .current,
+        primaryExtensionMinutes: Int = 0
+    ) -> WindDownSchedulePeriod? {
+        eligibleOccurrences(
+            in: state,
+            at: date,
+            calendar: calendar,
+            primaryExtensionMinutes: primaryExtensionMinutes
+        ).first { $0.sourceID == sourceID }
+    }
+
+    private static func eligibleOccurrences(
+        in state: WindDownScheduleState,
+        at date: Date,
+        calendar: Calendar,
+        primaryExtensionMinutes: Int
+    ) -> [WindDownSchedulePeriod] {
         var candidates = state.oneTimePeriods.compactMap { item -> WindDownSchedulePeriod? in
             guard item.isEligible(at: date),
                   let occurrence = item.occurrence(),
@@ -513,12 +557,7 @@ enum WindDownScheduleEngine {
                 candidates.append(WindDownSchedulePeriod(occurrence: expanded, title: routine.title, recurring: true))
             }
         }
-        return candidates.min {
-            if $0.occurrence.interval.start == $1.occurrence.interval.start {
-                return $0.title < $1.title
-            }
-            return $0.occurrence.interval.start < $1.occurrence.interval.start
-        }
+        return candidates
     }
 
     static func expandedOccurrence(

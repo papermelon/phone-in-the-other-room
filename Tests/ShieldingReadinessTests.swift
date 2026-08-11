@@ -2,7 +2,7 @@ import XCTest
 
 final class ShieldingReadinessTests: XCTestCase {
     func testReadyExplainsSelectedApps() {
-        XCTAssertEqual(ShieldingReadiness.ready.title, "Apps to rest are ready")
+        XCTAssertEqual(ShieldingReadiness.ready.title, "Selected apps are ready")
         XCTAssertTrue(ShieldingReadiness.ready.detail.contains("Wind Down start through morning quiet"))
     }
 

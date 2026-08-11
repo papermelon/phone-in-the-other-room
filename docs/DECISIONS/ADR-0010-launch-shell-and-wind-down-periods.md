@@ -1,6 +1,6 @@
 # ADR-0010: Launch Shell, Flock Arrival, and Multiple Wind Down Periods
 
-- Status: Accepted
+- Status: Accepted; Farm and result presentation superseded by ADR-0015
 - Date: 2026-08-03
 - Decider: Founder
 - Related: ADR-0006, ADR-0007, ADR-0009
@@ -9,17 +9,14 @@
 
 The launch shell has four root destinations: Home, Nights, Farm, and Settings. Settings is a
 finite root screen for plan configuration, connections, privacy, feedback, and internal previews.
-Friends and Shop remain unavailable from release navigation.
+Friends remains unavailable from release navigation. Farm Shop is nested under Farm and does not
+create a fifth root destination.
 
-Farm is a rehabilitation of the existing farm presentation and assets. Release Farm reads only
-the persisted sheep-search field book and presents an equal flock: one protected primary night
-settles one sheep. Its hierarchy is pasture and flock overview, the latest arrival (or a quiet
-pasture state), a compact trail-map status, and a finite field board. The board uses kind
-"Still searching" / "Home" language rather than missing/found posters. Legacy coins, balances,
-capacity, rarity, missions, upgrades, and reward shelf data remain decodable but are not read by
-release UI. Field notes use sheep-search identity, clue, and home status for cosmetic/story
-context only; they do not add currency, capacity, performance ranking, or a second progression
-system. The field board is not shown in Home or Nights.
+ADR-0015 supersedes the former static Farm presentation. Release Farm uses `FarmState` and
+`SheepSearchState` for a paged living pasture, finite-capacity Barn, Trail Board, Trail Notes,
+local Farm Shop, and customization. Legacy mock economies remain compatibility-only and are not
+reused. The production wool economy is earned through sheep decisions, not elapsed minutes.
+Farm destinations are not shown in Home or Nights.
 
 Nights leads with a finite seven-day record and links to a monthly calendar. A recorded day can
 contain multiple separately inspectable Wind Down occurrences. Quiet minutes are the union of
@@ -54,8 +51,8 @@ onboarding marker, local history, selections, and runtime state, then opens fres
 onboarding in the same process. It does not revoke iOS permissions or delete remotely uploaded
 impact records.
 
-Completion shows a short factual receipt first. One explicit “Open Ollie's field note” action
-reveals the already persisted outcome matched to that run ID. The top-aligned, finite field note
+Completion shows a short factual receipt first. One explicit “Open Ollie's Trail Notes” action
+reveals the already persisted outcome matched to that run ID. The top-aligned, finite Trail Note
 shows a persisted sheep asset, name, habitat, story, and trail evidence when a sheep is home; a
 trail-only result shows only honest clue evidence. A clear “Back to the Farm” action returns to
 the shipping Farm. The release surface does not present “What the quiet held,” claim that
@@ -74,4 +71,4 @@ and remains through overnight until the scheduled morning-quiet finish.
 Existing `NightWatchPlan`, `NightWatchRecord`, progress, reward, and sheep-search JSON continues
 to decode. New role fields default to the primary sleep-bookend role for legacy records. The old
 MVP Farm/Friends/Shop screens and reward shelf remain available only to the explicit Debug
-internal-preview launch path until a later compatibility cleanup.
+internal-preview launch path. They are distinct from the production Farm and nested Farm Shop.

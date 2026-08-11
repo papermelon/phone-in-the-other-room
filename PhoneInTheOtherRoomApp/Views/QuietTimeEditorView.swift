@@ -6,14 +6,6 @@ struct QuietTimeEditorView: View {
         case routine(UUID?)
     }
 
-    private enum OneTimeMode: String, CaseIterable, Identifiable {
-        case now
-        case later
-
-        var id: String { rawValue }
-        var title: String { rawValue.capitalized }
-    }
-
     private enum RepeatChoice: String, CaseIterable, Identifiable {
         case daily
         case weekdays
@@ -37,8 +29,6 @@ struct QuietTimeEditorView: View {
     @State private var title = "One-time quiet period"
     @State private var starts: Date
     @State private var ends: Date
-    @State private var oneTimeMode: OneTimeMode = .now
-    @State private var durationMinutes = 30
     @State private var repeatChoice: RepeatChoice = .daily
     @State private var selectedWeekdays = Set(2...6)
     @State private var enabled = true
@@ -77,7 +67,7 @@ struct QuietTimeEditorView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 intro
-                if isNewOneTime { newOneTimeContent } else { detailsCard }
+                detailsCard
                 if routineID != nil || isNewRoutine { recurrenceCard }
                 if let error {
                     PixelCard {
@@ -108,51 +98,13 @@ struct QuietTimeEditorView: View {
 
     private var intro: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(isNewOneTime ? "Make a little room for quiet." : "Quiet time settings")
+            Text(isNewOneTime ? "Plan a little room for quiet." : "Quiet time settings")
                 .font(AppTypography.title)
             Text(isNewOneTime
-                ? "A bounded quiet period stays separate from protected nights and Ollie’s sheep search."
+                ? "Choose a future window. Starting now is a separate, one-tap quiet flow."
                 : "Keep this quiet period comfortable and easy to change.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.muted)
-        }
-    }
-
-    private var newOneTimeContent: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("When")
-                        .font(AppTypography.headline)
-                    PixelSegmentedPicker(
-                        title: "When to start quiet time",
-                        selection: $oneTimeMode,
-                        label: { $0.title }
-                    )
-                }
-            }
-            if oneTimeMode == .now {
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("How long")
-                            .font(AppTypography.headline)
-                        Text("Ollie will start a quiet time from this moment.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                        HStack(spacing: AppSpacing.xs) {
-                            ForEach([15, 30, 45, 60], id: \.self) { minutes in
-                                Button(String(minutes) + " min") {
-                                    durationMinutes = minutes
-                                }
-                                .buttonStyle(PixelChipButtonStyle(isSelected: durationMinutes == minutes))
-                                .accessibilityLabel(String(minutes) + " minutes")
-                            }
-                        }
-                    }
-                }
-            } else {
-                detailsCard
-            }
         }
     }
 
@@ -219,7 +171,6 @@ struct QuietTimeEditorView: View {
     }
 
     private var primaryActionTitle: String {
-        if isNewOneTime && oneTimeMode == .now { return "Start quiet time" }
         return isNewOneTime || isNewRoutine ? "Save quiet time" : "Save changes"
     }
 
@@ -299,16 +250,6 @@ struct QuietTimeEditorView: View {
 
     private func save() {
         let calendar = Calendar.current
-        if isNewOneTime && oneTimeMode == .now {
-            let success = viewModel.startNewOneTimeAdditionalQuietNow(
-                duration: TimeInterval(durationMinutes * 60),
-                title: title
-            )
-            onComplete(success)
-            if success { dismiss() }
-            else { error = viewModel.windDownScheduleError ?? "Quiet time could not be started just now." }
-            return
-        }
         if let oneTimeID {
             let success = viewModel.updateOneTimeQuiet(
                 id: oneTimeID,
@@ -362,12 +303,20 @@ struct QuietTimeEditorView: View {
     }
 }
 
-#Preview("One-time editor · now") {
+#Preview("One-time editor") {
     NavigationStack {
         QuietTimeEditorView(mode: .oneTime(nil), onComplete: { _ in })
             .environmentObject(FocusRunViewModel())
     }
     .preferredColorScheme(.dark)
+}
+
+#Preview("One-time editor · Dynamic Type") {
+    NavigationStack {
+        QuietTimeEditorView(mode: .oneTime(nil), onComplete: { _ in })
+            .environmentObject(FocusRunViewModel())
+            .environment(\.dynamicTypeSize, .accessibility2)
+    }
 }
 
 #Preview("One-time editor · overlap/error") {

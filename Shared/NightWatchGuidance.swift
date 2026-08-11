@@ -193,7 +193,7 @@ struct NightWatchGuidance {
         case .shieldingFailed:
             return NightWatchNotificationCopy(
                 title: "A quick protection note",
-                body: "Apps to rest could not be limited this time. Your phone-away plan is still here."
+                body: "Selected apps could not be limited this time. Your phone-away plan is still here."
             )
         case .quietPeriodComplete:
             return NightWatchNotificationCopy(

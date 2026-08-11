@@ -411,6 +411,23 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         preferences: NotificationPreferences,
         center: UNUserNotificationCenter
     ) async {
+        if plan.role == .additionalQuiet {
+            let quietCopy = NightWatchGuidance.notificationCopy(for: .quietPeriodComplete)
+            await add(
+                PlannedNotification(
+                    id: "night-watch-quiet-period-complete",
+                    date: plan.protectedUntil,
+                    title: quietCopy.title,
+                    body: quietCopy.body,
+                    phase: .complete,
+                    importance: .active,
+                    playsSound: soundsEnabled,
+                    destination: .nights
+                ),
+                to: center
+            )
+            return
+        }
         let sleepCopy = NotificationCopyResolver.resolve(
             id: .sleepTime,
             moment: .sleepTime,

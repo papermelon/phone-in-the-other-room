@@ -17,6 +17,17 @@ struct WindDownScheduleView: View {
                 Text("Keep one-time quiet periods ready for the day. They disappear after their window; completed quiet remains in Nights.")
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.muted)
+
+                Button {
+                    let started = viewModel.startNewOneTimeAdditionalQuietNow()
+                    if !started {
+                        message = viewModel.windDownScheduleError ?? "Quiet time could not be started just now."
+                    }
+                } label: {
+                    Label("Start now", systemImage: "timer")
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(PixelPrimaryButtonStyle())
             }
 
             Section("One-time quiet periods") {
@@ -26,15 +37,36 @@ struct WindDownScheduleView: View {
                         .foregroundStyle(AppColors.muted)
                 } else {
                     ForEach(upcomingOneTimePeriods) { period in
-                        Button { editor = .oneTime(period.id) } label: {
-                            scheduleRow(
-                                title: period.title,
-                                detail: formatted(period.interval),
-                                status: viewModel.readyOneTimeQuietPeriodID == period.id ? "Ready now" : nil,
-                                enabled: period.enabled
-                            )
+                        let isReady = viewModel.readyOneTimeQuietPeriodID == period.id
+                        HStack(spacing: AppSpacing.sm) {
+                            if isReady {
+                                Button {
+                                    viewModel.requestStartNightWatch(sourceID: period.id)
+                                } label: {
+                                    scheduleRow(
+                                        title: period.title,
+                                        detail: formatted(period.interval),
+                                        status: "Ready now",
+                                        enabled: period.enabled,
+                                        trailingIcon: "play.fill"
+                                    )
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityHint("Starts this exact quiet time")
+                            } else {
+                                scheduleRow(
+                                    title: period.title,
+                                    detail: formatted(period.interval),
+                                    enabled: period.enabled
+                                )
+                            }
+
+                            Button("Edit") {
+                                editor = .oneTime(period.id)
+                            }
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.grass)
                         }
-                        .buttonStyle(.plain)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                             Button("Cancel", role: .destructive) {
                                 viewModel.cancelOneTimeQuiet(id: period.id)
@@ -128,10 +160,18 @@ struct WindDownScheduleView: View {
                 }
             }
             .environmentObject(viewModel)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
         }
     }
 
-    private func scheduleRow(title: String, detail: String, status: String? = nil, enabled: Bool) -> some View {
+    private func scheduleRow(
+        title: String,
+        detail: String,
+        status: String? = nil,
+        enabled: Bool,
+        trailingIcon: String = "chevron.right"
+    ) -> some View {
         HStack(spacing: AppSpacing.sm) {
             Image(systemName: enabled ? "moon.zzz.fill" : "pause.circle")
                 .foregroundStyle(enabled ? AppColors.grass : AppColors.muted)
@@ -145,7 +185,7 @@ struct WindDownScheduleView: View {
                 Text(detail).font(AppTypography.caption).foregroundStyle(AppColors.muted)
             }
             Spacer()
-            Image(systemName: "chevron.right")
+            Image(systemName: trailingIcon)
                 .font(.caption.weight(.bold))
                 .foregroundStyle(AppColors.muted)
         }

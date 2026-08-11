@@ -5,18 +5,29 @@ struct NightJourneyView: View {
     let run: FocusRun
     let reduceMotion: Bool
     var mappedBonusPercentagePoints = 0
+    var fixedDate: Date?
 
+    @ViewBuilder
     var body: some View {
-        TimelineView(.periodic(from: .now, by: reduceMotion ? 1 : 1.0 / 30.0)) { context in
-            if let journey = NightJourneyProgress.resolve(run: run, at: context.date) {
-                GeometryReader { proxy in
-                    scene(journey: journey, date: context.date, size: proxy.size)
-                }
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel(accessibilityLabel(for: journey, at: context.date))
+        if let fixedDate {
+            journey(at: fixedDate)
+        } else {
+            TimelineView(.periodic(from: .now, by: reduceMotion ? 1 : 1.0 / 30.0)) { context in
+                journey(at: context.date)
             }
         }
-        .aspectRatio(16.0 / 9.0, contentMode: .fit)
+    }
+
+    @ViewBuilder
+    private func journey(at date: Date) -> some View {
+        if let journey = NightJourneyProgress.resolve(run: run, at: date) {
+            GeometryReader { proxy in
+                scene(journey: journey, date: date, size: proxy.size)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(accessibilityLabel(for: journey, at: date))
+            .aspectRatio(16.0 / 9.0, contentMode: .fit)
+        }
     }
 
     private func scene(journey: NightJourneyProgress, date: Date, size: CGSize) -> some View {
@@ -213,7 +224,7 @@ struct NightJourneyView: View {
         case .windDown: return "TO BEDTIME"
         case .overnight: return "TO MORNING"
         case .morningQuiet: return "QUIET LEFT"
-        case .complete: return "FIELD NOTE READY"
+        case .complete: return "TRAIL NOTE READY"
         }
     }
 

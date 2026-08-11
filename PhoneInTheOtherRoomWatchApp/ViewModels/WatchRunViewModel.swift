@@ -46,6 +46,10 @@ final class WatchRunViewModel: ObservableObject {
         return max(0, run.plannedEndAt.timeIntervalSince(Date()))
     }
 
+    var isAdditionalQuiet: Bool {
+        run?.nightWatchPlan?.role == .additionalQuiet
+    }
+
     func pingPhone() {
         WKInterfaceDevice.current().play(.click)
         connectionText = watch.isReachable ? "Ping sent to iPhone" : "Ping queued until iPhone is reachable"
@@ -77,7 +81,9 @@ final class WatchRunViewModel: ObservableObject {
 
     func endRun() {
         guard run?.guardKind != .nfcTag else {
-            connectionText = "Use iPhone and tap the phone-bed tag to end Wind Down"
+            connectionText = isAdditionalQuiet
+                ? "Use iPhone and tap the phone-bed tag to end quiet time"
+                : "Use iPhone and tap the phone-bed tag to end Wind Down"
             return
         }
         WKInterfaceDevice.current().play(.stop)
@@ -101,7 +107,9 @@ final class WatchRunViewModel: ObservableObject {
     func requestDistanceCheck() {
         guard run?.guardKind == .watchPlacement,
               run?.placementStatus == .awaitingConfirmation else {
-            connectionText = "Wind Down is keeping time on iPhone"
+            connectionText = isAdditionalQuiet
+                ? "Quiet time is keeping time on iPhone"
+                : "Wind Down is keeping time on iPhone"
             return
         }
         WKInterfaceDevice.current().play(.click)
@@ -119,14 +127,16 @@ final class WatchRunViewModel: ObservableObject {
         switch message.type {
         case .startFocusRun:
             WKInterfaceDevice.current().play(.start)
-            notifications.scheduleRunStartedNotification()
+            notifications.scheduleRunStartedNotification(role: run?.nightWatchPlan?.role ?? .primarySleepBookend)
             if run?.guardKind == .watchPlacement,
                run?.placementStatus == .awaitingConfirmation {
                 startNearbyInteraction(with: message.tokenData)
                 connectionText = "One quick placement check"
             } else {
                 stopNearbyInteraction()
-                connectionText = "Wind Down is keeping time on iPhone"
+                connectionText = isAdditionalQuiet
+                    ? "Quiet time is keeping time on iPhone"
+                    : "Wind Down is keeping time on iPhone"
             }
         case .nearbyDiscoveryToken:
             if run?.guardKind == .watchPlacement,

@@ -14,11 +14,18 @@ Farm
 Settings
 ```
 
-Friends and Shop remain compiled only for Debug exploration and are backed by `MVPMockData`.
+Friends and the legacy Farm/Shop previews remain compiled only for Debug exploration and are
+backed by `MVPMockData`.
 The old More utility sheet and top-bar ellipsis are not part of the release shell.
-The shipping Farm reads the real flock count and sheep-search field book; its Missing Posters
-carousel is separate from the legacy mock Farm. There is no Missions tab. Do not add new code to
-`Views/MVP/` or `MockData/` as part of Night Watch work.
+The production Farm reads `SheepSearchState` and versioned `FarmState`. It provides a paged
+pasture, The Barn, Trail Board, Ollie's Trail Notes, Farm Shop, and Your Shepherd without using
+the legacy mock layer. Wool is earned through flock decisions and is separate from
+legacy progress balances. There is no Missions tab. Do not add new code to `Views/MVP/` or
+`MockData/` as part of production work.
+
+`FocusSessionCoordinator` persists each resolved search outcome and reconciles its Farm arrival
+exactly once. Pure lifecycle, migration, purchase, equipment, capacity, and balance rules live in
+`Shared/Farm*.swift`; `FocusRunViewModel+Farm.swift` exposes UI intents.
 
 ## Night Watch implementation
 

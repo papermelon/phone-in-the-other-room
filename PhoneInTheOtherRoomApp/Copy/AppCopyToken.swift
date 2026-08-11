@@ -1,0 +1,71 @@
+import Foundation
+
+struct AppCopyToken: Hashable {
+    let id: String
+    let value: String
+}
+
+enum AppCopy {
+    enum OnboardingWelcome {
+        static let eyebrow = AppCopyToken(
+            id: "iphone.onboarding.welcome.eyebrow",
+            value: "A QUIETER NIGHT"
+        )
+        static let title = AppCopyToken(
+            id: "iphone.onboarding.welcome.title",
+            value: "Put your phone to bed.\nWake before it does."
+        )
+        static let detail = AppCopyToken(
+            id: "iphone.onboarding.welcome.detail",
+            value: "Counting Sheep helps you put the phone in another room before bed, then keeps the first quiet part of morning phone-free."
+        )
+    }
+
+    enum ConfiguredHome {
+        static let quietStatement = AppCopyToken(
+            id: "iphone.home.configured.quiet-statement",
+            value: "The quiet is the point. There is nothing to check off."
+        )
+        static let startButton = AppCopyToken(
+            id: "iphone.home.configured.start-button",
+            value: "Start Wind Down"
+        )
+    }
+
+    enum ActiveWindDown {
+        static let cueEyebrow = AppCopyToken(
+            id: "iphone.active.wind-down.cue-eyebrow",
+            value: "PHONE-FREE WIND-DOWN"
+        )
+    }
+
+    enum EarlyEnd {
+        static let eyebrow = AppCopyToken(
+            id: "iphone.early-end.receipt-eyebrow",
+            value: "WIND DOWN ENDED"
+        )
+        static let title = AppCopyToken(
+            id: "iphone.early-end.receipt-title",
+            value: "Welcome back. Ollie kept your spot warm."
+        )
+        static let doneButton = AppCopyToken(
+            id: "iphone.early-end.done-button",
+            value: "Done for now"
+        )
+    }
+
+    enum Farm {
+        static let eyebrow = AppCopyToken(
+            id: "iphone.farm.header-eyebrow",
+            value: "THE FARM"
+        )
+        static let title = AppCopyToken(
+            id: "iphone.farm.header-title",
+            value: "Where Ollie’s trails come home"
+        )
+        static let detail = AppCopyToken(
+            id: "iphone.farm.header-detail",
+            value: "Wind Down gives Ollie a trail. The flock, wool, and everything you build live here."
+        )
+    }
+}

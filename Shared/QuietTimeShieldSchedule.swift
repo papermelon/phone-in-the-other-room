@@ -7,11 +7,12 @@ enum QuietTimeShieldWindow: String, Codable, CaseIterable, Equatable {
 }
 
 struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
-    static let currentSchemaVersion = 2
+    static let currentSchemaVersion = 3
 
     var schemaVersion: Int
     var runID: UUID
     var revision: Int
+    var role: QuietTimeShieldRole
     /// The actual app-limit interval. Unlike the two credited bookends, this
     /// can span the overnight phase when the user chooses the NFC barrier.
     var protectedSessionInterval: DateInterval?
@@ -24,6 +25,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
         schemaVersion: Int = currentSchemaVersion,
         runID: UUID,
         revision: Int,
+        role: QuietTimeShieldRole = .primaryWindDown,
         protectedSessionInterval: DateInterval? = nil,
         windDownInterval: DateInterval?,
         morningQuietInterval: DateInterval,
@@ -33,6 +35,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
         self.schemaVersion = schemaVersion
         self.runID = runID
         self.revision = max(1, revision)
+        self.role = role
         self.protectedSessionInterval = protectedSessionInterval
         self.windDownInterval = windDownInterval
         self.morningQuietInterval = morningQuietInterval
@@ -41,15 +44,19 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, runID, revision, protectedSessionInterval, windDownInterval, morningQuietInterval
+        case schemaVersion, runID, revision, role, protectedSessionInterval, windDownInterval, morningQuietInterval
         case updatedAt, repeatsDaily
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? Self.currentSchemaVersion
+        let storedSchemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion)
+            ?? Self.currentSchemaVersion
+        schemaVersion = max(storedSchemaVersion, Self.currentSchemaVersion)
         runID = try container.decode(UUID.self, forKey: .runID)
         revision = max(1, try container.decodeIfPresent(Int.self, forKey: .revision) ?? 1)
+        role = try container.decodeIfPresent(QuietTimeShieldRole.self, forKey: .role)
+            ?? .primaryWindDown
         protectedSessionInterval = try container.decodeIfPresent(DateInterval.self, forKey: .protectedSessionInterval)
         windDownInterval = try container.decodeIfPresent(DateInterval.self, forKey: .windDownInterval)
         morningQuietInterval = try container.decode(DateInterval.self, forKey: .morningQuietInterval)
@@ -101,6 +108,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
             && protectedSessionInterval == other.protectedSessionInterval
             && windDownInterval == other.windDownInterval
             && morningQuietInterval == other.morningQuietInterval
+            && role == other.role
             && repeatsDaily == other.repeatsDaily
     }
 }
@@ -325,6 +333,7 @@ enum QuietTimeShieldScheduleBuilder {
         return QuietTimeShieldScheduleSnapshot(
             runID: runID,
             revision: revision,
+            role: plan.role == .additionalQuiet ? .additionalQuiet : .primaryWindDown,
             protectedSessionInterval: protectedStart.map {
                 DateInterval(start: $0, end: plan.protectedUntil)
             },

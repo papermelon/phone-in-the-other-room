@@ -128,6 +128,7 @@ final class SheepSearchTests: XCTestCase {
         ).outcome
 
         XCTAssertEqual(reopened, first)
+        XCTAssertEqual(first.id, runID)
         XCTAssertEqual(state.outcomes.count, 1)
     }
 
@@ -139,8 +140,9 @@ final class SheepSearchTests: XCTestCase {
         XCTAssertTrue(breeds.contains(.merino))
         XCTAssertTrue(breeds.contains(.night))
         XCTAssertTrue(breeds.contains(.guardian))
-        XCTAssertEqual(SheepCatalog.definition(for: "oat")?.assetName, "sheep/sheep_merino")
-        XCTAssertEqual(SheepCatalog.definition(for: "wisp")?.assetName, "sheep/sheep_night")
+        XCTAssertEqual(SheepCatalog.definition(for: "oat")?.assetName, "sheep/sheep_oat_wool_ready")
+        XCTAssertEqual(SheepCatalog.definition(for: "wisp")?.assetName, "sheep/sheep_wisp_wool_ready")
+        XCTAssertEqual(Set(SheepCatalog.all.map(\.assetName)).count, SheepCatalog.all.count)
     }
 
     func testPosterArrivalNightsKeepStarterPostersAvailableAndLaterPostersGated() {
@@ -188,10 +190,37 @@ final class SheepSearchTests: XCTestCase {
         XCTAssertTrue(home.isEmpty)
     }
 
-    func testFieldBoardFilterTitlesUseKindSearchLanguage() {
+    func testTrailBoardFilterTitlesUseSearchLanguage() {
         XCTAssertEqual(SheepPosterFilter.missing.title, "Still searching")
         XCTAssertEqual(SheepPosterFilter.home.title, "Home")
-        XCTAssertEqual(SheepPosterFilter.all.title, "Field book")
+        XCTAssertEqual(SheepPosterFilter.all.title, "All trails")
+    }
+
+    func testTrackedTrailChangesSelectionWeightButNotEncounterOdds() {
+        var trackedFinds = 0
+        var untrackedFinds = 0
+        for seed in 1...300 {
+            let runID = UUID(uuidString: String(format: "00000000-0000-0000-0000-%012d", seed))!
+            let untracked = SheepSearchEngine.calculate(
+                runID: runID,
+                protectedNightNumber: 1,
+                evidence: .empty,
+                state: .empty,
+                seed: UInt64(seed)
+            ).outcome
+            let tracked = SheepSearchEngine.calculate(
+                runID: runID,
+                protectedNightNumber: 1,
+                evidence: .empty,
+                state: .empty,
+                trackedSheepID: "oat",
+                seed: UInt64(seed)
+            ).outcome
+            XCTAssertEqual(tracked.encounterOdds, untracked.encounterOdds)
+            if untracked.sheepID == "oat" { untrackedFinds += 1 }
+            if tracked.sheepID == "oat" { trackedFinds += 1 }
+        }
+        XCTAssertGreaterThan(trackedFinds, untrackedFinds)
     }
 
     func testTrailMapAccumulatesInFifteenMinutePointsAndCapsAtSeventyFive() {
