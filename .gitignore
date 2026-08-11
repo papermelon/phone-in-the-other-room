@@ -16,6 +16,10 @@ tmp/
 *.dSYM.zip
 *.dSYM
 
+# Python-generated cache files
+__pycache__/
+*.py[cod]
+
 # Swift Package Manager
 .build/
 Packages/
