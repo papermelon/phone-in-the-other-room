@@ -29,13 +29,16 @@ struct PixelHomeDashboard: View {
                 if viewModel.hasConfiguredNightWatch
                     && viewModel.canBeginNightWatchNow
                     && methodIsReady {
-                    viewModel.requestStartNightWatch()
+                    viewModel.requestStartNightWatch(
+                        sourceID: viewModel.currentWindDownStartContext?.sourceID
+                    )
                 } else {
                     showRunSetup = true
                 }
             },
             onEditTiming: { showTimingEditor = true },
-            onQuietTimeSchedule: { showQuietTimeSchedule = true }
+            onQuietTimeSchedule: { showQuietTimeSchedule = true },
+            onStartNow: { _ = viewModel.startNewOneTimeAdditionalQuietNow() }
         )
         .navigationDestination(isPresented: $showRunSetup) {
             FocusRunSetupView()
@@ -66,6 +69,7 @@ private struct PixelHomeDashboardContent: View {
     var onPrimaryAction: () -> Void
     var onEditTiming: () -> Void
     var onQuietTimeSchedule: () -> Void
+    var onStartNow: () -> Void
 
     private var latestNight: DailyFocusRecord? { progress.recentFocusRecords.first }
 
@@ -84,7 +88,7 @@ private struct PixelHomeDashboardContent: View {
                 Text(purpose.inAppDisplayPhrase)
                     .font(AppTypography.headline)
                     .multilineTextAlignment(.center)
-                Text("The quiet is the point. There is nothing to check off.")
+                Text(AppCopy.ConfiguredHome.quietStatement.value)
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                     .multilineTextAlignment(.center)
@@ -113,7 +117,9 @@ private struct PixelHomeDashboardContent: View {
             UpcomingQuietTimesCard(
                 nextPeriod: nextUpcoming,
                 additionalCount: upcomingAdditionalCount,
-                action: onQuietTimeSchedule
+                showStartNow: preferences.isConfigured && !canBeginNow,
+                action: onQuietTimeSchedule,
+                startNow: onStartNow
             )
 
             if preferences.guardKind == .watchPlacement {
@@ -139,7 +145,7 @@ private struct PixelHomeDashboardContent: View {
                 break
             }
         }
-        return canBeginNow ? "Start Wind Down" : "Review Wind Down"
+        return canBeginNow ? AppCopy.ConfiguredHome.startButton.value : "Review Wind Down"
     }
 
     private var primaryEyebrow: String? {
@@ -272,30 +278,41 @@ private struct NightWatchOverviewBlock: View {
 private struct UpcomingQuietTimesCard: View {
     var nextPeriod: WindDownSchedulePeriod?
     var additionalCount: Int
+    var showStartNow: Bool
     var action: () -> Void
+    var startNow: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            PixelCard {
-                HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "moon.zzz.fill")
-                        .font(.title2.weight(.black))
-                        .foregroundStyle(AppColors.grass)
-                        .frame(width: 30)
-                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("Upcoming quiet times")
-                            .font(AppTypography.headline)
-                        Text(summary)
-                            .font(AppTypography.caption)
+        VStack(spacing: AppSpacing.sm) {
+            Button(action: action) {
+                PixelCard {
+                    HStack(spacing: AppSpacing.md) {
+                        Image(systemName: "moon.zzz.fill")
+                            .font(.title2.weight(.black))
+                            .foregroundStyle(AppColors.grass)
+                            .frame(width: 30)
+                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                            Text("Upcoming quiet times")
+                                .font(AppTypography.headline)
+                            Text(summary)
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.muted)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.right")
                             .foregroundStyle(AppColors.muted)
                     }
-                    Spacer(minLength: 0)
-                    Image(systemName: "chevron.right")
-                        .foregroundStyle(AppColors.muted)
                 }
             }
+            .buttonStyle(.plain)
+
+            if showStartNow {
+                Button("Start now", action: startNow)
+                    .frame(maxWidth: .infinity)
+                    .buttonStyle(PixelPrimaryButtonStyle())
+                    .accessibilityHint("Starts a one-time quiet period without changing your schedule")
+            }
         }
-        .buttonStyle(.plain)
         .accessibilityHint("Opens your finite list of once and repeating quiet times")
     }
 
@@ -327,7 +344,8 @@ private struct UpcomingQuietTimesCard: View {
                 mappedBonusPercentagePoints: 0,
                 onPrimaryAction: {},
                 onEditTiming: {},
-                onQuietTimeSchedule: {}
+                onQuietTimeSchedule: {},
+                onStartNow: {}
             )
             .padding(AppSpacing.md)
         }
@@ -363,7 +381,8 @@ private struct UpcomingQuietTimesCard: View {
                 mappedBonusPercentagePoints: 3,
                 onPrimaryAction: {},
                 onEditTiming: {},
-                onQuietTimeSchedule: {}
+                onQuietTimeSchedule: {},
+                onStartNow: {}
             )
             .padding(AppSpacing.md)
         }

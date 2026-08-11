@@ -8,7 +8,7 @@ struct WatchRunView: View {
         ScrollView {
             VStack(spacing: 10) {
                 WatchOllieIconView(mood: .guarding)
-                Text(phase?.title ?? "Ollie is on watch")
+                Text(isAdditionalQuiet ? "Quiet time" : (phase?.title ?? "Ollie is on watch"))
                     .font(.headline)
                     .multilineTextAlignment(.center)
                 Text(
@@ -43,9 +43,9 @@ struct WatchRunView: View {
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 } else {
-                    Button("End Wind Down") { viewModel.endRun() }
+                    Button(isAdditionalQuiet ? "End quiet time" : "End Wind Down") { viewModel.endRun() }
                         .tint(.orange)
-                        .accessibilityHint("Ends this Wind Down early")
+                        .accessibilityHint(isAdditionalQuiet ? "Ends this quiet time early" : "Ends this Wind Down early")
                 }
             }
             .padding(.vertical, 4)
@@ -69,6 +69,9 @@ struct WatchRunView: View {
         if needsWatchPlacement {
             return "A quick check helps Ollie see the phone tuck in. After that, your iPhone keeps time."
         }
+        if isAdditionalQuiet {
+            return "Quiet time is running. Your iPhone keeps time."
+        }
         switch phase {
         case .windDown: return "Let the evening get quieter. Your iPhone keeps time."
         case .overnight: return "The phone is tucked away. There is nothing else to do."
@@ -80,6 +83,10 @@ struct WatchRunView: View {
 
     private var phase: NightWatchPhase? {
         viewModel.run?.nightWatchPhase(at: phaseReferenceDate)
+    }
+
+    private var isAdditionalQuiet: Bool {
+        viewModel.isAdditionalQuiet
     }
 
     private var transitionRemainingSeconds: TimeInterval {
@@ -102,6 +109,9 @@ struct WatchRunView: View {
 
     private var activity: PhoneFreeActivity? {
         guard let plan = viewModel.run?.nightWatchPlan else { return nil }
+        if isAdditionalQuiet {
+            return nil
+        }
         switch phase {
         case .windDown: return plan.eveningActivity
         case .morningQuiet: return plan.morningActivity
@@ -111,6 +121,9 @@ struct WatchRunView: View {
 
     private var timerAccessibilityLabel: String {
         let minutes = OllieFormat.minutes(transitionRemainingSeconds)
+        if isAdditionalQuiet {
+            return "\(minutes) minutes until quiet time ends"
+        }
         let destination: String
         switch phase {
         case .windDown: destination = "bedtime"

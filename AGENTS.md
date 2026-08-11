@@ -16,6 +16,13 @@ Document precedence (highest first):
 4. `PROJECT_AUDIT.md`, `IMPLEMENTATION_PLAN.md` (accurate July 2026 audits, treat as historical reference)
 5. `README.md`, `docs/PRD.md`, `docs/IMPLEMENTATION_NOTES.md`, `docs/CHARLIE_AUDIT_ROADMAP.md` — drift-prone; verify against code when in doubt (see "Known documentation drift" below)
 
+This guide records the founder's current product direction; it is not an immutable moral
+constitution. Previous agent-authored wording does not become founder intent merely because it
+appears in a canonical file. When the founder explicitly changes a product decision, update this
+guide and the affected decision records instead of defending the old wording. Distinguish actual
+technical, legal, privacy, and platform constraints from product hypotheses or agent preferences.
+Explain tradeoffs plainly, but do not turn an inferred preference into a permanent prohibition.
+
 ---
 
 ## 1. Mission
@@ -28,7 +35,8 @@ period, and quiet time after waking. An optional Apple Watch
 placement check can confirm the initial walk via Nearby Interaction (UWB).
 
 The differentiator is **screen time at the edges of sleep** and **physical separation**.
-Not generic productivity. Not medical sleep tracking. Not another gamified habit tracker.
+Gamification and collection serve that ritual; they do not turn the app into a generic
+productivity timer or medical sleep tracker.
 
 ## 2. What the product IS / IS NOT
 
@@ -39,15 +47,16 @@ Not generic productivity. Not medical sleep tracking. Not another gamified habit
 - Low friction: configure once, then one tap to start Quiet Time
 - Honest about what it measures (quiet minutes around sleep, protected nights, and
   "nights your phone slept in the other room")
-- Purposeful gamification: search pressure, rarity, and anticipation help people return to
-  Wind Down; outcomes remain transparent, cosmetic/story-led, and recoverable
+- Purposeful gamification: sheep search, rarity, farm management, collection, trading,
+  customization, and anticipation give Wind Down a meaningful narrative payoff
+- Flexible in how people enjoy the Farm: collecting a large flock, optimizing wool,
+  trading sheep, completing the catalogue, or decorating Ollie, a human avatar, and the farm
 
 **IS NOT:**
 
 - A generic productivity / pomodoro app
 - A medical or clinical sleep-tracking app (no sleep-quality claims, no diagnoses)
-- A deceptive or coercive engagement machine (no infinite feeds, loss-aversion streaks,
-  shame, paid randomness, or rewards for merely opening the app)
+- A single prescribed play style in which every player must value or manage sheep identically
 - A social network (Friends features are explicitly gated — see ADR-0003)
 
 See `docs/DECISIONS/ADR-0006-sleep-bookends-positioning.md` for the current rationale.
@@ -202,22 +211,38 @@ skills/                        ← portable agent skills (see skills/README.md)
 - Assets follow `docs/ASSET_NAMING.md` (`category_subject_variant_state`) and are organized in namespaced catalog groups (`dog/`, `farm/`, `home/`, `sheep/`, ...). Missing assets fall back to placeholder shapes via `AssetPlaceholderComponents.swift` — that fallback must keep working.
 - Visual tone: warm, soft, nighttime-friendly. Nothing flashing, urgent, or red-alarm styled. Bedtime screens must be comfortable to look at in a dark room.
 
-## 9. Product taste rules
+## 9. Product direction and game systems
 
-- Copy is warm, clear, and Ollie-voiced. Constructive urgency and anticipation are allowed
-  when the rule is understandable; never use humiliation, deception, or shame. See `skills/product-copy-review/SKILL.md`.
+- Copy is warm, clear, and Ollie-voiced. Pressure, urgency, stakes, and anticipation should be
+  evaluated for clarity and fit with the bedtime ritual, not accepted or rejected through a
+  generic checklist. See `skills/product-copy-review/SKILL.md`.
 - No medical claims ("improves sleep", "fixes insomnia"). Say "helps you wind down", "phone-away habit".
 - Habit formation is intentional: the first three completed protected nights settle a sheep;
   later nights advance Ollie's search and can discover common, uncommon, rare, or legendary
-  cosmetic/story sheep. Search odds, streak momentum, and wanted posters may create anticipation.
+  sheep. Search odds, streak momentum, and wanted posters may create anticipation.
 - Search outcomes are deterministic after resolution, persisted once, and protected against
   unreasonable bad luck. Missing data never lowers the search chance.
-- Rewards never affect essential access. An early-ended run advances no sheep search but keeps
-  its factual trail receipt; a missed night is recoverable and never deletes found sheep.
+- The Farm progression direction separates a permanent discovery/history record from the
+  currently owned flock. A found sheep can remain recorded in the catalogue and Ollie's Trail
+  Notes even if its owned instance is later sheared, traded, released, or otherwise cycled.
+- The active flock has finite capacity. Players may prioritize collecting and capacity expansion,
+  wool production, trading sheep to other farms, catalogue completion, or cosmetic customization.
+  Do not assume that every collected sheep must occupy the Farm forever.
+- Wool is the single Farm currency. Shearing and trading sheep to other farms produce it, and the
+  Farm Shop exchanges it for capacity upgrades, collectibles, farm decoration, Ollie cosmetics,
+  and a future customizable human avatar. Economy values and lifecycle timing must be explicit,
+  testable balance rules rather than incidental constants embedded in views.
+- Shearing is a deliberate flock-management action, not merely a loss state: it retains a
+  sheep while its wool regrows. Trading or releasing may remove the owned instance while keeping
+  its discovery and history. ADR-0015 records the current returns and timing.
+- An early-ended run advances no sheep search but keeps its factual trail receipt. The product
+  does not need automatic sheep deletion after a missed night; future lifecycle mechanics remain
+  open product decisions rather than assumed permanent restrictions.
 - Successfully completed additional-quiet periods map up to 75 minutes toward a future
   non-guaranteed search. They never resolve sheep; guaranteed or early-ended primary runs
   consume no mapped minutes.
-- Every feature must pass the belonging test in `docs/PRODUCT_PRINCIPLES.md` §"Does this feature belong?".
+- Use the belonging test in `docs/PRODUCT_PRINCIPLES.md` to clarify how a feature supports the
+  product. It is a decision aid, not a veto over explicit founder direction.
 
 ## 10. Validation — commands to run
 
@@ -252,7 +277,10 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 3. Check `docs/FUTURE_AGENT_TASKS.md` — your task may already be scoped there with acceptance criteria.
 4. Confirm which layer your change belongs in (Shared / Services / ViewModels / Views).
 5. If your change touches `project.yml`, targets, entitlements, signing, or the tab structure: **stop and confirm with the human first**. Never run more than one agent at a time on these.
-6. If your plan includes "finishing" the Farm, Friends, or Shop screens, wiring `MVPMockData` into real flows, or adding Screen Time UI to release builds: **stop**. Those are gated behind explicit milestones (`docs/DECISIONS/ADR-0003-gated-features.md`, `ADR-0004`).
+6. Friends and release-facing Screen Time UI remain gated by their relevant decision records.
+   Farm, The Barn, Trail Board, sheep lifecycle, wool, Shop, and customization work is an
+   approved direction when explicitly requested. Implement it with new production models and
+   real persisted data; never wire `MVPMockData` or `Views/MVP/` into release flows.
 
 ## 12. After editing code — agent checklist
 
@@ -266,7 +294,9 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 
 - **Editing `project.pbxproj` by hand.** It is generated. Edit `project.yml`, then `xcodegen generate`.
 - **Trusting stale docs.** See "Known documentation drift" below.
-- **"Finishing" the mock screens.** `Views/MVP/AssetReadyScreens.swift` + `MockData/` look like unfinished features begging to be wired up. They are deliberately gated. Don't.
+- **Promoting mock screens into production.** `Views/MVP/AssetReadyScreens.swift` + `MockData/`
+  may inform visual exploration, but they must not feed release flows. Build real Farm and Shop
+  models and views outside the gated preview layer.
 - **Adding entitlement keys without portal setup.** HealthKit and Family Controls require capabilities in the Apple Developer portal and (for Family Controls distribution) Apple's approval. Adding plist/entitlement text alone breaks signing.
 - **Expanding shielding beyond its consented boundary.** Reporting/pickers and optional
   shielding are enabled; shielding must use the consented selection, run only from an
@@ -274,14 +304,22 @@ There is no CI. A green local build + test run is the merge gate. If you changed
   Overnight shielding is the accepted ADR-0012 barrier; it still never earns quiet credit.
 - **Breaking the unsupported-device path.** Not all devices have UWB. `unsupported` state and fallback providers must keep working.
 - **Breaking persisted-data decoding.** `UserProgress` etc. are stored as JSON. Changing Codable models needs backwards-compatible decoding (there is a legacy-decode test — keep it passing).
-- **Adding dark-pattern gamification.** See §9 and `docs/PRODUCT_PRINCIPLES.md`. This is a hard product boundary, not a style preference.
-- **Scope creep.** The #1 project risk is that the app tries to do too much. When in doubt, do less.
+- **Inventing product prohibitions.** Do not present an agent-authored taste judgment as the
+  founder's ethos or as an immutable boundary. Record the requested direction, explain concrete
+  product tradeoffs, and escalate only decisions that are genuinely unresolved.
+- **Unsequenced scope.** Farm, economy, Shop, and avatar work is substantial. Implement coherent,
+  testable vertical slices and keep later slices data-compatible instead of scattering partial
+  behavior across the app.
 
-## 14. Feature creep warnings (explicitly gated work)
+## 14. Feature gates and approved directions
 
 | Feature | Status | Gate |
 |---|---|---|
-| Friends / Shop screens | Debug internal-preview launch flag only | ADR-0003/0007 milestones |
+| Farm / The Barn / Trail Board | Implemented with real persisted data | Do not wire `MVPMockData`; follow ADR-0015 |
+| Sheep lifecycle + wool | Implemented | Persist backwards-compatibly; centralize and test balance rules |
+| Farm Shop + Ollie/farm cosmetics | Implemented, nested in Farm | Fixed local catalogue; follow ADR-0015 |
+| Human avatar + cosmetics | Implemented local foundation | Keep inclusive and data-compatible; expand with finished assets |
+| Friends screens | Debug internal-preview launch flag only | ADR-0003 milestone or a newer explicit founder decision |
 | Screen Time reports & pickers | Foundation enabled; physical-device QA pending | Family Controls distribution assigned to app + report extension |
 | HealthKit sleep duration/stages | Included for 1.0, optional and read-only | Physical-device reads + privacy disclosure |
 | NFC + app shielding for Night Watch | Included for 1.0, optional | New extension App IDs, Family Controls distribution, and physical overnight QA |
@@ -295,9 +333,10 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 2. Privacy strings consistent with Night Watch; App Store privacy labels cover the optional
    Supabase dependency and its enabled/disabled configuration.
 3. Re-run a signed archive with the configured bundle IDs, Team ID, and version numbers.
-4. App Store 1.0 stays four tabs (Home + Nights + Farm + Settings), with mock UI gated behind the
-   explicit Debug preview flag. NFC, read-only HealthKit sleep, Screen Time reports, and
-   optional continuous selected-app shielding serve that ritual.
+4. App Store 1.0 stays four tabs (Home + Nights + Farm + Settings). Farm may contain The Barn,
+   Trail Board, Farm Shop, and customization; the legacy mock UI remains behind the explicit
+   Debug preview flag. NFC, read-only HealthKit sleep, Screen Time reports, and optional
+   continuous selected-app shielding serve the bedtime ritual.
 5. Manual QA per `docs/PLAYBOOKS/testflight-readiness.md`.
 6. Confirm the embedded Screen Time report extension signs and renders on a physical device.
 7. Confirm the monitor, shield configuration, and shield action App IDs have Family Controls
@@ -305,9 +344,9 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 
 ## 16. Known documentation drift (do not propagate)
 
-The previously listed drift items were reconciled again on 2026-07-18 after the Night
-Watch and ADR-0005 backend changes. README, PRD, implementation notes, architecture, and
-TestFlight guidance now describe the current phase-aware product and approved dependency.
+The Farm lifecycle, economy, Shop, customization, and naming direction was reconciled on
+2026-08-10 across the project brief, principles, rewards guide, architecture, implementation
+notes, backlog, and ADR-0003/0007/0009/0010/0014. ADR-0015 is the current detailed decision.
 No documentation drift is currently known.
 
-When in doubt, still verify doc claims against code and `project.yml` — docs can drift again as the code moves.
+Continue to verify documentation claims against code and `project.yml` as the implementation moves.

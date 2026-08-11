@@ -129,7 +129,7 @@ struct WindDownHowItWorksView: View {
                 howCard(
                     icon: "iphone.slash",
                     title: "Protect",
-                    detail: "Apps to rest can be limited from Wind Down start through morning quiet. Counting Sheep stays available."
+                    detail: "Selected apps can be limited from Wind Down start through morning quiet. Counting Sheep stays available."
                 )
                 howCard(
                     icon: "book.closed.fill",

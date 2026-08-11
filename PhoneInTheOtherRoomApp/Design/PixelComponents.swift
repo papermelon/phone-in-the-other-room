@@ -268,6 +268,7 @@ struct CountingSheepBottomBar: View {
                             .frame(height: 28)
                         Text(tab.title)
                             .font(pixelFont(.caption2))
+                            .dynamicTypeSize(...DynamicTypeSize.large)
                             .lineLimit(1)
                             .minimumScaleFactor(0.78)
                     }

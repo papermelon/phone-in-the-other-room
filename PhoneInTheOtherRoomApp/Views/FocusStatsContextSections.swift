@@ -1,29 +1,99 @@
 import SwiftUI
 
-struct NightsHealthContext: View {
+struct NightsContextSection: View {
     @ObservedObject var viewModel: FocusRunViewModel
-    @State private var isExpanded = false
+    let record: NightWatchRecord?
 
     var body: some View {
         PixelCard {
-            DisclosureGroup(isExpanded: $isExpanded) {
-                healthDetails
-                    .padding(.top, AppSpacing.sm)
-            } label: {
-                HStack(spacing: AppSpacing.sm) {
-                    Image(systemName: "heart.text.square.fill")
+            VStack(alignment: .leading, spacing: 0) {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("CONTEXT")
+                        .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("Apple Health context")
-                            .font(AppTypography.headline)
-                        Text(summary)
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    }
+                    Text(contextSubtitle)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+                .padding(.bottom, AppSpacing.sm)
+
+                if record != nil {
+                    Divider()
+                    MorningCheckInCard(record: record, presentation: .embedded)
+                        .environmentObject(viewModel)
+                }
+
+                Divider()
+                NightsHealthContext(
+                    viewModel: viewModel,
+                    record: record,
+                    isEmbedded: true
+                )
+
+                Divider()
+                NightsScreenTimeContext(viewModel: viewModel, isEmbedded: true)
+            }
+        }
+    }
+
+    private var contextSubtitle: String {
+        guard let record else {
+            return "Optional local context appears after a protected night."
+        }
+        return "Night ending \(record.plan.wakeTime.formatted(.dateTime.weekday(.wide).month(.wide).day()))"
+    }
+}
+
+struct NightsHealthContext: View {
+    @ObservedObject var viewModel: FocusRunViewModel
+    var record: NightWatchRecord?
+    var isEmbedded = false
+    @State private var isExpanded = false
+
+    var body: some View {
+        Group {
+            if isEmbedded {
+                disclosure
+                    .padding(.vertical, AppSpacing.sm)
+            } else {
+                PixelCard { disclosure }
+            }
+        }
+    }
+
+    private var disclosure: some View {
+        DisclosureGroup(isExpanded: $isExpanded) {
+            healthDetails
+                .padding(.top, AppSpacing.sm)
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "heart.text.square.fill")
+                    .foregroundStyle(AppColors.grass)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("Apple Health")
+                        .font(AppTypography.headline)
+                    Text(summary)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
                 }
             }
-            .tint(AppColors.grass)
         }
+        .tint(AppColors.grass)
+    }
+
+    private var matchedSleep: SleepSummary? {
+        guard let record else { return viewModel.lastNightSleep }
+        return viewModel.recentNightSleeps.first { sleep in
+            guard let date = sleep.nightEndingDate ?? sleep.endDate else { return false }
+            return Calendar.current.isDate(date, inSameDayAs: record.plan.wakeTime)
+        }
+    }
+
+    private var availableSleep: (sleep: SleepSummary, isStale: Bool)? {
+        if let matchedSleep { return (matchedSleep, false) }
+        if let older = viewModel.recentNightSleeps.first { return (older, true) }
+        return nil
     }
 
     private var summary: String {
@@ -33,13 +103,10 @@ struct NightsHealthContext: View {
         case .error: return "Could not load sleep context"
         case .requested:
             if viewModel.isRefreshingSleep { return "Checking Apple Health…" }
-            if let sleep = viewModel.lastNightSleep {
-                return "Sleep recorded for \(nightEndingLabel(for: sleep))"
-            }
-            if let olderSleep = viewModel.recentNightSleeps.first {
-                return "Latest available sample: \(nightEndingLabel(for: olderSleep))"
-            }
-            return "No matching sleep sample yet"
+            guard let availableSleep else { return "No matching sleep sample yet" }
+            return availableSleep.isStale
+                ? "Latest sample: \(nightEndingLabel(for: availableSleep.sleep))"
+                : "Sleep recorded for \(nightEndingLabel(for: availableSleep.sleep))"
         }
     }
 
@@ -63,12 +130,16 @@ struct NightsHealthContext: View {
                     Text("Checking Apple Health…")
                         .font(AppTypography.body)
                 }
-            } else if let sleep = viewModel.lastNightSleep {
-                sleepDetails(sleep, isStale: false)
-            } else if let olderSleep = viewModel.recentNightSleeps.first {
-                sleepDetails(olderSleep, isStale: true)
+            } else if let availableSleep {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    sleepDetails(availableSleep.sleep, isStale: availableSleep.isStale)
+                    if let comparison = viewModel.sleepOutcomeComparison {
+                        Divider()
+                        comparisonDetails(comparison)
+                    }
+                }
             } else {
-                Text("No sleep sample was found for the latest night. Health context will appear when Apple has a matching sample.")
+                Text("No sleep sample was found for this night. Health context will appear when Apple has a matching sample.")
                     .font(AppTypography.body)
             }
         }
@@ -76,7 +147,7 @@ struct NightsHealthContext: View {
 
     private func sleepDetails(_ sleep: SleepSummary, isStale: Bool) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text(isStale ? "Latest available sample" : "Latest matching sample")
+            Text(isStale ? "Latest available sample" : "Matching sleep sample")
                 .font(AppTypography.caption.weight(.semibold))
                 .foregroundStyle(AppColors.muted)
             Text(sleep.durationLabel)
@@ -85,14 +156,21 @@ struct NightsHealthContext: View {
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.grass)
             if let start = sleep.startDate, let end = sleep.endDate {
-                Text("\(start.formatted(date: .omitted, time: .shortened))–\(end.formatted(date: .omitted, time: .shortened))")
+                Text(OllieFormat.timeRange(from: start, to: end))
                     .font(AppTypography.body)
             }
             if sleep.stages.hasStages {
-                HStack(spacing: AppSpacing.sm) {
-                    stageMetric("Core", seconds: sleep.stages.coreSeconds)
-                    stageMetric("Deep", seconds: sleep.stages.deepSeconds)
-                    stageMetric("REM", seconds: sleep.stages.remSeconds)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: AppSpacing.sm) {
+                        stageMetric("Core", seconds: sleep.stages.coreSeconds)
+                        stageMetric("Deep", seconds: sleep.stages.deepSeconds)
+                        stageMetric("REM", seconds: sleep.stages.remSeconds)
+                    }
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        stageMetric("Core", seconds: sleep.stages.coreSeconds)
+                        stageMetric("Deep", seconds: sleep.stages.deepSeconds)
+                        stageMetric("REM", seconds: sleep.stages.remSeconds)
+                    }
                 }
             } else {
                 Text("Apple Health did not provide separate Core, Deep, or REM stages for this sample.")
@@ -105,6 +183,30 @@ struct NightsHealthContext: View {
                     .foregroundStyle(AppColors.muted)
             }
         }
+    }
+
+    private func comparisonDetails(_ comparison: SleepOutcomeComparison) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("YOUR LOCAL COMPARISON")
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.grass)
+            Text(comparisonSentence(comparison))
+                .font(AppTypography.body)
+            Text("This is an association in your available records, not proof that Wind Down caused the difference.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.muted)
+        }
+    }
+
+    private func comparisonSentence(_ comparison: SleepOutcomeComparison) -> String {
+        let difference = comparison.differenceMinutes
+        let comparisonText: String
+        if difference == 0 {
+            comparisonText = "the same"
+        } else {
+            comparisonText = "\(abs(difference)) minutes \(difference > 0 ? "longer" : "shorter")"
+        }
+        return "Across \(comparison.protectedNightCount) protected and \(comparison.baselineNightCount) other measured nights, recorded sleep averaged \(comparisonText) on protected nights."
     }
 
     private func stageMetric(_ title: String, seconds: TimeInterval) -> some View {
@@ -120,11 +222,11 @@ struct NightsHealthContext: View {
 
     private func nightEndingLabel(for sleep: SleepSummary) -> String {
         let date = sleep.nightEndingDate ?? sleep.endDate ?? Date()
-        return "Night ending \(date.formatted(.dateTime.weekday(.wide).month(.wide).day()))"
+        return "night ending \(date.formatted(.dateTime.weekday(.wide).month(.wide).day()))"
     }
 
     private func durationLabel(_ seconds: TimeInterval) -> String {
-        let minutes = max(0, Int(seconds / 60))
+        let minutes = OllieFormat.minutes(seconds)
         return minutes >= 60 ? "\(minutes / 60)h \(minutes % 60)m" : "\(minutes)m"
     }
 
@@ -135,46 +237,76 @@ struct NightsHealthContext: View {
 
 struct NightsScreenTimeContext: View {
     @ObservedObject var viewModel: FocusRunViewModel
+    var isEmbedded = false
 
     var body: some View {
         switch viewModel.screenTimeAuthorization {
         case .unavailable:
-            statusCard(
-                title: "Screen Time context",
+            statusContent(
                 detail: "Unavailable on this iPhone. Counting Sheep keeps working without it."
             )
         case .notDetermined:
-            statusCard(
-                title: "Screen Time context",
-                detail: "Optional · connect Screen Time in Settings to compare one chosen evening or morning window at a time."
+            statusContent(
+                detail: "Optional · connect in Settings for separate evening and morning reports."
             )
         case .denied:
-            statusCard(
-                title: "Screen Time context",
-                detail: "Access is off. Counting Sheep keeps working without it; permission can be changed later in Settings."
+            statusContent(
+                detail: "Access is off. You can change it later in Settings."
             )
         case .approved:
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
-            ScreenTimeBookendCard(showAppPicker: .constant(false), mode: .reports)
-                .environmentObject(viewModel)
+            ScreenTimeBookendCard(
+                showAppPicker: .constant(false),
+                mode: .reports,
+                isEmbedded: isEmbedded
+            )
+            .environmentObject(viewModel)
 #else
-            statusCard(
-                title: "Screen Time context",
-                detail: "Screen Time is connected, but its report extension is unavailable in this build."
+            statusContent(
+                detail: "Connected, but the report extension is unavailable in this build."
             )
 #endif
         }
     }
 
-    private func statusCard(title: String, detail: String) -> some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Label(title, systemImage: "iphone.slash")
+    @ViewBuilder
+    private func statusContent(detail: String) -> some View {
+        let content = HStack(spacing: AppSpacing.sm) {
+            Image(systemName: "iphone.slash")
+                .foregroundStyle(AppColors.grass)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text("Screen Time")
                     .font(AppTypography.headline)
                 Text(detail)
-                    .font(AppTypography.body)
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
         }
+
+        if isEmbedded {
+            content.padding(.vertical, AppSpacing.sm)
+        } else {
+            PixelCard { content }
+        }
     }
+}
+
+#Preview("Nights context · disconnected") {
+    let viewModel = FocusRunViewModel()
+    viewModel.sleepAuthorization = .notRequested
+    viewModel.screenTimeAuthorization = .notDetermined
+    return NightsContextSection(viewModel: viewModel, record: nil)
+        .padding()
+        .background(AppColors.paper)
+}
+
+#Preview("Nights context · unavailable · dark") {
+    let viewModel = FocusRunViewModel()
+    viewModel.sleepAuthorization = .unavailable
+    viewModel.screenTimeAuthorization = .unavailable
+    return NightsContextSection(viewModel: viewModel, record: nil)
+        .padding()
+        .background(AppColors.paper)
+        .preferredColorScheme(.dark)
 }

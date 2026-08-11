@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "counting-sheep-screenbook-copy-review-v1",
+  "title": "Counting Sheep Screenbook copy review",
+  "type": "object",
+  "required": ["schemaVersion", "screenbookManifestHash", "createdAt", "reviewer", "batchTitle", "items"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "screenbookManifestHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "reviewer": { "type": "string", "minLength": 1 },
+    "batchTitle": { "type": "string", "minLength": 1 },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["reviewId", "scenarioId", "decision", "sourceManifestHash"],
+        "properties": {
+          "reviewId": { "type": "string", "minLength": 1 },
+          "scenarioId": { "type": "string", "minLength": 1 },
+          "copyId": { "type": "string" },
+          "sourceRendered": { "type": "string" },
+          "sourceAuthored": { "type": "string" },
+          "proposedReplacement": { "type": "string" },
+          "editorialNote": { "type": "string" },
+          "decision": { "enum": ["open", "approved", "rejected", "needs-discussion"] },
+          "sourceManifestHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    }
+  }
+}

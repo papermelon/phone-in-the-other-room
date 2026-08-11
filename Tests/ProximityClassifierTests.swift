@@ -106,7 +106,7 @@ final class ProximityClassifierTests: XCTestCase {
         XCTAssertEqual(NightJourneyAssets.ollieRunFrames.count, 6)
         XCTAssertEqual(
             NightJourneyAssets.ollieRunFrames,
-            (1...6).map { "dog/dog_run_frame_0\($0)" }
+            (1...6).map { "dog/dog_classic_run_frame_0\($0)" }
         )
         XCTAssertTrue(NightJourneyAssets.ollieRunFrames.allSatisfy { $0.hasPrefix("dog/") })
     }

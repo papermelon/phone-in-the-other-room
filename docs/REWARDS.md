@@ -14,31 +14,46 @@ flowchart LR
     Evening --> Night[Ollie keeps Night Watch]
     Night --> Morning[Phone-free morning]
     Morning --> Search[Sheep found or trail advanced]
-    Search --> Arrival[Homecoming or clue and factual receipt]
-    Arrival --> Nights[Cumulative flock in Nights]
-    Nights --> Plan
+    Search --> Note[Ollie's Trail Note]
+    Note --> Arrival[Active flock or pending gate]
+    Arrival --> Choice[Keep, shear, trade, or customize]
+    Choice --> Plan
 ```
 
-Completion creates one search outcome. The factual receipt keeps wind-down and morning-quiet
-minutes separate. Core ritual evidence affects trail strength; optional HealthKit, Screen Time,
-and self-reported habits provide positive-only bonuses. Rarity affects cosmetic/story identity,
-never power or essential access.
+Completion creates one persisted search outcome. The factual receipt keeps wind-down and
+morning-quiet minutes separate. Core ritual evidence affects trail strength; optional HealthKit,
+Screen Time, and self-reported habits can add search evidence. Rarity affects encounter weighting,
+wool yield, regrowth, trade value, art, and story.
 
 ## Canonical presentation
 
-The completion card says that Ollie found a sheep or advanced the trail, shows the relevant
-poster/field clue, and includes the factual quiet-time receipt. Nights shows found identities,
-active wanted posters, habitats, trail distance, and rarity labels. Exact odds are optional.
+The completion receipt offers one explicit “Open Ollie's Trail Notes” action. A found note names
+the sheep and whether it entered the active flock or is waiting at The Barn gate. A clue note
+records honest trail evidence and links to the Trail Board. Farm owns the living flock,
+lifecycle, economy, and customization presentation. Exact search odds remain optional.
 
-An early-ended Night Watch adds no sheep. It still receives warm copy and the factual receipt;
-no sheep or previously completed night is lost.
+An early-ended Night Watch adds no search outcome. It still receives the factual receipt. Sheep
+lifecycle changes occur through explicit Farm actions, not through the early-end settlement path.
+
+## Farm lifecycle and economy
+
+Every found outcome creates an individual `FlockSheep`. Catalogue discovery and Trail Notes stay
+recorded after an owned sheep is traded. The active flock begins at 12 spaces and can expand to 60;
+overflow waits at the arrival gate.
+
+Shearing keeps the sheep and yields 1/2/4/7 wool for common/uncommon/rare/legendary sheep. Wool
+regrows after 2/3/4/5 subsequently completed protected nights. Trading a sheep to another farm
+returns 3/6/13/30 wool; a sheep traded while regrowing returns 75% of its base value. The local
+Farm Shop spends wool on Barn capacity, Ollie and shepherd wearables, Farm decoration, and collectibles.
+See ADR-0015 for the full rules.
 
 ## Persisted compatibility
 
-`RewardItem`, `RewardContext`, rarity, coin and sheep balances, total earned fields, and
-Ollie level remain encoded and decoded so existing users lose no data. The release UI does
-not read those legacy economy values. The old keepsake shelf is available only through the
-explicit Debug internal-preview flag until a later compatibility cleanup.
+`RewardItem`, `RewardContext`, legacy coin and sheep balances, total earned fields, and Ollie
+level remain encoded and decoded so existing users lose no data. They are not mapped into the
+new `FarmState.woolBalance`. Version-one `FarmState.cashBalance` is different: schema v2 converts
+that retired Farm currency to wool at five cash per wool, rounding any remainder up once. The old keepsake shelf remains an explicit Debug
+internal preview until a later compatibility cleanup.
 
 ## Evidence boundary
 
@@ -67,13 +82,15 @@ Sources:
 
 - **Slow living:** the reveal repeats what the quiet made room for and the two offline cues;
   it adds no routine checklist.
-- **Purposeful accumulation:** protected nights advance a search, wanted posters create
-  anticipation, and rare sheep remain cosmetic/story rewards. No paid odds or sheep power.
+- **Purposeful accumulation:** protected nights advance search and wool regrowth; wanted trails,
+  finite capacity, shearing, trading, expansion, and customization give arrivals meaning.
 - **Mindful screen-time management:** the rewarded behavior is physical separation during
   the selected bookends. Optional Screen Time reports can supply context elsewhere but
   never determine the sheep.
-- **Kindness:** the flock cannot shrink; shorter attempts receive warmth rather than punishment.
-- **Finite attention:** one arrival appears at completion and Nights remains a finite record.
+- **Player agency:** collectors, wool producers, traders, catalogue completers, and decorators
+  can value the same sheep differently.
+- **Finite attention:** one outcome appears at completion; Farm destinations remain finite and
+  the active flock has a 60-sheep ceiling.
 
 ## Evaluation
 
@@ -84,7 +101,10 @@ Judge this loop by protected behavior, not collection engagement:
 - whether users understand that the first three searches guarantee homecomings and later
   searches can produce clues, odds, or rarer sheep;
 - selected-app use around sleep when the person explicitly enables Screen Time reports; and
-- qualitative reports that rewards feel calm, meaningful, and non-compulsive.
+- whether users understand shearing, trading, pending arrivals, and Shop prices;
+- which play styles emerge and whether one balance path dominates; and
+- qualitative reports that the Farm gives Wind Down a meaningful narrative payoff.
 
-Do not optimize completion-screen opens, flock-page dwell time, notification taps, rarity
-demand, or currency accumulation.
+Evaluate the Farm against protected-night return behavior, comprehension, strategy diversity,
+and qualitative attachment. Page dwell time and currency totals are diagnostic context rather
+than standalone success criteria.

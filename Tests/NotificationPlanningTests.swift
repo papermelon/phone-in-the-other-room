@@ -131,6 +131,12 @@ final class NotificationPlanningTests: XCTestCase {
         XCTAssertFalse(planned.contains { $0.id == "night-watch-sleep-time" })
         XCTAssertFalse(planned.contains { $0.id == "night-watch-phone-free-morning" })
         XCTAssertTrue(planned.contains { $0.id == "night-watch-quiet-period-complete" })
+        XCTAssertTrue(planned.allSatisfy { notification in
+            let copy = "(notification.title) (notification.body)".lowercased()
+            return !copy.contains("wind down")
+                && !copy.contains("sleep")
+                && !copy.contains("morning")
+        })
     }
 
     func testLegacyNotificationPreferencesKeepOptionalChannelsOff() throws {

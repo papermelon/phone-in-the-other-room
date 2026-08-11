@@ -70,7 +70,7 @@ All work is committed on `main`. **Nothing has been pushed** to GitHub.
 |---|---|
 | `fff6214` → `ce0b12d` | Agent OS: `AGENTS.md`, docs, ADRs, playbooks, skills |
 | `e6998bc` → `bf6ae5f` | Full MVP codebase: shared logic, services, pixel UI, Watch, Screen Time extension scaffold, assets |
-| `a6e42e1` | **A2:** Release = Home + Stats only; Farm/Friends/Shop + mock layer DEBUG-gated |
+| `a6e42e1` | **A2 (historical; Farm/Shop superseded by ADR-0015):** Release = Home + Stats only; Farm/Friends/Shop + mock layer DEBUG-gated |
 | `f745945` | **A3 prep:** `com.papermelon.countingsheep` bundle IDs, auto signing, v0.1.0/1, entitlements wired (empty) |
 | `c175598` | **B1:** Doc drift fixed (README, PRD, IMPLEMENTATION_NOTES, CHARLIE_AUDIT_ROADMAP) |
 | `21af0ab` | **A7 + B2 (iOS run flow):** VoiceOver labels/hints; shame-free early-end copy |

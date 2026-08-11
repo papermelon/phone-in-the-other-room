@@ -20,6 +20,35 @@ enum NightWatchNotificationPlanBuilder {
         let windDownStart = max(startedAt, plannedStart)
         var candidates: [PlannedNotification] = []
 
+        if plan.role == .additionalQuiet {
+            candidates.append(
+                PlannedNotification(
+                    id: "night-watch-quiet-period-start",
+                    date: windDownStart,
+                    title: "Quiet time is coming",
+                    body: "A little room away from the screen starts at \(OllieFormat.time(windDownStart)).",
+                    phase: .windDown,
+                    importance: .active,
+                    playsSound: soundsEnabled,
+                    destination: .home
+                )
+            )
+            candidates.append(
+                copy(
+                    id: "night-watch-quiet-period-complete",
+                    date: plan.protectedUntil,
+                    phase: .complete,
+                    moment: .quietPeriodComplete,
+                    importance: .active,
+                    playsSound: soundsEnabled,
+                    destination: .nights,
+                    copyOverrides: copyOverrides
+                )
+            )
+            return spaced(candidates.sorted { $0.date < $1.date })
+                .filter { $0.date > now }
+        }
+
         for minutes in cadence.leadInMinutes {
             candidates.append(
                 copy(
@@ -70,26 +99,6 @@ enum NightWatchNotificationPlanBuilder {
                     copyOverrides: copyOverrides
                 )
             )
-        }
-
-        // Additional periods are bounded quiet records, not sleep bookends.
-        // Stop the plan here so they never receive bedtime, wake, or sleep
-        // language from the primary ritual notification set.
-        if plan.role == .additionalQuiet {
-            candidates.append(
-                copy(
-                    id: "night-watch-quiet-period-complete",
-                    date: plan.protectedUntil,
-                    phase: .complete,
-                    moment: .quietPeriodComplete,
-                    importance: .active,
-                    playsSound: soundsEnabled,
-                    destination: .nights,
-                    copyOverrides: copyOverrides
-                )
-            )
-            return spaced(candidates.sorted { $0.date < $1.date })
-                .filter { $0.date > now }
         }
 
         candidates.append(
@@ -279,16 +288,24 @@ enum UpcomingWindDownNotificationPlanBuilder {
             limit: limit
         ).map { period in
             let start = period.occurrence.interval.start
-            let copy = NotificationCopyResolver.resolve(
-                id: .windDownStart,
-                moment: .windDownReminder,
-                context: NotificationCopyContext(
-                    purpose: purpose.reminderPhrase,
-                    tip: purpose.reminderPhrase,
-                    date: start
-                ),
-                overrides: copyOverrides
-            )
+            let copy: NightWatchNotificationCopy
+            if period.occurrence.role == .additionalQuiet {
+                copy = NightWatchNotificationCopy(
+                    title: "Quiet time is coming",
+                    body: "A little room away from the screen starts at \(OllieFormat.time(start))."
+                )
+            } else {
+                copy = NotificationCopyResolver.resolve(
+                    id: .windDownStart,
+                    moment: .windDownReminder,
+                    context: NotificationCopyContext(
+                        purpose: purpose.reminderPhrase,
+                        tip: purpose.reminderPhrase,
+                        date: start
+                    ),
+                    overrides: copyOverrides
+                )
+            }
             return PlannedNotification(
                 id: identifier(for: period, date: start),
                 date: start,

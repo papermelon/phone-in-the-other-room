@@ -1,7 +1,9 @@
 # Product Principles — Counting Sheep
 
-Durable rules for deciding what to build, how it should feel, and what to refuse.
-These are hard constraints, not preferences. Canonical guide: [`AGENTS.md`](../AGENTS.md).
+Current product guidance for deciding what to build and how it should feel. Product hypotheses
+and taste judgments remain revisable through explicit founder direction; technical, legal,
+privacy, and platform constraints should be named separately. Canonical guide:
+[`AGENTS.md`](../AGENTS.md).
 
 ## Philosophy
 
@@ -15,7 +17,7 @@ to fail.
 The emotional register is a children's-book farm at dusk: soft, patient, a bit whimsical.
 The user is tired. Meet them there.
 
-## Habit-formation guardrails (hard boundaries)
+## Habit formation and Farm progression
 
 Counting Sheep deliberately competes with the pull of social apps. It should become a
 habitual part of a sleep-bookends ritual—not by keeping people scrolling, but by making the
@@ -23,58 +25,56 @@ phone-away choice feel warm, rewarding, and worth repeating.
 
 1. **One night, one search.** The first three completed protected nights guarantee a sheep.
    After that, each completed night advances Ollie's search and may find a sheep. Encounter
-   odds, rarity, streak momentum, and wanted posters are allowed when clearly explained and
-   never sold. Search outcomes are persisted once and protected by a bad-luck guarantee.
+   odds, rarity, streak momentum, wanted posters, and a favoured Trail Board lead can shape
+   anticipation. Search outcomes are persisted once and protected by a bad-luck guarantee.
    Completed additional-quiet periods may map up to 75 quiet minutes for a future,
    non-guaranteed search: each 15 minutes can add one percentage point, up to five.
    Guaranteed searches and early endings consume none; additional quiet never finds a sheep.
-2. **Pressure must be constructive.** A streak or wanted poster may make returning feel
-   meaningful, but missed nights never delete found sheep, block essential access, or use
-   humiliation. A fresh start is always available.
-3. **No infinite or bottomless surfaces.** No feeds, no endless scrolls, no autoplaying
-   sequences. Every screen has a floor.
-4. **No empty engagement bait.** No badges for opening the app, no daily-login rewards,
-   no paid randomness, and no notification designed to pull the user in at night.
-   Notifications exist only to support an active run or a ritual the user asked for.
-5. **No humiliation or deception.** Copy may create urgency, anticipation, and a desire to
-   keep a routine when the rules are honest. An early-ended run gets a factual receipt, adds
-   no search progress, and loses nothing already found.
-6. **Blocking must stay consensual.** If/when app-blocking ships (ADR-0004): the user picks
+2. **Discovery and ownership differ.** Ollie's Trail Notes and catalogue discoveries remain
+   historical records. The active flock is finite inventory: sheep can stay, be sheared for
+   wool, or be traded to another farm for wool without erasing the discovery.
+3. **Several play styles should work.** A collector can expand toward 60 active sheep; a wool
+   farmer can manage regrowth; a trader can exchange sheep for immediate wool and capacity; a catalogue player can pursue new
+   definitions; and a decorator can spend on Ollie, Your Shepherd, collectibles, and the Farm.
+4. **Capacity creates a decision.** A full Barn sends new sheep to a persisted arrival gate.
+   The player makes room, expands, or sells; the app does not invent a silent outcome.
+5. **Progress stays linked to the ritual.** Wool regrowth advances through completed protected
+   nights. App opens, overnight hours, and passive wall-clock waiting do not manufacture Farm
+   output.
+6. **Blocking stays consensual.** The user picks
    what's blocked, shield copy is gentle, and an emergency exit is always available. We add
    friction, never bars.
-7. **Offline cues are suggestions, not gates.** The user may choose one evening and one
+7. **Offline cues remain suggestions, not Farm gates.** The user may choose one evening and one
    morning activity. Never require a checklist, photo, AI proof, or completed habit to end
    Night Watch or regain essential phone access.
 
-## Playful, not manipulative — the distinction
+## How to evaluate new mechanics
 
-Playful: Ollie has moods. Sheep may have names later. The flock can be *looked at fondly*,
-but every sheep represents the same completed ritual and the flock is never a compulsion.
+Describe the concrete loop, the behavior it rewards, the information the player sees, and what
+happens after absence. Evaluate urgency, scarcity, randomness, monetization, and loss through
+their actual implementation and effect. Do not replace that analysis with a generic blacklist,
+and do not present an agent's preference as founder intent.
 
-Manipulative: rewards for mere app opens, paid random outcomes, countdowns that pressure,
-red badges, "your friends did X", limited-time rewards, progress bars that reset on
-failure. None of this ships, regardless of metrics.
-
-The test: **would this mechanic still feel kind if the user ignored the app for a month?**
-If returning after a month feels like being welcomed back, it's playful. If it feels like
-being billed for absence, it's manipulative.
+The current Farm uses explicit local prices, deterministic settled outcomes, finite inventory,
+and user-directed lifecycle actions. Later mechanics should record their own rules and tradeoffs
+in an ADR rather than inheriting an assumed prohibition.
 
 ## Does this feature belong? (the belonging test)
 
-A feature belongs only if it passes all five:
+A feature proposal should answer these five questions:
 
 1. **Ritual test** — does it make the phone-away sleep-bookends ritual easier, warmer, or more
    trustworthy? (Not "is it cool", not "do competitors have it".)
 2. **Sleep-bookends test** — does it serve the wind-down, overnight separation, or
    morning-quiet continuation? Generic-focus features dilute the positioning (ADR-0006).
-3. **Kindness test** — can it be built without guilt, pressure, or engagement bait?
+3. **Experience test** — what emotion, pressure, and player decision does it create in context?
 4. **Subtraction test** — is the app still legible with it added? If a new tester can no
    longer explain the app in one sentence, it doesn't belong yet.
 5. **Cost test** — does its review/entitlement/maintenance cost fit the current stage?
    (E.g. HealthKit and Screen Time carry real App Review tax.)
 
-When a feature fails the test but seems valuable later, record it as gated with explicit
-milestones (see ADR-0003) rather than half-shipping it.
+Use the answers to expose tradeoffs and sequencing. The test is a decision aid, not a veto over
+explicit founder direction.
 
 ## Wind Down UX principles
 
@@ -120,7 +120,7 @@ milestones (see ADR-0003) rather than half-shipping it.
   Optional impact sharing must be purpose-limited, separately consented, date-free, minimal,
   inspectable in copy, stoppable, and deletable.
 
-## Product constitution
+## Durable product commitments
 
 1. Optimise for healthier bedtime behaviour, not time inside Counting Sheep.
 2. Support the ritual; do not become the ritual.
@@ -128,7 +128,7 @@ milestones (see ADR-0003) rather than half-shipping it.
 4. Label observation, inference, and self-report honestly.
 5. Treat sleep outcomes as context and association, never proof or diagnosis.
 6. Prefer one small, transparent experiment over opaque scores or AI advice.
-7. Help people recover; never punish absence.
+7. Make return states and absence consequences explicit product decisions.
 8. Keep NFC optional, shielding consensual, and the emergency exit obvious.
 9. Earn trust locally before asking to share minimised impact data.
 10. Graduation or lower-frequency use is a successful outcome.
@@ -154,13 +154,11 @@ never drill-sergeant. Full guide with examples: `skills/product-copy-review/SKIL
 - Ollie and the sheep carry the personality; UI chrome stays quiet so they can.
 - Empty states are cozy, not sad ("the pasture is quiet tonight"), and never nag.
 
-## What to avoid (summary blacklist)
+## Current implementation exclusions
 
-- Streak-loss threats, guilt copy, shame states, "disappointed" mascot moods
-- Engagement notifications, re-engagement campaigns, badges for app opens, paid random rewards
-- Feeds, leaderboards, social comparison, competitive mechanics
-- Medical/sleep-quality claims or scores
-- Paywalls on kindness (consolations, emergency unlocks must never be monetised)
-- Generic productivity framing ("crush your goals", "maximize focus")
-- Dark-pattern friction (hard-to-find exits, confirm-shaming, countdown pressure)
-- Feature sprawl — when in doubt, do less (the app's #1 recorded risk)
+- No medical/sleep-quality claims or scores.
+- No Friends, social comparison, or backend avatar profile in the current Farm scope.
+- No real-money purchase path in ADR-0015; Farm Shop prices use local wool only.
+- No automatic sheep expiration, breeding, or seasonal migration in the first lifecycle slice.
+- No generic productivity framing; progression remains the payoff of the sleep-bookend ritual.
+- No unsequenced mock-backed features: production surfaces use real models and persisted data.

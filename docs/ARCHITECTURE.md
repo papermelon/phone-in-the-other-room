@@ -25,8 +25,8 @@ Last verified against code: 1 August 2026.
 | `PhoneInTheOtherRoomLiveActivity` | iOS Widget extension | `Shared/` + `PhoneInTheOtherRoomLiveActivity/` + assets | Embedded Live Activity for Lock Screen, Dynamic Island, and paired-Watch Smart Stack status. |
 | `PhoneInTheOtherRoomScreenTimeReport` | iOS app extension | `Shared/` + `PhoneInTheOtherRoomScreenTimeReport/` | Embedded DeviceActivity report extension. Main app and extension compile the `SCREEN_TIME_REPORTS` paths and share scoped selections through the App Group. |
 | `PhoneInTheOtherRoomDeviceActivityMonitor` | iOS app extension | `Shared/` + `PhoneInTheOtherRoomDeviceActivityMonitor/` | Applies and clears scheduled wind-down/morning shields while the app is suspended. |
-| `PhoneInTheOtherRoomShieldConfiguration` | iOS app extension | `PhoneInTheOtherRoomShieldConfiguration/` + local asset catalog | Gentle Wind Down shield appearance with full-colour running Ollie. |
-| `PhoneInTheOtherRoomShieldAction` | iOS app extension | `PhoneInTheOtherRoomShieldAction/` | Opens Counting Sheep from Continue Wind Down on iOS 26.5+; safely closes the shielded app on older OS versions. |
+| `PhoneInTheOtherRoomShieldConfiguration` | iOS app extension | `PhoneInTheOtherRoomShieldConfiguration/` + shared shield-presentation contract + local asset catalog | Role-aware ManagedSettings shield with finite first-party cues, the real protected-session end time, and a full-colour Ollie/sheep companion. |
+| `PhoneInTheOtherRoomShieldAction` | iOS app extension | `PhoneInTheOtherRoomShieldAction/` | Handles role-aware Return to Quiet Time / Return to Wind Down actions on iOS 26.5+; safely closes the shielded app on older OS versions. |
 | `PhoneInTheOtherRoomTests` | unit tests | `Shared/` + `Tests/` | Shared-domain coverage, including Night Watch schedule and legacy decoding. |
 
 Schemes: `PhoneInTheOtherRoom` (builds iOS + Watch, runs tests) and
@@ -44,6 +44,7 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ SessionGuard.swift            honor timer / Watch placement / QR / NFC guard metadata
 ├─ NightWatch.swift              saved sleep-bookend plan, phases, activities, quiet credit
 ├─ WindDownScheduling.swift      versioned schedule state, recurrence, one-time periods, overlap rules, aggregation
+├─ NightsHistorySummary.swift    wake-day/start-day presentation summaries for week, month, and day history
 ├─ NightJourneyProgress.swift    run/phase-aware wall-clock journey reducer
 ├─ NightJourneyTerrain.swift     periodic terrain height and slope profiles
 ├─ OfflinePurpose.swift          private offline intention + notification privacy choice
@@ -61,6 +62,10 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ WindDownGuidance.swift         finite, source-linked screen-time and sleep-habit ideas
 ├─ SheepSearch.swift               deterministic search outcomes, posters, rarity, habitats
 ├─ SheepSearchState.swift          versioned outcomes, trail-map credit, and persisted state
+├─ FarmModels.swift                versioned owned flock, discovery, balances, equipment, history
+├─ FarmEconomyRules.swift          capacity, shearing, regrowth, sale, and balance invariants
+├─ FarmMigration.swift             deterministic outcome/legacy-flock reconciliation
+├─ FarmShop.swift                  fixed local catalogue, purchase, upgrade, and equipment rules
 ├─ Orientation.swift                versioned two-step app tour + legacy milestone migration
 ├─ AppFeedback.swift             validated feedback draft/attachment/receipt protocol
 ├─ DistanceProvider.swift        protocol: async stream of distance readings
@@ -98,9 +103,17 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ FocusRunSetupView.swift                  bedtime/wake, bookends, purpose + guard
 │  ├─ ActiveRunView.swift                      in-run UI + non-scrolling journey state
 │  ├─ CompletionView.swift / EarlyEndView.swift
-│  ├─ FocusStatsView.swift                     concise seven-day Nights history + reports
-│  ├─ MonthlyNightsView.swift                  month calendar, day drill-down, period detail
-│  ├─ FarmView.swift                           shipping flock view backed by SheepSearchState
+│  ├─ FocusStatsView.swift                     latest-primary Nights overview + grouped context
+│  ├─ NightsWeekSection.swift                  seven-day board + all-nights navigation
+│  ├─ MonthlyNightsView.swift                  shared-summary month calendar
+│  ├─ NightsDayDetailView.swift                grouped day occurrences + factual record detail
+│  ├─ FarmView.swift                           production Farm dashboard and destination routing
+│  ├─ FarmPastureView.swift                    paged, grounded, visit-shuffled living flock scene
+│  ├─ BarnView.swift                           owned flock, capacity, lifecycle, and pending arrivals
+│  ├─ TrailBoardView.swift                     missing/discovered catalogue and tracked lead
+│  ├─ TrailNotesArchiveView.swift              persisted search-result history
+│  ├─ FarmShopView.swift                       local purchases, upgrades, and equipment
+│  ├─ ShepherdCustomizationView.swift          local player-avatar editor
 │  ├─ MoreView.swift                           Settings root: configuration, connections, privacy, help
 │  ├─ WindDownTimingView.swift                  compact saved schedule editor
 │  ├─ WindDownScheduleView.swift                 finite Once / Repeats / Usual Wind Down editor
@@ -209,23 +222,34 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    accept a grant only for the same run/revision; a pending or stale callback instead
    reconciles the current schedule and reapplies its existing shield when that phase is
    still eligible. Web domains never advertise or receive Brief Access.
+   The App Group snapshot carries a backwards-compatible `QuietTimeShieldRole` (legacy
+   snapshots resolve to primary Wind Down). Shield Configuration selects a finite,
+   deterministic first-party cue for additional quiet, wind-down, overnight, or morning
+   quiet and uses the protected-session interval—not a bookend—as the displayed end time.
+   Its Ollie/sheep icon is decorative; the companion sheep is not a search result, reward,
+   or owned flock item.
 7. On finish, `RewardEngine` retains compatibility updates while crediting only elapsed
-   wind-down and morning-quiet minutes. The release presentation reads only
-   `totalCompletedRuns`: one completed protected night adds one equal visible sheep.
-   Overnight time, duration, warnings, method, Watch ownership, and streaks never change its
-   value. Progress is attributed to the intended-bedtime date, then `PersistenceService`
-   saves and the Watch gets the completion or early-end message. See `docs/REWARDS.md`.
+   wind-down and morning-quiet minutes. The coordinator resolves one deterministic search outcome
+   per run, persists it, and reconciles one individual `FlockSheep` arrival into `FarmState`.
+   Available arrivals enter the active flock; capacity overflow remains pending. The completed
+   protected-night count also advances wool regrowth. Progress is attributed to the intended-
+   bedtime date, then `PersistenceService` saves and the Watch gets the terminal message. See
+   `docs/REWARDS.md` and ADR-0015.
 8. `HomeView` routes to `CompletionView` / `EarlyEndView` based on `activeRun.state`.
    Both outcomes show the same factual receipt: elapsed phone-away time, credited quiet
    bookends, optional Apple Health sleep context, and an explicit Screen Time availability
    state. The separate Nights tab stays finite and observational: seven-day results, monthly
    drill-down, reflection, Health context, and consented selected-app results. Farm owns the
-   flock presentation; Settings owns plan and report configuration. Chosen report windows do not
+   active flock, lifecycle, catalogue, Shop, and customization presentation; Settings owns plan
+   and report configuration. Chosen report windows do not
    alter Quiet Time. Missing data is never estimated.
 9. During an active Night Watch, Home is replaced by the live journey while Nights, Farm,
    and Settings remain mounted in the same four-tab shell. A persistent return strip resets
    nested navigation and returns to Home. Run start, app activation, and active-run notification
-   routing make Home the default. Terminal receipts temporarily replace the shell.
+   routing make Home the default. ActiveRunPresentation supplies role-aware copy,
+   accessibility, guidance, exit, and shielding-status affordances; additional quiet uses
+   its actual plan end date and never borrows primary Wind Down phase language. Terminal
+   receipts temporarily replace the shell.
 10. `NightJourneyProgress` resolves overall, phase, and segment progress from the active
     `FocusRun`; `NightJourneyTerrainProfile` supplies a periodic height and derivative used by
     both the Canvas foreground and Ollie's foot alignment. Backdrops pan/zoom only within safe
@@ -235,10 +259,11 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    at 75 and retains bounded credited run IDs for idempotency. A non-guaranteed protected-night
    search applies only whole percentage points that fit below the 92% cap; appending the
    persisted outcome consumes exactly 15 mapped minutes per applied point.
-   The one-time quiet editor can also create a bounded 15, 30, 45, or 60 minute occurrence
-   from the current clock time and immediately reuse the standard start confirmation. If that
-   confirmation cannot be prepared, the newly created occurrence is rolled back; starting or
-   completing it never changes protected-night or sheep-search progress.
+   Home and Upcoming quiet times offer a separate ad-hoc Start now action. It creates a
+   temporary bounded occurrence for the single start transaction; Not now rolls it back, while
+   starting consumes it. Scheduled rows keep their exact occurrence identity through
+   confirmation, and the future-period editor does not participate in this path. Starting or
+   completing ad-hoc quiet never changes protected-night or sheep-search progress.
 12. After first-run setup, the `HomeView` shell presents a finite two-step app tour persisted
     as `ollie.orientation.state`. A dimmed modal layer spotlights the real Tonight plan and
     bottom navigation without becoming part of Home's scroll. Finishing or dismissing the
@@ -340,6 +365,7 @@ by the iPhone.
 | `ollie.notifications.preferences` | `NotificationPreferences` | cadence, authorization choices, sounds, optional channels, and versioned local message overrides |
 | `ollie.notifications.remindersEnabled` | `Bool` | backwards-compatible mirror of the notification master switch |
 | `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes including applied map bonus, trail-map minutes/run IDs, trail distance, no-find protection, odds preference |
+| `ollie.farm.state` | `FarmState` | versioned individual flock, pending arrivals, discovery history, capacity, wool, Shop ownership/equipment, avatar, and transaction history; schema v2 folds legacy Farm cash into wool at 5:1, rounded up |
 | `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
 | `ollie.phoneBedNFCTag.registration` | `PhoneBedTagRegistration` | local tag UUID + digest metadata; raw token is not retained |
 | `ollie.impactSharing.preferences` | `ImpactSharingPreferences` | explicit optional-sharing state and consent date |
@@ -406,9 +432,10 @@ cloud boundaries.
    Wind Down opens Counting Sheep on iOS 26.5+ and keeps the close fallback on older systems.
    Authorization, picker persistence, report rendering, empty states, and distribution
    profiles must still be exercised on a physical iPhone.
-4. **Legacy mock layer remains compiled in Debug.** Friends/Shop and the old Farm/reward shelf
+4. **Legacy mock layer remains compiled in Debug.** Friends and the old Farm/Shop/reward shelf
    still render `MVPMockData`; they appear only inside More with
-   `-ollie.debug.enableMockScreens YES`. The shipping Farm is a separate real-data surface.
+   `-ollie.debug.enableMockScreens YES`. The production Farm and Farm Shop are separate real-data
+   surfaces backed by `FarmState`.
 5. **Oversized files.** `AssetReadyScreens.swift` and `PixelComponents.swift` resist safe
    editing by agents with limited context.
 6. **Singleton coupling.** Services are reached via `.shared` from the coordinator, which
@@ -441,8 +468,8 @@ cloud boundaries.
 
 ## 9. Clean up before App Store 1.0
 
-1. Keep Friends/Shop, the legacy Farm/shelf, and `MVPMockData` behind the explicit Debug flag;
-   keep the shipping Farm backed only by persisted `SheepSearchState`.
+1. Keep Friends, the legacy Farm/Shop/shelf, and `MVPMockData` behind the explicit Debug flag;
+   keep the production Farm backed only by persisted `SheepSearchState` and `FarmState`.
 2. Register/approve/sign the three new shield extension IDs.
 3. Increment the build number and produce a distribution archive.
 4. `HealthSleepService` uses requested/no-data/error states because HealthKit does not

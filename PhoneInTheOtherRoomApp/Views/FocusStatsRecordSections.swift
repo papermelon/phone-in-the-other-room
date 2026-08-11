@@ -4,183 +4,171 @@ struct NightsRecordSection: View {
     @ObservedObject var viewModel: FocusRunViewModel
     let focusedRecordID: UUID?
 
-    private var completedRecords: [NightWatchRecord] {
+    private var records: [NightWatchRecord] {
         viewModel.nightWatchRecords
-            .filter { $0.outcome != .active }
-            .sorted { resultDate($0) > resultDate($1) }
     }
 
-    private var latestRecord: NightWatchRecord? { completedRecords.first }
-
-    private var latestProtectedRecord: NightWatchRecord? {
-        completedRecords.first {
-            $0.outcome == .completed && $0.occurrenceRole.isProgressionEligible
-        }
+    private var latestPrimaryRecord: NightWatchRecord? {
+        NightsHistoryAggregator.latestPrimaryRecord(from: records)
     }
 
-    private var orientationRecord: NightWatchRecord? {
+    private var latestAdditionalRecord: NightWatchRecord? {
+        NightsHistoryAggregator.latestAdditionalRecord(from: records)
+    }
+
+    private var focusedRecord: NightWatchRecord? {
         guard let focusedRecordID else { return nil }
-        return completedRecords.first { $0.id == focusedRecordID }
+        return records.first { $0.id == focusedRecordID && $0.outcome != .active }
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
-            latestResultCard
-
-            if let latestProtectedRecord,
-               latestProtectedRecord.id != latestRecord?.id {
-                NightsResultCard(record: latestProtectedRecord, isLatest: false)
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            if let latestPrimaryRecord {
+                NightsPrimaryResultCard(
+                    record: latestPrimaryRecord,
+                    eyebrow: latestPrimaryRecord.id == focusedRecordID
+                        ? "ORIENTATION RECORD"
+                        : "LATEST NIGHT"
+                )
+                .id(latestPrimaryRecord.id == focusedRecordID ? Self.anchor(for: latestPrimaryRecord.id) : nil)
+            } else {
+                emptyPrimaryCard
             }
 
-            if let orientationRecord,
-               orientationRecord.id != latestRecord?.id {
-                orientationRecordCard(orientationRecord)
+            if let latestAdditionalRecord, shouldShowAdditional(latestAdditionalRecord) {
+                NightsAdditionalResultRow(
+                    record: latestAdditionalRecord,
+                    isOrientationRecord: latestAdditionalRecord.id == focusedRecordID
+                )
+                .id(latestAdditionalRecord.id == focusedRecordID ? Self.anchor(for: latestAdditionalRecord.id) : nil)
             }
 
-            MorningCheckInCard(record: latestProtectedRecord)
-                .environmentObject(viewModel)
-        }
-    }
-
-    @ViewBuilder
-    private var latestResultCard: some View {
-        if let latestRecord {
-            NightsResultCard(
-                record: latestRecord,
-                isOrientationRecord: latestRecord.id == focusedRecordID
-            )
-        } else {
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Label("LATEST RESULT", systemImage: "moon.stars.fill")
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(AppColors.grass)
-                    Text("Your first Wind Down will appear here.")
-                        .font(AppTypography.headline)
-                    Text("Counting Sheep records quiet time before bed and after waking. A one-time quiet period appears here separately from protected nights.")
-                        .font(AppTypography.body)
-                        .foregroundStyle(AppColors.muted)
+            if let focusedRecord, !isAlreadyPresented(focusedRecord) {
+                if focusedRecord.occurrenceRole.isProgressionEligible {
+                    NightsPrimaryResultCard(record: focusedRecord, eyebrow: "ORIENTATION RECORD")
+                        .id(Self.anchor(for: focusedRecord.id))
+                } else {
+                    NightsAdditionalResultRow(record: focusedRecord, isOrientationRecord: true)
+                        .id(Self.anchor(for: focusedRecord.id))
                 }
             }
         }
     }
 
-    private func orientationRecordCard(_ record: NightWatchRecord) -> some View {
-        NightsResultCard(record: record, isOrientationRecord: true)
-            .id(Self.anchor(for: record.id))
+    static func anchor(for recordID: UUID) -> String {
+        "nights-record-\(recordID.uuidString)"
     }
 
-    static func anchor(for recordID: UUID) -> String { "nights-record-\(recordID.uuidString)" }
+    private var emptyPrimaryCard: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Label("LATEST NIGHT", systemImage: "moon.stars.fill")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Text("Your first protected night will settle here.")
+                    .font(AppTypography.headline)
+                Text("Quiet before bed and after waking will appear together after Wind Down.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+            }
+        }
+    }
+
+    private func shouldShowAdditional(_ additional: NightWatchRecord) -> Bool {
+        guard let latestPrimaryRecord else { return true }
+        return resultDate(additional) > resultDate(latestPrimaryRecord)
+    }
+
+    private func isAlreadyPresented(_ record: NightWatchRecord) -> Bool {
+        record.id == latestPrimaryRecord?.id
+            || (record.id == latestAdditionalRecord?.id && shouldShowAdditional(record))
+    }
 
     private func resultDate(_ record: NightWatchRecord) -> Date {
         record.endedAt ?? record.updatedAt
     }
 }
 
-struct NightsResultCard: View {
+struct NightsPrimaryResultCard: View {
     let record: NightWatchRecord
-    var isOrientationRecord = false
-    var isLatest = true
+    var eyebrow = "LATEST NIGHT"
 
-    private var isPrimary: Bool { record.occurrenceRole.isProgressionEligible }
     private var quietMinutes: Int {
         record.creditedWindDownMinutes + record.creditedMorningQuietMinutes
     }
+
     private var statusColor: Color {
-        switch record.outcome {
-        case .endedEarly: return AppColors.warning
-        case .completed: return isPrimary ? AppColors.grass : AppColors.lavender
-        case .active: return AppColors.muted
-        }
+        record.outcome == .completed ? AppColors.grass : AppColors.warning
+    }
+
+    private var statusTitle: String {
+        record.outcome == .completed ? "Protected night" : "Ended early"
     }
 
     var body: some View {
         PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                HStack(alignment: .top) {
-                    Label(eyebrow, systemImage: isPrimary ? "moon.stars.fill" : "sparkles")
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(alignment: .firstTextBaseline) {
+                    Label(eyebrow, systemImage: "moon.stars.fill")
                         .font(pixelFont(.caption))
                         .foregroundStyle(statusColor)
-                    Spacer()
-                    Text(resultDate.formatted(.dateTime.month(.abbreviated).day()))
+                    Spacer(minLength: AppSpacing.sm)
+                    Text(record.plan.wakeTime.formatted(.dateTime.month(.abbreviated).day()))
                         .font(AppTypography.monoCaption)
                         .foregroundStyle(AppColors.muted)
                 }
 
                 Text(statusTitle)
-                    .font(isPrimary ? AppTypography.display(28) : AppTypography.headline)
+                    .font(AppTypography.display(27))
                     .foregroundStyle(statusColor)
                 Text("\(quietMinutes) min quiet")
-                    .font(isPrimary ? AppTypography.headline : AppTypography.body)
+                    .font(AppTypography.headline)
 
-                if isPrimary {
-                    primaryBreakdown
-                } else {
-                    Text(additionalDescription)
-                        .font(AppTypography.body)
-                        .foregroundStyle(AppColors.muted)
-                }
+                NightsBookendBreakdown(
+                    windDownMinutes: record.creditedWindDownMinutes,
+                    morningMinutes: record.creditedMorningQuietMinutes
+                )
 
-                Text(finishedLabel)
+                Text("Night ending \(record.plan.wakeTime.formatted(.dateTime.weekday(.wide).month(.wide).day()))")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
-
-                if record.outcome == .endedEarly {
-                    Text("No protected night was added. Your record stays here, and nothing already found was lost.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
             }
         }
-        .id(isOrientationRecord ? NightsRecordSection.anchor(for: record.id) : nil)
-        .accessibilityElement(children: .contain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(statusTitle), night ending \(record.plan.wakeTime.formatted(.dateTime.weekday(.wide).month(.wide).day()))")
+        .accessibilityValue("\(record.creditedWindDownMinutes) minutes before bed, \(record.creditedMorningQuietMinutes) minutes after waking")
     }
+}
 
-    private var statusTitle: String {
-        switch record.outcome {
-        case .endedEarly: return "Ended early"
-        case .completed: return isPrimary ? "Protected night" : "One-time quiet period"
-        case .active: return "In progress"
+private struct NightsBookendBreakdown: View {
+    let windDownMinutes: Int
+    let morningMinutes: Int
+
+    var body: some View {
+        HStack(spacing: 0) {
+            bookend(
+                title: "Before bed",
+                minutes: windDownMinutes,
+                systemImage: "moon.zzz.fill"
+            )
+            Divider()
+                .padding(.vertical, AppSpacing.xs)
+            bookend(
+                title: "After waking",
+                minutes: morningMinutes,
+                systemImage: "sun.horizon.fill"
+            )
         }
+        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.sm))
     }
 
-    private var eyebrow: String {
-        if isOrientationRecord { return "ORIENTATION RECORD" }
-        return isLatest ? "LATEST RESULT" : "LATEST PROTECTED NIGHT"
-    }
-
-    private var additionalDescription: String {
-        if isOrientationRecord {
-            return "Five minutes of practice quiet, recorded factually. It is real quiet time, but separate from protected-night progress and Ollie’s sheep search."
-        }
-        return "A bounded one-time quiet period outside the usual Wind Down. It is real quiet time, but does not become a protected night."
-    }
-
-    private var finishedLabel: String {
-        let date = record.endedAt ?? record.updatedAt
-        return "Finished \(date.formatted(.dateTime.weekday(.wide).month(.wide).day().hour().minute()))"
-    }
-
-    private var resultDate: Date { record.endedAt ?? record.updatedAt }
-
-    private var primaryBreakdown: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("The two edges of this night")
-                .font(AppTypography.caption.weight(.semibold))
-                .foregroundStyle(AppColors.muted)
-            HStack(spacing: AppSpacing.sm) {
-                quietPart("Before bed", minutes: record.creditedWindDownMinutes, icon: "moon.zzz.fill")
-                quietPart("After waking", minutes: record.creditedMorningQuietMinutes, icon: "sun.max.fill")
-            }
-        }
-    }
-
-    private func quietPart(_ label: String, minutes: Int, icon: String) -> some View {
+    private func bookend(title: String, minutes: Int, systemImage: String) -> some View {
         HStack(spacing: AppSpacing.xs) {
-            Image(systemName: icon)
+            Image(systemName: systemImage)
                 .foregroundStyle(AppColors.grass)
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(label)
+                Text(title)
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                 Text("\(minutes) min")
@@ -189,229 +177,97 @@ struct NightsResultCard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(AppSpacing.sm)
-        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.sm))
     }
 }
 
-struct NightsSevenDaySection: View {
-    @ObservedObject var viewModel: FocusRunViewModel
+struct NightsAdditionalResultRow: View {
+    let record: NightWatchRecord
+    var isOrientationRecord = false
 
-    private var summaries: [NightsSevenDaySummary] {
-        let calendar = Calendar.current
-        let records = viewModel.nightWatchRecords.filter { $0.outcome != .active }
-        let grouped = Dictionary(grouping: records) {
-            calendar.startOfDay(for: $0.plan.intendedBedtime)
-        }
-        let today = calendar.startOfDay(for: Date())
-        return (0..<7).reversed().compactMap { offset in
-            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
-            return NightsSevenDaySummary(day: day, records: grouped[day] ?? [])
-        }
+    private var quietMinutes: Int {
+        record.creditedWindDownMinutes + record.creditedMorningQuietMinutes
     }
-
-    var body: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Label("LAST 7 NIGHTS", systemImage: "calendar")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-
-                HStack(spacing: AppSpacing.sm) {
-                    metric("\(summaries.reduce(0) { $0 + $1.protectedNightCount })", label: "protected nights")
-                    metric("\(summaries.reduce(0) { $0 + $1.protectedQuietMinutes })m", label: "protected quiet")
-                    metric("\(summaries.reduce(0) { $0 + $1.additionalQuietCount })", label: "one-time periods")
-                }
-
-                VStack(spacing: AppSpacing.xs) {
-                    ForEach(summaries) { summary in
-                        summaryRow(summary)
-                    }
-                }
-
-                Text("Quiet minutes here come from protected nights. One-time quiet periods are shown separately and do not become protected nights.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-            }
-        }
-    }
-
-    private func metric(_ value: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            Text(value)
-                .font(AppTypography.display(25))
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(label)
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func summaryRow(_ summary: NightsSevenDaySummary) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Circle()
-                .fill(summary.statusColor)
-                .frame(width: 10, height: 10)
-            Text(summary.day.formatted(.dateTime.weekday(.wide).month().day()))
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-            Spacer(minLength: AppSpacing.xs)
-            Text(summary.statusLabel)
-                .font(AppTypography.caption)
-                .foregroundStyle(summary.records.isEmpty ? AppColors.muted : AppColors.ink)
-                .multilineTextAlignment(.trailing)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(summary.day.formatted(.dateTime.weekday(.wide).month().day()))
-        .accessibilityValue(summary.statusLabel)
-    }
-}
-
-private struct NightsSevenDaySummary: Identifiable {
-    let day: Date
-    let records: [NightWatchRecord]
-
-    var id: Date { day }
-    var primaryRecords: [NightWatchRecord] { records.filter { $0.occurrenceRole.isProgressionEligible } }
-    var protectedNightCount: Int { primaryRecords.filter { $0.outcome == .completed }.count }
-    var protectedQuietMinutes: Int {
-        primaryRecords.filter { $0.outcome == .completed }.reduce(0) {
-            $0 + $1.creditedWindDownMinutes + $1.creditedMorningQuietMinutes
-        }
-    }
-    var additionalQuietCount: Int { records.filter { $0.occurrenceRole == .additionalQuiet }.count }
-
-    var statusColor: Color {
-        if protectedNightCount > 0 { return AppColors.grass }
-        if records.contains(where: { $0.outcome == .endedEarly }) { return AppColors.warning }
-        if additionalQuietCount > 0 { return AppColors.lavender }
-        return AppColors.surfaceMuted
-    }
-
-    var statusLabel: String {
-        guard !records.isEmpty else { return "No record" }
-        var labels: [String] = []
-        if protectedNightCount > 0 {
-            labels.append("Protected night · \(protectedQuietMinutes)m")
-        }
-        if records.contains(where: { $0.outcome == .endedEarly }) {
-            labels.append("Ended early")
-        }
-        if additionalQuietCount > 0 {
-            let minutes = records.filter { $0.occurrenceRole == .additionalQuiet }
-                .reduce(0) { $0 + $1.creditedWindDownMinutes + $1.creditedMorningQuietMinutes }
-            labels.append("One-time quiet · \(minutes)m")
-        }
-        return labels.joined(separator: " · ")
-    }
-}
-
-struct NightsMonthLink: View {
-    @ObservedObject var viewModel: FocusRunViewModel
 
     var body: some View {
         NavigationLink {
-            MonthlyNightsView()
-                .environmentObject(viewModel)
+            WindDownRecordDetailView(record: record)
         } label: {
             HStack(spacing: AppSpacing.sm) {
-                Image(systemName: "calendar")
-                    .foregroundStyle(AppColors.grass)
+                Image(systemName: "sparkles")
+                    .font(AppTypography.title)
+                    .foregroundStyle(AppColors.lavender)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("See the month")
+                    Text(isOrientationRecord ? "Orientation quiet" : "Recent one-time quiet")
                         .font(AppTypography.headline)
-                    Text("Open a day-by-day record when you want more detail.")
+                    Text("\(quietMinutes) min · \(record.startedAt.formatted(.dateTime.weekday(.wide).month().day()))")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }
-                Spacer()
+                Spacer(minLength: AppSpacing.xs)
                 Image(systemName: "chevron.right")
                     .foregroundStyle(AppColors.muted)
+                    .accessibilityHidden(true)
             }
             .padding(AppSpacing.md)
-            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .frame(minHeight: AppSpacing.xxl + AppSpacing.xl)
+            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md))
             .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .stroke(AppColors.stroke.opacity(0.14), lineWidth: 1)
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .stroke(AppColors.lavender.opacity(0.5), lineWidth: 1)
             )
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Opens the optional month view")
+        .accessibilityLabel(isOrientationRecord ? "Orientation quiet" : "Recent one-time quiet")
+        .accessibilityValue("\(quietMinutes) minutes on \(record.startedAt.formatted(.dateTime.weekday(.wide).month().day()))")
+        .accessibilityHint("Opens the quiet-time record")
     }
 }
 
-#Preview("Nights record · protected · light") {
-    NightsResultCard(record: NightsPreviewData.protectedRecord)
-        .padding()
-        .background(AppColors.paper)
-        .preferredColorScheme(.light)
-}
-
-#Preview("Nights record · one-time quiet · dark") {
-    NightsResultCard(
-        record: NightsPreviewData.additionalRecord,
-        isOrientationRecord: true
-    )
-    .padding()
-    .background(AppColors.paper)
-    .preferredColorScheme(.dark)
-}
-
-#Preview("Nights record · ended early") {
-    NightsResultCard(record: NightsPreviewData.earlyRecord)
+#Preview("Latest night · protected") {
+    NightsPrimaryResultCard(record: NightsRecordPreviewData.protected)
         .padding()
         .background(AppColors.paper)
 }
 
-private enum NightsPreviewData {
+#Preview("Latest night · ended early · dark") {
+    NightsPrimaryResultCard(record: NightsRecordPreviewData.endedEarly)
+        .padding()
+        .background(AppColors.paper)
+        .preferredColorScheme(.dark)
+}
+
+private enum NightsRecordPreviewData {
     static let bedtime = Date(timeIntervalSinceNow: -9 * 60 * 60)
     static let wake = Date(timeIntervalSinceNow: -2 * 60 * 60)
-
-    static let primaryPlan = NightWatchPlan(
+    static let plan = NightWatchPlan(
         intendedBedtime: bedtime,
         wakeTime: wake,
-        protectedUntil: Date(timeIntervalSinceNow: -60 * 60),
-        windDownMinutes: 30,
-        morningQuietMinutes: 30,
+        protectedUntil: wake.addingTimeInterval(45 * 60),
+        windDownMinutes: 60,
+        morningQuietMinutes: 45,
         eveningActivity: .read,
         morningActivity: .openCurtains
     )
-
-    static let protectedRecord = NightWatchRecord(
+    static let protected = NightWatchRecord(
         id: UUID(),
-        plan: primaryPlan,
-        startedAt: Date(timeIntervalSinceNow: -9 * 60 * 60),
-        endedAt: Date(timeIntervalSinceNow: -60 * 60),
+        plan: plan,
+        startedAt: bedtime.addingTimeInterval(-60 * 60),
+        endedAt: plan.protectedUntil,
         startMethod: .honorTimer,
         outcome: .completed,
-        creditedWindDownMinutes: 30,
-        creditedMorningQuietMinutes: 30,
-        role: .primarySleepBookend
+        creditedWindDownMinutes: 60,
+        creditedMorningQuietMinutes: 45,
+        updatedAt: plan.protectedUntil
     )
-
-    static let additionalRecord = NightWatchRecord(
+    static let endedEarly = NightWatchRecord(
         id: UUID(),
-        plan: .additionalQuiet(
-            start: Date(timeIntervalSinceNow: -20 * 60),
-            end: Date(timeIntervalSinceNow: -15 * 60)
-        ),
-        startedAt: Date(timeIntervalSinceNow: -20 * 60),
-        endedAt: Date(timeIntervalSinceNow: -15 * 60),
-        startMethod: .honorTimer,
-        outcome: .completed,
-        creditedWindDownMinutes: 5,
-        role: .additionalQuiet
-    )
-
-    static let earlyRecord = NightWatchRecord(
-        id: UUID(),
-        plan: primaryPlan,
-        startedAt: Date(timeIntervalSinceNow: -9 * 60 * 60),
-        endedAt: Date(timeIntervalSinceNow: -8 * 60 * 60),
+        plan: plan,
+        startedAt: bedtime.addingTimeInterval(-30 * 60),
+        endedAt: bedtime.addingTimeInterval(-10 * 60),
         startMethod: .honorTimer,
         outcome: .endedEarly,
-        creditedWindDownMinutes: 10,
-        role: .primarySleepBookend
+        creditedWindDownMinutes: 20,
+        updatedAt: bedtime.addingTimeInterval(-10 * 60)
     )
 }

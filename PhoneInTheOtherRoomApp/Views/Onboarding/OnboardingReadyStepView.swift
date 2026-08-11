@@ -23,7 +23,7 @@ struct OnboardingReadyStep: View {
                     summaryRow("Quiet after waking", value: QuietTimeDurationOptions.label(for: draft.morningQuietMinutes))
                     summaryRow("Evening cue", value: draft.eveningCueText ?? "None")
                     summaryRow("Morning cue", value: draft.morningCueText ?? "None")
-                    summaryRow("Apps to rest", value: shieldingSummary)
+                    summaryRow("Selected apps", value: shieldingSummary)
                 }
             }
 
@@ -42,7 +42,7 @@ struct OnboardingReadyStep: View {
     }
 
     private var shieldingSummary: String {
-        draft.shieldingEnabled ? "On for apps to rest" : "Off for now"
+        draft.shieldingEnabled ? "App limits on" : "Off for now"
     }
 
     private func summaryRow(_ title: String, value: String) -> some View {

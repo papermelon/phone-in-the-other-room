@@ -10,10 +10,12 @@ struct EarlyEndView: View {
                     HStack(alignment: .top, spacing: 14) {
                         OllieRitualView(state: .endedEarly)
                         VStack(alignment: .leading, spacing: 7) {
-                            Text("WIND DOWN ENDED")
+                            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet ? "QUIET TIME ENDED" : AppCopy.EarlyEnd.eyebrow.value)
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.secondaryText)
-                            Text("Welcome back. Ollie kept your spot warm.")
+                            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
+                                ? "Quiet time ended early. Your receipt is ready."
+                                : AppCopy.EarlyEnd.title.value)
                                 .font(pixelFont(.title3))
                             Text(minutesAwayText + " Tonight can simply be a fresh start.")
                                 .font(pixelFont(.body))
@@ -27,7 +29,7 @@ struct EarlyEndView: View {
                     sleepAuthorization: viewModel.sleepAuthorization,
                     screenTimeAuthorization: viewModel.screenTimeAuthorization
                 )
-                Button("Done for now") { viewModel.resetSetup() }
+                Button(AppCopy.EarlyEnd.doneButton.value) { viewModel.resetSetup() }
                     .frame(maxWidth: .infinity)
                     .buttonStyle(PixelPrimaryButtonStyle())
             }

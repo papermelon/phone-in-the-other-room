@@ -25,6 +25,7 @@ enum CountingSheepOwnedStorage {
         "ollie.impactSharing.preferences",
         "ollie.impactSharing.records",
         "ollie.sheepSearch.state",
+        "ollie.farm.state",
         "ollie.orientation.state",
         "ollie.onboarding.version",
         "ollie.onboarding.draft",

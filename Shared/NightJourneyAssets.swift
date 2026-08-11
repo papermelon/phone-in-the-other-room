@@ -17,6 +17,6 @@ enum NightJourneyAssets {
         "farm/farm_journey_clue_bell"
     ]
     static let ollieRunFrames: [String] = (1...6).map { frame in
-        "dog/dog_run_frame_0\(frame)"
+        "dog/dog_classic_run_frame_0\(frame)"
     }
 }

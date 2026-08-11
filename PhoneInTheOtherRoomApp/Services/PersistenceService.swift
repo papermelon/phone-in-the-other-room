@@ -4,7 +4,7 @@ import OSLog
 final class PersistenceService {
     static let shared = PersistenceService()
 
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
     private let progressKey = "ollie.progress"
     private let rewardsKey = "ollie.rewards"
     private let thresholdKey = "ollie.thresholds"
@@ -26,6 +26,7 @@ final class PersistenceService {
     private let impactSharingPreferencesKey = "ollie.impactSharing.preferences"
     private let impactUploadRecordsKey = "ollie.impactSharing.records"
     private let sheepSearchStateKey = "ollie.sheepSearch.state"
+    private let farmStateKey = "ollie.farm.state"
     private let orientationStateKey = "ollie.orientation.state"
 #if DEBUG
     private let energyLogger = Logger(
@@ -35,6 +36,10 @@ final class PersistenceService {
     private var debugSaveCounts: [String: Int] = [:]
     private var debugLastSaveAt: [String: Date] = [:]
 #endif
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
 
     var progress: UserProgress {
         get { load(UserProgress.self, key: progressKey) ?? .empty }
@@ -229,7 +234,8 @@ final class PersistenceService {
             morningCheckInsKey,
             nightWatchHistoryKey,
             impactUploadRecordsKey,
-            sheepSearchStateKey
+            sheepSearchStateKey,
+            farmStateKey
         ].forEach { defaults.removeObject(forKey: $0) }
     }
 
@@ -270,7 +276,7 @@ final class PersistenceService {
             if let stored = load(SheepSearchState.self, key: sheepSearchStateKey) {
                 return stored
             }
-            // Existing installs keep their protected-night count. Give the field book a
+            // Existing installs keep their protected-night count. Give the Trail Board a
             // deterministic starting flock without inventing historical run outcomes.
             let legacyProgress = progress
             guard legacyProgress.totalCompletedRuns > 0 else { return .empty }
@@ -283,6 +289,21 @@ final class PersistenceService {
             return migrated
         }
         set { save(newValue, key: sheepSearchStateKey) }
+    }
+
+    var farmState: FarmState {
+        get {
+            let stored = load(FarmState.self, key: farmStateKey)
+            let reconciled = FarmMigration.migrated(
+                existing: stored,
+                searchState: sheepSearchState
+            )
+            if stored != reconciled {
+                save(reconciled, key: farmStateKey)
+            }
+            return reconciled
+        }
+        set { save(newValue, key: farmStateKey) }
     }
 
     func deleteImpactUploadRecords() {

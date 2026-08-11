@@ -18,12 +18,19 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
     private var debugLastSendAt: Date?
 #endif
 
-    override private init() {
+    private init(activatesSession: Bool = true) {
         super.init()
+        guard activatesSession else { return }
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
     }
+
+#if DEBUG
+    static func inactiveForDeterministicCapture() -> WatchConnectivityManager {
+        WatchConnectivityManager(activatesSession: false)
+    }
+#endif
 
     func send(_ message: WatchMessage) {
         guard WCSession.isSupported() else { return }

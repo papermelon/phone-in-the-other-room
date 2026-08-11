@@ -1,0 +1,13 @@
+{
+  "images" : [
+    {
+      "filename" : "shop_ollie_classic_moss_bandana.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

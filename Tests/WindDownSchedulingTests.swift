@@ -151,6 +151,57 @@ final class WindDownSchedulingTests: XCTestCase {
         XCTAssertEqual(eligible.sourceID, period.id)
     }
 
+    func testExactEligibleOccurrenceUsesTheRequestedScheduledPeriod() throws {
+        let now = try date(2026, 8, 3, 20, 15)
+        let usual = WindDownRoutine(
+            title: "Usual Wind Down",
+            role: .primarySleepBookend,
+            start: WindDownClockTime(hour: 20, minute: 0),
+            end: WindDownClockTime(hour: 22, minute: 0)
+        )
+        let oneTime = WindDownOneTimePeriod(
+            id: UUID(),
+            title: "A saved one-time quiet",
+            role: .primarySleepBookend,
+            interval: DateInterval(
+                start: now.addingTimeInterval(-60),
+                end: now.addingTimeInterval(45 * 60)
+            )
+        )
+        let state = WindDownScheduleState(oneTimePeriods: [oneTime], routines: [usual])
+
+        let selected = try XCTUnwrap(
+            WindDownScheduleEngine.eligibleOccurrence(
+                in: state,
+                at: now,
+                sourceID: oneTime.id,
+                calendar: calendar
+            )
+        )
+
+        XCTAssertEqual(selected.sourceID, oneTime.id)
+        XCTAssertEqual(selected.title, oneTime.title)
+        XCTAssertEqual(selected.occurrence.interval, oneTime.interval)
+    }
+
+    func testCancellingAdHocStartTransactionRollsBackOnlyItsTemporaryPeriod() throws {
+        let now = try date(2026, 8, 3, 20, 15)
+        let existing = WindDownOneTimePeriod(
+            title: "Keep this scheduled quiet",
+            interval: DateInterval(start: now.addingTimeInterval(60 * 60), end: now.addingTimeInterval(90 * 60))
+        )
+        let temporary = WindDownOneTimePeriod(
+            title: "Temporary quiet",
+            interval: DateInterval(start: now, end: now.addingTimeInterval(30 * 60))
+        )
+        var schedule = WindDownScheduleState(oneTimePeriods: [existing, temporary])
+        let transaction = WindDownStartTransaction(createdOneTimePeriodID: temporary.id)
+
+        XCTAssertTrue(transaction.cancel(in: &schedule))
+        XCTAssertEqual(schedule.oneTimePeriods.map(\.id), [existing.id])
+        XCTAssertFalse(transaction.cancel(in: &schedule))
+    }
+
     func testRecurringPrimaryPlanUsesSavedBedtimeRatherThanRoutineWakeEnd() throws {
         let preferences = NightWatchPreferences(
             bedtimeHour: 23,

@@ -1,6 +1,6 @@
 # ADR-0007: Launch Navigation, Flock Progress, and Feedback Delivery
 
-- Status: Accepted
+- Status: Accepted; Farm and economy sections superseded by ADR-0015
 - Date: 2026-08-01
 - Deciders: Founder
 - Related: ADR-0003, ADR-0005, ADR-0006, `docs/PROJECT_BRIEF.md`
@@ -14,9 +14,8 @@ candidate needs one information architecture across Debug, TestFlight, and App S
 builds, without deleting compatibility data or useful internal mock screens. Settings is a
 root destination because configuration is part of the tested product, not a hidden utility.
 
-The former keepsake, sheep-currency, coin, and Ollie-level concepts were not connected to a
-real ritual. The updated direction makes Ollie's search, wanted posters, and cosmetic rarity
-part of the bedtime habit loop while keeping the result local, transparent, and non-functional.
+The former keepsake and Ollie-level concepts were not connected to a real ritual. ADR-0015 now
+connects the search result to a local, transparent Farm lifecycle and economy.
 Testers still need a direct, privacy-bounded way to report problems, but backend readiness must
 not block submission.
 
@@ -30,26 +29,26 @@ All ordinary builds use exactly four root destinations:
    Set/Start Wind Down action, a clickable schedule editor, and a compact one-time Wind Down card.
 2. **Nights** — a finite, observational record: latest result, flock total, seven-night
    history, morning reflection, Apple Health context, and Screen Time results.
-3. **Farm** — the real-data flock presentation, one equal sheep per protected primary night.
+3. **Farm** — the real-data pasture, The Barn, Trail Board, Farm Shop, and Trail Notes.
 4. **Settings** — the Wind Down plan, App Shielding choice, connections, privacy, help, and app information.
 
-The old More utility sheet and top-bar ellipsis are removed. Friends, Shop, and the
-legacy Farm/shelf mock screens are reachable only from Settings when launched with
-`-ollie.debug.enableMockScreens YES`; they are not shown as locked or coming soon.
+The old More utility sheet and top-bar ellipsis are removed. Friends and the legacy Farm/Shop/
+shelf mock screens are reachable only from Settings when launched with
+`-ollie.debug.enableMockScreens YES`; they are not shown as locked or coming soon. The production
+Farm Shop is a distinct real-data destination nested under Farm.
 
 ### Ollie's search
 
-The release presentation uses `UserProgress.totalCompletedRuns` as the flock count: each
-completed primary protected night settles one equal sheep. Farm also reads the compatible
-sheep-search field book to render the finite Missing Posters board; poster identity, rarity, and
-trail context are cosmetic/story context only and never alter the equal sheep value.
+Every persisted successful search outcome creates an individual Farm arrival. Farm separates
+owned `FlockSheep` inventory from permanent catalogue discovery and Trail Note history. Rarity
+affects wool yield, regrowth, and trade value as specified by ADR-0015.
 
 `UserProgress.totalCompletedRuns` remains the protected-night count. Search outcomes and found
 sheep identities live in `SheepSearchState`; early-ended sessions do not advance the search.
 
-`RewardItem`, balances, coins, rarity, and Ollie-level fields remain persisted and continue
-decoding for compatibility. The August release UI does not read them. The old shelf remains
-an explicit internal preview until a later migration decision.
+Legacy `RewardItem`, balance, coin, and Ollie-level fields remain decodable for compatibility,
+but the new wool balance is a clean field in `FarmState`. The old shelf remains an
+explicit internal preview.
 
 ### Feedback delivery
 
@@ -71,12 +70,11 @@ physical-device checks pass. With it off, the validated form opens the same draf
 screenshots in Mail. If Mail is unavailable, the app displays and copies
 `countingsheep.sg@gmail.com`.
 
-## Post-launch gate
+## Superseding Farm decision
 
-After at least two stable weeks and the retention and qualitative gates in ADR-0003, the
-shipping Farm can be expanded internally from the same flock count and poster board. It must
-not revive currency, sheep power, or mock missions. Shop can only be nested in Farm. Friends
-remains last-or-never and requires its own ADR, backend, moderation, and belonging-test approval.
+ADR-0015 authorizes the production Farm lifecycle, wool economy, nested Shop, and local
+customization. It does not authorize mock missions or social features. Friends remains gated and
+requires its own ADR, backend, moderation, and belonging-test approval.
 
 ## Consequences
 

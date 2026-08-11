@@ -13,6 +13,8 @@ The full-screen run route also prevented access to notification and plan prefere
 
 Additional quiet periods need a warm connection to the lost-sheep story without becoming a
 second sheep-search loophole or implying that any environmental clue guarantees a reward.
+The app shield also needs a companion visual that feels native to the active journey without
+being mistaken for progression.
 
 ## Decision
 
@@ -30,6 +32,10 @@ up to five, on a future non-guaranteed primary search. Only points that fit unde
 duplicates, and additional-quiet completion itself consume or resolve nothing. Outcomes persist
 the applied map bonus and legacy data defaults it to zero.
 
+As explicit product direction, a non-collectible companion sheep may appear beside Ollie on
+the app shield. It is decorative only: it does not represent a resolved search, a promised
+reward, or an owned sheep in the flock.
+
 During an active Night Watch, the four release tabs remain available. Home is the default live
 journey; other roots show a persistent timed return control that clears nested navigation.
 Starting/restoring a run, foreground activation, and active-run notification routing return to
@@ -39,8 +45,8 @@ update immediately; notification changes rebuild only still-future alerts for th
 
 ## Consequences
 
-- The active journey remains honest and non-interactive: no sheep appears before the persisted
-  protected-night field note is opened.
+- The active journey remains honest and non-interactive: no collectible, found, or owned sheep
+  appears before the persisted protected-night Trail Note is opened.
 - Additional quiet has positive, capped narrative value without becoming an alternate flock
   progression system.
 - Tab access is a deliberate exception to the normal “status, not destination” principle and

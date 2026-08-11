@@ -1,6 +1,6 @@
 # ADR-0003: Gated Features and Reintroduction Criteria (Farm / Friends / Shop)
 
-- Status: Accepted
+- Status: Partially superseded by ADR-0015
 - Date: 2026-07-07
 - Deciders: Founder
 - Related: ADR-0001 (positioning), `docs/PROJECT_BRIEF.md` (MVP scope), ADR-0004 (which outranks this work post-build-1)
@@ -16,15 +16,19 @@ one is real, and it is the single strongest temptation for future agents to "fin
 
 ## Decision
 
-**Farm, Friends, and Shop are hidden from release builds — code kept, gated behind a
-DEBUG launch flag — until the milestone gates below are met.** They are not deleted, and
-they are never shipped as "coming soon" placeholders.
+The legacy mock Farm, Friends, and Shop screens remain behind the DEBUG launch flag. ADR-0015
+supersedes the former gate on a real Farm and nested Farm Shop: those destinations now ship from
+persisted production models and must never read `MVPMockData`. Friends remains gated and is never
+shipped as a "coming soon" placeholder.
 
 The launch surface is Home, Nights, Farm, and Settings. Ordinary Debug navigation matches Release.
 Internal mock screens appear inside Settings only when launched with
 `-ollie.debug.enableMockScreens YES` (ADR-0007).
 
-## Reintroduction gates (all must pass, in order)
+## Historical reintroduction gates
+
+The Farm and Shop parts of these gates are superseded by the founder decision in ADR-0015. They
+remain below only as the history of why the mock screens were withheld. The Friends gate remains.
 
 - **Gate 0 — Shipped and stable.** TestFlight build 1 is live; no P0 bugs; core loop
   stable across ~2 weeks of tester use.
@@ -33,18 +37,16 @@ Internal mock screens appear inside Settings only when launched with
   more progression/collection. If nobody asks, these features stay gated.
 - **Gate 2 — Technical readiness.** Farm reads `SheepSearchState` for found sheep, wanted
   posters, habitats, and cosmetic rarity (no `MVPMockData` in any release path), and
-  persisted-model changes have backwards-compatible decoding with tests. It does not expose
-  coins, balances, sheep power, or minute-based sheep values.
+  persisted-model changes have backwards-compatible decoding with tests.
 - **Gate 3 — Art readiness.** The relevant asset set is complete per
   `docs/SCREEN_ASSET_MAP.md` (no placeholder-shape fallbacks on shipped screens).
 
 ## Reintroduction order and method
 
-1. **Farm first.** Farm visualizes the cumulative flock from `totalCompletedRuns`. If it
-   earns a root destination, it remains a root destination alongside Home, Nights, and Settings.
-   Settings continues to hold configuration and utility actions.
-2. **Shop later, nested in Farm.** Shop is never a root tab and cannot revive a coin or
-   scarcity economy. Its value and mechanics require a new reviewed scope.
+1. **Farm.** Implemented as a root destination backed by individual search outcomes and
+   `FarmState`, alongside Home, Nights, and Settings.
+2. **Shop, nested in Farm.** Implemented by ADR-0015 with a local wool balance, fixed
+   catalogues, capacity upgrades, and cosmetic equipment. It is not a root tab.
 3. **Friends last — or never.** Requires a backend, accounts, and moderation, and is the
    feature most at odds with the anti-addiction principles (social comparison). Requires
    its own ADR before any work starts. Default answer is no.
@@ -61,5 +63,5 @@ post-build-1 priority — they grow who can use the app; these deepen it for exi
 - Build 1 is legible and honest; the mock layer stops being a TestFlight liability.
 - ~1,400 lines of gated code carry a maintenance shadow (kept compiling under DEBUG).
   Accepted: deleting would discard useful scaffolding and history shows we want it later.
-- Agents get a citable refusal: work on these screens without the gates met is out of
-  scope by decision, not by opinion.
+- Agents must distinguish the production Farm/Shop authorized by ADR-0015 from the legacy mock
+  layer that remains gated here.

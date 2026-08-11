@@ -24,7 +24,8 @@ The repository folder and target names still use the code name **Phone in the Ot
 5. Use the default honor timer, an optional Apple Watch placement assist, QR phone bed, or
    locally registered NFC phone-bed tag.
 6. Let the phone remain tucked away through morning quiet.
-7. Return to one calm completion receipt; one equal sheep settles into the cumulative flock.
+7. Return to one calm completion receipt and open Ollie's Trail Notes; a successful search
+   welcomes an individual sheep to the Farm or its pending-arrival gate.
 
 The iPhone owns the wall-clock state and restoration path. The Watch is optional. Nearby
 Interaction is a one-time, time-boxed tuck-in assist; it never monitors the whole night,

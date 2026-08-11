@@ -6,6 +6,10 @@ import SwiftUI
 struct FocusStatsView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
 
+    private var latestPrimaryRecord: NightWatchRecord? {
+        NightsHistoryAggregator.latestPrimaryRecord(from: viewModel.nightWatchRecords)
+    }
+
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView {
@@ -17,8 +21,10 @@ struct FocusStatsView: View {
                     )
                     NightsSevenDaySection(viewModel: viewModel)
                     NightsMonthLink(viewModel: viewModel)
-                    NightsHealthContext(viewModel: viewModel)
-                    NightsScreenTimeContext(viewModel: viewModel)
+                    NightsContextSection(
+                        viewModel: viewModel,
+                        record: latestPrimaryRecord
+                    )
                 }
                 .padding(AppSpacing.md)
             }
@@ -56,7 +62,7 @@ struct NightsHeader: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Nights")
                 .font(AppTypography.display(34))
-            Text("See what your phone-away ritual recorded around sleep.")
+            Text("Your phone-away nights, at a glance.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.muted)
         }

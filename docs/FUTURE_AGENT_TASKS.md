@@ -11,6 +11,30 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Recently completed
 
+- **2026-08-11 · Codex:** Completed the Farm presentation pass: rebuilt the Farm Shop as a
+  non-clipping category catalogue with one wool balance, owned progress, compact responsive item
+  cards, and explicit affordability/equipment states; clarified Trail Board tracking copy and
+  metrics; added meaningful Farm destination counts; and replaced twelve generic Shop,
+  decoration, wardrobe, and equipment glyphs with transparent pixel-art inventory assets.
+
+- **2026-08-11 · Codex:** Replaced the procedural Shepherd hair overlays with five authored,
+  reference-led transparent avatar assets. The compact modular character retains skin and outfit
+  tint masks, and the customization screen now presents every hairstyle in an unclipped adaptive
+  grid with selected and accessible states.
+
+- **2026-08-11 · Codex:** Consolidated the Farm economy into wool as its single currency.
+  Version-two `FarmState` converts retired Farm cash at five-to-one, rounded up once, without
+  touching legacy `UserProgress.coinBalance`; capacity, Shop prices, balances, transaction
+  deltas, and sheep trading now use wool throughout.
+
+- **2026-08-10 · Codex:** Implemented the production Farm lifecycle and ADR-0015: individual
+  migrated flock inventory, permanent discovery and Trail Note history, paged pastures, finite
+  Barn capacity and pending arrivals, protected-night wool regrowth, user-directed shearing and
+  selling, tracked Trail Board leads, the original local dual-currency Farm Shop,
+  Ollie/Farm/Shepherd equipment,
+  and inclusive local shepherd customization. Production flows use `FarmState` and
+  `SheepSearchState`; the legacy mock layer remains isolated.
+
 - **2026-08-10 · Codex:** Tightened the Home orientation into three precise spotlights for
   the complete Tonight card, the actual start action, and bottom navigation using one geometry
   space and collision-aware coach placement. Home and confirmation now preserve the identity
@@ -36,11 +60,11 @@ execute without human sign-off mid-task (final merge review still applies per
   older-OS behavior, approximately-five-minute restoration, cold/background launch routing,
   fixed-size Ollie rendering, and repeated tab navigation in each phase.
 
-- **2026-08-08 · Codex:** Shipped the completion receipt and field-note reveal redesign. The
+- **2026-08-08 · Codex:** Shipped the completion receipt and first Trail Note reveal redesign. The
   factual receipt now comes first; the single reveal action reads the persisted outcome by run ID
-  without resolving again, and the field note remains fully scrollable with found and trail-only
+  without resolving again, and the Trail Note remains fully scrollable with found and trail-only
   branches. Reworked the shipping Farm into pasture/flock overview, latest-arrival or quiet state,
-  compact trail map, and finite field board with “Still searching” / “Home” language. Added
+  compact trail map, and finite early Trail Board with “Still searching” / “Home” language. Added
   idempotent outcome-reopen coverage and Dynamic Type / Reduce Motion previews. Physical-device
   VoiceOver and smallest-device QA remain follow-ups.
 
@@ -182,8 +206,13 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## E. Later / explicitly postponed (do not start; citable refusals)
 
-- **Farm reintroduction** — ADR-0003 gates 0–3, after D1; visualize only `totalCompletedRuns`.
-- **Shop** — later nested Farm destination only; new product decision required.
+- **Screenbook Phase 2+** — after founder acceptance of the five-scenario technical spike,
+  separately approve production hardening, the broader iPhone catalogue, copy application,
+  localization, secondary Apple surfaces, and any private hosting. Keep investigating simulator
+  profile changes that could invalidate the home-indicator canonicalizer, dependency-map
+  omissions, browser-storage backup ergonomics, and equipped Farm decorations inheriting a
+  transient `TabView` pre-layout position without expanding the Phase 1 registry or checking
+  generated screenshots into Git.
 - **Friends / social** — requires its own ADR; default no (ADR-0003).
 - **Design-system convergence** (retire `GameComponents`) — opportunistic only.
 - **New persistence layer / CoreData / SwiftData** — not needed at this scale.
@@ -201,13 +230,13 @@ execute without human sign-off mid-task (final merge review still applies per
 - **2026-08-01 · Founder-approved direction:** Replaced the equal-sheep-only reward model with
   Ollie's lost-sheep search loop. First three protected nights guarantee homecomings; later
   searches use transparent qualitative odds, exact-odds opt-in, wanted posters, rarity, positive-
-  only optional bonuses, persisted trail progress, and cosmetic/story-only sheep identities.
+  only optional bonuses, persisted trail progress, and distinct sheep identities.
 
 - **2026-08-01 · Codex + human-approved plan:** Replaced ordinary Debug and Release
   navigation with Home/Nights/Farm and More as a utility sheet; moved setup and connection controls into More; kept
   Farm/Friends/Shop and the legacy shelf behind the explicit Debug preview argument; and
-  made the release presentation one equal sheep per completed protected night, derived only
-  from `totalCompletedRuns`. Added the validated feedback form, metadata-stripped screenshot
+  made the then-release presentation derive its flock from `totalCompletedRuns` (superseded by
+  ADR-0015). Added the validated feedback form, metadata-stripped screenshot
   preparation, automatic email fallback, private Supabase schema/Storage policies,
   authenticated idempotent submission, five-per-day enforcement, Resend delivery/retry,
   180-day cleanup, privacy declarations, release docs, and ADR-0007. Backend enablement,

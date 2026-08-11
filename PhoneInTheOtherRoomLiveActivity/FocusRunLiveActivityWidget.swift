@@ -49,14 +49,14 @@ struct FocusRunLiveActivityWidget: Widget {
                 Image(systemName: "moon.stars.fill")
                     .font(.caption2)
                     .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
-                    .accessibilityLabel("Wind Down is active")
+                    .accessibilityLabel(context.state.isAdditionalQuiet ? "Quiet time is active" : "Wind Down is active")
             } compactTrailing: {
                 EmptyView()
             } minimal: {
                 Image(systemName: "moon.stars.fill")
                     .font(.caption2)
                     .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
-                    .accessibilityLabel("Wind Down is active")
+                    .accessibilityLabel(context.state.isAdditionalQuiet ? "Quiet time is active" : "Wind Down is active")
             }
         }
     }
@@ -69,6 +69,12 @@ struct FocusRunLiveActivityWidget: Widget {
             return NightWatchLiveActivityGuidance(
                 primary: terminalPresentation.headline,
                 secondary: terminalPresentation.message
+            )
+        }
+        if state.isAdditionalQuiet {
+            return NightWatchLiveActivityGuidance(
+                primary: "Quiet time is running.",
+                secondary: "Ends at \(OllieFormat.time(state.plannedEndAt))"
             )
         }
         let phase = state.currentPhase
@@ -259,6 +265,7 @@ private struct FocusRunLiveActivityView: View {
         if let terminalPresentation = state.terminalPresentation {
             return terminalPresentation.headline
         }
+        if state.isAdditionalQuiet { return "QUIET TIME" }
         switch state.currentPhase {
         case .windDown: return "PHONE-FREE WIND-DOWN"
         case .overnight: return "SLEEP TIME"
@@ -278,6 +285,12 @@ private struct FocusRunLiveActivityView: View {
             return NightWatchLiveActivityGuidance(
                 primary: terminalPresentation.headline,
                 secondary: terminalPresentation.message
+            )
+        }
+        if state.isAdditionalQuiet {
+            return NightWatchLiveActivityGuidance(
+                primary: "Quiet time is running.",
+                secondary: "Ends at \(OllieFormat.time(state.plannedEndAt))"
             )
         }
         let phase = state.currentPhase
@@ -318,6 +331,14 @@ private struct FocusRunCountdown: View {
 }
 
 private extension FocusRunLiveActivityAttributes.ContentState {
+    var occurrenceRole: WindDownOccurrenceRole {
+        role ?? .primarySleepBookend
+    }
+
+    var isAdditionalQuiet: Bool {
+        occurrenceRole == .additionalQuiet
+    }
+
     var terminalPresentation: FocusRunLiveActivityTerminalPresentation? {
         if let terminalStatus {
             return terminalStatus.presentation
@@ -332,6 +353,9 @@ private extension FocusRunLiveActivityAttributes.ContentState {
         if terminalStatus == .completed || isComplete {
             return .complete
         }
+        if isAdditionalQuiet {
+            return .windDown
+        }
         return phase ?? phase(at: Date())
     }
 
@@ -340,6 +364,7 @@ private extension FocusRunLiveActivityAttributes.ContentState {
     }
 
     var nextTransitionAt: Date {
+        if isAdditionalQuiet { return plannedEndAt }
         switch currentPhase {
         case .windDown: return bedtimeAt ?? plannedEndAt
         case .overnight: return wakeAt ?? plannedEndAt
@@ -348,6 +373,9 @@ private extension FocusRunLiveActivityAttributes.ContentState {
     }
 
     func phase(at date: Date) -> NightWatchPhase? {
+        if isAdditionalQuiet {
+            return date >= plannedEndAt ? .complete : .windDown
+        }
         guard let bedtimeAt, let wakeAt, let morningQuietEndsAt else { return nil }
         if date >= morningQuietEndsAt { return .complete }
         if date >= wakeAt { return .morningQuiet }

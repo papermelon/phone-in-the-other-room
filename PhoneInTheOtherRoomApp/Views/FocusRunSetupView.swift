@@ -7,6 +7,7 @@ import FamilyControls
 struct FocusRunSetupView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var purposeCategory: OfflinePurposeCategory = .rest
     @State private var customPurpose = ""
     @State private var includePurposeInNotifications = false
@@ -29,42 +30,19 @@ struct FocusRunSetupView: View {
                         .foregroundStyle(AppColors.muted)
                     }
                 }
-                scheduleCard
-                quietTimeCard
-                activityCard
-                automaticStartCard
-                guardCard
-                Button {
-                    if viewModel.canBeginNightWatchNow && !viewModel.isRunning {
-                        viewModel.requestStartNightWatch()
-                    } else {
-                        viewModel.saveNightWatchPlanForTonight()
-                        dismiss()
-                    }
-                } label: {
-                    HStack {
-                        Image(systemName: "door.left.hand.open")
-                        Text(viewModel.isRunning
-                            ? "Save for next Wind Down"
-                            : (viewModel.canBeginNightWatchNow ? "Start Wind Down" : "Save Wind Down"))
-                        Spacer()
-                        Text(viewModel.nightWatchScheduleLabel)
-                            .font(AppTypography.caption)
-                    }
-                    .font(AppTypography.headline)
-                }
-                .buttonStyle(PixelPrimaryButtonStyle())
-                .accessibilityHint(
-                    viewModel.canBeginNightWatchNow && !viewModel.isRunning
-                        ? "Starts tonight's phone-away ritual through the phone-free morning"
-                        : "Saves the plan and asks Ollie to remind you at wind-down time"
-                )
+                tonightPlanCard
+                offlineCuesCard
+                protectionCard
             }
             .padding(AppSpacing.md)
+            .padding(.bottom, AppSpacing.sm)
         }
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Wind Down")
         .navigationBarTitleDisplayMode(.inline)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            setupActionBar
+        }
         .onAppear(perform: loadPurpose)
         .onChange(of: viewModel.isRunning) { _, isRunning in
             if isRunning { dismiss() }
@@ -106,11 +84,14 @@ struct FocusRunSetupView: View {
         .padding(.vertical, AppSpacing.sm)
     }
 
-    private var scheduleCard: some View {
+    private var tonightPlanCard: some View {
         PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("Your sleep schedule")
-                    .font(AppTypography.headline)
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                setupSectionHeader(
+                    title: "Tonight's plan",
+                    detail: "Bedtime, wake time, and two quiet windows.",
+                    systemImage: "moon.stars.fill"
+                )
                 DatePicker(
                     "Bedtime",
                     selection: Binding(
@@ -119,6 +100,7 @@ struct FocusRunSetupView: View {
                     ),
                     displayedComponents: .hourAndMinute
                 )
+                .frame(minHeight: 44)
                 DatePicker(
                     "Wake time",
                     selection: Binding(
@@ -127,16 +109,13 @@ struct FocusRunSetupView: View {
                     ),
                     displayedComponents: .hourAndMinute
                 )
+                .frame(minHeight: 44)
                 Text("Tonight can still start late. Ollie will simply protect the time that remains.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
-            }
-        }
-    }
-
-    private var quietTimeCard: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                Divider()
+                Text("Quiet windows")
+                    .font(AppTypography.body.weight(.semibold))
                 durationChoices(
                     title: "Quiet before bed",
                     selection: $viewModel.nightWatchPreferences.windDownMinutes
@@ -152,26 +131,61 @@ struct FocusRunSetupView: View {
         }
     }
 
-    private func durationChoices(title: String, selection: Binding<Int>) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Text(title)
-                .font(AppTypography.headline)
-            Spacer()
-            Picker(title, selection: selection) {
-                ForEach(QuietTimeDurationOptions.including(selection.wrappedValue), id: \.self) { minutes in
-                    Text(QuietTimeDurationOptions.label(for: minutes)).tag(minutes)
-                }
+    private func setupSectionHeader(title: String, detail: String, systemImage: String) -> some View {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
+            Image(systemName: systemImage)
+                .font(.headline.weight(.bold))
+                .foregroundStyle(AppColors.grass)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text(title)
+                    .font(AppTypography.headline)
+                Text(detail)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
             }
-            .pickerStyle(.menu)
-            .tint(AppColors.grass)
         }
     }
 
-    private var activityCard: some View {
+    private func durationChoices(title: String, selection: Binding<Int>) -> some View {
+        HStack(alignment: .center, spacing: AppSpacing.sm) {
+            Text(title)
+                .font(AppTypography.body.weight(.semibold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer()
+            Picker(selection: selection) {
+                ForEach(QuietTimeDurationOptions.including(selection.wrappedValue), id: \.self) { minutes in
+                    Text(QuietTimeDurationOptions.label(for: minutes)).tag(minutes)
+                }
+            } label: {
+                Text(QuietTimeDurationOptions.label(for: selection.wrappedValue))
+                    .font(AppTypography.body.weight(.semibold))
+                    .foregroundStyle(AppColors.ink)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .pickerStyle(.menu)
+            .tint(AppColors.ink)
+            .padding(.horizontal, AppSpacing.sm)
+            .frame(minHeight: 44)
+            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .stroke(AppColors.stroke.opacity(0.48), lineWidth: 1.5)
+            }
+        }
+        .frame(minHeight: 44)
+    }
+
+    private var offlineCuesCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text("What will the quiet make room for?")
-                    .font(AppTypography.headline)
+                setupSectionHeader(
+                    title: "Offline cues",
+                    detail: "One gentle cue before bed and after waking.",
+                    systemImage: "book.closed.fill"
+                )
                 cueEditor(
                     title: "Tonight, I’d like to make room for…",
                     text: Binding(
@@ -212,25 +226,41 @@ struct FocusRunSetupView: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(title)
                 .font(AppTypography.body.weight(.semibold))
-            TextField("It can be simple, specific, or left blank", text: text)
-                .textFieldStyle(.roundedBorder)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.xs) {
-                    ForEach(suggestions) { activity in
-                        Button(activity.title) {
-                            if evening {
-                                viewModel.nightWatchPreferences.eveningActivity = activity
-                            } else {
-                                viewModel.nightWatchPreferences.morningActivity = activity
-                            }
-                            text.wrappedValue = activity.title
+                .accessibilityAddTraits(.isHeader)
+            TextField(
+                "Offline cue",
+                text: text,
+                prompt: Text("It can be simple, specific, or left blank")
+                    .foregroundStyle(AppColors.muted)
+            )
+            .windDownTextFieldSurface()
+            .accessibilityLabel(title)
+
+            LazyVGrid(columns: suggestionColumns, alignment: .leading, spacing: AppSpacing.xs) {
+                ForEach(suggestions) { activity in
+                    Button {
+                        if evening {
+                            viewModel.nightWatchPreferences.eveningActivity = activity
+                        } else {
+                            viewModel.nightWatchPreferences.morningActivity = activity
                         }
-                        .font(AppTypography.caption)
-                        .buttonStyle(PixelChipButtonStyle(isSelected: text.wrappedValue == activity.title))
+                        text.wrappedValue = activity.title
+                    } label: {
+                        Text(activity.title)
                     }
+                    .buttonStyle(
+                        WindDownSuggestionChipStyle(isSelected: text.wrappedValue == activity.title)
+                    )
                 }
             }
         }
+    }
+
+    private var suggestionColumns: [GridItem] {
+        if dynamicTypeSize.isAccessibilitySize {
+            return [GridItem(.flexible())]
+        }
+        return [GridItem(.flexible()), GridItem(.flexible())]
     }
 
     private var purposeCard: some View {
@@ -251,8 +281,13 @@ struct FocusRunSetupView: View {
                 .onChange(of: purposeCategory) { _, _ in savePurpose() }
 
                 if purposeCategory == .custom {
-                    TextField("A book, project, person, or quiet moment", text: $customPurpose)
-                        .textFieldStyle(.roundedBorder)
+                    TextField(
+                        "Purpose",
+                        text: $customPurpose,
+                        prompt: Text("A book, project, person, or quiet moment")
+                            .foregroundStyle(AppColors.muted)
+                    )
+                        .windDownTextFieldSurface()
                         .onChange(of: customPurpose) { _, _ in savePurpose() }
                     Toggle("Use my words in reminders", isOn: $includePurposeInNotifications)
                         .font(AppTypography.body)
@@ -269,9 +304,14 @@ struct FocusRunSetupView: View {
         }
     }
 
-    private var automaticStartCard: some View {
+    private var protectionCard: some View {
         PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                setupSectionHeader(
+                    title: "Automatic start and protection",
+                    detail: "Choose when Ollie starts and how the quiet is guarded.",
+                    systemImage: "lock.shield.fill"
+                )
                 Toggle(
                     "Start Wind Down automatically",
                     isOn: Binding(
@@ -280,7 +320,7 @@ struct FocusRunSetupView: View {
                     )
                 )
                 .font(AppTypography.headline)
-                Text("Ollie will let you know 60, 30, and 10 minutes before Wind Down. At the scheduled time, apps to rest can be limited automatically when shielding is enabled.")
+                Text("Ollie will let you know 60, 30, and 10 minutes before Wind Down. At the scheduled time, selected apps can be limited automatically when app limits are enabled.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                 Text(
@@ -295,15 +335,10 @@ struct FocusRunSetupView: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
                 }
-            }
-        }
-    }
 
-    private var guardCard: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Divider()
                 Text("How will you start?")
-                    .font(AppTypography.headline)
+                    .font(AppTypography.body.weight(.semibold))
                 ForEach(WindDownProtectionChoice.allCases) { choice in
                     Button {
                         viewModel.selectProtectionChoice(choice)
@@ -325,6 +360,7 @@ struct FocusRunSetupView: View {
                             }
                         }
                         .padding(AppSpacing.sm)
+                        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
                         .background(
                             viewModel.selectedGuardKind == choice.guardKind
                                 ? AppColors.grass.opacity(0.16)
@@ -354,17 +390,21 @@ struct FocusRunSetupView: View {
                             viewModel.provisionNFCTag()
                         }
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        .frame(maxWidth: .infinity, minHeight: 44)
                     } else {
                         Label("Wind Down tag is ready", systemImage: "checkmark.circle.fill")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.grass)
-                        HStack {
+                        HStack(spacing: AppSpacing.sm) {
                             Button("Replace tag") {
                                 showTagReplacementConfirmation = true
                             }
+                            .frame(minHeight: 44)
                             Button("Forget tag", role: .destructive, action: viewModel.resetNFCTag)
+                                .frame(minHeight: 44)
                         }
                         .font(AppTypography.caption)
+                        .frame(minHeight: 44)
                     }
                     if !viewModel.nfcStatus.isEmpty {
                         Text(viewModel.nfcStatus)
@@ -374,7 +414,7 @@ struct FocusRunSetupView: View {
                 }
 
                 Divider()
-                Text("Apps to rest stay limited from Wind Down start through morning quiet. Counting Sheep stays available, and the emergency exit lifts the limits immediately.")
+                Text("Selected apps stay limited from Wind Down start through morning quiet. Counting Sheep stays available, and the emergency exit lifts the limits immediately.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
 
@@ -382,9 +422,11 @@ struct FocusRunSetupView: View {
                 if viewModel.screenTimeAuthorization != .approved {
                     Button("Allow Screen Time access", action: viewModel.connectScreenTime)
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        .frame(maxWidth: .infinity, minHeight: 44)
                 } else if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
-                    Button("Choose apps to rest", action: { showBedtimeAppPicker = true })
+                    Button("Choose apps to limit", action: { showBedtimeAppPicker = true })
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        .frame(maxWidth: .infinity, minHeight: 44)
                 } else {
                     Text(viewModel.bedtimeActivitySelection.phoneOtherSelectionSummary)
                         .font(AppTypography.caption)
@@ -392,9 +434,62 @@ struct FocusRunSetupView: View {
                     Button("Change shielded apps", action: { showBedtimeAppPicker = true })
                         .font(AppTypography.caption)
                         .buttonStyle(.plain)
+                        .frame(minHeight: 44, alignment: .leading)
                 }
 #endif
             }
+        }
+    }
+
+    private var setupActionBar: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text(viewModel.isRunning
+                ? "Next Wind Down · \(viewModel.nightWatchScheduleLabel)"
+                : "Bedtime to phone wake · \(viewModel.nightWatchScheduleLabel)")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.muted)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Button(action: saveOrStart) {
+                Label(primaryActionTitle, systemImage: "door.left.hand.open")
+                    .font(AppTypography.headline)
+                    .frame(maxWidth: .infinity, minHeight: 52)
+            }
+            .buttonStyle(PixelPrimaryButtonStyle())
+            .accessibilityHint(primaryActionHint)
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.top, AppSpacing.sm)
+        .padding(.bottom, AppSpacing.sm)
+        .background(AppColors.paper)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(AppColors.stroke.opacity(0.14))
+                .frame(height: 1)
+        }
+    }
+
+    private var primaryActionTitle: String {
+        if viewModel.isRunning {
+            return "Save for next Wind Down"
+        }
+        return viewModel.canBeginNightWatchNow ? "Start Wind Down" : "Save Wind Down"
+    }
+
+    private var primaryActionHint: String {
+        viewModel.canBeginNightWatchNow && !viewModel.isRunning
+            ? "Starts tonight's phone-away ritual through the phone-free morning"
+            : "Saves the plan and asks Ollie to remind you at wind-down time"
+    }
+
+    private func saveOrStart() {
+        if viewModel.canBeginNightWatchNow && !viewModel.isRunning {
+            viewModel.requestStartNightWatch()
+        } else {
+            viewModel.saveNightWatchPlanForTonight()
+            dismiss()
         }
     }
 
@@ -419,6 +514,57 @@ struct FocusRunSetupView: View {
 
 }
 
+private struct WindDownTextFieldSurface: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .textFieldStyle(.plain)
+            .font(AppTypography.body)
+            .foregroundStyle(AppColors.ink)
+            .tint(AppColors.grass)
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.vertical, AppSpacing.xs)
+            .frame(minHeight: 48, alignment: .leading)
+            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .stroke(AppColors.stroke.opacity(0.62), lineWidth: 1.5)
+            }
+    }
+}
+
+private extension View {
+    func windDownTextFieldSurface() -> some View {
+        modifier(WindDownTextFieldSurface())
+    }
+}
+
+private struct WindDownSuggestionChipStyle: ButtonStyle {
+    let isSelected: Bool
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(AppTypography.caption)
+            .foregroundStyle(isSelected ? .white : AppColors.ink)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .padding(.horizontal, AppSpacing.xs)
+            .padding(.vertical, AppSpacing.xs)
+            .background(
+                isSelected ? AppColors.grass : AppColors.surfaceMuted,
+                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .stroke(
+                        isSelected ? AppColors.grass : AppColors.stroke.opacity(0.48),
+                        lineWidth: isSelected ? 2 : 1.5
+                    )
+            }
+            .opacity(configuration.isPressed ? 0.86 : 1)
+    }
+}
+
 #Preview("Wind Down setup") {
     NavigationStack {
         FocusRunSetupView()
@@ -429,6 +575,41 @@ struct FocusRunSetupView: View {
 #Preview("Phone bed setup") {
     let viewModel = FocusRunViewModel()
     viewModel.selectedGuardKind = .nfcTag
+    return NavigationStack {
+        FocusRunSetupView()
+            .environmentObject(viewModel)
+    }
+}
+
+#Preview("Wind Down setup · dark") {
+    NavigationStack {
+        FocusRunSetupView()
+            .environmentObject(FocusRunViewModel())
+    }
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Wind Down setup · smallest iPhone") {
+    NavigationStack {
+        FocusRunSetupView()
+            .environmentObject(FocusRunViewModel())
+    }
+    .previewDevice(PreviewDevice(rawValue: "iPhone SE (3rd generation)"))
+}
+
+#Preview("Wind Down setup · accessibility") {
+    NavigationStack {
+        FocusRunSetupView()
+            .environmentObject(FocusRunViewModel())
+    }
+    .environment(\.dynamicTypeSize, .accessibility3)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Wind Down setup · long cues") {
+    let viewModel = FocusRunViewModel()
+    viewModel.nightWatchPreferences.eveningCueText = "Read a few quiet pages, leave the phone charging, and let the room settle before sleep."
+    viewModel.nightWatchPreferences.morningCueText = "Open the curtains, make a warm breakfast, and start the morning without reaching for the phone first."
     return NavigationStack {
         FocusRunSetupView()
             .environmentObject(viewModel)

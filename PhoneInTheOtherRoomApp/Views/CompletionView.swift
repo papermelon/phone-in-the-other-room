@@ -29,10 +29,11 @@ struct CompletionView: View {
                         WindDownRevealView(
                             outcome: persistedOutcome,
                             showExactOdds: viewModel.sheepSearchState.showExactOdds,
+                            farmState: viewModel.farmState,
                             onReturnToFarm: returnToFarm
                         )
                     } label: {
-                        Label("Open Ollie's field note", systemImage: "note.text")
+                        Label("Open Ollie’s Trail Notes", systemImage: "note.text")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelPrimaryButtonStyle())
@@ -134,17 +135,21 @@ private struct AdditionalQuietMapReceipt: View {
 }
 
 struct WindDownRevealView: View {
+    @Environment(\.dismiss) private var dismiss
     let outcome: SheepSearchOutcome?
     let showExactOdds: Bool
-    let onReturnToFarm: () -> Void
+    let farmState: FarmState
+    let onReturnToFarm: (() -> Void)?
 
     init(
         outcome: SheepSearchOutcome?,
         showExactOdds: Bool = false,
-        onReturnToFarm: @escaping () -> Void = {}
+        farmState: FarmState = .empty,
+        onReturnToFarm: (() -> Void)? = nil
     ) {
         self.outcome = outcome
         self.showExactOdds = showExactOdds
+        self.farmState = farmState
         self.onReturnToFarm = onReturnToFarm
     }
 
@@ -154,14 +159,14 @@ struct WindDownRevealView: View {
                 FieldNoteTitle()
 
                 if let outcome {
-                    FieldNotePaper(outcome: outcome, showExactOdds: showExactOdds)
+                    FieldNotePaper(outcome: outcome, showExactOdds: showExactOdds, farmState: farmState)
                 } else {
                     PixelCard {
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text("NO FIELD NOTE SAVED")
+                            Text("NO TRAIL NOTE SAVED")
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.grass)
-                            Text("This Wind Down has no saved search note.")
+                            Text("This Wind Down has no saved Trail Note.")
                                 .font(AppTypography.headline)
                             Text("Your quiet-time receipt is still saved in Nights.")
                                 .font(AppTypography.body)
@@ -170,10 +175,26 @@ struct WindDownRevealView: View {
                     }
                 }
 
-                Button("Back to the Farm", action: onReturnToFarm)
+                if outcome?.result == .trailOnly {
+                    NavigationLink("See the Trail Board") { TrailBoardView() }
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                } else if outcome?.result == .found {
+                    NavigationLink(arrivalIsPending ? "Make room in The Barn" : "See the flock in The Barn") {
+                        FarmBarnView()
+                    }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                }
+
+                Button("Back to the Farm") {
+                    if let onReturnToFarm {
+                        onReturnToFarm()
+                    } else {
+                        dismiss()
+                    }
+                }
                     .frame(maxWidth: .infinity)
                     .buttonStyle(PixelPrimaryButtonStyle())
-                    .accessibilityHint("Returns to the Farm field board")
+                    .accessibilityHint("Returns to the Farm")
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
             .padding(.horizontal, AppSpacing.md)
@@ -182,8 +203,13 @@ struct WindDownRevealView: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Ollie's field note")
+        .navigationTitle("Ollie’s Trail Notes")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private var arrivalIsPending: Bool {
+        guard let outcome else { return false }
+        return farmState.sheep.first { $0.sourceOutcomeID == outcome.id }?.status == .pending
     }
 }
 
@@ -193,7 +219,7 @@ private struct FieldNoteTitle: View {
             Image(systemName: "leaf.fill")
                 .foregroundStyle(AppColors.grass)
                 .accessibilityHidden(true)
-            Text("OLLIE'S FIELD NOTE")
+            Text("TRAIL NOTE")
                 .font(pixelFont(.title3))
                 .foregroundStyle(AppColors.ink)
         }
@@ -211,10 +237,21 @@ private struct FieldNoteTitle: View {
 private struct FieldNotePaper: View {
     let outcome: SheepSearchOutcome
     let showExactOdds: Bool
+    let farmState: FarmState
 
     private var sheep: SheepDefinition? {
         guard outcome.result == .found else { return nil }
         return outcome.sheepID.flatMap(SheepCatalog.definition)
+    }
+
+    private var flockSheep: FlockSheep? {
+        farmState.sheep.first { $0.sourceOutcomeID == outcome.id }
+    }
+
+    private var nextLead: SheepDefinition? {
+        let known = Set(farmState.discoveries.map(\.definitionID))
+        return SheepCatalog.eligible(for: outcome.protectedNightNumber + 1)
+            .first { !known.contains($0.id) }
     }
 
     var body: some View {
@@ -223,13 +260,13 @@ private struct FieldNotePaper: View {
                 PixelAssetImage(name: sheep.assetName)
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 150, maxHeight: 230)
-                    .accessibilityLabel(sheep.name)
+                    .accessibilityLabel(flockSheep?.displayName ?? sheep.name)
 
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text("A SHEEP FOUND ITS WAY HOME")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text(sheep.name)
+                    Text(flockSheep?.displayName ?? sheep.name)
                         .font(AppTypography.display(32))
                         .fixedSize(horizontal: false, vertical: true)
                     Text(sheep.story)
@@ -239,9 +276,10 @@ private struct FieldNotePaper: View {
                 }
 
                 FieldNoteMetric(title: "Habitat", value: outcome.habitat?.title ?? sheep.habitat.title)
+                FieldNoteMetric(title: "At the Farm", value: arrivalStatus)
                 FieldNoteTrailDetails(outcome: outcome, showExactOdds: showExactOdds)
             } else {
-                TrailOnlyNote(outcome: outcome, showExactOdds: showExactOdds)
+                TrailOnlyNote(outcome: outcome, showExactOdds: showExactOdds, nextLead: nextLead)
             }
         }
         .padding(AppSpacing.lg)
@@ -253,11 +291,21 @@ private struct FieldNotePaper: View {
                 .stroke(AppColors.stroke.opacity(0.45), lineWidth: 1.5)
         }
     }
+
+    private var arrivalStatus: String {
+        switch farmState.sheep.first(where: { $0.sourceOutcomeID == outcome.id })?.status {
+        case .active: return "Living in The Barn"
+        case .pending: return "Waiting at The Barn gate"
+        case .sold: return "Discovery kept · sheep moved on"
+        case nil: return "Homecoming recorded"
+        }
+    }
 }
 
 private struct TrailOnlyNote: View {
     let outcome: SheepSearchOutcome
     let showExactOdds: Bool
+    let nextLead: SheepDefinition?
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
@@ -278,6 +326,21 @@ private struct TrailOnlyNote: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
+            FieldNoteMetric(
+                title: "Clue gained",
+                value: nextLead?.posterClue ?? "The trail reaches beyond the current board."
+            )
+            FieldNoteMetric(
+                title: "Mapped quiet used",
+                value: outcome.trailMapBonusPercentagePoints > 0
+                    ? "+\(outcome.trailMapBonusPercentagePoints) percentage points"
+                    : "No mapped bonus used"
+            )
+            FieldNoteMetric(
+                title: "Next eligible lead",
+                value: nextLead.map { "\($0.rarity.title) · \($0.habitat.title)" }
+                    ?? "All current trails explored"
+            )
             FieldNoteTrailDetails(outcome: outcome, showExactOdds: showExactOdds)
         }
     }
@@ -345,7 +408,7 @@ extension Notification.Name {
     static let countingSheepShowHome = Notification.Name("countingSheep.showHome")
 }
 
-#Preview("Field note found") {
+#Preview("Trail Note found") {
     NavigationStack {
         WindDownRevealView(
             outcome: SheepSearchOutcome(
@@ -360,7 +423,7 @@ extension Notification.Name {
     }
 }
 
-#Preview("Field note trail only · Reduce Motion") {
+#Preview("Trail Note trail only · Reduce Motion") {
     NavigationStack {
         WindDownRevealView(
             outcome: SheepSearchOutcome(

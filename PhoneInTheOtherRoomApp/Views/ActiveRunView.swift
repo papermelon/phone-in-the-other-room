@@ -5,17 +5,64 @@ import SwiftUI
 struct ActiveRunView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    private let fixedNow: Date?
     @State private var emergencyExitExpanded = false
     @State private var showEmergencyExitConfirmation = false
     @State private var showNFCTagReplacementConfirmation = false
 
+    init(now: Date? = nil) {
+        fixedNow = now
+    }
+
     private var run: FocusRun? { viewModel.activeRun }
     private var guardKind: SessionGuardKind { run?.guardKind ?? .honorTimer }
+    private var currentDate: Date { fixedNow ?? Date() }
+    private var presentation: ActiveRunPresentation? {
+        guard let run else { return nil }
+        return ActiveRunPresentation(
+            run: run,
+            at: currentDate,
+            offlinePurpose: viewModel.offlinePurpose.inAppDisplayPhrase,
+            shieldingState: viewModel.coordinator.shieldingState
+        )
+    }
+
+    private var fallbackReturnBarTitle: String {
+        run?.nightWatchPlan?.role == .additionalQuiet ? "Quiet time" : "Wind Down"
+    }
+
+    private var fallbackExit: ActiveRunExitPresentation {
+        run?.nightWatchPlan?.role == .additionalQuiet
+            ? ActiveRunExitPresentation(
+                actionTitle: "End quiet time early",
+                confirmationTitle: "End quiet time early?",
+                confirmationBody: "This ends the timer and removes any app limits.",
+                cancelTitle: "Keep quiet time running",
+                confirmTitle: "End quiet time"
+            )
+            : ActiveRunExitPresentation(
+                actionTitle: "End Wind Down early",
+                confirmationTitle: "End Wind Down early?",
+                confirmationBody: "This immediately lifts app limits and ends this Wind Down early.",
+                cancelTitle: "Keep Wind Down running",
+                confirmTitle: "Use emergency exit"
+            )
+    }
+
+    private var tagReplacementTitle: String {
+        presentation?.isAdditionalQuiet == true ? "Pair a new phone-bed tag?" : "Pair a new Wind Down tag?"
+    }
+
+    private var tagReplacementMessage: String {
+        presentation?.isAdditionalQuiet == true
+            ? "We’ll write a new tag now. Your current quiet time will stay in place, and the old tag will stop working after the new one is saved."
+            : "We’ll write a new tag now. Your current Wind Down will stay in place, and the old tag will stop working after the new one is saved."
+    }
 
     var body: some View {
         Group {
-            if let run, run.isNightWatch {
-                nightWatchBody(run: run)
+            if let run, run.isNightWatch, let presentation {
+                nightWatchBody(run: run, presentation: presentation)
             } else {
                 ScrollView {
                     VStack(spacing: 16) {
@@ -25,8 +72,8 @@ struct ActiveRunView: View {
                         if let message = viewModel.coordinator.backgroundReturnMessage {
                             returnBanner(message)
                         }
-                        if let message = viewModel.coordinator.shieldingMessage {
-                            returnBanner(message)
+                        if let banner = presentation?.shieldingBanner {
+                            shieldingBanner(banner)
                         }
                         actions
                     }
@@ -40,21 +87,29 @@ struct ActiveRunView: View {
                 : AppColors.paper
             ).ignoresSafeArea()
         )
-        .navigationTitle(run?.isNightWatch == true ? "Wind Down" : "Phone-away time")
+        .navigationTitle(
+            run?.isNightWatch == true
+                ? (presentation?.returnBarTitle ?? fallbackReturnBarTitle)
+                : "Phone-away time"
+        )
         .navigationBarTitleDisplayMode(.inline)
         .alert(
-            "End Wind Down early?",
+            (presentation?.exit ?? fallbackExit).confirmationTitle,
             isPresented: $showEmergencyExitConfirmation
         ) {
-            Button("Keep Wind Down running", role: .cancel) {}
-            Button("Use emergency exit", role: .destructive) {
-                viewModel.emergencyEndWindDown()
+            Button((presentation?.exit ?? fallbackExit).cancelTitle, role: .cancel) {}
+            Button((presentation?.exit ?? fallbackExit).confirmTitle, role: .destructive) {
+                if presentation?.isAdditionalQuiet == true {
+                    viewModel.endWindDownEarly()
+                } else {
+                    viewModel.emergencyEndWindDown()
+                }
             }
         } message: {
-            Text("This immediately lifts any app shields and ends this Wind Down early.")
+            Text((presentation?.exit ?? fallbackExit).confirmationBody)
         }
         .alert(
-            "Pair a new Wind Down tag?",
+            tagReplacementTitle,
             isPresented: $showNFCTagReplacementConfirmation
         ) {
             Button("Keep current tag", role: .cancel) {}
@@ -62,28 +117,40 @@ struct ActiveRunView: View {
                 viewModel.provisionNFCTag(forActiveRun: true)
             }
         } message: {
-            Text("We’ll write a new tag now. Your current Wind Down will stay in place, and the old tag will stop working after the new one is saved.")
+            Text(tagReplacementMessage)
         }
     }
 
-    private func nightWatchBody(run: FocusRun) -> some View {
+    private func nightWatchBody(run: FocusRun, presentation: ActiveRunPresentation) -> some View {
         ScrollView {
             VStack(spacing: AppSpacing.md) {
                 NightJourneyView(
                     run: run,
                     reduceMotion: reduceMotion,
-                    mappedBonusPercentagePoints: viewModel.sheepSearchState.trailMap.availableBonusPercentagePoints
+                    mappedBonusPercentagePoints: viewModel.sheepSearchState.trailMap.availableBonusPercentagePoints,
+                    fixedDate: fixedNow
                 )
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(phase?.title.uppercased() ?? "OLLIE IS ON WATCH")
+                    Text(
+                        presentation.phase == .windDown && !presentation.isAdditionalQuiet
+                            ? AppCopy.ActiveWindDown.cueEyebrow.value
+                            : presentation.eyebrow
+                    )
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
                     Text(headline)
                         .font(AppTypography.headline)
-                    Text(timerInterval: countdownInterval, countsDown: true, showsHours: true)
-                        .font(.system(size: 34, weight: .black, design: .monospaced))
-                        .monospacedDigit()
-                        .accessibilityLabel(timerAccessibilityLabel)
+                    if fixedNow != nil {
+                        Text(OllieFormat.timer(transitionRemainingSeconds))
+                            .font(.system(size: 34, weight: .black, design: .monospaced))
+                            .monospacedDigit()
+                            .accessibilityLabel(timerAccessibilityLabel)
+                    } else {
+                        Text(timerInterval: countdownInterval, countsDown: true, showsHours: true)
+                            .font(.system(size: 34, weight: .black, design: .monospaced))
+                            .monospacedDigit()
+                            .accessibilityLabel(timerAccessibilityLabel)
+                    }
                     Text(transitionCaption)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
@@ -97,8 +164,8 @@ struct ActiveRunView: View {
                 } else if let message = viewModel.coordinator.backgroundReturnMessage {
                     returnBanner(message)
                 }
-                if let message = viewModel.coordinator.shieldingMessage {
-                    shieldingBanner(message)
+                if let banner = presentation.shieldingBanner {
+                    shieldingBanner(banner)
                 }
                 actions
             }
@@ -114,7 +181,7 @@ struct ActiveRunView: View {
                 HStack(alignment: .top, spacing: 14) {
                     OllieRitualView(state: ollieState, size: 76)
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(phase?.title.uppercased() ?? "OLLIE IS ON WATCH")
+                        Text(presentation?.eyebrow ?? "OLLIE IS ON WATCH")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.secondaryText)
                         Text(headline)
@@ -163,7 +230,10 @@ struct ActiveRunView: View {
         switch run?.placementStatus ?? .notRequired {
         case .notRequired, .confirmed:
             PixelCard {
-                Label(phaseStatusText, systemImage: phase == .morningQuiet ? "sun.max.fill" : "moon.stars.fill")
+                Label(
+                    presentation?.phaseStatusText ?? "Your phone-away time is still running.",
+                    systemImage: presentation?.statusSystemImage ?? "moon.stars.fill"
+                )
                     .font(pixelFont(.body))
                     .foregroundStyle(AppColors.secondaryText)
             }
@@ -216,6 +286,9 @@ struct ActiveRunView: View {
     }
 
     private var placementEyebrow: String {
+        if presentation?.isAdditionalQuiet == true {
+            return "START QUIET"
+        }
         switch guardKind {
         case .qrCode: return "START SCAN"
         case .nfcTag: return "START TAG"
@@ -224,6 +297,13 @@ struct ActiveRunView: View {
     }
 
     private var placementInstructions: String {
+        if presentation?.isAdditionalQuiet == true {
+            switch guardKind {
+            case .qrCode: return "Scan the code to start quiet time."
+            case .nfcTag: return "Tap your saved tag to start quiet time."
+            default: return "Ollie only needs one short check before quiet time continues."
+            }
+        }
         switch guardKind {
         case .qrCode: return "Scan the code to begin Wind Down."
         case .nfcTag: return "Tap your Wind Down tag to begin."
@@ -241,21 +321,24 @@ struct ActiveRunView: View {
 
     @ViewBuilder
     private var phoneFreeCue: some View {
-        if let plan = run?.nightWatchPlan, let phase {
+        if let plan = run?.nightWatchPlan,
+           presentation?.isAdditionalQuiet == false,
+           let phase,
+           let guidanceTip {
             switch phase {
             case .windDown:
                 activityCue(
-                    eyebrow: "PHONE-FREE WIND-DOWN",
+                    eyebrow: AppCopy.ActiveWindDown.cueEyebrow.value,
                     activity: plan.eveningActivity,
                     title: plan.eveningActivityTitle,
-                    detail: guidanceTip ?? "Let the evening get a little quieter."
+                    detail: guidanceTip
                 )
             case .morningQuiet:
                 activityCue(
                     eyebrow: "PHONE-FREE MORNING",
                     activity: plan.morningActivity,
                     title: plan.morningActivityTitle,
-                    detail: guidanceTip ?? "Let the phone wake after you do."
+                    detail: guidanceTip
                 )
             case .overnight, .complete:
                 EmptyView()
@@ -302,7 +385,13 @@ struct ActiveRunView: View {
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
             }
 
-            if guardKind == .nfcTag,
+            if presentation?.isAdditionalQuiet == true {
+                Button(presentation?.exit.actionTitle ?? "End quiet time early") {
+                    showEmergencyExitConfirmation = true
+                }
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.secondaryText)
+            } else if guardKind == .nfcTag,
                run?.isNightWatch == true,
                run?.placementStatus != .awaitingConfirmation {
                 DisclosureGroup(
@@ -318,7 +407,7 @@ struct ActiveRunView: View {
                         }
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
-                        Button("End Wind Down early") {
+                        Button((presentation?.exit ?? fallbackExit).actionTitle) {
                             showEmergencyExitConfirmation = true
                         }
                         .font(AppTypography.caption)
@@ -329,7 +418,10 @@ struct ActiveRunView: View {
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
             } else {
-                Button(run?.isNightWatch == true ? "End Wind Down early" : "End early") {
+                Button(run?.isNightWatch == true
+                    ? (presentation?.exit ?? fallbackExit).actionTitle
+                    : "End early"
+                ) {
                     viewModel.endWindDownEarly()
                 }
                 .font(pixelFont(.caption))
@@ -347,13 +439,13 @@ struct ActiveRunView: View {
             .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
     }
 
-    private func shieldingBanner(_ message: String) -> some View {
+    private func shieldingBanner(_ banner: ActiveRunShieldingBanner) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Label(message, systemImage: "iphone.slash")
+            Label(banner.message, systemImage: "iphone.slash")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
-            if viewModel.shieldingReadiness == .ready {
-                Button("Try app shielding again") {
+            if let retryTitle = banner.retryTitle {
+                Button(retryTitle) {
                     viewModel.retryShielding()
                 }
                 .font(AppTypography.caption)
@@ -382,31 +474,12 @@ struct ActiveRunView: View {
     }
 
     private var headline: String {
-        if run?.placementStatus == .awaitingConfirmation {
-            return "A calm start"
-        }
-        switch phase {
-        case .windDown:
-            return run?.nightWatchPlan?.role == .additionalQuiet
-                ? "A quieter moment starts here."
-                : "The evening can get quieter now."
-        case .overnight: return "Phone resting. You can too."
-        case .morningQuiet: return "Wake up before your phone does."
-        case .complete: return "A protected night."
-        case nil: return "Phone resting. You can too."
-        }
+        presentation?.headline ?? "Phone resting. You can too."
     }
 
     private var subheadline: String {
-        let isAdditional = run?.nightWatchPlan?.role == .additionalQuiet
-        if run?.placementStatus != .awaitingConfirmation {
-            switch phase {
-            case .windDown: return isAdditional ? "A bounded quiet period. Ollie is keeping the edges simple." : "Phone-free time until bedtime."
-            case .overnight: return "Sleep time. Your phone stays tucked away."
-            case .morningQuiet: return "Phone-free time after waking."
-            case .complete: return isAdditional ? "Your bounded quiet period is recorded." : "Your phone-free night is ready."
-            case nil: break
-            }
+        if let subheadline = presentation?.subheadline, !subheadline.isEmpty {
+            return subheadline
         }
         switch guardKind {
         case .honorTimer: return "No Watch check needed. Take your phone to its bed."
@@ -441,64 +514,91 @@ struct ActiveRunView: View {
     }
 
     private var phase: NightWatchPhase? {
-        run?.nightWatchPhase()
+        presentation?.phase
     }
 
     private var transitionRemainingSeconds: TimeInterval {
-        guard let transition = viewModel.coordinator.nextNightWatchTransition else {
-            return viewModel.coordinator.remainingSeconds
+        guard let transition = presentation?.nextTransitionDate else {
+            return max(0, (run?.plannedEndAt ?? currentDate).timeIntervalSince(currentDate))
         }
-        return max(0, transition.timeIntervalSince(Date()))
+        return max(0, transition.timeIntervalSince(currentDate))
     }
 
     private var countdownInterval: ClosedRange<Date> {
-        let now = Date()
-        let transition = viewModel.coordinator.nextNightWatchTransition
+        let transition = presentation?.nextTransitionDate
             ?? run?.plannedEndAt
-            ?? now
-        return now...max(now, transition)
+            ?? currentDate
+        return currentDate...max(currentDate, transition)
     }
 
     private var transitionCaption: String {
-        guard let transition = viewModel.coordinator.nextNightWatchTransition, let phase else {
-            return "Ollie will check in when the phone-away time is done."
-        }
-        let time = transition.formatted(date: .omitted, time: .shortened)
-        if run?.nightWatchPlan?.role == .additionalQuiet {
-            return phase == .complete ? "Quiet period complete" : "Quiet period ends at \(time)"
-        }
-        switch phase {
-        case .windDown: return "Bedtime at \(time)"
-        case .overnight: return "Phone-free morning begins at \(time)"
-        case .morningQuiet: return "Your phone wakes at \(time)"
-        case .complete: return "Wind Down is complete"
-        }
-    }
-
-    private var phaseStatusText: String {
-        if run?.nightWatchPlan?.role == .additionalQuiet, phase == .complete {
-            return "This bounded quiet period is recorded."
-        }
-        switch phase {
-        case .windDown: return "Your phone is tucked away. Ollie is following the first trail."
-        case .overnight: return "Sleep time is keeping. There is nothing else to do here."
-        case .morningQuiet: return "This phone-free morning is yours. Ollie is taking the trail home."
-        case .complete: return "Both phone-free windows are protected."
-        case nil: return "Your phone-away time is yours now. Ollie will check in when it is done."
-        }
+        presentation?.transitionCaption ?? "Ollie will check in when the phone-away time is done."
     }
 
     private var guidanceTip: String? {
-        guard let run, let phase else { return nil }
-        let phaseTip = WindDownGuidanceLibrary.featured(for: phase, seed: run.id)?.body
-        guard phase == .windDown || phase == .morningQuiet else { return phaseTip }
-        return [viewModel.offlinePurpose.inAppDisplayPhrase + ".", phaseTip]
-            .compactMap { $0 }
-            .joined(separator: " ")
+        presentation?.guidanceTip()
     }
 
     private var timerAccessibilityLabel: String {
-        let remaining = OllieFormat.minutes(transitionRemainingSeconds)
-        return remaining > 0 ? "\(remaining) minutes until the next Wind Down step" : "Less than a minute remaining"
+        presentation?.timerAccessibilityLabel(remainingSeconds: transitionRemainingSeconds)
+            ?? "Less than a minute remaining"
+    }
+}
+
+#Preview("Active run · one-time quiet · 6 PM") {
+    let calendar = Calendar.current
+    let now = calendar.date(
+        from: DateComponents(year: 2026, month: 8, day: 11, hour: 18, minute: 0)
+    )!
+    let end = now.addingTimeInterval(30 * 60)
+    let viewModel = FocusRunViewModel()
+    let plan = NightWatchPlan.additionalQuiet(start: now, end: end)
+    viewModel.coordinator.run = FocusRun(
+        plannedDurationSeconds: 30 * 60,
+        startedAt: now,
+        state: .running,
+        guardKind: .honorTimer,
+        nightWatchPlan: plan,
+        appShieldingRequested: false
+    )
+    return NavigationStack {
+        ActiveRunView(now: now)
+            .environmentObject(viewModel)
+    }
+}
+
+#Preview("Active run · primary overnight") {
+    let calendar = Calendar.current
+    let bedtime = calendar.date(
+        from: DateComponents(year: 2026, month: 8, day: 11, hour: 23, minute: 0)
+    )!
+    let now = calendar.date(
+        from: DateComponents(year: 2026, month: 8, day: 12, hour: 0, minute: 30)
+    )!
+    let wake = calendar.date(
+        from: DateComponents(year: 2026, month: 8, day: 12, hour: 7, minute: 0)
+    )!
+    let protectedUntil = wake.addingTimeInterval(30 * 60)
+    let viewModel = FocusRunViewModel()
+    let plan = NightWatchPlan(
+        intendedBedtime: bedtime,
+        wakeTime: wake,
+        protectedUntil: protectedUntil,
+        windDownMinutes: 30,
+        morningQuietMinutes: 30,
+        eveningActivity: .read,
+        morningActivity: .openCurtains
+    )
+    viewModel.coordinator.run = FocusRun(
+        plannedDurationSeconds: protectedUntil.timeIntervalSince(bedtime.addingTimeInterval(-30 * 60)),
+        startedAt: bedtime.addingTimeInterval(-30 * 60),
+        state: .running,
+        guardKind: .honorTimer,
+        nightWatchPlan: plan,
+        appShieldingRequested: false
+    )
+    return NavigationStack {
+        ActiveRunView(now: now)
+            .environmentObject(viewModel)
     }
 }

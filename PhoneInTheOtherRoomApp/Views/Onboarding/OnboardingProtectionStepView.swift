@@ -15,12 +15,12 @@ struct OnboardingProtectionStep: View {
             onboardingTitle(
                 eyebrow: "OPTIONAL PROTECTION",
                 title: "Give the quiet a little help.",
-                detail: "App shielding limits the apps you choose from Wind Down start through your morning quiet window. Counting Sheep stays available, and you can use the emergency exit if you need your phone back."
+                detail: "App limits cover the selected apps from Wind Down start through your morning quiet window. Counting Sheep stays available, and you can use the emergency exit if you need your phone back."
             )
 
             OnboardingChoiceCard(
-                title: "Apps to rest",
-                detail: "Choose 1–3 apps or categories to rest through your full Wind Down.",
+                title: "App limits",
+                detail: "Choose 1–3 apps or categories to limit through your full Wind Down.",
                 icon: "iphone.slash",
                 isSelected: draft.shieldingEnabled && draft.protectionChoice == .appShielding
             ) {
@@ -90,7 +90,7 @@ struct OnboardingProtectionStep: View {
     private var shieldingCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Label("Choose apps to rest", systemImage: "shield.lefthalf.filled")
+                    Label("Choose apps to limit", systemImage: "shield.lefthalf.filled")
                     .font(AppTypography.headline)
 
                 if viewModel.screenTimeAuthorization == .approved {
@@ -99,21 +99,21 @@ struct OnboardingProtectionStep: View {
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.grass)
                     } else {
-                        Text("Choose 1–3 apps or categories to rest.")
+                        Text("Choose 1–3 apps or categories to limit.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
                     }
                     Button(
-                        viewModel.hasSelectedShieldingApps ? "Change apps to rest" : "Choose apps to rest",
+                        viewModel.hasSelectedShieldingApps ? "Change selected apps" : "Choose apps to limit",
                         action: onChooseApps
                     )
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 } else if case .denied = viewModel.screenTimeAuthorization {
-                    Text("Screen Time access is off. Save Wind Down now; add apps to rest later in Settings if you want them.")
+                    Text("Screen Time access is off. Save Wind Down now; choose apps to limit later in Settings if you want app limits.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 } else if viewModel.screenTimeAuthorization == .unavailable {
-                    Text("Apps to rest are unavailable on this device. Wind Down still works on its own.")
+                    Text("App limits are unavailable on this device. Wind Down still works on its own.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 } else {
@@ -121,7 +121,7 @@ struct OnboardingProtectionStep: View {
                         viewModel.connectScreenTime()
                     }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    Text("After permission, choose 1–3 apps or categories to rest. Counting Sheep never shields itself.")
+                    Text("After permission, choose 1–3 apps or categories to limit. Counting Sheep never limits itself.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }

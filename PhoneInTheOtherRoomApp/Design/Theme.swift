@@ -188,12 +188,16 @@ enum AppShadows {
 
 enum AssetSlot {
     enum Dog {
-        static let idle = "dog/dog_idle"
-        static let happy = "dog/dog_happy"
-        static let sleeping = "dog/dog_sleeping"
-        static let focused = "dog/dog_focused"
-        static let concerned = "dog/dog_concerned"
-        static let proud = "dog/dog_proud"
+        static let idle = "dog/dog_classic_idle"
+        static let happy = "dog/dog_classic_happy"
+        static let farmNeutralIdle = "dog/dog_classic_farm_idle"
+        static let farmMossBandanaEquipped = "dog/dog_classic_farm_moss_bandana_equipped_overlay"
+        static let farmMoonKerchiefEquipped = "dog/dog_classic_farm_moon_kerchief_equipped_overlay"
+        static let farmBrassTrailBellEquipped = "dog/dog_classic_farm_brass_trail_bell_equipped_overlay"
+        static let sleeping = "dog/dog_classic_sleeping"
+        static let focused = "dog/dog_classic_focused"
+        static let concerned = "dog/dog_classic_concerned"
+        static let proud = "dog/dog_classic_proud"
     }
 
     enum Sheep {
@@ -214,6 +218,26 @@ enum AssetSlot {
         static let fence = "farm/farm_fence"
         static let windmill = "farm/farm_windmill"
         static let hayBale = "farm/farm_hay_bale"
+        static let shepherdDefault = "farm/farm_shepherd_default_idle"
+        static let shepherdHairWaves = "farm/farm_shepherd_hair_waves_idle"
+        static let shepherdHairWavesSkinMask = "farm/farm_shepherd_hair_waves_skin_mask"
+        static let shepherdHairWavesOutfitMask = "farm/farm_shepherd_hair_waves_outfit_mask"
+        static let shepherdHairCurls = "farm/farm_shepherd_hair_curls_idle"
+        static let shepherdHairCurlsSkinMask = "farm/farm_shepherd_hair_curls_skin_mask"
+        static let shepherdHairCurlsOutfitMask = "farm/farm_shepherd_hair_curls_outfit_mask"
+        static let shepherdHairCoils = "farm/farm_shepherd_hair_coils_idle"
+        static let shepherdHairCoilsSkinMask = "farm/farm_shepherd_hair_coils_skin_mask"
+        static let shepherdHairCoilsOutfitMask = "farm/farm_shepherd_hair_coils_outfit_mask"
+        static let shepherdHairLong = "farm/farm_shepherd_hair_long_idle"
+        static let shepherdHairLongSkinMask = "farm/farm_shepherd_hair_long_skin_mask"
+        static let shepherdHairLongOutfitMask = "farm/farm_shepherd_hair_long_outfit_mask"
+        static let shepherdSkinMask = "farm/farm_shepherd_skin_mask"
+        static let shepherdOutfitMask = "farm/farm_shepherd_outfit_mask"
+        static let shepherdCroppedWoolFieldHatEquipped = "farm/farm_shepherd_cropped_wool_field_hat_equipped_overlay"
+        static let shepherdWavesWoolFieldHatEquipped = "farm/farm_shepherd_waves_wool_field_hat_equipped_overlay"
+        static let shepherdCurlsWoolFieldHatEquipped = "farm/farm_shepherd_curls_wool_field_hat_equipped_overlay"
+        static let shepherdCoilsWoolFieldHatEquipped = "farm/farm_shepherd_coils_wool_field_hat_equipped_overlay"
+        static let shepherdLongWoolFieldHatEquipped = "farm/farm_shepherd_long_wool_field_hat_equipped_overlay"
     }
 
     enum Home {

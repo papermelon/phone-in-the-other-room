@@ -6,109 +6,35 @@ struct HomeView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var pingBannerVisible = false
     @State private var showOrientationPracticeOffer = false
-    @State private var selectedTab: MainAppTab = .home
+    @State private var selectedTab: MainAppTab
+    @State private var farmVisitSeed: UInt64
     @State private var homeNavigationPath = NavigationPath()
     @State private var nightsNavigationPath = NavigationPath()
     @State private var farmNavigationPath = NavigationPath()
     @State private var settingsNavigationPath = NavigationPath()
+    private let activeRunNow: Date?
+    private let dashboardWatch: WatchConnectivityManager
+    private let allowsLaunchRouting: Bool
+
+    init(
+        initialTab: MainAppTab = .home,
+        farmVisitSeed: UInt64 = UInt64.random(in: UInt64.min...UInt64.max),
+        activeRunNow: Date? = nil,
+        dashboardWatch: WatchConnectivityManager = .shared,
+        allowsLaunchRouting: Bool = true
+    ) {
+        _selectedTab = State(initialValue: initialTab)
+        _farmVisitSeed = State(initialValue: farmVisitSeed)
+        self.activeRunNow = activeRunNow
+        self.dashboardWatch = dashboardWatch
+        self.allowsLaunchRouting = allowsLaunchRouting
+    }
 
     var body: some View {
         ZStack {
             shellBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                NavigationStack(path: selectedNavigationPath) {
-                    ZStack {
-                        VStack(spacing: 0) {
-                            if showChrome {
-                                CountingSheepTopBar()
-                                    .padding(.horizontal, 18)
-                                    .padding(.top, 10)
-                            }
-
-                            if contentUsesOwnScroll {
-                                content
-                            } else {
-                                ScrollView {
-                                    VStack(spacing: 18) {
-                                        content
-                                    }
-                                    .padding(.horizontal, 16)
-                                    .padding(.top, showChrome ? 20 : 12)
-                                    .padding(.bottom, 18)
-                                }
-                            }
-                        }
-
-                        if pingBannerVisible {
-                            PingPulseOverlay()
-                                .transition(
-                                    reduceMotion
-                                        ? .opacity
-                                        : .opacity.combined(with: .scale(scale: 0.96))
-                                )
-                                .zIndex(10)
-                        }
-                    }
-                    .alert("Turn on Sleep Focus?", isPresented: $viewModel.showFocusModePrompt) {
-                        Button("Skip", role: .cancel) {
-                            viewModel.startRun(focusAccepted: false)
-                        }
-                        Button("I've Turned It On") {
-                            viewModel.startRun(focusAccepted: true)
-                        }
-                    } message: {
-                        Text("Counting Sheep can't turn on Sleep Focus for you. You can switch it on in Control Center, then continue.")
-                    }
-                    .onAppear {
-                        viewModel.applyShortcutPreparationIfNeeded()
-                        routePendingNotificationIfNeeded()
-                    }
-                    .onReceive(NotificationCenter.default.publisher(for: .countingSheepNotificationDestination)) { notification in
-                        guard let destination = notification.object as? NotificationDestination else { return }
-                        switch destination {
-                        case .home, .activeRun:
-                            select(.home)
-                        case .nights, .morningReflection:
-                            if viewModel.isRunning { select(.home) } else { select(.nights) }
-                        }
-                    }
-                    .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowFarm)) { _ in
-                        select(.farm)
-                    }
-                    .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNights)) { _ in
-                        if viewModel.activeRun?.state == .completed || viewModel.activeRun?.state == .endedEarly {
-                            viewModel.resetSetup()
-                        }
-                        select(.nights)
-                    }
-                    .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowHome)) { _ in
-                        select(.home)
-                    }
-                    .onChange(of: viewModel.isRunning) { _, isRunning in
-                        if isRunning { routeToHome() }
-                    }
-                    .onChange(of: scenePhase) { _, phase in
-                        if phase == .active, viewModel.isRunning { routeToHome() }
-                    }
-                    .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
-                        guard count > 0 else { return }
-                        showPingBanner()
-                    }
-                    .sheet(isPresented: $viewModel.showQRCodeScanner) {
-                        PhoneBedScannerSheet(
-                            isPresented: $viewModel.showQRCodeScanner,
-                            status: viewModel.qrCodeStatus,
-                            onCode: viewModel.acceptQRCode
-                        )
-                    }
-                    .sheet(isPresented: $viewModel.showNightWatchStartPrompt) {
-                        WindDownStartSheet()
-                            .environmentObject(viewModel)
-                            .presentationDetents([.medium])
-                            .presentationDragIndicator(.visible)
-                    }
-                    .toolbar(.hidden, for: .navigationBar)
-                }
+                selectedTabNavigationStack
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if showChrome {
@@ -116,6 +42,65 @@ struct HomeView: View {
                 }
             }
             .accessibilityHidden(isOrientationTourPresented)
+        }
+        .alert("Turn on Sleep Focus?", isPresented: $viewModel.showFocusModePrompt) {
+            Button("Skip", role: .cancel) {
+                viewModel.startRun(focusAccepted: false)
+            }
+            Button("I've Turned It On") {
+                viewModel.startRun(focusAccepted: true)
+            }
+        } message: {
+            Text("Counting Sheep can't turn on Sleep Focus for you. You can switch it on in Control Center, then continue.")
+        }
+                    .onAppear {
+                        guard allowsLaunchRouting else { return }
+                        viewModel.applyShortcutPreparationIfNeeded()
+                        routePendingNotificationIfNeeded()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .countingSheepNotificationDestination)) { notification in
+            guard let destination = notification.object as? NotificationDestination else { return }
+            switch destination {
+            case .home, .activeRun:
+                select(.home)
+            case .nights, .morningReflection:
+                if viewModel.isRunning { select(.home) } else { select(.nights) }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowFarm)) { _ in
+            select(.farm)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNights)) { _ in
+            if viewModel.activeRun?.state == .completed || viewModel.activeRun?.state == .endedEarly {
+                viewModel.resetSetup()
+            }
+            select(.nights)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowHome)) { _ in
+            select(.home)
+        }
+        .onChange(of: viewModel.isRunning) { _, isRunning in
+            if isRunning { routeToHome() }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active, viewModel.isRunning { routeToHome() }
+        }
+        .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
+            guard count > 0 else { return }
+            showPingBanner()
+        }
+        .sheet(isPresented: $viewModel.showQRCodeScanner) {
+            PhoneBedScannerSheet(
+                isPresented: $viewModel.showQRCodeScanner,
+                status: viewModel.qrCodeStatus,
+                onCode: viewModel.acceptQRCode
+            )
+        }
+        .sheet(isPresented: $viewModel.showNightWatchStartPrompt) {
+            WindDownStartSheet()
+                .environmentObject(viewModel)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .overlayPreferenceValue(OrientationTourTargetPreferenceKey.self) { targets in
             GeometryReader { proxy in
@@ -139,6 +124,62 @@ struct HomeView: View {
             )
             .presentationDetents([.medium])
             .presentationDragIndicator(.visible)
+        }
+    }
+
+    @ViewBuilder
+    private var selectedTabNavigationStack: some View {
+        switch selectedTab {
+        case .home:
+            tabNavigationStack(path: $homeNavigationPath)
+        case .nights:
+            tabNavigationStack(path: $nightsNavigationPath)
+        case .farm:
+            tabNavigationStack(path: $farmNavigationPath)
+        case .settings:
+            tabNavigationStack(path: $settingsNavigationPath)
+        }
+    }
+
+    private func tabNavigationStack(path: Binding<NavigationPath>) -> some View {
+        NavigationStack(path: path) {
+            tabContent
+        }
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var tabContent: some View {
+        ZStack {
+            VStack(spacing: 0) {
+                if showChrome {
+                    CountingSheepTopBar()
+                        .padding(.horizontal, 18)
+                        .padding(.top, 10)
+                }
+
+                if contentUsesOwnScroll {
+                    content
+                } else {
+                    ScrollView {
+                        VStack(spacing: 18) {
+                            content
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.top, showChrome ? 20 : 12)
+                        .padding(.bottom, 18)
+                    }
+                }
+            }
+
+            if pingBannerVisible {
+                PingPulseOverlay()
+                    .transition(
+                        reduceMotion
+                            ? .opacity
+                            : .opacity.combined(with: .scale(scale: 0.96))
+                    )
+                    .zIndex(10)
+            }
         }
     }
 
@@ -183,15 +224,6 @@ struct HomeView: View {
         viewModel.isRunning && viewModel.activeRun?.isNightWatch == true
     }
 
-    private var selectedNavigationPath: Binding<NavigationPath> {
-        switch selectedTab {
-        case .home: return $homeNavigationPath
-        case .nights: return $nightsNavigationPath
-        case .farm: return $farmNavigationPath
-        case .settings: return $settingsNavigationPath
-        }
-    }
-
     private var shellFooter: some View {
         VStack(spacing: AppSpacing.xs) {
             if viewModel.isRunning, selectedTab != .home {
@@ -232,17 +264,17 @@ struct HomeView: View {
         } else if let run = viewModel.activeRun, run.state == .endedEarly {
             EarlyEndView()
         } else if viewModel.isRunning && (selectedTab == .home || viewModel.activeRun?.isNightWatch != true) {
-            ActiveRunView()
+            ActiveRunView(now: activeRunNow)
         } else {
             switch selectedTab {
             case .home:
-                PixelHomeDashboard()
+                PixelHomeDashboard(watch: dashboardWatch)
                     .environmentObject(viewModel)
             case .nights:
                 FocusStatsView()
                     .environmentObject(viewModel)
             case .farm:
-                FarmView()
+                FarmView(pastureVisitSeed: farmVisitSeed)
                     .environmentObject(viewModel)
             case .settings:
                 SettingsView()
@@ -269,6 +301,9 @@ struct HomeView: View {
 
     private func select(_ tab: MainAppTab) {
         let isReselection = selectedTab == tab
+        if tab == .farm {
+            farmVisitSeed = UInt64.random(in: UInt64.min...UInt64.max)
+        }
         selectedTab = tab
         if tab == .home || isReselection {
             resetNavigation(for: tab)
@@ -305,17 +340,39 @@ struct HomeView: View {
 
 private struct ActiveWindDownReturnBar: View {
     let run: FocusRun?
+    let now: Date
     let action: () -> Void
+
+    init(run: FocusRun?, now: Date = Date(), action: @escaping () -> Void) {
+        self.run = run
+        self.now = now
+        self.action = action
+    }
+
+    private var presentation: ActiveRunPresentation? {
+        run.map { ActiveRunPresentation(run: $0, at: now) }
+    }
+
+    private var fallbackTitle: String {
+        run?.nightWatchPlan?.role == .additionalQuiet ? "Quiet time" : "Wind Down"
+    }
+
+    private var fallbackAccessibilityHint: String {
+        run?.nightWatchPlan?.role == .additionalQuiet
+            ? "Returns to the live quiet time"
+            : "Returns to the live Wind Down journey"
+    }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: AppSpacing.xs) {
                 Image(systemName: "moon.stars.fill")
                     .foregroundStyle(AppColors.lavender)
-                Text("Wind Down")
+                Text(presentation?.returnBarTitle ?? fallbackTitle)
                     .font(AppTypography.caption.weight(.bold))
-                if let end = run?.nightWatchPlan?.nextTransition(after: Date()) ?? run?.plannedEndAt {
-                    Text(timerInterval: Date()...max(Date(), end), countsDown: true, showsHours: true)
+                if let presentation {
+                    let end = presentation.returnBarEndDate
+                    Text(timerInterval: now...max(now, end), countsDown: true, showsHours: true)
                         .font(.system(.caption, design: .monospaced).weight(.bold))
                         .monospacedDigit()
                     Text("left")
@@ -332,6 +389,11 @@ private struct ActiveWindDownReturnBar: View {
             .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Returns to the live Wind Down journey")
+        .accessibilityLabel(
+            presentation.map {
+                "\($0.returnBarTitle), \($0.timerAccessibilityLabel(remainingSeconds: max(0, $0.returnBarEndDate.timeIntervalSince(now))))"
+        } ?? fallbackTitle
+        )
+        .accessibilityHint(presentation?.returnBarAccessibilityHint ?? fallbackAccessibilityHint)
     }
 }

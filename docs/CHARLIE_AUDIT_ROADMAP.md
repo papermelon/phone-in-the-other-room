@@ -21,7 +21,8 @@ Transferable patterns:
 Non-transferable or risky patterns:
 
 - Weight/body language should not be copied into a screen-time app. For focus, a simple daily status line is kinder and less shame-based.
-- Purchasable currency is not MVP-critical and could conflict with a calm focus-product feel; coins should start as earned-only.
+- Historical note: the earlier mock coin system was not launch-ready. ADR-0015 now defines earned
+  wool from explicit Farm decisions; it adds no real-money purchase path.
 - Always-on social ranking would need backend, privacy design, blocking/reporting, and careful pressure management.
 
 ## Current App Audit
@@ -61,7 +62,7 @@ Feature gaps relative to Charlie:
 3. Reward shelf improvements: rarity filters, featured reward, and simple cosmetic equip slots.
 4. Share card for a completed run or weekly focus trail, generated locally.
 5. Local-only friend mock/preview mode for demoing social comparison without a backend.
-6. Sheep selling and coin pricing for Ollie/room cosmetic items.
+6. Sheep trading and wool pricing for Ollie/room cosmetic items.
 
 ### Long Term
 

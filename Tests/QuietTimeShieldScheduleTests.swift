@@ -61,6 +61,76 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
         XCTAssertTrue(snapshot?.isEligible(at: start.addingTimeInterval(1)) == true)
     }
 
+    func testLegacyScheduleSnapshotDefaultsToPrimaryWindDownAndMigratesSchema() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let snapshot = QuietTimeShieldScheduleSnapshot(
+            schemaVersion: 2,
+            runID: UUID(),
+            revision: 1,
+            protectedSessionInterval: DateInterval(
+                start: start,
+                end: start.addingTimeInterval(8 * 60 * 60)
+            ),
+            windDownInterval: DateInterval(start: start, end: start.addingTimeInterval(30 * 60)),
+            morningQuietInterval: DateInterval(
+                start: start.addingTimeInterval(8 * 60 * 60),
+                end: start.addingTimeInterval(8.5 * 60 * 60)
+            ),
+            updatedAt: start
+        )
+        let encoded = try JSONEncoder().encode(snapshot)
+        var legacyObject = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: encoded) as? [String: Any]
+        )
+        legacyObject.removeValue(forKey: "role")
+        let legacyData = try JSONSerialization.data(withJSONObject: legacyObject)
+
+        let decoded = try JSONDecoder().decode(
+            QuietTimeShieldScheduleSnapshot.self,
+            from: legacyData
+        )
+
+        XCTAssertEqual(decoded.role, .primaryWindDown)
+        XCTAssertEqual(decoded.schemaVersion, QuietTimeShieldScheduleSnapshot.currentSchemaVersion)
+    }
+
+    func testAdditionalQuietPlanWritesAdditionalQuietShieldRole() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan.additionalQuiet(
+            start: start,
+            end: start.addingTimeInterval(30 * 60)
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: 30 * 60,
+            startedAt: start,
+            state: .running,
+            guardKind: .honorTimer,
+            nightWatchPlan: plan
+        )
+
+        let snapshot = QuietTimeShieldScheduleBuilder.snapshot(for: run, revision: 1)
+
+        XCTAssertEqual(snapshot?.role, .additionalQuiet)
+    }
+
+    func testShieldScheduleWindowsIncludeRoleInEquality() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let interval = DateInterval(start: start, end: start.addingTimeInterval(30 * 60))
+        let primary = QuietTimeShieldScheduleSnapshot(
+            runID: UUID(),
+            revision: 1,
+            role: .primaryWindDown,
+            protectedSessionInterval: interval,
+            windDownInterval: interval,
+            morningQuietInterval: interval,
+            updatedAt: start
+        )
+        var additional = primary
+        additional.role = .additionalQuiet
+
+        XCTAssertFalse(primary.hasSameWindows(as: additional))
+    }
+
     func testAutomaticScheduleRepeatsAtTheSameLocalTimeEachDay() {
         let calendar = Calendar.current
         let start = calendar.date(bySettingHour: 22, minute: 30, second: 0, of: Date())!

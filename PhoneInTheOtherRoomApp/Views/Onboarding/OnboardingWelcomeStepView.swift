@@ -4,9 +4,9 @@ struct OnboardingWelcomeStep: View {
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
             onboardingTitle(
-                eyebrow: "A QUIETER NIGHT",
-                title: "Put your phone to bed.\nWake before it does.",
-                detail: "Counting Sheep helps you put the phone in another room before bed, then keeps the first quiet part of morning phone-free."
+                eyebrow: AppCopy.OnboardingWelcome.eyebrow.value,
+                title: AppCopy.OnboardingWelcome.title.value,
+                detail: AppCopy.OnboardingWelcome.detail.value
             )
 
             OnboardingTimeline(draft: OnboardingDraft())
