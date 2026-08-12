@@ -24,6 +24,7 @@ enum QuietPeriodSchedulingError: Error, Equatable {
 enum QuietPeriodScheduling {
     static let quarterHourMinutes = 15
     static let meaningfulMinimumRemainingDuration: TimeInterval = 60
+    static let minimumImmediateDuration: TimeInterval = 5 * 60
 
     static func nextLocalQuarterHour(
         after date: Date,
@@ -58,6 +59,26 @@ enum QuietPeriodScheduling {
         let end = calendar.date(byAdding: .second, value: Int(preset.duration), to: start)
             ?? start.addingTimeInterval(preset.duration)
         return DateInterval(start: start, end: end)
+    }
+
+    /// Keeps an immediate extra-quiet period clear of the next scheduled
+    /// ritual. A five-minute floor avoids offering a button for a sliver of
+    /// time that will disappear while the start sheet is being reviewed.
+    static func immediateWindow(
+        now: Date,
+        maximumDuration: TimeInterval = QuietPeriodPreset.general.duration,
+        nextScheduledStart: Date?,
+        minimumDuration: TimeInterval = minimumImmediateDuration
+    ) -> DateInterval? {
+        let preferredEnd = now.addingTimeInterval(maximumDuration)
+        let end: Date
+        if let nextScheduledStart, nextScheduledStart > now {
+            end = min(preferredEnd, nextScheduledStart)
+        } else {
+            end = preferredEnd
+        }
+        guard end.timeIntervalSince(now) >= minimumDuration else { return nil }
+        return DateInterval(start: now, end: end)
     }
 
     static func normalizedInterval(

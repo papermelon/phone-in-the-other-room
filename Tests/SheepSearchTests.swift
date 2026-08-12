@@ -233,6 +233,18 @@ final class SheepSearchTests: XCTestCase {
         }
     }
 
+    func testTrailMapHomeCopyExplainsTheRealMechanic() throws {
+        XCTAssertNil(SheepTrailMapPresentation.home(availableBonusPercentagePoints: 0))
+        let presentation = try XCTUnwrap(
+            SheepTrailMapPresentation.home(availableBonusPercentagePoints: 5)
+        )
+        XCTAssertEqual(presentation.title, "Extra quiet has mapped more of Ollie’s trail.")
+        XCTAssertTrue(presentation.detail.contains("5 percentage points"))
+        XCTAssertTrue(presentation.detail.contains("finding a sheep on a future search"))
+        XCTAssertFalse(presentation.detail.contains("clue"))
+        XCTAssertFalse(presentation.detail.contains("tonight"))
+    }
+
     func testTrailMapRejectsDuplicateRuns() {
         var map = SheepTrailMapState()
         let runID = UUID()

@@ -58,6 +58,28 @@ final class QuietPeriodSchedulingTests: XCTestCase {
         XCTAssertEqual(practice.duration, 5 * 60, accuracy: 0.1)
     }
 
+    func testImmediateWindowStopsAtNextScheduledQuietTime() throws {
+        let now = try date(2026, 8, 9, 21, 30)
+        let nextStart = now.addingTimeInterval(12 * 60)
+
+        let interval = try XCTUnwrap(QuietPeriodScheduling.immediateWindow(
+            now: now,
+            nextScheduledStart: nextStart
+        ))
+
+        XCTAssertEqual(interval.start, now)
+        XCTAssertEqual(interval.end, nextStart)
+    }
+
+    func testImmediateWindowIsHiddenWhenNextQuietTimeIsLessThanFiveMinutesAway() throws {
+        let now = try date(2026, 8, 9, 21, 59)
+
+        XCTAssertNil(QuietPeriodScheduling.immediateWindow(
+            now: now,
+            nextScheduledStart: now.addingTimeInterval(60)
+        ))
+    }
+
     func testNowStartIsNormalizedToTheConfirmationTime() throws {
         let now = try date(2026, 8, 9, 5, 15, second: 4)
         let interval = try QuietPeriodScheduling.normalizedInterval(

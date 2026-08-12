@@ -3,6 +3,7 @@ import SwiftUI
 struct OnboardingReadyStep: View {
     let draft: OnboardingDraft
     let showsTourHandoff: Bool
+    var showsSlumberParty = false
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
@@ -24,6 +25,30 @@ struct OnboardingReadyStep: View {
                     summaryRow("Evening cue", value: draft.eveningCueText ?? "None")
                     summaryRow("Morning cue", value: draft.morningCueText ?? "None")
                     summaryRow("Selected apps", value: shieldingSummary)
+                }
+            }
+
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("WHAT THESE NAMES MEAN")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    term(
+                        "Wind Down",
+                        detail: "Your usual nightly phone-away ritual: quiet before bed, overnight, and quiet after waking."
+                    )
+                    Divider()
+                    term(
+                        "Extra quiet time",
+                        detail: "Optional phone-away time outside Wind Down. Every 15 completed minutes adds 1 percentage point to a future sheep-search chance, up to 5."
+                    )
+                    if showsSlumberParty {
+                        Divider()
+                        term(
+                            "Slumber Party",
+                            detail: "An optional invite-only seven-night challenge under Farm. It shares only tucked-away phones and completed quiet mornings."
+                        )
+                    }
                 }
             }
 
@@ -57,6 +82,18 @@ struct OnboardingReadyStep: View {
         }
     }
 
+    private func term(_ title: String, detail: String) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+            Text(title)
+                .font(AppTypography.body)
+            Text(detail)
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+    }
+
     private func timeLabel(hour: Int, minute: Int) -> String {
         Calendar.current.date(
             bySettingHour: hour,
@@ -71,4 +108,16 @@ struct OnboardingReadyStep: View {
     OnboardingReadyStep(draft: OnboardingDraft(), showsTourHandoff: true)
         .padding()
         .background(AppColors.paper)
+}
+
+#Preview("Saved plan · Slumber Party") {
+    ScrollView {
+        OnboardingReadyStep(
+            draft: OnboardingDraft(),
+            showsTourHandoff: true,
+            showsSlumberParty: true
+        )
+        .padding()
+    }
+    .background(AppColors.paper)
 }

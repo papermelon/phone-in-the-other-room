@@ -238,6 +238,11 @@ final class FocusRunViewModel: ObservableObject {
         )
     }
     var nextUpcomingQuietPeriod: WindDownSchedulePeriod? { upcomingQuietPeriods.first }
+    var immediateAdditionalQuietMinutes: Int? {
+        let now = nowProvider()
+        guard let interval = immediateAdditionalQuietWindow(now: now) else { return nil }
+        return Int(interval.duration / 60)
+    }
     var upcomingAdditionalQuietPeriods: [WindDownSchedulePeriod] {
         upcomingQuietPeriods.filter { $0.occurrence.role == .additionalQuiet }
     }
@@ -415,13 +420,16 @@ final class FocusRunViewModel: ObservableObject {
             return false
         }
 
+        guard let window = immediateAdditionalQuietWindow(now: now, maximumDuration: duration) else {
+            windDownScheduleError = "Your next scheduled quiet time begins too soon for a separate extra quiet period."
+            return false
+        }
         let periodID = UUID()
-        let end = now.addingTimeInterval(duration)
         guard addOneTimeAdditionalQuiet(
             id: periodID,
             title: title,
-            start: now,
-            end: end,
+            start: window.start,
+            end: window.end,
             now: now
         ) else {
             return false
@@ -435,6 +443,22 @@ final class FocusRunViewModel: ObservableObject {
             return false
         }
         return true
+    }
+
+    private func immediateAdditionalQuietWindow(
+        now: Date,
+        maximumDuration: TimeInterval = QuietPeriodPreset.general.duration
+    ) -> DateInterval? {
+        let nextStart = windDownSchedule.upcomingPeriods(
+            after: now,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes,
+            limit: 1
+        ).first?.occurrence.interval.start
+        return QuietPeriodScheduling.immediateWindow(
+            now: now,
+            maximumDuration: maximumDuration,
+            nextScheduledStart: nextStart
+        )
     }
 
     private func reconcileOrientationAfterRun() {

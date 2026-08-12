@@ -115,9 +115,17 @@ struct OnboardingFlowView: View {
                 showsNFCChoice: isReplay
             )
         case .automaticStart:
-            OnboardingReadyStep(draft: draft, showsTourHandoff: !isReplay)
+            OnboardingReadyStep(
+                draft: draft,
+                showsTourHandoff: !isReplay,
+                showsSlumberParty: viewModel.nightFlockViewModel.featureEnabled
+            )
         case .ready:
-            OnboardingReadyStep(draft: draft, showsTourHandoff: !isReplay)
+            OnboardingReadyStep(
+                draft: draft,
+                showsTourHandoff: !isReplay,
+                showsSlumberParty: viewModel.nightFlockViewModel.featureEnabled
+            )
         }
     }
 
