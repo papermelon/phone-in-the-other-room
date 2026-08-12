@@ -57,13 +57,15 @@ productivity timer or medical sleep tracker.
 - A generic productivity / pomodoro app
 - A medical or clinical sleep-tracking app (no sleep-quality claims, no diagnoses)
 - A single prescribed play style in which every player must value or manage sheep identically
-- A social network (Friends features are explicitly gated — see ADR-0003)
+- A social network. The narrow invite-only seven-night Night Flock companion ritual is the
+  sole approved social exception (ADR-0016); Friends, feeds, chat, discovery, and comparison
+  remain gated.
 
 See `docs/DECISIONS/ADR-0006-sleep-bookends-positioning.md` for the current rationale.
 
 ## 3. Current architecture summary
 
-Stack: Swift 5.9, SwiftUI, iOS 17.0+, watchOS 10.0+, **XcodeGen** (`project.yml` generates `PhoneInTheOtherRoom.xcodeproj`). The official `supabase-swift` package is the one approved SPM dependency, limited to optional ActivityKit delivery (ADR-0005); there are no CocoaPods dependencies. Pattern: MVVM + a session coordinator.
+Stack: Swift 5.9, SwiftUI, iOS 17.0+, watchOS 10.0+, **XcodeGen** (`project.yml` generates `PhoneInTheOtherRoom.xcodeproj`). The official `supabase-swift` package is the one approved SPM dependency, used only by the separately gated backend paths authorized by ADR-0005 and ADR-0016; there are no CocoaPods dependencies. Pattern: MVVM + a session coordinator.
 
 Eight targets (defined in `project.yml`):
 
@@ -114,6 +116,9 @@ flowchart LR
    `UserDefaults` under `ollie.*`, including a 90-day session-and-event history. Detailed
    ritual, reflection, and HealthKit history remains local. Separately consented impact
    records omit exact dates/times, source names, selected apps, and raw Health samples.
+7. When ADR-0016's disabled-by-default Night Flock is enabled, an eligible shared primary run
+   queues only `phoneTucked` after validation and `morningQuietCompleted` after success. The
+   local run never waits for the network, and active Wind Down receives no social UI.
 
 The iPhone is the **authoritative** side of a run. The Watch displays state and reports a brief optional placement distance only.
 Persistence is UserDefaults + Codable JSON only — no CoreData or SwiftData. Core app
@@ -137,6 +142,9 @@ Shared/                        ← Pure domain logic compiled into all targets
   RewardEngine.swift             (protected-night progress + legacy reward/economy compatibility)
   FocusAnalytics.swift           (day records, correlations, CSV/JSON export)
   ImpactMeasurement.swift        (local sleep-outcome comparison + minimised upload contract)
+  NightFlockModels.swift          (pure seven-day and positive-only social domain)
+  NightFlockPresentation.swift    (aggregate and privacy-safe presentation derivations)
+  NightFlockAPI.swift             (versioned command/state and local outbox contracts)
   NightWatchHistory.swift        (90-day session records + idempotent ritual events)
   PhoneBedTag.swift              (local NFC tag registration digest)
   QuietTimeShieldSchedule.swift  (shared schedule/status/evidence contract)
@@ -150,7 +158,7 @@ PhoneInTheOtherRoomApp/        ← iOS app
   Proximity/                     (FocusSessionCoordinator + optional Nearby Interaction provider)
   Services/                      (persistence, watch connectivity, notifications,
                                   HealthKit sleep, Screen Time auth/selection, feedback, exports,
-                                  optional Supabase ActivityKit delivery)
+                                  optional Supabase ActivityKit delivery and Night Flock)
   ViewModels/                    (FocusRunViewModel and friends)
   Views/                         (screens; Components/ = shared UI; MVP/ = GATED mock screens)
   MockData/                      (MVPMockData.swift — feeds gated MVP screens ONLY)
@@ -161,7 +169,7 @@ PhoneInTheOtherRoomDeviceActivityMonitor/ ← quiet-window scheduling callbacks
 PhoneInTheOtherRoomShieldConfiguration/ ← custom shield appearance
 PhoneInTheOtherRoomShieldAction/ ← shield-button response
 Config/                         ← local Supabase xcconfig inputs (secrets stay untracked)
-supabase/                       ← versioned ADR-0005 schema/functions for ActivityKit delivery
+supabase/                       ← versioned gated backend schema/functions (ADR-0005/ADR-0016)
 Assets.xcassets/               ← pixel art groups (dog/, farm/, home/, sheep/, ...) + rewards
 Tests/                         ← unit tests (Shared logic only; no UI tests)
 docs/                          ← durable docs, decisions, playbooks
@@ -277,7 +285,8 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 3. Check `docs/FUTURE_AGENT_TASKS.md` — your task may already be scoped there with acceptance criteria.
 4. Confirm which layer your change belongs in (Shared / Services / ViewModels / Views).
 5. If your change touches `project.yml`, targets, entitlements, signing, or the tab structure: **stop and confirm with the human first**. Never run more than one agent at a time on these.
-6. Friends and release-facing Screen Time UI remain gated by their relevant decision records.
+6. General Friends and release-facing Screen Time UI remain gated by their relevant decision
+   records. ADR-0016 authorizes only the feature-flagged invite-only Night Flock slice.
    Farm, The Barn, Trail Board, sheep lifecycle, wool, Shop, and customization work is an
    approved direction when explicitly requested. Implement it with new production models and
    real persisted data; never wire `MVPMockData` or `Views/MVP/` into release flows.
@@ -319,11 +328,12 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 | Sheep lifecycle + wool | Implemented | Persist backwards-compatibly; centralize and test balance rules |
 | Farm Shop + Ollie/farm cosmetics | Implemented, nested in Farm | Fixed local catalogue; follow ADR-0015 |
 | Human avatar + cosmetics | Implemented local foundation | Keep inclusive and data-compatible; expand with finished assets |
-| Friends screens | Debug internal-preview launch flag only | ADR-0003 milestone or a newer explicit founder decision |
+| Friends screens | Debug internal-preview launch flag only | ADR-0003; Night Flock does not ungate them |
+| Invite-only Night Flock | Implemented, disabled by default | ADR-0016; Apple/Supabase setup, hosted deployment, moderation operations, and physical two-account QA |
 | Screen Time reports & pickers | Foundation enabled; physical-device QA pending | Family Controls distribution assigned to app + report extension |
 | HealthKit sleep duration/stages | Included for 1.0, optional and read-only | Physical-device reads + privacy disclosure |
 | NFC + app shielding for Night Watch | Included for 1.0, optional | New extension App IDs, Family Controls distribution, and physical overnight QA |
-| Social features | Not planned | Own decision record required; ADR-0005 does not authorize social UI |
+| Broader social features | Not planned | Own decision record required; ADR-0016 authorizes Night Flock only |
 | Supabase ActivityKit delivery | Approved, disabled by default | ADR-0005 deployment and privacy gates |
 
 ## 15. TestFlight-readiness priorities (ordered)
@@ -331,7 +341,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 1. Physical overnight QA: background/termination restore, notifications, Live Activity,
    Watch unreachable, QR fallback, no-UWB devices, and timezone/DST behavior.
 2. Privacy strings consistent with Night Watch; App Store privacy labels cover the optional
-   Supabase dependency and its enabled/disabled configuration.
+   Supabase dependency, Apple-linked Night Flock identity, and enabled/disabled configuration.
 3. Re-run a signed archive with the configured bundle IDs, Team ID, and version numbers.
 4. App Store 1.0 stays four tabs (Home + Nights + Farm + Settings). Farm may contain The Barn,
    Trail Board, Farm Shop, and customization; the legacy mock UI remains behind the explicit
@@ -344,9 +354,9 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 
 ## 16. Known documentation drift (do not propagate)
 
-The Farm lifecycle, economy, Shop, customization, and naming direction was reconciled on
-2026-08-10 across the project brief, principles, rewards guide, architecture, implementation
-notes, backlog, and ADR-0003/0007/0009/0010/0014. ADR-0015 is the current detailed decision.
+The invite-only seven-night Night Flock exception was reconciled on 2026-08-12 across the
+project brief, principles, architecture, privacy/release docs, backlog, ADR-0003/0005, and
+ADR-0016. The general Friends and social-network restrictions still apply.
 No documentation drift is currently known.
 
 Continue to verify documentation claims against code and `project.yml` as the implementation moves.

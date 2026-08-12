@@ -58,6 +58,10 @@ Counting Sheep includes:
 • Private morning reflections and cautious sleep-context comparisons
 • A direct feedback and support path
 
+Only if Night Flock is enabled for this submission, append:
+
+`• An optional invite-only seven-night Night Flock with positive-only shared check-ins`
+
 NFC tags are optional. Wind Down always has a no-hardware path, and shielding always has a
 gentle early exit through the registered Wind Down tag or Counting Sheep.
 
@@ -140,9 +144,24 @@ The feedback form uses private Supabase Storage and Resend only when its indepen
 flag is enabled. It accepts optional reply email, selected screenshots, and a narrow
 diagnostics opt-in. If that backend gate is off, the same validated draft opens in Mail.
 
-No sign-in or demo credentials are required. A short physical-device video showing NFC
+No sign-in or demo credentials are required for the core flow or while Night Flock is disabled.
+A short physical-device video showing NFC
 provisioning, continuous shielding through overnight, and early exit should be attached if
 App Review cannot reproduce the hardware path.
+
+NIGHT FLOCK (ONLY WHEN `SUPABASE_NIGHT_FLOCK_ENABLED=YES`)
+
+Night Flock is nested under Farm and requires Sign in with Apple to create or join. It links the
+existing anonymous Supabase identity in place; it does not replace ownership or make the local
+Wind Down require an account. Reviewers need two Apple-linked test accounts and a one-use invite
+code to exercise the full flow. The feature shares only positive phone-tucked and completed
+quiet-morning states. Active Wind Down has no social UI. There is no feed, chat, discovery,
+leaderboard, reward, Farm transfer, free text, or named completion.
+
+Keep `SUPABASE_NIGHT_FLOCK_ENABLED=NO` for App Review until the Apple capability/provider,
+hosted migration and functions, retention schedule, moderation operations, public policy/App
+Privacy answers, and physical two-account QA are complete. If enabled, attach review credentials
+or precise invite instructions and describe the block/report/account-deletion path.
 
 ## App Privacy answers
 
@@ -162,6 +181,9 @@ Answer for the most data-collecting production configuration, including Supabase
 Do not declare local-only HealthKit, Screen Time selections, NFC registration, or free-text
 reflection as collected unless the production app or a third party transmits it. Do include
 the official Supabase SDK and enabled service behavior in the answers.
+If Night Flock is enabled, include its fixed positive check-ins/reactions and safety reports under
+the current App Store Connect User Content/Product Interaction taxonomy and Sign in with Apple
+account identifier under User ID.
 
 ## Required screenshots
 

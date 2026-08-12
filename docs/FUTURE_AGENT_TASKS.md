@@ -11,6 +11,13 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Recently completed
 
+- **2026-08-12 · Codex:** Implemented the ADR-0016 invite-only Night Flock source slice behind
+  `SUPABASE_NIGHT_FLOCK_ENABLED=NO`: Apple identity linking that preserves the Supabase Auth UUID,
+  normalized schema/RLS/service RPCs, typed functions and app contracts, monotonic local outbox,
+  run-boundary callbacks, Home/Farm/completion surfaces, fixed reactions and safety/deletion
+  controls, privacy-safe aggregation, retention implementation, and Swift/SQL/Deno tests. Nothing
+  was deployed; the external release task below remains mandatory before enablement.
+
 - **2026-08-11 · Codex:** Completed the Farm presentation pass: rebuilt the Farm Shop as a
   non-clipping category catalogue with one wool balance, owned progress, compact responsive item
   cards, and explicit affordability/equipment states; clarified Trail Board tracking copy and
@@ -204,6 +211,18 @@ execute without human sign-off mid-task (final merge review still applies per
   first, no diagnosis or sleep-quality promise, no notifications/feed/novelty loop, and no
   nighttime interaction requirement. Any future expansion still needs product review.
 
+### D4. Night Flock hosted release and two-account proof
+- **Gate:** ADR-0016 source implementation reviewed and local database validation green.
+- **Mode:** Human + Codex support · **Size:** M · **Autonomous:** no
+- **Accept:** enable Sign in with Apple for the main App ID and regenerate provisioning; configure
+  Supabase Apple Auth/manual linking; review and deploy migration `20260812120000_night_flock_mvp.sql`
+  and both Night Flock functions; schedule daily retention; establish a staffed moderation and
+  deletion runbook; publish the updated privacy policy and App Privacy answers; then pass a physical
+  two-Apple-account matrix for create, one-use invite, join, all seven day boundaries, offline
+  outbox, per-night private reset, global sharing-off purge, completion/reactions, leave, block,
+  report, Night Flock deletion, and full account deletion. Keep the release flag `NO` until every
+  item passes. Do not infer multi-device or Apple identity success from simulator tests.
+
 ## E. Later / explicitly postponed (do not start; citable refusals)
 
 - **Screenbook Phase 2+** — after founder acceptance of the five-scenario technical spike,
@@ -213,7 +232,9 @@ execute without human sign-off mid-task (final merge review still applies per
   omissions, browser-storage backup ergonomics, and equipped Farm decorations inheriting a
   transient `TabView` pre-layout position without expanding the Phase 1 registry or checking
   generated screenshots into Git.
-- **Friends / social** — requires its own ADR; default no (ADR-0003).
+- **General Friends / broader social** — Night Flock is the sole ADR-0016 exception; every feed,
+  chat, discovery, friendship graph, leaderboard, or other social surface still requires its own
+  founder decision and ADR (ADR-0003).
 - **Design-system convergence** (retire `GameComponents`) — opportunistic only.
 - **New persistence layer / CoreData / SwiftData** — not needed at this scale.
 - **CI pipeline** — valuable, but after first TestFlight; local gate suffices now.
