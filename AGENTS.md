@@ -57,7 +57,7 @@ productivity timer or medical sleep tracker.
 - A generic productivity / pomodoro app
 - A medical or clinical sleep-tracking app (no sleep-quality claims, no diagnoses)
 - A single prescribed play style in which every player must value or manage sheep identically
-- A social network. The narrow invite-only seven-night Night Flock companion ritual is the
+- A social network. The narrow invite-only seven-night Slumber Party companion ritual is the
   sole approved social exception (ADR-0016); Friends, feeds, chat, discovery, and comparison
   remain gated.
 
@@ -116,7 +116,7 @@ flowchart LR
    `UserDefaults` under `ollie.*`, including a 90-day session-and-event history. Detailed
    ritual, reflection, and HealthKit history remains local. Separately consented impact
    records omit exact dates/times, source names, selected apps, and raw Health samples.
-7. When ADR-0016's disabled-by-default Night Flock is enabled, an eligible shared primary run
+7. When ADR-0016's disabled-by-default Slumber Party is enabled, an eligible shared primary run
    queues only `phoneTucked` after validation and `morningQuietCompleted` after success. The
    local run never waits for the network, and active Wind Down receives no social UI.
 
@@ -158,7 +158,7 @@ PhoneInTheOtherRoomApp/        ← iOS app
   Proximity/                     (FocusSessionCoordinator + optional Nearby Interaction provider)
   Services/                      (persistence, watch connectivity, notifications,
                                   HealthKit sleep, Screen Time auth/selection, feedback, exports,
-                                  optional Supabase ActivityKit delivery and Night Flock)
+                                  optional Supabase ActivityKit delivery and Slumber Party)
   ViewModels/                    (FocusRunViewModel and friends)
   Views/                         (screens; Components/ = shared UI; MVP/ = GATED mock screens)
   MockData/                      (MVPMockData.swift — feeds gated MVP screens ONLY)
@@ -286,7 +286,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 4. Confirm which layer your change belongs in (Shared / Services / ViewModels / Views).
 5. If your change touches `project.yml`, targets, entitlements, signing, or the tab structure: **stop and confirm with the human first**. Never run more than one agent at a time on these.
 6. General Friends and release-facing Screen Time UI remain gated by their relevant decision
-   records. ADR-0016 authorizes only the feature-flagged invite-only Night Flock slice.
+   records. ADR-0016 authorizes only the feature-flagged invite-only Slumber Party slice.
    Farm, The Barn, Trail Board, sheep lifecycle, wool, Shop, and customization work is an
    approved direction when explicitly requested. Implement it with new production models and
    real persisted data; never wire `MVPMockData` or `Views/MVP/` into release flows.
@@ -328,12 +328,12 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 | Sheep lifecycle + wool | Implemented | Persist backwards-compatibly; centralize and test balance rules |
 | Farm Shop + Ollie/farm cosmetics | Implemented, nested in Farm | Fixed local catalogue; follow ADR-0015 |
 | Human avatar + cosmetics | Implemented local foundation | Keep inclusive and data-compatible; expand with finished assets |
-| Friends screens | Debug internal-preview launch flag only | ADR-0003; Night Flock does not ungate them |
-| Invite-only Night Flock | Implemented, disabled by default | ADR-0016; Apple/Supabase setup, hosted deployment, moderation operations, and physical two-account QA |
+| Friends screens | Debug internal-preview launch flag only | ADR-0003; Slumber Party does not ungate them |
+| Invite-only Slumber Party | Implemented, disabled by default | ADR-0016; Apple/Supabase setup, hosted deployment, moderation operations, and physical two-account QA |
 | Screen Time reports & pickers | Foundation enabled; physical-device QA pending | Family Controls distribution assigned to app + report extension |
 | HealthKit sleep duration/stages | Included for 1.0, optional and read-only | Physical-device reads + privacy disclosure |
 | NFC + app shielding for Night Watch | Included for 1.0, optional | New extension App IDs, Family Controls distribution, and physical overnight QA |
-| Broader social features | Not planned | Own decision record required; ADR-0016 authorizes Night Flock only |
+| Broader social features | Not planned | Own decision record required; ADR-0016 authorizes Slumber Party only |
 | Supabase ActivityKit delivery | Approved, disabled by default | ADR-0005 deployment and privacy gates |
 
 ## 15. TestFlight-readiness priorities (ordered)
@@ -341,7 +341,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 1. Physical overnight QA: background/termination restore, notifications, Live Activity,
    Watch unreachable, QR fallback, no-UWB devices, and timezone/DST behavior.
 2. Privacy strings consistent with Night Watch; App Store privacy labels cover the optional
-   Supabase dependency, Apple-linked Night Flock identity, and enabled/disabled configuration.
+   Supabase dependency, Apple-linked Slumber Party identity, and enabled/disabled configuration.
 3. Re-run a signed archive with the configured bundle IDs, Team ID, and version numbers.
 4. App Store 1.0 stays four tabs (Home + Nights + Farm + Settings). Farm may contain The Barn,
    Trail Board, Farm Shop, and customization; the legacy mock UI remains behind the explicit
@@ -354,7 +354,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 
 ## 16. Known documentation drift (do not propagate)
 
-The invite-only seven-night Night Flock exception was reconciled on 2026-08-12 across the
+The invite-only seven-night Slumber Party exception was reconciled on 2026-08-12 across the
 project brief, principles, architecture, privacy/release docs, backlog, ADR-0003/0005, and
 ADR-0016. The general Friends and social-network restrictions still apply.
 No documentation drift is currently known.

@@ -29,7 +29,7 @@ export function validateNightFlockCommand(
   if (body.schemaVersion !== 1) throw new Error("Unsupported schemaVersion");
   const command = requireString(body, "command");
   const allowedFields = commandFields[command];
-  if (!allowedFields) throw new Error("Unsupported Night Flock command");
+  if (!allowedFields) throw new Error("Unsupported Slumber Party command");
   requireExactFields(body, allowedFields);
   const idempotencyKey = requireString(body, "idempotencyKey").toLowerCase();
   if (!idempotencyPattern.test(idempotencyKey)) throw new Error("Invalid idempotencyKey");

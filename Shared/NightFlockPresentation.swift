@@ -66,7 +66,7 @@ struct NightFlockHomeSummary: Equatable, Sendable {
     var challengeDay: Int?
 
     static let invitation = Self(
-        title: "Night Flock",
+        title: "Slumber Party",
         detail: "A small invite-only pasture for quiet nights.",
         challengeDay: nil
     )

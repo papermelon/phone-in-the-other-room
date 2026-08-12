@@ -12,7 +12,7 @@ Last verified against code: 12 August 2026.
   generated. Run `xcodegen generate` after adding/moving files or editing `project.yml`.
   Never hand-edit `project.pbxproj`.
 - One approved SPM dependency: official `supabase-swift`, limited to optional ActivityKit,
-  consented impact-data, gated feedback, and ADR-0016 Night Flock paths. No CocoaPods
+  consented impact-data, gated feedback, and ADR-0016 Slumber Party paths. No CocoaPods
   dependencies. No CI
   (local build + test is the gate).
 - Eight application/extension/test targets plus shared domain code.
@@ -102,7 +102,7 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ NightFlockAccountService.swift           anonymous-to-Apple identity linking
 │  ├─ NightFlockService.swift                  typed Edge Function client
 │  └─ NightFlockOutboxService.swift            local monotonic positive-state retry queue
-├─ ViewModels/FocusRunViewModel.swift          root view model, owns coordinator + Night Flock VM
+├─ ViewModels/FocusRunViewModel.swift          root view model, owns coordinator + Slumber Party VM
 ├─ ViewModels/NightFlockViewModel.swift        feature-gated social presentation and intents
 ├─ Views/
 │  ├─ HomeView.swift                           navigation shell + run-state routing
@@ -252,8 +252,8 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    active flock, lifecycle, catalogue, Shop, and customization presentation; Settings owns plan
    and report configuration. Chosen report windows do not
    alter Quiet Time. Missing data is never estimated.
-   When ADR-0016's flag is enabled, Home may show one compact positive Night Flock aggregate
-   and Farm owns the nested Night Flock hub. A successful eligible completion may show one
+   When ADR-0016's flag is enabled, Home may show one compact positive Slumber Party aggregate
+   and Farm owns the nested Slumber Party hub. A successful eligible completion may show one
    finite link to its anonymous shared-pasture result. None of these surfaces changes rewards.
 9. During an active Night Watch, Home is replaced by the live journey while Nights, Farm,
    and Settings remain mounted in the same four-tab shell. A persistent return strip resets
@@ -284,12 +284,12 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
     is recorded without protected-night progress or sheep resolution. Settings can resume or
     replay the tour and start practice separately. Version-one milestone data remains decodable.
 
-### Night Flock run boundary
+### Slumber Party run boundary
 
 `FocusRunViewModel` owns and forwards one `NightFlockViewModel`; there is no second app-root or
 session coordinator. A primary manual start creates its final run UUID before
 `FocusSessionCoordinator.start`. If the challenge is active, membership sharing is enabled, and
-the preflight was not private, the Night Flock view model stores a local run-share context.
+the preflight was not private, the Slumber Party view model stores a local run-share context.
 
 The coordinator calls `onPhoneAwayValidated` only after NFC/honor/QR/Watch placement has actually
 made the run valid. That callback enqueues `phoneTucked`; successful primary completion enqueues
@@ -298,8 +298,8 @@ additional-quiet runs have no context and therefore cannot publish. Stable
 challenge/member/day/run-derived hashes make retries idempotent, and foreground activation drains
 the monotonic UserDefaults outbox. Network work is asynchronous and never gates local run state.
 
-Home and Farm remove Night Flock navigation when a run becomes active. `ActiveRunView` has no
-Night Flock dependency, state, panel, badge, reaction, notification, or realtime subscription.
+Home and Farm remove Slumber Party navigation when a run becomes active. `ActiveRunView` has no
+Slumber Party dependency, state, panel, badge, reaction, notification, or realtime subscription.
 
 ### Backgrounding during a run
 
@@ -435,7 +435,7 @@ through `FocusRunLiveActivityRemoteSink` and remains disabled by default through
 local coordinator's authority, local notification, flock, or reopen reconciliation.
 
 The versioned `supabase/` backend contains the ActivityKit delivery schema, the optional
-`impact_nights` table, gated feedback delivery, and the independently gated Night Flock schema.
+`impact_nights` table, gated feedback delivery, and the independently gated Slumber Party schema.
 Impact rows use relative nights and exclude exact dates/times, source
 names, app tokens, NFC identity, raw Health samples, and free text. The user can stop future
 sharing or call a scoped deletion RPC without deleting local history. The backend and Edge
@@ -451,10 +451,10 @@ retries every ten minutes up to five attempts and purges rows/private objects af
 iOS form then uses Mail instead. ADR-0005/0007 and `ACTIVITYKIT_PUSH_BACKEND.md` define the
 cloud boundaries.
 
-Night Flock is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` (default `NO`). With
+Slumber Party is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` (default `NO`). With
 the flag off, its app surfaces are absent and it does not create a Supabase session or make a
 request. Entry creates or restores an anonymous session only when needed, then Sign in with Apple
-links that identity in place and verifies the Auth UUID did not change. Night Flock server RPCs
+links that identity in place and verifies the Auth UUID did not change. Slumber Party server RPCs
 also require Apple in Auth app metadata, so another non-anonymous provider is insufficient.
 
 `night-flock-command` and `night-flock-state` derive the caller from the JWT, validate exact
@@ -464,7 +464,7 @@ per flock, and an eight-member trigger protected by an advisory lock. State proj
 system aliases only in the roster and omit Auth owner IDs, run IDs, exact timestamps, and private
 state. Plain invite codes are returned once and stored only as SHA-256 digests.
 
-Night Flock tables do not reference `focus_runs`, `impact_nights`, HealthKit, Screen Time, NFC,
+Slumber Party tables do not reference `focus_runs`, `impact_nights`, HealthKit, Screen Time, NFC,
 notifications, or any Farm/economy table. Retention purges invites after 30 days, raw check-ins and
 reactions after 90 days, and aggregate completed summaries after 12 months. The hosted scheduler,
 migration/functions, Apple provider, and moderation operating process remain deployment gates.
@@ -503,7 +503,7 @@ migration/functions, Apple provider, and moderation operating process remain dep
 9. **Feedback delivery is disabled by default.** Resend secrets/domain, scheduled retry,
    hosted migration, private-object behavior, mailbox retention, and a physical-device
    upload must all pass before enabling it. Email fallback is the release-safe path.
-10. **Night Flock is disabled by default.** The local contract, app surfaces, schema, RLS tests,
+10. **Slumber Party is disabled by default.** The local contract, app surfaces, schema, RLS tests,
     and Edge Functions are versioned, but hosted deployment, Apple/Supabase configuration,
     moderation operations, retention scheduling, and physical two-account QA remain external.
 
@@ -522,12 +522,12 @@ migration/functions, Apple provider, and moderation operating process remain dep
 - Inject services into `FocusSessionCoordinator` (init parameters defaulting to
   `.shared`) to make it testable — mechanical, low-risk refactor.
 - Keep cloud work additive and permission-separated: ActivityKit delivery, explicitly consented
-  minimised impact rows, and ADR-0016's narrow Night Flock tables never become shared data sources.
+  minimised impact rows, and ADR-0016's narrow Slumber Party tables never become shared data sources.
 
 ## 9. Clean up before App Store 1.0
 
 1. Keep general Friends, the legacy Farm/Shop/shelf, and `MVPMockData` behind the explicit Debug
-   flag. Night Flock is the separate ADR-0016 production slice and stays release-hidden until its
+   flag. Slumber Party is the separate ADR-0016 production slice and stays release-hidden until its
    explicit feature flag and external gates are approved.
 2. Register/approve/sign the three new shield extension IDs.
 3. Increment the build number and produce a distribution archive.

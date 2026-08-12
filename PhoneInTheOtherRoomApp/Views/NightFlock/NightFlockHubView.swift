@@ -17,7 +17,7 @@ struct NightFlockHubView: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Night Flock")
+        .navigationTitle("Slumber Party")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
         .onAppear(perform: viewModel.entryAppeared)
@@ -55,14 +55,14 @@ struct NightFlockHubView: View {
                 NightFlockStatusCard(
                     symbol: "person.3.fill",
                     title: "That pasture is full.",
-                    detail: "Night Flocks have room for up to eight people."
+                    detail: "Slumber Parties have room for up to eight people."
                 )
                 createOrJoin
             case .blocked:
                 NightFlockStatusCard(
                     symbol: "hand.raised.fill",
                     title: "That shared gate is closed.",
-                    detail: "No Night Flock details are visible from this account."
+                    detail: "No Slumber Party details are visible from this account."
                 )
             case .error(let message):
                 NightFlockStatusCard(
@@ -114,7 +114,7 @@ private struct NightFlockHeader: View {
             Text("INVITE-ONLY · SEVEN NIGHTS")
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
-            Text("Night Flock")
+            Text("Slumber Party")
                 .font(AppTypography.display(27))
             Text("Share only the good news: a tucked-away phone and a completed quiet morning.")
                 .font(AppTypography.body)
@@ -154,7 +154,7 @@ private struct NightFlockCreateJoinView: View {
                             viewModel.selectedIdentity == identity ? AppColors.grass : AppColors.ink
                         )
                     }
-                    Button("Create Night Flock", action: viewModel.createFlock)
+                    Button("Create Slumber Party", action: viewModel.createFlock)
                         .frame(maxWidth: .infinity)
                         .buttonStyle(PixelPrimaryButtonStyle())
                 }
@@ -169,11 +169,11 @@ private struct NightFlockCreateJoinView: View {
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                         .textFieldStyle(.roundedBorder)
-                        .accessibilityLabel("Night Flock invite code")
+                        .accessibilityLabel("Slumber Party invite code")
                     Text("Joining shares only positive check-ins for this challenge. Private nights never appear.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
-                    Button("Join Night Flock", action: viewModel.joinFlock)
+                    Button("Join Slumber Party", action: viewModel.joinFlock)
                         .frame(maxWidth: .infinity)
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 }

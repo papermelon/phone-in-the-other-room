@@ -109,7 +109,7 @@ rewards or replace local notification and app-reopen reconciliation.
   Function, with private Storage attachments and no client table reads. Resend delivery,
   retry, rate-limit, and retention boundaries are defined by ADR-0007.
 
-ADR-0016 approves separate normalized Night Flock membership, challenge, positive check-in,
+ADR-0016 approves separate normalized Slumber Party membership, challenge, positive check-in,
 reaction, safety, and service-moderation tables. It does not authorize a friendship graph or
 generic social profile. Progression, inventory, subscriptions, and broader relationships still
 require their own approved milestones; do not encode them into a generic JSON profile.

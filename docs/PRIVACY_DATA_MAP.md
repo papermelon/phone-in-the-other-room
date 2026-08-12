@@ -94,15 +94,15 @@ the separately configured Live Activity transport is enabled. Raw push tokens ar
 credentials, excluded from logs, and governed by ADR-0005. This transport does not receive
 HealthKit data.
 
-## Optional invite-only Night Flock
+## Optional invite-only Slumber Party
 
-Night Flock is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` and is hidden and
+Slumber Party is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` and is hidden and
 network-silent when the flag is off. Entering it can create an anonymous Supabase session; before
 creating, joining, reading, or mutating a flock, the person must link that same Auth user to Sign
 in with Apple. The app requests no Apple name or email scope. Supabase and Apple still process the
 provider identity needed to authenticate the account, and the stable Auth user ID is linked data.
 
-Night Flock stores:
+Slumber Party stores:
 
 - a preset flock identity and server-generated member aliases;
 - current membership/role and the member's sharing setting;
@@ -117,12 +117,12 @@ entries are unnamed. They do not include Auth owner IDs, local run IDs, exact ev
 private-night state, or any list of who did not check in. For a two- or three-member flock, copy
 suppresses an exact positive count where it would reveal an individual's absence.
 
-Night Flock never receives exact bedtime, wake time, run duration, early-ending reason, additional
+Slumber Party never receives exact bedtime, wake time, run duration, early-ending reason, additional
 quiet, HealthKit or raw sleep data, Screen Time selections, selected apps, NFC information,
 purpose/cue text, notification state, Farm inventory, sheep, wool, transaction data, or
 `impact_nights`. These sources remain logically and permission-wise separate.
 
-The app provides leave, block, report, sharing, Night Flock deletion, and full online-account
+The app provides leave, block, report, sharing, Slumber Party deletion, and full online-account
 deletion controls. Blocking removes mutual visibility immediately and removes the blocker from
 the shared flock. Invite rows purge after 30 days (codes stop working after seven), raw check-ins
 and reactions after 90 days, and completed aggregate summaries after no more than 12 months unless
@@ -161,8 +161,8 @@ the 1.0 implementation, expect at least:
 - Health & Fitness → Health (optional impact sharing);
 - Usage Data → Product Interaction (quiet/completion/shield evidence);
 - Identifiers → User ID (anonymous Supabase identity);
-- User Content → Other User Content (Night Flock positive check-ins, fixed reactions, blocks,
-  and fixed-enum safety reports when Night Flock is enabled);
+- User Content → Other User Content (Slumber Party positive check-ins, fixed reactions, blocks,
+  and fixed-enum safety reports when Slumber Party is enabled);
 - Identifiers → Device ID (app installation ID and ActivityKit delivery identity);
 - Contact Info → Email Address (optional feedback replies);
 - User Content → Customer Support and Other User Content (feedback text);
