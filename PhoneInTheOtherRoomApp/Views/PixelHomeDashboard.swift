@@ -23,6 +23,7 @@ struct PixelHomeDashboard: View {
             nextUpcoming: viewModel.nextUpcomingQuietPeriod,
             upcomingAdditionalCount: viewModel.upcomingAdditionalQuietPeriods.count,
             mappedBonusPercentagePoints: viewModel.sheepSearchState.trailMap.availableBonusPercentagePoints,
+            nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
             onPrimaryAction: {
                 let methodIsReady = viewModel.selectedGuardKind != .nfcTag
                     || viewModel.hasRegisteredNFCTag
@@ -38,7 +39,10 @@ struct PixelHomeDashboard: View {
             },
             onEditTiming: { showTimingEditor = true },
             onQuietTimeSchedule: { showQuietTimeSchedule = true },
-            onStartNow: { _ = viewModel.startNewOneTimeAdditionalQuietNow() }
+            onStartNow: { _ = viewModel.startNewOneTimeAdditionalQuietNow() },
+            onOpenNightFlock: {
+                NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: nil)
+            }
         )
         .navigationDestination(isPresented: $showRunSetup) {
             FocusRunSetupView()
@@ -66,10 +70,12 @@ private struct PixelHomeDashboardContent: View {
     var nextUpcoming: WindDownSchedulePeriod?
     var upcomingAdditionalCount: Int
     var mappedBonusPercentagePoints: Int
+    var nightFlockSummary: NightFlockHomeSummary? = nil
     var onPrimaryAction: () -> Void
     var onEditTiming: () -> Void
     var onQuietTimeSchedule: () -> Void
     var onStartNow: () -> Void
+    var onOpenNightFlock: () -> Void = {}
 
     private var latestNight: DailyFocusRecord? { progress.recentFocusRecords.first }
 
@@ -121,6 +127,10 @@ private struct PixelHomeDashboardContent: View {
                 action: onQuietTimeSchedule,
                 startNow: onStartNow
             )
+
+            if let nightFlockSummary {
+                NightFlockHomeCard(summary: nightFlockSummary, action: onOpenNightFlock)
+            }
 
             if preferences.guardKind == .watchPlacement {
                 watchStatus

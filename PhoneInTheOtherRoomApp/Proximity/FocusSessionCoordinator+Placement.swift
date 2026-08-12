@@ -104,6 +104,7 @@ extension FocusSessionCoordinator {
         stopWatchPlacement()
         UIApplication.shared.isIdleTimerDisabled = false
         watch.send(WatchMessage(type: .focusRunStateUpdate, run: run, proximity: proximityState))
+        onPhoneAwayValidated?(run)
         if Date() >= run.plannedEndAt {
             reconcileSession()
         }

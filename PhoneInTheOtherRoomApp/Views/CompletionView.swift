@@ -22,6 +22,19 @@ struct CompletionView: View {
                     screenTimeAuthorization: viewModel.screenTimeAuthorization
                 )
 
+                if let run,
+                   run.completedSuccessfully,
+                   run.isProgressionEligibleNightWatch,
+                   viewModel.nightFlockViewModel.hasSharedResult(for: run.id) {
+                    NavigationLink {
+                        NightFlockHubView(viewModel: viewModel.nightFlockViewModel)
+                    } label: {
+                        NightFlockResultCard(snapshot: viewModel.nightFlockViewModel.snapshot)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens the shared pasture result for this completed Wind Down")
+                }
+
                 if run?.nightWatchPlan?.role == .additionalQuiet {
                     AdditionalQuietMapReceipt(map: viewModel.sheepSearchState.trailMap, minutes: minutes)
                 } else if run?.isProgressionEligibleNightWatch == true {
@@ -406,6 +419,7 @@ extension Notification.Name {
     static let countingSheepShowFarm = Notification.Name("countingSheep.showFarm")
     static let countingSheepShowNights = Notification.Name("countingSheep.showNights")
     static let countingSheepShowHome = Notification.Name("countingSheep.showHome")
+    static let countingSheepShowNightFlock = Notification.Name("countingSheep.showNightFlock")
 }
 
 #Preview("Trail Note found") {

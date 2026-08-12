@@ -8,6 +8,7 @@ struct HomeView: View {
     @State private var showOrientationPracticeOffer = false
     @State private var selectedTab: MainAppTab
     @State private var farmVisitSeed: UInt64
+    @State private var opensNightFlock = false
     @State private var homeNavigationPath = NavigationPath()
     @State private var nightsNavigationPath = NavigationPath()
     @State private var farmNavigationPath = NavigationPath()
@@ -70,6 +71,11 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowFarm)) { _ in
             select(.farm)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNightFlock)) { _ in
+            guard !viewModel.isRunning else { return }
+            select(.farm)
+            opensNightFlock = true
+        }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNights)) { _ in
             if viewModel.activeRun?.state == .completed || viewModel.activeRun?.state == .endedEarly {
                 viewModel.resetSetup()
@@ -80,7 +86,11 @@ struct HomeView: View {
             select(.home)
         }
         .onChange(of: viewModel.isRunning) { _, isRunning in
-            if isRunning { routeToHome() }
+            if isRunning {
+                opensNightFlock = false
+                resetNavigation(for: .farm)
+                routeToHome()
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active, viewModel.isRunning { routeToHome() }
@@ -274,7 +284,10 @@ struct HomeView: View {
                 FocusStatsView()
                     .environmentObject(viewModel)
             case .farm:
-                FarmView(pastureVisitSeed: farmVisitSeed)
+                FarmView(
+                    pastureVisitSeed: farmVisitSeed,
+                    opensNightFlock: $opensNightFlock
+                )
                     .environmentObject(viewModel)
             case .settings:
                 SettingsView()
