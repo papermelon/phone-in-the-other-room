@@ -4,6 +4,12 @@ struct FarmView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var selectedSheepID: UUID?
     let pastureVisitSeed: UInt64
+    @Binding var opensNightFlock: Bool
+
+    init(pastureVisitSeed: UInt64, opensNightFlock: Binding<Bool> = .constant(false)) {
+        self.pastureVisitSeed = pastureVisitSeed
+        _opensNightFlock = opensNightFlock
+    }
 
     var body: some View {
         FarmDashboardContent(
@@ -12,6 +18,8 @@ struct FarmView: View {
             protectedNightCount: viewModel.coordinator.progress.totalCompletedRuns,
             isWindDownActive: viewModel.isRunning,
             pastureVisitSeed: pastureVisitSeed,
+            nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
+            onOpenNightFlock: { opensNightFlock = true },
             onSelectSheep: { selectedSheepID = $0.id }
         )
         .navigationDestination(isPresented: Binding(
@@ -22,6 +30,9 @@ struct FarmView: View {
                 BarnSheepDetailView(sheepID: selectedSheepID)
                     .environmentObject(viewModel)
             }
+        }
+        .navigationDestination(isPresented: $opensNightFlock) {
+            NightFlockHubView(viewModel: viewModel.nightFlockViewModel)
         }
         .farmActionAlert(viewModel: viewModel)
         .onAppear { viewModel.markOrientation(.farmExplored) }
@@ -34,6 +45,8 @@ struct FarmDashboardContent: View {
     let protectedNightCount: Int
     let isWindDownActive: Bool
     var pastureVisitSeed: UInt64 = 0
+    var nightFlockSummary: NightFlockHomeSummary? = nil
+    var onOpenNightFlock: () -> Void = {}
     let onSelectSheep: (FlockSheep) -> Void
 
     private var latestOutcome: SheepSearchOutcome? { searchState.outcomes.last }
@@ -198,6 +211,17 @@ struct FarmDashboardContent: View {
 
     private var destinationGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
+            if let nightFlockSummary, !isWindDownActive {
+                Button(action: onOpenNightFlock) {
+                    destinationLabel(
+                        "Night Flock",
+                        detail: "Invite-only quiet",
+                        badge: nightFlockSummary.challengeDay.map { "day \($0) / 7" } ?? "private",
+                        icon: "person.3.fill"
+                    )
+                }
+                .buttonStyle(.plain)
+            }
             destination("The Barn", detail: "Flock & wool", badge: "\(state.activeSheep.count) / \(state.activeCapacity)", icon: "house.lodge.fill") { FarmBarnView() }
             destination("Trail Board", detail: "Missing sheep", badge: "\(searchableCount) trails", icon: "map.fill") { TrailBoardView() }
             destination("Farm Shop", detail: "Build & wear", badge: "\(state.woolBalance) wool", icon: "storefront.fill") { FarmShopView() }
@@ -213,40 +237,49 @@ struct FarmDashboardContent: View {
         @ViewBuilder destination: () -> Destination
     ) -> some View {
         NavigationLink(destination: destination()) {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                HStack {
-                    Image(systemName: icon)
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(AppColors.grass)
-                    Spacer(minLength: 0)
-                    Text(badge)
-                        .font(pixelFont(.caption2))
-                        .foregroundStyle(AppColors.grass)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.72)
-                }
-                Text(title)
-                    .font(AppTypography.headline)
-                    .foregroundStyle(AppColors.ink)
-                    .multilineTextAlignment(.leading)
-                Text(detail)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-                Spacer(minLength: 0)
-                Image(systemName: "arrow.right")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(AppColors.grass)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-            }
-            .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
-            .padding(AppSpacing.md)
-            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay {
-                RoundedRectangle(cornerRadius: AppRadius.lg)
-                    .stroke(AppColors.stroke.opacity(0.2), lineWidth: 1)
-            }
+            destinationLabel(title, detail: detail, badge: badge, icon: icon)
         }
         .buttonStyle(.plain)
+    }
+
+    private func destinationLabel(
+        _ title: String,
+        detail: String,
+        badge: String,
+        icon: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(AppColors.grass)
+                Spacer(minLength: 0)
+                Text(badge)
+                    .font(pixelFont(.caption2))
+                    .foregroundStyle(AppColors.grass)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            Text(title)
+                .font(AppTypography.headline)
+                .foregroundStyle(AppColors.ink)
+                .multilineTextAlignment(.leading)
+            Text(detail)
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+            Spacer(minLength: 0)
+            Image(systemName: "arrow.right")
+                .font(.caption.weight(.bold))
+                .foregroundStyle(AppColors.grass)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
+        .padding(AppSpacing.md)
+        .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.lg))
+        .overlay {
+            RoundedRectangle(cornerRadius: AppRadius.lg)
+                .stroke(AppColors.stroke.opacity(0.2), lineWidth: 1)
+        }
     }
 
     private var recentStory: some View {

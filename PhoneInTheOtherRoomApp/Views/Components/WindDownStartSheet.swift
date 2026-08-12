@@ -97,6 +97,8 @@ struct WindDownStartSheet: View {
 
                     shieldingChoice
 
+                    nightFlockPrivacyChoice
+
                     Toggle(
                         isAdHocQuiet ? "Show on the Lock Screen" : "Show progress on the Lock Screen",
                         isOn: $viewModel.liveActivityChoiceForNextRun
@@ -149,6 +151,33 @@ struct WindDownStartSheet: View {
             viewModel.appShieldingChoiceForNextRun = viewModel.shieldingReadiness == .ready
         }
 #endif
+    }
+
+    @ViewBuilder
+    private var nightFlockPrivacyChoice: some View {
+        if viewModel.pendingWindDownStartContext?.kind == .primary,
+           viewModel.nightFlockViewModel.canOfferSharingForNextPrimaryRun {
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Toggle(
+                        "Keep tonight private",
+                        isOn: Binding(
+                            get: { !viewModel.nightFlockViewModel.shareNextPrimaryRun },
+                            set: { viewModel.nightFlockViewModel.shareNextPrimaryRun = !$0 }
+                        )
+                    )
+                    .font(AppTypography.body)
+                    .tint(AppColors.grass)
+                    .disabled(!viewModel.nightFlockViewModel.isChallengeSharingEnabled)
+
+                    Text(viewModel.nightFlockViewModel.isChallengeSharingEnabled
+                        ? "If off, only positive phone-tucked and quiet-morning states can be shared."
+                        : "Night Flock sharing is already off in your privacy settings.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+            }
+        }
     }
 
     @ViewBuilder

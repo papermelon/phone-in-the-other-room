@@ -32,6 +32,7 @@ final class FocusSessionCoordinator: ObservableObject {
     var pairedWatchTokenData: Data?
     private var lastLiveActivityPhase: NightWatchPhase?
     var optionalSheepSearchBonusProvider: (() -> Int)?
+    var onPhoneAwayValidated: ((FocusRun) -> Void)?
     /// Lets the owning view model advance the saved routine cursor after a
     /// terminal run without making the coordinator own scheduling policy.
     var onRunFinished: (() -> Void)?
@@ -171,6 +172,9 @@ final class FocusSessionCoordinator: ObservableObject {
         UIApplication.shared.isIdleTimerDisabled = configuration.guardKind == .watchPlacement
         scheduleNextBoundaryTimer()
         watch.send(WatchMessage(type: .startFocusRun, run: newRun, proximity: proximityState))
+        if newRun.phoneAwayValidatedAt != nil {
+            onPhoneAwayValidated?(newRun)
+        }
 
         switch configuration.guardKind {
         case .watchPlacement:
@@ -284,6 +288,7 @@ final class FocusSessionCoordinator: ObservableObject {
         reconcileShielding(for: run)
         UIApplication.shared.isIdleTimerDisabled = false
         watch.send(WatchMessage(type: .focusRunStateUpdate, run: run, proximity: proximityState))
+        onPhoneAwayValidated?(run)
         if Date() >= run.plannedEndAt {
             reconcileSession()
         }

@@ -57,6 +57,7 @@ struct PhoneInTheOtherRoomApp: App {
                     case .active:
                         runViewModel.coordinator.applicationDidBecomeActive()
                         runViewModel.reconcileAutomaticWindDownIfNeeded()
+                        runViewModel.nightFlockViewModel.handleForeground()
                     case .inactive:
                         break
                     @unknown default:

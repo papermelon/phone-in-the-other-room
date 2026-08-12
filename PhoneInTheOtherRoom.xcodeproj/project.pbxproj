@@ -72,8 +72,10 @@
 		1941CDDA71EE847524A3B75B /* FocusAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CB9D7F6CBF2FB36B03D2B /* FocusAnalytics.swift */; };
 		197411141A63E80355738EF3 /* PhoneInTheOtherRoomShieldConfiguration.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7069088917330301D9C04EFA /* PhoneInTheOtherRoomShieldConfiguration.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		1986707CDA671784481E7040 /* ScreenbookScenario.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEFA770209522C30518C311E /* ScreenbookScenario.swift */; };
+		1A756A5B4A98418C47675D93 /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
 		1AC01546472596D97D4A6AEC /* CompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F6F711960B149665B4E5B3 /* CompletionView.swift */; };
 		1BE7CE6D6AC31ABE4901BF85 /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E109FBC4F835E47324D0F295 /* FarmModels.swift */; };
+		1CC56DF89D039F63717DB9D9 /* NightFlockPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB187B79332895B17084F74 /* NightFlockPresentation.swift */; };
 		1D88BC92839CD6DCDF5D9B4C /* RewardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F2F141C24516D082490195 /* RewardEngine.swift */; };
 		1D91A89EFBF61205F763B197 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC03E8137A0193E690B45BB3 /* Theme.swift */; };
 		1DA09929AB6DA17CFBEF9B1E /* ImpactSharingConsentSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0813C86FDB60332218CA22 /* ImpactSharingConsentSheet.swift */; };
@@ -114,12 +116,15 @@
 		2D7008D7AFF6C1F03049EEFB /* BarnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C97297774BF85D09B33C057 /* BarnView.swift */; };
 		2E9058B5A00BF211C158EAC0 /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
 		2E93C8883309FAF3A2E009EE /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
+		2ED16D7EC13526B27631B8D6 /* NightFlockPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB187B79332895B17084F74 /* NightFlockPresentation.swift */; };
 		2F22D06A0264FFA4320BEE2F /* NightJourneyProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = C72601B936190333C971123E /* NightJourneyProgress.swift */; };
 		2F592190E9FF1E9EE0ED1FB0 /* QuietTimeShieldScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A6A44FF65DC1B46C80557C /* QuietTimeShieldScheduleTests.swift */; };
+		30A07E2415E652AAB698C16E /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		30A4F43CD08D444AF06F89BA /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		32333EEF834C0AB04E12CAC2 /* NightJourneyGait.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */; };
 		32D48AF51A5F99FC8A3E53CC /* OfflinePurpose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180FD34F0C45EF5E28E01556 /* OfflinePurpose.swift */; };
 		34B3592154393AC82C33F4CA /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1703E9A69A2A56DE2F850967 /* AppRootView.swift */; };
+		353243A0EA0BABE5E5F471CF /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		368AE4B89A55C32403BB6D5E /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		36AA2B1114372488FABDCBBF /* FocusRunViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10F6B198F7484F2D1475ED0 /* FocusRunViewModel.swift */; };
 		36DFFE64F22A9D5E69C9D2AB /* MorningCheckInCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EBF5AEECC8C11A24F9AC80C /* MorningCheckInCard.swift */; };
@@ -129,13 +134,16 @@
 		38603B4C747E6BABA61087E7 /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
 		38A955CAD149160BECAB25CA /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
 		3912643133F5E2BDC9DBEFA0 /* QuietTimeShieldPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */; };
+		394FB71A964F8FB0486F0C06 /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
 		3A446C95E3F3D5B1B554224C /* QuietTimeShieldSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */; };
 		3AC316CE143FD99BDAAFE917 /* FarmSharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D298D556D163C71582736B0F /* FarmSharedComponents.swift */; };
 		3B0EB94A253EB131FD5005A7 /* MorningCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */; };
+		3B4CCB7C57215201407D4358 /* NightFlockViewModel+Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7606643546B66C81C5292038 /* NightFlockViewModel+Errors.swift */; };
 		3E044B1F6F9F00F2A72F8EC4 /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
 		3F4A1E86A6D960EDDFE64213 /* FocusRunLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */; };
 		3F91E4CDB2C938AAE517C5B7 /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		406CF5E814BF782BBCFA45FE /* NightWatchUsageMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4203FF55399C57FCA0A042D /* NightWatchUsageMonitoring.swift */; };
+		409F5958B12BF0E9AB0DD9EF /* NightFlockOutboxService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5CFEB51D35E8C302B15B6E /* NightFlockOutboxService.swift */; };
 		40BEEAE760EE95B0EB984D65 /* CountingSheepStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F944D82DFD76323D0FF627B0 /* CountingSheepStorage.swift */; };
 		423131065D96B4C816455928 /* FocusRunRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7479F9FF862CDA06790D8869 /* FocusRunRules.swift */; };
 		43CB192465E8025108653978 /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E109FBC4F835E47324D0F295 /* FarmModels.swift */; };
@@ -166,6 +174,7 @@
 		4F6D56516B6F29050F70373C /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
 		4F9C1C72F9228B44D0A5781D /* OfflinePurposeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B131CABED0445916D4A206D2 /* OfflinePurposeTests.swift */; };
 		508CFC3E8BFBAA5CF1E80052 /* FarmMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0FC8B341E9575F1CD5187A7 /* FarmMigration.swift */; };
+		518174109E530619D44F5FDE /* NightFlockSharedPastureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CFAE2418AA82478569AF2EC /* NightFlockSharedPastureView.swift */; };
 		51A43E02843BD6E81D0FCB46 /* QuietTimeShieldSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */; };
 		51AF0AFF4828BAD669EC3FF8 /* WindDownStartTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */; };
 		52AB14A0F25C36FD2EE53DB2 /* NightJourneyTerrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */; };
@@ -201,6 +210,7 @@
 		6344CD8B169F84F6FD109BE0 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
 		63E255D815F2B72C5935AD14 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
 		643F100286C48D88E66D82F5 /* ScreenbookFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A825C770C4A91D66A1E00438 /* ScreenbookFixtures.swift */; };
+		6470B6B4AA9B8329F0203BA5 /* NightFlockAccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC05A84D67C2987C58A1A9E /* NightFlockAccountService.swift */; };
 		64BC59F8DEA2A5BFC74642DC /* FocusRunLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */; };
 		6579C35A2C31A596AA93626F /* NightsHistorySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */; };
 		658D6BCD0D5266E5E87AA675 /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
@@ -222,6 +232,7 @@
 		6C731AB89AD16612042529C9 /* FarmShopPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE41981940E0041F8B252414 /* FarmShopPreviews.swift */; };
 		6CAA815C75FB6C3FBCF88462 /* QuietTimeShieldSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */; };
 		6CB70567B8D91F6F58FC2B32 /* FocusRunRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7479F9FF862CDA06790D8869 /* FocusRunRules.swift */; };
+		6CD81241FF535D67A8C2E6CE /* NightFlockHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EBABFF4413C439F3C62EC52 /* NightFlockHubView.swift */; };
 		6D2F03B0D04C489375FF0BFE /* NightWatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6981F038801F2E19A264F5 /* NightWatchTests.swift */; };
 		6D31699A57C52B8B1D4F073A /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		6DA27428F4128B18FCDFD14F /* WindDownMethodPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7AE226B0340F8F53DD877A8 /* WindDownMethodPicker.swift */; };
@@ -260,6 +271,7 @@
 		7C8F693BAECF50AEFA90F1E2 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9259C854A63E43C57AEAA32C /* FeedbackService.swift */; };
 		7D1DC28007CFFFD6F872447E /* Orientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF7E46FDD6564DB0A78FC1E3 /* Orientation.swift */; };
 		7D48645BE58A9E075F863FEB /* MVPMockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7122E74B25BB4F4D1EB3D94C /* MVPMockData.swift */; };
+		7D5ABB511D0B7EB02F3D8C84 /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
 		7EA1D481F43C3C63841523A0 /* NightJourneyGait.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */; };
 		7F66FEEADED6A9FADED39DBD /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C142284812C6FFC1A66DC6 /* QRCodeScannerView.swift */; };
 		807863A3A355C18EA1F8A910 /* FarmEconomyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */; };
@@ -277,6 +289,7 @@
 		877E987C02578F87EBCA0208 /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
 		884CF15B0C65BAC011618F96 /* RewardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F2F141C24516D082490195 /* RewardEngine.swift */; };
 		888E319EF2E7CA27ACC10AB7 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
+		8949C9178A1DE5CA452C6005 /* NightFlockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9224AB0895BD0E0DB0E09F82 /* NightFlockTests.swift */; };
 		8960494EFE5BDE8B5A92E2D1 /* OnboardingStepSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A493AFCF8698D6793A0D03B /* OnboardingStepSupport.swift */; };
 		897057BBDD47C09A3485DF9B /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
 		89F0C749E5AE2CFD76E139F4 /* FocusRunLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */; };
@@ -300,6 +313,7 @@
 		92C959F57FD16619F3552606 /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
 		93E87528CA5E4C426C1EC9EE /* QuietNoteTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8083824E0DA7A3EB14F351 /* QuietNoteTextTests.swift */; };
 		93EF975DB44538C09E74A8C4 /* AppFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984770912E1D1E0E0B021EAD /* AppFeedback.swift */; };
+		942C467FFF7D3779C749702C /* NightFlockPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB187B79332895B17084F74 /* NightFlockPresentation.swift */; };
 		945B6D2B599CAFE2A7DC7E32 /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
 		947B76D4DEB5EFC131A0B7C0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3DF58B2DAC7FE37451EAB87E /* Assets.xcassets */; };
 		949BB4249161FC001D5EE821 /* FarmPastureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2548EA4C722C48C6FFC70B78 /* FarmPastureView.swift */; };
@@ -317,6 +331,7 @@
 		9CE3ADA6AF680AFD766DD0A5 /* WindDownStartTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */; };
 		9ED5C8FB43BA41FEA9D75056 /* LocalResetContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4759057D27C87BA76C7B6D1F /* LocalResetContractTests.swift */; };
 		9F9B799A3607880757A262A3 /* OrientationTourOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85E234AB3A00377C8BB23E3 /* OrientationTourOverlay.swift */; };
+		9FCD933486F08FF50AC5EACC /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		9FE58DBF228A344AF499696D /* NightWatchUsageMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4203FF55399C57FCA0A042D /* NightWatchUsageMonitoring.swift */; };
 		9FF058C4BC2075946BC785CA /* MorningCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */; };
 		A00D68168B0BC95B83F70872 /* SupabaseAuthenticationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABBAA24A4F91E63BAAED02F3 /* SupabaseAuthenticationService.swift */; };
@@ -356,7 +371,9 @@
 		B0B7903882659D29B1B0B02F /* MonthlyNightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D900184B3424BC293A70642 /* MonthlyNightsView.swift */; };
 		B1411048A57F370B2684544E /* QuietTimeBriefAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8ED50B756C1284D8161069 /* QuietTimeBriefAccess.swift */; };
 		B1C913224ABD7368AB62D6EA /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
+		B222233BB56AE759E5A140AB /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
 		B26166D321337F488B0F0676 /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E109FBC4F835E47324D0F295 /* FarmModels.swift */; };
+		B2D1CAAD98B4F5A75195DA80 /* NightFlockHomeCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FB6BE1FB12978F1724FB4AC /* NightFlockHomeCard.swift */; };
 		B328B6A757F1F2E3026517DB /* NightsHistorySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */; };
 		B358C91EFEC533742711FBF1 /* QuietTimeBriefAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8ED50B756C1284D8161069 /* QuietTimeBriefAccess.swift */; };
 		B3F593924D0C732409BA2DE3 /* WindDownGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B90812500022857C5B05D0 /* WindDownGuidance.swift */; };
@@ -371,12 +388,14 @@
 		BA9543D34B25572B73E4F1B5 /* ActiveRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCE67F996AC2C3BDD00A1717 /* ActiveRunView.swift */; };
 		BADC449C710BDD6F6AD5F3D4 /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		BD5A985CAFDB04385F02E862 /* FarmMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0FC8B341E9575F1CD5187A7 /* FarmMigration.swift */; };
+		BE2694C56DC7244ABEF5CC4B /* NightFlockPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB187B79332895B17084F74 /* NightFlockPresentation.swift */; };
 		BE6C24537600EBF99A5AC5ED /* WindDownPhaseProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FD5AC342523B66ED804749A /* WindDownPhaseProgressView.swift */; };
 		BE974EB1F959E29D891D8D5A /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
 		BEA7391F437682C412F91A77 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556930E68BC87E851A8295A3 /* Formatting.swift */; };
 		BFBF2B3CB91A59991D204395 /* TrailNotesArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C7125C370816F069E2B9EA /* TrailNotesArchiveView.swift */; };
 		C107E412664051996D3972B6 /* ImpactMeasurementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0774B703AAB7AA39ED6E9 /* ImpactMeasurementTests.swift */; };
 		C1A85EF813C789BD7F99EE24 /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 627A5DA42D08C5C40DA30548 /* PersistenceService.swift */; };
+		C246B9AEC1819D0F8238C65C /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		C29D295CAEAC83392CD3A9F4 /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		C2B25171432179C89EDF3267 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
 		C2CE381ADC249C646303A830 /* ScreenTimeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */; };
@@ -386,6 +405,7 @@
 		C442D7B21A8281A4C0434BC8 /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
 		C466BB4649F04B9D2E0872D3 /* WatchMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B830DE525CC379D8E1929C /* WatchMessage.swift */; };
 		C500303F220D95AB5D643911 /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
+		C505E401C00A207B66804C6C /* NightFlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 745FB7D374C727192ED7EB22 /* NightFlockViewModel.swift */; };
 		C519151350FE88A5EAE2DF0C /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E109FBC4F835E47324D0F295 /* FarmModels.swift */; };
 		C57F065ACCBB7C41ABAFE18E /* MorningCheckInTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BDC3C8DA311A6319747CCBE /* MorningCheckInTests.swift */; };
 		C6A5731F75D96AAF6A8B82BB /* NightWatchHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 766D336119CCB55800F75535 /* NightWatchHistory.swift */; };
@@ -398,6 +418,7 @@
 		CBE2CAFE4E587EB30315B923 /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		CC10F6B26D7D056B00819D34 /* PhoneInTheOtherRoomScreenTimeReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 9B2EA2B025D77BE05F1451EC /* PhoneInTheOtherRoomScreenTimeReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CC3FFCFE6DBE15C54F3736E4 /* WatchRunViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6D3FBBE656EE8A700243E7 /* WatchRunViewModel.swift */; };
+		CCA4D8459A76AA56CE1D6364 /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		CD50E34B387FCECE5271255C /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		CD6A523A3741BCA874E592BD /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
 		CE48762879212A44ADA41E45 /* WindDownStartTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */; };
@@ -422,6 +443,8 @@
 		D855468FCD75145DD23D2559 /* NightsHistorySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */; };
 		D85D3C52E479D3D984584D8E /* RewardShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844AB1C45E211CDC829A1DCB /* RewardShelfView.swift */; };
 		D973DA009E0AFD5648DA4764 /* WatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C1AA88D44D7B3D5BEAEF1C /* WatchConnectivityManager.swift */; };
+		D991D919B9B3FDB81A629BDD /* NightFlockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02EFC6890BD5476F555E775D /* NightFlockService.swift */; };
+		DB46C2AD5374D10673C4353C /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		DBB4C32007F6102603D7D254 /* NightJourneyProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = C72601B936190333C971123E /* NightJourneyProgress.swift */; };
 		DBBF9A3411E99528C0F51DC0 /* TrailBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2C22C0D15ABFC507CAE656F /* TrailBoardView.swift */; };
 		DC3A664794C5DF530C324350 /* ScreenbookScenarioRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF6FC38E493F7600E7AD1FE1 /* ScreenbookScenarioRegistry.swift */; };
@@ -429,9 +452,12 @@
 		DC5C5603B522C4B636E433F7 /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
 		DC813616AD49A2906F915E47 /* SessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7A93AA462082036AB119D5 /* SessionGuard.swift */; };
 		DD7A1E1EAA081E6D89614700 /* QuietPeriodScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3505E7C64139CE4F4E17143 /* QuietPeriodScheduling.swift */; };
+		DE29AB9F220756B88FFE45BA /* NightFlockPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB187B79332895B17084F74 /* NightFlockPresentation.swift */; };
 		DE63244BD47D272310524ABB /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556930E68BC87E851A8295A3 /* Formatting.swift */; };
 		DE9743631F10743A2E66ACCA /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
+		DF269AD669E20C3F58D86665 /* NightFlockDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FDDBADC3E8BB0308C1A6CA /* NightFlockDashboard.swift */; };
 		DF9E0F392DB4691A3DDCDE1F /* AnalyticsExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84574AF008061FDF9EEDBE7A /* AnalyticsExportService.swift */; };
+		DFE8D9D20180309C1B726AD2 /* NightFlockPreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82EB78C4D690A72BBCD83377 /* NightFlockPreviews.swift */; };
 		E007FB3287ABB44BD2909CF8 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
 		E06B67B22C0C86E579DA5246 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
 		E1163580735C9015E025515E /* WindDownGuideCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCFF516621464F444B1C666 /* WindDownGuideCard.swift */; };
@@ -447,10 +473,12 @@
 		E74844C79FF19297720361C6 /* QuietNoteText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075F8FE54AF036CB8A62A9C7 /* QuietNoteText.swift */; };
 		E75F662A389C8DE087C3AD24 /* FocusRunLiveActivityPushContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */; };
 		E7C81829A27A3F201EF5D839 /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
+		E7D120184E5EAD84C8016B2B /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
 		E80EB340B15ED80246C1D2E8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07F629923FA0EFE9EFADB0AA /* Assets.xcassets */; };
 		E840CF0B9D97BEB561ADD643 /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB21F4F561F0CDDE5838E2E /* AppAppearance.swift */; };
 		E8FED9FC54C957DBEC1B9C25 /* NightWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0017C31179B4E0FF551A79D4 /* NightWatch.swift */; };
 		E9D92B98B682606ADDCA7DA7 /* NightJourneyTerrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */; };
+		E9F4DA532D5C767C643E9137 /* NightFlockPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB187B79332895B17084F74 /* NightFlockPresentation.swift */; };
 		EB168616C20B8D390DA75A37 /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
 		EB971264164D13BB707F1DD5 /* NightWatchGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE29836613BFD365670A422D /* NightWatchGuidance.swift */; };
 		EBC2F3E9EEB6054AF4888967 /* SessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7A93AA462082036AB119D5 /* SessionGuard.swift */; };
@@ -478,6 +506,7 @@
 		F79EC70123FDC8FA131594F1 /* RewardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F2F141C24516D082490195 /* RewardEngine.swift */; };
 		F7D09980F0A747FE035BF831 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		F8487D073D156F361C650D26 /* RewardShelfViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F600DE2E47379444ABD60760 /* RewardShelfViewModel.swift */; };
+		F8A81C87379B035FC2DB72A4 /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
 		F93B0789A394FF61828EFCD9 /* FarmEconomyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */; };
 		F9E8C987498EA62985893D75 /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
 		FA7194D4C7C1775C6A9A9E47 /* NotificationCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93972DA8F2073D37A04DFC6 /* NotificationCopy.swift */; };
@@ -580,6 +609,7 @@
 		008A4EBE50F30A695D24EFBB /* HealthSleepService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthSleepService.swift; sourceTree = "<group>"; };
 		008E2862DEB041FA57F918F7 /* RewardEngineTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardEngineTests.swift; sourceTree = "<group>"; };
 		01E1609869578CBA439CC5D9 /* WindDownSchedulingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownSchedulingTests.swift; sourceTree = "<group>"; };
+		02EFC6890BD5476F555E775D /* NightFlockService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockService.swift; sourceTree = "<group>"; };
 		049E4EF9D90B759E69EDBD13 /* WatchSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSetupView.swift; sourceTree = "<group>"; };
 		06D5412EB0A88211750BD467 /* NotificationPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPreferences.swift; sourceTree = "<group>"; };
 		075F8FE54AF036CB8A62A9C7 /* QuietNoteText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietNoteText.swift; sourceTree = "<group>"; };
@@ -592,7 +622,9 @@
 		0F0FF354B369E470C16D40BB /* QuietTimeShielding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShielding.swift; sourceTree = "<group>"; };
 		0F205094CAC93767D6BE21A4 /* PhoneInTheOtherRoom.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneInTheOtherRoom.entitlements; sourceTree = "<group>"; };
 		0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldPresentation.swift; sourceTree = "<group>"; };
+		0FB6BE1FB12978F1724FB4AC /* NightFlockHomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockHomeCard.swift; sourceTree = "<group>"; };
 		0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightJourneyGait.swift; sourceTree = "<group>"; };
+		12FDDBADC3E8BB0308C1A6CA /* NightFlockDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockDashboard.swift; sourceTree = "<group>"; };
 		143998BEF75E197363BCBB6F /* PhoneInTheOtherRoomShieldAction.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneInTheOtherRoomShieldAction.entitlements; sourceTree = "<group>"; };
 		1475062F8198CD34FBC569B2 /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		156E35C22E01790D51A4A0E4 /* Supabase.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Supabase.xcconfig; sourceTree = "<group>"; };
@@ -601,6 +633,7 @@
 		178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmEconomyRules.swift; sourceTree = "<group>"; };
 		180FD34F0C45EF5E28E01556 /* OfflinePurpose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflinePurpose.swift; sourceTree = "<group>"; };
 		1BDC3C8DA311A6319747CCBE /* MorningCheckInTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInTests.swift; sourceTree = "<group>"; };
+		1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockModels.swift; sourceTree = "<group>"; };
 		1F71861D5D292EA8E4A987B6 /* FeedbackFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackFormView.swift; sourceTree = "<group>"; };
 		1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldSchedule.swift; sourceTree = "<group>"; };
 		20513EF9877F54ADA4BEE987 /* WatchEarlyEndView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchEarlyEndView.swift; sourceTree = "<group>"; };
@@ -669,12 +702,15 @@
 		6A86147F5D5B2180BAA8BA8B /* ImpactDataSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpactDataSyncService.swift; sourceTree = "<group>"; };
 		6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmShop.swift; sourceTree = "<group>"; };
 		6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeIntegration.swift; sourceTree = "<group>"; };
+		6CFAE2418AA82478569AF2EC /* NightFlockSharedPastureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedPastureView.swift; sourceTree = "<group>"; };
 		7005D618AE83F9E9EFC62CAD /* WatchOllieIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchOllieIconView.swift; sourceTree = "<group>"; };
 		7069088917330301D9C04EFA /* PhoneInTheOtherRoomShieldConfiguration.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneInTheOtherRoomShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7122E74B25BB4F4D1EB3D94C /* MVPMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MVPMockData.swift; sourceTree = "<group>"; };
 		7206F968949A850F425C443C /* ScreenbookCaptureReadiness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenbookCaptureReadiness.swift; sourceTree = "<group>"; };
+		745FB7D374C727192ED7EB22 /* NightFlockViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockViewModel.swift; sourceTree = "<group>"; };
 		7479F9FF862CDA06790D8869 /* FocusRunRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunRules.swift; sourceTree = "<group>"; };
 		74F981EB8E07B457CED0B09A /* WatchRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRunView.swift; sourceTree = "<group>"; };
+		7606643546B66C81C5292038 /* NightFlockViewModel+Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NightFlockViewModel+Errors.swift"; sourceTree = "<group>"; };
 		766D336119CCB55800F75535 /* NightWatchHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightWatchHistory.swift; sourceTree = "<group>"; };
 		79A0FB5E7DC57798BBE4096D /* FocusRunSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunSetupView.swift; sourceTree = "<group>"; };
 		79FD21CE8287D13A7A2F93B7 /* OnboardingQuietStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingQuietStepView.swift; sourceTree = "<group>"; };
@@ -684,12 +720,16 @@
 		7C8EBA2BFE8E2FDEADE480C5 /* FocusRunViewModel+Farm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FocusRunViewModel+Farm.swift"; sourceTree = "<group>"; };
 		7CB21F4F561F0CDDE5838E2E /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAppearance.swift; sourceTree = "<group>"; };
 		7CC8CF1566C6708731DA3245 /* WatchConnectivityManagerWatch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityManagerWatch.swift; sourceTree = "<group>"; };
+		7DB187B79332895B17084F74 /* NightFlockPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockPresentation.swift; sourceTree = "<group>"; };
 		7E204C37852098CA2DC19896 /* NightWatchReceiptCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightWatchReceiptCard.swift; sourceTree = "<group>"; };
 		7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunLiveActivityPushContract.swift; sourceTree = "<group>"; };
+		7EBABFF4413C439F3C62EC52 /* NightFlockHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockHubView.swift; sourceTree = "<group>"; };
 		80E395A728ED7F48F5A013B9 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
+		82EB78C4D690A72BBCD83377 /* NightFlockPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockPreviews.swift; sourceTree = "<group>"; };
 		844AB1C45E211CDC829A1DCB /* RewardShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardShelfView.swift; sourceTree = "<group>"; };
 		84574AF008061FDF9EEDBE7A /* AnalyticsExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsExportService.swift; sourceTree = "<group>"; };
 		86474E30A0FD22942AB201DD /* EarlyEndView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarlyEndView.swift; sourceTree = "<group>"; };
+		9224AB0895BD0E0DB0E09F82 /* NightFlockTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockTests.swift; sourceTree = "<group>"; };
 		92339633AA5087ADD44DC25B /* NightWatchHistoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightWatchHistoryTests.swift; sourceTree = "<group>"; };
 		9259C854A63E43C57AEAA32C /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
 		96D492CABD33A3BC68F45C56 /* WatchNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchNotificationService.swift; sourceTree = "<group>"; };
@@ -748,6 +788,7 @@
 		C8F6D96755B7E55F65270D23 /* PhoneInTheOtherRoom.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PhoneInTheOtherRoom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C94150EEEF9D0FB0010D157C /* NotificationPlanningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPlanningTests.swift; sourceTree = "<group>"; };
 		CA2700AF27F1B49CE70A7034 /* PhoneInTheOtherRoomTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PhoneInTheOtherRoomTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CA5CFEB51D35E8C302B15B6E /* NightFlockOutboxService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockOutboxService.swift; sourceTree = "<group>"; };
 		CC03E8137A0193E690B45BB3 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		CC796881096EBDE0ADEE0E5E /* QuietTimeShieldConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldConfiguration.swift; sourceTree = "<group>"; };
 		CE41981940E0041F8B252414 /* FarmShopPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmShopPreviews.swift; sourceTree = "<group>"; };
@@ -786,6 +827,7 @@
 		EAC3F61F4E30B8DA8EEB2818 /* ActiveRunPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRunPresentationTests.swift; sourceTree = "<group>"; };
 		EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckIn.swift; sourceTree = "<group>"; };
 		ECC9B78384C74CC3192CFD2C /* NightsWeekSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightsWeekSection.swift; sourceTree = "<group>"; };
+		EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockAPI.swift; sourceTree = "<group>"; };
 		F155290D562D7CB38E2AB55F /* PhoneInTheOtherRoomLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneInTheOtherRoomLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightsHistorySummary.swift; sourceTree = "<group>"; };
 		F4AFA2769B1B9866001DB88D /* GameComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameComponents.swift; sourceTree = "<group>"; };
@@ -796,6 +838,7 @@
 		F93972DA8F2073D37A04DFC6 /* NotificationCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCopy.swift; sourceTree = "<group>"; };
 		F944D82DFD76323D0FF627B0 /* CountingSheepStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountingSheepStorage.swift; sourceTree = "<group>"; };
 		FA6981F038801F2E19A264F5 /* NightWatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightWatchTests.swift; sourceTree = "<group>"; };
+		FBC05A84D67C2987C58A1A9E /* NightFlockAccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockAccountService.swift; sourceTree = "<group>"; };
 		FCC2F309C1511BAC0E1BAB3E /* WindDownTimingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownTimingView.swift; sourceTree = "<group>"; };
 		FCE67F996AC2C3BDD00A1717 /* ActiveRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRunView.swift; sourceTree = "<group>"; };
 		FDF622225F600D7D4FE48BB2 /* QuietWindowDurationEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietWindowDurationEditor.swift; sourceTree = "<group>"; };
@@ -838,6 +881,9 @@
 				5651C224C107445FDB3F11A9 /* FocusRunLiveActivityService.swift */,
 				008A4EBE50F30A695D24EFBB /* HealthSleepService.swift */,
 				6A86147F5D5B2180BAA8BA8B /* ImpactDataSyncService.swift */,
+				FBC05A84D67C2987C58A1A9E /* NightFlockAccountService.swift */,
+				CA5CFEB51D35E8C302B15B6E /* NightFlockOutboxService.swift */,
+				02EFC6890BD5476F555E775D /* NightFlockService.swift */,
 				4553AA68080C4280F7560845 /* NightWatchUsageMonitoringService.swift */,
 				627A5DA42D08C5C40DA30548 /* PersistenceService.swift */,
 				AE506420243A43FDCCD953CF /* PhoneBedNFCService.swift */,
@@ -895,6 +941,7 @@
 				51A0774B703AAB7AA39ED6E9 /* ImpactMeasurementTests.swift */,
 				4759057D27C87BA76C7B6D1F /* LocalResetContractTests.swift */,
 				1BDC3C8DA311A6319747CCBE /* MorningCheckInTests.swift */,
+				9224AB0895BD0E0DB0E09F82 /* NightFlockTests.swift */,
 				2E6D7736AF6FF5F49C26FC84 /* NightJourneyProgressTests.swift */,
 				5091A90B501C64D66D6C3608 /* NightsHistorySummaryTests.swift */,
 				92339633AA5087ADD44DC25B /* NightWatchHistoryTests.swift */,
@@ -1089,9 +1136,22 @@
 				FCC2F309C1511BAC0E1BAB3E /* WindDownTimingView.swift */,
 				2FE380081A872D395BE61323 /* Components */,
 				D659BE7A19CFBF29D88A511C /* MVP */,
+				773144292B181E496792CA85 /* NightFlock */,
 				114A3BB936871B096EC20FBD /* Onboarding */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		773144292B181E496792CA85 /* NightFlock */ = {
+			isa = PBXGroup;
+			children = (
+				12FDDBADC3E8BB0308C1A6CA /* NightFlockDashboard.swift */,
+				0FB6BE1FB12978F1724FB4AC /* NightFlockHomeCard.swift */,
+				7EBABFF4413C439F3C62EC52 /* NightFlockHubView.swift */,
+				82EB78C4D690A72BBCD83377 /* NightFlockPreviews.swift */,
+				6CFAE2418AA82478569AF2EC /* NightFlockSharedPastureView.swift */,
+			);
+			path = NightFlock;
 			sourceTree = "<group>";
 		};
 		8D92613771E431FCF5A0293E /* Products */ = {
@@ -1145,6 +1205,8 @@
 			children = (
 				E10F6B198F7484F2D1475ED0 /* FocusRunViewModel.swift */,
 				7C8EBA2BFE8E2FDEADE480C5 /* FocusRunViewModel+Farm.swift */,
+				745FB7D374C727192ED7EB22 /* NightFlockViewModel.swift */,
+				7606643546B66C81C5292038 /* NightFlockViewModel+Errors.swift */,
 				F600DE2E47379444ABD60760 /* RewardShelfViewModel.swift */,
 			);
 			path = ViewModels;
@@ -1191,6 +1253,9 @@
 				556930E68BC87E851A8295A3 /* Formatting.swift */,
 				E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */,
 				EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */,
+				EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */,
+				1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */,
+				7DB187B79332895B17084F74 /* NightFlockPresentation.swift */,
 				D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */,
 				0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */,
 				C72601B936190333C971123E /* NightJourneyProgress.swift */,
@@ -1605,6 +1670,19 @@
 				167567E4D871040D9DE32CB8 /* MorningCheckIn.swift in Sources */,
 				36DFFE64F22A9D5E69C9D2AB /* MorningCheckInCard.swift in Sources */,
 				102EEDF4C97841C7389559A8 /* NearbyInteractionDistanceProvider.swift in Sources */,
+				1A756A5B4A98418C47675D93 /* NightFlockAPI.swift in Sources */,
+				6470B6B4AA9B8329F0203BA5 /* NightFlockAccountService.swift in Sources */,
+				DF269AD669E20C3F58D86665 /* NightFlockDashboard.swift in Sources */,
+				B2D1CAAD98B4F5A75195DA80 /* NightFlockHomeCard.swift in Sources */,
+				6CD81241FF535D67A8C2E6CE /* NightFlockHubView.swift in Sources */,
+				353243A0EA0BABE5E5F471CF /* NightFlockModels.swift in Sources */,
+				409F5958B12BF0E9AB0DD9EF /* NightFlockOutboxService.swift in Sources */,
+				942C467FFF7D3779C749702C /* NightFlockPresentation.swift in Sources */,
+				DFE8D9D20180309C1B726AD2 /* NightFlockPreviews.swift in Sources */,
+				D991D919B9B3FDB81A629BDD /* NightFlockService.swift in Sources */,
+				518174109E530619D44F5FDE /* NightFlockSharedPastureView.swift in Sources */,
+				3B4CCB7C57215201407D4358 /* NightFlockViewModel+Errors.swift in Sources */,
+				C505E401C00A207B66804C6C /* NightFlockViewModel.swift in Sources */,
 				F7D09980F0A747FE035BF831 /* NightJourneyAssets.swift in Sources */,
 				9A11D4F350366236FCC6BF58 /* NightJourneyGait.swift in Sources */,
 				11C7E3EC931CAB2C524A326E /* NightJourneyProgress.swift in Sources */,
@@ -1722,6 +1800,9 @@
 				BEA7391F437682C412F91A77 /* Formatting.swift in Sources */,
 				3E044B1F6F9F00F2A72F8EC4 /* ImpactMeasurement.swift in Sources */,
 				55ABC61716645893EDD05AF5 /* MorningCheckIn.swift in Sources */,
+				394FB71A964F8FB0486F0C06 /* NightFlockAPI.swift in Sources */,
+				DB46C2AD5374D10673C4353C /* NightFlockModels.swift in Sources */,
+				E9F4DA532D5C767C643E9137 /* NightFlockPresentation.swift in Sources */,
 				888E319EF2E7CA27ACC10AB7 /* NightJourneyAssets.swift in Sources */,
 				756E006DCE141D6022C1067C /* NightJourneyGait.swift in Sources */,
 				A2004564E7A1B2DBF90D2236 /* NightJourneyProgress.swift in Sources */,
@@ -1785,6 +1866,9 @@
 				09B37744056AAC8ABD096A63 /* Formatting.swift in Sources */,
 				C442D7B21A8281A4C0434BC8 /* ImpactMeasurement.swift in Sources */,
 				9FF058C4BC2075946BC785CA /* MorningCheckIn.swift in Sources */,
+				E7D120184E5EAD84C8016B2B /* NightFlockAPI.swift in Sources */,
+				30A07E2415E652AAB698C16E /* NightFlockModels.swift in Sources */,
+				2ED16D7EC13526B27631B8D6 /* NightFlockPresentation.swift in Sources */,
 				C3B39C287883C672C7AE0E50 /* NightJourneyAssets.swift in Sources */,
 				0E1D50337F0F1298A1352269 /* NightJourneyGait.swift in Sources */,
 				AE663D22394EC73E02C633C0 /* NightJourneyProgress.swift in Sources */,
@@ -1847,6 +1931,9 @@
 				A2051E6767C60E2DE6C5A4E1 /* Formatting.swift in Sources */,
 				E7C81829A27A3F201EF5D839 /* ImpactMeasurement.swift in Sources */,
 				69FA98FCA63048D31A258816 /* MorningCheckIn.swift in Sources */,
+				B222233BB56AE759E5A140AB /* NightFlockAPI.swift in Sources */,
+				CCA4D8459A76AA56CE1D6364 /* NightFlockModels.swift in Sources */,
+				1CC56DF89D039F63717DB9D9 /* NightFlockPresentation.swift in Sources */,
 				C913E185B0625F7CDEC29C67 /* NightJourneyAssets.swift in Sources */,
 				F24BCF5C2459654624480BD5 /* NightJourneyGait.swift in Sources */,
 				2F22D06A0264FFA4320BEE2F /* NightJourneyProgress.swift in Sources */,
@@ -1927,6 +2014,9 @@
 				0D16961804F0A1782D7E104E /* Formatting.swift in Sources */,
 				56FF302373E22AC6002EBD28 /* ImpactMeasurement.swift in Sources */,
 				3B0EB94A253EB131FD5005A7 /* MorningCheckIn.swift in Sources */,
+				F8A81C87379B035FC2DB72A4 /* NightFlockAPI.swift in Sources */,
+				9FCD933486F08FF50AC5EACC /* NightFlockModels.swift in Sources */,
+				BE2694C56DC7244ABEF5CC4B /* NightFlockPresentation.swift in Sources */,
 				8E1A4A4BEEEC870003DC9E68 /* NightJourneyAssets.swift in Sources */,
 				7EA1D481F43C3C63841523A0 /* NightJourneyGait.swift in Sources */,
 				DBB4C32007F6102603D7D254 /* NightJourneyProgress.swift in Sources */,
@@ -2006,6 +2096,10 @@
 				9ED5C8FB43BA41FEA9D75056 /* LocalResetContractTests.swift in Sources */,
 				5F3BF3BAB1BB152BFD67EF56 /* MorningCheckIn.swift in Sources */,
 				C57F065ACCBB7C41ABAFE18E /* MorningCheckInTests.swift in Sources */,
+				7D5ABB511D0B7EB02F3D8C84 /* NightFlockAPI.swift in Sources */,
+				C246B9AEC1819D0F8238C65C /* NightFlockModels.swift in Sources */,
+				DE29AB9F220756B88FFE45BA /* NightFlockPresentation.swift in Sources */,
+				8949C9178A1DE5CA452C6005 /* NightFlockTests.swift in Sources */,
 				49A44BC0B84BBC21984D02C4 /* NightJourneyAssets.swift in Sources */,
 				32333EEF834C0AB04E12CAC2 /* NightJourneyGait.swift in Sources */,
 				574C6543C8D25D3ACF99B7FB /* NightJourneyProgress.swift in Sources */,

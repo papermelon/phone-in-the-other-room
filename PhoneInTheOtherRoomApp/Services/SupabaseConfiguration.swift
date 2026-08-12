@@ -22,6 +22,7 @@ struct SupabaseConfiguration: Equatable, Sendable {
     let publishableKey: String
     let liveActivityPushEnabled: Bool
     let feedbackEnabled: Bool
+    let nightFlockEnabled: Bool
 
     static func load(bundle: Bundle = .main) throws -> SupabaseConfiguration {
         guard let rawURL = bundle.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
@@ -45,11 +46,15 @@ struct SupabaseConfiguration: Equatable, Sendable {
         let feedbackValue = bundle.object(forInfoDictionaryKey: "SUPABASE_FEEDBACK_ENABLED")
         let feedbackEnabled = (feedbackValue as? Bool)
             ?? ((feedbackValue as? String)?.uppercased() == "YES")
+        let nightFlockValue = bundle.object(forInfoDictionaryKey: "SUPABASE_NIGHT_FLOCK_ENABLED")
+        let nightFlockEnabled = (nightFlockValue as? Bool)
+            ?? ((nightFlockValue as? String)?.uppercased() == "YES")
         return SupabaseConfiguration(
             url: url,
             publishableKey: key,
             liveActivityPushEnabled: enabled,
-            feedbackEnabled: feedbackEnabled
+            feedbackEnabled: feedbackEnabled,
+            nightFlockEnabled: nightFlockEnabled
         )
     }
 }

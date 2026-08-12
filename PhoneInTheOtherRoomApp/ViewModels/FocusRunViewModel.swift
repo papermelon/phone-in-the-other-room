@@ -71,6 +71,7 @@ final class FocusRunViewModel: ObservableObject {
     @Published var nightsRecordFocusID: UUID?
     @Published var shieldingEnabled: Bool
     @Published var farmActionMessage: String?
+    let nightFlockViewModel: NightFlockViewModel
 
     private let focusService = FocusModeSuggestionService()
     private let notifications = PhoneNotificationService.shared
@@ -103,10 +104,15 @@ final class FocusRunViewModel: ObservableObject {
         coordinator: FocusSessionCoordinator? = nil,
         persistence: PersistenceService = .shared,
         nowProvider: @escaping () -> Date = Date.init,
-        startsExternalServices: Bool = true
+        startsExternalServices: Bool = true,
+        nightFlockViewModel: NightFlockViewModel? = nil
     ) {
         self.persistence = persistence
         self.nowProvider = nowProvider
+        self.nightFlockViewModel = nightFlockViewModel
+            ?? (startsExternalServices
+                ? NightFlockViewModel.configured()
+                : NightFlockViewModel(featureEnabled: false))
         let savedQuietTime = persistence.nightWatchPreferences
         let savedSchedule = persistence.windDownSchedule
         let savedReportPreferences = persistence.screenTimeReportPreferences
@@ -154,18 +160,35 @@ final class FocusRunViewModel: ObservableObject {
         self.coordinator.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &cancellables)
+        self.nightFlockViewModel.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
         self.coordinator.optionalSheepSearchBonusProvider = { [weak self] in
             self?.optionalSheepSearchBonusPoints() ?? 0
         }
+        self.coordinator.onPhoneAwayValidated = { [weak self] run in
+            self?.nightFlockViewModel.publishPhoneTucked(for: run)
+        }
         self.coordinator.onRunFinished = { [weak self] in
             guard let self else { return }
+            if let run = self.activeRun {
+                self.nightFlockViewModel.handleTerminalRun(run)
+            }
             self.reconcileOrientationAfterRun()
             self.scheduleAutomaticWindDownIfNeeded()
         }
         screenTimeAuthorization = startsExternalServices ? screenTimeService.currentState() : .notDetermined
         if startsExternalServices {
+            self.nightFlockViewModel.bootstrap()
             Task { @MainActor in
                 notificationAuthorization = await notifications.authorizationStatus()
+            }
+        }
+        if let activeRun, activeRun.state == .completed || activeRun.state == .endedEarly {
+            Task { @MainActor [weak self] in
+                await Task.yield()
+                guard let self, let run = self.activeRun else { return }
+                self.nightFlockViewModel.handleTerminalRun(run)
             }
         }
         sleepAuthorization = startsExternalServices
@@ -543,6 +566,9 @@ final class FocusRunViewModel: ObservableObject {
                 practicePeriodID: orientationState.practicePeriodID
             )
         }
+        if pendingWindDownStartContext?.kind == .primary {
+            nightFlockViewModel.resetNextPrimaryRunSharing()
+        }
         pendingNightWatchPlan = eligible.map {
             WindDownScheduleEngine.plan(
                 for: $0,
@@ -617,13 +643,22 @@ final class FocusRunViewModel: ObservableObject {
         notifications.cancelNightWatchReminder()
         persistence.automaticWindDownSchedule = nil
         quietTimeShielding.cancelAutomaticSchedule()
+        let runID = UUID()
+        if plan.role == .primarySleepBookend {
+            nightFlockViewModel.preparePrimaryRun(
+                runID: runID,
+                at: startedAt,
+                share: nightFlockViewModel.shareNextPrimaryRun
+            )
+        }
         coordinator.start(
             configuration: FocusRunConfiguration(nightWatchPlan: plan, guardKind: selectedGuardKind),
             focusAccepted: false,
             startedAt: startedAt,
             autoConfirmPlacement: selectedGuardKind == .nfcTag,
             appShieldingRequested: appShieldingRequested,
-            liveActivityRequested: liveActivityRequested
+            liveActivityRequested: liveActivityRequested,
+            runID: runID
         )
         if let sourceID,
            sourceID == orientationState.practicePeriodID,
