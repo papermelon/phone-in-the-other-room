@@ -117,7 +117,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   shearing, trading, favourites, and pending arrivals; the Trail Board for missing sheep and
   one favoured lead; Ollie's Trail Notes for persisted results; and the nested Farm Shop plus
   Your Shepherd customization. Discovery history remains after an owned sheep is traded.
-  The feature-flagged **Night Flock** hub is also nested here: two to eight Apple-linked,
+  The feature-flagged **Slumber Party** hub is also nested here: two to eight Apple-linked,
   invited members share only positive phone-tucked and quiet-morning states through one
   seven-night challenge. It has preset identities, system aliases, fixed reactions, safety and
   deletion controls, and no feed, chat, discovery, leaderboard, reward, or Farm economy effect.
@@ -134,7 +134,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
 **Gated out of normal navigation:** general Friends, the legacy mock Farm/Shop, the legacy keepsake
 shelf, and mock-data screens. Debug access requires `-ollie.debug.enableMockScreens YES`;
 these screens are never reachable in Release. The shipping Farm and Farm Shop read only real
-persisted production data. ADR-0016's production Night Flock is a separate narrow exception and
+persisted production data. ADR-0016's production Slumber Party is a separate narrow exception and
 remains fully hidden and network-silent while `SUPABASE_NIGHT_FLOCK_ENABLED=NO`.
 
 **Still deferred:** adaptive coaching, routine checklists, composite behavioural scores,

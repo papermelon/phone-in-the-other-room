@@ -43,7 +43,7 @@ enum NightFlockServiceError: LocalizedError {
     case unsupportedResponse
 
     var errorDescription: String? {
-        "Night Flock returned an unsupported response."
+        "Slumber Party returned an unsupported response."
     }
 }
 

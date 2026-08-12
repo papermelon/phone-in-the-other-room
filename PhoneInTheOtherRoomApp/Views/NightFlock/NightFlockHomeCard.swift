@@ -13,7 +13,7 @@ struct NightFlockHomeCard: View {
                         .foregroundStyle(AppColors.lavender)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text(summary.challengeDay.map { "NIGHT FLOCK · DAY \($0) OF 7" } ?? "NIGHT FLOCK")
+                        Text(summary.challengeDay.map { "SLUMBER PARTY · DAY \($0) OF 7" } ?? "SLUMBER PARTY")
                             .font(pixelFont(.caption2))
                             .foregroundStyle(AppColors.grass)
                         Text(summary.title)
@@ -29,6 +29,6 @@ struct NightFlockHomeCard: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Opens the invite-only Night Flock pasture under Farm")
+        .accessibilityHint("Opens the invite-only Slumber Party pasture under Farm")
     }
 }

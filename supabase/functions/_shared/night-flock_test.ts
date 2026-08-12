@@ -10,7 +10,7 @@ const userID = "10000000-0000-4000-8000-000000000001";
 const challengeID = "20000000-0000-4000-8000-000000000001";
 const key = "a".repeat(64);
 
-Deno.test("Night Flock payload rejects every unrecognized sensitive field", () => {
+Deno.test("Slumber Party payload rejects every unrecognized sensitive field", () => {
   const base = {
     schemaVersion: 1,
     command: "publishCheckIn",
@@ -32,7 +32,7 @@ Deno.test("Night Flock payload rejects every unrecognized sensitive field", () =
   }
 });
 
-Deno.test("Night Flock payload validates identifiers, enums, days, and invite shape", () => {
+Deno.test("Slumber Party payload validates identifiers, enums, days, and invite shape", () => {
   assertThrows(() => validateNightFlockCommand({
     schemaVersion: 1,
     command: "publishCheckIn",
@@ -60,7 +60,7 @@ Deno.test("Night Flock payload validates identifiers, enums, days, and invite sh
   }, "b".repeat(64)), Error, "Idempotency key mismatch");
 });
 
-Deno.test("Night Flock command rejects anonymous JWT callers", async () => {
+Deno.test("Slumber Party command rejects anonymous JWT callers", async () => {
   const response = await handleNightFlockCommand(commandRequest(), {
     authenticate: async () => ({ id: userID, isAnonymous: true }),
     execute: async () => ({ accepted: true }),
@@ -70,7 +70,7 @@ Deno.test("Night Flock command rejects anonymous JWT callers", async () => {
   assertStringIncludes(await response.text(), "Linked account required");
 });
 
-Deno.test("Night Flock command derives caller and never accepts a body owner", async () => {
+Deno.test("Slumber Party command derives caller and never accepts a body owner", async () => {
   let receivedCaller = "";
   const dependencies: NightFlockCommandDependencies = {
     authenticate: async () => ({ id: userID, isAnonymous: false }),

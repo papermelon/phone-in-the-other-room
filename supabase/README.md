@@ -55,7 +55,7 @@ npx supabase functions deploy focus-run-sync
 npx supabase functions deploy live-activity-dispatch --no-verify-jwt
 npx supabase functions deploy submit-feedback
 npx supabase functions deploy feedback-email-delivery --no-verify-jwt
-# Deploy Night Flock only after every ADR-0016 release gate is approved:
+# Deploy Slumber Party only after every ADR-0016 release gate is approved:
 npx supabase functions deploy night-flock-command
 npx supabase functions deploy night-flock-state
 ```
@@ -79,11 +79,11 @@ verified sender in secrets, not source. Configure Supabase Cron to POST
 run, stops after five attempts, and removes feedback rows/private attachments after 180
 days. The support mailbox owner must follow the matching 180-day deletion process.
 
-Night Flock additionally requires Supabase Auth's Apple provider, manual-linking support,
+Slumber Party additionally requires Supabase Auth's Apple provider, manual-linking support,
 deployment of `20260812120000_night_flock_mvp.sql`, both authenticated functions, and a daily
 service-role schedule for `purge_night_flock_retention(now())`. Establish a moderation queue and
 document who can create service-only moderation actions before enabling the client. Do not reuse
-the impact or ActivityKit tables as Night Flock sources.
+the impact or ActivityKit tables as Slumber Party sources.
 
 For development, `APNS_HOST` is `https://api.sandbox.push.apple.com` and
 `APNS_ENVIRONMENT` is `sandbox`.

@@ -15,7 +15,7 @@ Deno.serve((request) => handleNightFlockCommand(request, {
       p_command: payload,
     });
     if (error) throw error;
-    if (!data || typeof data !== "object") throw new Error("Night Flock result unavailable");
+    if (!data || typeof data !== "object") throw new Error("Slumber Party result unavailable");
     return data as {
       accepted: boolean;
       inviteCode?: string | null;

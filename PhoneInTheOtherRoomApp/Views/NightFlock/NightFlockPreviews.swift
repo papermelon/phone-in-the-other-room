@@ -52,7 +52,7 @@ private func previewModel(
     )
 }
 
-#Preview("Night Flock · active") {
+#Preview("Slumber Party · active") {
     NavigationStack {
         NightFlockHubView(viewModel: previewModel(
             phase: .ready,
@@ -61,7 +61,7 @@ private func previewModel(
     }
 }
 
-#Preview("Night Flock · completed · Large Type") {
+#Preview("Slumber Party · completed · Large Type") {
     NavigationStack {
         NightFlockHubView(viewModel: previewModel(
             phase: .ready,
@@ -71,34 +71,34 @@ private func previewModel(
     .environment(\.dynamicTypeSize, .accessibility2)
 }
 
-#Preview("Night Flock · account entry") {
+#Preview("Slumber Party · account entry") {
     NavigationStack {
         NightFlockHubView(viewModel: previewModel(phase: .idle, account: .anonymous))
     }
 }
 
-#Preview("Night Flock · empty") {
+#Preview("Slumber Party · empty") {
     NavigationStack {
         NightFlockHubView(viewModel: previewModel(phase: .ready))
     }
 }
 
-#Preview("Night Flock · loading") {
+#Preview("Slumber Party · loading") {
     NavigationStack { NightFlockHubView(viewModel: previewModel(phase: .loading)) }
 }
 
-#Preview("Night Flock · offline") {
+#Preview("Slumber Party · offline") {
     NavigationStack { NightFlockHubView(viewModel: previewModel(phase: .offline)) }
 }
 
-#Preview("Night Flock · expired invite") {
+#Preview("Slumber Party · expired invite") {
     NavigationStack { NightFlockHubView(viewModel: previewModel(phase: .expiredInvite)) }
 }
 
-#Preview("Night Flock · full") {
+#Preview("Slumber Party · full") {
     NavigationStack { NightFlockHubView(viewModel: previewModel(phase: .fullFlock)) }
 }
 
-#Preview("Night Flock · blocked") {
+#Preview("Slumber Party · blocked") {
     NavigationStack { NightFlockHubView(viewModel: previewModel(phase: .blocked)) }
 }

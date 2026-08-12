@@ -172,7 +172,7 @@ struct WindDownStartSheet: View {
 
                     Text(viewModel.nightFlockViewModel.isChallengeSharingEnabled
                         ? "If off, only positive phone-tucked and quiet-morning states can be shared."
-                        : "Night Flock sharing is already off in your privacy settings.")
+                        : "Slumber Party sharing is already off in your privacy settings.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }

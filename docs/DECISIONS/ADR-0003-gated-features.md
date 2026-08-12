@@ -19,7 +19,7 @@ one is real, and it is the single strongest temptation for future agents to "fin
 The legacy mock Farm, Friends, and Shop screens remain behind the DEBUG launch flag. ADR-0015
 supersedes the former gate on a real Farm and nested Farm Shop: those destinations now ship from
 persisted production models and must never read `MVPMockData`. ADR-0016 supersedes the broad
-Friends/social restriction only for its invite-only seven-night Night Flock boundary. The mock
+Friends/social restriction only for its invite-only seven-night Slumber Party boundary. The mock
 Friends screen and every broader friend graph, feed, chat, discovery, or comparison feature remain
 gated and are never shipped as a "coming soon" placeholder.
 
@@ -49,7 +49,7 @@ remain below only as the history of why the mock screens were withheld. The Frie
    `FarmState`, alongside Home, Nights, and Settings.
 2. **Shop, nested in Farm.** Implemented by ADR-0015 with a local wool balance, fixed
    catalogues, capacity upgrades, and cosmetic equipment. It is not a root tab.
-3. **General Friends last — or never.** Night Flock is separately authorized by ADR-0016.
+3. **General Friends last — or never.** Slumber Party is separately authorized by ADR-0016.
    Any broader Friends surface still requires a backend, accounts, and moderation, and is the
    feature most at odds with the anti-addiction principles (social comparison). Requires
    its own ADR before any work starts. Default answer is no.

@@ -214,7 +214,7 @@ struct FarmDashboardContent: View {
             if let nightFlockSummary, !isWindDownActive {
                 Button(action: onOpenNightFlock) {
                     destinationLabel(
-                        "Night Flock",
+                        "Slumber Party",
                         detail: "Invite-only quiet",
                         badge: nightFlockSummary.challengeDay.map { "day \($0) / 7" } ?? "private",
                         icon: "person.3.fill"

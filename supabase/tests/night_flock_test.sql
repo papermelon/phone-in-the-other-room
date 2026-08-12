@@ -182,7 +182,7 @@ begin
     );
     raise exception 'second active flock was accepted';
   exception when raise_exception then
-    if sqlerrm not like '%One active Night Flock%' then raise; end if;
+    if sqlerrm not like '%One active Slumber Party%' then raise; end if;
   end;
 
   result := public.night_flock_command(owner_id, jsonb_build_object(

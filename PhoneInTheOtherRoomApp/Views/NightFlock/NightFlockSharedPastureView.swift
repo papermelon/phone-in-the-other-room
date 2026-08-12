@@ -94,7 +94,7 @@ struct NightFlockResultCard: View {
                     .foregroundStyle(AppColors.amber)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("NIGHT FLOCK")
+                    Text("SLUMBER PARTY")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
                     Text("A quiet morning reached the shared pasture.")

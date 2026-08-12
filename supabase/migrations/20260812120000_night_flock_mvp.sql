@@ -223,7 +223,7 @@ begin
   from public.night_flock_members
   where flock_id = new.flock_id and status = 'active' and id <> new.id;
   if active_count >= 8 then
-    raise exception 'Night Flock is full' using errcode = '23514';
+    raise exception 'Slumber Party is full' using errcode = '23514';
   end if;
   return new;
 end;
@@ -581,14 +581,14 @@ begin
       and action in ('socialSuspension', 'accountSuspension', 'accountDeletion')
       and (expires_at is null or expires_at > now())
   ) then
-    raise exception 'Night Flock unavailable for this account' using errcode = '42501';
+    raise exception 'Slumber Party unavailable for this account' using errcode = '42501';
   end if;
 
   select * into membership from public.night_flock_members
   where user_id = p_user_id and status = 'active' limit 1;
 
   if command_name = 'createFlock' then
-    if membership.id is not null then raise exception 'One active Night Flock allowed'; end if;
+    if membership.id is not null then raise exception 'One active Slumber Party allowed'; end if;
     if p_command ->> 'identity' not in ('moonlitMeadow', 'orchardGate', 'starlightHill') then
       raise exception 'Invalid flock identity';
     end if;
@@ -660,7 +660,7 @@ begin
     if not found then raise exception 'Invite unavailable'; end if;
 
   elsif command_name = 'join' then
-    if membership.id is not null then raise exception 'One active Night Flock allowed'; end if;
+    if membership.id is not null then raise exception 'One active Slumber Party allowed'; end if;
     if p_command ->> 'shortCode' !~ '^[A-HJ-NP-Z2-9]{12}$' then raise exception 'Invalid invite code'; end if;
     select * into invite from public.night_flock_invites
     where token_hash = extensions.digest(upper(p_command ->> 'shortCode'), 'sha256')
@@ -672,7 +672,7 @@ begin
     perform pg_advisory_xact_lock(hashtextextended(invite.flock_id::text, 0));
     select count(*) into active_count from public.night_flock_members
     where flock_id = invite.flock_id and status = 'active';
-    if active_count >= 8 then raise exception 'Night Flock is full'; end if;
+    if active_count >= 8 then raise exception 'Slumber Party is full'; end if;
     if exists (
       select 1 from public.night_flock_members peer
       where peer.flock_id = invite.flock_id and peer.status = 'active'
@@ -809,7 +809,7 @@ begin
     perform private.delete_night_flock_user_data(p_user_id);
 
   else
-    raise exception 'Unsupported Night Flock command';
+    raise exception 'Unsupported Slumber Party command';
   end if;
 
   return jsonb_build_object(

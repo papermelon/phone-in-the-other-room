@@ -32,15 +32,15 @@ struct NightFlockDashboard: View {
             memberRoster
             privacyControls
         }
-        .confirmationDialog("Leave this Night Flock?", isPresented: $showLeaveConfirmation) {
-            Button("Leave Night Flock", role: .destructive, action: viewModel.leave)
+        .confirmationDialog("Leave this Slumber Party?", isPresented: $showLeaveConfirmation) {
+            Button("Leave Slumber Party", role: .destructive, action: viewModel.leave)
         } message: {
             Text("Shared pasture access ends immediately. Your local nights and Farm stay unchanged.")
         }
-        .confirmationDialog("Delete your Night Flock data?", isPresented: $showDataDeletionConfirmation) {
-            Button("Delete Night Flock data", role: .destructive, action: viewModel.deleteNightFlockData)
+        .confirmationDialog("Delete your Slumber Party data?", isPresented: $showDataDeletionConfirmation) {
+            Button("Delete Slumber Party data", role: .destructive, action: viewModel.deleteNightFlockData)
         } message: {
-            Text("This removes your membership, check-ins, reactions, invites, and profile from Night Flock.")
+            Text("This removes your membership, check-ins, reactions, invites, and profile from Slumber Party.")
         }
         .confirmationDialog("Delete the full online account?", isPresented: $showAccountDeletionConfirmation) {
             Button("Delete online account", role: .destructive, action: viewModel.deleteOnlineAccount)
@@ -168,8 +168,8 @@ struct NightFlockDashboard: View {
                 Text("No exact times, durations, missed nights, early endings, health data, app selections, or Farm data are shared.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
-                Button("Leave Night Flock") { showLeaveConfirmation = true }
-                Button("Delete my Night Flock data") { showDataDeletionConfirmation = true }
+                Button("Leave Slumber Party") { showLeaveConfirmation = true }
+                Button("Delete my Slumber Party data") { showDataDeletionConfirmation = true }
                 Button("Delete full online account", role: .destructive) {
                     showAccountDeletionConfirmation = true
                 }

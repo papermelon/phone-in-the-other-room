@@ -3,7 +3,7 @@
 Prepare Counting Sheep 1.0 for TestFlight and App Store review. Product scope is fixed by
 `PROJECT_BRIEF.md` and ADR-0003/0004/0006/0007: four Release tabs, one user-facing Wind Down
 ritual, optional NFC and continuous shielding, optional read-only sleep context, and only the
-feature-flagged invite-only Night Flock exception defined by ADR-0016.
+feature-flagged invite-only Slumber Party exception defined by ADR-0016.
 
 Last reconciled with `project.yml`: 2026-08-05.
 
@@ -65,12 +65,12 @@ Not locally provable:
 - [ ] HealthKit, NFC Tag Reading, App Groups, Live Activities/push, and Family Controls
       capabilities match the entitlements in `project.yml`.
 - [ ] Sign in with Apple is enabled for the main App ID and its regenerated development and
-      distribution profiles contain `com.apple.developer.applesignin` before Night Flock is enabled.
+      distribution profiles contain `com.apple.developer.applesignin` before Slumber Party is enabled.
 - [ ] Current artwork is cleared per `ASSET_NOTICE.md`.
 - [ ] A public privacy-policy URL reflects `docs/PRIVACY_DATA_MAP.md` and the feedback
       disclosures in `docs/PUBLIC_PRIVACY_POLICY.md`.
 - [ ] App Privacy answers disclose any enabled Supabase transport, optional impact data,
-      optional feedback text/email/screenshots/diagnostics, and any enabled Night Flock account,
+      optional feedback text/email/screenshots/diagnostics, and any enabled Slumber Party account,
       positive check-in, reaction, block, and report data.
 
 ## 2. Generated project, versions, and archive
@@ -102,7 +102,7 @@ xcodebuild archive \
 - [ ] Debug and Release expose exactly Home, Nights, Farm, and Settings by default.
 - [ ] Legacy Friends/Farm/Shop, the legacy shelf, `MVPMockData`, manual analytics, and QA data are
       unreachable without `-ollie.debug.enableMockScreens YES`, and always unreachable in Release.
-      The production Farm/Shop remain real-data surfaces; Night Flock is separate and hidden when
+      The production Farm/Shop remain real-data surfaces; Slumber Party is separate and hidden when
       `SUPABASE_NIGHT_FLOCK_ENABLED=NO`.
 - [ ] No customer surface calls the ritual a Focus Run or generic productivity session.
 - [ ] Current setup exposes App Shielding or NFC + App Shielding. Legacy timer, Watch, and QR
@@ -204,7 +204,7 @@ xcodebuild archive \
 - [ ] Test local midnight, spring/fall DST, timezone change, late start, and app update from
       the current TestFlight build.
 
-## 9A. Night Flock release gate
+## 9A. Slumber Party release gate
 
 - [ ] Hosted migration `20260812120000_night_flock_mvp.sql`, both authenticated Edge Functions,
       Apple Auth provider/manual linking, and daily retention RPC schedule are reviewed and deployed.
@@ -214,9 +214,9 @@ xcodebuild archive \
       and incident procedures are documented before inviting testers.
 - [ ] Two physical Apple-linked accounts prove anonymous ownership is preserved through linking,
       one-use invite create/join, the locked timezone, positive state/reaction sync, offline retry,
-      private-night suppression, sharing-off purge, leave, block, report, Night Flock deletion, and
+      private-night suppression, sharing-off purge, leave, block, report, Slumber Party deletion, and
       full account deletion.
-- [ ] During active Wind Down there is no Night Flock UI, reaction surface, realtime subscription,
+- [ ] During active Wind Down there is no Slumber Party UI, reaction surface, realtime subscription,
       or notification, and backend failure never delays or changes the local run/reward/Farm result.
 - [ ] The public policy and App Store review notes match the enabled behavior. Keep
       `SUPABASE_NIGHT_FLOCK_ENABLED=NO` until every preceding item passes.
@@ -241,7 +241,7 @@ xcodebuild archive \
 - [ ] `git diff --check` is clean.
 - [ ] `plutil -lint` passes for every plist and entitlement.
 - [ ] `supabase db lint` (or hosted migration validation) passes.
-- [ ] Feedback and Night Flock SQL tests and all Deno checks/tests pass.
+- [ ] Feedback and Slumber Party SQL tests and all Deno checks/tests pass.
 - [ ] Human reviews coordinator, entitlement, target, privacy, and migration changes.
 
 The repository can prove compilation and pure logic. Apple distribution approval,
