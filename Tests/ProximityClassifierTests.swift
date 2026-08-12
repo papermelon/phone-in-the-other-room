@@ -103,12 +103,27 @@ final class ProximityClassifierTests: XCTestCase {
         XCTAssertEqual(Set(NightJourneyAssets.backdrops.keys), Set(NightJourneySegment.allCases))
         XCTAssertTrue(NightJourneyAssets.backdrops.values.allSatisfy { $0.hasPrefix("farm/farm_journey_") })
         XCTAssertEqual(NightJourneyAssets.clueAssets.count, 4)
+        XCTAssertEqual(NightJourneyAssets.ollieHomeIdleFrames.count, 6)
+        XCTAssertEqual(
+            NightJourneyAssets.ollieHomeIdleFrames,
+            (1...6).map { "dog/dog_classic_home_idle_frame_0\($0)" }
+        )
         XCTAssertEqual(NightJourneyAssets.ollieRunFrames.count, 6)
         XCTAssertEqual(
             NightJourneyAssets.ollieRunFrames,
             (1...6).map { "dog/dog_classic_run_frame_0\($0)" }
         )
         XCTAssertTrue(NightJourneyAssets.ollieRunFrames.allSatisfy { $0.hasPrefix("dog/") })
+        XCTAssertEqual(NightJourneyAssets.ollieRunGroundAnchors.count, NightJourneyGait.frameCount)
+        XCTAssertTrue(NightJourneyAssets.ollieRunGroundAnchors.allSatisfy { 0.85...1 ~= $0 })
+        XCTAssertEqual(NightJourneyAssets.companionSheepRunFrames.count, 6)
+        XCTAssertEqual(
+            NightJourneyAssets.companionSheepRunFrames,
+            (1...6).map { "sheep/sheep_bramble_chase_run_frame_0\($0)" }
+        )
+        XCTAssertTrue(NightJourneyAssets.companionSheepRunFrames.allSatisfy { $0.hasPrefix("sheep/") })
+        XCTAssertEqual(NightJourneyAssets.companionSheepRunGroundAnchors.count, NightJourneyGait.frameCount)
+        XCTAssertTrue(NightJourneyAssets.companionSheepRunGroundAnchors.allSatisfy { 0.75...0.95 ~= $0 })
     }
     func testScreenTimeSharedStorageUsesStableAppGroupAndOllieKeys() {
         XCTAssertEqual(

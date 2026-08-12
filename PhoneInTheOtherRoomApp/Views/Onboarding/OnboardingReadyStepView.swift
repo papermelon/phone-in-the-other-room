@@ -6,7 +6,7 @@ struct OnboardingReadyStep: View {
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
-            OllieRitualView(state: .ready, size: 100)
+            OllieRitualView(state: .ready, presentation: .inline)
             onboardingTitle(
                 eyebrow: "SAVED FOR TONIGHT",
                 title: "Your Wind Down is ready.",

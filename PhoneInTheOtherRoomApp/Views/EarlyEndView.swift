@@ -2,26 +2,13 @@ import SwiftUI
 
 struct EarlyEndView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         ScrollView {
             VStack(spacing: 16) {
                 PixelCard {
-                    HStack(alignment: .top, spacing: 14) {
-                        OllieRitualView(state: .endedEarly)
-                        VStack(alignment: .leading, spacing: 7) {
-                            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet ? "QUIET TIME ENDED" : AppCopy.EarlyEnd.eyebrow.value)
-                                .font(pixelFont(.caption))
-                                .foregroundStyle(AppColors.secondaryText)
-                            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
-                                ? "Quiet time ended early. Your receipt is ready."
-                                : AppCopy.EarlyEnd.title.value)
-                                .font(pixelFont(.title3))
-                            Text(minutesAwayText + " Tonight can simply be a fresh start.")
-                                .font(pixelFont(.body))
-                                .foregroundStyle(AppColors.secondaryText)
-                        }
-                    }
+                    receiptHeader
                 }
                 NightWatchReceiptCard(
                     run: viewModel.activeRun,
@@ -37,6 +24,48 @@ struct EarlyEndView: View {
         }
         .background(AppColors.paper.ignoresSafeArea())
         .onAppear(perform: viewModel.refreshSleepSummary)
+    }
+
+    @ViewBuilder
+    private var receiptHeader: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            stackedReceiptHeader
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 14) {
+                    OllieRitualView(state: .endedEarly, presentation: .cardCompanion)
+                    receiptMessage
+                        .frame(width: 176, alignment: .leading)
+                        .layoutPriority(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                stackedReceiptHeader
+            }
+        }
+    }
+
+    private var stackedReceiptHeader: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            OllieRitualView(state: .endedEarly, presentation: .cardCompanion)
+                .frame(maxWidth: .infinity)
+            receiptMessage
+        }
+    }
+
+    private var receiptMessage: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet ? "QUIET TIME ENDED" : AppCopy.EarlyEnd.eyebrow.value)
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.secondaryText)
+            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
+                ? "Quiet time ended early. Your receipt is ready."
+                : AppCopy.EarlyEnd.title.value)
+                .font(pixelFont(.title3))
+            Text(minutesAwayText + " Tonight can simply be a fresh start.")
+                .font(pixelFont(.body))
+                .foregroundStyle(AppColors.secondaryText)
+        }
     }
 
     private var minutesAwayText: String {

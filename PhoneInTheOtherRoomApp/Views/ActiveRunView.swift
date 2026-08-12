@@ -179,7 +179,7 @@ struct ActiveRunView: View {
         PixelCard {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(alignment: .top, spacing: 14) {
-                    OllieRitualView(state: ollieState, size: 76)
+                    OllieRitualView(state: ollieState, presentation: .inline)
                     VStack(alignment: .leading, spacing: 5) {
                         Text(presentation?.eyebrow ?? "OLLIE IS ON WATCH")
                             .font(pixelFont(.caption))

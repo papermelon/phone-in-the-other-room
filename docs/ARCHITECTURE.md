@@ -334,6 +334,11 @@ by the iPhone.
   distributed via `.environmentObject`. Views are thin; intents go to the view model.
 - `OllieRitualView` maps the existing setup, placement, Night Watch phase, completion, and
   early-end presentation states to still-image poses. It does not own or duplicate run state.
+- `HomeOllieIdleView` uses a registered six-frame Ollie loop for a brief blink, ear twitch,
+  head tilt, and settle on the configured Home dashboard; Reduce Motion holds frame one.
+- `NightJourneyView` animates the approved six-frame Ollie cycle with a smaller current-batch
+  Bramble sheep running ahead as decorative scenery. The companion is not a search result,
+  reward, or owned flock item.
 - `AppMotion` in `Theme.swift` is the iOS motion vocabulary. Shipping motion respects
   Reduce Motion by removing spatial/repeating effects while retaining brief fades where useful.
 - Two design layers exist (known debt): the canonical pixel Theme

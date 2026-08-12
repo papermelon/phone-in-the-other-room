@@ -67,7 +67,7 @@ struct FeedbackFormView: View {
     private var introduction: some View {
         PixelCard {
             HStack(alignment: .top, spacing: AppSpacing.md) {
-                OllieRitualView(state: .ready, size: 78)
+                OllieRitualView(state: .ready, presentation: .inline)
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("Tell us what you noticed")
                         .font(AppTypography.headline)
