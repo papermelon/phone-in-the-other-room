@@ -17,16 +17,21 @@ docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
   -v ON_ERROR_STOP=1 < supabase/tests/impact_data_test.sql
 docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
   -v ON_ERROR_STOP=1 < supabase/tests/app_feedback_test.sql
+docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
+  -v ON_ERROR_STOP=1 < supabase/tests/night_flock_test.sql
 npx deno check \
   supabase/functions/live-activity-registration/index.ts \
   supabase/functions/live-activity-cancellation/index.ts \
   supabase/functions/focus-run-sync/index.ts \
   supabase/functions/live-activity-dispatch/index.ts \
   supabase/functions/submit-feedback/index.ts \
-  supabase/functions/feedback-email-delivery/index.ts
+  supabase/functions/feedback-email-delivery/index.ts \
+  supabase/functions/night-flock-command/index.ts \
+  supabase/functions/night-flock-state/index.ts
 npx deno test --allow-env \
   supabase/functions/_shared/apns_test.ts \
-  supabase/functions/_shared/feedback_test.ts
+  supabase/functions/_shared/feedback_test.ts \
+  supabase/functions/_shared/night-flock_test.ts
 ```
 
 ## Hosted development project
@@ -50,6 +55,9 @@ npx supabase functions deploy focus-run-sync
 npx supabase functions deploy live-activity-dispatch --no-verify-jwt
 npx supabase functions deploy submit-feedback
 npx supabase functions deploy feedback-email-delivery --no-verify-jwt
+# Deploy Night Flock only after every ADR-0016 release gate is approved:
+npx supabase functions deploy night-flock-command
+npx supabase functions deploy night-flock-state
 ```
 
 Apply `20260730100000_fix_live_activity_rpc_overload.sql` and deploy the updated
@@ -71,6 +79,12 @@ verified sender in secrets, not source. Configure Supabase Cron to POST
 run, stops after five attempts, and removes feedback rows/private attachments after 180
 days. The support mailbox owner must follow the matching 180-day deletion process.
 
+Night Flock additionally requires Supabase Auth's Apple provider, manual-linking support,
+deployment of `20260812120000_night_flock_mvp.sql`, both authenticated functions, and a daily
+service-role schedule for `purge_night_flock_retention(now())`. Establish a moderation queue and
+document who can create service-only moderation actions before enabling the client. Do not reuse
+the impact or ActivityKit tables as Night Flock sources.
+
 For development, `APNS_HOST` is `https://api.sandbox.push.apple.com` and
 `APNS_ENVIRONMENT` is `sandbox`.
 
@@ -84,6 +98,7 @@ SUPABASE_URL = https:/$()/gftqcxfbzngopwndvjyp.supabase.co
 SUPABASE_PUBLISHABLE_KEY = sb_publishable_REPLACE_LOCALLY
 SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED = NO
 SUPABASE_FEEDBACK_ENABLED = NO
+SUPABASE_NIGHT_FLOCK_ENABLED = NO
 ```
 
 Keep the feature disabled until migrations, functions, Cron, Sandbox APNs credentials,
@@ -96,3 +111,8 @@ production schema and functions are deployed, but Resend credentials/domain, Cro
 privacy publication, mailbox retention, and physical-iPhone upload/accessibility checks
 remain external launch gates; until those pass, notification rows remain retryable and the
 iOS form offers its recoverable prefilled-email fallback after a backend failure.
+
+Keep `SUPABASE_NIGHT_FLOCK_ENABLED = NO` in every local/release file until the hosted migration,
+functions, retention schedule, Apple provider, privacy publication, moderation runbook, and
+physical two-account create/join/share/private/block/report/delete matrix all pass. Never replace
+an existing local xcconfig or paste hosted credentials into a tracked example.

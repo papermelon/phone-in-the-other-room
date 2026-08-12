@@ -225,6 +225,12 @@ verify_jwt = true
 [functions.feedback-email-delivery]
 verify_jwt = false
 
+[functions.night-flock-command]
+verify_jwt = true
+
+[functions.night-flock-state]
+verify_jwt = true
+
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
 # [auth.captcha]
 # enabled = true
