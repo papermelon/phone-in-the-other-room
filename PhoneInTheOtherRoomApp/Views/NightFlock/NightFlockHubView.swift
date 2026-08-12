@@ -83,24 +83,66 @@ struct NightFlockHubView: View {
         }
     }
 
+    @ViewBuilder
     private var accountEntry: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            NightFlockStatusCard(
-                symbol: "person.crop.circle.badge.checkmark",
-                title: "A linked account keeps this pasture private.",
-                detail: "Sign in with Apple only when you are ready to create or join. Your local Wind Down stays local."
-            )
-            SignInWithAppleButton(.continue) { request in
-                viewModel.prepareAppleSignInRequest(request)
-            } onCompletion: { result in
-                viewModel.completeAppleSignIn(result)
+            switch viewModel.accountState {
+            case .linking:
+                NightFlockStatusCard(
+                    symbol: "person.crop.circle.badge.clock",
+                    title: "Linking your Apple account…",
+                    detail: "Keep this screen open for a moment. Your existing Counting Sheep data stays with this account."
+                )
+                ProgressView()
+                    .tint(AppColors.grass)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Linking Apple account")
+            case .unavailable:
+                NightFlockStatusCard(
+                    symbol: "wifi.slash",
+                    title: "The account gate could not open.",
+                    detail: accountErrorMessage ?? "Check your connection and try again. Wind Down still works normally."
+                )
+                retryButton
+            case .anonymous:
+                NightFlockStatusCard(
+                    symbol: "person.crop.circle.badge.checkmark",
+                    title: "A linked account keeps this pasture private.",
+                    detail: "Link with Apple only when you are ready to create or join. Your local Wind Down stays local."
+                )
+                if let accountErrorMessage {
+                    NightFlockStatusCard(
+                        symbol: "exclamationmark.bubble.fill",
+                        title: "Apple sign-in did not link this account.",
+                        detail: accountErrorMessage
+                    )
+                }
+                SignInWithAppleButton(.continue) { request in
+                    viewModel.prepareAppleSignInRequest(request)
+                } onCompletion: { result in
+                    viewModel.completeAppleSignIn(result)
+                }
+                .signInWithAppleButtonStyle(.black)
+                .frame(height: 50)
+                .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+                .accessibilityHint("Links the existing anonymous online account without replacing it")
+            case .linked:
+                EmptyView()
             }
-            .signInWithAppleButtonStyle(.black)
-            .frame(height: 50)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-            .disabled(viewModel.accountState == .linking)
-            .accessibilityHint("Links the existing anonymous online account without replacing it")
         }
+    }
+
+    private var accountErrorMessage: String? {
+        guard case .error(let message) = viewModel.phase else { return nil }
+        return message
+    }
+
+    private var retryButton: some View {
+        Button(action: viewModel.retryAccountConnection) {
+            Label("Try the account gate again", systemImage: "arrow.clockwise")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(PixelChipButtonStyle(isSelected: false))
     }
 
     private var createOrJoin: some View {

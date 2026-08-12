@@ -77,6 +77,21 @@ private func previewModel(
     }
 }
 
+#Preview("Slumber Party · linking Apple account") {
+    NavigationStack {
+        NightFlockHubView(viewModel: previewModel(phase: .loading, account: .linking))
+    }
+}
+
+#Preview("Slumber Party · Apple link error") {
+    NavigationStack {
+        NightFlockHubView(viewModel: previewModel(
+            phase: .error("Apple sign-in finished, but account linking is not available yet. Your current account and local data were left unchanged."),
+            account: .anonymous
+        ))
+    }
+}
+
 #Preview("Slumber Party · empty") {
     NavigationStack {
         NightFlockHubView(viewModel: previewModel(phase: .ready))

@@ -24,7 +24,7 @@ struct WindDownScheduleView: View {
                         message = viewModel.windDownScheduleError ?? "Quiet time could not be started just now."
                     }
                 } label: {
-                    Label("Start now", systemImage: "timer")
+                    Label("Start extra quiet now", systemImage: "timer")
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(PixelPrimaryButtonStyle())

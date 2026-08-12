@@ -133,6 +133,21 @@ struct SheepTrailMapState: Codable, Equatable {
     }
 }
 
+struct SheepTrailMapPresentation: Equatable {
+    var title: String
+    var detail: String
+
+    static func home(availableBonusPercentagePoints: Int) -> Self? {
+        let points = min(5, max(0, availableBonusPercentagePoints))
+        guard points > 0 else { return nil }
+        let unit = points == 1 ? "percentage point" : "percentage points"
+        return Self(
+            title: "Extra quiet has mapped more of Ollie’s trail.",
+            detail: "Completed extra quiet time adds \(points) \(unit) to the chance of finding a sheep on a future search."
+        )
+    }
+}
+
 struct SheepSearchState: Codable, Equatable {
     static let currentSchemaVersion = 2
 

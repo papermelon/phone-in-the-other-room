@@ -67,6 +67,33 @@ actor NightFlockAccountService {
         try? await client.auth.signOut(scope: .local)
     }
 
+    nonisolated static func linkFailureMessage(for error: Error) -> String {
+        if let accountError = error as? NightFlockAccountError {
+            return accountError.localizedDescription
+        }
+        if let authError = error as? AuthError {
+            switch authError.errorCode {
+            case .manualLinkingDisabled:
+                return "Apple sign-in finished, but account linking is not available yet. Your current account and local data were left unchanged."
+            case .oauthProviderNotSupported, .providerDisabled, .unexpectedAudience:
+                return "Apple sign-in is not fully configured for this build yet. Your current account and local data were left unchanged."
+            case .identityAlreadyExists:
+                return "That Apple ID is already linked to another Counting Sheep account. This account was left unchanged."
+            default:
+                return "Apple sign-in could not link this account. Your current account and local data were left unchanged. \(authError.localizedDescription)"
+            }
+        }
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost, .timedOut:
+                return "The connection dropped before Apple sign-in could finish. Your current account was left unchanged."
+            default:
+                break
+            }
+        }
+        return "Apple sign-in could not link this account. Your current account and local data were left unchanged."
+    }
+
     nonisolated static func makeAppleNonce() throws -> NightFlockAppleNonce {
         var bytes = [UInt8](repeating: 0, count: 32)
         guard SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes) == errSecSuccess else {

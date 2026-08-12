@@ -138,7 +138,12 @@ final class NightFlockViewModel: ObservableObject {
         switch result {
         case .failure(let error):
             pendingAppleNonce = nil
-            phase = .error(error.localizedDescription)
+            if let authorizationError = error as? ASAuthorizationError,
+               authorizationError.code == .canceled {
+                phase = .idle
+            } else {
+                phase = .error("Apple sign-in did not finish. Please try again.")
+            }
         case .success(let authorization):
             guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
                   let tokenData = credential.identityToken,
@@ -148,18 +153,30 @@ final class NightFlockViewModel: ObservableObject {
                 return
             }
             pendingAppleNonce = nil
+            guard let accountService else {
+                accountState = .unavailable
+                phase = .error("Account linking is unavailable in this build. Your current account was left unchanged.")
+                return
+            }
             accountState = .linking
+            phase = .loading
             Task {
                 do {
-                    try await accountService?.linkAppleIdentity(identityToken: token, nonce: nonce)
+                    try await accountService.linkAppleIdentity(identityToken: token, nonce: nonce)
                     accountState = .linked
                     await refreshState(showLoading: true)
                 } catch {
                     accountState = .anonymous
-                    phase = .error(error.localizedDescription)
+                    phase = .error(NightFlockAccountService.linkFailureMessage(for: error))
                 }
             }
         }
+    }
+
+    func retryAccountConnection() {
+        guard featureEnabled, accountState != .linking else { return }
+        phase = .idle
+        Task { await activateEntry() }
     }
 
     func createFlock() {

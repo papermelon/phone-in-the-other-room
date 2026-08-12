@@ -474,6 +474,7 @@
 		E75F662A389C8DE087C3AD24 /* FocusRunLiveActivityPushContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */; };
 		E7C81829A27A3F201EF5D839 /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
 		E7D120184E5EAD84C8016B2B /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
+		E80E4F43C0FF41D82856120E /* UpcomingQuietTimesCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 699FD1A342B33E49AEA2D7ED /* UpcomingQuietTimesCard.swift */; };
 		E80EB340B15ED80246C1D2E8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 07F629923FA0EFE9EFADB0AA /* Assets.xcassets */; };
 		E840CF0B9D97BEB561ADD643 /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB21F4F561F0CDDE5838E2E /* AppAppearance.swift */; };
 		E8FED9FC54C957DBEC1B9C25 /* NightWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0017C31179B4E0FF551A79D4 /* NightWatch.swift */; };
@@ -696,6 +697,7 @@
 		62BB0BF6298C97D81EECFDD2 /* PhoneInTheOtherRoomWatchApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhoneInTheOtherRoomWatchApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		657822B85060A72926C6069A /* OrientationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationTests.swift; sourceTree = "<group>"; };
 		66DF0DEF514C026CD82AAFF7 /* Supabase.release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Supabase.release.xcconfig; sourceTree = "<group>"; };
+		699FD1A342B33E49AEA2D7ED /* UpcomingQuietTimesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingQuietTimesCard.swift; sourceTree = "<group>"; };
 		6A493AFCF8698D6793A0D03B /* OnboardingStepSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepSupport.swift; sourceTree = "<group>"; };
 		6A5704A7274ACC4DDB90E2AE /* PhoneInTheOtherRoomShieldConfiguration.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneInTheOtherRoomShieldConfiguration.entitlements; sourceTree = "<group>"; };
 		6A7E863AA70FE51BBA4E5D1B /* FarmPreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmPreviewData.swift; sourceTree = "<group>"; };
@@ -1032,6 +1034,7 @@
 				34C142284812C6FFC1A66DC6 /* QRCodeScannerView.swift */,
 				FDF622225F600D7D4FE48BB2 /* QuietWindowDurationEditor.swift */,
 				B3D573FF141CA5AFC3BA0C0F /* ScreenTimeBookendCard.swift */,
+				699FD1A342B33E49AEA2D7ED /* UpcomingQuietTimesCard.swift */,
 				DCCFF516621464F444B1C666 /* WindDownGuideCard.swift */,
 				C7AE226B0340F8F53DD877A8 /* WindDownMethodPicker.swift */,
 				4FD5AC342523B66ED804749A /* WindDownPhaseProgressView.swift */,
@@ -1764,6 +1767,7 @@
 				1D91A89EFBF61205F763B197 /* Theme.swift in Sources */,
 				DBBF9A3411E99528C0F51DC0 /* TrailBoardView.swift in Sources */,
 				BFBF2B3CB91A59991D204395 /* TrailNotesArchiveView.swift in Sources */,
+				E80E4F43C0FF41D82856120E /* UpcomingQuietTimesCard.swift in Sources */,
 				D973DA009E0AFD5648DA4764 /* WatchConnectivityManager.swift in Sources */,
 				C466BB4649F04B9D2E0872D3 /* WatchMessage.swift in Sources */,
 				EC201A3FF4D9822BE21B0936 /* WindDownGuidance.swift in Sources */,
