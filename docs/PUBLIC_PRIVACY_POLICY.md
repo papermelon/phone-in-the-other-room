@@ -1,6 +1,6 @@
 # Counting Sheep App Privacy Policy
 
-**Effective date:** 1 August 2026
+**Effective date:** 12 August 2026
 
 Counting Sheep Project (“we”, “us”, or “Counting Sheep”) provides the Counting Sheep
 iPhone and Apple Watch app. This policy explains how the app handles information. Counting
@@ -76,6 +76,29 @@ operate and evaluate Counting Sheep’s bedtime-habit service, not for advertisi
 unrelated profiling. An observed association does not prove that Counting Sheep caused a
 sleep outcome.
 
+## Optional invite-only Night Flock
+
+If Night Flock is enabled, two to eight invited people can take part in one seven-night
+phone-away challenge. Creating or joining requires Sign in with Apple. Counting Sheep does not
+request your Apple name or email scope for this feature; Apple and Supabase process the provider
+identity and account identifier needed to authenticate and protect your membership.
+
+Night Flock uses a preset flock identity and system-generated aliases. It can store membership,
+the challenge timezone and date range, positive phone-tucked or quiet-morning states by challenge
+day, fixed reactions, hashed and expiring invite codes, sharing choices, blocks, fixed-choice
+reports, and restricted moderation records.
+
+Night Flock does not receive your exact bedtime or wake time, run duration, early-ending reason,
+private or missed nights, Health information, Screen Time selections, selected apps, NFC data,
+personal purpose or cue, notification choices, Farm inventory, sheep, wool, transactions, or
+optional impact-sharing records. Shared morning entries are unnamed, and the app does not list
+who did not share a check-in. Night Flock does not change local rewards or Farm outcomes.
+
+You can keep an individual night private, turn positive sharing off, leave, block another member,
+report using fixed safety reasons, delete your Night Flock data, or delete the full online account.
+Invite records are removed after 30 days, raw positive check-ins and reactions after 90 days, and
+completed aggregate summaries after no more than 12 months unless deletion happens sooner.
+
 ## Optional feedback
 
 The app includes a feedback form. If in-app delivery is enabled and you choose Send, we may
@@ -111,8 +134,9 @@ Apple settings.
 
 We retain backend operational information only as long as reasonably needed to provide,
 secure, troubleshoot, and meet legal obligations for the service. Optional impact data is
-deleted through the in-app deletion control after the service confirms the request. For
-other backend deletion or privacy requests, contact us using the details below. We may need
+deleted through the in-app deletion control after the service confirms the request. For Night
+Flock, in-app controls can remove Night Flock data or the full online account. For other backend
+deletion or privacy requests, contact us using the details below. We may need
 limited information to identify the anonymous installation involved.
 
 ## Security and service providers

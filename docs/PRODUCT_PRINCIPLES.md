@@ -89,6 +89,9 @@ explicit founder direction.
   roots remain reachable so a person can adjust preferences or inspect their own records;
   a persistent return control leads directly back to Wind Down. This access exception must
   not become a feed, game loop, sheep teaser, or reason to keep holding the phone.
+- **Keep Night Flock outside the active ritual.** Before Wind Down, Home may show one quiet
+  positive aggregate. During Wind Down there is no social panel, live update, reaction,
+  notification, or novelty. The morning shared pasture is finite, unnamed, and positive-only.
 - **Respect the morning.** Morning is when rewards land, stats are glanced at, and streak
   warmth is felt. Keep the chosen morning-quiet window calm; do not turn it into a routine
   checklist or an app-browsing session.
@@ -119,6 +122,11 @@ explicit founder direction.
   HealthKit samples, source names, app selections, and personal reflections stay local.
   Optional impact sharing must be purpose-limited, separately consented, date-free, minimal,
   inspectable in copy, stoppable, and deletable.
+- **Share the smallest social truth.** Night Flock publishes only `phoneTucked` and
+  `morningQuietCompleted` for an explicitly shared eligible night. Private nights, additional
+  quiet, absence, early endings, times, durations, HealthKit, Screen Time, NFC, purpose,
+  notification, Farm, sheep, wool, and impact data do not enter its contracts. Small-flock
+  aggregates must not reveal which person is absent.
 
 ## Durable product commitments
 
@@ -157,7 +165,8 @@ never drill-sergeant. Full guide with examples: `skills/product-copy-review/SKIL
 ## Current implementation exclusions
 
 - No medical/sleep-quality claims or scores.
-- No Friends, social comparison, or backend avatar profile in the current Farm scope.
+- No general Friends, social comparison, or backend avatar profile in the current Farm scope.
+  ADR-0016 separately permits only the invite-only seven-night Night Flock companion ritual.
 - No real-money purchase path in ADR-0015; Farm Shop prices use local wool only.
 - No automatic sheep expiration, breeding, or seasonal migration in the first lifecycle slice.
 - No generic productivity framing; progression remains the payoff of the sleep-bookend ritual.

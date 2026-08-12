@@ -3,7 +3,7 @@
 Practical architecture reference for humans and agents. Canonical rules live in
 [`AGENTS.md`](../AGENTS.md); this file goes deeper on structure, data flow, and risk.
 
-Last verified against code: 1 August 2026.
+Last verified against code: 12 August 2026.
 
 ## 1. Stack and build system
 
@@ -12,7 +12,8 @@ Last verified against code: 1 August 2026.
   generated. Run `xcodegen generate` after adding/moving files or editing `project.yml`.
   Never hand-edit `project.pbxproj`.
 - One approved SPM dependency: official `supabase-swift`, limited to optional ActivityKit,
-  consented impact-data, and gated feedback paths. No CocoaPods dependencies. No CI
+  consented impact-data, gated feedback, and ADR-0016 Night Flock paths. No CocoaPods
+  dependencies. No CI
   (local build + test is the gate).
 - Eight application/extension/test targets plus shared domain code.
 
@@ -51,6 +52,9 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ RewardEngine.swift            protected-night progress + legacy reward updates
 ├─ FocusAnalytics.swift          day records, correlations, CSV/JSON export
 ├─ ImpactMeasurement.swift       local outcome comparison + minimised sharing record
+├─ NightFlockModels.swift        seven-day rules and positive-only social domain
+├─ NightFlockPresentation.swift  aggregate and privacy presentation derivations
+├─ NightFlockAPI.swift           versioned commands/state + monotonic outbox contracts
 ├─ NightWatchHistory.swift       90-day aggregate records + idempotent ritual events
 ├─ PhoneBedTag.swift             local NDEF registration digest
 ├─ QuietTimeShieldSchedule.swift schedule/status/evidence App Group contract
@@ -94,8 +98,12 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ AnalyticsExportService.swift             JSON/CSV export to temp files
 │  ├─ SupabaseClientProvider.swift             configured official Swift client
 │  ├─ SupabaseAuthenticationService.swift      anonymous-session restore/create
-│  └─ SupabaseLiveActivityRemoteSink.swift     disabled-by-default push registration sink
-├─ ViewModels/FocusRunViewModel.swift          root view model, owns the coordinator
+│  ├─ SupabaseLiveActivityRemoteSink.swift     disabled-by-default push registration sink
+│  ├─ NightFlockAccountService.swift           anonymous-to-Apple identity linking
+│  ├─ NightFlockService.swift                  typed Edge Function client
+│  └─ NightFlockOutboxService.swift            local monotonic positive-state retry queue
+├─ ViewModels/FocusRunViewModel.swift          root view model, owns coordinator + Night Flock VM
+├─ ViewModels/NightFlockViewModel.swift        feature-gated social presentation and intents
 ├─ Views/
 │  ├─ HomeView.swift                           navigation shell + run-state routing
 │  ├─ PixelHomeDashboard.swift                 home tab
@@ -108,6 +116,7 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ MonthlyNightsView.swift                  shared-summary month calendar
 │  ├─ NightsDayDetailView.swift                grouped day occurrences + factual record detail
 │  ├─ FarmView.swift                           production Farm dashboard and destination routing
+│  ├─ NightFlock/                              invite, hub, trail, pasture, safety, result views
 │  ├─ FarmPastureView.swift                    paged, grounded, visit-shuffled living flock scene
 │  ├─ BarnView.swift                           owned flock, capacity, lifecycle, and pending arrivals
 │  ├─ TrailBoardView.swift                     missing/discovered catalogue and tracked lead
@@ -243,6 +252,9 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    active flock, lifecycle, catalogue, Shop, and customization presentation; Settings owns plan
    and report configuration. Chosen report windows do not
    alter Quiet Time. Missing data is never estimated.
+   When ADR-0016's flag is enabled, Home may show one compact positive Night Flock aggregate
+   and Farm owns the nested Night Flock hub. A successful eligible completion may show one
+   finite link to its anonymous shared-pasture result. None of these surfaces changes rewards.
 9. During an active Night Watch, Home is replaced by the live journey while Nights, Farm,
    and Settings remain mounted in the same four-tab shell. A persistent return strip resets
    nested navigation and returns to Home. Run start, app activation, and active-run notification
@@ -271,6 +283,23 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
     practice is offered only after the tour and uses the normal additional-quiet path, so it
     is recorded without protected-night progress or sheep resolution. Settings can resume or
     replay the tour and start practice separately. Version-one milestone data remains decodable.
+
+### Night Flock run boundary
+
+`FocusRunViewModel` owns and forwards one `NightFlockViewModel`; there is no second app-root or
+session coordinator. A primary manual start creates its final run UUID before
+`FocusSessionCoordinator.start`. If the challenge is active, membership sharing is enabled, and
+the preflight was not private, the Night Flock view model stores a local run-share context.
+
+The coordinator calls `onPhoneAwayValidated` only after NFC/honor/QR/Watch placement has actually
+made the run valid. That callback enqueues `phoneTucked`; successful primary completion enqueues
+`morningQuietCompleted`. An early end removes the context without a command. Automatic and
+additional-quiet runs have no context and therefore cannot publish. Stable
+challenge/member/day/run-derived hashes make retries idempotent, and foreground activation drains
+the monotonic UserDefaults outbox. Network work is asynchronous and never gates local run state.
+
+Home and Farm remove Night Flock navigation when a run becomes active. `ActiveRunView` has no
+Night Flock dependency, state, panel, badge, reaction, notification, or realtime subscription.
 
 ### Backgrounding during a run
 
@@ -375,6 +404,8 @@ by the iPhone.
 | `ollie.phoneBedNFCTag.registration` | `PhoneBedTagRegistration` | local tag UUID + digest metadata; raw token is not retained |
 | `ollie.impactSharing.preferences` | `ImpactSharingPreferences` | explicit optional-sharing state and consent date |
 | `ollie.impactSharing.records` | `[ImpactUploadRecord]` | date-free retry cache for consented impact rows |
+| `ollie.nightFlock.outbox` | `[NightFlockOutboxRecord]` | bounded local retry queue containing only positive state contracts |
+| `ollie.nightFlock.runContexts` | `[NightFlockRunShareContext]` | up to 32 local consent/idempotency contexts; never uploaded as run IDs |
 | `ollie.appearance.preference` | `AppAppearancePreference` | Automatic, Light, or Dark app appearance choice |
 
 - No CoreData / SwiftData. Core state stays in standard defaults. The App Group is limited
@@ -401,10 +432,11 @@ client restores or refreshes an anonymous Supabase session and creates an anonym
 only when no stored session exists. Live Activity registration/cancellation is injected
 through `FocusRunLiveActivityRemoteSink` and remains disabled by default through
 `SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED`. Configuration or network failure never changes the
-  local coordinator's authority, local notification, flock, or reopen reconciliation.
+local coordinator's authority, local notification, flock, or reopen reconciliation.
 
 The versioned `supabase/` backend contains the ActivityKit delivery schema, the optional
-`impact_nights` table, and gated feedback delivery. Impact rows use relative nights and exclude exact dates/times, source
+`impact_nights` table, gated feedback delivery, and the independently gated Night Flock schema.
+Impact rows use relative nights and exclude exact dates/times, source
 names, app tokens, NFC identity, raw Health samples, and free text. The user can stop future
 sharing or call a scoped deletion RPC without deleting local history. The backend and Edge
 Functions remain separately deployed. Client-visible tables use RLS with `auth.uid()`; raw tokens, worker queues, and
@@ -418,6 +450,24 @@ retries every ten minutes up to five attempts and purges rows/private objects af
 `SUPABASE_FEEDBACK_ENABLED` remains off until the independent production gate passes; the
 iOS form then uses Mail instead. ADR-0005/0007 and `ACTIVITYKIT_PUSH_BACKEND.md` define the
 cloud boundaries.
+
+Night Flock is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` (default `NO`). With
+the flag off, its app surfaces are absent and it does not create a Supabase session or make a
+request. Entry creates or restores an anonymous session only when needed, then Sign in with Apple
+links that identity in place and verifies the Auth UUID did not change. Night Flock server RPCs
+also require Apple in Auth app metadata, so another non-anonymous provider is insufficient.
+
+`night-flock-command` and `night-flock-state` derive the caller from the JWT, validate exact
+schema-version-one payloads, and alone call service-role RPCs. Protected tables have RLS enabled,
+no authenticated client write grants, one active membership per user, one pending/active challenge
+per flock, and an eight-member trigger protected by an advisory lock. State projections include
+system aliases only in the roster and omit Auth owner IDs, run IDs, exact timestamps, and private
+state. Plain invite codes are returned once and stored only as SHA-256 digests.
+
+Night Flock tables do not reference `focus_runs`, `impact_nights`, HealthKit, Screen Time, NFC,
+notifications, or any Farm/economy table. Retention purges invites after 30 days, raw check-ins and
+reactions after 90 days, and aggregate completed summaries after 12 months. The hosted scheduler,
+migration/functions, Apple provider, and moderation operating process remain deployment gates.
 
 ## 7. Known architectural risks
 
@@ -453,6 +503,9 @@ cloud boundaries.
 9. **Feedback delivery is disabled by default.** Resend secrets/domain, scheduled retry,
    hosted migration, private-object behavior, mailbox retention, and a physical-device
    upload must all pass before enabling it. Email fallback is the release-safe path.
+10. **Night Flock is disabled by default.** The local contract, app surfaces, schema, RLS tests,
+    and Edge Functions are versioned, but hosted deployment, Apple/Supabase configuration,
+    moderation operations, retention scheduling, and physical two-account QA remain external.
 
 ## 8. Recommended architecture direction
 
@@ -468,13 +521,14 @@ cloud boundaries.
 - Converge run-screen UI onto the pixel Theme; retire `GameComponents` gradually.
 - Inject services into `FocusSessionCoordinator` (init parameters defaulting to
   `.shared`) to make it testable — mechanical, low-risk refactor.
-- Keep ADR-0005 cloud work additive: ActivityKit delivery plus explicitly consented,
-  minimised impact rows. Detailed history remains local.
+- Keep cloud work additive and permission-separated: ActivityKit delivery, explicitly consented
+  minimised impact rows, and ADR-0016's narrow Night Flock tables never become shared data sources.
 
 ## 9. Clean up before App Store 1.0
 
-1. Keep Friends, the legacy Farm/Shop/shelf, and `MVPMockData` behind the explicit Debug flag;
-   keep the production Farm backed only by persisted `SheepSearchState` and `FarmState`.
+1. Keep general Friends, the legacy Farm/Shop/shelf, and `MVPMockData` behind the explicit Debug
+   flag. Night Flock is the separate ADR-0016 production slice and stays release-hidden until its
+   explicit feature flag and external gates are approved.
 2. Register/approve/sign the three new shield extension IDs.
 3. Increment the build number and produce a distribution archive.
 4. `HealthSleepService` uses requested/no-data/error states because HealthKit does not
