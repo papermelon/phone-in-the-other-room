@@ -42,23 +42,40 @@ struct NightJourneyView: View {
         let groundY = CGFloat(profile.normalizedHeight(at: worldPosition)) * size.height
         let slope = profile.normalizedSlope(at: worldPosition) * Double(size.height) / Double(tileWidth)
         let rotation = min(12, max(-12, atan(slope) * 180 / .pi))
-        let ollieSize = min(112, size.width * 0.28)
+        let ollieSize = min(OllieRitualPresentation.journeyAnimation.canvasSize, size.width * 0.28)
+        let sheepX = min(size.width * 0.87, ollieX + max(116, size.width * 0.39))
+        let sheepSize = min(96, size.width * 0.26)
+        let sheepWorldPosition = (Double(sheepX) + travelled) / Double(tileWidth)
+        let sheepGroundY = CGFloat(profile.normalizedHeight(at: sheepWorldPosition)) * size.height
+        let sheepSlope = profile.normalizedSlope(at: sheepWorldPosition) * Double(size.height) / Double(tileWidth)
+        let sheepRotation = min(12, max(-12, atan(sheepSlope) * 180 / .pi))
         let frame = NightJourneyGait.frame(
             forForegroundDistance: travelled,
             reduceMotion: reduceMotion
         )
+        let ollieGroundAnchor = CGFloat(NightJourneyAssets.ollieRunGroundAnchors[frame])
+        let sheepGroundAnchor = CGFloat(NightJourneyAssets.companionSheepRunGroundAnchors[frame])
 
         return ZStack {
             backdrops(for: journey, size: size)
             terrain(profile: profile, travelled: travelled, tileWidth: tileWidth, size: size)
             clueLayer(journey: journey, profile: profile, travelled: travelled, tileWidth: tileWidth, size: size)
+            SheepWalkCycleView(frame: frame, size: sheepSize)
+                .rotationEffect(
+                    .degrees(sheepRotation),
+                    anchor: UnitPoint(x: 0.5, y: sheepGroundAnchor)
+                )
+                .position(x: sheepX, y: sheepGroundY - sheepSize * (sheepGroundAnchor - 0.5))
             OllieWalkCycleView(
                 state: ollieState(for: journey.segment),
                 frame: frame,
                 size: ollieSize
             )
-            .rotationEffect(.degrees(rotation), anchor: .bottom)
-            .position(x: ollieX, y: groundY - ollieSize * 0.4167)
+            .rotationEffect(
+                .degrees(rotation),
+                anchor: UnitPoint(x: 0.5, y: ollieGroundAnchor)
+            )
+            .position(x: ollieX, y: groundY - ollieSize * (ollieGroundAnchor - 0.5))
 
             VStack {
                 HStack(alignment: .top) {
@@ -284,6 +301,17 @@ private struct OllieWalkCycleView: View {
     }
 }
 
+private struct SheepWalkCycleView: View {
+    let frame: Int
+    let size: CGFloat
+
+    var body: some View {
+        JourneyAssetImage(name: NightJourneyAssets.companionSheepRunFrames[frame])
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}
+
 private struct JourneyAssetImage: View {
     let name: String
     var contentMode: ContentMode = .fit
@@ -294,12 +322,12 @@ private struct JourneyAssetImage: View {
                 .resizable()
                 .interpolation(.high)
                 .aspectRatio(contentMode: contentMode)
-        } else {
-            ZStack {
-                LinearGradient(colors: [AppColors.sky, AppColors.grass], startPoint: .top, endPoint: .bottom)
-                Image(systemName: name.hasPrefix("dog/") ? "figure.walk" : "mountain.2.fill")
+            } else {
+                ZStack {
+                    LinearGradient(colors: [AppColors.sky, AppColors.grass], startPoint: .top, endPoint: .bottom)
+                    Image(systemName: name.hasPrefix("dog/") ? "figure.walk" : name.hasPrefix("sheep/") ? "hare.fill" : "mountain.2.fill")
                     .foregroundStyle(.white.opacity(0.8))
-            }
+                }
         }
     }
 }

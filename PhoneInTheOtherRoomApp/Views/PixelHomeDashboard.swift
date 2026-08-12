@@ -81,7 +81,7 @@ private struct PixelHomeDashboardContent: View {
                 onEdit: onEditTiming
             )
 
-            OllieRitualView(state: .ready, size: 152)
+            HomeOllieIdleView()
                 .accessibilityLabel("Ollie is ready for tonight's Wind Down")
 
             VStack(spacing: AppSpacing.sm) {

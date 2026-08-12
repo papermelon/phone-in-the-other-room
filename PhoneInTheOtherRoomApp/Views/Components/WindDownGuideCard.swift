@@ -113,7 +113,7 @@ struct WindDownHowItWorksView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                OllieRitualView(state: .ready, size: 112)
+                OllieRitualView(state: .ready, presentation: .cardCompanion)
                     .frame(maxWidth: .infinity)
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("HOW WIND DOWN WORKS")

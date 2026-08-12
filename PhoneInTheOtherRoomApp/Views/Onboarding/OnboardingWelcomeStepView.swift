@@ -12,7 +12,7 @@ struct OnboardingWelcomeStep: View {
             OnboardingTimeline(draft: OnboardingDraft())
 
             VStack(spacing: AppSpacing.sm) {
-                OllieRitualView(state: .ready, size: 112)
+                OllieRitualView(state: .ready, presentation: .onboardingHero)
                 Text("Ollie keeps watch while the phone rests somewhere else.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)

@@ -37,7 +37,9 @@ runtime and persistence decisions remain in `AGENTS.md`, `docs/ARCHITECTURE.md`,
 - [x] `dog_classic_proud`
 - [x] `dog_classic_concerned`
 - [x] `dog_classic_run_frame_01` through `dog_classic_run_frame_06`
+- [x] `dog_classic_home_idle_frame_01` through `dog_classic_home_idle_frame_06`
 - [x] `dog_classic_farm_idle`
+- [x] `sheep_bramble_chase_run_frame_01` through `sheep_bramble_chase_run_frame_06` (decorative journey companion)
 - [x] Three fitted Farm equipment overlays
 - [x] Three separate 384×384 Shop inventory assets
 - [x] `ollie_sheep_storybook_shield`

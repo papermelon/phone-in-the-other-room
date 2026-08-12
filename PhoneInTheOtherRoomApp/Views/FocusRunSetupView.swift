@@ -73,7 +73,7 @@ struct FocusRunSetupView: View {
 
     private var hero: some View {
         VStack(spacing: AppSpacing.sm) {
-            OllieRitualView(state: .ready, size: 112)
+            OllieRitualView(state: .ready, presentation: .cardCompanion)
             Text("Put your phone to bed")
                 .font(AppTypography.display(32))
             Text("Protect the quiet before sleep, then wake up before your phone does.")

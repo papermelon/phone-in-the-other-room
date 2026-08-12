@@ -83,7 +83,7 @@ private struct CompletionHeader: View {
     var body: some View {
         PixelCard {
             HStack(alignment: .top, spacing: AppSpacing.md) {
-                OllieRitualView(state: .completed, size: 76)
+                OllieRitualView(state: .completed, presentation: .inline)
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text(run?.nightWatchPlan?.role == .additionalQuiet ? "QUIET TIME COMPLETE" : "WIND DOWN COMPLETE")
                         .font(pixelFont(.caption))
