@@ -144,7 +144,7 @@ enum ScreenbookScenarioRegistry {
                 route: "farm",
                 state: "populated",
                 tags: ["farm", "flock", "wool"],
-                fixtureVersion: 1,
+                fixtureVersion: 2,
                 captureProfile: captureProfile,
                 captureProvenance: "automated-simulator",
                 dependencies: commonDependencies + [
@@ -159,7 +159,7 @@ enum ScreenbookScenarioRegistry {
                     .stable(AppCopy.Farm.eyebrow, file: "PhoneInTheOtherRoomApp/Views/FarmView.swift", symbol: "FarmDashboardContent.header"),
                     .stable(AppCopy.Farm.title, file: "PhoneInTheOtherRoomApp/Views/FarmView.swift", symbol: "FarmDashboardContent.header"),
                     .stable(AppCopy.Farm.detail, file: "PhoneInTheOtherRoomApp/Views/FarmView.swift", symbol: "FarmDashboardContent.header"),
-                    .provisional(id: "iphone.farm.wool-ready.provisional", rendered: "6 fleeces are ready in The Barn.", authored: "{count} fleeces are ready in The Barn.", file: "PhoneInTheOtherRoomApp/Views/FarmView.swift", symbol: "FarmDashboardContent.priorityCard", parameters: ["count": "6"])
+                    .provisional(id: "iphone.farm.wool-ready.provisional", rendered: "6 sheep are ready to shear.", authored: "{count} sheep are ready to shear.", file: "PhoneInTheOtherRoomApp/Views/FarmView.swift", symbol: "FarmDashboardContent.priorityCard", parameters: ["count": "6"])
                 ],
                 warnings: coverageWarning
             )

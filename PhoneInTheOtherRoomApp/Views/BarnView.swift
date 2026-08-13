@@ -81,7 +81,7 @@ struct FarmBarnView: View {
             Text("THE BARN")
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
-            Text("Choose who stays, who shears, and how the flock grows.")
+            Text("Manage your flock, wool, and pasture space.")
                 .font(AppTypography.title)
                 .fixedSize(horizontal: false, vertical: true)
             FarmBalanceBar(state: state)
@@ -105,7 +105,7 @@ struct FarmBarnView: View {
                     NavigationLink {
                         FarmShopView(initialCategory: .barn)
                     } label: {
-                        Label("Open the next pasture", systemImage: "arrow.up.right.square")
+                        Label("Expand The Barn", systemImage: "arrow.up.right.square")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
@@ -131,7 +131,7 @@ struct FarmBarnView: View {
                         FarmSheepSprite(sheep: sheep, protectedNightCount: protectedNights, size: 62)
                         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                             Text(sheep.displayName).font(AppTypography.headline)
-                            Text("Needs room before joining the active pasture.")
+                            Text("Make room to welcome this sheep.")
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.secondaryText)
                         }
@@ -153,7 +153,7 @@ struct FarmBarnView: View {
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
                 Spacer()
-                Picker("Barn filter", selection: $filter) {
+                Picker("The Barn filter", selection: $filter) {
                     ForEach(BarnFilter.allCases) { option in Text(option.title).tag(option) }
                 }
                 .pickerStyle(.menu)
@@ -166,11 +166,11 @@ struct FarmBarnView: View {
                         Image(systemName: "house.lodge.fill")
                             .font(.title2)
                             .foregroundStyle(AppColors.grass)
-                        Text(state.activeSheep.isEmpty ? "The Barn is ready." : "No sheep match this filter.")
+                        Text(state.activeSheep.isEmpty ? "The Barn is ready." : "No sheep match this view.")
                             .font(AppTypography.headline)
                         Text(state.activeSheep.isEmpty
                             ? "Ollie’s first homecoming will settle here."
-                            : "Try another view of the flock.")
+                            : "Choose another view of the flock.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                     }
@@ -366,7 +366,7 @@ struct BarnSheepDetailView: View {
                     }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 } else {
-                    Text("\(sheep.displayName) has moved to another pasture. The discovery remains in Ollie’s Trail Notes.")
+                    Text("\(sheep.displayName) has moved to another pasture. The discovery remains in Search Journal.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.secondaryText)
                 }

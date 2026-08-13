@@ -97,9 +97,9 @@ struct NightFlockResultCard: View {
                     Text("SLUMBER PARTY")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("A quiet morning reached the shared pasture.")
+                    Text("A quiet morning was shared.")
                         .font(AppTypography.headline)
-                    Text("This group Trail Note is narrative only. It adds no wool, sheep, rank, or reward.")
+                    Text("This shared result is a record of positive check-ins. It adds no wool, sheep, rank, or reward.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }

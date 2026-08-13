@@ -70,6 +70,18 @@ enum FarmPreviewData {
         return FarmMigration.migrated(existing: nil, searchState: search)
     }
 
+    static var pendingArrivalState: FarmState {
+        var state = sixtySheepState
+        state.recordArrival(searchState.outcomes[0])
+        return state
+    }
+
+    static var activeSearchState: SheepSearchState {
+        var state = SheepSearchState.empty
+        state.trailMap.credit(runID: previewUUID(901), minutes: 28)
+        return state
+    }
+
     static var sixtySheepState: FarmState {
         var state = FarmState.empty
         state.barnCapacityLevel = FarmEconomyRules.maximumCapacityLevel
@@ -102,6 +114,18 @@ enum FarmPreviewData {
 #Preview("The Barn · ready to shear") {
     NavigationStack {
         FarmBarnPreview(state: FarmPreviewData.oneSheepState)
+    }
+}
+
+#Preview("Farm · pending arrival") {
+    NavigationStack {
+        FarmDashboardContent(
+            state: FarmPreviewData.pendingArrivalState,
+            searchState: FarmPreviewData.searchState,
+            protectedNightCount: 18,
+            isWindDownActive: false,
+            onSelectSheep: { _ in }
+        )
     }
 }
 

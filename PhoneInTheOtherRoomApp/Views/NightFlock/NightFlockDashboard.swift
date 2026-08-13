@@ -18,7 +18,7 @@ struct NightFlockDashboard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             identityCard
-            NightFlockChallengeTrail(snapshot: snapshot, currentDay: challengeDay)
+            NightFlockChallengeTrail(snapshot: snapshot)
             aggregateCard
             NavigationLink {
                 NightFlockSharedPastureView(viewModel: viewModel, snapshot: snapshot)
@@ -60,7 +60,7 @@ struct NightFlockDashboard: View {
                     Text(snapshot.identity.title)
                         .font(AppTypography.title)
                     Text(snapshot.challenge.status == .pending
-                        ? "The seven-night trail begins when a second member joins."
+                        ? "Seven quiet nights begin when a second person joins."
                         : "Day \(challengeDay ?? 7) of seven · \(snapshot.members.count) members")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
@@ -165,7 +165,7 @@ struct NightFlockDashboard: View {
                     set: viewModel.setSharingEnabled
                 ))
                     .tint(AppColors.grass)
-                Text("No exact times, durations, missed nights, early endings, health data, app selections, or Farm data are shared.")
+                Text("Only positive check-ins are shared. Routine steps, schedules, absence, missed nights, health data, app choices, and private details stay here.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                 Button("Leave Slumber Party") { showLeaveConfirmation = true }
@@ -181,29 +181,40 @@ struct NightFlockDashboard: View {
 
 struct NightFlockChallengeTrail: View {
     let snapshot: NightFlockSnapshot
-    let currentDay: Int?
+
+    private var sharedDays: [NightFlockDaySummary] {
+        snapshot.days.filter {
+            $0.phoneTuckedCount > 0 || $0.morningQuietCompletedCount > 0
+        }
+    }
 
     var body: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text(snapshot.challenge.status == .completed ? "GROUP TRAIL NOTE" : "SEVEN-NIGHT TRAIL")
+                Text(snapshot.challenge.status == .completed ? "SEVEN-NIGHT RESULT" : "SHARED MOMENTS")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                HStack(spacing: AppSpacing.xs) {
-                    ForEach(1...7, id: \.self) { day in
-                        let summary = snapshot.days.first(where: { $0.day == day })
-                        VStack(spacing: AppSpacing.xxs) {
-                            Image(systemName: trailSymbol(for: summary))
-                                .foregroundStyle(trailColor(day: day, summary: summary))
-                            Text("\(day)")
-                                .font(pixelFont(.caption2))
+                if sharedDays.isEmpty {
+                    Text("Shared moments will appear here when someone chooses to share.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                } else {
+                    HStack(spacing: AppSpacing.xs) {
+                        ForEach(sharedDays) { summary in
+                            let day = summary.day
+                            VStack(spacing: AppSpacing.xxs) {
+                                Image(systemName: trailSymbol(for: summary))
+                                    .foregroundStyle(trailColor(summary: summary))
+                                Text("Day \(day)")
+                                    .font(pixelFont(.caption2))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .accessibilityLabel(accessibilityLabel(day: day, summary: summary))
                         }
-                        .frame(maxWidth: .infinity)
-                        .accessibilityLabel(accessibilityLabel(day: day, summary: summary))
                     }
                 }
                 if snapshot.challenge.status == .completed {
-                    Text("Seven nights passed through this pasture. There is no rank or reward.")
+                    Text("Seven nights made room for shared moments. There is no rank or reward.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }
@@ -211,21 +222,17 @@ struct NightFlockChallengeTrail: View {
         }
     }
 
-    private func trailSymbol(for summary: NightFlockDaySummary?) -> String {
-        if (summary?.morningQuietCompletedCount ?? 0) > 0 { return "sun.max.fill" }
-        if (summary?.phoneTuckedCount ?? 0) > 0 { return "moon.fill" }
-        return "circle"
+    private func trailSymbol(for summary: NightFlockDaySummary) -> String {
+        summary.morningQuietCompletedCount > 0 ? "sun.max.fill" : "moon.fill"
     }
 
-    private func trailColor(day: Int, summary: NightFlockDaySummary?) -> Color {
-        if (summary?.morningQuietCompletedCount ?? 0) > 0 { return AppColors.amber }
-        if (summary?.phoneTuckedCount ?? 0) > 0 { return AppColors.lavender }
-        return day == currentDay ? AppColors.grass : AppColors.stroke
+    private func trailColor(summary: NightFlockDaySummary) -> Color {
+        summary.morningQuietCompletedCount > 0 ? AppColors.amber : AppColors.lavender
     }
 
-    private func accessibilityLabel(day: Int, summary: NightFlockDaySummary?) -> String {
-        if (summary?.morningQuietCompletedCount ?? 0) > 0 { return "Day \(day), quiet morning shared" }
-        if (summary?.phoneTuckedCount ?? 0) > 0 { return "Day \(day), phone tucked shared" }
-        return "Day \(day), no shared note"
+    private func accessibilityLabel(day: Int, summary: NightFlockDaySummary) -> String {
+        summary.morningQuietCompletedCount > 0
+            ? "Day \(day), quiet morning shared"
+            : "Day \(day), phone tucked shared"
     }
 }

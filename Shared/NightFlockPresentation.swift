@@ -11,7 +11,7 @@ struct NightFlockAggregatePresentation: Equatable, Sendable {
             allTitle: "The whole flock has tucked in.",
             someTitle: "Someone in the flock has tucked in.",
             countTitle: { "\($0) phones are resting away." },
-            emptyDetail: "The pasture is quiet tonight.",
+            emptyDetail: "Shared moments will appear when someone chooses to share.",
             positiveDetail: "Only shared tuck-ins appear here."
         )
     }
@@ -23,7 +23,7 @@ struct NightFlockAggregatePresentation: Equatable, Sendable {
             allTitle: "The whole flock kept the morning quiet.",
             someTitle: "A quiet morning reached the pasture.",
             countTitle: { "\($0) quiet mornings reached the pasture." },
-            emptyDetail: "Morning notes will settle here gently.",
+            emptyDetail: "Shared mornings will appear when someone chooses to share.",
             positiveDetail: "No missed nights or private nights are shown."
         )
     }
@@ -66,8 +66,8 @@ struct NightFlockHomeSummary: Equatable, Sendable {
     var challengeDay: Int?
 
     static let invitation = Self(
-        title: "Slumber Party",
-        detail: "A small invite-only pasture for quiet nights.",
+        title: "Wind down with a small flock",
+        detail: "Seven quiet nights with people you invite. Only tucked-away phones and completed mornings are shared.",
         challengeDay: nil
     )
 

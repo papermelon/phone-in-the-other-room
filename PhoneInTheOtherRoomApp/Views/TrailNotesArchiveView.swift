@@ -30,7 +30,7 @@ struct TrailNotesArchiveView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
-                Picker("Trail Notes filter", selection: $filter) {
+                Picker("Search Journal filter", selection: $filter) {
                     ForEach(TrailNotesFilter.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -54,7 +54,7 @@ struct TrailNotesArchiveView: View {
                     }
                 }
 
-                NavigationLink("See the Trail Board") { TrailBoardView() }
+                NavigationLink("Open Ollie’s Search") { TrailBoardView() }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
             }
             .padding(.horizontal, AppSpacing.md)
@@ -62,7 +62,7 @@ struct TrailNotesArchiveView: View {
             .padding(.bottom, AppSpacing.xxl)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Ollie’s Trail Notes")
+        .navigationTitle("Search Journal")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -71,15 +71,15 @@ struct TrailNotesArchiveView: View {
             HStack(alignment: .top, spacing: AppSpacing.sm) {
                 PixelAssetImage(name: AssetSlot.Dog.proud)
                     .frame(width: 72, height: 72)
-                    .accessibilityLabel("Ollie with the Trail Notes")
+                    .accessibilityLabel("Ollie with the Search Journal")
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("OLLIE’S TRAIL NOTES")
+                    Text("SEARCH JOURNAL")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("Every homecoming and every clue, kept by the night that found it.")
+                    Text("Homecomings and clues from Ollie’s searches.")
                         .font(AppTypography.headline)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("\(viewModel.sheepSearchState.outcomes.count) notes · \(viewModel.farmState.discoveries.count) sheep known")
+                    Text("\(viewModel.sheepSearchState.outcomes.count) entries · \(viewModel.farmState.discoveries.count) sheep known")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }
@@ -93,9 +93,9 @@ struct TrailNotesArchiveView: View {
                 Image(systemName: "note.text")
                     .font(.title2)
                     .foregroundStyle(AppColors.grass)
-                Text("The first page is waiting.")
+                Text("Your Search Journal is waiting.")
                     .font(AppTypography.headline)
-                Text("A protected Wind Down will give Ollie a trail to record.")
+                Text("Complete Wind Down and Ollie will record a homecoming or clue.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }
@@ -136,7 +136,7 @@ private struct TrailNoteRow: View {
             .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(outcome.result == .found ? displayName : "The trail continues")
+                Text(outcome.result == .found ? displayName : "Search continues")
                     .font(AppTypography.headline)
                     .foregroundStyle(AppColors.ink)
                 Text(originLine)
@@ -160,7 +160,7 @@ private struct TrailNoteRow: View {
 
     private var statusLine: String {
         switch (outcome.result, ownedStatus) {
-        case (.trailOnly, _): return "Clue saved for another quiet night"
+        case (.trailOnly, _): return "Clue saved for another search"
         case (.found, .pending): return "Waiting at The Barn gate"
         case (.found, .sold): return "Discovery kept · sheep moved on"
         case (.found, .active): return "Living in the active flock"
@@ -176,7 +176,7 @@ private struct TrailNoteRow: View {
     }
 }
 
-#Preview("Ollie’s Trail Notes") {
+#Preview("Search Journal") {
     NavigationStack {
         VStack(spacing: AppSpacing.sm) {
             ForEach(FarmPreviewData.searchState.outcomes.reversed()) {

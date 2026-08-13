@@ -16,8 +16,8 @@ struct FarmBalanceBar: View {
                         label: "Flock"
                     )
                 }
-                NavigationLink { TrailBoardView() } label: {
-                    metric(icon: "book.closed.fill", value: "\(state.discoveries.count)", label: "Known")
+                NavigationLink { TrailNotesArchiveView() } label: {
+                    metric(icon: "book.closed.fill", value: "\(state.discoveries.count)", label: "Known sheep")
                 }
                 NavigationLink { FarmShopView() } label: {
                     metric(icon: "cloud.fill", value: "\(state.woolBalance)", label: "Wool")
@@ -29,7 +29,7 @@ struct FarmBalanceBar: View {
                     value: "\(state.activeSheep.count)/\(state.activeCapacity)",
                     label: "Flock"
                 )
-                metric(icon: "book.closed.fill", value: "\(state.discoveries.count)", label: "Known")
+                metric(icon: "book.closed.fill", value: "\(state.discoveries.count)", label: "Known sheep")
                 metric(icon: "cloud.fill", value: "\(state.woolBalance)", label: "Wool")
             }
         }

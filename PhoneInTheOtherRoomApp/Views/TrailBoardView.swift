@@ -7,8 +7,8 @@ private enum TrailBoardFilter: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .searching: return "Still searching"
-        case .known: return "Known"
-        case .all: return "All trails"
+        case .known: return "Found"
+        case .all: return "All sheep"
         }
     }
 }
@@ -42,7 +42,7 @@ struct TrailBoardView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
-                Picker("Trail Board filter", selection: $filter) {
+                Picker("Ollie’s Search filter", selection: $filter) {
                     ForEach(TrailBoardFilter.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -78,7 +78,7 @@ struct TrailBoardView: View {
             .padding(.bottom, AppSpacing.xxl)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Trail Board")
+        .navigationTitle("Ollie’s Search")
         .navigationBarTitleDisplayMode(.inline)
         .farmActionAlert(viewModel: viewModel)
     }
@@ -91,13 +91,13 @@ struct TrailBoardView: View {
                         .font(.title.weight(.bold))
                         .foregroundStyle(AppColors.grass)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("OLLIE’S TRAIL BOARD")
+                        Text("OLLIE’S SEARCH")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.grass)
-                        Text("Choose one missing sheep for Ollie to keep close.")
+                        Text("Choose one missing sheep for Ollie to favour.")
                             .font(AppTypography.headline)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Following a trail helps Ollie choose where to look when a search begins. It never guarantees who comes home.")
+                        Text("Ollie will look more closely there when a search begins. It never guarantees who comes home.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
@@ -111,7 +111,7 @@ struct TrailBoardView: View {
                     )
                     boardMetric(
                         "\(discoveredIDs.count) / \(SheepCatalog.all.count)",
-                        label: "Known",
+                        label: "Found",
                         icon: "book.closed.fill"
                     )
                 }
@@ -142,11 +142,11 @@ struct TrailBoardView: View {
                 Image(systemName: filter == .known ? "house.fill" : "pawprint.fill")
                     .font(.title2)
                     .foregroundStyle(AppColors.grass)
-                Text(filter == .searching ? "Every available trail has a name." : "No sheep are known here yet.")
+                Text(filter == .searching ? "Ollie has no new sheep to search for yet." : "No sheep are recorded here yet.")
                     .font(AppTypography.headline)
                 Text(filter == .searching
-                    ? "Future rumours will reach the board after more protected nights."
-                    : "Ollie’s first homecoming will be recorded here.")
+                    ? "More sheep become available as protected Wind Downs add new trails."
+                    : "Complete a protected Wind Down to begin the Search Journal.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }
@@ -165,12 +165,12 @@ private struct TrailBoardCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack {
-                Text(isDiscovered ? "KNOWN" : isEligible ? "STILL SEARCHING" : "RUMOURED")
+                Text(isDiscovered ? "FOUND" : isEligible ? "STILL SEARCHING" : "NOT YET AVAILABLE")
                     .font(pixelFont(.caption2))
                     .foregroundStyle(isDiscovered ? AppColors.success : AppColors.bark)
                 Spacer()
                 if isNew && !isDiscovered {
-                    Text("NEW TRAIL")
+                    Text("NEW SEARCH")
                         .font(pixelFont(.caption2))
                         .foregroundStyle(AppColors.berry)
                 }
@@ -201,17 +201,17 @@ private struct TrailBoardCard: View {
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.bark.opacity(0.74))
                 .lineLimit(2)
-            Text(isEligible ? clue : "Ollie has only heard a distant rumour.")
+            Text(isEligible ? clue : "Ollie will learn more after future Wind Downs.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.bark)
                 .fixedSize(horizontal: false, vertical: true)
 
             if !isDiscovered && isEligible {
-                Button(isTracked ? "Trail followed" : "Follow this trail", action: onTrack)
+                Button(isTracked ? "Search chosen" : "Choose for Ollie’s Search", action: onTrack)
                     .buttonStyle(PixelChipButtonStyle(isSelected: isTracked))
                     .frame(maxWidth: .infinity)
             } else if isDiscovered {
-                Label("In Trail Notes", systemImage: "checkmark.seal.fill")
+                Label("Recorded in Search Journal", systemImage: "checkmark.seal.fill")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.success)
             }
@@ -231,7 +231,7 @@ private struct TrailBoardCard: View {
     }
 }
 
-#Preview("Trail Board") {
+#Preview("Ollie’s Search") {
     NavigationStack {
         TrailBoardPreview()
     }

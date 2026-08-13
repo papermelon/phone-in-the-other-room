@@ -158,7 +158,7 @@ private struct NightFlockHeader: View {
                 .foregroundStyle(AppColors.grass)
             Text("Slumber Party")
                 .font(AppTypography.display(27))
-            Text("Share only the good news: a tucked-away phone and a completed quiet morning.")
+            Text("Wind down with a small flock. Only tucked-away phones and completed mornings are shared.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -176,7 +176,7 @@ private struct NightFlockCreateJoinView: View {
                     Text("OPEN A PASTURE")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("Choose a flock sign.")
+                    Text("Choose a small flock to invite.")
                         .font(AppTypography.headline)
                     ForEach(NightFlockIdentity.allCases) { identity in
                         Button {
@@ -212,7 +212,7 @@ private struct NightFlockCreateJoinView: View {
                         .autocorrectionDisabled()
                         .textFieldStyle(.roundedBorder)
                         .accessibilityLabel("Slumber Party invite code")
-                    Text("Joining shares only positive check-ins for this challenge. Private nights never appear.")
+                    Text("Only positive check-ins are shared for this challenge. Routine steps and private nights stay here.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                     Button("Join Slumber Party", action: viewModel.joinFlock)
