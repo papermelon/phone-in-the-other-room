@@ -58,7 +58,7 @@ enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identi
         case .trailNote:
             return "A homecoming means Ollie found a sheep.\nA clue means he has more trail to follow."
         case .barnCapacity:
-            return "If The Barn is full, make room or open a new pasture.\nThe discovery stays in Trail Notes."
+            return "If The Barn is full, make room or open a new pasture.\nThe discovery stays in the Search Journal."
         }
     }
 }

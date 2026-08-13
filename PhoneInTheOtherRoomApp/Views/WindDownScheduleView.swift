@@ -46,7 +46,7 @@ struct WindDownScheduleView: View {
                                     viewModel.requestStartNightWatch(sourceID: period.id)
                                 } label: {
                                     scheduleRow(
-                                        title: period.title,
+                                        title: period.userFacingTitle,
                                         detail: formatted(period.interval),
                                         status: "Ready now",
                                         enabled: period.enabled,
@@ -54,11 +54,11 @@ struct WindDownScheduleView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel("Start scheduled \(period.title)")
+                                .accessibilityLabel("Start scheduled \(period.userFacingTitle)")
                                 .accessibilityHint("Starts this scheduled Phone Away period")
                             } else {
                                 scheduleRow(
-                                    title: period.title,
+                                    title: period.userFacingTitle,
                                     detail: formatted(period.interval),
                                     enabled: period.enabled
                                 )
@@ -94,7 +94,7 @@ struct WindDownScheduleView: View {
                     ForEach(routines) { routine in
                         Button { editor = .routine(routine.id) } label: {
                             scheduleRow(
-                                title: routine.title,
+                                title: routine.userFacingTitle,
                                 detail: "\(routine.recurrence.title) · \(clock(routine.start))–\(clock(routine.end))",
                                 enabled: routine.enabled
                             )
