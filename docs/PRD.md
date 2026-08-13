@@ -26,6 +26,12 @@ Night Watches and quiet minutes in the two bookends. With permission it compares
 sleep outcomes as context. It does not score sleep, diagnose a condition, or claim that
 using the app caused an improvement.
 
+**Phone Away** is the optional secondary one-time or scheduled mode outside Wind Down. Its
+user-facing actions are **Put phone away**, **Start now**, and **Plan**. Completed Phone Away
+periods feed a centrally configured 100-minute search meter; that number is a game-balance choice,
+not a sleep-science claim. Internal `PhoneBreak`, `additionalQuiet`, `QuietTime`, and `NightWatch*`
+names and persisted values remain backward-compatible.
+
 ## Primary user
 
 Someone who scrolls in bed or reaches for the phone immediately after waking and wants a
@@ -38,11 +44,12 @@ The first release contains four tabs:
 - **Home:** understand tonight's saved plan and purpose, then set/start Wind Down or edit it.
 - **Nights:** see protected nights, quiet-bookend minutes, recent history, optional sleep
   duration/stages, selected-app Screen Time, and cautious local outcome comparisons.
-- **Farm:** tend the living flock, manage The Barn, follow the Trail Board, revisit Ollie's Trail
-  Notes, and use wool for capacity and local customization
+- **Farm:** tend the living flock, manage The Barn, use Ollie's Search, revisit the Search Journal,
+  and use wool for capacity and local customization
   for cosmetic/story context; posters do not change progression value.
-- **Settings:** configure Wind Down, manage connections and privacy, send feedback, and see app
-  information.
+- **Settings:** organize **Your Wind Down**, **Connections**, and **Help & app guide**; manage the
+  plan, connections, privacy, feedback, and app information through those groups. There is no
+  duplicate Review Wind Down setup route.
 
 Farm, Friends, Shop, adaptive coaching, social features, and mock-backed features are not
 reachable in Release. Their gates are defined in ADR-0003 and ADR-0004.
@@ -52,8 +59,11 @@ reachable in Release. Their gates are defined in ADR-0003 and ADR-0004.
 1. The user saves an intended bedtime and wake time.
 2. The user chooses 15–90 minute quiet bookends from the restrained presets presented by
    the UI; defaults are 30 minutes before bed and 30 minutes after waking.
-3. The user chooses one evening and one morning phone-free cue. Cues are suggestions,
-   never checklists or completion requirements.
+3. The user chooses a private ordered sequence of up to three evening and two morning phone-free
+   suggestions. Putting the phone away is fixed first. Suggestions have no checkmarks,
+   verification, reward, score, streak, or completion requirement. General sleep-health guidance
+   appears beside these choices, on Home, and in phase-appropriate moments; the full local source
+   library is linked from “About these ideas and sources.”
 4. At wind-down, the user begins Night Watch and physically places the phone elsewhere.
 5. New plans default to the registered NFC phone-bed tag. The same tag confirms the initial
    tuck-in and the normal end action; Watch, QR, and the honor timer remain explicit alternatives.
@@ -99,7 +109,7 @@ completed habit before restoring access or granting the Night Watch receipt.
 
 ## Progress and the flock
 
-- Each completed primary sleep-bookend Wind Down resolves one persisted search; Farm's Trail Board
+- Each completed primary sleep-bookend Wind Down resolves one persisted search; **Ollie's Search**
   provides clues and catalogue context for named sheep.
 - Later completed nights resolve into a persisted search outcome: sheep found or trail advanced.
 - Factual receipts keep the ritual honest; rarity and the wool economy begin only after a

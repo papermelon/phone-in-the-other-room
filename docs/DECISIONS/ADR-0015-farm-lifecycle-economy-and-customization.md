@@ -27,12 +27,14 @@ that distinction made prices and balances harder to understand without adding a 
 Farm remains one of the four root tabs. Its nested destinations are:
 
 - **The Barn** for the active owned flock, pending arrivals, capacity, shearing, and trading;
-- **Trail Board** for missing sheep and the one trail Ollie currently favours;
-- **Ollie's Trail Notes** for persisted homecomings and clue history;
+- **Ollie's Search** for missing sheep and the one lead Ollie currently favours;
+- **Search Journal** for persisted homecomings and clue history;
 - **Farm Shop** for Barn expansion, cosmetics, decoration, and collectibles; and
 - **Your Shepherd** for the local human-avatar representation.
 
 Earlier working labels for these destinations are retired from the current product language.
+Existing internal view, model, and persistence identifiers may remain stable for compatibility;
+the user-facing labels are Ollie's Search and Search Journal.
 
 ### Discovery and ownership are separate
 
@@ -87,7 +89,7 @@ Active and pending sheep can be traded to another farm for wool:
 A sheep traded while its wool is regrowing returns 75% of its base value, rounded down. Shearing
 is recurring income and keeps the sheep; trading provides roughly three to four shearings of wool
 immediately and frees capacity. A favourite can still be traded, but the confirmation names it
-explicitly. Trading changes ownership, not discovery or Trail Note history.
+explicitly. Trading changes ownership, not discovery or Search Journal history.
 
 Automatic expiration, ageing, random disappearance, breeding, and seasonal migration are not
 part of this implementation. They remain possible future product decisions.
@@ -126,7 +128,7 @@ accessory, and Farm decoration are visible in the pasture.
 
 ### Search tracking
 
-The Trail Board allows one eligible, undiscovered sheep to be tracked. Tracking does not change
+Ollie's Search allows one eligible, undiscovered sheep to be tracked. Tracking does not change
 the overall encounter probability. After a successful encounter roll, the tracked sheep's
 selection weight is multiplied by three. The UI states that Ollie favours rather than guarantees
 that trail. Tracking clears on discovery.

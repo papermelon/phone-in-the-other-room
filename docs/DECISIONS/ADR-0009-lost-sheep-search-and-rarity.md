@@ -27,7 +27,7 @@ signals may add bonuses or open habitat affinities. Missing permissions, missing
 or skipped reflections never reduce the chance.
 
 Sheep have four rarity levels: common, uncommon, rare, and legendary. Rarity affects encounter
-weights, Trail Board treatment, art, story, wool yield, regrowth, and trade value. It never changes
+weights, Ollie's Search treatment, art, story, wool yield, regrowth, and trade value. It never changes
 essential access or creates a sleep score. Each owned sheep has a unique identity; repeated
 catalogue archetypes receive stable local names.
 
@@ -37,7 +37,7 @@ seeded arrivals. Posters do not expire in the first release. Exact encounter odd
 default and can be enabled in Settings; the default presentation uses qualitative trail strength and
 habitat eligibility.
 
-Trail Board presentation uses an adaptive native SwiftUI poster grid. Missing sheep use
+Ollie's Search presentation uses an adaptive native SwiftUI poster grid. Missing sheep use
 silhouettes or obscured palettes, clue fragments, habitat, and rarity hints rather than revealing
 the full-colour discovery asset. One missing definition can be tracked; after a successful
 encounter roll its selection weight is tripled without changing the encounter probability.
@@ -54,7 +54,7 @@ GPS or Health measurement.
 - No-find nights still create progress and reasons to continue.
 - The first three nights teach the mechanic before probability and rarity are introduced.
 - The collection and individually owned flock can grow without changing the Wind Down state
-  machine. The Trail Board remains a secondary Farm surface rather than a Home or Nights lead.
+  machine. Ollie's Search remains a secondary Farm surface rather than a Home or Nights lead.
 - The old mock Farm remains a gated compatibility surface; the production Farm is defined by
   ADR-0015, which supersedes ADR-0010's earlier presentation limits.
 

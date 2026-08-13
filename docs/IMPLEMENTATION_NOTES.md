@@ -18,7 +18,7 @@ Friends and the legacy Farm/Shop previews remain compiled only for Debug explora
 backed by `MVPMockData`.
 The old More utility sheet and top-bar ellipsis are not part of the release shell.
 The production Farm reads `SheepSearchState` and versioned `FarmState`. It provides a paged
-pasture, The Barn, Trail Board, Ollie's Trail Notes, Farm Shop, and Your Shepherd without using
+pasture, The Barn, Ollie's Search, Search Journal, Farm Shop, and Your Shepherd without using
 the legacy mock layer. Wool is earned through flock decisions and is separate from
 legacy progress balances. There is no Missions tab. Do not add new code to `Views/MVP/` or
 `MockData/` as part of production work.

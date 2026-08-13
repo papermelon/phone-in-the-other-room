@@ -25,10 +25,10 @@ from foreground distance. Deterministic, non-interactive environmental clues app
 progress thresholds and do not participate in reward resolution. Reduce Motion displays a
 static aligned scene with reached evidence. The scene reports real time to the next phase.
 
-Completed Phone Break runs credit their actual quiet minutes to a versioned trail map in
-`SheepSearchState`, with a 75-minute search cost and up to one carried remainder. Credit starts
-at 15 minutes, caps at 75 minutes per run, and never comes from practice or early endings.
-After three protected Wind Downs, the next eligible completed Phone Break resolves one separate
+Completed Phone Away runs credit their actual quiet minutes to a versioned search map in
+`SheepSearchState`, with a centrally configured 100-minute meter and up to one carried remainder.
+Credit starts at 15 minutes, caps at the configured 100-minute meter per run, and never comes from
+practice or early endings. After three protected Wind Downs, the next eligible completed Phone Away resolves one separate
 bonus search on a deterministic 20/30/40/50/100 ladder. Its clue counter and outcomes are
 isolated from Wind Down odds and bad-luck protection. Legacy map-bonus fields remain decodable.
 
@@ -46,8 +46,8 @@ update immediately; notification changes rebuild only still-future alerts for th
 ## Consequences
 
 - The active journey remains honest and non-interactive: no collectible, found, or owned sheep
-  appears before the persisted protected-night Trail Note is opened.
-- Phone Break has positive, capped narrative value without becoming an alternate protected-night
+  appears before the persisted protected-night Search Journal entry is opened.
+- Phone Away has positive, capped narrative value without becoming an alternate protected-night
   progression system; a found sheep still uses the ordinary Farm arrival flow.
 - Tab access is a deliberate exception to the normal “status, not destination” principle and
   may not be expanded into engagement feeds or nighttime reveal hooks.

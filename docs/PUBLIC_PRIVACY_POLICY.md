@@ -5,14 +5,15 @@
 Counting Sheep Project (“we”, “us”, or “Counting Sheep”) provides the Counting Sheep
 iPhone and Apple Watch app. This policy explains how the app handles information. Counting
 Sheep is a bedtime-habit and digital-wellbeing tool; it is not a medical device and does not
-provide diagnosis or treatment.
+provide diagnosis or treatment. Its general sleep-health ideas are educational guidance, not
+insomnia treatment, and this policy does not claim that qualified clinical review has occurred.
 
 ## Information kept on your device
 
 By default, Counting Sheep keeps the following information on your device:
 
-- your Wind Down and Phone Break schedules, active session, and recent phone-away history;
-- optional morning reflections and personal routine wording;
+- your Wind Down and Phone Away schedules, active session, and recent phone-away history;
+- optional morning reflections and private routine suggestions;
 - flock progress, legacy reward records, and app preferences;
 - your Screen Time app/category selection, stored as Apple-provided opaque tokens;
 - NFC phone-bed registration, stored as a one-way digest rather than the raw tag token;
@@ -34,6 +35,10 @@ Health information is used to show your own sleep context alongside your quiet-t
 history. It is not used for advertising, sold, provided to data brokers, or used to make
 eligibility decisions. Missing or denied Health access does not affect the core ritual or
 the flock.
+
+Counting Sheep does not diagnose or treat insomnia, prescribe a sleep schedule, or claim that
+its guidance improves sleep. The full locally bundled source library is available in the app
+through “About these ideas and sources.”
 
 ## Optional online services
 
@@ -89,8 +94,8 @@ day, fixed reactions, hashed and expiring invite codes, sharing choices, blocks,
 reports, and restricted moderation records.
 
 Slumber Party does not receive your exact bedtime or wake time, run duration, early-ending reason,
-private or missed nights, Health information, Screen Time selections, selected apps, NFC data,
-personal purpose or cue, notification choices, Farm inventory, sheep, wool, transactions, or
+private or missed nights, routine steps, schedules, absence, Health information, Screen Time
+selections, selected apps, NFC data, personal purpose or cue, notification choices, Farm inventory, sheep, wool, transactions, or
 optional impact-sharing records. Shared morning entries are unnamed, and the app does not list
 who did not share a check-in. Slumber Party does not change local rewards or Farm outcomes.
 

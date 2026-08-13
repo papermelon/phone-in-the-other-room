@@ -14,7 +14,7 @@ flowchart LR
     Evening --> Night[Ollie keeps Night Watch]
     Night --> Morning[Phone-free morning]
     Morning --> Search[Sheep found or trail advanced]
-    Search --> Note[Ollie's Trail Note]
+    Search --> Note[Search Journal]
     Note --> Arrival[Active flock or pending gate]
     Arrival --> Choice[Keep, shear, trade, or customize]
     Choice --> Plan
@@ -27,9 +27,9 @@ wool yield, regrowth, trade value, art, and story.
 
 ## Canonical presentation
 
-The completion receipt offers one explicit “Open Ollie's Trail Notes” action. A found note names
+The completion receipt offers one explicit “Open Search Journal” action. A found entry names
 the sheep and whether it entered the active flock or is waiting at The Barn gate. A clue note
-records honest trail evidence and links to the Trail Board. Farm owns the living flock,
+records honest search evidence and links to Ollie's Search. Farm owns the living flock,
 lifecycle, economy, and customization presentation. Exact search odds remain optional.
 
 An early-ended Night Watch adds no search outcome. It still receives the factual receipt. Sheep
@@ -37,7 +37,7 @@ lifecycle changes occur through explicit Farm actions, not through the early-end
 
 ## Farm lifecycle and economy
 
-Every found outcome creates an individual `FlockSheep`. Catalogue discovery and Trail Notes stay
+Every found outcome creates an individual `FlockSheep`. Catalogue discovery and Search Journal stay
 recorded after an owned sheep is traded. The active flock begins at 12 spaces and can expand to 60;
 overflow waits at the arrival gate.
 
@@ -57,14 +57,15 @@ internal preview until a later compatibility cleanup.
 
 ## Evidence boundary
 
-Counting Sheep is **CBT-I-informed, not CBT-I treatment**. The 2021 American Academy of
+Counting Sheep offers general sleep-health education; it is **not insomnia treatment**. The 2021 American Academy of
 Sleep Medicine guideline recommends clinician-delivered, multi-component CBT-I for chronic
 insomnia and explicitly cautions that sleep hygiene alone is not an adequate treatment.
 Stimulus control—one component—works to strengthen the bed as a cue for sleep and establish
 a consistent wake time. The 2025 VA/DoD guidance likewise describes CBT-I as a structured,
 multi-component intervention with clinical considerations.
 
-The app stays on the non-clinical side of that boundary:
+The app stays on the non-clinical side of that boundary. The sources are reference material; this
+document does not claim that qualified clinical review of Counting Sheep's guidance has occurred:
 
 - the phone has a consistent resting place outside the bedroom;
 - a saved wind-down and wake boundary make the ritual easier to repeat;

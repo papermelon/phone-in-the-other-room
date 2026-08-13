@@ -52,15 +52,20 @@ phone-away barrier is validated. `morningQuietCompleted` is queued only after su
 completion. Additional quiet, early endings, and private nights publish nothing. Exact bedtime,
 wake time, duration, run identity, and early-end reason never enter the social request or peer
 projection.
+Routine steps, schedules, absence, Health data, and private details remain local. Slumber Party
+may support commitment and shared joy, but it never turns those private contexts into shared
+status.
 
-Home may show one compact aggregate before Wind Down. The hub is nested under Farm. Active Wind
-Down has no Slumber Party panel, badge, reaction, notification, realtime subscription, or novelty.
+When enabled, Slumber Party appears as one full-width contextual card on Farm and Home; the
+card may support commitment and shared joy without becoming a feed. The hub remains nested under
+Farm. Active Wind Down has no Slumber Party panel, badge, reaction, notification, realtime
+subscription, or novelty.
 Morning completion may show one finite result card and an anonymous shared pasture. System aliases
 appear only in the roster; completion entries are unnamed. For flocks of two or three, aggregates
 use qualitative wording whenever a count would identify an absence. No UI lists who did not share
 or presents an explicit failure.
 
-The seven-day result is a factual group Trail Note. Slumber Party never grants wool, sheep, a rarity
+The seven-day result is a factual shared result. Slumber Party never grants wool, sheep, a rarity
 roll, Farm inventory, economic value, or individual rank and never changes the local reward or
 search result.
 

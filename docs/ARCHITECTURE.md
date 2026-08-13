@@ -119,11 +119,11 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ NightFlock/                              invite, hub, trail, pasture, safety, result views
 │  ├─ FarmPastureView.swift                    paged, grounded, visit-shuffled living flock scene
 │  ├─ BarnView.swift                           owned flock, capacity, lifecycle, and pending arrivals
-│  ├─ TrailBoardView.swift                     missing/discovered catalogue and tracked lead
-│  ├─ TrailNotesArchiveView.swift              persisted search-result history
+│  ├─ TrailBoardView.swift                     internal view name for Ollie's Search
+│  ├─ TrailNotesArchiveView.swift              internal view name for Search Journal
 │  ├─ FarmShopView.swift                       local purchases, upgrades, and equipment
 │  ├─ ShepherdCustomizationView.swift          local player-avatar editor
-│  ├─ MoreView.swift                           Settings root: configuration, connections, privacy, help
+│  ├─ MoreView.swift                           Settings root: Your Wind Down, Connections, Help & app guide
 │  ├─ WindDownTimingView.swift                  compact saved schedule editor
 │  ├─ WindDownScheduleView.swift                 finite Once / Repeats / Usual Wind Down editor
 │  ├─ FeedbackFormView.swift                   validated form + email fallback
@@ -185,8 +185,14 @@ stateDiagram-v2
 Sequence per Night Watch (persisted internally as `FocusRun` for data compatibility):
 
 1. `PixelHomeDashboard` → `FocusRunSetupView` saves `NightWatchPreferences`: bedtime,
-   wake time, quiet-window lengths, two optional offline cues, and the placement guard.
+   wake time, quiet-window lengths, an ordered private sequence of up to three evening and two
+   morning suggestions (putting the phone away is fixed first in the evening), and the placement
+   guard. Suggestions have no checkmarks, verification, reward, score, streak, or completion claim.
    Outside the start window, the app saves the plan and schedules a wind-down reminder.
+   The user-facing actions are **Put phone away**, **Start now**, and **Plan**. Guidance sits beside
+   routine choices, on Home, and in phase-appropriate moments. The full source library is local
+   and reached from the secondary **About these ideas and sources** link; “finite guide” is not
+   user-facing copy.
 2. `FocusRunViewModel.requestStartNightWatch()` anchors a `NightWatchPlan` to tonight and
    starts `FocusSessionCoordinator`. One persisted run spans wind-down, overnight, and
    morning quiet; there is no second morning timer or competing state machine.
@@ -232,8 +238,8 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    reconciles the current schedule and reapplies its existing shield when that phase is
    still eligible. Web domains never advertise or receive Brief Access.
    The App Group snapshot carries a backwards-compatible `QuietTimeShieldRole` (legacy
-   snapshots resolve to primary Wind Down). Shield Configuration selects a finite,
-   deterministic first-party cue for Phone Break, Wind Down, overnight, or morning
+   snapshots resolve to primary Wind Down). Shield Configuration selects a deterministic
+   first-party cue for Phone Away, Wind Down, overnight, or morning
    quiet and uses the protected-session interval—not a bookend—as the displayed end time.
    Its Ollie/sheep icon is decorative; the companion sheep is not a search result, reward,
    or owned flock item.
@@ -251,35 +257,36 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    drill-down, reflection, Health context, and consented selected-app results. Farm owns the
    active flock, lifecycle, catalogue, Shop, and customization presentation; Settings owns plan
    and report configuration. Chosen report windows do not
-   alter Wind Down or Phone Break. Missing data is never estimated.
-   When ADR-0016's flag is enabled, Home may show one compact positive Slumber Party aggregate
-   and Farm owns the nested Slumber Party hub. A successful eligible completion may show one
+   alter Wind Down or Phone Away. Missing data is never estimated.
+   When ADR-0016's flag is enabled, Home and Farm may show one full-width contextual Slumber Party
+   card supporting commitment and shared joy; routines, schedules, absence, Health data, and
+   private details remain unshared. A successful eligible completion may show one
    finite link to its anonymous shared-pasture result. None of these surfaces changes rewards.
 9. During an active Night Watch, Home is replaced by the live journey while Nights, Farm,
    and Settings remain mounted in the same four-tab shell. A persistent return strip resets
    nested navigation and returns to Home. Run start, app activation, and active-run notification
    routing make Home the default. ActiveRunPresentation supplies role-aware copy,
-   accessibility, guidance, exit, and shielding-status affordances; Phone Break uses
+   accessibility, guidance, exit, and shielding-status affordances; Phone Away uses
    its actual plan end date and never borrows primary Wind Down phase language. Terminal
    receipts temporarily replace the shell.
 10. `NightJourneyProgress` resolves overall, phase, and segment progress from the active
     `FocusRun`; `NightJourneyTerrainProfile` supplies a periodic height and derivative used by
     both the Canvas foreground and Ollie's foot alignment. Backdrops pan/zoom only within safe
     crop bounds, and deterministic clues at 20/55/82 percent never affect search resolution.
-11. Successful Phone Break runs atomically credit at least 15 and at most 75 of their actual
-   quiet minutes to the versioned `SheepTrailMapState` nested in `SheepSearchState`. The state
+11. Successful Phone Away runs atomically credit their actual quiet minutes, up to the centrally
+   configured 100-minute meter, to the versioned `SheepTrailMapState` nested in `SheepSearchState`. The state
    carries remainder minutes, retains bounded credited run IDs for idempotency, and resolves at
    most one separate bonus search per completed break after three protected Wind Downs. The
-   deterministic 20/30/40/50/100 ladder and Phone Break clue counter never alter Wind Down odds.
-   Home and the Phone Break schedule offer a separate ad-hoc Start now action. It creates a
+   deterministic 20/30/40/50/100 ladder and Phone Away clue counter never alter Wind Down odds.
+   Home and the Phone Away schedule offer a separate **Start now** action. It creates a
    temporary bounded occurrence for the single start transaction; Not now rolls it back, while
    starting consumes it. Scheduled rows keep their exact occurrence identity through
    confirmation, and the future-period editor does not participate in this path. Starting one
-   never changes progress by itself. An eligible completion can fill the Phone Break meter and
+   never changes progress by itself. An eligible completion can fill the Phone Away meter and
    open its separate bonus search, but never changes protected-night progress or Wind Down odds.
 12. After first-run setup, the `HomeView` shell presents a finite three-step app tour persisted
     as `ollie.orientation.state`; one-time contextual spotlights cover Nights, Farm, Settings,
-    Phone Break, the first Trail Note, and first Barn capacity. Each uses the same dimmed coach-mark
+    Phone Away, the first Search Journal entry, and first Barn capacity. Each uses the same dimmed coach-mark
     language as Home and points to real interface beneath it; no guide step is styled as ordinary
     app content. A dimmed modal layer spotlights the real
     Tonight plan and bottom navigation without becoming part of Home's scroll. Finishing or dismissing the
