@@ -5,9 +5,9 @@ final class FocusRunLiveActivityPushContractTests: XCTestCase {
         let completed = FocusRunLiveActivityTerminalStatus.completed.presentation
         let endedEarly = FocusRunLiveActivityTerminalStatus.endedEarly.presentation
 
-        XCTAssertEqual(completed.headline, "QUIET TIME COMPLETE")
+        XCTAssertEqual(completed.headline, "WIND DOWN COMPLETE")
         XCTAssertEqual(completed.message, "Ollie kept the quiet. Nice work.")
-        XCTAssertEqual(endedEarly.headline, "QUIET TIME ENDED")
+        XCTAssertEqual(endedEarly.headline, "WIND DOWN ENDED")
         XCTAssertNotEqual(endedEarly, completed)
 
         for copy in [completed.headline, completed.message, endedEarly.headline, endedEarly.message] {

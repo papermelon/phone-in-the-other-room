@@ -263,7 +263,7 @@ struct OrientationRecordPrompt: View {
                     .foregroundStyle(AppColors.grass)
                 Text("Five minutes of quiet, recorded plainly.")
                     .font(AppTypography.headline)
-                Text("This is real quiet time, separate from protected-night progress and Ollie’s sheep search.")
+                Text("It appears in Nights, but it does not count as a Wind Down or open a sheep search.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                 Button("See it in Nights", action: onSeeNights)

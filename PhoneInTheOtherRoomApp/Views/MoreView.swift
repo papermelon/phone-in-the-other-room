@@ -11,6 +11,7 @@ struct SettingsView: View {
     @State private var showStartOver = false
     @State private var showReplaySetup = false
     @State private var showAppShieldInfo = false
+    @State private var contextualTip: CountingSheepContextualTip?
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     @State private var showScreenTimePicker = false
 #endif
@@ -20,6 +21,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
                 orientationSection
+                    .contextualGuideTarget(.settings)
                 appearanceSection
                 windDownSection
                 guidanceSection
@@ -37,7 +39,15 @@ struct SettingsView: View {
             .padding(AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .onAppear { viewModel.markOrientation(.settingsExplored) }
+        .onAppear {
+            viewModel.markOrientation(.settingsExplored)
+            contextualTip = viewModel.contextualTip(from: [.settings])
+        }
+        .contextualGuideOverlay(
+            tip: $contextualTip,
+            onAcknowledge: viewModel.acknowledgeContextualTip,
+            onSkipAll: viewModel.disableContextualTips
+        )
         .sheet(isPresented: $showImpactConsent) {
             ImpactSharingConsentSheet {
                 viewModel.setImpactSharingEnabled(true)
@@ -116,7 +126,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text(viewModel.orientationState.canResume ? "Your app tour is paused." : "A quick map of Counting Sheep")
                         .font(AppTypography.headline)
-                    Text("Take a two-step tour that points to the real Home plan and bottom navigation.")
+                    Text("Take a short three-step Home tour, then discover the other screens as you use them.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                     Button(viewModel.orientationState.canResume ? "Resume app tour" : "Show app tour") {
@@ -527,7 +537,7 @@ struct SettingsView: View {
 
     private var healthDetail: String {
         switch viewModel.sleepAuthorization {
-        case .notRequested: return "Optional sleep duration and stages beside your protected-night history."
+        case .notRequested: return "Optional sleep duration and stages beside your Wind Down history."
         case .requested: return "Connected. Sleep context appears in Nights when Apple Health has a sample."
         case .unavailable: return "Apple Health sleep data is unavailable on this device."
         case .error: return "Apple Health could not complete the request. You can try again later."

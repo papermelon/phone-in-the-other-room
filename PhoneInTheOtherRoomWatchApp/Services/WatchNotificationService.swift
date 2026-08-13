@@ -19,7 +19,7 @@ final class WatchNotificationService: NSObject, UNUserNotificationCenterDelegate
             let content = UNMutableNotificationContent()
             content.title = role == .additionalQuiet ? "Ollie is keeping quiet" : "Ollie is on Wind Down"
             content.body = role == .additionalQuiet
-                ? "Your quiet time is running."
+                ? "Your Phone Break is running."
                 : "Your phone is tucked in for the night."
             content.sound = .default
 

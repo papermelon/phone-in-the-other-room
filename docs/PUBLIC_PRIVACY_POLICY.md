@@ -11,7 +11,7 @@ provide diagnosis or treatment.
 
 By default, Counting Sheep keeps the following information on your device:
 
-- your Quiet Time schedule, active session, and recent quiet-time history;
+- your Wind Down and Phone Break schedules, active session, and recent phone-away history;
 - optional morning reflections and personal routine wording;
 - flock progress, legacy reward records, and app preferences;
 - your Screen Time app/category selection, stored as Apple-provided opaque tokens;
@@ -44,11 +44,11 @@ When server-assisted Live Activity delivery is enabled, the service may process:
 
 - an app installation identifier and anonymous user identifier;
 - app version and Apple push environment;
-- Quiet Time run identifiers, planned transition times, state, and revision; and
+- Wind Down run identifiers, planned transition times, state, and revision; and
 - an ActivityKit push token and operational delivery results.
 
 Push tokens are credentials used only to deliver the requested Live Activity update.
-Backend delivery is optional support for the Lock Screen display; local Quiet Time remains
+Backend delivery is optional support for the Lock Screen display; local Wind Down remains
 authoritative.
 
 ## Optional impact sharing

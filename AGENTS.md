@@ -29,10 +29,11 @@ Explain tradeoffs plainly, but do not turn an inferred preference into a permane
 
 Help people stop doomscrolling around sleep by making it easy, warm, and even a little
 delightful to physically put the phone in another room before bed and let it wake after
-they do. The user-facing ritual is **Quiet Time** (represented internally by the established
-`NightWatch*` types): one phone-away session spans quiet time before bed, the overnight
-period, and quiet time after waking. An optional Apple Watch
-placement check can confirm the initial walk via Nearby Interaction (UWB).
+they do. The user-facing nightly ritual is **Wind Down** (represented internally by the
+established `NightWatch*` types): one phone-away session spans wind down before bed, the
+overnight period, and quiet time after waking. **Phone Break** is the secondary, one-time or
+scheduled phone-away mode outside that ritual. The optional Apple Watch companion mirrors the
+phone-authoritative timer. UWB placement checking is deferred from the current release.
 
 The differentiator is **screen time at the edges of sleep** and **physical separation**.
 Gamification and collection serve that ritual; they do not turn the app into a generic
@@ -42,9 +43,9 @@ productivity timer or medical sleep tracker.
 
 **IS:**
 
-- A quiet-time ritual app: put the phone away, wind down, and wake before it does
+- A Wind Down ritual app: put the phone away, wind down, and wake before it does
 - Warm, playful, cozy, emotionally safe — pixel-art farm aesthetic, gentle copy
-- Low friction: configure once, then one tap to start Quiet Time
+- Low friction: configure once, then one tap to start Wind Down; Phone Break stays optional
 - Honest about what it measures (quiet minutes around sleep, protected nights, and
   "nights your phone slept in the other room")
 - Purposeful gamification: sheep search, rarity, farm management, collection, trading,
@@ -72,7 +73,7 @@ Eight targets (defined in `project.yml`):
 | Target | Type | Notes |
 |---|---|---|
 | `PhoneInTheOtherRoom` | iOS app | Sources: `Shared/` + `PhoneInTheOtherRoomApp/`. Embeds the Watch app. iPhone-only. |
-| `PhoneInTheOtherRoomWatchApp` | watchOS app | Sources: `Shared/` + `PhoneInTheOtherRoomWatchApp/`. Optional companion and one-time Watch placement assist. |
+| `PhoneInTheOtherRoomWatchApp` | watchOS app | Sources: `Shared/` + `PhoneInTheOtherRoomWatchApp/`. Optional companion that mirrors the phone-authoritative Wind Down or Phone Break timer. |
 | `PhoneInTheOtherRoomLiveActivity` | iOS Widget extension | Lock Screen, Dynamic Island, and paired-Watch Smart Stack run status. Embedded in the iOS app. |
 | `PhoneInTheOtherRoomScreenTimeReport` | iOS app extension | Embedded DeviceActivity report extension. Main app + extension compile with `SCREEN_TIME_REPORTS`, share scoped selections through the approved App Group, and carry Family Controls entitlements. |
 | `PhoneInTheOtherRoomDeviceActivityMonitor` | iOS app extension | Enforces the consented selected-app barrier through the protected session while the app is suspended. |
@@ -92,7 +93,6 @@ flowchart LR
     end
     subgraph Watch
         WVM[WatchRunViewModel] --> WCW[WatchConnectivityManagerWatch]
-        WVM --> NI[NearbyInteraction session]
     end
     WCM <-->|"WatchMessage over WatchConnectivity"| WCW
 ```
@@ -103,9 +103,9 @@ flowchart LR
 2. `NightWatchPreferences` creates an anchored `NightWatchPlan`; the iPhone persists and
    keeps its wall-clock transitions even while either app is backgrounded. Local reminders
    support the next requested wind-down and morning completion.
-3. New plans default to `.nfcTag`, using a locally registered NDEF phone-bed tag; `.honorTimer` remains the simplest fallback. `.watchPlacement` makes one optional, time-boxed Nearby Interaction check at the start; `.qrCode` records a phone-bed scan. An opted-in automatic Wind Down can schedule shielding while the app is closed, with the app reconciling the run on next activation.
-4. The plan moves through `.windDown`, `.overnight`, and `.morningQuiet`. Optional placement
-   can always become a simple timer; no later Watch distance can warn or end Night Watch.
+3. New plans offer `.honorTimer` App Shielding or `.nfcTag` NFC + App Shielding, using a locally registered NDEF phone-bed tag for the latter. Legacy `.watchPlacement` and `.qrCode` values remain decodable but normalize to the timer for new release flows. An opted-in automatic Wind Down can schedule shielding while the app is closed, with the app reconciling the run on next activation.
+4. The plan moves through `.windDown`, `.overnight`, and `.morningQuiet`. The Watch mirrors
+   that run but does not authorize, advance, or end the current release's protection flow.
 5. If the user opted into shielding, the same consented Screen Time selection is shielded
    from the eligible Wind Down start through the end of morning quiet, including overnight
    separation. Counting Sheep and its fail-open emergency exit remain available. The monitor
@@ -188,7 +188,7 @@ skills/                        ← portable agent skills (see skills/README.md)
 - Naming: `*ViewModel` for view models, `*Service` for services, `*Manager` only for the existing connectivity managers, `Watch*` prefix for watch-side types.
 - UserDefaults keys use the `ollie.*` prefix. Screen Time report contexts use `phone-other.*`.
 - Formatting helpers go through `OllieFormat` in `Shared/Formatting.swift`.
-- Guard platform-specific APIs: Nearby Interaction requires UWB hardware; Screen Time code compiles only under `#if SCREEN_TIME_REPORTS && canImport(...)`. Placement must always degrade to the phone-away timer.
+- Screen Time code compiles only under `#if SCREEN_TIME_REPORTS && canImport(...)`. Retained legacy Nearby Interaction paths require UWB hardware and must remain unreachable from current release setup; old placement data must degrade to the phone-away timer.
 - Comments explain *why*, not *what*. No TODO comments — file a task in `docs/FUTURE_AGENT_TASKS.md` instead.
 
 ## 6. SwiftUI and state management conventions
@@ -311,7 +311,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
   shielding are enabled; shielding must use the consented selection, run only from an
   eligible Wind Down start through morning quiet, preserve the early exit, and fail open.
   Overnight shielding is the accepted ADR-0012 barrier; it still never earns quiet credit.
-- **Breaking the unsupported-device path.** Not all devices have UWB. `unsupported` state and fallback providers must keep working.
+- **Re-exposing deferred guard choices.** New release flows expose only App Shielding (timer) and NFC + App Shielding. Keep legacy Watch-placement/QR data decodable without returning either choice to setup.
 - **Breaking persisted-data decoding.** `UserProgress` etc. are stored as JSON. Changing Codable models needs backwards-compatible decoding (there is a legacy-decode test — keep it passing).
 - **Inventing product prohibitions.** Do not present an agent-authored taste judgment as the
   founder's ethos or as an immutable boundary. Record the requested direction, explain concrete
@@ -333,13 +333,14 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 | Screen Time reports & pickers | Foundation enabled; physical-device QA pending | Family Controls distribution assigned to app + report extension |
 | HealthKit sleep duration/stages | Included for 1.0, optional and read-only | Physical-device reads + privacy disclosure |
 | NFC + app shielding for Night Watch | Included for 1.0, optional | New extension App IDs, Family Controls distribution, and physical overnight QA |
+| Apple Watch companion | Included for 1.0, optional | Mirrors timer/NFC run state; UWB placement checking is deferred |
 | Broader social features | Not planned | Own decision record required; ADR-0016 authorizes Slumber Party only |
 | Supabase ActivityKit delivery | Approved, disabled by default | ADR-0005 deployment and privacy gates |
 
 ## 15. TestFlight-readiness priorities (ordered)
 
 1. Physical overnight QA: background/termination restore, notifications, Live Activity,
-   Watch unreachable, QR fallback, no-UWB devices, and timezone/DST behavior.
+   Watch reachable/unreachable timer mirroring, NFC fallback/recovery, and timezone/DST behavior.
 2. Privacy strings consistent with Night Watch; App Store privacy labels cover the optional
    Supabase dependency, Apple-linked Slumber Party identity, and enabled/disabled configuration.
 3. Re-run a signed archive with the configured bundle IDs, Team ID, and version numbers.

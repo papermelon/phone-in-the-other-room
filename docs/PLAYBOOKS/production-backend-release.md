@@ -75,7 +75,7 @@ In the Supabase dashboard:
 
 With a separately approved physical-device install:
 
-1. Start an honor-timer Quiet Time with Live Activity enabled.
+1. Start an App Shielding Wind Down with Live Activity enabled.
 2. Confirm one successful registration invocation and no 4xx/5xx response.
 3. Confirm bedtime and wake phase events are scheduled once per activity generation.
 4. End early and confirm cancellation remains idempotent.

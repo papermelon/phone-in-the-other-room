@@ -55,11 +55,11 @@ struct EarlyEndView: View {
 
     private var receiptMessage: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet ? "QUIET TIME ENDED" : AppCopy.EarlyEnd.eyebrow.value)
+            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet ? "PHONE BREAK ENDED" : AppCopy.EarlyEnd.eyebrow.value)
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.secondaryText)
             Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
-                ? "Quiet time ended early. Your receipt is ready."
+                ? "Phone Break ended early. The time you completed is saved in Nights."
                 : AppCopy.EarlyEnd.title.value)
                 .font(pixelFont(.title3))
             Text(minutesAwayText + " Tonight can simply be a fresh start.")

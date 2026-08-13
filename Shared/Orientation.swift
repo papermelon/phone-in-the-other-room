@@ -24,6 +24,45 @@ enum CountingSheepOrientationStep: String, Codable, Equatable {
     static let count = 3
 }
 
+enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identifiable {
+    case nights
+    case farm
+    case settings
+    case phoneBreak
+    case trailNote
+    case barnCapacity
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .nights: return "Your nights, kept together"
+        case .farm: return "Ollie’s trails lead here"
+        case .settings: return "Your plan lives here"
+        case .phoneBreak: return "A break outside bedtime"
+        case .trailNote: return "A clue leaves a trail"
+        case .barnCapacity: return "The discovery stays safe"
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .nights:
+            return "Wind Down is your nightly ritual.\nPhone Breaks stay here as smaller, separate records."
+        case .farm:
+            return "Wind Down moves Ollie’s main trail.\nPhone Break minutes wait on their own trail."
+        case .settings:
+            return "Change Wind Down, connections, and guidance here.\nYou can replay this guide whenever you like."
+        case .phoneBreak:
+            return "Start one now or save one for later.\nEvery 75 completed minutes can open a bonus search after three Wind Downs."
+        case .trailNote:
+            return "A homecoming means Ollie found a sheep.\nA clue means he has more trail to follow."
+        case .barnCapacity:
+            return "If The Barn is full, make room or open a new pasture.\nThe discovery stays in Trail Notes."
+        }
+    }
+}
+
 enum CountingSheepOrientationMilestone: String, Codable, CaseIterable, Hashable {
     case homeExplained
     case nightsExplored
@@ -39,7 +78,7 @@ enum CountingSheepOrientationMilestone: String, Codable, CaseIterable, Hashable 
 /// Legacy milestones remain decodable because practice records and development
 /// installs may still refer to them, but they no longer gate finishing the tour.
 struct CountingSheepOrientationState: Codable, Equatable {
-    static let currentSchemaVersion = 3
+    static let currentSchemaVersion = 4
 
     var schemaVersion: Int
     var status: CountingSheepOrientationStatus
@@ -47,6 +86,8 @@ struct CountingSheepOrientationState: Codable, Equatable {
     var milestones: Set<CountingSheepOrientationMilestone>
     var practicePeriodID: UUID?
     var practiceRunID: UUID?
+    var seenContextualTips: Set<CountingSheepContextualTip>
+    var contextualTipsDisabled: Bool
 
     static let fresh = Self(
         schemaVersion: currentSchemaVersion,
@@ -54,7 +95,9 @@ struct CountingSheepOrientationState: Codable, Equatable {
         currentStep: .home,
         milestones: [],
         practicePeriodID: nil,
-        practiceRunID: nil
+        practiceRunID: nil,
+        seenContextualTips: [],
+        contextualTipsDisabled: false
     )
 
     init(
@@ -63,7 +106,9 @@ struct CountingSheepOrientationState: Codable, Equatable {
         currentStep: CountingSheepOrientationStep = .home,
         milestones: Set<CountingSheepOrientationMilestone> = [],
         practicePeriodID: UUID? = nil,
-        practiceRunID: UUID? = nil
+        practiceRunID: UUID? = nil,
+        seenContextualTips: Set<CountingSheepContextualTip> = [],
+        contextualTipsDisabled: Bool = false
     ) {
         self.schemaVersion = max(schemaVersion, Self.currentSchemaVersion)
         self.status = status
@@ -71,6 +116,8 @@ struct CountingSheepOrientationState: Codable, Equatable {
         self.milestones = milestones
         self.practicePeriodID = practicePeriodID
         self.practiceRunID = practiceRunID
+        self.seenContextualTips = seenContextualTips
+        self.contextualTipsDisabled = contextualTipsDisabled
     }
 
     var isVisibleOnHome: Bool {
@@ -150,6 +197,27 @@ struct CountingSheepOrientationState: Codable, Equatable {
         status = .skipped
     }
 
+    var canShowContextualTips: Bool {
+        status != .skipped && status != .dismissed && !contextualTipsDisabled
+    }
+
+    func nextContextualTip(from candidates: [CountingSheepContextualTip]) -> CountingSheepContextualTip? {
+        guard canShowContextualTips else { return nil }
+        return candidates.first { !seenContextualTips.contains($0) }
+    }
+
+    mutating func markContextualTipSeen(_ tip: CountingSheepContextualTip) {
+        guard canShowContextualTips else { return }
+        seenContextualTips.insert(tip)
+        if tip == .barnCapacity {
+            seenContextualTips.insert(.farm)
+        }
+    }
+
+    mutating func disableContextualTips() {
+        contextualTipsDisabled = true
+    }
+
     mutating func replay() {
         self = .fresh
         status = .inProgress
@@ -162,6 +230,8 @@ struct CountingSheepOrientationState: Codable, Equatable {
         case milestones
         case practicePeriodID
         case practiceRunID
+        case seenContextualTips
+        case contextualTipsDisabled
         // These fields make a partial pre-versioned state safe to migrate.
         case homeExplained
         case nightsExplored
@@ -229,6 +299,8 @@ struct CountingSheepOrientationState: Codable, Equatable {
         milestones = decodedMilestones
         practicePeriodID = try container.decodeIfPresent(UUID.self, forKey: .practicePeriodID)
         practiceRunID = try container.decodeIfPresent(UUID.self, forKey: .practiceRunID)
+        seenContextualTips = try container.decodeIfPresent(Set<CountingSheepContextualTip>.self, forKey: .seenContextualTips) ?? []
+        contextualTipsDisabled = try container.decodeIfPresent(Bool.self, forKey: .contextualTipsDisabled) ?? false
     }
 
     func encode(to encoder: Encoder) throws {
@@ -239,5 +311,7 @@ struct CountingSheepOrientationState: Codable, Equatable {
         try container.encode(milestones, forKey: .milestones)
         try container.encodeIfPresent(practicePeriodID, forKey: .practicePeriodID)
         try container.encodeIfPresent(practiceRunID, forKey: .practiceRunID)
+        try container.encode(seenContextualTips, forKey: .seenContextualTips)
+        try container.encode(contextualTipsDisabled, forKey: .contextualTipsDisabled)
     }
 }

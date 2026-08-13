@@ -50,6 +50,22 @@ enum WindDownGuidanceLibrary {
             sourceIDs: ["nhlbi-healthy-sleep"]
         ),
         WindDownGuidanceItem(
+            id: "leave-room-after-heavy-meal",
+            topic: .lightAndTiming,
+            title: "Leave room after a heavy meal",
+            body: "If you have a large meal close to bedtime, try leaving a little more room before bed when you can. Your own timing is the useful guide.",
+            phase: .windDown,
+            sourceIDs: ["nhlbi-healthy-sleep"]
+        ),
+        WindDownGuidanceItem(
+            id: "personal-caffeine-cutoff",
+            topic: .lightAndTiming,
+            title: "Try an earlier caffeine cutoff",
+            body: "Caffeine can linger for hours. Try an earlier personal cutoff and notice how the evening feels.",
+            phase: .windDown,
+            sourceIDs: ["nhlbi-healthy-sleep"]
+        ),
+        WindDownGuidanceItem(
             id: "steady-wake",
             topic: .lightAndTiming,
             title: "Give morning a familiar shape",

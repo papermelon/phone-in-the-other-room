@@ -26,7 +26,10 @@ enum ScreenbookFixtures {
         if kind != .onboardingWelcome {
             persistence.nightWatchPreferences = configuredPreferences
             persistence.offlinePurpose = OfflinePurposeProfile(category: .read)
-            persistence.orientationState = CountingSheepOrientationState(status: .completed)
+            persistence.orientationState = CountingSheepOrientationState(
+                status: .completed,
+                seenContextualTips: Set(CountingSheepContextualTip.allCases)
+            )
             persistence.progress = progress
             persistence.sheepSearchState = searchState
             persistence.farmState = farmState
@@ -45,7 +48,8 @@ enum ScreenbookFixtures {
             coordinator: coordinator,
             persistence: persistence,
             nowProvider: { fixedNow },
-            startsExternalServices: false
+            startsExternalServices: false,
+            nightFlockViewModel: NightFlockViewModel(featureEnabled: true)
         )
 
         switch kind {

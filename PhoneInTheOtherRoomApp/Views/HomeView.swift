@@ -367,12 +367,12 @@ private struct ActiveWindDownReturnBar: View {
     }
 
     private var fallbackTitle: String {
-        run?.nightWatchPlan?.role == .additionalQuiet ? "Quiet time" : "Wind Down"
+        run?.nightWatchPlan?.role == .additionalQuiet ? "Phone Break" : "Wind Down"
     }
 
     private var fallbackAccessibilityHint: String {
         run?.nightWatchPlan?.role == .additionalQuiet
-            ? "Returns to the live quiet time"
+            ? "Returns to the live Phone Break"
             : "Returns to the live Wind Down journey"
     }
 

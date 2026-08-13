@@ -1,6 +1,12 @@
 import Foundation
 
+enum SheepSearchOrigin: String, Codable {
+    case windDown
+    case phoneBreak
+}
+
 struct SheepSearchOutcome: Codable, Equatable, Identifiable {
+
     enum Result: String, Codable {
         case found
         case trailOnly
@@ -8,6 +14,7 @@ struct SheepSearchOutcome: Codable, Equatable, Identifiable {
 
     let id: UUID
     let runID: UUID
+    let origin: SheepSearchOrigin
     let protectedNightNumber: Int
     let result: Result
     let sheepID: String?
@@ -24,6 +31,7 @@ struct SheepSearchOutcome: Codable, Equatable, Identifiable {
     init(
         id: UUID,
         runID: UUID,
+        origin: SheepSearchOrigin = .windDown,
         protectedNightNumber: Int,
         result: Result,
         sheepID: String?,
@@ -39,6 +47,7 @@ struct SheepSearchOutcome: Codable, Equatable, Identifiable {
     ) {
         self.id = id
         self.runID = runID
+        self.origin = origin
         self.protectedNightNumber = protectedNightNumber
         self.result = result
         self.sheepID = sheepID
@@ -54,7 +63,7 @@ struct SheepSearchOutcome: Codable, Equatable, Identifiable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id, runID, protectedNightNumber, result, sheepID, rarity, habitat
+        case id, runID, origin, protectedNightNumber, result, sheepID, rarity, habitat
         case trailStrength, encounterOdds, trailDistance, consecutiveNoFinds, bonusPoints
         case trailMapBonusPercentagePoints, createdAt
     }
@@ -64,6 +73,7 @@ struct SheepSearchOutcome: Codable, Equatable, Identifiable {
         self.init(
             id: try container.decode(UUID.self, forKey: .id),
             runID: try container.decode(UUID.self, forKey: .runID),
+            origin: try container.decodeIfPresent(SheepSearchOrigin.self, forKey: .origin) ?? .windDown,
             protectedNightNumber: try container.decode(Int.self, forKey: .protectedNightNumber),
             result: try container.decode(Result.self, forKey: .result),
             sheepID: try container.decodeIfPresent(String.self, forKey: .sheepID),
@@ -81,8 +91,9 @@ struct SheepSearchOutcome: Codable, Equatable, Identifiable {
 }
 
 struct SheepTrailMapState: Codable, Equatable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
     static let maximumMappedMinutes = 75
+    static let maximumPendingMinutes = 150
     static let maximumCreditedRunIDs = 128
 
     var schemaVersion: Int = currentSchemaVersion
@@ -99,7 +110,7 @@ struct SheepTrailMapState: Codable, Equatable {
         creditedAdHocRunIDs: [UUID] = []
     ) {
         self.schemaVersion = schemaVersion
-        self.pendingMappedMinutes = min(Self.maximumMappedMinutes, max(0, pendingMappedMinutes))
+        self.pendingMappedMinutes = min(Self.maximumPendingMinutes, max(0, pendingMappedMinutes))
         self.creditedAdHocRunIDs = Array(creditedAdHocRunIDs.suffix(Self.maximumCreditedRunIDs))
     }
 
@@ -116,20 +127,29 @@ struct SheepTrailMapState: Codable, Equatable {
         min(5, max(0, pendingMappedMinutes) / 15)
     }
 
+    var isReadyForBonusSearch: Bool {
+        pendingMappedMinutes >= Self.maximumMappedMinutes
+    }
+
     @discardableResult
-    mutating func credit(runID: UUID, minutes: Int) -> Int {
+    mutating func credit(
+        runID: UUID,
+        minutes: Int,
+        pendingCap: Int = Self.maximumPendingMinutes
+    ) -> Int {
         guard minutes > 0, !creditedAdHocRunIDs.contains(runID) else { return 0 }
         creditedAdHocRunIDs.append(runID)
         if creditedAdHocRunIDs.count > Self.maximumCreditedRunIDs {
             creditedAdHocRunIDs.removeFirst(creditedAdHocRunIDs.count - Self.maximumCreditedRunIDs)
         }
         let previous = pendingMappedMinutes
-        pendingMappedMinutes = min(Self.maximumMappedMinutes, previous + minutes)
+        let safeCap = min(Self.maximumPendingMinutes, max(0, pendingCap))
+        pendingMappedMinutes = min(safeCap, previous + minutes)
         return pendingMappedMinutes - previous
     }
 
-    mutating func consume(percentagePoints: Int) {
-        pendingMappedMinutes = max(0, pendingMappedMinutes - max(0, percentagePoints) * 15)
+    mutating func consumeBonusSearchMeter() {
+        pendingMappedMinutes = max(0, pendingMappedMinutes - Self.maximumMappedMinutes)
     }
 }
 
@@ -138,23 +158,41 @@ struct SheepTrailMapPresentation: Equatable {
     var detail: String
 
     static func home(availableBonusPercentagePoints: Int) -> Self? {
-        let points = min(5, max(0, availableBonusPercentagePoints))
-        guard points > 0 else { return nil }
-        let unit = points == 1 ? "percentage point" : "percentage points"
+        home(pendingMappedMinutes: max(0, availableBonusPercentagePoints) * 15)
+    }
+
+    static func home(
+        pendingMappedMinutes: Int,
+        protectedWindDownCount: Int = SheepSearchEngine.starterGuaranteeRuns
+    ) -> Self? {
+        let minutes = min(SheepTrailMapState.maximumMappedMinutes, max(0, pendingMappedMinutes))
+        guard minutes > 0 else { return nil }
+        let isUnlocked = protectedWindDownCount >= SheepSearchEngine.starterGuaranteeRuns
+        let detail: String
+        if isUnlocked {
+            detail = minutes == SheepTrailMapState.maximumMappedMinutes
+                ? "The trail is full. Complete another Phone Break to open one bonus search."
+                : "Every 75 completed Phone Break minutes opens one bonus search."
+        } else {
+            detail = minutes == SheepTrailMapState.maximumMappedMinutes
+                ? "The trail is full. It will wait until three Wind Downs are complete."
+                : "These minutes are saved. Bonus searches open after three Wind Downs."
+        }
         return Self(
-            title: "Extra quiet has mapped more of Ollie’s trail.",
-            detail: "Completed extra quiet time adds \(points) \(unit) to the chance of finding a sheep on a future search."
+            title: "Phone Break trail · \(minutes) / 75 minutes",
+            detail: detail
         )
     }
 }
 
 struct SheepSearchState: Codable, Equatable {
-    static let currentSchemaVersion = 2
+    static let currentSchemaVersion = 3
 
     var schemaVersion: Int
     var outcomes: [SheepSearchOutcome]
     var foundSheepIDs: [String]
     var consecutiveNoFinds: Int
+    var phoneBreakConsecutiveNoFinds: Int
     var totalTrailDistance: Double
     var showExactOdds: Bool
     var trailMap: SheepTrailMapState
@@ -164,6 +202,7 @@ struct SheepSearchState: Codable, Equatable {
         outcomes: [],
         foundSheepIDs: [],
         consecutiveNoFinds: 0,
+        phoneBreakConsecutiveNoFinds: 0,
         totalTrailDistance: 0,
         showExactOdds: false,
         trailMap: SheepTrailMapState()
@@ -171,23 +210,40 @@ struct SheepSearchState: Codable, Equatable {
 
     var lastOutcome: SheepSearchOutcome? { outcomes.last }
 
+    var completedWindDownSearchCount: Int {
+        outcomes.filter { $0.origin == .windDown }.count
+    }
+
+    func phoneBreakOutcome(for runID: UUID) -> SheepSearchOutcome? {
+        outcomes.first { $0.origin == .phoneBreak && $0.runID == runID }
+    }
+
     mutating func append(_ outcome: SheepSearchOutcome) {
         guard !outcomes.contains(where: { $0.runID == outcome.runID }) else { return }
         outcomes.append(outcome)
-        trailMap.consume(percentagePoints: outcome.trailMapBonusPercentagePoints)
+        // The mapped-bonus field is retained for legacy Wind Down outcomes only.
+        // New Phone Break searches consume the separate meter before settlement.
         if let sheepID = outcome.sheepID {
             if !foundSheepIDs.contains(sheepID) {
                 foundSheepIDs.append(sheepID)
             }
-            consecutiveNoFinds = 0
+            if outcome.origin == .phoneBreak {
+                phoneBreakConsecutiveNoFinds = 0
+            } else {
+                consecutiveNoFinds = 0
+            }
         } else {
-            consecutiveNoFinds += 1
+            if outcome.origin == .phoneBreak {
+                phoneBreakConsecutiveNoFinds += 1
+            } else {
+                consecutiveNoFinds += 1
+            }
         }
         totalTrailDistance += outcome.trailDistance
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, outcomes, foundSheepIDs, consecutiveNoFinds, totalTrailDistance
+        case schemaVersion, outcomes, foundSheepIDs, consecutiveNoFinds, phoneBreakConsecutiveNoFinds, totalTrailDistance
         case showExactOdds, trailMap
     }
 
@@ -196,6 +252,7 @@ struct SheepSearchState: Codable, Equatable {
         outcomes: [SheepSearchOutcome],
         foundSheepIDs: [String],
         consecutiveNoFinds: Int,
+        phoneBreakConsecutiveNoFinds: Int = 0,
         totalTrailDistance: Double,
         showExactOdds: Bool,
         trailMap: SheepTrailMapState = SheepTrailMapState()
@@ -204,6 +261,7 @@ struct SheepSearchState: Codable, Equatable {
         self.outcomes = outcomes
         self.foundSheepIDs = foundSheepIDs
         self.consecutiveNoFinds = consecutiveNoFinds
+        self.phoneBreakConsecutiveNoFinds = max(0, phoneBreakConsecutiveNoFinds)
         self.totalTrailDistance = totalTrailDistance
         self.showExactOdds = showExactOdds
         self.trailMap = trailMap
@@ -216,6 +274,7 @@ struct SheepSearchState: Codable, Equatable {
             outcomes: try container.decodeIfPresent([SheepSearchOutcome].self, forKey: .outcomes) ?? [],
             foundSheepIDs: try container.decodeIfPresent([String].self, forKey: .foundSheepIDs) ?? [],
             consecutiveNoFinds: try container.decodeIfPresent(Int.self, forKey: .consecutiveNoFinds) ?? 0,
+            phoneBreakConsecutiveNoFinds: try container.decodeIfPresent(Int.self, forKey: .phoneBreakConsecutiveNoFinds) ?? 0,
             totalTrailDistance: try container.decodeIfPresent(Double.self, forKey: .totalTrailDistance) ?? 0,
             showExactOdds: try container.decodeIfPresent(Bool.self, forKey: .showExactOdds) ?? false,
             trailMap: try container.decodeIfPresent(SheepTrailMapState.self, forKey: .trailMap) ?? SheepTrailMapState()

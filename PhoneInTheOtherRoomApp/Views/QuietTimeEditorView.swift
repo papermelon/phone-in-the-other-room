@@ -26,7 +26,7 @@ struct QuietTimeEditorView: View {
     let mode: Mode
     let onComplete: (Bool) -> Void
 
-    @State private var title = "One-time quiet period"
+    @State private var title = "Phone Break"
     @State private var starts: Date
     @State private var ends: Date
     @State private var repeatChoice: RepeatChoice = .daily
@@ -86,7 +86,7 @@ struct QuietTimeEditorView: View {
             .padding(AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle(isNewOneTime || isNewRoutine ? "Add quiet time" : "Edit quiet time")
+        .navigationTitle(isNewOneTime || isNewRoutine ? "Add Phone Break" : "Edit Phone Break")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
@@ -98,11 +98,11 @@ struct QuietTimeEditorView: View {
 
     private var intro: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(isNewOneTime ? "Plan a little room for quiet." : "Quiet time settings")
+            Text(isNewOneTime ? "Plan a little room away from the phone." : "Phone Break settings")
                 .font(AppTypography.title)
             Text(isNewOneTime
-                ? "Choose a future window. Starting now is a separate, one-tap quiet flow."
-                : "Keep this quiet period comfortable and easy to change.")
+                ? "Choose a future window. To begin right away, use Start Phone Break on Home."
+                : "Keep this Phone Break comfortable and easy to change.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.muted)
         }
@@ -111,14 +111,14 @@ struct QuietTimeEditorView: View {
     private var detailsCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text("Quiet time")
+                Text("Phone Break")
                     .font(AppTypography.headline)
                 TextField("Name", text: $title)
                     .font(AppTypography.body)
                     .padding(AppSpacing.sm)
                     .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.sm))
                     .overlay(RoundedRectangle(cornerRadius: AppRadius.sm).stroke(AppColors.stroke.opacity(0.18), lineWidth: 1))
-                    .accessibilityLabel("Quiet time name")
+                    .accessibilityLabel("Phone Break name")
                 dateRow("Starts", selection: $starts, range: nil)
                 dateRow("Ends", selection: $ends, range: starts...)
                 if oneTimeID != nil {
@@ -152,7 +152,7 @@ struct QuietTimeEditorView: View {
                 .frame(maxWidth: .infinity)
                 .buttonStyle(PixelPrimaryButtonStyle())
             if let oneTimeID {
-                Button("Cancel this quiet time", role: .destructive) {
+                Button("Cancel this Phone Break", role: .destructive) {
                     viewModel.cancelOneTimeQuiet(id: oneTimeID)
                     dismiss()
                 }
@@ -160,7 +160,7 @@ struct QuietTimeEditorView: View {
                 .font(AppTypography.body)
             }
             if let routineID {
-                Button("Cancel this repeating time", role: .destructive) {
+                Button("Cancel this repeating Phone Break", role: .destructive) {
                     viewModel.cancelAdditionalRoutine(id: routineID)
                     dismiss()
                 }
@@ -171,7 +171,7 @@ struct QuietTimeEditorView: View {
     }
 
     private var primaryActionTitle: String {
-        return isNewOneTime || isNewRoutine ? "Save quiet time" : "Save changes"
+        return isNewOneTime || isNewRoutine ? "Save Phone Break" : "Save changes"
     }
 
     private func dateRow(_ label: String, selection: Binding<Date>, range: PartialRangeFrom<Date>?) -> some View {
@@ -260,14 +260,14 @@ struct QuietTimeEditorView: View {
             )
             onComplete(success)
             if success { dismiss() }
-            else { error = viewModel.windDownScheduleError ?? "Choose a future window that does not overlap another quiet time." }
+            else { error = viewModel.windDownScheduleError ?? "Choose a future window that does not overlap another phone-away session." }
             return
         }
         if isNewOneTime {
             let success = viewModel.addOneTimeAdditionalQuiet(title: title, start: starts, end: ends)
             onComplete(success)
             if success { dismiss() }
-            else { error = viewModel.windDownScheduleError ?? "Choose a future window that does not overlap another quiet time." }
+            else { error = viewModel.windDownScheduleError ?? "Choose a future window that does not overlap another phone-away session." }
             return
         }
         let start = WindDownClockTime(
@@ -299,7 +299,7 @@ struct QuietTimeEditorView: View {
         }
         onComplete(success)
         if success { dismiss() }
-        else { error = viewModel.windDownScheduleError ?? "That repeat overlaps another quiet time. Choose a different window." }
+        else { error = viewModel.windDownScheduleError ?? "That repeat overlaps another phone-away session. Choose a different window." }
     }
 }
 
@@ -324,7 +324,7 @@ struct QuietTimeEditorView: View {
         QuietTimeEditorView(
             mode: .oneTime(nil),
             onComplete: { _ in },
-            initialError: "This quiet time overlaps another period. Choose a different window."
+            initialError: "This Phone Break overlaps another phone-away time. Choose a different window."
         )
         .environmentObject(FocusRunViewModel())
     }

@@ -3,6 +3,7 @@ import SwiftUI
 struct FarmView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var selectedSheepID: UUID?
+    @State private var contextualTip: CountingSheepContextualTip?
     let pastureVisitSeed: UInt64
     @Binding var opensNightFlock: Bool
 
@@ -35,7 +36,17 @@ struct FarmView: View {
             NightFlockHubView(viewModel: viewModel.nightFlockViewModel)
         }
         .farmActionAlert(viewModel: viewModel)
-        .onAppear { viewModel.markOrientation(.farmExplored) }
+        .onAppear {
+            viewModel.markOrientation(.farmExplored)
+            contextualTip = viewModel.farmState.isBarnFull || !viewModel.farmState.pendingSheep.isEmpty
+                ? nil
+                : viewModel.contextualTip(from: [.farm])
+        }
+        .contextualGuideOverlay(
+            tip: $contextualTip,
+            onAcknowledge: viewModel.acknowledgeContextualTip,
+            onSkipAll: viewModel.disableContextualTips
+        )
     }
 }
 
@@ -70,6 +81,7 @@ struct FarmDashboardContent: View {
                     layoutSeed: pastureVisitSeed,
                     onSelectSheep: onSelectSheep
                 )
+                .contextualGuideTarget(.farm)
                 FarmKeepsakeDisplay(state: state)
                 priorityCard
                 FarmBalanceBar(state: state, linksEnabled: true)

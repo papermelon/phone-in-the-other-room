@@ -40,7 +40,7 @@ struct WindDownDayDetailView: View {
                         isExpanded: $showsPrimaryRecords
                     )
                     occurrenceGroup(
-                        title: "ONE-TIME QUIET",
+                        title: "PHONE BREAK",
                         records: additionalRecords,
                         totalMinutes: summary.additionalQuietMinutes,
                         accent: AppColors.lavender,
@@ -137,7 +137,7 @@ struct WindDownDayDetailView: View {
         switch summary.primaryOutcome {
         case .protected: return "Protected night"
         case .endedEarly: return "Ended early"
-        case nil: return summary.additionalCount > 0 ? "One-time quiet" : "No recorded quiet"
+        case nil: return summary.additionalCount > 0 ? "Phone Break" : "No recorded quiet"
         }
     }
 
@@ -240,7 +240,7 @@ struct WindDownRecordDetailView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text(record.occurrenceRole == .additionalQuiet ? "One-time quiet period" : "Wind Down")
+                        Text(record.occurrenceRole == .additionalQuiet ? "Phone Break" : "Wind Down")
                             .font(AppTypography.display(26))
                         Text(record.outcome == .completed ? "Completed" : "Ended early")
                             .font(AppTypography.headline)
@@ -258,6 +258,9 @@ struct WindDownRecordDetailView: View {
                                 .foregroundStyle(AppColors.grass)
                             Text(outcome.sheepID.flatMap(SheepCatalog.definition).map { "Found \($0.name)" } ?? "Trail clue saved")
                                 .font(AppTypography.headline)
+                            Text(outcome.origin == .phoneBreak ? "Opened by 75 Phone Break minutes" : "Opened by this Wind Down")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.muted)
                             if outcome.trailMapBonusPercentagePoints > 0 {
                                 Text("+\(outcome.trailMapBonusPercentagePoints) mapped percentage points applied")
                                     .font(AppTypography.caption)
@@ -268,9 +271,13 @@ struct WindDownRecordDetailView: View {
                 }
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        detailMetric("Quiet before bed", value: "\(record.creditedWindDownMinutes) min")
-                        detailMetric("Quiet after waking", value: "\(record.creditedMorningQuietMinutes) min")
-                        detailMetric("Total quiet", value: "\(record.creditedWindDownMinutes + record.creditedMorningQuietMinutes) min")
+                        if record.occurrenceRole == .additionalQuiet {
+                            detailMetric("Phone-away time", value: "\(record.creditedWindDownMinutes + record.creditedMorningQuietMinutes) min")
+                        } else {
+                            detailMetric("Quiet before bed", value: "\(record.creditedWindDownMinutes) min")
+                            detailMetric("Quiet after waking", value: "\(record.creditedMorningQuietMinutes) min")
+                            detailMetric("Total quiet", value: "\(record.creditedWindDownMinutes + record.creditedMorningQuietMinutes) min")
+                        }
                         if record.briefAccessUseCount > 0 {
                             detailMetric(
                                 "Short breaks",
@@ -283,7 +290,7 @@ struct WindDownRecordDetailView: View {
             .padding(AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Wind Down")
+        .navigationTitle(record.occurrenceRole == .additionalQuiet ? "Phone Break" : "Wind Down")
         .navigationBarTitleDisplayMode(.inline)
     }
 

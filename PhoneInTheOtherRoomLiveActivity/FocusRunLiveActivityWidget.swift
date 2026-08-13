@@ -49,14 +49,14 @@ struct FocusRunLiveActivityWidget: Widget {
                 Image(systemName: "moon.stars.fill")
                     .font(.caption2)
                     .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
-                    .accessibilityLabel(context.state.isAdditionalQuiet ? "Quiet time is active" : "Wind Down is active")
+                    .accessibilityLabel(context.state.isAdditionalQuiet ? "Phone Break is active" : "Wind Down is active")
             } compactTrailing: {
                 EmptyView()
             } minimal: {
                 Image(systemName: "moon.stars.fill")
                     .font(.caption2)
                     .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
-                    .accessibilityLabel(context.state.isAdditionalQuiet ? "Quiet time is active" : "Wind Down is active")
+                    .accessibilityLabel(context.state.isAdditionalQuiet ? "Phone Break is active" : "Wind Down is active")
             }
         }
     }
@@ -73,7 +73,7 @@ struct FocusRunLiveActivityWidget: Widget {
         }
         if state.isAdditionalQuiet {
             return NightWatchLiveActivityGuidance(
-                primary: "Quiet time is running.",
+                primary: "Phone Break is running.",
                 secondary: "Ends at \(OllieFormat.time(state.plannedEndAt))"
             )
         }
@@ -265,12 +265,12 @@ private struct FocusRunLiveActivityView: View {
         if let terminalPresentation = state.terminalPresentation {
             return terminalPresentation.headline
         }
-        if state.isAdditionalQuiet { return "QUIET TIME" }
+        if state.isAdditionalQuiet { return "PHONE BREAK" }
         switch state.currentPhase {
         case .windDown: return "PHONE-FREE WIND-DOWN"
         case .overnight: return "SLEEP TIME"
         case .morningQuiet: return "PHONE-FREE MORNING"
-        case .complete: return "QUIET TIME COMPLETE"
+        case .complete: return "WIND DOWN COMPLETE"
         case nil: return "OLLIE IS ON WATCH"
         }
     }
@@ -289,7 +289,7 @@ private struct FocusRunLiveActivityView: View {
         }
         if state.isAdditionalQuiet {
             return NightWatchLiveActivityGuidance(
-                primary: "Quiet time is running.",
+                primary: "Phone Break is running.",
                 secondary: "Ends at \(OllieFormat.time(state.plannedEndAt))"
             )
         }

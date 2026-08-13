@@ -50,7 +50,7 @@ struct NotificationSchedulePreviewView: View {
     private var introDetail: String {
         let date = OllieFormat.dateAndTime(preview.startDate)
         if preview.isAdditionalQuiet {
-            return "Starts \(date). These cues end with this quiet time and stay separate from the overnight ritual."
+            return "Starts \(date). These cues end with this Phone Break and stay separate from the overnight ritual."
         }
         return "Starts \(date). This is the finite cue schedule for this Wind Down. Usage-aware cues appear only after selected-app activity."
     }

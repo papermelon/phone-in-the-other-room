@@ -22,7 +22,7 @@ Last verified against code: 12 August 2026.
 | Target | Type | Sources | Notes |
 |---|---|---|---|
 | `PhoneInTheOtherRoom` | iOS app | `Shared/` + `PhoneInTheOtherRoomApp/` + assets | Display name "Counting Sheep". Embeds the Watch app. iPhone-only (`TARGETED_DEVICE_FAMILY: 1`). |
-| `PhoneInTheOtherRoomWatchApp` | watchOS app | `Shared/` + `PhoneInTheOtherRoomWatchApp/` | Optional companion: mirrors run state and can make one brief Nearby Interaction placement check. |
+| `PhoneInTheOtherRoomWatchApp` | watchOS app | `Shared/` + `PhoneInTheOtherRoomWatchApp/` | Optional companion: mirrors the phone-authoritative timer for timer/NFC protection flows. UWB placement is deferred. |
 | `PhoneInTheOtherRoomLiveActivity` | iOS Widget extension | `Shared/` + `PhoneInTheOtherRoomLiveActivity/` + assets | Embedded Live Activity for Lock Screen, Dynamic Island, and paired-Watch Smart Stack status. |
 | `PhoneInTheOtherRoomScreenTimeReport` | iOS app extension | `Shared/` + `PhoneInTheOtherRoomScreenTimeReport/` | Embedded DeviceActivity report extension. Main app and extension compile the `SCREEN_TIME_REPORTS` paths and share scoped selections through the App Group. |
 | `PhoneInTheOtherRoomDeviceActivityMonitor` | iOS app extension | `Shared/` + `PhoneInTheOtherRoomDeviceActivityMonitor/` | Applies and clears scheduled wind-down/morning shields while the app is suspended. |
@@ -70,7 +70,7 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ FarmEconomyRules.swift          capacity, shearing, regrowth, sale, and balance invariants
 ├─ FarmMigration.swift             deterministic outcome/legacy-flock reconciliation
 ├─ FarmShop.swift                  fixed local catalogue, purchase, upgrade, and equipment rules
-├─ Orientation.swift                versioned two-step app tour + legacy milestone migration
+├─ Orientation.swift                versioned three-step Home tour + contextual-tip migration
 ├─ AppFeedback.swift             validated feedback draft/attachment/receipt protocol
 ├─ DistanceProvider.swift        protocol: async stream of distance readings
 └─ Formatting.swift              OllieFormat timer/minute formatting
@@ -107,7 +107,7 @@ PhoneInTheOtherRoomApp/        iOS app
 ├─ Views/
 │  ├─ HomeView.swift                           navigation shell + run-state routing
 │  ├─ PixelHomeDashboard.swift                 home tab
-│  ├─ Components/OrientationTourOverlay.swift  two-step shell spotlight + practice offer
+│  ├─ Components/OrientationTourOverlay.swift  shared spotlight guide for Home and contextual tips
 │  ├─ FocusRunSetupView.swift                  bedtime/wake, bookends, purpose + guard
 │  ├─ ActiveRunView.swift                      in-run UI + non-scrolling journey state
 │  ├─ CompletionView.swift / EarlyEndView.swift
@@ -162,7 +162,7 @@ supabase/                       versioned ADR-0005 migrations and Edge Functions
 
 ## 4. Data flow
 
-### Quiet Time lifecycle (implemented by the internal Night Watch model)
+### Wind Down lifecycle (implemented by the internal Night Watch model)
 
 ```mermaid
 stateDiagram-v2
@@ -198,10 +198,10 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    and lifecycle events; when the optional ActivityKit delivery path is deployed, the backend
    sends phase updates at the same two boundaries so the Live Activity can advance while the
    app is suspended.
-4. The honor-timer fallback completes without either device being foregrounded. The
-   optional `.watchPlacement` guard uses Nearby Interaction for at most 30 seconds to
-   confirm one initial Wind Down check; it then stops. `.qrCode` records one Wind Down code scan.
-   New plans default to `.nfcTag`; App Shielding is the simplest no-hardware path. `.nfcTag`
+4. The honor-timer path completes without either device being foregrounded. Current release
+   setup offers App Shielding (`.honorTimer`) or NFC + App Shielding (`.nfcTag`). Legacy
+   `.watchPlacement` and `.qrCode` values remain decodable and normalize to the timer for new
+   release flows; their older implementation is not user-selectable. `.nfcTag`
    reads a provisioned NDEF record and compares its local token digest. A failed
    tag scan can explicitly pair a replacement writable tag without restarting the
    current run; the new digest is committed only after a successful write, and supersedes
@@ -215,8 +215,8 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    same resolver before pending `UNNotificationRequest` values are rebuilt. Supported
    placeholders are optional (`{activity}`, `{purpose}`, `{time}`, and `{minutes}`); fixed
    protection notices bypass overrides.
-5. If optional placement is unavailable, the run automatically continues as a simple
-   phone-away timer. No later distance reading can warn or end a run.
+5. The Watch mirrors the authoritative run and never starts one from schedule defaults.
+   An explicit no-run state from the iPhone clears any stale Watch application context.
 6. Optional shielding derives a protected-session DeviceActivity schedule from this same
    `NightWatchPlan`. The start confirmation carries a per-run shielding choice, so a person
    can continue one practice or quiet period without app limits while preserving their saved
@@ -233,7 +233,7 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    still eligible. Web domains never advertise or receive Brief Access.
    The App Group snapshot carries a backwards-compatible `QuietTimeShieldRole` (legacy
    snapshots resolve to primary Wind Down). Shield Configuration selects a finite,
-   deterministic first-party cue for additional quiet, wind-down, overnight, or morning
+   deterministic first-party cue for Phone Break, Wind Down, overnight, or morning
    quiet and uses the protected-session interval—not a bookend—as the displayed end time.
    Its Ollie/sheep icon is decorative; the companion sheep is not a search result, reward,
    or owned flock item.
@@ -251,7 +251,7 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    drill-down, reflection, Health context, and consented selected-app results. Farm owns the
    active flock, lifecycle, catalogue, Shop, and customization presentation; Settings owns plan
    and report configuration. Chosen report windows do not
-   alter Quiet Time. Missing data is never estimated.
+   alter Wind Down or Phone Break. Missing data is never estimated.
    When ADR-0016's flag is enabled, Home may show one compact positive Slumber Party aggregate
    and Farm owns the nested Slumber Party hub. A successful eligible completion may show one
    finite link to its anonymous shared-pasture result. None of these surfaces changes rewards.
@@ -259,26 +259,30 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    and Settings remain mounted in the same four-tab shell. A persistent return strip resets
    nested navigation and returns to Home. Run start, app activation, and active-run notification
    routing make Home the default. ActiveRunPresentation supplies role-aware copy,
-   accessibility, guidance, exit, and shielding-status affordances; additional quiet uses
+   accessibility, guidance, exit, and shielding-status affordances; Phone Break uses
    its actual plan end date and never borrows primary Wind Down phase language. Terminal
    receipts temporarily replace the shell.
 10. `NightJourneyProgress` resolves overall, phase, and segment progress from the active
     `FocusRun`; `NightJourneyTerrainProfile` supplies a periodic height and derivative used by
     both the Canvas foreground and Ollie's foot alignment. Backdrops pan/zoom only within safe
     crop bounds, and deterministic clues at 20/55/82 percent never affect search resolution.
-11. Successful additional-quiet runs atomically credit their actual quiet minutes to the
-   versioned `SheepTrailMapState` nested in `SheepSearchState`. The state caps pending minutes
-   at 75 and retains bounded credited run IDs for idempotency. A non-guaranteed protected-night
-   search applies only whole percentage points that fit below the 92% cap; appending the
-   persisted outcome consumes exactly 15 mapped minutes per applied point.
-   Home and Upcoming quiet times offer a separate ad-hoc Start now action. It creates a
+11. Successful Phone Break runs atomically credit at least 15 and at most 75 of their actual
+   quiet minutes to the versioned `SheepTrailMapState` nested in `SheepSearchState`. The state
+   carries remainder minutes, retains bounded credited run IDs for idempotency, and resolves at
+   most one separate bonus search per completed break after three protected Wind Downs. The
+   deterministic 20/30/40/50/100 ladder and Phone Break clue counter never alter Wind Down odds.
+   Home and the Phone Break schedule offer a separate ad-hoc Start now action. It creates a
    temporary bounded occurrence for the single start transaction; Not now rolls it back, while
    starting consumes it. Scheduled rows keep their exact occurrence identity through
-   confirmation, and the future-period editor does not participate in this path. Starting or
-   completing ad-hoc quiet never changes protected-night or sheep-search progress.
-12. After first-run setup, the `HomeView` shell presents a finite two-step app tour persisted
-    as `ollie.orientation.state`. A dimmed modal layer spotlights the real Tonight plan and
-    bottom navigation without becoming part of Home's scroll. Finishing or dismissing the
+   confirmation, and the future-period editor does not participate in this path. Starting one
+   never changes progress by itself. An eligible completion can fill the Phone Break meter and
+   open its separate bonus search, but never changes protected-night progress or Wind Down odds.
+12. After first-run setup, the `HomeView` shell presents a finite three-step app tour persisted
+    as `ollie.orientation.state`; one-time contextual spotlights cover Nights, Farm, Settings,
+    Phone Break, the first Trail Note, and first Barn capacity. Each uses the same dimmed coach-mark
+    language as Home and points to real interface beneath it; no guide step is styled as ordinary
+    app content. A dimmed modal layer spotlights the real
+    Tonight plan and bottom navigation without becoming part of Home's scroll. Finishing or dismissing the
     tour is independent of tab visits and real Wind Down actions. The optional five-minute
     practice is offered only after the tour and uses the normal additional-quiet path, so it
     is recorded without protected-night progress or sheep resolution. Settings can resume or
@@ -291,7 +295,7 @@ session coordinator. A primary manual start creates its final run UUID before
 `FocusSessionCoordinator.start`. If the challenge is active, membership sharing is enabled, and
 the preflight was not private, the Slumber Party view model stores a local run-share context.
 
-The coordinator calls `onPhoneAwayValidated` only after NFC/honor/QR/Watch placement has actually
+The coordinator calls `onPhoneAwayValidated` only after the selected NFC/honor guard has actually
 made the run valid. That callback enqueues `phoneTucked`; successful primary completion enqueues
 `morningQuietCompleted`. An early end removes the context without a command. Automatic and
 additional-quiet runs have no context and therefore cannot publish. Stable
@@ -513,9 +517,9 @@ migration/functions, Apple provider, and moderation operating process remain dep
   Redux, etc.) — the codebase is small and the pattern works.
 - Keep wind-down, overnight, and morning quiet as phases of the same persisted run. New
   morning features must extend `NightWatchPlan`, not introduce a parallel session model.
-- The session-guard seam lives in `SessionGuardKind` (`.honorTimer`,
-  `.watchPlacement`, `.qrCode`, `.nfcTag`). Keep completion phone-authoritative; future
-  NFC and Screen Time shielding are optional and preserve an emergency exit.
+- The session-guard seam retains `SessionGuardKind` (`.honorTimer`, `.watchPlacement`,
+  `.qrCode`, `.nfcTag`) for persisted-data compatibility. Current release UI exposes only
+  `.honorTimer` and `.nfcTag`. Keep completion phone-authoritative and preserve an emergency exit.
 - Keep the App Group limited to Screen Time/Shield extension contracts; do not migrate
   unrelated progress, rewards, HealthKit history, or reflections into it.
 - Converge run-screen UI onto the pixel Theme; retire `GameComponents` gradually.

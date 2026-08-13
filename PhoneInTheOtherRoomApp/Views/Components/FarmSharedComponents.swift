@@ -191,16 +191,42 @@ struct OllieFarmAvatar: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            FarmCatalogAssetImage(
-                assetName: AssetSlot.Dog.farmNeutralIdle,
-                fallbackSymbol: "pawprint.fill",
-                fallbackColor: AppColors.grass,
-                size: size
-            )
-            FarmEquippedOverlayImage(assetName: equippedOverlayAssetName, size: size)
+            ollieBase
+            if equippedOverlayAssetName != nil {
+                FarmEquippedOverlayImage(assetName: equippedOverlayAssetName, size: size)
+                    .shadow(color: AppShadows.cardColor, radius: 1, y: 1)
+
+                // Repaint Ollie's head and upper chest above the accessory. The
+                // feathered depth matte makes the collar opening disappear behind
+                // his chin and neck fur instead of reading as a flat sticker.
+                ollieBase
+                    .mask(accessoryDepthMask)
+            }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var ollieBase: some View {
+        FarmCatalogAssetImage(
+            assetName: AssetSlot.Dog.farmNeutralIdle,
+            fallbackSymbol: "pawprint.fill",
+            fallbackColor: AppColors.grass,
+            size: size
+        )
+    }
+
+    private var accessoryDepthMask: some View {
+        LinearGradient(
+            stops: [
+                .init(color: .white, location: 0),
+                .init(color: .white, location: 0.54),
+                .init(color: .clear, location: 0.64)
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .frame(width: size, height: size)
     }
 
     private var accessibilityLabel: String {

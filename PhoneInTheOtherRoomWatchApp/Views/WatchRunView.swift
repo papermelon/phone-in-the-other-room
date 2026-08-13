@@ -5,50 +5,74 @@ struct WatchRunView: View {
     @State private var phaseReferenceDate = Date()
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 10) {
-                WatchOllieIconView(mood: .guarding)
-                Text(isAdditionalQuiet ? "Quiet time" : (phase?.title ?? "Ollie is on watch"))
-                    .font(.headline)
-                    .multilineTextAlignment(.center)
+        WatchScreen { usesCompactLayout in
+            VStack(spacing: 6) {
+                HStack(spacing: 4) {
+                    WatchOllieIconView(mood: ollieMood, size: usesCompactLayout ? 56 : 72)
+
+                    VStack(alignment: .leading, spacing: 5) {
+                        WatchStatusPill(
+                            title: phaseTitle,
+                            systemImage: phaseSymbol,
+                            tint: phaseTint
+                        )
+
+                        Text(statusText)
+                            .font((usesCompactLayout ? Font.caption : Font.body).weight(.semibold))
+                            .foregroundStyle(WatchTheme.cream)
+                            .lineLimit(3)
+                            .minimumScaleFactor(0.82)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
                 Text(
                     timerInterval: countdownInterval,
                     countsDown: true,
                     showsHours: true
                 )
-                    .font(.system(size: 30, weight: .black, design: .rounded))
+                    .font(.system(size: usesCompactLayout ? 31 : 34, weight: .bold, design: .rounded))
+                    .foregroundStyle(WatchTheme.cream)
                     .monospacedDigit()
                     .accessibilityLabel(timerAccessibilityLabel)
-                Text(statusText)
+
+                Text(countdownCaption)
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(WatchTheme.mist)
                     .multilineTextAlignment(.center)
 
+                if needsWatchPlacement {
+                    Button { viewModel.requestDistanceCheck() } label: {
+                        Label("Check placement", systemImage: "location.fill")
+                    }
+                    .buttonStyle(WatchPrimaryButtonStyle())
+                    .accessibilityHint("Makes one brief Apple Watch placement check")
+                }
+
                 if let activity {
-                    Label(activity.shortTitle, systemImage: activity.systemImage)
-                        .font(.caption2.weight(.semibold))
-                        .multilineTextAlignment(.center)
+                    WatchDetailCard(title: activity.title, systemImage: activity.systemImage)
                         .accessibilityLabel("Suggested phone-free activity: \(activity.title)")
                 }
 
-                if needsWatchPlacement {
-                    Button("Check placement") { viewModel.requestDistanceCheck() }
-                        .accessibilityHint("Makes one brief Apple Watch placement check")
-                }
-                Button("Ping Phone") { viewModel.pingPhone() }
-                    .accessibilityHint("Plays a sound on your iPhone")
                 if viewModel.run?.guardKind == .nfcTag {
-                    Text("To end, open Counting Sheep on iPhone and tap your phone-bed tag.")
+                    Label("End with your phone-bed tag on iPhone", systemImage: "dot.radiowaves.left.and.right")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(WatchTheme.mist)
                         .multilineTextAlignment(.center)
                 } else {
-                    Button(isAdditionalQuiet ? "End quiet time" : "End Wind Down") { viewModel.endRun() }
-                        .tint(.orange)
-                        .accessibilityHint(isAdditionalQuiet ? "Ends this quiet time early" : "Ends this Wind Down early")
+                    Button { viewModel.endRun() } label: {
+                        Label("End early", systemImage: "stop.circle")
+                    }
+                    .buttonStyle(WatchQuietButtonStyle())
+                    .accessibilityHint("Ends this Phone Break early")
                 }
+
+                Button { viewModel.pingPhone() } label: {
+                    Label("Ping iPhone", systemImage: "iphone.radiowaves.left.and.right")
+                }
+                .buttonStyle(WatchQuietButtonStyle())
+                .accessibilityHint("Plays a sound on your iPhone")
             }
-            .padding(.vertical, 4)
         }
         .task(id: nextTransitionDate) {
             guard let nextTransitionDate else { return }
@@ -66,18 +90,83 @@ struct WatchRunView: View {
     }
 
     private var statusText: String {
+        if isLegacyWarning {
+            return "Your phone wandered back"
+        }
         if needsWatchPlacement {
-            return "A quick check helps Ollie see the phone tuck in. After that, your iPhone keeps time."
+            return "Walk the phone to its bed"
         }
         if isAdditionalQuiet {
-            return "Quiet time is running. Your iPhone keeps time."
+            return "Phone Break"
         }
         switch phase {
-        case .windDown: return "Let the evening get quieter. Your iPhone keeps time."
-        case .overnight: return "The phone is tucked away. There is nothing else to do."
-        case .morningQuiet: return "Wake up before your phone does."
-        case .complete: return "Both phone-free windows are protected."
-        case nil: return "Your iPhone keeps time."
+        case .windDown: return "Let the evening get quieter"
+        case .overnight: return "Your phone is tucked away"
+        case .morningQuiet: return "Wake before your phone does"
+        case .complete: return "Both quiet bookends are protected"
+        case nil: return "Ollie is keeping watch"
+        }
+    }
+
+    private var countdownCaption: String {
+        if needsWatchPlacement { return viewModel.connectionText }
+        if isLegacyWarning { return "Open Counting Sheep on iPhone" }
+        if isAdditionalQuiet { return "remaining" }
+        switch phase {
+        case .windDown: return "until bedtime"
+        case .overnight: return "until morning quiet"
+        case .morningQuiet: return "until your phone wakes"
+        case .complete, nil: return "Wind Down complete"
+        }
+    }
+
+    private var phaseTitle: String {
+        if isLegacyWarning { return "Nearby" }
+        if needsWatchPlacement { return "Check" }
+        if isAdditionalQuiet { return "Phone Break" }
+        switch phase {
+        case .windDown: return "Evening"
+        case .overnight: return "Asleep"
+        case .morningQuiet: return "Morning"
+        case .complete: return "Protected"
+        case nil: return "Wind Down"
+        }
+    }
+
+    private var phaseSymbol: String {
+        if isLegacyWarning { return "iphone.gen3.radiowaves.left.and.right" }
+        if needsWatchPlacement { return "location.fill" }
+        if isAdditionalQuiet { return "leaf.fill" }
+        switch phase {
+        case .windDown: return "moon.stars.fill"
+        case .overnight: return "bed.double.fill"
+        case .morningQuiet: return "sunrise.fill"
+        case .complete: return "checkmark.seal.fill"
+        case nil: return "moon.fill"
+        }
+    }
+
+    private var phaseTint: Color {
+        isLegacyWarning ? WatchTheme.amber : WatchTheme.moss
+    }
+
+    private var ollieMood: OllieMood {
+        if isLegacyWarning { return .alert }
+        if needsWatchPlacement { return .guarding }
+        if isAdditionalQuiet { return .guarding }
+        switch phase {
+        case .windDown: return .guarding
+        case .overnight: return .sleepy
+        case .morningQuiet: return .happy
+        case .complete: return .proud
+        case nil: return .waiting
+        }
+    }
+
+    private var isLegacyWarning: Bool {
+        switch viewModel.run?.state {
+        case .warningPhoneTooClose, .signalLost, .unsupported: return true
+        default: return false
         }
     }
 
@@ -122,7 +211,7 @@ struct WatchRunView: View {
     private var timerAccessibilityLabel: String {
         let minutes = OllieFormat.minutes(transitionRemainingSeconds)
         if isAdditionalQuiet {
-            return "\(minutes) minutes until quiet time ends"
+            return "\(minutes) minutes until Phone Break ends"
         }
         let destination: String
         switch phase {
@@ -134,3 +223,15 @@ struct WatchRunView: View {
         return "\(minutes) minutes until \(destination)"
     }
 }
+
+#if DEBUG
+#Preview("Evening quiet") {
+    WatchRunView()
+        .environmentObject(WatchRunViewModel(captureState: .windDown))
+}
+
+#Preview("Placement") {
+    WatchRunView()
+        .environmentObject(WatchRunViewModel(captureState: .placement))
+}
+#endif

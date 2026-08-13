@@ -203,7 +203,7 @@ struct NightFlockChallengeTrail: View {
                     }
                 }
                 if snapshot.challenge.status == .completed {
-                    Text("Seven nights passed through this pasture. The note is factual and carries no rank or reward.")
+                    Text("Seven nights passed through this pasture. There is no rank or reward.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }

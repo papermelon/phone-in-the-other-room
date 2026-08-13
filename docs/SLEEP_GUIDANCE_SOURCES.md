@@ -35,3 +35,8 @@ content as medical treatment.
   only be a generic, usage-triggered reminder after selected-app activity. Require
   qualified sleep/CBT-I review before external release.
 - Keep each card short enough for a tired reader and show its source label in the guide.
+- The current finite library includes cautious NHLBI-sourced cards about leaving personally
+  suitable room after a heavy meal and trying an earlier personal caffeine cutoff. These are
+  observations, not universal cutoffs. A future seven-night experiment (morning light, late
+  meals, or caffeine timing) remains gated pending qualified sleep/CBT-I review; it must stay
+  optional, local-only, non-rewarded, and free of a nightly compliance checklist.

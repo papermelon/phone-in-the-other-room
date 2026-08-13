@@ -236,7 +236,7 @@ struct NotificationMessageEditorView: View {
         }
         let context = NotificationCopyContext(
             activityTitle: "Read",
-            purpose: "quiet time",
+            purpose: "phone-away time",
             tip: "Make a little room for quiet.",
             date: Date(timeIntervalSince1970: 1_700_000_000),
             minutes: templateID.minutes

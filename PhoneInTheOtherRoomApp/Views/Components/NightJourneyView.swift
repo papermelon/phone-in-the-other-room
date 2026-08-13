@@ -4,7 +4,7 @@ import UIKit
 struct NightJourneyView: View {
     let run: FocusRun
     let reduceMotion: Bool
-    var mappedBonusPercentagePoints = 0
+    var phoneBreakMeterMinutes = 0
     var fixedDate: Date?
 
     @ViewBuilder
@@ -98,8 +98,8 @@ struct NightJourneyView: View {
                         .padding(.vertical, AppSpacing.xs)
                         .background(.black.opacity(0.32), in: Capsule())
                     Spacer()
-                    if mappedBonusPercentagePoints > 0 {
-                        Text("UP TO +\(mappedBonusPercentagePoints) MAPPED")
+                    if phoneBreakMeterMinutes > 0 {
+                        Text("PHONE BREAK TRAIL · \(min(phoneBreakMeterMinutes, 75)) / 75 MIN")
                             .font(.system(size: 8, weight: .bold, design: .monospaced))
                             .foregroundStyle(.white.opacity(0.88))
                             .padding(7)
@@ -341,7 +341,7 @@ private struct JourneyAssetImage: View {
             nightWatchPlan: NightWatchPreferences.defaults.makePlan()
         ),
         reduceMotion: true,
-        mappedBonusPercentagePoints: 3
+        phoneBreakMeterMinutes: 45
     )
     .padding()
     .background(AppColors.paper)

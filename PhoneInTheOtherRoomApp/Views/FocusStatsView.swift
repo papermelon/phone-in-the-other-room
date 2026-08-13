@@ -5,6 +5,7 @@ import SwiftUI
 /// below the recent ritual record.
 struct FocusStatsView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    @State private var contextualTip: CountingSheepContextualTip?
 
     private var latestPrimaryRecord: NightWatchRecord? {
         NightsHistoryAggregator.latestPrimaryRecord(from: viewModel.nightWatchRecords)
@@ -19,6 +20,7 @@ struct FocusStatsView: View {
                         viewModel: viewModel,
                         focusedRecordID: viewModel.nightsRecordFocusID
                     )
+                    .contextualGuideTarget(.nights)
                     NightsSevenDaySection(viewModel: viewModel)
                     NightsMonthLink(viewModel: viewModel)
                     NightsContextSection(
@@ -31,6 +33,7 @@ struct FocusStatsView: View {
             .background(AppColors.paper.ignoresSafeArea())
             .onAppear {
                 viewModel.markOrientation(.nightsExplored)
+                contextualTip = viewModel.contextualTip(from: [.nights])
                 focusRecord(using: proxy)
             }
             .onChange(of: viewModel.nightsRecordFocusID) { _, _ in
@@ -41,6 +44,11 @@ struct FocusStatsView: View {
                     viewModel.refreshSleepSummary()
                 }
             }
+            .contextualGuideOverlay(
+                tip: $contextualTip,
+                onAcknowledge: viewModel.acknowledgeContextualTip,
+                onSkipAll: viewModel.disableContextualTips
+            )
         }
     }
 
