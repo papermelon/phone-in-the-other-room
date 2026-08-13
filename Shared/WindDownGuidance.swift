@@ -120,7 +120,7 @@ enum WindDownGuidanceLibrary {
     }
 
     static func items(for phase: NightWatchPhase) -> [WindDownGuidanceItem] {
-        // Unphased ideas belong to the finite More guide, never to an active-night cue.
+        // Unphased ideas belong in the source-linked guide, never in an active-night cue.
         items.filter { $0.phase == phase }
     }
 

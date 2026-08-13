@@ -122,4 +122,91 @@ final class OnboardingTests: XCTestCase {
 
         XCTAssertEqual(OnboardingDraft.replay(from: preferences).protectionChoice, .nfcAndAppShielding)
     }
+
+    func testLegacyDraftCuesMigrateToPrivateOneStepRoutines() throws {
+        var draft = OnboardingDraft()
+        draft.eveningCueText = "  Finish my watercolor  "
+        draft.morningCueText = "Sit by the window"
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(draft)) as? [String: Any]
+        )
+        object.removeValue(forKey: "eveningRoutine")
+        object.removeValue(forKey: "morningRoutine")
+
+        let decoded = try JSONDecoder().decode(
+            OnboardingDraft.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+
+        XCTAssertEqual(decoded.eveningRoutine.map(\.title), ["Finish my watercolor"])
+        XCTAssertEqual(decoded.morningRoutine.map(\.title), ["Sit by the window"])
+        XCTAssertEqual(decoded.eveningCueText, "Finish my watercolor")
+        XCTAssertEqual(decoded.morningCueText, "Sit by the window")
+    }
+
+    func testRoutineLimitsPreserveOrderAndKeepPhoneAwayOutOfStorage() {
+        let steps = [
+            WindDownRoutineStep.custom("First idea", phase: .evening),
+            WindDownRoutineStep.suggested(.read, phase: .evening),
+            WindDownRoutineStep.custom("Put phone away", phase: .evening),
+            WindDownRoutineStep.suggested(.stretch, phase: .evening),
+            WindDownRoutineStep.suggested(.journal, phase: .evening),
+            WindDownRoutineStep.suggested(.makeTea, phase: .evening),
+            WindDownRoutineStep.suggested(.openCurtains, phase: .morning)
+        ]
+
+        let normalized = WindDownRoutineStep.normalized(steps, for: .evening)
+
+        XCTAssertEqual(normalized.count, 3)
+        XCTAssertEqual(normalized.map(\.title), ["First idea", "Read a paper book", "Stretch gently"])
+        XCTAssertFalse(normalized.contains { $0.title == WindDownRoutineStep.phoneAwayTitle })
+    }
+
+    func testExplicitEmptyRoutinesStayEmptyAndHaveNoCompletionState() throws {
+        let preferences = NightWatchPreferences(
+            bedtimeHour: 23,
+            bedtimeMinute: 0,
+            wakeHour: 7,
+            wakeMinute: 0,
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains,
+            eveningRoutine: [],
+            morningRoutine: [],
+            guardKind: .honorTimer,
+            isConfigured: true
+        )
+        let data = try JSONEncoder().encode(preferences)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let decoded = try JSONDecoder().decode(NightWatchPreferences.self, from: data)
+
+        XCTAssertEqual(decoded.eveningRoutine, [])
+        XCTAssertEqual(decoded.morningRoutine, [])
+        XCTAssertFalse(object.keys.contains { $0.lowercased().contains("complete") })
+        XCTAssertEqual(decoded.presentedEveningRoutineTitles, [WindDownRoutineStep.phoneAwayTitle])
+        XCTAssertEqual(decoded.presentedMorningRoutineTitles, [])
+    }
+
+    func testRoutineSummariesHideCustomWordsWithoutConsent() {
+        let preferences = NightWatchPreferences(
+            bedtimeHour: 23,
+            bedtimeMinute: 0,
+            wakeHour: 7,
+            wakeMinute: 0,
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains,
+            eveningRoutine: [.custom("My private note", phase: .evening)],
+            morningRoutine: [.custom("My morning note", phase: .morning)],
+            guardKind: .honorTimer,
+            isConfigured: true
+        )
+
+        XCTAssertEqual(preferences.makePlan().eveningRoutineSummary(allowsPersonalText: false), "Put phone away")
+        XCTAssertEqual(preferences.makePlan().eveningRoutineSummary(allowsPersonalText: true), "Put phone away · My private note")
+        XCTAssertNil(preferences.makePlan().morningRoutineSummary(allowsPersonalText: false))
+        XCTAssertEqual(preferences.makePlan().morningRoutineSummary(allowsPersonalText: true), "My morning note")
+    }
 }

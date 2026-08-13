@@ -22,33 +22,18 @@ struct OnboardingReadyStep: View {
                     summaryRow("Wake time", value: timeLabel(hour: draft.wakeHour, minute: draft.wakeMinute))
                     summaryRow("Quiet before bed", value: QuietTimeDurationOptions.label(for: draft.windDownMinutes))
                     summaryRow("Quiet after waking", value: QuietTimeDurationOptions.label(for: draft.morningQuietMinutes))
-                    summaryRow("Evening cue", value: draft.eveningCueText ?? "None")
-                    summaryRow("Morning cue", value: draft.morningCueText ?? "None")
                     summaryRow("Selected apps", value: shieldingSummary)
                 }
             }
 
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("WHAT THESE NAMES MEAN")
+                    Text("YOUR PRIVATE ROUTINE")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    term(
-                        "Wind Down",
-                        detail: "Your usual nightly phone-away ritual: quiet before bed, overnight, and quiet after waking."
-                    )
+                    routineGroup(title: "Evening", steps: [WindDownRoutineStep.phoneAwayTitle] + draft.eveningRoutine.map(\.title))
                     Divider()
-                    term(
-                        "Phone Break",
-                        detail: "Optional phone-away time outside Wind Down. Every 75 completed Phone Break minutes opens a bonus search. A search may find a sheep or leave a clue."
-                    )
-                    if showsSlumberParty {
-                        Divider()
-                        term(
-                            "Slumber Party",
-                            detail: "An optional invite-only seven-night challenge under Farm. It shares only tucked-away phones and completed quiet mornings."
-                        )
-                    }
+                    routineGroup(title: "Morning", steps: draft.morningRoutine.map(\.title))
                 }
             }
 
@@ -82,14 +67,22 @@ struct OnboardingReadyStep: View {
         }
     }
 
-    private func term(_ title: String, detail: String) -> some View {
+    private func routineGroup(title: String, steps: [String]) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
             Text(title)
-                .font(AppTypography.body)
-            Text(detail)
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
+                .font(AppTypography.body.weight(.semibold))
+            if steps.isEmpty {
+                Text("No ideas saved")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+            } else {
+                ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
+                    Text("\(index + 1). \(step)")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
         }
         .accessibilityElement(children: .combine)
     }
@@ -120,4 +113,12 @@ struct OnboardingReadyStep: View {
         .padding()
     }
     .background(AppColors.paper)
+}
+
+#Preview("Saved plan · no morning ideas") {
+    var draft = OnboardingDraft()
+    draft.morningRoutine = []
+    return OnboardingReadyStep(draft: draft, showsTourHandoff: false)
+        .padding()
+        .background(AppColors.paper)
 }

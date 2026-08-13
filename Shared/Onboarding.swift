@@ -82,6 +82,12 @@ struct OnboardingDraft: Codable, Equatable {
     var morningActivity: PhoneFreeActivity = .openCurtains
     var eveningCueText: String?
     var morningCueText: String?
+    var eveningRoutine: [WindDownRoutineStep] = [
+        .suggested(.read, phase: .evening)
+    ]
+    var morningRoutine: [WindDownRoutineStep] = [
+        .suggested(.openCurtains, phase: .morning)
+    ]
     var purposeCategory: OfflinePurposeCategory = .rest
     var customPurpose: String?
     var allowsCustomTextInNotifications = false
@@ -94,6 +100,68 @@ struct OnboardingDraft: Codable, Equatable {
     var educationalTipsEnabled = false
     var usageAwareRemindersEnabled = false
     var morningReflectionReminderEnabled = false
+
+    private enum CodingKeys: String, CodingKey {
+        case step, bedtimeHour, bedtimeMinute, wakeHour, wakeMinute
+        case windDownMinutes, morningQuietMinutes, eveningActivity, morningActivity
+        case eveningCueText, morningCueText, eveningRoutine, morningRoutine
+        case purposeCategory, customPurpose, allowsCustomTextInNotifications
+        case protectionChoice, shieldingEnabled, automaticStartEnabled
+        case remindersEnabled, notificationCadence, notificationSoundsEnabled
+        case educationalTipsEnabled, usageAwareRemindersEnabled, morningReflectionReminderEnabled
+    }
+
+    init() {}
+
+    init(step: CountingSheepOnboardingStep) {
+        self.init()
+        self.step = step
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        step = try container.decodeIfPresent(CountingSheepOnboardingStep.self, forKey: .step) ?? .welcome
+        bedtimeHour = try container.decodeIfPresent(Int.self, forKey: .bedtimeHour) ?? 23
+        bedtimeMinute = try container.decodeIfPresent(Int.self, forKey: .bedtimeMinute) ?? 0
+        wakeHour = try container.decodeIfPresent(Int.self, forKey: .wakeHour) ?? 7
+        wakeMinute = try container.decodeIfPresent(Int.self, forKey: .wakeMinute) ?? 0
+        windDownMinutes = try container.decodeIfPresent(Int.self, forKey: .windDownMinutes) ?? 30
+        morningQuietMinutes = try container.decodeIfPresent(Int.self, forKey: .morningQuietMinutes) ?? 30
+        eveningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .eveningActivity) ?? .read
+        morningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .morningActivity) ?? .openCurtains
+        eveningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .eveningCueText))
+        morningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .morningCueText))
+        eveningRoutine = WindDownRoutineStep.normalized(
+            try container.decodeIfPresent([WindDownRoutineStep].self, forKey: .eveningRoutine)
+                ?? WindDownRoutineStep.migrated(
+                    phase: .evening,
+                    activity: eveningActivity,
+                    cueText: eveningCueText
+                ),
+            for: .evening
+        )
+        morningRoutine = WindDownRoutineStep.normalized(
+            try container.decodeIfPresent([WindDownRoutineStep].self, forKey: .morningRoutine)
+                ?? WindDownRoutineStep.migrated(
+                    phase: .morning,
+                    activity: morningActivity,
+                    cueText: morningCueText
+                ),
+            for: .morning
+        )
+        purposeCategory = try container.decodeIfPresent(OfflinePurposeCategory.self, forKey: .purposeCategory) ?? .rest
+        customPurpose = try container.decodeIfPresent(String.self, forKey: .customPurpose)
+        allowsCustomTextInNotifications = try container.decodeIfPresent(Bool.self, forKey: .allowsCustomTextInNotifications) ?? false
+        protectionChoice = try container.decodeIfPresent(OnboardingProtectionChoice.self, forKey: .protectionChoice) ?? .appShielding
+        shieldingEnabled = try container.decodeIfPresent(Bool.self, forKey: .shieldingEnabled) ?? true
+        automaticStartEnabled = try container.decodeIfPresent(Bool.self, forKey: .automaticStartEnabled) ?? true
+        remindersEnabled = try container.decodeIfPresent(Bool.self, forKey: .remindersEnabled) ?? true
+        notificationCadence = try container.decodeIfPresent(NotificationCadence.self, forKey: .notificationCadence) ?? .balanced
+        notificationSoundsEnabled = try container.decodeIfPresent(Bool.self, forKey: .notificationSoundsEnabled) ?? true
+        educationalTipsEnabled = try container.decodeIfPresent(Bool.self, forKey: .educationalTipsEnabled) ?? false
+        usageAwareRemindersEnabled = try container.decodeIfPresent(Bool.self, forKey: .usageAwareRemindersEnabled) ?? false
+        morningReflectionReminderEnabled = try container.decodeIfPresent(Bool.self, forKey: .morningReflectionReminderEnabled) ?? false
+    }
 
     var selectedGuardKind: SessionGuardKind { protectionChoice.guardKind }
 
@@ -109,6 +177,8 @@ struct OnboardingDraft: Codable, Equatable {
             morningActivity: morningActivity,
             eveningCueText: eveningCueText,
             morningCueText: morningCueText,
+            eveningRoutine: eveningRoutine,
+            morningRoutine: morningRoutine,
             guardKind: selectedGuardKind,
             isConfigured: true,
             automaticStartEnabled: automaticStartEnabled
@@ -146,24 +216,25 @@ struct OnboardingDraft: Codable, Equatable {
     }
 
     static func defaults(from preferences: NightWatchPreferences = .defaults) -> Self {
-        Self(
-            step: .welcome,
-            bedtimeHour: preferences.bedtimeHour,
-            bedtimeMinute: preferences.bedtimeMinute,
-            wakeHour: preferences.wakeHour,
-            wakeMinute: preferences.wakeMinute,
-            windDownMinutes: preferences.windDownMinutes,
-            morningQuietMinutes: preferences.morningQuietMinutes,
-            eveningActivity: preferences.eveningActivity,
-            morningActivity: preferences.morningActivity,
-            eveningCueText: preferences.eveningCueText,
-            morningCueText: preferences.morningCueText,
-            // A first-run user should understand the no-hardware path before being
-            // invited to add an NFC tag. Existing plans are not routed through onboarding.
-            protectionChoice: .appShielding,
-            shieldingEnabled: true,
-            automaticStartEnabled: preferences.automaticStartEnabled
-        )
+        var draft = Self()
+        draft.bedtimeHour = preferences.bedtimeHour
+        draft.bedtimeMinute = preferences.bedtimeMinute
+        draft.wakeHour = preferences.wakeHour
+        draft.wakeMinute = preferences.wakeMinute
+        draft.windDownMinutes = preferences.windDownMinutes
+        draft.morningQuietMinutes = preferences.morningQuietMinutes
+        draft.eveningActivity = preferences.eveningActivity
+        draft.morningActivity = preferences.morningActivity
+        draft.eveningCueText = preferences.eveningCueText
+        draft.morningCueText = preferences.morningCueText
+        draft.eveningRoutine = preferences.eveningRoutine
+        draft.morningRoutine = preferences.morningRoutine
+        // A first-run user should understand the no-hardware path before being
+        // invited to add an NFC tag. Existing plans are not routed through onboarding.
+        draft.protectionChoice = .appShielding
+        draft.shieldingEnabled = true
+        draft.automaticStartEnabled = preferences.automaticStartEnabled
+        return draft
     }
 
     static func replay(from preferences: NightWatchPreferences) -> Self {
