@@ -6,7 +6,8 @@ struct CompletionView: View {
     private var run: FocusRun? { viewModel.activeRun }
     private var minutes: Int { run?.creditedQuietMinutes ?? 0 }
     private var persistedOutcome: SheepSearchOutcome? {
-        guard let run, run.isProgressionEligibleNightWatch else { return nil }
+        guard let run else { return nil }
+        guard run.isProgressionEligibleNightWatch || run.nightWatchPlan?.role == .additionalQuiet else { return nil }
         return viewModel.sheepSearchOutcome(for: run.id)
     }
 
@@ -35,8 +36,24 @@ struct CompletionView: View {
                     .accessibilityHint("Opens the shared pasture result for this completed Wind Down")
                 }
 
-                if run?.nightWatchPlan?.role == .additionalQuiet {
-                    AdditionalQuietMapReceipt(map: viewModel.sheepSearchState.trailMap, minutes: minutes)
+                if run?.nightWatchPlan?.role == .additionalQuiet, let persistedOutcome {
+                    NavigationLink {
+                        WindDownRevealView(
+                            outcome: persistedOutcome,
+                            showExactOdds: viewModel.sheepSearchState.showExactOdds,
+                            farmState: viewModel.farmState,
+                            onReturnToFarm: returnToFarm
+                        )
+                    } label: {
+                        Label("Open the Phone Break trail note", systemImage: "note.text")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(PixelPrimaryButtonStyle())
+                } else if run?.nightWatchPlan?.role == .additionalQuiet {
+                    AdditionalQuietMapReceipt(
+                        map: viewModel.sheepSearchState.trailMap,
+                        protectedWindDownCount: viewModel.coordinator.progress.totalCompletedRuns
+                    )
                 } else if run?.isProgressionEligibleNightWatch == true {
                     NavigationLink {
                         WindDownRevealView(
@@ -98,10 +115,10 @@ private struct CompletionHeader: View {
             HStack(alignment: .top, spacing: AppSpacing.md) {
                 OllieRitualView(state: .completed, presentation: .inline)
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(run?.nightWatchPlan?.role == .additionalQuiet ? "QUIET TIME COMPLETE" : "WIND DOWN COMPLETE")
+                    Text(run?.nightWatchPlan?.role == .additionalQuiet ? "PHONE BREAK COMPLETE" : "WIND DOWN COMPLETE")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text(run?.nightWatchPlan?.role == .additionalQuiet ? "A quiet stretch is on the map." : "The phone slept in the other room.")
+                    Text(run?.nightWatchPlan?.role == .additionalQuiet ? "Ollie kept the phone tucked away." : "The phone slept in the other room.")
                         .font(AppTypography.title)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(run?.nightWatchPlan?.role == .additionalQuiet
@@ -114,7 +131,7 @@ private struct CompletionHeader: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel(run?.nightWatchPlan?.role == .additionalQuiet
-                ? "Quiet time complete. " + quietMinutes.description + " quiet minutes recorded."
+                ? "Phone Break complete. " + quietMinutes.description + " quiet minutes recorded."
                 : "Wind Down complete. The phone slept in the other room. " + quietMinutes.description + " quiet minutes around sleep recorded.")
         }
     }
@@ -122,7 +139,7 @@ private struct CompletionHeader: View {
 
 private struct AdditionalQuietMapReceipt: View {
     let map: SheepTrailMapState
-    let minutes: Int
+    let protectedWindDownCount: Int
 
     var body: some View {
         PixelCard {
@@ -135,9 +152,7 @@ private struct AdditionalQuietMapReceipt: View {
                     Text("TRAIL MAP UPDATED")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text(map.pendingMappedMinutes >= SheepTrailMapState.maximumMappedMinutes
-                        ? "The trail map is ready for a future search."
-                        : minutes.description + " quiet minutes are mapped for a future search.")
+                    Text(receiptMessage)
                         .font(AppTypography.body)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -145,10 +160,22 @@ private struct AdditionalQuietMapReceipt: View {
             .accessibilityElement(children: .combine)
         }
     }
+
+    private var receiptMessage: String {
+        let minutes = min(map.pendingMappedMinutes, SheepTrailMapState.maximumMappedMinutes)
+        if map.isReadyForBonusSearch {
+            return protectedWindDownCount < SheepSearchEngine.starterGuaranteeRuns
+                ? "The trail is full. It will wait until three Wind Downs are complete."
+                : "The trail is full. Complete another Phone Break to open one bonus search."
+        }
+        return "\(minutes) of 75 minutes are saved on the Phone Break trail."
+    }
 }
 
 struct WindDownRevealView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var viewModel: FocusRunViewModel
+    @State private var contextualTip: CountingSheepContextualTip?
     let outcome: SheepSearchOutcome?
     let showExactOdds: Bool
     let farmState: FarmState
@@ -173,15 +200,16 @@ struct WindDownRevealView: View {
 
                 if let outcome {
                     FieldNotePaper(outcome: outcome, showExactOdds: showExactOdds, farmState: farmState)
+                        .contextualGuideTarget(.trailNote)
                 } else {
                     PixelCard {
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
                             Text("NO TRAIL NOTE SAVED")
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.grass)
-                            Text("This Wind Down has no saved Trail Note.")
-                                .font(AppTypography.headline)
-                            Text("Your quiet-time receipt is still saved in Nights.")
+                    Text("This Wind Down has no saved Trail Note.")
+                        .font(AppTypography.headline)
+                    Text("Your quiet-time receipt is still saved in Nights.")
                                 .font(AppTypography.body)
                                 .foregroundStyle(AppColors.secondaryText)
                         }
@@ -218,6 +246,15 @@ struct WindDownRevealView: View {
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Ollie’s Trail Notes")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            guard outcome != nil else { return }
+            contextualTip = viewModel.contextualTip(from: [.trailNote])
+        }
+        .contextualGuideOverlay(
+            tip: $contextualTip,
+            onAcknowledge: viewModel.acknowledgeContextualTip,
+            onSkipAll: viewModel.disableContextualTips
+        )
     }
 
     private var arrivalIsPending: Bool {
@@ -263,7 +300,10 @@ private struct FieldNotePaper: View {
 
     private var nextLead: SheepDefinition? {
         let known = Set(farmState.discoveries.map(\.definitionID))
-        return SheepCatalog.eligible(for: outcome.protectedNightNumber + 1)
+        let eligibilityNight = outcome.origin == .phoneBreak
+            ? outcome.protectedNightNumber
+            : outcome.protectedNightNumber + 1
+        return SheepCatalog.eligible(for: eligibilityNight)
             .first { !known.contains($0.id) }
     }
 
@@ -330,10 +370,12 @@ private struct TrailOnlyNote: View {
                     Text("OLLIE KEPT TO THE TRAIL")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("The trail continues.")
+                    Text(outcome.origin == .phoneBreak ? "The Phone Break trail continues." : "The trail continues.")
                         .font(AppTypography.title)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("Ollie didn't find a sheep on this trail. The clue is saved for another quiet night.")
+                    Text(outcome.origin == .phoneBreak
+                        ? "Ollie didn't find a sheep on this Phone Break. The clue is saved for another trail."
+                        : "Ollie didn't find a sheep on this trail. The clue is saved for another quiet night.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -343,12 +385,14 @@ private struct TrailOnlyNote: View {
                 title: "Clue gained",
                 value: nextLead?.posterClue ?? "The trail reaches beyond the current board."
             )
-            FieldNoteMetric(
-                title: "Mapped quiet used",
-                value: outcome.trailMapBonusPercentagePoints > 0
-                    ? "+\(outcome.trailMapBonusPercentagePoints) percentage points"
-                    : "No mapped bonus used"
-            )
+            if outcome.origin == .windDown {
+                FieldNoteMetric(
+                    title: "Mapped quiet used",
+                    value: outcome.trailMapBonusPercentagePoints > 0
+                        ? "+\(outcome.trailMapBonusPercentagePoints) percentage points"
+                        : "No mapped bonus used"
+                )
+            }
             FieldNoteMetric(
                 title: "Next eligible lead",
                 value: nextLead.map { "\($0.rarity.title) · \($0.habitat.title)" }
@@ -368,9 +412,17 @@ private struct FieldNoteTrailDetails: View {
             Text("TRAIL DETAILS")
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
-            FieldNoteMetric(title: "Distance", value: String(format: "%.1f km", outcome.trailDistance))
-            FieldNoteMetric(title: "Trail strength", value: strengthLabel)
-            if outcome.trailMapBonusPercentagePoints > 0 {
+            if outcome.origin == .phoneBreak {
+                FieldNoteMetric(title: "Search opened by", value: "75 Phone Break minutes")
+                FieldNoteMetric(
+                    title: "Clues before this search",
+                    value: outcome.consecutiveNoFinds.description
+                )
+            } else {
+                FieldNoteMetric(title: "Distance", value: String(format: "%.1f km", outcome.trailDistance))
+                FieldNoteMetric(title: "Trail strength", value: strengthLabel)
+            }
+            if outcome.origin == .windDown, outcome.trailMapBonusPercentagePoints > 0 {
                 FieldNoteMetric(
                     title: "Mapped bonus applied",
                     value: "+" + outcome.trailMapBonusPercentagePoints.description + " percentage points"
@@ -435,6 +487,7 @@ extension Notification.Name {
             showExactOdds: false
         )
     }
+    .environmentObject(FocusRunViewModel())
 }
 
 #Preview("Trail Note trail only · Reduce Motion") {
@@ -448,6 +501,7 @@ extension Notification.Name {
             )
         )
     }
+    .environmentObject(FocusRunViewModel())
     .transaction { transaction in
         transaction.disablesAnimations = true
     }

@@ -18,7 +18,7 @@ struct UpcomingQuietTimesCard: View {
                             .foregroundStyle(AppColors.grass)
                             .frame(width: 30)
                         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text("Quiet time schedule")
+                            Text("Phone Break schedule")
                                 .font(AppTypography.headline)
                             Text(summary)
                                 .font(AppTypography.caption)
@@ -30,7 +30,7 @@ struct UpcomingQuietTimesCard: View {
                     }
                 }
                 .buttonStyle(.plain)
-                .accessibilityHint("Opens your scheduled extra quiet times")
+                .accessibilityHint("Opens your scheduled Phone Breaks")
 
                 if let trailMapPresentation {
                     Divider()
@@ -51,11 +51,11 @@ struct UpcomingQuietTimesCard: View {
 
                 if let immediateStartMinutes {
                     Button(action: startNow) {
-                        Label("Start \(immediateStartMinutes)-minute extra quiet", systemImage: "timer")
+                        Label("Start \(immediateStartMinutes)-minute Phone Break", systemImage: "timer")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelPrimaryButtonStyle())
-                    .accessibilityHint("Starts a separate one-time quiet period without changing Wind Down")
+                    .accessibilityHint("Starts a separate Phone Break without changing Wind Down")
                 }
             }
         }
@@ -64,15 +64,15 @@ struct UpcomingQuietTimesCard: View {
     private var summary: String {
         guard let nextPeriod else {
             return additionalCount == 0
-                ? "Add optional extra quiet time outside your usual Wind Down."
-                : "Your next quiet time is being tended by Ollie."
+                ? "Start a Phone Break now or schedule one outside your usual Wind Down."
+                : "Your next Phone Break is being tended by Ollie."
         }
         let start = nextPeriod.occurrence.interval.start.formatted(date: .abbreviated, time: .shortened)
         let count: String
         switch additionalCount {
-        case 0: count = "No extra quiet times"
-        case 1: count = "1 extra quiet time"
-        default: count = "\(additionalCount) extra quiet times"
+        case 0: count = "No Phone Breaks"
+        case 1: count = "1 Phone Break"
+        default: count = "\(additionalCount) Phone Breaks"
         }
         return "Next: \(start) · \(count)"
     }

@@ -116,7 +116,7 @@ struct ActiveRunPresentation: Equatable {
     }
 
     var eyebrow: String {
-        if isAdditionalQuiet { return "ONE-TIME QUIET" }
+        if isAdditionalQuiet { return "PHONE BREAK" }
         switch phase {
         case .windDown: return "PHONE-FREE WIND-DOWN"
         case .overnight: return "SLEEP TIME"
@@ -141,9 +141,9 @@ struct ActiveRunPresentation: Equatable {
     var subheadline: String {
         if isAdditionalQuiet {
             if placementStatus == .awaitingConfirmation {
-                return "Your quiet timer starts after the check."
+            return "Your Phone Break starts after the check."
             }
-            return "A bounded quiet period. Ollie is keeping the edges simple."
+            return "A little room away from the screen."
         }
         if placementStatus != .awaitingConfirmation {
             switch phase {
@@ -174,7 +174,7 @@ struct ActiveRunPresentation: Equatable {
 
     var phaseStatusText: String {
         if isAdditionalQuiet {
-            return phase == .complete ? "Quiet time is complete." : "Quiet time is running."
+            return phase == .complete ? "Phone Break is complete." : "Phone Break is running."
         }
         switch phase {
         case .windDown: return "Your phone is tucked away. Ollie is following the first trail."
@@ -191,7 +191,7 @@ struct ActiveRunPresentation: Equatable {
     }
 
     var returnBarTitle: String {
-        isAdditionalQuiet ? "Quiet time" : "Wind Down"
+        isAdditionalQuiet ? "Phone Break" : "Wind Down"
     }
 
     var returnBarEndDate: Date {
@@ -200,18 +200,18 @@ struct ActiveRunPresentation: Equatable {
 
     var returnBarAccessibilityHint: String {
         isAdditionalQuiet
-            ? "Returns to the live quiet time"
+            ? "Returns to the live Phone Break"
             : "Returns to the live Wind Down journey"
     }
 
     var exit: ActiveRunExitPresentation {
         if isAdditionalQuiet {
             return ActiveRunExitPresentation(
-                actionTitle: "End quiet time early",
-                confirmationTitle: "End quiet time early?",
+                actionTitle: "End Phone Break early",
+                confirmationTitle: "End Phone Break early?",
                 confirmationBody: "This ends the timer and removes any app limits.",
-                cancelTitle: "Keep quiet time running",
-                confirmTitle: "End quiet time"
+                cancelTitle: "Keep Phone Break running",
+                confirmTitle: "End Phone Break"
             )
         }
         return ActiveRunExitPresentation(
@@ -239,11 +239,11 @@ struct ActiveRunPresentation: Equatable {
             switch failure {
             case .noSelection:
                 message = isAdditionalQuiet
-                    ? "App limits didn’t start. Your quiet timer is still running."
+                    ? "App limits didn’t start. Your Phone Break timer is still running."
                     : "No selected apps were set up, so Wind Down is continuing without app limits."
             case .monitoring, .unavailable, .other:
                 message = isAdditionalQuiet
-                    ? "App limits didn’t start. Your quiet timer is still running."
+                    ? "App limits didn’t start. Your Phone Break timer is still running."
                     : "App limits didn’t start. Wind Down is still running, and you can try again next time."
             }
         }
@@ -270,7 +270,7 @@ struct ActiveRunPresentation: Equatable {
         let remaining = OllieFormat.minutes(remainingSeconds)
         if remaining > 0 {
             return isAdditionalQuiet
-                ? "\(remaining) minutes until quiet time ends"
+                ? "\(remaining) minutes until Phone Break ends"
                 : "\(remaining) minutes until the next Wind Down step"
         }
         return "Less than a minute remaining"

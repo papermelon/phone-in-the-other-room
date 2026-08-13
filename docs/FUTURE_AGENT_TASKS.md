@@ -11,6 +11,22 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Recently completed
 
+- **2026-08-13 · Codex:** Implemented the progressive three-step Home guide with one-time
+  contextual spotlights that reuse the Home coach-mark language, the capitalized Phone Break mode,
+  its carried 75-minute bonus-search meter
+  and isolated deterministic odds ladder, plus finite NHLBI-sourced meal and caffeine guidance.
+  Future sleep-habit experimentation remains gated: seven local-only nights, passive HealthKit
+  wake context, one chosen topic, one end reflection, no checklist/reward/sharing, and qualified
+  sleep/CBT-I review before external release.
+
+- **2026-08-12 · Codex + human device confirmation:** Redesigned the Apple Watch companion
+  around the current storybook Ollie, shared the exact iPhone app icon, and validated current
+  timer mirroring on the paired physical Watch plus 46 mm and 40 mm simulators. Fixed stale
+  Watch application context so an authoritative no-run reply cannot show Quiet Time before
+  iPhone onboarding or after reset. Founder deferred UWB Watch placement and QR from v1; current
+  release setup remains App Shielding (timer) or NFC + App Shielding. Prepared four 46 mm Watch
+  listing candidates. Dynamic Type and a complete timer/NFC overnight remain physical QA items.
+
 - **2026-08-12 · Codex:** Implemented the ADR-0016 invite-only Slumber Party source slice behind
   `SUPABASE_NIGHT_FLOCK_ENABLED=NO`: Apple identity linking that preserves the Supabase Auth UUID,
   normalized schema/RLS/service RPCs, typed functions and app contracts, monotonic local outbox,
@@ -124,12 +140,12 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ### B1. Validate a full Wind Down on physical hardware
 - **Why:** the session deliberately crosses midnight and depends on restoration, local
-  notifications, ActivityKit, and optional Watch placement behavior that unit tests and a
+  notifications, ActivityKit, and optional Watch timer mirroring that unit tests and a
   short simulator run cannot fully reproduce.
 - **Mode:** Human + Codex · **Size:** S · **Autonomous:** no
 - **Accept:** run from wind-down through morning quiet on a physical iPhone; cover locked
   screen, termination/relaunch, notification delivery, Live Activity phase changes, early
-  end, and one Watch/QR fallback; record results in the TestFlight QA playbook. Repeat one
+  end, Watch reachable/unreachable timer mirroring, and NFC recovery; record results in the TestFlight QA playbook. Repeat one
   schedule across a DST or timezone boundary before broader rollout. For the notification
   expansion, also verify Quiet/Balanced/Supportive counts, tip replacement, tap routing,
   reflection cancellation, three-minute DeviceActivity thresholds in all three phases,
@@ -138,15 +154,15 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ### B2. Establish physical-device overnight energy baselines
 - **Why:** the code is event-driven after the 2026-07-27 energy audit, but Live Activity
-  display cost, UWB burst cost, optional Supabase transport, and real suspension behavior
+  display cost, WatchConnectivity cost, optional Supabase transport, and real suspension behavior
   require device measurements rather than inference.
 - **Mode:** Human + Codex · **Size:** S · **Autonomous:** no
 - **Files:** `docs/ENERGY_AUDIT.md`
 - **Accept:** capture at least three comparable Power Profiler traces for idle, honor-timer
-  without Live Activity, honor-timer with Live Activity, and Watch placement; capture one
+  without Live Activity, honor-timer with Live Activity, and Watch timer mirroring; capture one
   full overnight on-device Performance Trace; record selected-range CPU, display, network,
   and per-app power impact plus DEBUG event counts. Confirm there is no one-second
-  persistence/Watch stream and that NI ends within the placement window.
+  persistence/Watch stream.
 
 ### B3. Design honest HealthKit read-access states — completed 2026-07-26
 - **Why:** HealthKit intentionally does not disclose whether read access was denied;

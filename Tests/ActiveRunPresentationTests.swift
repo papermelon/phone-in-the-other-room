@@ -16,13 +16,13 @@ final class ActiveRunPresentationTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(presentation.eyebrow, "ONE-TIME QUIET")
+        XCTAssertEqual(presentation.eyebrow, "PHONE BREAK")
         XCTAssertEqual(presentation.headline, "A little room away from the screen.")
         XCTAssertEqual(presentation.transitionCaption, "Ends at \(end.formatted(date: .omitted, time: .shortened))")
-        XCTAssertEqual(presentation.returnBarTitle, "Quiet time")
+        XCTAssertEqual(presentation.returnBarTitle, "Phone Break")
         XCTAssertEqual(
             presentation.timerAccessibilityLabel(remainingSeconds: 30 * 60),
-            "30 minutes until quiet time ends"
+            "30 minutes until Phone Break ends"
         )
         XCTAssertNil(presentation.guidanceTip())
 
@@ -41,7 +41,7 @@ final class ActiveRunPresentationTests: XCTestCase {
             presentation.exit.confirmTitle
         ].joined(separator: " ").lowercased()
         for forbidden in ["bedtime", "sleep time", "morning quiet", "protected-night", "next wind down step"] {
-            XCTAssertFalse(copy.contains(forbidden), "Unexpected additional-quiet copy: \(forbidden)")
+            XCTAssertFalse(copy.contains(forbidden), "Unexpected Phone Break copy: \(forbidden)")
         }
     }
 
@@ -107,10 +107,10 @@ final class ActiveRunPresentationTests: XCTestCase {
             (.notRequested, nil, nil),
             (.scheduled, "Selected apps will be limited until", nil),
             (.active, "Selected apps are limited until", nil),
-            (.failed(.noSelection), "App limits didn’t start. Your quiet timer is still running.", nil),
-            (.failed(.unavailable), "App limits didn’t start. Your quiet timer is still running.", nil),
-            (.failed(.other), "App limits didn’t start. Your quiet timer is still running.", nil),
-            (.failed(.monitoring), "App limits didn’t start. Your quiet timer is still running.", "Try app limits again")
+            (.failed(.noSelection), "App limits didn’t start. Your Phone Break timer is still running.", nil),
+            (.failed(.unavailable), "App limits didn’t start. Your Phone Break timer is still running.", nil),
+            (.failed(.other), "App limits didn’t start. Your Phone Break timer is still running.", nil),
+            (.failed(.monitoring), "App limits didn’t start. Your Phone Break timer is still running.", "Try app limits again")
         ]
 
         for (state, message, retryTitle) in states {
@@ -156,11 +156,11 @@ final class ActiveRunPresentationTests: XCTestCase {
             planEndDate: end,
             now: now
         ).exit
-        XCTAssertEqual(additional.actionTitle, "End quiet time early")
-        XCTAssertEqual(additional.confirmationTitle, "End quiet time early?")
+        XCTAssertEqual(additional.actionTitle, "End Phone Break early")
+        XCTAssertEqual(additional.confirmationTitle, "End Phone Break early?")
         XCTAssertEqual(additional.confirmationBody, "This ends the timer and removes any app limits.")
-        XCTAssertEqual(additional.cancelTitle, "Keep quiet time running")
-        XCTAssertEqual(additional.confirmTitle, "End quiet time")
+        XCTAssertEqual(additional.cancelTitle, "Keep Phone Break running")
+        XCTAssertEqual(additional.confirmTitle, "End Phone Break")
 
         let primary = ActiveRunPresentation(
             role: .primarySleepBookend,

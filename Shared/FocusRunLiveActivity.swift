@@ -8,13 +8,13 @@ enum FocusRunLiveActivityTerminalStatus: String, Codable, Hashable {
         switch self {
         case .completed:
             return FocusRunLiveActivityTerminalPresentation(
-                headline: "QUIET TIME COMPLETE",
+                headline: "WIND DOWN COMPLETE",
                 message: "Ollie kept the quiet. Nice work."
             )
         case .endedEarly:
             return FocusRunLiveActivityTerminalPresentation(
-                headline: "QUIET TIME ENDED",
-                message: "Quiet time ended early. Your receipt is ready in Counting Sheep."
+                headline: "WIND DOWN ENDED",
+                message: "Wind Down ended early. Your receipt is ready in Counting Sheep."
             )
         }
     }

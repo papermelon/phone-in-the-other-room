@@ -11,7 +11,7 @@ The publication draft is `docs/PUBLIC_PRIVACY_POLICY.md`; App Store field guidan
 
 | Data | Purpose | Location / retention | Leaves device by default? |
 |---|---|---|---|
-| Quiet Time plan and active run | Run the requested ritual and restore it | Standard UserDefaults; latest state | No |
+| Wind Down / Phone Break plan and active run | Run the requested phone-away session and restore it | Standard UserDefaults; latest state | No |
 | Ritual records and events | Receipts, quiet-minute history, reliability/evidence | Standard UserDefaults; 90 days | No |
 | Morning reflection | Optional personal context | Standard UserDefaults; 45 days | No |
 | HealthKit `sleepAnalysis` | Sleep interval, duration, core/deep/REM/unspecified/awake where present | Read on demand; derived summaries in memory | No |

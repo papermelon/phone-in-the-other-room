@@ -16,27 +16,65 @@ struct WatchSetupView: View {
                 WatchRunView()
             }
         } else {
-            ScrollView {
-                VStack(spacing: 8) {
-                    WatchOllieIconView(mood: .waiting)
-                    Text("Counting Sheep")
-                        .font(.headline)
-                        .multilineTextAlignment(.center)
-                    Text(viewModel.connectionText)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                    Button("Join Wind Down") { viewModel.requestCurrentRun() }
-                        .accessibilityHint("Checks the iPhone for an active Wind Down")
-                    Button("Ping Phone") { viewModel.pingPhone() }
+            WatchScreen { usesCompactLayout in
+                VStack(spacing: 7) {
+                    HStack(spacing: 4) {
+                        WatchOllieIconView(mood: .waiting, size: usesCompactLayout ? 56 : 78)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Counting Sheep")
+                                .font((usesCompactLayout ? Font.body : Font.headline).weight(.bold))
+                                .foregroundStyle(WatchTheme.cream)
+                                .lineLimit(2)
+                                .minimumScaleFactor(0.85)
+                            Text("Ready when your iPhone is")
+                                .font(.caption2)
+                                .foregroundStyle(WatchTheme.mist)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+
+                    WatchStatusPill(
+                        title: connectionStatus.title,
+                        systemImage: connectionStatus.systemImage,
+                        tint: connectionStatus.tint
+                    )
+
+                    Button { viewModel.requestCurrentRun() } label: {
+                        Label("Check iPhone", systemImage: "arrow.clockwise")
+                    }
+                    .buttonStyle(WatchPrimaryButtonStyle())
+                    .accessibilityHint("Checks the iPhone for an active Wind Down or Phone Break")
+
+                    Button { viewModel.pingPhone() } label: {
+                        Label("Ping iPhone", systemImage: "iphone.radiowaves.left.and.right")
+                    }
+                    .buttonStyle(WatchQuietButtonStyle())
                         .accessibilityHint("Plays a sound on your iPhone")
-                    Text("Begin Wind Down on iPhone. The iPhone keeps time, so the Watch can rest too.")
+
+                    Text("Start Wind Down or a Phone Break on iPhone. Ollie will meet you here.")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(WatchTheme.mist)
                         .multilineTextAlignment(.center)
                 }
-                .padding(.vertical, 4)
             }
         }
     }
+
+    private var connectionStatus: (title: String, systemImage: String, tint: Color) {
+        let status = viewModel.connectionText.lowercased()
+        if status.contains("connected") || status.contains("heard") {
+            return ("iPhone connected", "checkmark.circle.fill", WatchTheme.moss)
+        }
+        if status.contains("not reachable") || status.contains("open the iphone") {
+            return ("iPhone out of reach", "iphone.slash", WatchTheme.amber)
+        }
+        return ("Checking for iPhone", "wave.3.right", WatchTheme.mist)
+    }
 }
+
+#if DEBUG
+#Preview("Ready") {
+    WatchSetupView()
+        .environmentObject(WatchRunViewModel(captureState: .setup))
+}
+#endif

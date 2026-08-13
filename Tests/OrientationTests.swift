@@ -103,6 +103,46 @@ final class OrientationTests: XCTestCase {
         XCTAssertEqual(state.currentStep, .navigation)
     }
 
+    func testCompletedLegacyTourCanShowNewContextualTips() throws {
+        let data = Data(#"{"schemaVersion":3,"status":"completed","currentStep":"navigation","milestones":[]}"#.utf8)
+        let state = try JSONDecoder().decode(CountingSheepOrientationState.self, from: data)
+        XCTAssertTrue(state.canShowContextualTips)
+        XCTAssertEqual(state.nextContextualTip(from: [.nights]), .nights)
+    }
+
+    func testSkippedAndDismissedToursSuppressContextualTips() {
+        var skipped = CountingSheepOrientationState.fresh
+        skipped.skipPermanently()
+        XCTAssertNil(skipped.nextContextualTip(from: [.nights]))
+
+        var dismissed = CountingSheepOrientationState.fresh
+        dismissed.dismiss()
+        XCTAssertNil(dismissed.nextContextualTip(from: [.nights]))
+        dismissed.resume()
+        XCTAssertEqual(dismissed.nextContextualTip(from: [.nights]), .nights)
+    }
+
+    func testContextualTipsAreOneTimeAndReplayClearsThem() {
+        var state = CountingSheepOrientationState.fresh
+        XCTAssertEqual(state.nextContextualTip(from: [.nights, .farm]), .nights)
+        state.markContextualTipSeen(.nights)
+        XCTAssertEqual(state.nextContextualTip(from: [.nights, .farm]), .farm)
+        state.disableContextualTips()
+        XCTAssertNil(state.nextContextualTip(from: [.farm]))
+        state.replay()
+        XCTAssertTrue(state.seenContextualTips.isEmpty)
+        XCTAssertFalse(state.contextualTipsDisabled)
+        XCTAssertEqual(state.nextContextualTip(from: [.nights]), .nights)
+    }
+
+    func testBarnCapacityTipAlsoSatisfiesTheGenericFarmTip() {
+        var state = CountingSheepOrientationState.fresh
+        state.markContextualTipSeen(.barnCapacity)
+        XCTAssertTrue(state.seenContextualTips.contains(.barnCapacity))
+        XCTAssertTrue(state.seenContextualTips.contains(.farm))
+        XCTAssertNil(state.nextContextualTip(from: [.farm]))
+    }
+
     func testPassiveTabVisitsDoNotSilentlyResumeDismissedOrientation() {
         var state = CountingSheepOrientationState.fresh
         state.mark(.homeExplained)

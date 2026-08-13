@@ -4,6 +4,7 @@ struct WindDownScheduleView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var editor: Editor?
     @State private var message: String?
+    @State private var contextualTip: CountingSheepContextualTip?
 
     private var upcomingOneTimePeriods: [WindDownOneTimePeriod] {
         viewModel.windDownSchedule.oneTimePeriods
@@ -14,25 +15,26 @@ struct WindDownScheduleView: View {
     var body: some View {
         List {
             Section {
-                Text("Keep one-time quiet periods ready for the day. They disappear after their window; completed quiet remains in Nights.")
+                Text("Start one now, or save one for later. Phone Breaks stay separate from Wind Down.")
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.muted)
 
                 Button {
                     let started = viewModel.startNewOneTimeAdditionalQuietNow()
                     if !started {
-                        message = viewModel.windDownScheduleError ?? "Quiet time could not be started just now."
+                        message = viewModel.windDownScheduleError ?? "Phone Break could not be started just now."
                     }
                 } label: {
-                    Label("Start extra quiet now", systemImage: "timer")
+                    Label("Start Phone Break now", systemImage: "timer")
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(PixelPrimaryButtonStyle())
+                .contextualGuideTarget(.phoneBreak)
             }
 
-            Section("One-time quiet periods") {
+            Section("One-time Phone Breaks") {
                 if upcomingOneTimePeriods.isEmpty {
-                    Text("No one-time quiet periods are scheduled.")
+                    Text("No one-time Phone Breaks are scheduled.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
                 } else {
@@ -52,7 +54,7 @@ struct WindDownScheduleView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityHint("Starts this exact quiet time")
+                                .accessibilityHint("Starts this exact Phone Break")
                             } else {
                                 scheduleRow(
                                     title: period.title,
@@ -75,16 +77,16 @@ struct WindDownScheduleView: View {
                     }
                 }
                 Button { editor = .newOneTime } label: {
-                    Label("Add one-time quiet period", systemImage: "plus")
+                    Label("Add one-time Phone Break", systemImage: "plus")
                 }
             }
 
-            Section("Repeats") {
+            Section("Repeating Phone Breaks") {
                 let routines = viewModel.windDownSchedule.routines.filter {
                     $0.role == .additionalQuiet
                 }
                 if routines.isEmpty {
-                    Text("No repeating quiet times yet.")
+                    Text("No repeating Phone Breaks yet.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
                 } else {
@@ -105,7 +107,7 @@ struct WindDownScheduleView: View {
                     }
                 }
                 Button { editor = .newRoutine } label: {
-                    Label("Add a repeating quiet time", systemImage: "repeat")
+                    Label("Add a repeating Phone Break", systemImage: "repeat")
                 }
             }
 
@@ -136,26 +138,34 @@ struct WindDownScheduleView: View {
                 }
             }
         }
-        .navigationTitle("Upcoming quiet times")
+        .navigationTitle("Phone Break schedule")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            contextualTip = viewModel.contextualTip(from: [.phoneBreak])
+        }
+        .contextualGuideOverlay(
+            tip: $contextualTip,
+            onAcknowledge: viewModel.acknowledgeContextualTip,
+            onSkipAll: viewModel.disableContextualTips
+        )
         .sheet(item: $editor) { editor in
             NavigationStack {
                 switch editor {
                 case .newOneTime:
                     QuietTimeEditorView(mode: .oneTime(nil), onComplete: { success in
-                        message = success ? "Ollie saved that quiet time." : "Choose a future window that does not overlap another quiet time."
+                        message = success ? "Ollie saved that Phone Break." : "Choose a future window that does not overlap another Phone Break."
                     })
                 case let .oneTime(id):
                     QuietTimeEditorView(mode: .oneTime(id), onComplete: { success in
-                        message = success ? "Ollie updated that quiet time." : "Choose a future window that does not overlap another quiet time."
+                        message = success ? "Ollie updated that Phone Break." : "Choose a future window that does not overlap another Phone Break."
                     })
                 case .newRoutine:
                     QuietTimeEditorView(mode: .routine(nil), onComplete: { success in
-                        message = success ? "Ollie saved that repeating quiet time." : "That repeat overlaps another quiet time. Choose a different window."
+                        message = success ? "Ollie saved that repeating Phone Break." : "That repeat overlaps another Phone Break. Choose a different window."
                     })
                 case let .routine(id):
                     QuietTimeEditorView(mode: .routine(id), onComplete: { success in
-                        message = success ? "Ollie updated that repeating quiet time." : "That repeat overlaps another quiet time. Choose a different window."
+                        message = success ? "Ollie updated that repeating Phone Break." : "That repeat overlaps another Phone Break. Choose a different window."
                     })
                 }
             }

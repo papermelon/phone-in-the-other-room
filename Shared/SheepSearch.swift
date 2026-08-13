@@ -213,10 +213,11 @@ enum SheepSearchEngine {
         let oddsBeforeMap = min(0.92, baseOdds + droughtBonus)
         let guaranteed = protectedNightNumber <= starterGuaranteeRuns
             || state.consecutiveNoFinds >= hardGuaranteeAfterNoFinds
-        let availableMapPoints = min(5, max(0, evidence.trailMapBonusPercentagePoints))
-        let wholePointHeadroom = max(0, Int(floor((0.92 - oddsBeforeMap) * 100 + 0.000_001)))
-        let appliedMapPoints = guaranteed ? 0 : min(availableMapPoints, wholePointHeadroom)
-        let encounterOdds = min(0.92, oddsBeforeMap + Double(appliedMapPoints) / 100)
+        // Phone Breaks now resolve through their own meter. Keep the legacy
+        // evidence field decodable, but do not let new Wind Down searches
+        // consume or apply it.
+        let appliedMapPoints = 0
+        let encounterOdds = oddsBeforeMap
         let generator = DeterministicSheepRandom(seed: seed ?? stableSeed(runID: runID, protectedNightNumber: protectedNightNumber))
         let shouldFind = guaranteed || generator.value() < encounterOdds
 
@@ -256,6 +257,60 @@ enum SheepSearchEngine {
         return SheepSearchCalculation(outcome: outcome, score: score)
     }
 
+    static func calculatePhoneBreak(
+        runID: UUID,
+        protectedNightNumber: Int,
+        state: SheepSearchState,
+        trackedSheepID: String? = nil,
+        now: Date = Date(),
+        seed: UInt64? = nil
+    ) -> SheepSearchCalculation {
+        if let existing = state.phoneBreakOutcome(for: runID) {
+            return SheepSearchCalculation(outcome: existing, score: existing.trailStrength)
+        }
+
+        let drought = max(0, state.phoneBreakConsecutiveNoFinds)
+        let guaranteed = drought >= 4
+        let encounterOdds = guaranteed
+            ? 1.0
+            : [0.20, 0.30, 0.40, 0.50][min(drought, 3)]
+        let generator = DeterministicSheepRandom(
+            seed: seed ?? stablePhoneBreakSeed(runID: runID, protectedNightNumber: protectedNightNumber)
+        )
+        let shouldFind = guaranteed || generator.value() < encounterOdds
+        let eligible = SheepCatalog.eligible(for: max(1, protectedNightNumber))
+            .filter { !state.foundSheepIDs.contains($0.id) }
+        let candidatePool = eligible.isEmpty
+            ? SheepCatalog.eligible(for: max(1, protectedNightNumber))
+            : eligible
+        let selected = shouldFind
+            ? weightedSheep(
+                from: candidatePool,
+                score: 50,
+                trackedSheepID: trackedSheepID,
+                random: generator
+            )
+            : nil
+        let outcome = SheepSearchOutcome(
+            id: runID,
+            runID: runID,
+            origin: .phoneBreak,
+            protectedNightNumber: max(0, protectedNightNumber),
+            result: selected == nil ? .trailOnly : .found,
+            sheepID: selected?.id,
+            rarity: selected?.rarity,
+            habitat: selected?.habitat,
+            trailStrength: 50,
+            encounterOdds: encounterOdds,
+            trailDistance: 1.0,
+            consecutiveNoFinds: drought,
+            bonusPoints: 0,
+            trailMapBonusPercentagePoints: 0,
+            createdAt: now
+        )
+        return SheepSearchCalculation(outcome: outcome, score: 50)
+    }
+
     private static func ratio(_ value: Int, planned: Int) -> Double {
         guard planned > 0 else { return 0 }
         return min(1, max(0, Double(value) / Double(planned)))
@@ -289,6 +344,10 @@ enum SheepSearchEngine {
             value = value &* 31 &+ UInt64(scalar.value)
         }
         return value
+    }
+
+    private static func stablePhoneBreakSeed(runID: UUID, protectedNightNumber: Int) -> UInt64 {
+        stableSeed(runID: runID, protectedNightNumber: protectedNightNumber) ^ 0x50484F4E4542524B
     }
 }
 

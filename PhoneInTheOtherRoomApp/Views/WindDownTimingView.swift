@@ -13,7 +13,7 @@ struct WindDownTimingView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 Text("Your usual quiet window")
                     .font(AppTypography.display(30))
-                Text("Set the sleep window Ollie uses for your regular Wind Down. You can still add a one-time quiet period from Home.")
+                Text("Set the sleep window Ollie uses for your regular Wind Down. You can still add a Phone Break from Home.")
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.muted)
 

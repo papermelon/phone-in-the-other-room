@@ -22,6 +22,7 @@ enum BarnFilter: String, CaseIterable, Identifiable {
 struct FarmBarnView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var filter: BarnFilter
+    @State private var contextualTip: CountingSheepContextualTip?
 
     init(initialFilter: BarnFilter = .all) {
         _filter = State(initialValue: initialFilter)
@@ -52,6 +53,7 @@ struct FarmBarnView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
                 capacityCard
+                    .contextualGuideTarget(.barnCapacity)
                 if !state.pendingSheep.isEmpty { pendingSection }
                 flockSection
             }
@@ -63,6 +65,15 @@ struct FarmBarnView: View {
         .navigationTitle("The Barn")
         .navigationBarTitleDisplayMode(.inline)
         .farmActionAlert(viewModel: viewModel)
+        .onAppear {
+            guard state.isBarnFull || !state.pendingSheep.isEmpty else { return }
+            contextualTip = viewModel.contextualTip(from: [.barnCapacity])
+        }
+        .contextualGuideOverlay(
+            tip: $contextualTip,
+            onAcknowledge: viewModel.acknowledgeContextualTip,
+            onSkipAll: viewModel.disableContextualTips
+        )
     }
 
     private var header: some View {

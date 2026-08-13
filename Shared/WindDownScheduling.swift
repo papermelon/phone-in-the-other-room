@@ -195,7 +195,7 @@ struct WindDownOneTimePeriod: Codable, Identifiable, Equatable {
     init(
         schemaVersion: Int = currentSchemaVersion,
         id: UUID = UUID(),
-        title: String = "One-time quiet period",
+        title: String = "Phone Break",
         role: WindDownOccurrenceRole = .additionalQuiet,
         interval: DateInterval,
         enabled: Bool = true,
@@ -203,7 +203,7 @@ struct WindDownOneTimePeriod: Codable, Identifiable, Equatable {
     ) {
         self.schemaVersion = schemaVersion
         self.id = id
-        self.title = title.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyOrNil ?? "One-time quiet period"
+        self.title = title.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyOrNil ?? "Phone Break"
         self.role = role
         self.interval = interval
         self.enabled = enabled
@@ -260,7 +260,7 @@ struct WindDownScheduleState: Codable, Equatable {
            nextOverride.interval.end > nextOverride.interval.start {
             oneTimePeriods = [WindDownOneTimePeriod(
                 id: nextOverride.id,
-                title: nextOverride.role == .primarySleepBookend ? "Adjusted Wind Down" : "One-time quiet period",
+            title: nextOverride.role == .primarySleepBookend ? "Adjusted Wind Down" : "Phone Break",
                 role: nextOverride.role,
                 interval: nextOverride.interval
             )]

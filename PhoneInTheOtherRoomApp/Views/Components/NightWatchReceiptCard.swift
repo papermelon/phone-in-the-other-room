@@ -23,10 +23,10 @@ struct NightWatchReceiptCard: View {
                 if let run, run.isNightWatch {
                     receiptRow(
                         icon: "moon.zzz.fill",
-                        title: run.nightWatchPlan?.role == .additionalQuiet ? "One-time quiet period" : "Phone-free time",
+                        title: run.nightWatchPlan?.role == .additionalQuiet ? "Phone Break" : "Phone-free time",
                         value: "\(run.creditedQuietMinutes) min",
                         detail: run.nightWatchPlan?.role == .additionalQuiet
-                            ? "A bounded quiet period; no sleep claim"
+                            ? "A short phone-away break outside Wind Down"
                             : "Wind-down and after waking only"
                     )
 

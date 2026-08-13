@@ -18,6 +18,12 @@ struct PhoneInTheOtherRoomApp: App {
             )
             return
         }
+        if WatchPhysicalQAFixture.isRequested {
+            _runViewModel = StateObject(
+                wrappedValue: WatchPhysicalQAFixture.makeViewModel()
+            )
+            return
+        }
 #endif
         PhoneNotificationService.shared.configure()
         let liveActivityService: FocusRunLiveActivityService

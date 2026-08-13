@@ -24,7 +24,7 @@ struct PixelHomeDashboard: View {
             nextUpcoming: viewModel.nextUpcomingQuietPeriod,
             upcomingAdditionalCount: viewModel.upcomingAdditionalQuietPeriods.count,
             immediateAdditionalQuietMinutes: viewModel.immediateAdditionalQuietMinutes,
-            mappedBonusPercentagePoints: viewModel.sheepSearchState.trailMap.availableBonusPercentagePoints,
+            phoneBreakMeterMinutes: viewModel.sheepSearchState.trailMap.pendingMappedMinutes,
             nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
             onPrimaryAction: {
                 let methodIsReady = viewModel.selectedGuardKind != .nfcTag
@@ -62,10 +62,10 @@ struct PixelHomeDashboard: View {
             WindDownScheduleView()
                 .environmentObject(viewModel)
         }
-        .alert("Extra quiet time could not start", isPresented: $showQuickStartError) {
+        .alert("Phone Break could not start", isPresented: $showQuickStartError) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text(viewModel.windDownScheduleError ?? "Try again after your scheduled quiet time.")
+            Text(viewModel.windDownScheduleError ?? "Try again after the current phone-away time ends.")
         }
     }
 }
@@ -81,7 +81,7 @@ private struct PixelHomeDashboardContent: View {
     var nextUpcoming: WindDownSchedulePeriod?
     var upcomingAdditionalCount: Int
     var immediateAdditionalQuietMinutes: Int?
-    var mappedBonusPercentagePoints: Int
+    var phoneBreakMeterMinutes: Int
     var nightFlockSummary: NightFlockHomeSummary? = nil
     var onPrimaryAction: () -> Void
     var onEditTiming: () -> Void
@@ -132,7 +132,8 @@ private struct PixelHomeDashboardContent: View {
                     ? immediateAdditionalQuietMinutes
                     : nil,
                 trailMapPresentation: SheepTrailMapPresentation.home(
-                    availableBonusPercentagePoints: mappedBonusPercentagePoints
+                    pendingMappedMinutes: phoneBreakMeterMinutes,
+                    protectedWindDownCount: progress.totalCompletedRuns
                 ),
                 action: onQuietTimeSchedule,
                 startNow: onStartNow
@@ -154,9 +155,9 @@ private struct PixelHomeDashboardContent: View {
             case .practice:
                 return "Start \(startContext.durationMinutes)-minute practice"
             case .oneTimeQuiet:
-                return "Start one-time quiet"
+                return "Start Phone Break"
             case .repeatingQuiet:
-                return "Start extra quiet"
+                return "Start Phone Break"
             case .primary:
                 break
             }
@@ -168,8 +169,8 @@ private struct PixelHomeDashboardContent: View {
         guard canBeginNow, let startContext else { return nil }
         switch startContext.kind {
         case .practice: return "PRACTICE QUIET · \(startContext.durationMinutes) MIN"
-        case .oneTimeQuiet: return "ONE-TIME QUIET"
-        case .repeatingQuiet: return "EXTRA QUIET"
+        case .oneTimeQuiet: return "PHONE BREAK"
+        case .repeatingQuiet: return "PHONE BREAK"
         case .primary: return nil
         }
     }
@@ -305,7 +306,7 @@ private struct NightWatchOverviewBlock: View {
                 nextUpcoming: nil,
                 upcomingAdditionalCount: 0,
                 immediateAdditionalQuietMinutes: nil,
-                mappedBonusPercentagePoints: 0,
+                phoneBreakMeterMinutes: 0,
                 onPrimaryAction: {},
                 onEditTiming: {},
                 onQuietTimeSchedule: {},
@@ -343,7 +344,7 @@ private struct NightWatchOverviewBlock: View {
                 nextUpcoming: nil,
                 upcomingAdditionalCount: 0,
                 immediateAdditionalQuietMinutes: nil,
-                mappedBonusPercentagePoints: 5,
+                phoneBreakMeterMinutes: 75,
                 nightFlockSummary: .invitation,
                 onPrimaryAction: {},
                 onEditTiming: {},

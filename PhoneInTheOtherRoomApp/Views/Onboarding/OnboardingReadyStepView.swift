@@ -39,8 +39,8 @@ struct OnboardingReadyStep: View {
                     )
                     Divider()
                     term(
-                        "Extra quiet time",
-                        detail: "Optional phone-away time outside Wind Down. Every 15 completed minutes adds 1 percentage point to a future sheep-search chance, up to 5."
+                        "Phone Break",
+                        detail: "Optional phone-away time outside Wind Down. Every 75 completed Phone Break minutes opens a bonus search. A search may find a sheep or leave a clue."
                     )
                     if showsSlumberParty {
                         Divider()
@@ -61,7 +61,7 @@ struct OnboardingReadyStep: View {
 
     private var handoffMessage: String {
         if showsTourHandoff {
-            return "Next: Home will show your saved plan, followed by a short two-step tour of the real app."
+            return "Next: Home will show your saved plan, followed by a short three-step tour of the real app."
         }
         return "Your saved changes will appear on Home."
     }

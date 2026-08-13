@@ -23,13 +23,14 @@ contain multiple separately inspectable Wind Down occurrences. Quiet minutes are
 credited intervals, and only the designated primary sleep-bookend occurrence contributes to
 protected-night progression.
 
-The saved schedule contains one migrated primary sleep-bookend routine and optional additional
-bounded quiet routines. Home exposes a compact one-time additional-quiet editor; recurring
-additional routines remain decodable but are not automatically scheduled by the current UI.
+The saved schedule contains one migrated primary sleep-bookend routine and optional **Phone Break**
+routines. Home exposes a compact one-time Phone Break editor; recurring Phone Break routines remain
+decodable and can be scheduled through the finite editor.
 A one-time next-period override can adjust either kind without mutating the usual routine.
 Historical records retain their plan snapshot. Overlapping recurring occurrences are rejected
-before saving. Additional quiet periods contribute factual history but make no sleep claim and
-never create a sheep-search attempt.
+before saving. Phone Break periods contribute factual history, make no sleep claim, and never create
+a protected-night search attempt. Eligible completed Phone Breaks instead credit a separate
+75-minute meter and can resolve one bonus search after three protected Wind Downs.
 
 Current setup offers only App Shielding or NFC + App Shielding. Legacy timer, Watch, and QR
 guard kinds remain for backwards decoding and old active runs, but are not presented as choices.
@@ -42,8 +43,8 @@ recurring routines. The finite Upcoming quiet times editor supports once, daily,
 and custom weekday periods, with edit, enable/disable, cancellation, passed-period pruning,
 and overlap identification. The scheduler resolves the earliest future or currently eligible
 occurrence across both sources; a future additional period cannot replace a normal Wind Down
-started now. Additional quiet remains factual history only and never creates protected-night or
-sheep progress.
+started now. Phone Break never creates protected-night progress. Its elapsed time remains factual
+history, while its separate meter and bonus-search rules settle only on eligible completions.
 
 Settings includes a non-destructive Review Wind Down setup action and a separate destructive
 "Erase local data and start over" action. The latter clears the saved plan, NFC pairing,

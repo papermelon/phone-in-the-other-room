@@ -28,17 +28,17 @@ struct ActiveRunView: View {
     }
 
     private var fallbackReturnBarTitle: String {
-        run?.nightWatchPlan?.role == .additionalQuiet ? "Quiet time" : "Wind Down"
+        run?.nightWatchPlan?.role == .additionalQuiet ? "Phone Break" : "Wind Down"
     }
 
     private var fallbackExit: ActiveRunExitPresentation {
         run?.nightWatchPlan?.role == .additionalQuiet
             ? ActiveRunExitPresentation(
-                actionTitle: "End quiet time early",
-                confirmationTitle: "End quiet time early?",
+                actionTitle: "End Phone Break early",
+                confirmationTitle: "End Phone Break early?",
                 confirmationBody: "This ends the timer and removes any app limits.",
-                cancelTitle: "Keep quiet time running",
-                confirmTitle: "End quiet time"
+                cancelTitle: "Keep Phone Break running",
+                confirmTitle: "End Phone Break"
             )
             : ActiveRunExitPresentation(
                 actionTitle: "End Wind Down early",
@@ -55,7 +55,7 @@ struct ActiveRunView: View {
 
     private var tagReplacementMessage: String {
         presentation?.isAdditionalQuiet == true
-            ? "We’ll write a new tag now. Your current quiet time will stay in place, and the old tag will stop working after the new one is saved."
+            ? "We’ll write a new tag now. Your Phone Break will keep running, and the old tag will stop working after the new one is saved."
             : "We’ll write a new tag now. Your current Wind Down will stay in place, and the old tag will stop working after the new one is saved."
     }
 
@@ -127,7 +127,7 @@ struct ActiveRunView: View {
                 NightJourneyView(
                     run: run,
                     reduceMotion: reduceMotion,
-                    mappedBonusPercentagePoints: viewModel.sheepSearchState.trailMap.availableBonusPercentagePoints,
+                    phoneBreakMeterMinutes: viewModel.sheepSearchState.trailMap.pendingMappedMinutes,
                     fixedDate: fixedNow
                 )
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
@@ -299,9 +299,9 @@ struct ActiveRunView: View {
     private var placementInstructions: String {
         if presentation?.isAdditionalQuiet == true {
             switch guardKind {
-            case .qrCode: return "Scan the code to start quiet time."
-            case .nfcTag: return "Tap your saved tag to start quiet time."
-            default: return "Ollie only needs one short check before quiet time continues."
+            case .qrCode: return "Scan the code to start the phone-away session."
+            case .nfcTag: return "Tap your saved tag to start the phone-away session."
+            default: return "Ollie only needs one short check before the phone-away session continues."
             }
         }
         switch guardKind {
@@ -386,7 +386,7 @@ struct ActiveRunView: View {
             }
 
             if presentation?.isAdditionalQuiet == true {
-                Button(presentation?.exit.actionTitle ?? "End quiet time early") {
+                Button(presentation?.exit.actionTitle ?? "End Wind Down early") {
                     showEmergencyExitConfirmation = true
                 }
                 .font(pixelFont(.caption))
@@ -545,7 +545,7 @@ struct ActiveRunView: View {
     }
 }
 
-#Preview("Active run · one-time quiet · 6 PM") {
+#Preview("Active run · Phone Break · 6 PM") {
     let calendar = Calendar.current
     let now = calendar.date(
         from: DateComponents(year: 2026, month: 8, day: 11, hour: 18, minute: 0)

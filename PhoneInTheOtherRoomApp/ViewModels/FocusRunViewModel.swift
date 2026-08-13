@@ -333,6 +333,24 @@ final class FocusRunViewModel: ObservableObject {
         persistence.orientationState = orientationState
     }
 
+    func contextualTip(
+        from candidates: [CountingSheepContextualTip]
+    ) -> CountingSheepContextualTip? {
+        guard !isRunning else { return nil }
+        return orientationState.nextContextualTip(from: candidates)
+    }
+
+    func acknowledgeContextualTip(_ tip: CountingSheepContextualTip) {
+        guard !isRunning else { return }
+        orientationState.markContextualTipSeen(tip)
+        persistence.orientationState = orientationState
+    }
+
+    func disableContextualTips() {
+        orientationState.disableContextualTips()
+        persistence.orientationState = orientationState
+    }
+
     func dismissOrientation() {
         orientationState.dismiss()
         persistence.orientationState = orientationState
@@ -412,16 +430,16 @@ final class FocusRunViewModel: ObservableObject {
     @discardableResult
     func startNewOneTimeAdditionalQuietNow(
         duration: TimeInterval = 30 * 60,
-        title: String = "One-time quiet period",
+        title: String = "Phone Break",
         now: Date = Date()
     ) -> Bool {
         guard !isRunning else {
-            windDownScheduleError = "Finish the current quiet time before starting another one."
+            windDownScheduleError = "Finish the current phone-away session before starting a Phone Break."
             return false
         }
 
         guard let window = immediateAdditionalQuietWindow(now: now, maximumDuration: duration) else {
-            windDownScheduleError = "Your next scheduled quiet time begins too soon for a separate extra quiet period."
+            windDownScheduleError = "Your next scheduled Wind Down begins too soon for a separate Phone Break."
             return false
         }
         let periodID = UUID()
@@ -439,7 +457,7 @@ final class FocusRunViewModel: ObservableObject {
         requestStartNightWatch(sourceID: periodID)
         guard showNightWatchStartPrompt else {
             rollbackPendingAdHocQuiet()
-            windDownScheduleError = "Quiet time could not be prepared just now."
+            windDownScheduleError = "Phone Break could not be prepared just now."
             return false
         }
         return true
@@ -745,7 +763,7 @@ final class FocusRunViewModel: ObservableObject {
         recurrence: WindDownRecurrence = .daily
     ) -> Bool {
         guard !isRunning, recurrence.isValid else {
-            windDownScheduleError = "Choose at least one day for this repeating quiet time."
+            windDownScheduleError = "Choose at least one day for this repeating Phone Break."
             return false
         }
         let routine = WindDownRoutine(
@@ -916,7 +934,7 @@ final class FocusRunViewModel: ObservableObject {
         guard !isRunning, recurrence.isValid,
               let index = windDownSchedule.routines.firstIndex(where: { $0.id == id && $0.role == .additionalQuiet }) else {
             if !recurrence.isValid {
-                windDownScheduleError = "Choose at least one day for this repeating quiet time."
+                windDownScheduleError = "Choose at least one day for this repeating Phone Break."
             }
             return false
         }
@@ -991,7 +1009,7 @@ final class FocusRunViewModel: ObservableObject {
             case .invalidInterval:
                 windDownScheduleError = "Choose a future quiet window with an ending time after its start."
             case .invalidRecurrence:
-                windDownScheduleError = "Choose at least one day for this repeating quiet time."
+                windDownScheduleError = "Choose at least one day for this repeating Phone Break."
             }
             return false
         } catch {
@@ -1007,7 +1025,7 @@ final class FocusRunViewModel: ObservableObject {
         if let routine = schedule.routines.first(where: { $0.id == id }) {
             return routine.title
         }
-        return "Quiet time"
+        return "Phone-away time"
     }
 
     private func normalizedOneTimeInterval(
@@ -1052,7 +1070,7 @@ final class FocusRunViewModel: ObservableObject {
             )
         }
         return addOneTimePeriod(
-            title: role == .primarySleepBookend ? "Adjusted Wind Down" : "One-time quiet period",
+            title: role == .primarySleepBookend ? "Adjusted Wind Down" : "Phone Break",
             start: start,
             end: end,
             role: role
@@ -1433,7 +1451,7 @@ final class FocusRunViewModel: ObservableObject {
                    self.activeRun == nil {
                     guard read.digest == expectedDigest else {
                         self.nfcStatus = self.pendingRunIsAdditionalQuiet
-                            ? "That is not your phone-bed tag. Quiet time has not started."
+                            ? "That is not your phone-bed tag. Phone Break has not started."
                             : "That is not your Wind Down tag. The session has not started."
                         return
                     }
@@ -1443,7 +1461,7 @@ final class FocusRunViewModel: ObservableObject {
                         self.persistence.phoneBedNFCTagRegistration = registration
                     }
                     self.nfcStatus = self.pendingRunIsAdditionalQuiet
-                        ? "Quiet time is starting."
+                        ? "Phone Break is starting."
                         : "Wind Down is starting."
                     self.startPendingNightWatch()
                     return
@@ -1462,17 +1480,17 @@ final class FocusRunViewModel: ObservableObject {
                         : "Wind Down tag confirmed."
                 } else {
                     self.nfcStatus = self.activeRunIsAdditionalQuiet
-                        ? "That is not your phone-bed tag. Quiet time is still running."
+                        ? "That is not your phone-bed tag. Phone Break is still running."
                         : "That is not your Wind Down tag. Wind Down is still running."
                 }
             case .cancelled:
                 if self.pendingNightWatchPlan != nil {
                     self.nfcStatus = self.pendingRunIsAdditionalQuiet
-                        ? "No tag was read. Quiet time has not started."
+                        ? "No tag was read. Phone Break has not started."
                         : "No tag was read. Wind Down has not started."
                 } else {
                     self.nfcStatus = self.activeRunIsAdditionalQuiet
-                        ? "No tag was read. Quiet time is still running."
+                        ? "No tag was read. Phone Break is still running."
                         : "No tag was read. Wind Down is still running."
                 }
             case .unavailable(let message):
@@ -1500,7 +1518,7 @@ final class FocusRunViewModel: ObservableObject {
                     ?? (read.digest == expectedDigest)
                 guard matchesRegisteredTag else {
                     self.nfcStatus = self.activeRunIsAdditionalQuiet
-                        ? "That is not your phone-bed tag. Quiet time is still running."
+                        ? "That is not your phone-bed tag. Phone Break is still running."
                         : "That is not your Wind Down tag. Wind Down is still running."
                     return
                 }
@@ -1516,7 +1534,7 @@ final class FocusRunViewModel: ObservableObject {
                 self.coordinator.endEarly(reason: .nfcTagAuthenticated)
             case .cancelled:
                 self.nfcStatus = self.activeRunIsAdditionalQuiet
-                    ? "No tag was read. Quiet time is still running."
+                    ? "No tag was read. Phone Break is still running."
                     : "No tag was read. Wind Down is still running."
             case .unavailable(let message):
                 self.nfcStatus = message
@@ -1573,11 +1591,11 @@ final class FocusRunViewModel: ObservableObject {
                             expectedFingerprint: registration.tokenDigest
                         )
                         self.nfcStatus = self.activeRunIsAdditionalQuiet
-                            ? "New tag paired. Quiet time is starting."
+                            ? "New tag paired. Phone Break is starting."
                             : "New tag paired. Wind Down is starting."
                     } else {
                         self.nfcStatus = self.activeRunIsAdditionalQuiet
-                            ? "New tag paired. Tap it again to end quiet time."
+                            ? "New tag paired. Tap it again to end Phone Break."
                             : "New tag paired. Tap it again to end Wind Down."
                     }
                 } else {
@@ -1586,7 +1604,7 @@ final class FocusRunViewModel: ObservableObject {
             case .cancelled:
                 self.nfcStatus = forActiveRun
                     ? (self.activeRunIsAdditionalQuiet
-                        ? "No changes made. Quiet time is still running with your current tag."
+                        ? "No changes made. Phone Break is still running with your current tag."
                         : "No changes made. Wind Down is still running with your current tag.")
                     : "No changes made. Your current Wind Down tag is still ready."
             case .unavailable(let message):

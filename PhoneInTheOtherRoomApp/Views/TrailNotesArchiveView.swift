@@ -139,7 +139,7 @@ private struct TrailNoteRow: View {
                 Text(outcome.result == .found ? displayName : "The trail continues")
                     .font(AppTypography.headline)
                     .foregroundStyle(AppColors.ink)
-                Text("Protected night \(outcome.protectedNightNumber) · \(outcome.createdAt.formatted(date: .abbreviated, time: .omitted))")
+                Text(originLine)
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                 Text(statusLine)
@@ -166,6 +166,13 @@ private struct TrailNoteRow: View {
         case (.found, .active): return "Living in the active flock"
         case (.found, nil): return "Homecoming recorded"
         }
+    }
+
+    private var originLine: String {
+        let date = outcome.createdAt.formatted(date: .abbreviated, time: .omitted)
+        return outcome.origin == .phoneBreak
+            ? "Phone Break bonus search · \(date)"
+            : "Wind Down \(outcome.protectedNightNumber) · \(date)"
     }
 }
 

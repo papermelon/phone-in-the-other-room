@@ -34,7 +34,7 @@ enum NotificationTemplateID: String, Codable, CaseIterable, Identifiable {
         case .usageWindDown: return "Wind Down usage cue"
         case .usageOvernight: return "Overnight usage cue"
         case .usageMorningQuiet: return "Morning quiet usage cue"
-        case .quietPeriodComplete: return "One-time quiet period completes"
+        case .quietPeriodComplete: return "Phone Break completes"
         case .shieldingFailed: return "Shielding failure"
         }
     }
@@ -52,7 +52,7 @@ enum NotificationTemplateID: String, Codable, CaseIterable, Identifiable {
         case .morningReflection: return "An optional private morning reflection prompt."
         case .usageWindDown, .usageOvernight, .usageMorningQuiet:
             return "An optional cue after selected-app activity."
-        case .quietPeriodComplete: return "The receipt for a bounded one-time quiet period."
+        case .quietPeriodComplete: return "Your Phone Break is saved in Nights."
         case .shieldingFailed: return "Kept fixed so the protection status stays accurate."
         }
     }

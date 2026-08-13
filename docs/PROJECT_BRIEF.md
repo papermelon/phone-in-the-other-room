@@ -7,7 +7,8 @@
 Counting Sheep is an iOS + watchOS app that protects phone-free time around sleep. Before
 bed, the user starts Wind Down and physically puts the phone in another room; it
 stays tucked away overnight and through a chosen morning-quiet window. An Apple Watch can make
-one optional placement check using Nearby Interaction (UWB). Ollie, a pixel-art border collie,
+the phone-authoritative timer glanceable, while the current release starts protection with
+either the timer or an optional NFC tag. Ollie, a pixel-art border collie,
 guards the ritual and offers one user-chosen offline cue before bed and after waking. This is
 a Wind Down ritual, not a productivity tool or sleep-quality tracker. The established
 `NightWatch*` names remain internal for persisted-data compatibility.
@@ -77,7 +78,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   Silent phase-change notices support bedtime and waking, followed by the requested audible
   completion. Setup also offers a private, optional reason for the quiet; custom wording stays
   in-app unless the person separately allows it in notifications. Home names the exact
-  eligible ritual before it starts: the usual Wind Down, a bounded one-time quiet, or the
+  eligible ritual before it starts: the usual Wind Down, a bounded Phone Break, or the
   optional five-minute practice. App limits can be skipped for one run without changing
   the saved shielding preference.
   NFC is the default Wind Down tag for new plans; App Shielding remains the simplest
@@ -91,9 +92,9 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   morning quiet; the barrier spans overnight and always has an early exit through the
   registered Wind Down tag or Counting Sheep's emergency exit.
   Home stays focused on the saved plan and one-tap start; its schedule block opens the timing editor
-  and an Upcoming quiet times card opens a finite Once / Repeats / Usual Wind Down editor for bounded additional quiet.
+  and a Phone Break schedule card opens a finite Once / Repeats editor for bounded phone-away breaks.
 - **Nights (one finite scroll)**: the latest primary night as the main result, consistently
-  dated by the night-ending wake day; a newer one-time quiet period appears only as a compact
+  dated by the night-ending wake day; a newer Phone Break appears only as a compact
   secondary row. A seven-day board keeps protected, ended-early, and additional-only states
   distinct, while **View all nights** opens the shared calendar summary and grouped per-day
   detail. Morning note, Apple Health, and Screen Time appear together as optional context for
@@ -137,7 +138,7 @@ these screens are never reachable in Release. The shipping Farm and Farm Shop re
 persisted production data. ADR-0016's production Slumber Party is a separate narrow exception and
 remains fully hidden and network-silent while `SUPABASE_NIGHT_FLOCK_ENABLED=NO`.
 
-**Still deferred:** adaptive coaching, routine checklists, composite behavioural scores,
+**Still deferred:** UWB Watch placement checking, QR placement, adaptive coaching, routine checklists, composite behavioural scores,
 general Friends/social features beyond ADR-0016, and later sheep lifecycle systems such as
 breeding or seasonal migration. They are not required for the current Farm loop.
 
@@ -148,7 +149,7 @@ breeding or seasonal migration. They are not required for the current Farm loop.
 - Social feeds, leaderboards, or competitive mechanics
 - Engagement for its own sake — success is the user returning for the phone-away ritual,
   then using selected distracting apps less around sleep
-- Android, iPad, or web versions (iPhone-first; Watch is an optional Wind Down check)
+- Android, iPad, or web versions (iPhone-first; Watch is an optional timer companion)
 
 ## Success criteria for TestFlight
 
@@ -159,8 +160,8 @@ breeding or seasonal migration. They are not required for the current Farm loop.
    nobody reports feeling guilted or nagged.
 4. **The pitch is legible**: a new tester can explain what the app does after one session
    ("it puts my phone to bed and helps me wake before it, and there's a dog").
-5. **The start choices are legible**: new plans begin with NFC and explain the honor timer,
-   Watch, and QR as optional alternatives rather than prerequisites.
+5. **The start choices are legible**: new plans clearly distinguish App Shielding from
+   optional NFC + App Shielding; neither requires the Apple Watch.
 6. **Quiet behaviour and sleep outcomes are both observed honestly**: evaluate completed
    quiet minutes and, only with HealthKit consent, changes in sleep duration/stages and
    morning restfulness. Report sample sizes and associations; do not claim causation.

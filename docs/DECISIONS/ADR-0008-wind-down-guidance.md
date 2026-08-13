@@ -39,7 +39,8 @@ experiment requires its own decision record.
 
 Allowed themes include quieter light and screens before bed, regular wake-time cues,
 daylight and movement during the day, a calm sleep environment, keeping the bed a sleep
-cue, relaxation, and reducing pressure to force sleep. The app must not implement sleep
+cue, relaxation, leaving personally suitable room after a heavy meal, and trying an earlier
+personal caffeine cutoff. The app must not implement sleep
 restriction, sleep-efficiency targets, diagnosis, medication advice, PSQI scoring, or
 claims that Wind Down improves sleep.
 
@@ -57,4 +58,7 @@ reviewer before external release.
 - Guidance content can be audited and updated without changing the session state machine.
 - App Store copy must describe support for winding down, not treatment or sleep outcomes.
 - The previous post-1.0 educational-note gate is satisfied for the current curated scope;
-  adaptive coaching remains deferred.
+  adaptive coaching remains deferred. A later optional seven-night experiment may observe
+  HealthKit wake-time context plus one chosen topic (morning light, late meals, or caffeine
+  timing), with one end reflection and no checklist, reward, score, or sharing; qualified
+  sleep/CBT-I review remains required before external release.

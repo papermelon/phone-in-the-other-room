@@ -27,9 +27,9 @@ phone-away choice feel warm, rewarding, and worth repeating.
    After that, each completed night advances Ollie's search and may find a sheep. Encounter
    odds, rarity, streak momentum, wanted posters, and a favoured Trail Board lead can shape
    anticipation. Search outcomes are persisted once and protected by a bad-luck guarantee.
-   Completed additional-quiet periods may map up to 75 quiet minutes for a future,
-   non-guaranteed search: each 15 minutes can add one percentage point, up to five.
-   Guaranteed searches and early endings consume none; additional quiet never finds a sheep.
+   Completed Phone Breaks credit up to 75 minutes to a separate meter (with carry-over),
+   then resolve one bonus search after the first three protected Wind Downs. Its chance ladder
+   is 20%, 30%, 40%, 50%, then guaranteed after four clue-only results; it never changes Wind Down odds.
 2. **Discovery and ownership differ.** Ollie's Trail Notes and catalogue discoveries remain
    historical records. The active flock is finite inventory: sheep can stay, be sheared for
    wool, or be traded to another farm for wool without erasing the discovery.
