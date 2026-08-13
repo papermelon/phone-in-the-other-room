@@ -25,12 +25,13 @@ phone-away choice feel warm, rewarding, and worth repeating.
 
 1. **One night, one search.** The first three completed protected nights guarantee a sheep.
    After that, each completed night advances Ollie's search and may find a sheep. Encounter
-   odds, rarity, streak momentum, wanted posters, and a favoured Trail Board lead can shape
+   odds, rarity, streak momentum, wanted posters, and a favoured Ollie's Search lead can shape
    anticipation. Search outcomes are persisted once and protected by a bad-luck guarantee.
-   Completed Phone Breaks credit up to 75 minutes to a separate meter (with carry-over),
+   Completed Phone Away periods credit actual quiet minutes to a separate, centrally configured
+   100-minute meter (with carry-over),
    then resolve one bonus search after the first three protected Wind Downs. Its chance ladder
    is 20%, 30%, 40%, 50%, then guaranteed after four clue-only results; it never changes Wind Down odds.
-2. **Discovery and ownership differ.** Ollie's Trail Notes and catalogue discoveries remain
+2. **Discovery and ownership differ.** Search Journal and catalogue discoveries remain
    historical records. The active flock is finite inventory: sheep can stay, be sheared for
    wool, or be traded to another farm for wool without erasing the discovery.
 3. **Several play styles should work.** A collector can expand toward 60 active sheep; a wool
@@ -44,9 +45,11 @@ phone-away choice feel warm, rewarding, and worth repeating.
 6. **Blocking stays consensual.** The user picks
    what's blocked, shield copy is gentle, and an emergency exit is always available. We add
    friction, never bars.
-7. **Offline cues remain suggestions, not Farm gates.** The user may choose one evening and one
-   morning activity. Never require a checklist, photo, AI proof, or completed habit to end
-   Night Watch or regain essential phone access.
+7. **Offline cues remain suggestions, not Farm gates.** Wind Down setup may hold an ordered
+   private sequence of up to three evening suggestions and two morning suggestions; putting the
+   phone away is always first. Never show checkmarks or claim verification, reward, score, streak,
+   or completion for a suggestion. Never require a checklist, photo, AI proof, or completed habit
+   to end Night Watch or regain essential phone access.
 
 ## How to evaluate new mechanics
 
@@ -89,9 +92,11 @@ explicit founder direction.
   roots remain reachable so a person can adjust preferences or inspect their own records;
   a persistent return control leads directly back to Wind Down. This access exception must
   not become a feed, game loop, sheep teaser, or reason to keep holding the phone.
-- **Keep Slumber Party outside the active ritual.** Before Wind Down, Home may show one quiet
-  positive aggregate. During Wind Down there is no social panel, live update, reaction,
-  notification, or novelty. The morning shared pasture is finite, unnamed, and positive-only.
+- **Keep Slumber Party outside the active ritual.** When enabled, Farm and Home may show one
+  full-width contextual card that supports commitment and shared joy. During Wind Down there is
+  no social panel, live update, reaction, notification, or novelty. Routines, schedules, absence,
+  Health data, and private details are never shared. The morning shared pasture is finite,
+  unnamed, and positive-only.
 - **Respect the morning.** Morning is when rewards land, stats are glanced at, and streak
   warmth is felt. Keep the chosen morning-quiet window calm; do not turn it into a routine
   checklist or an app-browsing session.
@@ -115,9 +120,11 @@ explicit founder direction.
   never say the ritual caused an improvement, diagnose a condition, or issue a sleep score.
 - **Reflection without grading.** Optional morning questions may help someone notice their
   own sleep context, but they stay private, produce no score, and never change rewards.
-- **CBT-I-informed, not CBT-I treatment.** Favor gentle cues such as going to bed when sleepy
-  and keeping wake times steady. Do not prescribe sleep restriction, diagnose insomnia, or
-  present the app as a substitute for care.
+- **General sleep-health guidance, not insomnia treatment.** Favor gentle educational cues such as
+  going to bed when sleepy and keeping wake times steady. Do not prescribe sleep restriction,
+  diagnose insomnia, present the app as a substitute for care, or claim that qualified clinical
+  review of the bundled guidance has occurred. The full local source library is reachable through
+  “About these ideas and sources.”
 - **Local insight before cloud collection.** Detailed behavioural events, exact dates,
   HealthKit samples, source names, app selections, and personal reflections stay local.
   Optional impact sharing must be purpose-limited, separately consented, date-free, minimal,

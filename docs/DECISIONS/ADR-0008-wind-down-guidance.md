@@ -20,19 +20,23 @@ sleep schedule.
 
 ## Decision
 
-Counting Sheep includes a finite, locally bundled guidance library alongside the Wind Down
-ritual. Guidance may appear in four places:
+Counting Sheep includes a locally bundled, source-linked guidance library alongside the Wind Down
+ritual. This is general sleep-health education, not insomnia treatment. Guidance may appear in
+four places:
 
-1. A short example during onboarding, to explain that the app is more than an app shield.
+1. Beside routine choices in Wind Down setup, to explain that suggestions are invitations rather
+   than a checklist.
 2. One optional, stable idea on Home before Wind Down.
 3. One short phase-appropriate cue during wind-down or morning quiet, including the Live
-   Activity. A person may separately opt into one reviewed guidance tip per night in local
+   Activity. A person may separately opt into one source-linked guidance tip per night in local
    notifications; that tip replaces an existing midpoint cue, never adds a notification.
    Overnight has no educational prompt.
-4. A finite guide in Settings with topic grouping and visible source labels.
+4. The Help & app guide area, with the full library reachable through the secondary
+   **“About these ideas and sources”** link and visible source labels.
 
-Guidance is optional, dismissible, and never a task, score, streak, reward condition, or
-notification campaign. A consented notification tip is finite, deterministic for the
+Guidance and routine suggestions are optional, dismissible, and never a task, score, streak,
+reward condition, checkmark, verification, or notification campaign. A consented notification tip
+is deterministic for the
 night, locally bundled, and limited to one per night. Detailed HealthKit and Screen Time
 data must not automatically produce individualized sleep advice. Any future adaptive
 experiment requires its own decision record.
@@ -44,9 +48,11 @@ personal caffeine cutoff. The app must not implement sleep
 restriction, sleep-efficiency targets, diagnosis, medication advice, PSQI scoring, or
 claims that Wind Down improves sleep.
 
-Every item carries a source identifier. The reviewed source list lives in
-`docs/SLEEP_GUIDANCE_SOURCES.md`; content must be reviewed by a qualified sleep or CBT-I
-reviewer before external release.
+Every item carries a source identifier. The source register lives in
+`docs/SLEEP_GUIDANCE_SOURCES.md`, and the full register remains locally bundled. The register
+does not claim that qualified clinical review has occurred. Any future treatment-adjacent,
+personalized, or insomnia-specific experiment requires qualified sleep/CBT-I review before
+external release.
 
 ## Consequences
 
@@ -57,7 +63,7 @@ reviewer before external release.
   new engagement channel; usage-aware reminders are generic and phase-specific.
 - Guidance content can be audited and updated without changing the session state machine.
 - App Store copy must describe support for winding down, not treatment or sleep outcomes.
-- The previous post-1.0 educational-note gate is satisfied for the current curated scope;
+- The current general educational scope makes no clinical-review or treatment claim;
   adaptive coaching remains deferred. A later optional seven-night experiment may observe
   HealthKit wake-time context plus one chosen topic (morning light, late meals, or caffeine
   timing), with one end reflection and no checklist, reward, score, or sharing; qualified

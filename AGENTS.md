@@ -31,7 +31,7 @@ Help people stop doomscrolling around sleep by making it easy, warm, and even a 
 delightful to physically put the phone in another room before bed and let it wake after
 they do. The user-facing nightly ritual is **Wind Down** (represented internally by the
 established `NightWatch*` types): one phone-away session spans wind down before bed, the
-overnight period, and quiet time after waking. **Phone Break** is the secondary, one-time or
+overnight period, and quiet time after waking. **Phone Away** is the secondary, one-time or
 scheduled phone-away mode outside that ritual. The optional Apple Watch companion mirrors the
 phone-authoritative timer. UWB placement checking is deferred from the current release.
 
@@ -45,7 +45,7 @@ productivity timer or medical sleep tracker.
 
 - A Wind Down ritual app: put the phone away, wind down, and wake before it does
 - Warm, playful, cozy, emotionally safe — pixel-art farm aesthetic, gentle copy
-- Low friction: configure once, then one tap to start Wind Down; Phone Break stays optional
+- Low friction: configure once, then one tap to start Wind Down; Phone Away stays optional
 - Honest about what it measures (quiet minutes around sleep, protected nights, and
   "nights your phone slept in the other room")
 - Purposeful gamification: sheep search, rarity, farm management, collection, trading,
@@ -73,7 +73,7 @@ Eight targets (defined in `project.yml`):
 | Target | Type | Notes |
 |---|---|---|
 | `PhoneInTheOtherRoom` | iOS app | Sources: `Shared/` + `PhoneInTheOtherRoomApp/`. Embeds the Watch app. iPhone-only. |
-| `PhoneInTheOtherRoomWatchApp` | watchOS app | Sources: `Shared/` + `PhoneInTheOtherRoomWatchApp/`. Optional companion that mirrors the phone-authoritative Wind Down or Phone Break timer. |
+| `PhoneInTheOtherRoomWatchApp` | watchOS app | Sources: `Shared/` + `PhoneInTheOtherRoomWatchApp/`. Optional companion that mirrors the phone-authoritative Wind Down or Phone Away timer. |
 | `PhoneInTheOtherRoomLiveActivity` | iOS Widget extension | Lock Screen, Dynamic Island, and paired-Watch Smart Stack run status. Embedded in the iOS app. |
 | `PhoneInTheOtherRoomScreenTimeReport` | iOS app extension | Embedded DeviceActivity report extension. Main app + extension compile with `SCREEN_TIME_REPORTS`, share scoped selections through the approved App Group, and carry Family Controls entitlements. |
 | `PhoneInTheOtherRoomDeviceActivityMonitor` | iOS app extension | Enforces the consented selected-app barrier through the protected session while the app is suspended. |
@@ -97,8 +97,10 @@ flowchart LR
     WCM <-->|"WatchMessage over WatchConnectivity"| WCW
 ```
 
-1. The user configures bedtime, wake time, two quiet bookends, two optional offline cues,
-   and a session guard in `FocusRunSetupView`. Before the wind-down window the plan is
+1. The user configures bedtime, wake time, two quiet bookends, an ordered private sequence of
+   up to three evening suggestions and two morning suggestions, and a session guard in
+   `FocusRunSetupView`. Putting the phone away is always the first evening suggestion. Before
+   the wind-down window the plan is
    saved; during it, one tap calls `FocusRunViewModel.requestStartNightWatch()`.
 2. `NightWatchPreferences` creates an anchored `NightWatchPlan`; the iPhone persists and
    keeps its wall-clock transitions even while either app is backgrounded. Local reminders
@@ -246,9 +248,20 @@ skills/                        ← portable agent skills (see skills/README.md)
 - An early-ended run advances no sheep search but keeps its factual trail receipt. The product
   does not need automatic sheep deletion after a missed night; future lifecycle mechanics remain
   open product decisions rather than assumed permanent restrictions.
-- Successfully completed additional-quiet periods map up to 75 minutes toward a future
-  non-guaranteed search. They never resolve sheep; guaranteed or early-ended primary runs
-  consume no mapped minutes.
+- Successfully completed additional-quiet periods map up to the centrally configured 100-minute
+  Phone Away search meter toward a future non-guaranteed search. They never resolve sheep;
+  guaranteed or early-ended primary runs consume no mapped minutes.
+- The user-facing action labels are **“Put phone away,” “Start now,”** and **“Plan.”** Copy does
+  not force the mode name into awkward verbs.
+- Wind Down setup may hold up to three ordered evening suggestions and two morning suggestions.
+  These are private, optional ideas with no checkmarks, verification, reward, score, streak, or
+  claim that a suggestion was completed. Guidance appears beside those choices, on Home, and at
+  phase-appropriate moments. The source library is bundled locally and reached from the secondary
+  **“About these ideas and sources”** link; “finite guide” is an internal description only.
+- Settings is organized as **Your Wind Down**, **Connections**, and **Help & app guide**. There is
+  one Wind Down configuration route, not a duplicate Review Wind Down route.
+- Farm's user-facing task labels are **Ollie's Search** and **Search Journal**. Existing internal
+  search/history type names may remain stable while copy migrates.
 - Use the belonging test in `docs/PRODUCT_PRINCIPLES.md` to clarify how a feature supports the
   product. It is a decision aid, not a veto over explicit founder direction.
 
@@ -287,7 +300,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 5. If your change touches `project.yml`, targets, entitlements, signing, or the tab structure: **stop and confirm with the human first**. Never run more than one agent at a time on these.
 6. General Friends and release-facing Screen Time UI remain gated by their relevant decision
    records. ADR-0016 authorizes only the feature-flagged invite-only Slumber Party slice.
-   Farm, The Barn, Trail Board, sheep lifecycle, wool, Shop, and customization work is an
+   Farm, The Barn, Ollie's Search, sheep lifecycle, wool, Shop, and customization work is an
    approved direction when explicitly requested. Implement it with new production models and
    real persisted data; never wire `MVPMockData` or `Views/MVP/` into release flows.
 
@@ -324,7 +337,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 
 | Feature | Status | Gate |
 |---|---|---|
-| Farm / The Barn / Trail Board | Implemented with real persisted data | Do not wire `MVPMockData`; follow ADR-0015 |
+| Farm / The Barn / Ollie's Search | Implemented with real persisted data | Do not wire `MVPMockData`; follow ADR-0015 |
 | Sheep lifecycle + wool | Implemented | Persist backwards-compatibly; centralize and test balance rules |
 | Farm Shop + Ollie/farm cosmetics | Implemented, nested in Farm | Fixed local catalogue; follow ADR-0015 |
 | Human avatar + cosmetics | Implemented local foundation | Keep inclusive and data-compatible; expand with finished assets |
@@ -345,7 +358,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
    Supabase dependency, Apple-linked Slumber Party identity, and enabled/disabled configuration.
 3. Re-run a signed archive with the configured bundle IDs, Team ID, and version numbers.
 4. App Store 1.0 stays four tabs (Home + Nights + Farm + Settings). Farm may contain The Barn,
-   Trail Board, Farm Shop, and customization; the legacy mock UI remains behind the explicit
+   Ollie's Search, Farm Shop, and customization; the legacy mock UI remains behind the explicit
    Debug preview flag. NFC, read-only HealthKit sleep, Screen Time reports, and optional
    continuous selected-app shielding serve the bedtime ritual.
 5. Manual QA per `docs/PLAYBOOKS/testflight-readiness.md`.
@@ -357,7 +370,10 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 
 The invite-only seven-night Slumber Party exception was reconciled on 2026-08-12 across the
 project brief, principles, architecture, privacy/release docs, backlog, ADR-0003/0005, and
-ADR-0016. The general Friends and social-network restrictions still apply.
-No documentation drift is currently known.
+ADR-0016. The Phone Away rename, 100-minute balance, private suggestion sequence, guidance
+placement/source link, Settings grouping, and concrete Farm labels were reconciled on
+2026-08-13. General Friends and social-network restrictions still apply. Internal
+`additionalQuiet`, `PhoneBreak`, `QuietTime`, `NightWatch*`, persisted enum values, and `ollie.*`
+keys remain backward-compatible; none of those identifiers are user-facing copy.
 
 Continue to verify documentation claims against code and `project.yml` as the implementation moves.

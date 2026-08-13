@@ -11,7 +11,7 @@ The publication draft is `docs/PUBLIC_PRIVACY_POLICY.md`; App Store field guidan
 
 | Data | Purpose | Location / retention | Leaves device by default? |
 |---|---|---|---|
-| Wind Down / Phone Break plan and active run | Run the requested phone-away session and restore it | Standard UserDefaults; latest state | No |
+| Wind Down / Phone Away plan and active run | Run the requested phone-away session and restore it | Standard UserDefaults; latest state | No |
 | Ritual records and events | Receipts, quiet-minute history, reliability/evidence | Standard UserDefaults; 90 days | No |
 | Morning reflection | Optional personal context | Standard UserDefaults; 45 days | No |
 | HealthKit `sleepAnalysis` | Sleep interval, duration, core/deep/REM/unspecified/awake where present | Read on demand; derived summaries in memory | No |
@@ -19,6 +19,10 @@ The publication draft is `docs/PUBLIC_PRIVACY_POLICY.md`; App Store field guidan
 | Shield schedule/status evidence | Apply/clear the two bookends and avoid claiming unobserved protection | App Group; bounded 40 status entries | No |
 | NFC phone-bed registration | Confirm the chosen physical tag | Standard UserDefaults; SHA-256 digest only | No |
 | Flock/progress and legacy reward fields | Local ritual feedback and compatible decoding | Standard UserDefaults | No |
+
+Wind Down routine suggestions are a private ordered sequence: up to three evening suggestions
+and two morning suggestions, with putting the phone away fixed first. They are not checklists and
+carry no verification, reward, score, streak, or completion claim.
 
 Counting Sheep requests **read access only** to HealthKit
 `HKCategoryTypeIdentifierSleepAnalysis`. It does not request HealthKit write access,
@@ -118,8 +122,8 @@ private-night state, or any list of who did not check in. For a two- or three-me
 suppresses an exact positive count where it would reveal an individual's absence.
 
 Slumber Party never receives exact bedtime, wake time, run duration, early-ending reason, additional
-quiet, HealthKit or raw sleep data, Screen Time selections, selected apps, NFC information,
-purpose/cue text, notification state, Farm inventory, sheep, wool, transaction data, or
+quiet, routine steps, schedules, absence, HealthKit or raw sleep data, Screen Time selections,
+selected apps, NFC information, purpose/cue text, notification state, Farm inventory, sheep, wool, transaction data, or
 `impact_nights`. These sources remain logically and permission-wise separate.
 
 The app provides leave, block, report, sharing, Slumber Party deletion, and full online-account

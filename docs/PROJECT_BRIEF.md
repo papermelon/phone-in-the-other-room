@@ -9,14 +9,14 @@ bed, the user starts Wind Down and physically puts the phone in another room; it
 stays tucked away overnight and through a chosen morning-quiet window. An Apple Watch can make
 the phone-authoritative timer glanceable, while the current release starts protection with
 either the timer or an optional NFC tag. Ollie, a pixel-art border collie,
-guards the ritual and offers one user-chosen offline cue before bed and after waking. This is
-a Wind Down ritual, not a productivity tool or sleep-quality tracker. The established
+guards the ritual and offers a private sequence of up to three evening and two morning
+suggestions. This is a Wind Down ritual, not a productivity tool or sleep-quality tracker. The established
 `NightWatch*` names remain internal for persisted-data compatibility.
 
 First-run onboarding makes the promise legible: app shielding is the simplest no-hardware
-starting point, NFC is an optional second layer, and Wind Down also offers a finite, locally
-bundled set of cautious screen-time and sleep-habit ideas. These ideas are invitations, not
-medical treatment, scores, or a feed. Its final save action explicitly hands off to a short,
+starting point, NFC is an optional second layer, and Wind Down also offers locally bundled,
+cautious screen-time and general sleep-health ideas beside private routine choices. These ideas
+are invitations, not insomnia treatment, scores, or a feed. Its final save action explicitly hands off to a short,
 dismissible app tour that spotlights the real Home plan, start action, and bottom navigation. A real
 five-minute practice is offered afterward but never gates finishing the tour.
 
@@ -44,8 +44,8 @@ with a warmer loop:
 
 ```
 requested wind-down cue → open the app-access barrier →
-optional Wind Down check → one offline evening cue → Ollie keeps the quiet →
-one quiet morning cue → the phone wakes later → Ollie's Trail Note → Farm choices
+optional Wind Down check → private evening suggestions → Ollie keeps the quiet →
+private morning suggestions → the phone wakes later → Search Journal → Farm choices
 ```
 
 The product loop is deliberately closed but small: **Prompt → Protect → Observe → Learn**.
@@ -76,10 +76,12 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   wind-down / overnight / morning-quiet phases → morning completion or kind early end.
   Active runs label those phases as phone-free wind-down, sleep time, and phone-free morning.
   Silent phase-change notices support bedtime and waking, followed by the requested audible
-  completion. Setup also offers a private, optional reason for the quiet; custom wording stays
-  in-app unless the person separately allows it in notifications. Home names the exact
-  eligible ritual before it starts: the usual Wind Down, a bounded Phone Break, or the
-  optional five-minute practice. App limits can be skipped for one run without changing
+  completion. Setup also offers a private, optional ordered sequence of up to three evening
+  suggestions and two morning suggestions. Putting the phone away is always first. Suggestions
+  have no checkmarks, verification, reward, score, streak, or claim that they were completed.
+  Custom wording stays in-app unless the person separately allows it in notifications. Home names
+  the exact eligible ritual before it starts: the usual Wind Down, a bounded Phone Away, or the
+  optional five-minute practice. Actions use “Put phone away,” “Start now,” and “Plan.” App limits can be skipped for one run without changing
   the saved shielding preference.
   NFC is the default Wind Down tag for new plans; App Shielding remains the simplest
   no-hardware path. A writable generic NDEF tag can be
@@ -92,9 +94,9 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   morning quiet; the barrier spans overnight and always has an early exit through the
   registered Wind Down tag or Counting Sheep's emergency exit.
   Home stays focused on the saved plan and one-tap start; its schedule block opens the timing editor
-  and a Phone Break schedule card opens a finite Once / Repeats editor for bounded phone-away breaks.
+  and a Phone Away schedule card opens a Once / Repeats editor for bounded phone-away breaks.
 - **Nights (one finite scroll)**: the latest primary night as the main result, consistently
-  dated by the night-ending wake day; a newer Phone Break appears only as a compact
+  dated by the night-ending wake day; a newer Phone Away appears only as a compact
   secondary row. A seven-day board keeps protected, ended-early, and additional-only states
   distinct, while **View all nights** opens the shared calendar summary and grouped per-day
   detail. Morning note, Apple Health, and Screen Time appear together as optional context for
@@ -115,16 +117,21 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   causation. Detailed behavioural and HealthKit history stays on the phone.
 - **Farm**: a living paged pasture backed by the real active flock; one current narrative
   action; compact flock, discovery, and wool status; The Barn for finite capacity,
-  shearing, trading, favourites, and pending arrivals; the Trail Board for missing sheep and
-  one favoured lead; Ollie's Trail Notes for persisted results; and the nested Farm Shop plus
+  shearing, trading, favourites, and pending arrivals; **Ollie's Search** for missing sheep and
+  one favoured lead; **Search Journal** for persisted results; and the nested Farm Shop plus
   Your Shepherd customization. Discovery history remains after an owned sheep is traded.
-  The feature-flagged **Slumber Party** hub is also nested here: two to eight Apple-linked,
+  The feature-flagged **Slumber Party** experience appears as a full-width contextual card on
+  Farm and Home when enabled. Two to eight Apple-linked,
   invited members share only positive phone-tucked and quiet-morning states through one
   seven-night challenge. It has preset identities, system aliases, fixed reactions, safety and
   deletion controls, and no feed, chat, discovery, leaderboard, reward, or Farm economy effect.
-  A compact aggregate may appear on Home before Wind Down; active Wind Down has no social UI.
-- **Settings**: Appearance, Wind Down schedule, bookends, App Shielding or NFC + App Shielding, automatic Wind Down and shielding;
-  a replayable “How Wind Down works” explanation and a finite, source-linked guidance guide;
+  Slumber Party may support commitment and shared joy, but routines, schedules, absence, Health
+  data, and private details remain unshared; active Wind Down has no social UI.
+- **Settings**: **Your Wind Down**, **Connections**, and **Help & app guide**. Your Wind Down
+  contains Appearance, schedule, bookends, App Shielding or NFC + App Shielding, and automatic
+  Wind Down and shielding. Help & app guide contains “How Wind Down works,” guidance beside
+  routine choices, and the secondary **“About these ideas and sources”** link to the full locally
+  bundled source library. There is no duplicate Review Wind Down setup route. Connections contains
   Apple Health, Screen Time, and notification connections; optional impact-sharing controls;
   a destructive local reset that erases the saved Wind Down plan, NFC pairing, selections, and local history
   before returning to Welcome; system permissions and remote impact records remain outside that reset;
@@ -165,5 +172,5 @@ breeding or seasonal migration. They are not required for the current Farm loop.
 6. **Quiet behaviour and sleep outcomes are both observed honestly**: evaluate completed
    quiet minutes and, only with HealthKit consent, changes in sleep duration/stages and
    morning restfulness. Report sample sizes and associations; do not claim causation.
-7. **The payoff is legible**: testers can explain how Wind Down creates a Trail Note, how a
+7. **The payoff is legible**: testers can explain how Wind Down creates a Search Journal entry, how a
    sheep reaches The Barn, and how keeping, shearing, trading, and customization differ.

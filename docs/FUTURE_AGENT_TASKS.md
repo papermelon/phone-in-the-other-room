@@ -12,12 +12,22 @@ execute without human sign-off mid-task (final merge review still applies per
 ## Recently completed
 
 - **2026-08-13 · Codex:** Implemented the progressive three-step Home guide with one-time
-  contextual spotlights that reuse the Home coach-mark language, the capitalized Phone Break mode,
-  its carried 75-minute bonus-search meter
+  contextual spotlights that reuse the Home coach-mark language, the capitalized Phone Away mode,
+  its carried 100-minute bonus-search meter
   and isolated deterministic odds ladder, plus finite NHLBI-sourced meal and caffeine guidance.
   Future sleep-habit experimentation remains gated: seven local-only nights, passive HealthKit
   wake context, one chosen topic, one end reflection, no checklist/reward/sharing, and qualified
   sleep/CBT-I review before external release.
+
+- **2026-08-13 · Codex:** Reconciled the founder-approved product contract across canonical
+  documentation: Wind Down remains the nightly sleep-bookends ritual; Phone Away uses “Put phone
+  away,” “Start now,” and “Plan”; internal `additionalQuiet`, `PhoneBreak`, `QuietTime`,
+  `NightWatch*`, persisted enum values, and `ollie.*` keys remain backward-compatible; the
+  centrally configured Phone Away meter is 100 minutes; Wind Down supports private ordered
+  suggestions (up to three evening, two morning, phone away first) without completion claims;
+  guidance is general sleep-health education rather than insomnia treatment; and the full source
+  register is local under “About these ideas and sources.” Settings, Farm labels, Slumber Party
+  contextual-card placement, and privacy boundaries are documented. No clinical review is claimed.
 
 - **2026-08-12 · Codex + human device confirmation:** Redesigned the Apple Watch companion
   around the current storybook Ollie, shared the exact iPhone app icon, and validated current
@@ -36,7 +46,7 @@ execute without human sign-off mid-task (final merge review still applies per
 
 - **2026-08-11 · Codex:** Completed the Farm presentation pass: rebuilt the Farm Shop as a
   non-clipping category catalogue with one wool balance, owned progress, compact responsive item
-  cards, and explicit affordability/equipment states; clarified Trail Board tracking copy and
+  cards, and explicit affordability/equipment states; clarified Ollie's Search tracking copy and
   metrics; added meaningful Farm destination counts; and replaced twelve generic Shop,
   decoration, wardrobe, and equipment glyphs with transparent pixel-art inventory assets.
 
@@ -51,9 +61,9 @@ execute without human sign-off mid-task (final merge review still applies per
   deltas, and sheep trading now use wool throughout.
 
 - **2026-08-10 · Codex:** Implemented the production Farm lifecycle and ADR-0015: individual
-  migrated flock inventory, permanent discovery and Trail Note history, paged pastures, finite
+  migrated flock inventory, permanent discovery and Search Journal history, paged pastures, finite
   Barn capacity and pending arrivals, protected-night wool regrowth, user-directed shearing and
-  selling, tracked Trail Board leads, the original local dual-currency Farm Shop,
+  selling, tracked Ollie's Search leads, the original local dual-currency Farm Shop,
   Ollie/Farm/Shepherd equipment,
   and inclusive local shepherd customization. Production flows use `FarmState` and
   `SheepSearchState`; the legacy mock layer remains isolated.
@@ -83,11 +93,11 @@ execute without human sign-off mid-task (final merge review still applies per
   older-OS behavior, approximately-five-minute restoration, cold/background launch routing,
   fixed-size Ollie rendering, and repeated tab navigation in each phase.
 
-- **2026-08-08 · Codex:** Shipped the completion receipt and first Trail Note reveal redesign. The
+- **2026-08-08 · Codex:** Shipped the completion receipt and first Search Journal reveal redesign. The
   factual receipt now comes first; the single reveal action reads the persisted outcome by run ID
-  without resolving again, and the Trail Note remains fully scrollable with found and trail-only
+  without resolving again, and the Search Journal entry remains fully scrollable with found and search-only
   branches. Reworked the shipping Farm into pasture/flock overview, latest-arrival or quiet state,
-  compact trail map, and finite early Trail Board with “Still searching” / “Home” language. Added
+  compact search map, and finite early Ollie's Search with “Still searching” / “Home” language. Added
   idempotent outcome-reopen coverage and Dynamic Type / Reduce Motion previews. Physical-device
   VoiceOver and smallest-device QA remain follow-ups.
 
@@ -186,6 +196,19 @@ execute without human sign-off mid-task (final merge review still applies per
   by explicit launch approval; finish the remaining external gates before enabling
   production notification delivery or calling this item complete.
 
+### B5. Apply the Phone Away contract in release copy and balance code
+- **Why:** the 2026-08-13 documentation contract intentionally leaves Swift/UI strings and
+  their tests untouched. Release code still exposes the former secondary-mode label, legacy Farm
+  search labels, and the old meter wording.
+- **Mode:** Codex · **Size:** M · **Autonomous:** no — user-facing copy and balance migration
+  require founder review
+- **Accept:** replace user-facing mode and Farm labels with Phone Away, Ollie's Search, and
+  Search Journal; use “Put phone away,” “Start now,” and “Plan” where applicable; centralize the
+  100-minute Phone Away meter as a game-balance value; retain `additionalQuiet`, `PhoneBreak`,
+  `QuietTime`, `NightWatch*`, persisted enum values, and `ollie.*` keys; update affected tests;
+  keep routine suggestions unverified and update the Settings/source-link surfaces. Do not
+  present the 100-minute value as sleep guidance.
+
 ## C. Architecture cleanup (post-first-upload, opportunistic)
 
 ### C2. Split AssetReadyScreens.swift (gated code)
@@ -219,7 +242,7 @@ execute without human sign-off mid-task (final merge review still applies per
   interaction.
 
 ### D3. Curated educational Live Activity notes — completed 2026-08-01
-- **Gate:** reviewed source list and finite guidance surface are shipped in onboarding, Home,
+- **Gate:** source register and locally bundled guidance surfaces are shipped in onboarding, Home,
   the active run, completion, and More. Live Activity remains limited to a single phase cue.
 - **Mode:** Product + Codex · **Size:** S · **Autonomous:** no
 - **Accept:** satisfied by `docs/DECISIONS/ADR-0008-wind-down-guidance.md` and

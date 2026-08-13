@@ -29,7 +29,7 @@ All ordinary builds use exactly four root destinations:
    Set/Start Wind Down action, a clickable schedule editor, and a compact one-time Wind Down card.
 2. **Nights** — a finite, observational record: latest result, flock total, seven-night
    history, morning reflection, Apple Health context, and Screen Time results.
-3. **Farm** — the real-data pasture, The Barn, Trail Board, Farm Shop, and Trail Notes.
+3. **Farm** — the real-data pasture, The Barn, Ollie's Search, Farm Shop, and Search Journal.
 4. **Settings** — the Wind Down plan, App Shielding choice, connections, privacy, help, and app information.
 
 The old More utility sheet and top-bar ellipsis are removed. Friends and the legacy Farm/Shop/
@@ -40,7 +40,7 @@ Farm Shop is a distinct real-data destination nested under Farm.
 ### Ollie's search
 
 Every persisted successful search outcome creates an individual Farm arrival. Farm separates
-owned `FlockSheep` inventory from permanent catalogue discovery and Trail Note history. Rarity
+owned `FlockSheep` inventory from permanent catalogue discovery and Search Journal history. Rarity
 affects wool yield, regrowth, and trade value as specified by ADR-0015.
 
 `UserProgress.totalCompletedRuns` remains the protected-night count. Search outcomes and found

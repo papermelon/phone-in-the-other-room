@@ -11,7 +11,7 @@ Last read-only App Store Connect audit: **2026-07-30, Asia/Singapore**.
 - Version 1.0: **Prepare for Submission**
 - TestFlight build 2: **processed successfully** and selected for App Store version 1.0.
 - Build 10 is the current local candidate and adds the Home/Nights/Farm/Settings shell;
-  Farm includes a living flock, The Barn, Trail Board, Trail Notes, and local customization,
+  Farm includes a living flock, The Barn, Ollie's Search, Search Journal, and local customization,
   NFC-authenticated ending, Live Activity layout fixes, and optional-sharing/feedback flows.
   Physical retest, screenshots, privacy updates, and upload remain pending.
 - No iPhone or Watch screenshots are uploaded.
@@ -53,7 +53,7 @@ Counting Sheep includes:
 • Optional selected-app shielding through Wind Down and sleep
 • App Shielding or NFC + App Shielding; legacy timer, QR, and Watch data remain compatible
 • A calm Lock Screen Live Activity while Wind Down is running
-• Quiet-minute history, a factual seven-night record, and Ollie's persisted sheep-search Trail Notes
+• Quiet-minute history, a factual seven-night record, and Ollie's persisted sheep-search Search Journal
 • Optional Apple Health sleep duration and available sleep stages
 • Private morning reflections and cautious sleep-context comparisons
 • A direct feedback and support path
@@ -190,7 +190,8 @@ account identifier under User ID.
 At minimum, capture truthful Release-build screens showing:
 
 1. Home: tonight’s Wind Down plan and one primary start action.
-2. Settings: finite Wind Down, Connections, Data & Privacy, Help, and About groups.
+2. Settings: Your Wind Down, Connections, and Help & app guide groups, including the secondary
+   “About these ideas and sources” link.
 3. Active Wind Down: calm current phase with early exit visible.
 4. Nights: cumulative flock, completed quiet minutes, and seven-night history.
 5. Nights: optional sleep duration/stages and the association-not-causation comparison.
