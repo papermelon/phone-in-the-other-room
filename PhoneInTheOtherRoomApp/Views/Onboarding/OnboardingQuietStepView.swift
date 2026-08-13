@@ -6,76 +6,62 @@ struct OnboardingQuietStep: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             onboardingTitle(
-                eyebrow: "OPTIONAL CUES",
-                title: "What should the quiet make room for?",
-                detail: "Choose one small evening cue and one morning cue. Both are optional—leave either blank to skip it. Nothing is a checklist."
+                eyebrow: "PRIVATE ROUTINE",
+                title: "Give the quiet a gentle shape.",
+                detail: "Put the phone away first, then choose a few ideas for the evening and morning. They stay private and remain optional."
             )
 
-            cueEditor(
-                title: "In the evening",
-                text: Binding(
-                    get: { draft.eveningCueText ?? "" },
-                    set: { draft.eveningCueText = PhoneFreeCue.normalized($0) }
-                ),
-                suggestions: PhoneFreeActivity.eveningChoices,
-                selectedActivity: $draft.eveningActivity
-            )
-            cueEditor(
-                title: "After waking",
-                text: Binding(
-                    get: { draft.morningCueText ?? "" },
-                    set: { draft.morningCueText = PhoneFreeCue.normalized($0) }
-                ),
-                suggestions: PhoneFreeActivity.morningChoices,
-                selectedActivity: $draft.morningActivity
+            WindDownRoutineEditor(
+                eveningSteps: $draft.eveningRoutine,
+                morningSteps: $draft.morningRoutine,
+                onChange: syncLegacyFields
             )
         }
     }
 
-    private func cueEditor(
-        title: String,
-        text: Binding<String>,
-        suggestions: [PhoneFreeActivity],
-        selectedActivity: Binding<PhoneFreeActivity>
-    ) -> some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text(title)
-                    .font(AppTypography.headline)
-                TextField("Add your own cue (optional)", text: text)
-                    .textFieldStyle(.roundedBorder)
-                Text("A few ideas, if they help")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-
-                LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: 124), spacing: AppSpacing.xs)],
-                    alignment: .leading,
-                    spacing: AppSpacing.xs
-                ) {
-                    ForEach(suggestions) { activity in
-                        Button {
-                            selectedActivity.wrappedValue = activity
-                            text.wrappedValue = activity.title
-                        } label: {
-                            Text(activity.title)
-                                .font(AppTypography.caption)
-                                .multilineTextAlignment(.center)
-                                .lineLimit(2)
-                                .minimumScaleFactor(0.85)
-                        }
-                        .buttonStyle(PixelChipButtonStyle(isSelected: text.wrappedValue == activity.title))
-                    }
-                }
-            }
+    private func syncLegacyFields() {
+        var updated = draft
+        if let custom = updated.eveningRoutine.first(where: { $0.kind == .custom }) {
+            updated.eveningCueText = custom.customText
+        } else {
+            updated.eveningCueText = nil
         }
+        if let activity = updated.eveningRoutine.first(where: { $0.kind == .suggestion })?.activity {
+            updated.eveningActivity = activity
+        }
+        if let custom = updated.morningRoutine.first(where: { $0.kind == .custom }) {
+            updated.morningCueText = custom.customText
+        } else {
+            updated.morningCueText = nil
+        }
+        if let activity = updated.morningRoutine.first(where: { $0.kind == .suggestion })?.activity {
+            updated.morningActivity = activity
+        }
+        draft = updated
     }
 }
 
 #Preview("Optional cues") {
     var draft = OnboardingDraft()
-    draft.eveningCueText = "Read a few pages"
+    draft.eveningRoutine = [
+        .suggested(.read, phase: .evening),
+        .custom("Leave room for a sketch", phase: .evening)
+    ]
+    draft.morningRoutine = []
     return OnboardingQuietStep(draft: .constant(draft))
         .padding()
         .background(AppColors.paper)
+}
+
+#Preview("Optional cues · three ideas") {
+    var draft = OnboardingDraft()
+    draft.eveningRoutine = [
+        .suggested(.read, phase: .evening),
+        .suggested(.stretch, phase: .evening),
+        .custom("Put tomorrow's worries on paper", phase: .evening)
+    ]
+    return OnboardingQuietStep(draft: .constant(draft))
+        .padding()
+        .background(AppColors.paper)
+        .environment(\.dynamicTypeSize, .accessibility3)
 }

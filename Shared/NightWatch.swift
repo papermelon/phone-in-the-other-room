@@ -90,6 +90,160 @@ enum PhoneFreeCue {
     }
 }
 
+enum WindDownRoutinePhase: String, Codable, CaseIterable, Hashable {
+    case evening
+    case morning
+}
+
+enum WindDownRoutineStepKind: String, Codable, CaseIterable, Hashable {
+    case suggestion
+    case custom
+}
+
+/// A private invitation in the Wind Down sequence. The model intentionally has
+/// no completion field: choosing an idea is not a promise that it happened.
+struct WindDownRoutineStep: Codable, Equatable, Identifiable, Hashable {
+    static let maximumEveningCount = 3
+    static let maximumMorningCount = 2
+    static let phoneAwayTitle = "Put phone away"
+
+    let id: UUID
+    let phase: WindDownRoutinePhase
+    let kind: WindDownRoutineStepKind
+    let activity: PhoneFreeActivity?
+    let customText: String?
+    let guidanceID: String?
+
+    init(
+        id: UUID = UUID(),
+        phase: WindDownRoutinePhase,
+        kind: WindDownRoutineStepKind,
+        activity: PhoneFreeActivity? = nil,
+        customText: String? = nil,
+        guidanceID: String? = nil
+    ) {
+        self.id = id
+        self.phase = phase
+        self.kind = kind
+        self.activity = kind == .suggestion ? activity : nil
+        self.customText = kind == .custom ? PhoneFreeCue.normalized(customText) : nil
+        self.guidanceID = kind == .suggestion ? guidanceID : nil
+    }
+
+    static func suggested(
+        _ activity: PhoneFreeActivity,
+        phase: WindDownRoutinePhase,
+        id: UUID = UUID(),
+        guidanceID: String? = nil
+    ) -> Self {
+        Self(
+            id: id,
+            phase: phase,
+            kind: .suggestion,
+            activity: activity,
+            guidanceID: guidanceID ?? activity.defaultGuidanceID(for: phase)
+        )
+    }
+
+    static func custom(
+        _ text: String,
+        phase: WindDownRoutinePhase,
+        id: UUID = UUID()
+    ) -> Self {
+        Self(id: id, phase: phase, kind: .custom, customText: text)
+    }
+
+    var title: String {
+        switch kind {
+        case .suggestion:
+            return activity?.title ?? "Quiet idea"
+        case .custom:
+            return customText ?? "Quiet idea"
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, phase, kind, activity, customText, guidanceID
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        phase = try container.decodeIfPresent(WindDownRoutinePhase.self, forKey: .phase) ?? .evening
+        kind = try container.decodeIfPresent(WindDownRoutineStepKind.self, forKey: .kind) ?? .custom
+        activity = kind == .suggestion
+            ? try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .activity)
+            : nil
+        customText = kind == .custom
+            ? PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .customText))
+            : nil
+        guidanceID = kind == .suggestion
+            ? try container.decodeIfPresent(String.self, forKey: .guidanceID)
+            : nil
+    }
+
+    static func normalized(
+        _ steps: [Self],
+        for phase: WindDownRoutinePhase
+    ) -> [Self] {
+        let limit = phase == .evening ? maximumEveningCount : maximumMorningCount
+        var normalized: [Self] = []
+        var seenActivities = Set<PhoneFreeActivity>()
+
+        for step in steps where normalized.count < limit && step.phase == phase {
+            switch step.kind {
+            case .suggestion:
+                guard let activity = step.activity, !seenActivities.contains(activity) else { continue }
+                seenActivities.insert(activity)
+                normalized.append(
+                    Self.suggested(
+                        activity,
+                        phase: phase,
+                        id: step.id,
+                        guidanceID: step.guidanceID
+                    )
+                )
+            case .custom:
+                guard let text = PhoneFreeCue.normalized(step.customText), !isPhoneAwayText(text) else {
+                    continue
+                }
+                normalized.append(Self.custom(text, phase: phase, id: step.id))
+            }
+        }
+        return normalized
+    }
+
+    static func migrated(
+        phase: WindDownRoutinePhase,
+        activity: PhoneFreeActivity,
+        cueText: String?
+    ) -> [Self] {
+        if let cueText = PhoneFreeCue.normalized(cueText) {
+            return [custom(cueText, phase: phase)]
+        }
+        return [suggested(activity, phase: phase)]
+    }
+
+    private static func isPhoneAwayText(_ text: String) -> Bool {
+        let compact = text
+            .lowercased()
+            .filter { $0.isLetter || $0.isNumber }
+        return ["putphoneaway", "putthephoneaway", "phoneaway"].contains(compact)
+    }
+}
+
+private extension PhoneFreeActivity {
+    func defaultGuidanceID(for phase: WindDownRoutinePhase) -> String? {
+        switch (phase, self) {
+        case (.evening, .read), (.evening, .makeTea): return "quiet-hour"
+        case (.evening, .journal): return "rest-not-performance"
+        case (.evening, .shower): return "calm-room"
+        case (.morning, .openCurtains), (.morning, .morningWalk): return "morning-light"
+        default: return nil
+        }
+    }
+}
+
 struct NightWatchPreferences: Codable, Equatable {
     var bedtimeHour: Int
     var bedtimeMinute: Int
@@ -101,6 +255,8 @@ struct NightWatchPreferences: Codable, Equatable {
     var morningActivity: PhoneFreeActivity
     var eveningCueText: String?
     var morningCueText: String?
+    var eveningRoutine: [WindDownRoutineStep]
+    var morningRoutine: [WindDownRoutineStep]
     var guardKind: SessionGuardKind
     var isConfigured: Bool
     var automaticStartEnabled: Bool
@@ -116,6 +272,8 @@ struct NightWatchPreferences: Codable, Equatable {
         morningActivity: .openCurtains,
         eveningCueText: nil,
         morningCueText: nil,
+        eveningRoutine: [WindDownRoutineStep.suggested(.read, phase: .evening)],
+        morningRoutine: [WindDownRoutineStep.suggested(.openCurtains, phase: .morning)],
         guardKind: .nfcTag,
         isConfigured: false,
         automaticStartEnabled: true
@@ -132,6 +290,8 @@ struct NightWatchPreferences: Codable, Equatable {
         morningActivity: PhoneFreeActivity,
         eveningCueText: String? = nil,
         morningCueText: String? = nil,
+        eveningRoutine: [WindDownRoutineStep]? = nil,
+        morningRoutine: [WindDownRoutineStep]? = nil,
         guardKind: SessionGuardKind,
         isConfigured: Bool,
         automaticStartEnabled: Bool = true
@@ -146,6 +306,18 @@ struct NightWatchPreferences: Codable, Equatable {
         self.morningActivity = morningActivity
         self.eveningCueText = PhoneFreeCue.normalized(eveningCueText)
         self.morningCueText = PhoneFreeCue.normalized(morningCueText)
+        self.eveningRoutine = Self.normalizedRoutine(
+            eveningRoutine,
+            phase: .evening,
+            activity: eveningActivity,
+            cueText: self.eveningCueText
+        )
+        self.morningRoutine = Self.normalizedRoutine(
+            morningRoutine,
+            phase: .morning,
+            activity: morningActivity,
+            cueText: self.morningCueText
+        )
         self.guardKind = guardKind
         self.isConfigured = isConfigured
         self.automaticStartEnabled = automaticStartEnabled
@@ -155,6 +327,7 @@ struct NightWatchPreferences: Codable, Equatable {
         case bedtimeHour, bedtimeMinute, wakeHour, wakeMinute
         case windDownMinutes, morningQuietMinutes, eveningActivity, morningActivity
         case eveningCueText, morningCueText
+        case eveningRoutine, morningRoutine
         case guardKind, isConfigured, automaticStartEnabled
     }
 
@@ -170,6 +343,18 @@ struct NightWatchPreferences: Codable, Equatable {
         morningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .morningActivity) ?? Self.defaults.morningActivity
         eveningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .eveningCueText))
         morningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .morningCueText))
+        eveningRoutine = Self.normalizedRoutine(
+            try container.decodeIfPresent([WindDownRoutineStep].self, forKey: .eveningRoutine),
+            phase: .evening,
+            activity: eveningActivity,
+            cueText: eveningCueText
+        )
+        morningRoutine = Self.normalizedRoutine(
+            try container.decodeIfPresent([WindDownRoutineStep].self, forKey: .morningRoutine),
+            phase: .morning,
+            activity: morningActivity,
+            cueText: morningCueText
+        )
         guardKind = try container.decodeIfPresent(SessionGuardKind.self, forKey: .guardKind) ?? Self.defaults.guardKind
         isConfigured = try container.decodeIfPresent(Bool.self, forKey: .isConfigured) ?? false
         // Existing saved plans should not silently begin shielding or sessions after an update.
@@ -234,8 +419,54 @@ struct NightWatchPreferences: Codable, Equatable {
             eveningActivity: eveningActivity,
             morningActivity: morningActivity,
             eveningCueText: eveningCueText,
-            morningCueText: morningCueText
+            morningCueText: morningCueText,
+            eveningRoutine: eveningRoutine,
+            morningRoutine: morningRoutine
         )
+    }
+
+    var presentedEveningRoutineTitles: [String] {
+        [WindDownRoutineStep.phoneAwayTitle] + eveningRoutine.map(\.title)
+    }
+
+    var presentedMorningRoutineTitles: [String] {
+        morningRoutine.map(\.title)
+    }
+
+    /// Keeps old readers useful when a person edits the new sequence. The new
+    /// arrays remain authoritative; these fields stay as a rollback bridge.
+    mutating func syncLegacyFieldsFromRoutine() {
+        if let custom = eveningRoutine.first(where: { $0.kind == .custom }) {
+            eveningCueText = custom.customText
+        } else {
+            eveningCueText = nil
+        }
+        if let activity = eveningRoutine.first(where: { $0.kind == .suggestion })?.activity {
+            eveningActivity = activity
+        }
+        if let custom = morningRoutine.first(where: { $0.kind == .custom }) {
+            morningCueText = custom.customText
+        } else {
+            morningCueText = nil
+        }
+        if let activity = morningRoutine.first(where: { $0.kind == .suggestion })?.activity {
+            morningActivity = activity
+        }
+    }
+
+    private static func normalizedRoutine(
+        _ steps: [WindDownRoutineStep]?,
+        phase: WindDownRoutinePhase,
+        activity: PhoneFreeActivity,
+        cueText: String?
+    ) -> [WindDownRoutineStep] {
+        guard let steps else {
+            return WindDownRoutineStep.normalized(
+                WindDownRoutineStep.migrated(phase: phase, activity: activity, cueText: cueText),
+                for: phase
+            )
+        }
+        return WindDownRoutineStep.normalized(steps, for: phase)
     }
 
     private func nextIntendedBedtime(after date: Date, calendar: Calendar) -> Date {
@@ -334,13 +565,16 @@ struct NightWatchPlan: Codable, Equatable {
     var morningActivity: PhoneFreeActivity
     var eveningCueText: String?
     var morningCueText: String?
+    var eveningRoutine: [WindDownRoutineStep]
+    var morningRoutine: [WindDownRoutineStep]
     /// Primary plans span the sleep bookends. Additional plans are standalone
     /// quiet intervals and must not advance protected-night progression.
     var role: WindDownOccurrenceRole
 
     private enum CodingKeys: String, CodingKey {
         case intendedBedtime, wakeTime, protectedUntil, windDownMinutes, morningQuietMinutes
-        case eveningActivity, morningActivity, eveningCueText, morningCueText, role
+        case eveningActivity, morningActivity, eveningCueText, morningCueText
+        case eveningRoutine, morningRoutine, role
     }
 
     init(
@@ -353,6 +587,8 @@ struct NightWatchPlan: Codable, Equatable {
         morningActivity: PhoneFreeActivity,
         eveningCueText: String? = nil,
         morningCueText: String? = nil,
+        eveningRoutine: [WindDownRoutineStep]? = nil,
+        morningRoutine: [WindDownRoutineStep]? = nil,
         role: WindDownOccurrenceRole = .primarySleepBookend
     ) {
         self.intendedBedtime = intendedBedtime
@@ -364,6 +600,22 @@ struct NightWatchPlan: Codable, Equatable {
         self.morningActivity = morningActivity
         self.eveningCueText = PhoneFreeCue.normalized(eveningCueText)
         self.morningCueText = PhoneFreeCue.normalized(morningCueText)
+        self.eveningRoutine = WindDownRoutineStep.normalized(
+            eveningRoutine ?? WindDownRoutineStep.migrated(
+                phase: .evening,
+                activity: eveningActivity,
+                cueText: self.eveningCueText
+            ),
+            for: .evening
+        )
+        self.morningRoutine = WindDownRoutineStep.normalized(
+            morningRoutine ?? WindDownRoutineStep.migrated(
+                phase: .morning,
+                activity: morningActivity,
+                cueText: self.morningCueText
+            ),
+            for: .morning
+        )
         self.role = role
     }
 
@@ -378,6 +630,24 @@ struct NightWatchPlan: Codable, Equatable {
         morningActivity = try container.decodeIfPresent(PhoneFreeActivity.self, forKey: .morningActivity) ?? .openCurtains
         eveningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .eveningCueText))
         morningCueText = PhoneFreeCue.normalized(try container.decodeIfPresent(String.self, forKey: .morningCueText))
+        eveningRoutine = WindDownRoutineStep.normalized(
+            try container.decodeIfPresent([WindDownRoutineStep].self, forKey: .eveningRoutine)
+                ?? WindDownRoutineStep.migrated(
+                    phase: .evening,
+                    activity: eveningActivity,
+                    cueText: eveningCueText
+                ),
+            for: .evening
+        )
+        morningRoutine = WindDownRoutineStep.normalized(
+            try container.decodeIfPresent([WindDownRoutineStep].self, forKey: .morningRoutine)
+                ?? WindDownRoutineStep.migrated(
+                    phase: .morning,
+                    activity: morningActivity,
+                    cueText: morningCueText
+                ),
+            for: .morning
+        )
         role = try container.decodeIfPresent(WindDownOccurrenceRole.self, forKey: .role) ?? .primarySleepBookend
     }
 
@@ -427,6 +697,19 @@ struct NightWatchPlan: Codable, Equatable {
     func morningNotificationActivityTitle(allowsPersonalText: Bool) -> String? {
         if morningCueText != nil && !allowsPersonalText { return nil }
         return morningActivityTitle
+    }
+
+    func eveningRoutineSummary(allowsPersonalText: Bool) -> String {
+        guard allowsPersonalText else { return WindDownRoutineStep.phoneAwayTitle }
+        let titles = [WindDownRoutineStep.phoneAwayTitle] + eveningRoutine.map(\.title)
+        return titles.joined(separator: " · ")
+    }
+
+    func morningRoutineSummary(allowsPersonalText: Bool) -> String? {
+        guard allowsPersonalText else { return nil }
+        let titles = morningRoutine.map(\.title)
+        guard !titles.isEmpty else { return nil }
+        return titles.joined(separator: " · ")
     }
 
     func nextTransition(after date: Date) -> Date? {

@@ -7,7 +7,6 @@ import FamilyControls
 struct FocusRunSetupView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var purposeCategory: OfflinePurposeCategory = .rest
     @State private var customPurpose = ""
     @State private var includePurposeInNotifications = false
@@ -31,7 +30,7 @@ struct FocusRunSetupView: View {
                     }
                 }
                 tonightPlanCard
-                offlineCuesCard
+                privateRoutineCard
                 protectionCard
             }
             .padding(AppSpacing.md)
@@ -178,89 +177,56 @@ struct FocusRunSetupView: View {
         .frame(minHeight: 44)
     }
 
-    private var offlineCuesCard: some View {
+    private var privateRoutineCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 setupSectionHeader(
-                    title: "Offline cues",
-                    detail: "One gentle cue before bed and after waking.",
+                    title: "Private routine",
+                    detail: "A repeatable sequence of optional ideas around the phone-away ritual.",
                     systemImage: "book.closed.fill"
                 )
-                cueEditor(
-                    title: "Tonight, I’d like to make room for…",
-                    text: Binding(
-                        get: { viewModel.nightWatchPreferences.eveningCueText ?? "" },
-                        set: { viewModel.updatePhoneFreeCue(evening: true, text: $0) }
-                    ),
-                    suggestions: PhoneFreeActivity.eveningChoices,
-                    evening: true
+                WindDownRoutineEditor(
+                    eveningSteps: routineBinding(for: .evening),
+                    morningSteps: routineBinding(for: .morning),
+                    onChange: saveRoutineChanges
                 )
-                cueEditor(
-                    title: "Tomorrow morning, I’d like to…",
-                    text: Binding(
-                        get: { viewModel.nightWatchPreferences.morningCueText ?? "" },
-                        set: { viewModel.updatePhoneFreeCue(evening: false, text: $0) }
-                    ),
-                    suggestions: PhoneFreeActivity.morningChoices,
-                    evening: false
-                )
-                Toggle("Let my words appear in reminders", isOn: $includePurposeInNotifications)
+                Text("Custom words stay inside Counting Sheep unless you separately allow them in reminders.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                Toggle("Let custom words appear in reminders", isOn: $includePurposeInNotifications)
                     .font(AppTypography.caption)
                     .onChange(of: includePurposeInNotifications) { _, _ in savePurpose() }
-                Text("Suggestions are optional. Your words stay inside Counting Sheep unless you choose to show them in a Lock Screen reminder.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                Text("These are gentle cues, never tasks to prove or complete.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
             }
         }
     }
 
-    private func cueEditor(
-        title: String,
-        text: Binding<String>,
-        suggestions: [PhoneFreeActivity],
-        evening: Bool
-    ) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text(title)
-                .font(AppTypography.body.weight(.semibold))
-                .accessibilityAddTraits(.isHeader)
-            TextField(
-                "Offline cue",
-                text: text,
-                prompt: Text("It can be simple, specific, or left blank")
-                    .foregroundStyle(AppColors.muted)
-            )
-            .windDownTextFieldSurface()
-            .accessibilityLabel(title)
-
-            LazyVGrid(columns: suggestionColumns, alignment: .leading, spacing: AppSpacing.xs) {
-                ForEach(suggestions) { activity in
-                    Button {
-                        if evening {
-                            viewModel.nightWatchPreferences.eveningActivity = activity
-                        } else {
-                            viewModel.nightWatchPreferences.morningActivity = activity
-                        }
-                        text.wrappedValue = activity.title
-                    } label: {
-                        Text(activity.title)
-                    }
-                    .buttonStyle(
-                        WindDownSuggestionChipStyle(isSelected: text.wrappedValue == activity.title)
-                    )
+    private func routineBinding(for phase: WindDownRoutinePhase) -> Binding<[WindDownRoutineStep]> {
+        Binding(
+            get: {
+                phase == .evening
+                    ? viewModel.nightWatchPreferences.eveningRoutine
+                    : viewModel.nightWatchPreferences.morningRoutine
+            },
+            set: { steps in
+                if phase == .evening {
+                    viewModel.nightWatchPreferences.eveningRoutine = steps
+                } else {
+                    viewModel.nightWatchPreferences.morningRoutine = steps
                 }
             }
-        }
+        )
     }
 
-    private var suggestionColumns: [GridItem] {
-        if dynamicTypeSize.isAccessibilitySize {
-            return [GridItem(.flexible())]
-        }
-        return [GridItem(.flexible()), GridItem(.flexible())]
+    private func saveRoutineChanges() {
+        var preferences = viewModel.nightWatchPreferences
+        preferences.syncLegacyFieldsFromRoutine()
+        viewModel.nightWatchPreferences = preferences
+        viewModel.updateOfflinePurpose(
+            category: preferences.eveningCueText == nil ? viewModel.offlinePurpose.category : .custom,
+            customText: preferences.eveningCueText,
+            allowsCustomTextInNotifications: includePurposeInNotifications
+        )
+        viewModel.saveNightWatchPreferences()
     }
 
     private var purposeCard: some View {
@@ -535,33 +501,6 @@ private struct WindDownTextFieldSurface: ViewModifier {
 private extension View {
     func windDownTextFieldSurface() -> some View {
         modifier(WindDownTextFieldSurface())
-    }
-}
-
-private struct WindDownSuggestionChipStyle: ButtonStyle {
-    let isSelected: Bool
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(AppTypography.caption)
-            .foregroundStyle(isSelected ? .white : AppColors.ink)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .padding(.horizontal, AppSpacing.xs)
-            .padding(.vertical, AppSpacing.xs)
-            .background(
-                isSelected ? AppColors.grass : AppColors.surfaceMuted,
-                in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-            )
-            .overlay {
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .stroke(
-                        isSelected ? AppColors.grass : AppColors.stroke.opacity(0.48),
-                        lineWidth: isSelected ? 2 : 1.5
-                    )
-            }
-            .opacity(configuration.isPressed ? 0.86 : 1)
     }
 }
 

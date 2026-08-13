@@ -11,7 +11,7 @@ struct WindDownGuideCard: View {
                     Image(systemName: "sparkles")
                         .foregroundStyle(AppColors.grass)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text(compact ? "ONE GENTLE IDEA" : "A GENTLE IDEA")
+                        Text("WHY THIS MAY HELP")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.grass)
                         Text(item.title)
@@ -23,11 +23,248 @@ struct WindDownGuideCard: View {
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Optional. No score, task, or streak attached.")
+                Text("Optional. Keep what feels useful.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                NavigationLink("About these ideas and sources") {
+                    WindDownGuideView()
+                }
+                .font(AppTypography.caption.weight(.semibold))
+                .foregroundStyle(AppColors.grass)
+            }
+        }
+    }
+}
+
+struct WindDownRoutineEditor: View {
+    @Binding var eveningSteps: [WindDownRoutineStep]
+    @Binding var morningSteps: [WindDownRoutineStep]
+    var onChange: () -> Void = {}
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            routineSection(
+                title: "In the evening",
+                detail: "Put the phone away first. Add up to three private ideas for the quiet that follows.",
+                phase: .evening,
+                steps: $eveningSteps
+            )
+            routineSection(
+                title: "After waking",
+                detail: "Add up to two private ideas for your morning quiet, or leave this part empty.",
+                phase: .morning,
+                steps: $morningSteps
+            )
+            Text("Ideas are invitations. Counting Sheep does not track whether you do them.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.muted)
+        }
+    }
+
+    private func routineSection(
+        title: String,
+        detail: String,
+        phase: WindDownRoutinePhase,
+        steps: Binding<[WindDownRoutineStep]>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text(title)
+                .font(AppTypography.headline)
+            Text(detail)
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.muted)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if phase == .evening {
+                fixedPhoneStep
+            }
+
+            ForEach(Array(steps.wrappedValue.enumerated()), id: \.element.id) { index, step in
+                routineRow(step: step, index: index, phase: phase, steps: steps)
+            }
+
+            if steps.wrappedValue.count < limit(for: phase) {
+                Text("Suggested ideas")
+                    .font(AppTypography.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.muted)
+                LazyVGrid(columns: suggestionColumns, alignment: .leading, spacing: AppSpacing.xs) {
+                    ForEach(choices(for: phase)) { activity in
+                        let selected = steps.wrappedValue.contains {
+                            $0.kind == .suggestion && $0.activity == activity
+                        }
+                        Button {
+                            guard !selected, steps.wrappedValue.count < limit(for: phase) else { return }
+                            steps.wrappedValue.append(
+                                .suggested(activity, phase: phase)
+                            )
+                            onChange()
+                        } label: {
+                            Text(activity.title)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                        }
+                        .buttonStyle(PixelChipButtonStyle(isSelected: selected))
+                        .disabled(selected)
+                        .accessibilityLabel(selected ? "Added idea: \(activity.title)" : "Add idea: \(activity.title)")
+                    }
+                }
+
+                Button {
+                    steps.wrappedValue.append(.custom("", phase: phase))
+                    onChange()
+                } label: {
+                    Label("Add a custom idea", systemImage: "plus")
+                        .font(AppTypography.caption.weight(.semibold))
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(PixelChipButtonStyle(isSelected: false))
+            } else {
+                Text("Your sequence is full. You can move or remove ideas below.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
+
+            if phase == .evening || !steps.wrappedValue.isEmpty {
+                NavigationLink("About these ideas and sources") {
+                    WindDownGuideView()
+                }
+                .font(AppTypography.caption.weight(.semibold))
+                .foregroundStyle(AppColors.grass)
+            }
         }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var fixedPhoneStep: some View {
+        HStack(spacing: AppSpacing.sm) {
+            Image(systemName: "iphone.slash")
+                .foregroundStyle(AppColors.grass)
+                .frame(width: 24)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text(WindDownRoutineStep.phoneAwayTitle)
+                    .font(AppTypography.body.weight(.semibold))
+                Text("Always first")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+            }
+            Spacer()
+            Image(systemName: "lock.fill")
+                .foregroundStyle(AppColors.muted)
+                .accessibilityHidden(true)
+        }
+        .padding(AppSpacing.sm)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Put phone away, always first")
+    }
+
+    @ViewBuilder
+    private func routineRow(
+        step: WindDownRoutineStep,
+        index: Int,
+        phase: WindDownRoutinePhase,
+        steps: Binding<[WindDownRoutineStep]>
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            HStack(alignment: .top, spacing: AppSpacing.xs) {
+                Text("\(index + 1)")
+                    .font(AppTypography.caption.weight(.bold))
+                    .foregroundStyle(AppColors.grass)
+                    .frame(width: 24, height: 24)
+                    .background(AppColors.grass.opacity(0.12), in: Circle())
+                    .accessibilityHidden(true)
+
+                if step.kind == .custom {
+                    TextField(
+                        "A quiet idea",
+                        text: Binding(
+                            get: { steps.wrappedValue[index].customText ?? "" },
+                            set: { newValue in
+                                steps.wrappedValue[index] = .custom(
+                                    newValue,
+                                    phase: phase,
+                                    id: steps.wrappedValue[index].id
+                                )
+                                onChange()
+                            }
+                        )
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .accessibilityLabel("Custom \(phase == .evening ? "evening" : "morning") idea \(index + 1)")
+                } else {
+                    Text(step.title)
+                        .font(AppTypography.body.weight(.semibold))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    guard index > 0 else { return }
+                    steps.wrappedValue.swapAt(index, index - 1)
+                    onChange()
+                } label: {
+                    Image(systemName: "chevron.up")
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.bordered)
+                .disabled(index == 0)
+                .accessibilityLabel("Move \(step.title) up")
+
+                Button {
+                    guard index + 1 < steps.wrappedValue.count else { return }
+                    steps.wrappedValue.swapAt(index, index + 1)
+                    onChange()
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .frame(width: 44, height: 44)
+                }
+                .buttonStyle(.bordered)
+                .disabled(index + 1 == steps.wrappedValue.count)
+                .accessibilityLabel("Move \(step.title) down")
+            }
+
+            HStack(spacing: AppSpacing.sm) {
+                Button("Remove \(step.title)", role: .destructive) {
+                    steps.wrappedValue.remove(at: index)
+                    onChange()
+                }
+                .font(AppTypography.caption)
+                .frame(minHeight: 44)
+                Spacer()
+            }
+
+            if let guidanceID = step.guidanceID,
+               let item = WindDownGuidanceLibrary.items.first(where: { $0.id == guidanceID }) {
+                WindDownGuideCard(item: item, compact: true)
+            }
+        }
+        .padding(AppSpacing.sm)
+        .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                .stroke(AppColors.stroke.opacity(0.35), lineWidth: 1.5)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(phase == .evening ? "Evening" : "Morning") idea \(index + 1) of \(steps.wrappedValue.count)")
+    }
+
+    private func limit(for phase: WindDownRoutinePhase) -> Int {
+        phase == .evening
+            ? WindDownRoutineStep.maximumEveningCount
+            : WindDownRoutineStep.maximumMorningCount
+    }
+
+    private func choices(for phase: WindDownRoutinePhase) -> [PhoneFreeActivity] {
+        phase == .evening ? PhoneFreeActivity.eveningChoices : PhoneFreeActivity.morningChoices
+    }
+
+    private var suggestionColumns: [GridItem] {
+        dynamicTypeSize.isAccessibilitySize
+            ? [GridItem(.flexible())]
+            : [GridItem(.flexible()), GridItem(.flexible())]
     }
 }
 
@@ -41,7 +278,7 @@ struct WindDownGuideView: View {
                         .foregroundStyle(AppColors.grass)
                     Text("Small ideas for a kinder relationship with screens and sleep.")
                         .font(AppTypography.display(30))
-                    Text("These are gentle experiments, not a treatment plan. Keep what feels useful and leave the rest.")
+                    Text("These are gentle ideas, not a treatment plan. Keep what feels useful and leave the rest.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
                 }
@@ -72,7 +309,7 @@ struct WindDownGuideView: View {
             .padding(AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Wind Down guide")
+        .navigationTitle("About these ideas and sources")
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -134,7 +371,7 @@ struct WindDownHowItWorksView: View {
                 howCard(
                     icon: "book.closed.fill",
                     title: "Replace",
-                    detail: "Choose one gentle evening cue and one morning cue. They are invitations, never tasks."
+                    detail: "Choose up to three evening ideas and two morning ideas. They are invitations, never tasks."
                 )
                 howCard(
                     icon: "sparkles",

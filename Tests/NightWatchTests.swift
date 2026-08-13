@@ -49,6 +49,38 @@ final class NightWatchTests: XCTestCase {
         XCTAssertEqual(decoded.guardKind, .honorTimer)
     }
 
+    func testOlderPreferencesMigrateNonEmptyCuesIntoPrivateRoutines() throws {
+        let preferences = NightWatchPreferences(
+            bedtimeHour: 23,
+            bedtimeMinute: 0,
+            wakeHour: 7,
+            wakeMinute: 0,
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains,
+            eveningCueText: "Finish my watercolor",
+            morningCueText: "Sit by the window",
+            guardKind: .honorTimer,
+            isConfigured: true
+        )
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(preferences)) as? [String: Any]
+        )
+        object.removeValue(forKey: "eveningRoutine")
+        object.removeValue(forKey: "morningRoutine")
+
+        let decoded = try JSONDecoder().decode(
+            NightWatchPreferences.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+
+        XCTAssertEqual(decoded.eveningRoutine.map(\.title), ["Finish my watercolor"])
+        XCTAssertEqual(decoded.morningRoutine.map(\.title), ["Sit by the window"])
+        XCTAssertEqual(decoded.eveningCueText, "Finish my watercolor")
+        XCTAssertEqual(decoded.morningCueText, "Sit by the window")
+    }
+
     func testAfterMidnightStartIsTreatedAsLateTuckIn() throws {
         let startedAt = try date(2026, 7, 19, 0, 30)
 
@@ -219,6 +251,29 @@ final class NightWatchTests: XCTestCase {
             NightWatchGuidance.tip(for: .morningQuiet, seed: runID)
         )
         XCTAssertNil(NightWatchGuidance.tip(for: .overnight, seed: runID))
+    }
+
+    func testLegacyNightWatchPlanDecodesCueTextIntoOrderedRoutines() throws {
+        let data = Data("""
+        {
+          "intendedBedtime": 1003600,
+          "wakeTime": 1032400,
+          "protectedUntil": 1034200,
+          "windDownMinutes": 30,
+          "morningQuietMinutes": 30,
+          "eveningActivity": "read",
+          "morningActivity": "openCurtains",
+          "eveningCueText": "Finish my watercolor",
+          "morningCueText": "Sit by the window"
+        }
+        """.utf8)
+
+        let plan = try JSONDecoder().decode(NightWatchPlan.self, from: data)
+
+        XCTAssertEqual(plan.eveningRoutine.map(\.title), ["Finish my watercolor"])
+        XCTAssertEqual(plan.morningRoutine.map(\.title), ["Sit by the window"])
+        XCTAssertEqual(plan.eveningActivityTitle, "Finish my watercolor")
+        XCTAssertEqual(plan.morningActivityTitle, "Sit by the window")
     }
 
     func testLiveActivityGuidanceSeparatesTheChosenActivityFromTheTip() throws {
