@@ -197,8 +197,8 @@ struct NightWatchGuidance {
             )
         case .quietPeriodComplete:
             return NightWatchNotificationCopy(
-                title: "Phone Break recorded",
-                body: "Ollie kept the phone tucked away. Your Phone Break is saved in Nights."
+                title: "Phone Away recorded",
+                body: "Ollie kept the phone tucked away. Your Phone Away time is saved in Nights."
             )
         }
     }

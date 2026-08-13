@@ -198,7 +198,7 @@ struct NightsAdditionalResultRow: View {
                     .foregroundStyle(AppColors.lavender)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(isOrientationRecord ? "Orientation quiet" : "Recent Phone Break")
+                    Text(isOrientationRecord ? "Orientation quiet" : "Recent Phone Away")
                         .font(AppTypography.headline)
                     Text("\(quietMinutes) min · \(record.startedAt.formatted(.dateTime.weekday(.wide).month().day()))")
                         .font(AppTypography.caption)
@@ -218,7 +218,7 @@ struct NightsAdditionalResultRow: View {
             )
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isOrientationRecord ? "Orientation quiet" : "Recent Phone Break")
+        .accessibilityLabel(isOrientationRecord ? "Orientation quiet" : "Recent Phone Away")
         .accessibilityValue("\(quietMinutes) minutes on \(record.startedAt.formatted(.dateTime.weekday(.wide).month().day()))")
         .accessibilityHint("Opens the quiet-time record")
     }

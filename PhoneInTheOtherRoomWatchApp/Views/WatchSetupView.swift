@@ -43,7 +43,7 @@ struct WatchSetupView: View {
                         Label("Check iPhone", systemImage: "arrow.clockwise")
                     }
                     .buttonStyle(WatchPrimaryButtonStyle())
-                    .accessibilityHint("Checks the iPhone for an active Wind Down or Phone Break")
+                    .accessibilityHint("Checks the iPhone for an active Wind Down or Phone Away")
 
                     Button { viewModel.pingPhone() } label: {
                         Label("Ping iPhone", systemImage: "iphone.radiowaves.left.and.right")
@@ -51,7 +51,7 @@ struct WatchSetupView: View {
                     .buttonStyle(WatchQuietButtonStyle())
                         .accessibilityHint("Plays a sound on your iPhone")
 
-                    Text("Start Wind Down or a Phone Break on iPhone. Ollie will meet you here.")
+                    Text("Start Wind Down or Phone Away on iPhone. Ollie will meet you here.")
                         .font(.caption2)
                         .foregroundStyle(WatchTheme.mist)
                         .multilineTextAlignment(.center)

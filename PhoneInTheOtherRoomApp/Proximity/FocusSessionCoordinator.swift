@@ -139,7 +139,7 @@ final class FocusSessionCoordinator: ObservableObject {
         )
         addEvent(
             isAdditionalQuiet
-                ? "Phone Break started."
+                ? "Phone Away started."
                 : (newRun.isNightWatch ? "Wind Down started." : "Phone-away time started."),
             detail: focusAccepted ? "System Focus was turned on." : nil
         )
@@ -186,7 +186,7 @@ final class FocusSessionCoordinator: ObservableObject {
                 addEvent(
                     isAdditionalQuiet ? "Phone-bed code needed." : "Wind Down code needed.",
                     detail: isAdditionalQuiet
-                        ? "Scan your phone-bed code to start Phone Break."
+                        ? "Scan your phone-bed code to start Phone Away."
                         : "Scan your Wind Down code to start the app-access barrier."
                 )
             }
@@ -201,7 +201,7 @@ final class FocusSessionCoordinator: ObservableObject {
                 isAdditionalQuiet
                     ? (autoConfirmPlacement
                         ? "Phone-bed tag confirmed."
-                        : "Phone Break is waiting. Tap the phone-bed tag when it is ready.")
+                        : "Phone Away is waiting. Tap the phone-bed tag when it is ready.")
                     : (autoConfirmPlacement
                         ? "Wind Down tag confirmed."
                         : "Wind Down is running. Tap the Wind Down tag when it is ready."),
@@ -277,7 +277,7 @@ final class FocusSessionCoordinator: ObservableObject {
         run.state = .running
         self.run = run
         ollieMessage = "Ollie will keep the quiet while your phone rests away."
-        addEvent(isAdditionalQuiet ? "Phone Break continued without a tag check." : "Wind Down continued without a tag check.")
+        addEvent(isAdditionalQuiet ? "Phone Away continued without a tag check." : "Wind Down continued without a tag check.")
         recordRitualEvent(
             .fallbackSelected,
             for: run,
@@ -539,18 +539,18 @@ final class FocusSessionCoordinator: ObservableObject {
         persistence.lastRun = finalRun
         if finalRun.completedSuccessfully,
            finalRun.nightWatchPlan?.role == .additionalQuiet,
-           finalRun.creditedQuietMinutes >= 15 {
+           finalRun.creditedQuietMinutes >= PhoneAwaySearchMeter.minimumEligibleMinutes {
             let phoneBreakSearchUnlocked = progress.totalCompletedRuns >= SheepSearchEngine.starterGuaranteeRuns
             sheepSearchState.trailMap.credit(
                 runID: finalRun.id,
-                minutes: min(75, finalRun.creditedQuietMinutes),
+                minutes: min(PhoneAwaySearchMeter.maximumMinutes, finalRun.creditedQuietMinutes),
                 pendingCap: phoneBreakSearchUnlocked
                     ? SheepTrailMapState.maximumPendingMinutes
                     : SheepTrailMapState.maximumMappedMinutes
             )
 
-            // Phone Breaks bank their own trail meter. Once three protected
-            // Wind Downs exist, the next completed Phone Break that fills the
+            // Phone Away runs bank their own search meter. Once three protected
+            // Wind Downs exist, the next completed Phone Away that fills the
             // meter resolves one separate, deterministic bonus search.
             if phoneBreakSearchUnlocked,
                sheepSearchState.trailMap.isReadyForBonusSearch,
@@ -585,7 +585,7 @@ final class FocusSessionCoordinator: ObservableObject {
                 recentProtectedNights: min(12, sheepSearchState.outcomes.suffix(7).filter { $0.result == .found }.count),
                 optionalBonusPoints: optionalSheepSearchBonusProvider?() ?? 0,
                 // Retained in the Codable evidence contract for old notes only.
-                // New Wind Down searches never borrow Phone Break meter progress.
+                // New Wind Down searches never borrow Phone Away meter progress.
                 trailMapBonusPercentagePoints: 0
             )
             let calculation = SheepSearchEngine.calculate(
@@ -620,7 +620,7 @@ final class FocusSessionCoordinator: ObservableObject {
         self.run = finalRun
         if finalRun.nightWatchPlan?.role == .additionalQuiet {
             ollieMessage = finalRun.completedSuccessfully
-                ? "Phone Break is complete."
+                ? "Phone Away is complete."
                 : "Ollie kept your quiet spot warm."
         } else {
             ollieMessage = finalRun.completedSuccessfully
@@ -772,7 +772,7 @@ final class FocusSessionCoordinator: ObservableObject {
             case .honorTimer: return "Carry the phone to its resting place. Ollie will keep the quiet."
             case .watchPlacement: return "Carry the phone away. Ollie will make one short Watch check."
             case .qrCode: return "Scan your phone-bed code to set the app limits."
-            case .nfcTag: return "Tap your phone-bed tag to start Phone Break."
+            case .nfcTag: return "Tap your phone-bed tag to start Phone Away."
             }
         }
         switch guardKind {
@@ -797,7 +797,7 @@ final class FocusSessionCoordinator: ObservableObject {
                 addEvent(
                     run?.nightWatchPlan?.role == .additionalQuiet ? "Phone-bed tag needed." : "Wind Down tag needed.",
                     detail: run?.nightWatchPlan?.role == .additionalQuiet
-                        ? "Use the iPhone and tap the registered tag to end Phone Break."
+                        ? "Use the iPhone and tap the registered tag to end Phone Away."
                         : "Use the iPhone and tap the registered tag to end Wind Down."
                 )
                 if let run {

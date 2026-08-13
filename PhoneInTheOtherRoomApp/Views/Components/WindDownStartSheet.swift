@@ -22,41 +22,41 @@ struct WindDownStartSheet: View {
         switch viewModel.pendingWindDownStartContext?.kind {
         case .practice:
             return "PRACTICE QUIET · \(viewModel.pendingWindDownStartContext?.durationMinutes ?? 5) MIN"
-        case .oneTimeQuiet: return "PHONE BREAK"
-        case .repeatingQuiet: return "PHONE BREAK"
+        case .oneTimeQuiet: return "PHONE AWAY"
+        case .repeatingQuiet: return "PHONE AWAY"
         case .primary, .none: return "START WIND DOWN"
         }
     }
 
     private var startButtonTitle: String {
         if viewModel.isScanningNFCForStart { return "Waiting for your tag…" }
-        if isAdHocQuiet { return "Start Phone Break" }
+        if isAdHocQuiet { return "Start now" }
         if viewModel.pendingWindDownStartContext?.isPractice == true {
             let minutes = viewModel.pendingWindDownStartContext?.durationMinutes ?? 5
             return usesNFC ? "Tap tag to start practice" : "Start \(minutes)-minute practice"
         }
         if viewModel.pendingNightWatchIsAdditionalQuiet {
-            return usesNFC ? "Tap tag to start Phone Break" : "Start Phone Break"
+            return usesNFC ? "Tap tag to start Phone Away" : "Start now"
         }
         return usesNFC ? "Tap Wind Down tag to start" : "Start now"
     }
 
     private var heading: String {
         if isAdHocQuiet {
-            return "Phone Break until \(adHocEndTime)"
+            return "Phone Away until \(adHocEndTime)"
         }
         if viewModel.pendingWindDownStartContext?.isPractice == true {
             return "Your practice quiet is ready."
         }
         if viewModel.pendingNightWatchIsAdditionalQuiet {
-            return viewModel.pendingNightWatchTitle ?? "A little Phone Break."
+            return viewModel.pendingNightWatchTitle ?? "A little Phone Away."
         }
         return usesNFC ? "Tap in when you are ready." : "Give the evening a little room."
     }
 
     private var explanation: String {
         if isAdHocQuiet {
-            return "The minutes begin when you tap Start. This Phone Break stays separate from Wind Down and appears in Nights."
+            return "The minutes begin when you tap Start. Phone Away stays separate from Wind Down and appears in Nights."
         }
         if viewModel.pendingNightWatchIsAdditionalQuiet {
             let end = viewModel.pendingNightWatchEndsAt.map(OllieFormat.time) ?? "the saved end time"
@@ -66,7 +66,7 @@ struct WindDownStartSheet: View {
             if viewModel.pendingWindDownStartContext?.isPractice == true {
                 return "This practice ends at \(end). It appears in Nights, but it does not count as a Wind Down or open a sheep search.\(protection)"
             }
-            return "This Phone Break ends at \(end). Its minutes begin when you start, and it stays separate from Wind Down.\(protection)"
+            return "This Phone Away period ends at \(end). Its minutes begin when you start, and it stays separate from Wind Down.\(protection)"
         }
         guard viewModel.willShieldPendingNightWatch else {
             return "Wind Down will keep time and record your quiet. No apps will be limited."
@@ -90,7 +90,7 @@ struct WindDownStartSheet: View {
                         .foregroundStyle(AppColors.muted)
 
                     if isAdHocQuiet, usesNFC {
-                        Text("Tap your registered phone-bed tag after choosing Start Phone Break.")
+                        Text("Tap your registered phone-bed tag after choosing Start now.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
                     }
@@ -142,7 +142,7 @@ struct WindDownStartSheet: View {
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
             headerText: viewModel.pendingNightWatchIsAdditionalQuiet
-                ? "Choose apps to limit during this Phone Break."
+                ? "Choose apps to limit during this Phone Away period."
                 : "Choose apps to limit during Wind Down.",
             footerText: "Counting Sheep stays available. Websites are ignored.",
             isPresented: $showScreenTimePicker,
@@ -233,7 +233,7 @@ struct WindDownStartSheet: View {
     let now = Date()
     viewModel.windDownSchedule = WindDownScheduleState(oneTimePeriods: [
         WindDownOneTimePeriod(
-            title: "Phone Break",
+            title: "Phone Away",
             interval: DateInterval(start: now, end: now.addingTimeInterval(30 * 60))
         )
     ])

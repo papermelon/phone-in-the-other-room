@@ -176,7 +176,7 @@ final class PersistenceService {
             if let newValue {
                 state.oneTimePeriods = [WindDownOneTimePeriod(
                     id: newValue.id,
-                    title: newValue.role == .primarySleepBookend ? "Adjusted Wind Down" : "Phone Break",
+                    title: newValue.role == .primarySleepBookend ? "Adjusted Wind Down" : "Phone Away",
                     role: newValue.role,
                     interval: newValue.interval,
                     enabled: newValue.consumedAt == nil

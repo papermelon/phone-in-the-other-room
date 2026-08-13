@@ -224,17 +224,17 @@ final class SheepSearchTests: XCTestCase {
     }
 
     func testTrailMapAccumulatesPhoneBreakMinutesAndCarriesRemainder() {
-        let cases = [(14, 0), (15, 1), (30, 2), (74, 4), (75, 5), (120, 5)]
+        let cases = [(14, 0), (15, 1), (30, 2), (99, 5), (100, 5), (220, 5)]
         for (minutes, expectedPoints) in cases {
             var map = SheepTrailMapState()
             map.credit(runID: UUID(), minutes: minutes)
-            XCTAssertEqual(map.pendingMappedMinutes, min(150, minutes))
+            XCTAssertEqual(map.pendingMappedMinutes, min(SheepTrailMapState.maximumPendingMinutes, minutes))
             XCTAssertEqual(map.availableBonusPercentagePoints, expectedPoints)
         }
 
         var map = SheepTrailMapState(pendingMappedMinutes: 60)
-        map.credit(runID: UUID(), minutes: 75)
-        XCTAssertEqual(map.pendingMappedMinutes, 135)
+        map.credit(runID: UUID(), minutes: 100)
+        XCTAssertEqual(map.pendingMappedMinutes, 160)
         map.consumeBonusSearchMeter()
         XCTAssertEqual(map.pendingMappedMinutes, 60)
     }
@@ -242,22 +242,22 @@ final class SheepSearchTests: XCTestCase {
     func testTrailMapHomeCopyExplainsTheRealMechanic() throws {
         XCTAssertNil(SheepTrailMapPresentation.home(availableBonusPercentagePoints: 0))
         let presentation = try XCTUnwrap(
-            SheepTrailMapPresentation.home(availableBonusPercentagePoints: 5)
+            SheepTrailMapPresentation.home(pendingMappedMinutes: SheepTrailMapState.maximumMappedMinutes)
         )
-        XCTAssertEqual(presentation.title, "Phone Break trail · 75 / 75 minutes")
-        XCTAssertTrue(presentation.detail.contains("Complete another Phone Break"))
+        XCTAssertEqual(presentation.title, "Extra search progress · 100 / 100 minutes")
+        XCTAssertTrue(presentation.detail.contains("Complete another Phone Away"))
     }
 
     func testLockedTrailMapBanksOnlyOneFullMeter() {
         var map = SheepTrailMapState()
-        map.credit(runID: UUID(), minutes: 75, pendingCap: 75)
-        map.credit(runID: UUID(), minutes: 75, pendingCap: 75)
-        XCTAssertEqual(map.pendingMappedMinutes, 75)
+        map.credit(runID: UUID(), minutes: 100, pendingCap: SheepTrailMapState.maximumMappedMinutes)
+        map.credit(runID: UUID(), minutes: 100, pendingCap: SheepTrailMapState.maximumMappedMinutes)
+        XCTAssertEqual(map.pendingMappedMinutes, SheepTrailMapState.maximumMappedMinutes)
 
-        map.credit(runID: UUID(), minutes: 75, pendingCap: 150)
-        XCTAssertEqual(map.pendingMappedMinutes, 150)
+        map.credit(runID: UUID(), minutes: 100, pendingCap: SheepTrailMapState.maximumPendingMinutes)
+        XCTAssertEqual(map.pendingMappedMinutes, SheepTrailMapState.maximumPendingMinutes)
         map.consumeBonusSearchMeter()
-        XCTAssertEqual(map.pendingMappedMinutes, 75)
+        XCTAssertEqual(map.pendingMappedMinutes, SheepTrailMapState.maximumMappedMinutes)
     }
 
     func testTrailMapRejectsDuplicateRuns() {
@@ -266,6 +266,48 @@ final class SheepSearchTests: XCTestCase {
         XCTAssertEqual(map.credit(runID: runID, minutes: 30), 30)
         XCTAssertEqual(map.credit(runID: runID, minutes: 30), 0)
         XCTAssertEqual(map.pendingMappedMinutes, 30)
+    }
+
+    func testPhoneAwayMeterPreservesLegacyPendingMinutesAndCapsOverflow() throws {
+        let decoder = JSONDecoder()
+        let legacy = """
+        {"schemaVersion":2,"pendingMappedMinutes":150,"creditedAdHocRunIDs":[]}
+        """.data(using: .utf8)!
+        let map = try decoder.decode(SheepTrailMapState.self, from: legacy)
+        XCTAssertEqual(map.pendingMappedMinutes, 150)
+        XCTAssertEqual(SheepTrailMapState.maximumMappedMinutes, 100)
+
+        var overflow = SheepTrailMapState()
+        XCTAssertEqual(
+            overflow.credit(runID: UUID(), minutes: 500),
+            SheepTrailMapState.maximumPendingMinutes
+        )
+        XCTAssertEqual(overflow.pendingMappedMinutes, SheepTrailMapState.maximumPendingMinutes)
+    }
+
+    func testPhoneAwaySearchKeepsTheDeterministicLadderSeparate() {
+        var state = SheepSearchState.empty
+        let odds: [(Int, Double)] = [(0, 0.20), (1, 0.30), (2, 0.40), (3, 0.50)]
+        for (noFinds, expected) in odds {
+            state.phoneBreakConsecutiveNoFinds = noFinds
+            let result = SheepSearchEngine.calculatePhoneBreak(
+                runID: UUID(),
+                protectedNightNumber: 4,
+                state: state,
+                seed: 999
+            )
+            XCTAssertEqual(result.outcome.encounterOdds, expected)
+        }
+        state.phoneBreakConsecutiveNoFinds = 4
+        XCTAssertEqual(
+            SheepSearchEngine.calculatePhoneBreak(
+                runID: UUID(),
+                protectedNightNumber: 4,
+                state: state,
+                seed: 999
+            ).outcome.encounterOdds,
+            1
+        )
     }
 
     func testGuaranteedSearchRetainsMappedMinutes() {
@@ -283,7 +325,7 @@ final class SheepSearchTests: XCTestCase {
 
     func testNewWindDownSearchDoesNotConsumePhoneBreakMeter() {
         var state = SheepSearchState.empty
-        state.trailMap.credit(runID: UUID(), minutes: 75)
+        state.trailMap.credit(runID: UUID(), minutes: 100)
         var evidence = SheepSearchEvidence.empty
         evidence.windDownMinutes = 30
         evidence.morningQuietMinutes = 30
@@ -298,7 +340,7 @@ final class SheepSearchTests: XCTestCase {
         )
         XCTAssertLessThanOrEqual(result.outcome.encounterOdds, 0.92)
         state.append(result.outcome)
-        XCTAssertEqual(state.trailMap.pendingMappedMinutes, 75)
+        XCTAssertEqual(state.trailMap.pendingMappedMinutes, 100)
     }
 
     func testPhoneBreakSearchUsesSeparateOriginAndDroughtCounter() {

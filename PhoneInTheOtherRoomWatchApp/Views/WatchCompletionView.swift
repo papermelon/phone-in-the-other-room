@@ -13,7 +13,7 @@ struct WatchCompletionView: View {
                             title: viewModel.isAdditionalQuiet ? "Complete" : "Protected",
                             systemImage: "checkmark.seal.fill"
                         )
-                        Text(viewModel.isAdditionalQuiet ? "A little more quiet" : "Your phone slept in the other room")
+                        Text(viewModel.isAdditionalQuiet ? "Phone Away is complete" : "Your phone slept in the other room")
                             .font((usesCompactLayout ? Font.caption : Font.body).weight(.semibold))
                             .foregroundStyle(WatchTheme.cream)
                             .lineLimit(3)
@@ -28,7 +28,7 @@ struct WatchCompletionView: View {
                     .multilineTextAlignment(.center)
 
                 if !viewModel.isAdditionalQuiet {
-                    Text("Your Trail Note is waiting on iPhone.")
+                    Text("Your Search Journal is waiting on iPhone.")
                         .font(.caption2)
                         .foregroundStyle(WatchTheme.mist)
                         .multilineTextAlignment(.center)

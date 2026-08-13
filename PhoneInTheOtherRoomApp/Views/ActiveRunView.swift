@@ -28,17 +28,17 @@ struct ActiveRunView: View {
     }
 
     private var fallbackReturnBarTitle: String {
-        run?.nightWatchPlan?.role == .additionalQuiet ? "Phone Break" : "Wind Down"
+        run?.nightWatchPlan?.role == .additionalQuiet ? "Phone Away" : "Wind Down"
     }
 
     private var fallbackExit: ActiveRunExitPresentation {
         run?.nightWatchPlan?.role == .additionalQuiet
             ? ActiveRunExitPresentation(
-                actionTitle: "End Phone Break early",
-                confirmationTitle: "End Phone Break early?",
+                actionTitle: "End Phone Away early",
+                confirmationTitle: "End Phone Away early?",
                 confirmationBody: "This ends the timer and removes any app limits.",
-                cancelTitle: "Keep Phone Break running",
-                confirmTitle: "End Phone Break"
+                cancelTitle: "Keep Phone Away running",
+                confirmTitle: "End Phone Away"
             )
             : ActiveRunExitPresentation(
                 actionTitle: "End Wind Down early",
@@ -55,7 +55,7 @@ struct ActiveRunView: View {
 
     private var tagReplacementMessage: String {
         presentation?.isAdditionalQuiet == true
-            ? "We’ll write a new tag now. Your Phone Break will keep running, and the old tag will stop working after the new one is saved."
+            ? "We’ll write a new tag now. Your Phone Away period will keep running, and the old tag will stop working after the new one is saved."
             : "We’ll write a new tag now. Your current Wind Down will stay in place, and the old tag will stop working after the new one is saved."
     }
 
@@ -545,7 +545,7 @@ struct ActiveRunView: View {
     }
 }
 
-#Preview("Active run · Phone Break · 6 PM") {
+#Preview("Active run · Phone Away · 6 PM") {
     let calendar = Calendar.current
     let now = calendar.date(
         from: DateComponents(year: 2026, month: 8, day: 11, hour: 18, minute: 0)

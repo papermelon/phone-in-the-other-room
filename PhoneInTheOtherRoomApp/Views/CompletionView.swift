@@ -45,7 +45,7 @@ struct CompletionView: View {
                             onReturnToFarm: returnToFarm
                         )
                     } label: {
-                        Label("Open the Phone Break trail note", systemImage: "note.text")
+                        Label("Open Search Journal", systemImage: "note.text")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelPrimaryButtonStyle())
@@ -63,7 +63,7 @@ struct CompletionView: View {
                             onReturnToFarm: returnToFarm
                         )
                     } label: {
-                        Label("Open Ollie’s Trail Notes", systemImage: "note.text")
+                        Label("Open Search Journal", systemImage: "note.text")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelPrimaryButtonStyle())
@@ -115,7 +115,7 @@ private struct CompletionHeader: View {
             HStack(alignment: .top, spacing: AppSpacing.md) {
                 OllieRitualView(state: .completed, presentation: .inline)
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(run?.nightWatchPlan?.role == .additionalQuiet ? "PHONE BREAK COMPLETE" : "WIND DOWN COMPLETE")
+                    Text(run?.nightWatchPlan?.role == .additionalQuiet ? "PHONE AWAY COMPLETE" : "WIND DOWN COMPLETE")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
                     Text(run?.nightWatchPlan?.role == .additionalQuiet ? "Ollie kept the phone tucked away." : "The phone slept in the other room.")
@@ -131,7 +131,7 @@ private struct CompletionHeader: View {
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel(run?.nightWatchPlan?.role == .additionalQuiet
-                ? "Phone Break complete. " + quietMinutes.description + " quiet minutes recorded."
+                ? "Phone Away complete. " + quietMinutes.description + " quiet minutes recorded."
                 : "Wind Down complete. The phone slept in the other room. " + quietMinutes.description + " quiet minutes around sleep recorded.")
         }
     }
@@ -149,7 +149,7 @@ private struct AdditionalQuietMapReceipt: View {
                     .foregroundStyle(AppColors.grass)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("TRAIL MAP UPDATED")
+                    Text("EXTRA SEARCH PROGRESS UPDATED")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
                     Text(receiptMessage)
@@ -166,9 +166,9 @@ private struct AdditionalQuietMapReceipt: View {
         if map.isReadyForBonusSearch {
             return protectedWindDownCount < SheepSearchEngine.starterGuaranteeRuns
                 ? "The trail is full. It will wait until three Wind Downs are complete."
-                : "The trail is full. Complete another Phone Break to open one bonus search."
+                : "Extra search progress is full. Complete another Phone Away to open one bonus search."
         }
-        return "\(minutes) of 75 minutes are saved on the Phone Break trail."
+        return "\(minutes) of \(SheepTrailMapState.maximumMappedMinutes) minutes are saved as extra search progress."
     }
 }
 
@@ -370,11 +370,11 @@ private struct TrailOnlyNote: View {
                     Text("OLLIE KEPT TO THE TRAIL")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text(outcome.origin == .phoneBreak ? "The Phone Break trail continues." : "The trail continues.")
+                    Text(outcome.origin == .phoneBreak ? "The extra search trail continues." : "The trail continues.")
                         .font(AppTypography.title)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(outcome.origin == .phoneBreak
-                        ? "Ollie didn't find a sheep on this Phone Break. The clue is saved for another trail."
+                        ? "Ollie didn't find a sheep on this Phone Away. The clue is saved for another search."
                         : "Ollie didn't find a sheep on this trail. The clue is saved for another quiet night.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.secondaryText)
@@ -413,7 +413,7 @@ private struct FieldNoteTrailDetails: View {
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
             if outcome.origin == .phoneBreak {
-                FieldNoteMetric(title: "Search opened by", value: "75 Phone Break minutes")
+                FieldNoteMetric(title: "Search opened by", value: "\(SheepTrailMapState.maximumMappedMinutes) Phone Away minutes")
                 FieldNoteMetric(
                     title: "Clues before this search",
                     value: outcome.consecutiveNoFinds.description
