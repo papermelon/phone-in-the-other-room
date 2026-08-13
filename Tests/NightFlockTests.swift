@@ -36,6 +36,16 @@ final class NightFlockTests: XCTestCase {
         XCTAssertFalse(presentation.detail.contains("missing"))
     }
 
+    func testEmptyAggregateInvitesSharingWithoutDescribingAbsence() {
+        let presentation = NightFlockAggregatePresentation.nighttime(
+            positiveCount: 0,
+            memberCount: 2
+        )
+        XCTAssertEqual(presentation.detail, "Shared moments will appear when someone chooses to share.")
+        XCTAssertFalse(presentation.detail.localizedCaseInsensitiveContains("absence"))
+        XCTAssertFalse(presentation.detail.localizedCaseInsensitiveContains("missed"))
+    }
+
     func testLargeFlockAggregateCountsOnlyPositiveStates() {
         let presentation = NightFlockAggregatePresentation.morning(
             positiveCount: 4,
@@ -43,6 +53,16 @@ final class NightFlockTests: XCTestCase {
         )
         XCTAssertEqual(presentation.title, "4 quiet mornings reached the pasture.")
         XCTAssertFalse(presentation.title.contains("2"))
+    }
+
+    func testInvitationUsesTiredReaderPrivacyCopy() {
+        XCTAssertEqual(NightFlockHomeSummary.invitation.title, "Wind down with a small flock")
+        XCTAssertEqual(
+            NightFlockHomeSummary.invitation.detail,
+            "Seven quiet nights with people you invite. Only tucked-away phones and completed mornings are shared."
+        )
+        XCTAssertFalse(NightFlockHomeSummary.invitation.detail.localizedCaseInsensitiveContains("missed"))
+        XCTAssertFalse(NightFlockHomeSummary.invitation.detail.localizedCaseInsensitiveContains("schedule"))
     }
 
     func testSmallFlockPastureSuppressesExactEntryCount() {

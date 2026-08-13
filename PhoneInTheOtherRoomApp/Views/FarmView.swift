@@ -82,9 +82,12 @@ struct FarmDashboardContent: View {
                     onSelectSheep: onSelectSheep
                 )
                 .contextualGuideTarget(.farm)
-                FarmKeepsakeDisplay(state: state)
                 priorityCard
+                FarmKeepsakeDisplay(state: state)
                 FarmBalanceBar(state: state, linksEnabled: true)
+                if let nightFlockSummary, !isWindDownActive {
+                    NightFlockHomeCard(summary: nightFlockSummary, action: onOpenNightFlock)
+                }
                 destinationGrid
                 recentStory
             }
@@ -155,8 +158,8 @@ struct FarmDashboardContent: View {
                 priorityLabel(
                     icon: "scissors",
                     eyebrow: "WOOL READY",
-                    title: "\(readyCount) \(readyCount == 1 ? "fleece is" : "fleeces are") ready in The Barn.",
-                    detail: "Shearing keeps each sheep home while its wool grows back."
+                    title: "\(readyCount) sheep are ready to shear.",
+                    detail: "Shear them when you want wool. Their fleece grows back over future Wind Downs."
                 )
             }
             .buttonStyle(.plain)
@@ -168,7 +171,19 @@ struct FarmDashboardContent: View {
                     icon: "note.text",
                     eyebrow: "LATEST TRAIL NOTE",
                     title: latestOutcome.result == .found ? "Ollie brought a sheep home." : "Ollie saved a clue for the next trail.",
-                    detail: "Open Ollie’s Trail Notes for the full search record."
+                    detail: "Open Search Journal for the full search record."
+                )
+            }
+            .buttonStyle(.plain)
+        } else if searchableCount > 0 {
+            NavigationLink {
+                TrailBoardView()
+            } label: {
+                priorityLabel(
+                    icon: "map.fill",
+                    eyebrow: "OLLIE’S SEARCH",
+                    title: "Ollie’s Search is ready.",
+                    detail: "Choose one missing sheep for Ollie to favour."
                 )
             }
             .buttonStyle(.plain)
@@ -223,21 +238,10 @@ struct FarmDashboardContent: View {
 
     private var destinationGrid: some View {
         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
-            if let nightFlockSummary, !isWindDownActive {
-                Button(action: onOpenNightFlock) {
-                    destinationLabel(
-                        "Slumber Party",
-                        detail: "Invite-only quiet",
-                        badge: nightFlockSummary.challengeDay.map { "day \($0) / 7" } ?? "private",
-                        icon: "person.3.fill"
-                    )
-                }
-                .buttonStyle(.plain)
-            }
-            destination("The Barn", detail: "Flock & wool", badge: "\(state.activeSheep.count) / \(state.activeCapacity)", icon: "house.lodge.fill") { FarmBarnView() }
-            destination("Trail Board", detail: "Missing sheep", badge: "\(searchableCount) trails", icon: "map.fill") { TrailBoardView() }
-            destination("Farm Shop", detail: "Build & wear", badge: "\(state.woolBalance) wool", icon: "storefront.fill") { FarmShopView() }
-            destination("Ollie’s Trail Notes", detail: "Search history", badge: "\(searchState.outcomes.count) notes", icon: "note.text") { TrailNotesArchiveView() }
+            destination("The Barn", detail: "Manage flock & wool", badge: "\(state.activeSheep.count) / \(state.activeCapacity)", icon: "house.lodge.fill") { FarmBarnView() }
+            destination("Ollie’s Search", detail: "Find missing sheep", badge: "\(searchableCount) available", icon: "map.fill") { TrailBoardView() }
+            destination("Farm Shop", detail: "Spend wool on the Farm", badge: "\(state.woolBalance) wool", icon: "storefront.fill") { FarmShopView() }
+            destination("Search Journal", detail: "Past arrivals & clues", badge: "\(searchState.outcomes.count) entries", icon: "note.text") { TrailNotesArchiveView() }
         }
     }
 
@@ -297,7 +301,7 @@ struct FarmDashboardContent: View {
     private var recentStory: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("RECENT AT THE FARM")
+                Text("RECENT EVENTS")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
                 if let transaction = state.transactions.last {
@@ -336,13 +340,18 @@ struct FarmDashboardContent: View {
         switch sheep.status {
         case .active: return "Ollie has made room for this homecoming."
         case .pending: return "Make room in The Barn to welcome this sheep home."
-        case .sold: return "The discovery remains safe in Ollie’s Trail Notes."
+        case .sold: return "The discovery remains safe in Search Journal."
         }
     }
 
     private func storyTitle(for transaction: FarmTransaction) -> String {
         switch transaction.kind {
-        case .arrival: return "A sheep came through the gate."
+        case .arrival:
+            if let sheepID = transaction.sheepID,
+               let sheep = state.sheep.first(where: { $0.id == sheepID }) {
+                return "\(sheep.displayName) came home."
+            }
+            return "A sheep came through the gate."
         case .shearing: return "Fresh wool reached the store room."
         case .sale: return "A sheep set off for another pasture."
         case .purchase: return "Something new arrived from the Farm Shop."
@@ -366,7 +375,7 @@ struct FarmDashboardContent: View {
     }
 }
 
-#Preview("Farm · empty") {
+#Preview("Farm · empty · Slumber Party disabled") {
     NavigationStack {
         FarmDashboardContent(
             state: .empty,
@@ -378,7 +387,61 @@ struct FarmDashboardContent: View {
     }
 }
 
-#Preview("Farm · large type") {
+#Preview("Farm · active search") {
+    NavigationStack {
+        FarmDashboardContent(
+            state: .empty,
+            searchState: FarmPreviewData.activeSearchState,
+            protectedNightCount: 3,
+            isWindDownActive: false,
+            onSelectSheep: { _ in }
+        )
+    }
+}
+
+#Preview("Farm · wool ready") {
+    NavigationStack {
+        FarmDashboardContent(
+            state: FarmPreviewData.oneSheepState,
+            searchState: FarmPreviewData.searchState,
+            protectedNightCount: 18,
+            isWindDownActive: false,
+            onSelectSheep: { _ in }
+        )
+    }
+}
+
+#Preview("Farm · Slumber Party invitation") {
+    NavigationStack {
+        FarmDashboardContent(
+            state: FarmPreviewData.fullState,
+            searchState: FarmPreviewData.searchState,
+            protectedNightCount: 18,
+            isWindDownActive: false,
+            nightFlockSummary: .invitation,
+            onSelectSheep: { _ in }
+        )
+    }
+}
+
+#Preview("Farm · Slumber Party active") {
+    NavigationStack {
+        FarmDashboardContent(
+            state: FarmPreviewData.fullState,
+            searchState: FarmPreviewData.searchState,
+            protectedNightCount: 18,
+            isWindDownActive: false,
+            nightFlockSummary: NightFlockHomeSummary(
+                title: "Someone in the flock has tucked in.",
+                detail: "Only shared tuck-ins appear here.",
+                challengeDay: 3
+            ),
+            onSelectSheep: { _ in }
+        )
+    }
+}
+
+#Preview("Farm · accessibility Dynamic Type") {
     NavigationStack {
         FarmDashboardContent(
             state: FarmPreviewData.fullState,

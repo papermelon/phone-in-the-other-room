@@ -45,7 +45,7 @@ struct CompletionView: View {
                             onReturnToFarm: returnToFarm
                         )
                     } label: {
-                        Label("Open Search Journal", systemImage: "note.text")
+                        Label("Open the Phone Away search result", systemImage: "note.text")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelPrimaryButtonStyle())
@@ -217,7 +217,7 @@ struct WindDownRevealView: View {
                 }
 
                 if outcome?.result == .trailOnly {
-                    NavigationLink("See the Trail Board") { TrailBoardView() }
+                    NavigationLink("Open Ollie’s Search") { TrailBoardView() }
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 } else if outcome?.result == .found {
                     NavigationLink(arrivalIsPending ? "Make room in The Barn" : "See the flock in The Barn") {
@@ -244,7 +244,7 @@ struct WindDownRevealView: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Ollie’s Trail Notes")
+        .navigationTitle("Search Journal")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             guard outcome != nil else { return }

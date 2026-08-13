@@ -41,6 +41,6 @@ struct NightFlockHomeCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens the invite-only Slumber Party pasture under Farm")
+        .accessibilityHint("Opens Slumber Party under Farm")
     }
 }
