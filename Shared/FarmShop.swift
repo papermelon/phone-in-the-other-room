@@ -140,7 +140,7 @@ enum FarmShopCatalog {
             effect: .shepherdAccessory
         ),
         FarmShopItem(id: "shepherd_moss_coat", title: "Moss Work Coat", detail: "A green coat with deep pockets.", category: .shepherd, woolCost: 8, symbolName: "tshirt.fill", inventoryAssetName: "shop/shop_shepherd_moss_coat", visualStyle: "grass", effect: .shepherdOutfit),
-        FarmShopItem(id: "shepherd_moon_coat", title: "Moonlit Coat", detail: "A dusk-blue coat for Trail Notes.", category: .shepherd, woolCost: 14, symbolName: "sparkles", inventoryAssetName: "shop/shop_shepherd_moon_coat", visualStyle: "lavender", effect: .shepherdOutfit),
+        FarmShopItem(id: "shepherd_moon_coat", title: "Moonlit Coat", detail: "A dusk-blue coat for nights at the Farm.", category: .shepherd, woolCost: 14, symbolName: "sparkles", inventoryAssetName: "shop/shop_shepherd_moon_coat", visualStyle: "lavender", effect: .shepherdOutfit),
 
         FarmShopItem(id: "farm_flower_patch", title: "Clover Patch", detail: "A flowering corner for the pasture.", category: .farm, woolCost: 4, symbolName: "camera.macro", inventoryAssetName: "shop/shop_farm_flower_patch", visualStyle: "grass", effect: .farmDecoration),
         FarmShopItem(id: "farm_lanterns", title: "Barn Lanterns", detail: "A warm light beside the Barn.", category: .farm, woolCost: 3, symbolName: "lightbulb.fill", inventoryAssetName: "shop/shop_farm_lanterns", visualStyle: "amber", effect: .farmDecoration),

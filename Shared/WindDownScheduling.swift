@@ -11,6 +11,13 @@ enum WindDownOccurrenceRole: String, Codable, CaseIterable, Hashable {
     }
 }
 
+enum PhoneAwayTerminology {
+    static func userFacingTitle(_ title: String, role: WindDownOccurrenceRole) -> String {
+        guard role == .additionalQuiet, title == "Phone Break" else { return title }
+        return "Phone Away"
+    }
+}
+
 struct WindDownClockTime: Codable, Equatable, Hashable {
     var hour: Int
     var minute: Int
@@ -82,6 +89,10 @@ struct WindDownRoutine: Codable, Identifiable, Equatable {
     var automaticStartEnabled: Bool
 
     var weekdays: [Int] { recurrence.weekdays }
+
+    var userFacingTitle: String {
+        PhoneAwayTerminology.userFacingTitle(title, role: role)
+    }
 
     init(
         schemaVersion: Int = currentSchemaVersion,
@@ -195,7 +206,7 @@ struct WindDownOneTimePeriod: Codable, Identifiable, Equatable {
     init(
         schemaVersion: Int = currentSchemaVersion,
         id: UUID = UUID(),
-        title: String = "Phone Break",
+        title: String = "Phone Away",
         role: WindDownOccurrenceRole = .additionalQuiet,
         interval: DateInterval,
         enabled: Bool = true,
@@ -203,7 +214,7 @@ struct WindDownOneTimePeriod: Codable, Identifiable, Equatable {
     ) {
         self.schemaVersion = schemaVersion
         self.id = id
-        self.title = title.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyOrNil ?? "Phone Break"
+        self.title = title.trimmingCharacters(in: .whitespacesAndNewlines).nonEmptyOrNil ?? "Phone Away"
         self.role = role
         self.interval = interval
         self.enabled = enabled
@@ -212,6 +223,9 @@ struct WindDownOneTimePeriod: Codable, Identifiable, Equatable {
 
     var isCancelled: Bool { cancelledAt != nil }
     var isAvailable: Bool { enabled && !isCancelled }
+    var userFacingTitle: String {
+        PhoneAwayTerminology.userFacingTitle(title, role: role)
+    }
 
     func isEligible(
         at date: Date,
@@ -260,7 +274,7 @@ struct WindDownScheduleState: Codable, Equatable {
            nextOverride.interval.end > nextOverride.interval.start {
             oneTimePeriods = [WindDownOneTimePeriod(
                 id: nextOverride.id,
-            title: nextOverride.role == .primarySleepBookend ? "Adjusted Wind Down" : "Phone Break",
+            title: nextOverride.role == .primarySleepBookend ? "Adjusted Wind Down" : "Phone Away",
                 role: nextOverride.role,
                 interval: nextOverride.interval
             )]
@@ -446,7 +460,7 @@ enum WindDownScheduleEngine {
     ) -> [WindDownSchedulePeriod] {
         var periods = state.oneTimePeriods.compactMap { item -> WindDownSchedulePeriod? in
             guard let occurrence = item.occurrence(), occurrence.interval.start > date else { return nil }
-            return WindDownSchedulePeriod(occurrence: occurrence, title: item.title, recurring: false)
+            return WindDownSchedulePeriod(occurrence: occurrence, title: item.userFacingTitle, recurring: false)
         }
 
         let oneTimeIntervals = state.oneTimePeriods.compactMap { item -> (WindDownOccurrenceRole, DateInterval)? in
@@ -468,7 +482,7 @@ enum WindDownScheduleEngine {
                 }
                 if expanded.interval.start > date && !replacesOneTime {
                     periods.append(
-                        WindDownSchedulePeriod(occurrence: expanded, title: routine.title, recurring: true)
+                        WindDownSchedulePeriod(occurrence: expanded, title: routine.userFacingTitle, recurring: true)
                     )
                 }
                 nextDate = occurrence.interval.end.addingTimeInterval(1)
@@ -531,7 +545,7 @@ enum WindDownScheduleEngine {
             guard item.isEligible(at: date),
                   let occurrence = item.occurrence(),
                   occurrence.interval.contains(date) else { return nil }
-            return WindDownSchedulePeriod(occurrence: occurrence, title: item.title, recurring: false)
+            return WindDownSchedulePeriod(occurrence: occurrence, title: item.userFacingTitle, recurring: false)
         }
         for routine in state.routines where routine.enabled {
             let startOfToday = calendar.startOfDay(for: date)
@@ -554,7 +568,7 @@ enum WindDownScheduleEngine {
                 if state.oneTimePeriods.contains(where: {
                     $0.role == routine.role && $0.interval.intersects(expanded.interval) && $0.isAvailable
                 }) { continue }
-                candidates.append(WindDownSchedulePeriod(occurrence: expanded, title: routine.title, recurring: true))
+                candidates.append(WindDownSchedulePeriod(occurrence: expanded, title: routine.userFacingTitle, recurring: true))
             }
         }
         return candidates

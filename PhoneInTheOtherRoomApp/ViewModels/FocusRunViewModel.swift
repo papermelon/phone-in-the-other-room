@@ -1032,10 +1032,10 @@ final class FocusRunViewModel: ObservableObject {
 
     private func scheduleTitle(for id: UUID, in schedule: WindDownScheduleState) -> String {
         if let period = schedule.oneTimePeriods.first(where: { $0.id == id }) {
-            return period.title
+            return period.userFacingTitle
         }
         if let routine = schedule.routines.first(where: { $0.id == id }) {
-            return routine.title
+            return routine.userFacingTitle
         }
         return "Phone-away time"
     }

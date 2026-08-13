@@ -18,7 +18,7 @@ extension FocusRunViewModel {
                 sheepID: sheepID,
                 protectedNightCount: coordinator.progress.totalCompletedRuns
             )
-            return "+\(amount) wool. This sheep has moved to another farm, while its story stays in Ollie’s Trail Notes."
+            return "+\(amount) wool. This sheep has moved to another farm. Its story stays in the Search Journal."
         }
     }
 
