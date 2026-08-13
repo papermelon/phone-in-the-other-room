@@ -355,9 +355,9 @@ enum NotificationPreviewData {
         let isAdditional = plan.role == .additionalQuiet
         let title: String
         if activePlan != nil {
-            title = isAdditional ? "Current Phone Break" : "Current Wind Down"
+            title = isAdditional ? "Current Phone Away" : "Current Wind Down"
         } else {
-            title = isAdditional ? "Next Phone Break" : "Next Wind Down"
+            title = isAdditional ? "Next Phone Away" : "Next Wind Down"
         }
         return Preview(
             title: title,

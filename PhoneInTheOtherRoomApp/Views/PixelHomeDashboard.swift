@@ -18,10 +18,11 @@ struct PixelHomeDashboard: View {
             preferences: viewModel.nightWatchPreferences,
             purpose: viewModel.offlinePurpose,
             watchReachable: watch.isReachable,
-            canBeginNow: viewModel.canBeginNightWatchNow,
+            canBeginNow: viewModel.currentPrimaryWindDownStartContext != nil,
             isNFCTagReady: viewModel.hasRegisteredNFCTag,
-            startContext: viewModel.currentWindDownStartContext,
-            nextUpcoming: viewModel.nextUpcomingQuietPeriod,
+            windDownStartContext: viewModel.currentPrimaryWindDownStartContext,
+            phoneAwayStartContext: viewModel.currentPhoneAwayStartContext,
+            nextUpcoming: viewModel.nextUpcomingAdditionalQuietPeriod,
             upcomingAdditionalCount: viewModel.upcomingAdditionalQuietPeriods.count,
             immediateAdditionalQuietMinutes: viewModel.immediateAdditionalQuietMinutes,
             phoneBreakMeterMinutes: viewModel.sheepSearchState.trailMap.pendingMappedMinutes,
@@ -30,10 +31,10 @@ struct PixelHomeDashboard: View {
                 let methodIsReady = viewModel.selectedGuardKind != .nfcTag
                     || viewModel.hasRegisteredNFCTag
                 if viewModel.hasConfiguredNightWatch
-                    && viewModel.canBeginNightWatchNow
+                    && viewModel.currentPrimaryWindDownStartContext != nil
                     && methodIsReady {
                     viewModel.requestStartNightWatch(
-                        sourceID: viewModel.currentWindDownStartContext?.sourceID
+                        sourceID: viewModel.currentPrimaryWindDownStartContext?.sourceID
                     )
                 } else {
                     showRunSetup = true
@@ -42,7 +43,14 @@ struct PixelHomeDashboard: View {
             onEditTiming: { showTimingEditor = true },
             onQuietTimeSchedule: { showQuietTimeSchedule = true },
             onStartNow: {
-                if !viewModel.startNewOneTimeAdditionalQuietNow() {
+                let started: Bool
+                if let context = viewModel.currentPhoneAwayStartContext {
+                    viewModel.requestStartNightWatch(sourceID: context.sourceID)
+                    started = viewModel.showNightWatchStartPrompt
+                } else {
+                    started = viewModel.startNewOneTimeAdditionalQuietNow()
+                }
+                if !started {
                     showQuickStartError = true
                 }
             },
@@ -62,7 +70,7 @@ struct PixelHomeDashboard: View {
             WindDownScheduleView()
                 .environmentObject(viewModel)
         }
-        .alert("Phone Break could not start", isPresented: $showQuickStartError) {
+        .alert("Phone Away could not start", isPresented: $showQuickStartError) {
             Button("OK", role: .cancel) {}
         } message: {
             Text(viewModel.windDownScheduleError ?? "Try again after the current phone-away time ends.")
@@ -77,7 +85,8 @@ private struct PixelHomeDashboardContent: View {
     var watchReachable: Bool
     var canBeginNow: Bool
     var isNFCTagReady: Bool
-    var startContext: WindDownStartContext?
+    var windDownStartContext: WindDownStartContext?
+    var phoneAwayStartContext: WindDownStartContext?
     var nextUpcoming: WindDownSchedulePeriod?
     var upcomingAdditionalCount: Int
     var immediateAdditionalQuietMinutes: Int?
@@ -116,8 +125,8 @@ private struct PixelHomeDashboardContent: View {
                 eyebrow: primaryEyebrow,
                 title: primaryTitle,
                 subtitle: primarySubtitle,
-                icon: startContext?.isAdditionalQuiet == true ? "timer" : "door.left.hand.open",
-                assetName: startContext?.isAdditionalQuiet == true ? nil : AssetSlot.Home.door,
+                icon: "door.left.hand.open",
+                assetName: AssetSlot.Home.door,
                 action: onPrimaryAction
             )
 
@@ -128,9 +137,11 @@ private struct PixelHomeDashboardContent: View {
             UpcomingQuietTimesCard(
                 nextPeriod: nextUpcoming,
                 additionalCount: upcomingAdditionalCount,
-                immediateStartMinutes: preferences.isConfigured && !canBeginNow
+                immediateStartMinutes: preferences.isConfigured && !canBeginNow && phoneAwayStartContext == nil
                     ? immediateAdditionalQuietMinutes
                     : nil,
+                scheduledStart: phoneAwayStartContext,
+                windDownIsReady: canBeginNow,
                 trailMapPresentation: SheepTrailMapPresentation.home(
                     pendingMappedMinutes: phoneBreakMeterMinutes,
                     protectedWindDownCount: progress.totalCompletedRuns
@@ -150,41 +161,17 @@ private struct PixelHomeDashboardContent: View {
         if preferences.guardKind == .nfcTag, !isNFCTagReady {
             return "Set up Wind Down tag"
         }
-        if let startContext, canBeginNow {
-            switch startContext.kind {
-            case .practice:
-                return "Start \(startContext.durationMinutes)-minute practice"
-            case .oneTimeQuiet:
-                return "Start Phone Break"
-            case .repeatingQuiet:
-                return "Start Phone Break"
-            case .primary:
-                break
-            }
-        }
-        return canBeginNow ? AppCopy.ConfiguredHome.startButton.value : "Review Wind Down"
+        return canBeginNow ? AppCopy.ConfiguredHome.startButton.value : "Plan Wind Down"
     }
 
     private var primaryEyebrow: String? {
-        guard canBeginNow, let startContext else { return nil }
-        switch startContext.kind {
-        case .practice: return "PRACTICE QUIET · \(startContext.durationMinutes) MIN"
-        case .oneTimeQuiet: return "PHONE BREAK"
-        case .repeatingQuiet: return "PHONE BREAK"
-        case .primary: return nil
-        }
+        guard canBeginNow, windDownStartContext != nil else { return nil }
+        return nil
     }
 
     private var primarySubtitle: String {
         guard preferences.isConfigured else { return "Choose when Wind Down runs" }
-        guard canBeginNow, let startContext, startContext.isAdditionalQuiet else {
-            return scheduleLabel
-        }
-        let end = OllieFormat.time(startContext.interval.end)
-        if startContext.isPractice {
-            return "Ends at \(end) · separate from protected nights"
-        }
-        return "\(startContext.title) · ends at \(end)"
+        return scheduleLabel
     }
 
     private var scheduleLabel: String {
@@ -302,7 +289,8 @@ private struct NightWatchOverviewBlock: View {
                 watchReachable: false,
                 canBeginNow: false,
                 isNFCTagReady: false,
-                startContext: nil,
+                windDownStartContext: nil,
+                phoneAwayStartContext: nil,
                 nextUpcoming: nil,
                 upcomingAdditionalCount: 0,
                 immediateAdditionalQuietMinutes: nil,
@@ -340,12 +328,46 @@ private struct NightWatchOverviewBlock: View {
                 watchReachable: false,
                 canBeginNow: false,
                 isNFCTagReady: false,
-                startContext: nil,
+                windDownStartContext: nil,
+                phoneAwayStartContext: nil,
                 nextUpcoming: nil,
                 upcomingAdditionalCount: 0,
                 immediateAdditionalQuietMinutes: nil,
-                phoneBreakMeterMinutes: 75,
+                phoneBreakMeterMinutes: PhoneAwaySearchMeter.maximumMinutes,
                 nightFlockSummary: .invitation,
+                onPrimaryAction: {},
+                onEditTiming: {},
+                onQuietTimeSchedule: {},
+                onStartNow: {}
+            )
+            .padding(AppSpacing.md)
+        }
+        .background(AppColors.paper)
+    }
+}
+
+#Preview("Phone Away scheduled and secondary") {
+    let now = Date()
+    NavigationStack {
+        ScrollView {
+            PixelHomeDashboardContent(
+                progress: .empty,
+                preferences: .defaults,
+                purpose: OfflinePurposeProfile(category: .read),
+                watchReachable: false,
+                canBeginNow: false,
+                isNFCTagReady: true,
+                windDownStartContext: nil,
+                phoneAwayStartContext: WindDownStartContext(
+                    sourceID: UUID(),
+                    kind: .oneTimeQuiet,
+                    title: "A little room",
+                    interval: DateInterval(start: now.addingTimeInterval(-60), end: now.addingTimeInterval(20 * 60))
+                ),
+                nextUpcoming: nil,
+                upcomingAdditionalCount: 1,
+                immediateAdditionalQuietMinutes: nil,
+                phoneBreakMeterMinutes: PhoneAwaySearchMeter.maximumMinutes,
                 onPrimaryAction: {},
                 onEditTiming: {},
                 onQuietTimeSchedule: {},

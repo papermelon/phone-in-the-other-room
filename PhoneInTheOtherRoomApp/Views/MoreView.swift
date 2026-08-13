@@ -9,7 +9,6 @@ struct SettingsView: View {
     @State private var showImpactConsent = false
     @State private var showImpactDeletion = false
     @State private var showStartOver = false
-    @State private var showReplaySetup = false
     @State private var showAppShieldInfo = false
     @State private var contextualTip: CountingSheepContextualTip?
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
@@ -20,15 +19,11 @@ struct SettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
-                orientationSection
-                    .contextualGuideTarget(.settings)
-                appearanceSection
                 windDownSection
-                guidanceSection
                 connectionsSection
+                helpAndGuideSection
                 dataAndPrivacySection
                 startOverSection
-                helpSection
                 aboutSection
 #if DEBUG
                 if internalPreviewsEnabled {
@@ -79,16 +74,6 @@ struct SettingsView: View {
         } message: {
             Text("This erases your Wind Down plan, protected nights, flock, rewards, reflections, local history, app selection, and paired NFC tag. Counting Sheep will return to the Welcome screen. System permissions already granted by iOS cannot be revoked here.")
         }
-        .sheet(isPresented: $showReplaySetup) {
-            NavigationStack {
-                OnboardingFlowView(
-                    initialDraft: OnboardingDraft.replay(from: viewModel.nightWatchPreferences),
-                    onComplete: { showReplaySetup = false },
-                    onCancel: { showReplaySetup = false }
-                )
-                .environmentObject(viewModel)
-            }
-        }
         .sheet(isPresented: $showAppShieldInfo) {
             AppShieldExplainerSheet {
                 showAppShieldInfo = false
@@ -119,50 +104,64 @@ struct SettingsView: View {
         }
     }
 
-    private var orientationSection: some View {
+    private var helpAndGuideSection: some View {
         VStack(spacing: AppSpacing.md) {
-            sectionHeader("Getting settled", icon: "map.fill")
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text(viewModel.orientationState.canResume ? "Your app tour is paused." : "A quick map of Counting Sheep")
-                        .font(AppTypography.headline)
-                    Text("Take a short three-step Home tour, then discover the other screens as you use them.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                    Button(viewModel.orientationState.canResume ? "Resume app tour" : "Show app tour") {
+            sectionHeader("Help & app guide", icon: "lifepreserver.fill")
+            NavigationLink {
+                WindDownHowItWorksView()
+            } label: {
+                settingsRow("How Counting Sheep works", icon: "moon.stars.fill", detail: "The simple Wind Down ritual")
+            }
+            .buttonStyle(.plain)
+            settingsButton(
+                title: viewModel.orientationState.canResume ? "Resume app guide" : "Show app guide",
+                icon: "map.fill",
+                detail: "A short map of Home and the four tabs."
+            ) {
                         if viewModel.orientationState.canResume {
                             viewModel.resumeOrientation()
                         } else {
                             viewModel.replayOrientation()
                         }
                         NotificationCenter.default.post(name: .countingSheepShowHome, object: nil)
-                    }
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    .frame(minHeight: 44, alignment: .leading)
-                    .disabled(viewModel.isRunning)
-                    if viewModel.isRunning {
-                        Text("You can return to this after the active Wind Down ends.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    }
-
-                    Divider()
-
-                    Text("Want to test Wind Down first?")
-                        .font(AppTypography.headline)
-                    Text("A real five-minute practice appears in Nights, but never counts as a protected night or starts a sheep search.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                    Button("Try 5 minutes") {
+            }
+            .disabled(viewModel.isRunning)
+            settingsButton(
+                title: "5-minute practice",
+                icon: "timer",
+                detail: "A real practice in Nights. It never counts as a Wind Down."
+            ) {
                         NotificationCenter.default.post(name: .countingSheepShowHome, object: nil)
                         _ = viewModel.startOrientationPractice()
-                    }
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    .frame(minHeight: 44, alignment: .leading)
-                    .disabled(viewModel.isRunning)
+            }
+            .disabled(viewModel.isRunning)
+            NavigationLink {
+                WindDownGuideView()
+            } label: {
+                settingsRow("About these ideas and sources", icon: "sparkles", detail: "Small, sourced ideas for settling and mornings")
+            }
+            .buttonStyle(.plain)
+            NavigationLink {
+                FeedbackFormView()
+                    .environmentObject(viewModel)
+            } label: {
+                settingsRow("Send feedback", icon: "bubble.left.and.text.bubble.right.fill")
+            }
+            .buttonStyle(.plain)
+            if let supportEmailURL = Self.supportEmailURL {
+                Link(destination: supportEmailURL) {
+                    settingsRow("Email support", icon: "envelope.fill")
                 }
+                .buttonStyle(.plain)
+            }
+            if let websiteURL = Self.websiteURL {
+                Link(destination: websiteURL) {
+                    settingsRow("Counting Sheep website", icon: "safari.fill")
+                }
+                .buttonStyle(.plain)
             }
         }
+        .contextualGuideTarget(.settings)
     }
 
     private var appearanceSection: some View {
@@ -184,18 +183,7 @@ struct SettingsView: View {
                         FocusRunSetupView()
                             .environmentObject(viewModel)
                     } label: {
-                        Label("Wind Down plan", systemImage: "slider.horizontal.3")
-                            .font(AppTypography.headline)
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                    }
-                    .buttonStyle(.plain)
-                    Divider()
-                    Button {
-                        showReplaySetup = true
-                    } label: {
-                        Label("Review Wind Down setup", systemImage: "arrow.counterclockwise")
-                            .font(AppTypography.headline)
-                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                        settingsRow("Plan & routine", icon: "slider.horizontal.3", detail: "Bedtime, wake time, and quiet bookends")
                     }
                     .buttonStyle(.plain)
                 }
@@ -211,6 +199,14 @@ struct SettingsView: View {
                 onSetUpNFCTag: { viewModel.provisionNFCTag() },
                 onShowAppShieldInfo: { showAppShieldInfo = true }
             )
+            appearanceSection
+            NavigationLink {
+                NotificationSettingsView()
+                    .environmentObject(viewModel)
+            } label: {
+                settingsRow("Reminders", icon: "bell.fill", detail: "Wind Down cues and quiet-time reminders")
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -278,13 +274,6 @@ struct SettingsView: View {
                 .environmentObject(viewModel)
             }
 #endif
-            NavigationLink {
-                NotificationSettingsView()
-                    .environmentObject(viewModel)
-            } label: {
-                settingsRow("Notifications", icon: "bell.fill")
-            }
-            .buttonStyle(.plain)
         }
     }
 
@@ -309,41 +298,6 @@ struct SettingsView: View {
                         .foregroundStyle(AppColors.secondaryText)
                 }
             }
-        }
-    }
-
-    private var guidanceSection: some View {
-        VStack(spacing: AppSpacing.md) {
-            sectionHeader("Wind Down ideas", icon: "sparkles")
-            NavigationLink {
-                WindDownHowItWorksView()
-            } label: {
-                settingsRow("How Wind Down works", icon: "moon.stars.fill")
-            }
-            .buttonStyle(.plain)
-            NavigationLink {
-                WindDownGuideView()
-            } label: {
-                PixelCard {
-                    HStack(spacing: AppSpacing.md) {
-                        Image(systemName: "sparkles")
-                            .font(.title2.weight(.black))
-                            .foregroundStyle(AppColors.grass)
-                            .frame(width: 30)
-                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text("Open the finite guide")
-                                .font(AppTypography.headline)
-                            Text("Small, sourced ideas for screens, settling, and mornings. Nothing to complete.")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.muted)
-                        }
-                        Spacer(minLength: 0)
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(AppColors.muted)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
         }
     }
 
@@ -404,31 +358,6 @@ struct SettingsView: View {
                     }
                     .buttonStyle(.bordered)
                 }
-            }
-        }
-    }
-
-    private var helpSection: some View {
-        VStack(spacing: AppSpacing.md) {
-            sectionHeader("Help", icon: "lifepreserver.fill")
-            NavigationLink {
-                FeedbackFormView()
-                    .environmentObject(viewModel)
-            } label: {
-                settingsRow("Send feedback", icon: "bubble.left.and.text.bubble.right.fill")
-            }
-            .buttonStyle(.plain)
-            if let supportEmailURL = Self.supportEmailURL {
-                Link(destination: supportEmailURL) {
-                    settingsRow("Email support", icon: "envelope.fill")
-                }
-                .buttonStyle(.plain)
-            }
-            if let websiteURL = Self.websiteURL {
-                Link(destination: websiteURL) {
-                    settingsRow("Counting Sheep website", icon: "safari.fill")
-                }
-                .buttonStyle(.plain)
             }
         }
     }
@@ -510,6 +439,8 @@ struct SettingsView: View {
                     }
                 }
                 Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(AppColors.muted)
             }
         }
     }
@@ -520,19 +451,38 @@ struct SettingsView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func settingsRow(_ title: String, icon: String) -> some View {
+    private func settingsRow(_ title: String, icon: String, detail: String? = nil) -> some View {
         PixelCard {
-            HStack {
+            HStack(alignment: .center, spacing: AppSpacing.md) {
                 Image(systemName: icon)
                     .foregroundStyle(AppColors.grass)
                     .frame(width: 24)
-                Text(title).font(AppTypography.headline)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(title).font(AppTypography.headline)
+                    if let detail {
+                        Text(detail)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .foregroundStyle(AppColors.muted)
             }
             .frame(minHeight: 44)
         }
+    }
+
+    private func settingsButton(
+        title: String,
+        icon: String,
+        detail: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            settingsRow(title, icon: icon, detail: detail)
+        }
+        .buttonStyle(.plain)
     }
 
     private var healthDetail: String {

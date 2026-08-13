@@ -25,7 +25,7 @@ enum NightWatchNotificationPlanBuilder {
                 PlannedNotification(
                     id: "night-watch-quiet-period-start",
                     date: windDownStart,
-                    title: "Phone Break is coming",
+                    title: "Phone Away is coming",
                     body: "A little room away from the screen starts at \(OllieFormat.time(windDownStart)).",
                     phase: .windDown,
                     importance: .active,
@@ -291,7 +291,7 @@ enum UpcomingWindDownNotificationPlanBuilder {
             let copy: NightWatchNotificationCopy
             if period.occurrence.role == .additionalQuiet {
                 copy = NightWatchNotificationCopy(
-                    title: "Phone Break is coming",
+                    title: "Phone Away is coming",
                     body: "A little room away from the screen starts at \(OllieFormat.time(start))."
                 )
             } else {

@@ -99,7 +99,7 @@ struct NightJourneyView: View {
                         .background(.black.opacity(0.32), in: Capsule())
                     Spacer()
                     if phoneBreakMeterMinutes > 0 {
-                        Text("PHONE BREAK TRAIL · \(min(phoneBreakMeterMinutes, 75)) / 75 MIN")
+                        Text("EXTRA SEARCH PROGRESS · \(min(phoneBreakMeterMinutes, SheepTrailMapState.maximumMappedMinutes)) / \(SheepTrailMapState.maximumMappedMinutes) MIN")
                             .font(.system(size: 8, weight: .bold, design: .monospaced))
                             .foregroundStyle(.white.opacity(0.88))
                             .padding(7)

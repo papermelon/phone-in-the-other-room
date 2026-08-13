@@ -223,7 +223,7 @@ private struct NightsWeekDayCell: View {
             parts.append("\(day.earlyEndedPrimaryCount) other usual Wind Down attempt\(day.earlyEndedPrimaryCount == 1 ? "" : "s") ended early")
         }
         if day.additionalCount > 0 {
-            parts.append("\(day.additionalCount) Phone Break\(day.additionalCount == 1 ? "" : "s"), \(day.additionalQuietMinutes) minutes")
+            parts.append("\(day.additionalCount) Phone Away period\(day.additionalCount == 1 ? "" : "s"), \(day.additionalQuietMinutes) minutes")
         }
         return parts.joined(separator: ", ")
     }

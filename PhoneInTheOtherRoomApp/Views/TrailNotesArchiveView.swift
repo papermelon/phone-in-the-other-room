@@ -171,7 +171,7 @@ private struct TrailNoteRow: View {
     private var originLine: String {
         let date = outcome.createdAt.formatted(date: .abbreviated, time: .omitted)
         return outcome.origin == .phoneBreak
-            ? "Phone Break bonus search · \(date)"
+            ? "Phone Away bonus search · \(date)"
             : "Wind Down \(outcome.protectedNightNumber) · \(date)"
     }
 }

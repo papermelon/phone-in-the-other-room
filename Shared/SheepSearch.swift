@@ -213,7 +213,7 @@ enum SheepSearchEngine {
         let oddsBeforeMap = min(0.92, baseOdds + droughtBonus)
         let guaranteed = protectedNightNumber <= starterGuaranteeRuns
             || state.consecutiveNoFinds >= hardGuaranteeAfterNoFinds
-        // Phone Breaks now resolve through their own meter. Keep the legacy
+            // Phone Away runs now resolve through their own meter. Keep the legacy
         // evidence field decodable, but do not let new Wind Down searches
         // consume or apply it.
         let appliedMapPoints = 0

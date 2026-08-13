@@ -81,14 +81,14 @@ final class WatchRunViewModel: ObservableObject {
     }
 
     func requestCurrentRun() {
-        connectionText = watch.isReachable ? "Looking for Wind Down or Phone Break..." : "Open the iPhone app and begin Wind Down or Phone Break"
+        connectionText = watch.isReachable ? "Looking for Wind Down or Phone Away..." : "Open the iPhone app and begin Wind Down or Phone Away"
         watch.sendWithReply(WatchMessage(type: .pingWatch)) { [weak self] reply in
             Task { @MainActor in
                 guard let self else { return }
                 if let reply {
                     self.handle(reply)
                 } else if self.run == nil {
-                    self.connectionText = self.watch.isReachable ? "No active Wind Down or Phone Break found" : "iPhone not reachable"
+                    self.connectionText = self.watch.isReachable ? "No active Wind Down or Phone Away found" : "iPhone not reachable"
                 }
             }
         }
@@ -97,7 +97,7 @@ final class WatchRunViewModel: ObservableObject {
     func endRun() {
         guard run?.guardKind != .nfcTag else {
             connectionText = isAdditionalQuiet
-                ? "Use iPhone and tap the phone-bed tag to end Phone Break"
+                ? "Use iPhone and tap the phone-bed tag to end Phone Away"
                 : "Use iPhone and tap the phone-bed tag to end Wind Down"
             return
         }
@@ -122,8 +122,8 @@ final class WatchRunViewModel: ObservableObject {
     func requestDistanceCheck() {
         guard run?.guardKind == .watchPlacement,
               run?.placementStatus == .awaitingConfirmation else {
-            connectionText = isAdditionalQuiet
-                ? "Phone Break is keeping time on iPhone"
+                connectionText = isAdditionalQuiet
+                    ? "Phone Away is keeping time on iPhone"
                 : "Wind Down is keeping time on iPhone"
             return
         }
@@ -158,7 +158,7 @@ final class WatchRunViewModel: ObservableObject {
             } else {
                 stopNearbyInteraction()
                 connectionText = isAdditionalQuiet
-                    ? "Phone Break is keeping time on iPhone"
+                    ? "Phone Away is keeping time on iPhone"
                     : "Wind Down is keeping time on iPhone"
             }
         case .nearbyDiscoveryToken:
@@ -188,7 +188,7 @@ final class WatchRunViewModel: ObservableObject {
             stopNearbyInteraction()
             WKInterfaceDevice.current().play(.stop)
         case .focusRunStateUpdate where message.run == nil:
-            connectionText = "No active Wind Down or Phone Break on iPhone"
+                connectionText = "No active Wind Down or Phone Away on iPhone"
         default:
             break
         }

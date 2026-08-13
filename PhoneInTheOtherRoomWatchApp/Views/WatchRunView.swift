@@ -64,7 +64,7 @@ struct WatchRunView: View {
                         Label("End early", systemImage: "stop.circle")
                     }
                     .buttonStyle(WatchQuietButtonStyle())
-                    .accessibilityHint("Ends this Phone Break early")
+                    .accessibilityHint("Ends this Phone Away period early")
                 }
 
                 Button { viewModel.pingPhone() } label: {
@@ -97,7 +97,7 @@ struct WatchRunView: View {
             return "Walk the phone to its bed"
         }
         if isAdditionalQuiet {
-            return "Phone Break"
+            return "Phone Away"
         }
         switch phase {
         case .windDown: return "Let the evening get quieter"
@@ -123,7 +123,7 @@ struct WatchRunView: View {
     private var phaseTitle: String {
         if isLegacyWarning { return "Nearby" }
         if needsWatchPlacement { return "Check" }
-        if isAdditionalQuiet { return "Phone Break" }
+        if isAdditionalQuiet { return "Phone Away" }
         switch phase {
         case .windDown: return "Evening"
         case .overnight: return "Asleep"
@@ -211,7 +211,7 @@ struct WatchRunView: View {
     private var timerAccessibilityLabel: String {
         let minutes = OllieFormat.minutes(transitionRemainingSeconds)
         if isAdditionalQuiet {
-            return "\(minutes) minutes until Phone Break ends"
+            return "\(minutes) minutes until Phone Away ends"
         }
         let destination: String
         switch phase {

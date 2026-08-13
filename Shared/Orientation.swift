@@ -48,13 +48,13 @@ enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identi
     var message: String {
         switch self {
         case .nights:
-            return "Wind Down is your nightly ritual.\nPhone Breaks stay here as smaller, separate records."
+            return "Wind Down is your nightly ritual.\nPhone Away stays here as a smaller, separate record."
         case .farm:
-            return "Wind Down moves Ollie’s main trail.\nPhone Break minutes wait on their own trail."
+            return "Wind Down moves Ollie’s main trail.\nPhone Away minutes wait as extra search progress."
         case .settings:
             return "Change Wind Down, connections, and guidance here.\nYou can replay this guide whenever you like."
         case .phoneBreak:
-            return "Start one now or save one for later.\nEvery 75 completed minutes can open a bonus search after three Wind Downs."
+            return "Start one now or save one for later.\nEvery \(PhoneAwaySearchMeter.maximumMinutes) completed minutes can open a bonus search after three Wind Downs."
         case .trailNote:
             return "A homecoming means Ollie found a sheep.\nA clue means he has more trail to follow."
         case .barnCapacity:

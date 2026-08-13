@@ -92,6 +92,28 @@ final class WindDownSchedulingTests: XCTestCase {
         XCTAssertEqual(confirmed.sourceID, requested.sourceID)
     }
 
+    func testScheduledPhoneAwayStartStaysSecondaryToWindDown() throws {
+        let now = try date(2026, 8, 3, 20, 15)
+        let period = WindDownOneTimePeriod(
+            title: "A little room",
+            role: .additionalQuiet,
+            interval: DateInterval(start: now.addingTimeInterval(-15 * 60), end: now.addingTimeInterval(45 * 60))
+        )
+        let eligible = try XCTUnwrap(
+            WindDownScheduleEngine.eligibleOccurrence(
+                in: WindDownScheduleState(oneTimePeriods: [period]),
+                at: now,
+                calendar: calendar
+            )
+        )
+        let context = WindDownStartContext(period: eligible, practicePeriodID: nil)
+
+        XCTAssertTrue(context.isAdditionalQuiet)
+        XCTAssertEqual(context.kind, .oneTimeQuiet)
+        XCTAssertNotEqual(context.kind, .primary)
+        XCTAssertEqual(context.title, "A little room")
+    }
+
     func testRecurringPrimaryRestartIgnoresConsumedOccurrenceStateWithinProtectedWindow() throws {
         let preferences = NightWatchPreferences(
             bedtimeHour: 23,

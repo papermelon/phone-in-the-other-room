@@ -40,7 +40,7 @@ struct WindDownDayDetailView: View {
                         isExpanded: $showsPrimaryRecords
                     )
                     occurrenceGroup(
-                        title: "PHONE BREAK",
+                        title: "PHONE AWAY",
                         records: additionalRecords,
                         totalMinutes: summary.additionalQuietMinutes,
                         accent: AppColors.lavender,
@@ -137,7 +137,7 @@ struct WindDownDayDetailView: View {
         switch summary.primaryOutcome {
         case .protected: return "Protected night"
         case .endedEarly: return "Ended early"
-        case nil: return summary.additionalCount > 0 ? "Phone Break" : "No recorded quiet"
+        case nil: return summary.additionalCount > 0 ? "Phone Away" : "No recorded quiet"
         }
     }
 
@@ -240,7 +240,7 @@ struct WindDownRecordDetailView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text(record.occurrenceRole == .additionalQuiet ? "Phone Break" : "Wind Down")
+                            Text(record.occurrenceRole == .additionalQuiet ? "Phone Away" : "Wind Down")
                             .font(AppTypography.display(26))
                         Text(record.outcome == .completed ? "Completed" : "Ended early")
                             .font(AppTypography.headline)
@@ -258,7 +258,7 @@ struct WindDownRecordDetailView: View {
                                 .foregroundStyle(AppColors.grass)
                             Text(outcome.sheepID.flatMap(SheepCatalog.definition).map { "Found \($0.name)" } ?? "Trail clue saved")
                                 .font(AppTypography.headline)
-                            Text(outcome.origin == .phoneBreak ? "Opened by 75 Phone Break minutes" : "Opened by this Wind Down")
+                            Text(outcome.origin == .phoneBreak ? "Opened by \(PhoneAwaySearchMeter.maximumMinutes) Phone Away minutes" : "Opened by this Wind Down")
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.muted)
                             if outcome.trailMapBonusPercentagePoints > 0 {
@@ -290,7 +290,7 @@ struct WindDownRecordDetailView: View {
             .padding(AppSpacing.md)
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle(record.occurrenceRole == .additionalQuiet ? "Phone Break" : "Wind Down")
+        .navigationTitle(record.occurrenceRole == .additionalQuiet ? "Phone Away" : "Wind Down")
         .navigationBarTitleDisplayMode(.inline)
     }
 

@@ -9,7 +9,7 @@ struct NightWatchReceiptCard: View {
     var body: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: 12) {
-                Text("YOUR WIND DOWN")
+                Text(run?.nightWatchPlan?.role == .additionalQuiet ? "YOUR PHONE AWAY" : "YOUR WIND DOWN")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
 
@@ -23,10 +23,10 @@ struct NightWatchReceiptCard: View {
                 if let run, run.isNightWatch {
                     receiptRow(
                         icon: "moon.zzz.fill",
-                        title: run.nightWatchPlan?.role == .additionalQuiet ? "Phone Break" : "Phone-free time",
+                        title: run.nightWatchPlan?.role == .additionalQuiet ? "Phone Away" : "Phone-free time",
                         value: "\(run.creditedQuietMinutes) min",
                         detail: run.nightWatchPlan?.role == .additionalQuiet
-                            ? "A short phone-away break outside Wind Down"
+                            ? "A short phone-away period outside Wind Down"
                             : "Wind-down and after waking only"
                     )
 

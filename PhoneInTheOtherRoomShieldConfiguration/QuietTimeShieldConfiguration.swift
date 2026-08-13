@@ -117,11 +117,11 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
     }
 
     private func primaryButtonTitle(for role: QuietTimeShieldRole) -> String {
-        role == .additionalQuiet ? "Return to Phone Break" : "Return to Wind Down"
+        role == .additionalQuiet ? "Return to Phone Away" : "Return to Wind Down"
     }
 
     private func keepRunningButtonTitle(for role: QuietTimeShieldRole) -> String {
-        role == .additionalQuiet ? "Keep Phone Break running" : "Keep Wind Down"
+        role == .additionalQuiet ? "Keep Phone Away running" : "Keep Wind Down"
     }
 
     private var secondaryButtonTitle: String {

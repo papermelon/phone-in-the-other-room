@@ -1,5 +1,11 @@
 import Foundation
 
+enum PhoneAwaySearchMeter {
+    static let maximumMinutes = 100
+    static let minimumEligibleMinutes = 15
+    static let maximumPendingMinutes = maximumMinutes * 2
+}
+
 enum SheepSearchOrigin: String, Codable {
     case windDown
     case phoneBreak
@@ -91,9 +97,9 @@ struct SheepSearchOutcome: Codable, Equatable, Identifiable {
 }
 
 struct SheepTrailMapState: Codable, Equatable {
-    static let currentSchemaVersion = 2
-    static let maximumMappedMinutes = 75
-    static let maximumPendingMinutes = 150
+    static let currentSchemaVersion = 3
+    static let maximumMappedMinutes = PhoneAwaySearchMeter.maximumMinutes
+    static let maximumPendingMinutes = PhoneAwaySearchMeter.maximumPendingMinutes
     static let maximumCreditedRunIDs = 128
 
     var schemaVersion: Int = currentSchemaVersion
@@ -171,15 +177,15 @@ struct SheepTrailMapPresentation: Equatable {
         let detail: String
         if isUnlocked {
             detail = minutes == SheepTrailMapState.maximumMappedMinutes
-                ? "The trail is full. Complete another Phone Break to open one bonus search."
-                : "Every 75 completed Phone Break minutes opens one bonus search."
+                ? "Extra search progress is full. Complete another Phone Away to open one bonus search."
+                : "Every \(SheepTrailMapState.maximumMappedMinutes) completed Phone Away minutes opens one bonus search."
         } else {
             detail = minutes == SheepTrailMapState.maximumMappedMinutes
-                ? "The trail is full. It will wait until three Wind Downs are complete."
+                ? "Extra search progress is full. It will wait until three Wind Downs are complete."
                 : "These minutes are saved. Bonus searches open after three Wind Downs."
         }
         return Self(
-            title: "Phone Break trail · \(minutes) / 75 minutes",
+            title: "Extra search progress · \(minutes) / \(SheepTrailMapState.maximumMappedMinutes) minutes",
             detail: detail
         )
     }
@@ -222,7 +228,7 @@ struct SheepSearchState: Codable, Equatable {
         guard !outcomes.contains(where: { $0.runID == outcome.runID }) else { return }
         outcomes.append(outcome)
         // The mapped-bonus field is retained for legacy Wind Down outcomes only.
-        // New Phone Break searches consume the separate meter before settlement.
+        // New Phone Away searches consume the separate meter before settlement.
         if let sheepID = outcome.sheepID {
             if !foundSheepIDs.contains(sheepID) {
                 foundSheepIDs.append(sheepID)

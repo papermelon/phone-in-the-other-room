@@ -16,13 +16,13 @@ final class ActiveRunPresentationTests: XCTestCase {
             now: now
         )
 
-        XCTAssertEqual(presentation.eyebrow, "PHONE BREAK")
+        XCTAssertEqual(presentation.eyebrow, "PHONE AWAY")
         XCTAssertEqual(presentation.headline, "A little room away from the screen.")
         XCTAssertEqual(presentation.transitionCaption, "Ends at \(end.formatted(date: .omitted, time: .shortened))")
-        XCTAssertEqual(presentation.returnBarTitle, "Phone Break")
+        XCTAssertEqual(presentation.returnBarTitle, "Phone Away")
         XCTAssertEqual(
             presentation.timerAccessibilityLabel(remainingSeconds: 30 * 60),
-            "30 minutes until Phone Break ends"
+            "30 minutes until Phone Away ends"
         )
         XCTAssertNil(presentation.guidanceTip())
 
@@ -107,10 +107,10 @@ final class ActiveRunPresentationTests: XCTestCase {
             (.notRequested, nil, nil),
             (.scheduled, "Selected apps will be limited until", nil),
             (.active, "Selected apps are limited until", nil),
-            (.failed(.noSelection), "App limits didn’t start. Your Phone Break timer is still running.", nil),
-            (.failed(.unavailable), "App limits didn’t start. Your Phone Break timer is still running.", nil),
-            (.failed(.other), "App limits didn’t start. Your Phone Break timer is still running.", nil),
-            (.failed(.monitoring), "App limits didn’t start. Your Phone Break timer is still running.", "Try app limits again")
+            (.failed(.noSelection), "App limits didn’t start. Your Phone Away timer is still running.", nil),
+            (.failed(.unavailable), "App limits didn’t start. Your Phone Away timer is still running.", nil),
+            (.failed(.other), "App limits didn’t start. Your Phone Away timer is still running.", nil),
+            (.failed(.monitoring), "App limits didn’t start. Your Phone Away timer is still running.", "Try app limits again")
         ]
 
         for (state, message, retryTitle) in states {
@@ -156,11 +156,11 @@ final class ActiveRunPresentationTests: XCTestCase {
             planEndDate: end,
             now: now
         ).exit
-        XCTAssertEqual(additional.actionTitle, "End Phone Break early")
-        XCTAssertEqual(additional.confirmationTitle, "End Phone Break early?")
+        XCTAssertEqual(additional.actionTitle, "End Phone Away early")
+        XCTAssertEqual(additional.confirmationTitle, "End Phone Away early?")
         XCTAssertEqual(additional.confirmationBody, "This ends the timer and removes any app limits.")
-        XCTAssertEqual(additional.cancelTitle, "Keep Phone Break running")
-        XCTAssertEqual(additional.confirmTitle, "End Phone Break")
+        XCTAssertEqual(additional.cancelTitle, "Keep Phone Away running")
+        XCTAssertEqual(additional.confirmTitle, "End Phone Away")
 
         let primary = ActiveRunPresentation(
             role: .primarySleepBookend,

@@ -15,26 +15,26 @@ struct WindDownScheduleView: View {
     var body: some View {
         List {
             Section {
-                Text("Start one now, or save one for later. Phone Breaks stay separate from Wind Down.")
+                Text("Start one now, or save one for later. Phone Away stays separate from Wind Down.")
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.muted)
 
                 Button {
                     let started = viewModel.startNewOneTimeAdditionalQuietNow()
                     if !started {
-                        message = viewModel.windDownScheduleError ?? "Phone Break could not be started just now."
+                        message = viewModel.windDownScheduleError ?? "Phone Away could not be started just now."
                     }
                 } label: {
-                    Label("Start Phone Break now", systemImage: "timer")
+                    Label("Start now", systemImage: "timer")
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(PixelPrimaryButtonStyle())
                 .contextualGuideTarget(.phoneBreak)
             }
 
-            Section("One-time Phone Breaks") {
+            Section("One-time Phone Away") {
                 if upcomingOneTimePeriods.isEmpty {
-                    Text("No one-time Phone Breaks are scheduled.")
+                    Text("No one-time Phone Away periods are scheduled.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
                 } else {
@@ -54,7 +54,8 @@ struct WindDownScheduleView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityHint("Starts this exact Phone Break")
+                                .accessibilityLabel("Start scheduled \(period.title)")
+                                .accessibilityHint("Starts this scheduled Phone Away period")
                             } else {
                                 scheduleRow(
                                     title: period.title,
@@ -77,16 +78,16 @@ struct WindDownScheduleView: View {
                     }
                 }
                 Button { editor = .newOneTime } label: {
-                    Label("Add one-time Phone Break", systemImage: "plus")
+                    Label("Plan one-time Phone Away", systemImage: "plus")
                 }
             }
 
-            Section("Repeating Phone Breaks") {
+            Section("Repeating Phone Away") {
                 let routines = viewModel.windDownSchedule.routines.filter {
                     $0.role == .additionalQuiet
                 }
                 if routines.isEmpty {
-                    Text("No repeating Phone Breaks yet.")
+                    Text("No repeating Phone Away periods yet.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
                 } else {
@@ -107,7 +108,7 @@ struct WindDownScheduleView: View {
                     }
                 }
                 Button { editor = .newRoutine } label: {
-                    Label("Add a repeating Phone Break", systemImage: "repeat")
+                    Label("Plan repeating Phone Away", systemImage: "repeat")
                 }
             }
 
@@ -138,7 +139,7 @@ struct WindDownScheduleView: View {
                 }
             }
         }
-        .navigationTitle("Phone Break schedule")
+        .navigationTitle("Phone Away schedule")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             contextualTip = viewModel.contextualTip(from: [.phoneBreak])
@@ -153,19 +154,19 @@ struct WindDownScheduleView: View {
                 switch editor {
                 case .newOneTime:
                     QuietTimeEditorView(mode: .oneTime(nil), onComplete: { success in
-                        message = success ? "Ollie saved that Phone Break." : "Choose a future window that does not overlap another Phone Break."
+                        message = success ? "Ollie saved that Phone Away period." : "Choose a future window that does not overlap another Phone Away period."
                     })
                 case let .oneTime(id):
                     QuietTimeEditorView(mode: .oneTime(id), onComplete: { success in
-                        message = success ? "Ollie updated that Phone Break." : "Choose a future window that does not overlap another Phone Break."
+                        message = success ? "Ollie updated that Phone Away period." : "Choose a future window that does not overlap another Phone Away period."
                     })
                 case .newRoutine:
                     QuietTimeEditorView(mode: .routine(nil), onComplete: { success in
-                        message = success ? "Ollie saved that repeating Phone Break." : "That repeat overlaps another Phone Break. Choose a different window."
+                        message = success ? "Ollie saved that repeating Phone Away period." : "That repeat overlaps another Phone Away period. Choose a different window."
                     })
                 case let .routine(id):
                     QuietTimeEditorView(mode: .routine(id), onComplete: { success in
-                        message = success ? "Ollie updated that repeating Phone Break." : "That repeat overlaps another Phone Break. Choose a different window."
+                        message = success ? "Ollie updated that repeating Phone Away period." : "That repeat overlaps another Phone Away period. Choose a different window."
                     })
                 }
             }
