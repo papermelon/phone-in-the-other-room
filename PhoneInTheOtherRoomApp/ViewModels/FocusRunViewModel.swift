@@ -521,6 +521,12 @@ final class FocusRunViewModel: ObservableObject {
         persistence.sheepSearchState.outcomes.first { $0.runID == runID }
     }
 
+    /// Reads the durable Phone Away settlement for a terminal run. Receipts
+    /// use this record rather than deriving credit from the current meter.
+    func phoneAwaySearchSettlement(for runID: UUID) -> PhoneAwaySearchSettlementRecord? {
+        persistence.sheepSearchState.phoneAwaySettlement(for: runID)
+    }
+
     func setSheepSearchExactOddsEnabled(_ enabled: Bool) {
         var state = coordinator.sheepSearchState
         state.showExactOdds = enabled
@@ -706,7 +712,14 @@ final class FocusRunViewModel: ObservableObject {
             )
         }
         coordinator.start(
-            configuration: FocusRunConfiguration(nightWatchPlan: plan, guardKind: selectedGuardKind),
+            configuration: FocusRunConfiguration(
+                nightWatchPlan: plan,
+                guardKind: selectedGuardKind,
+                isPractice: WindDownStartContext.isPracticeOccurrence(
+                    sourceID: sourceID,
+                    practicePeriodID: orientationState.practicePeriodID
+                )
+            ),
             focusAccepted: false,
             startedAt: startedAt,
             autoConfirmPlacement: selectedGuardKind == .nfcTag,

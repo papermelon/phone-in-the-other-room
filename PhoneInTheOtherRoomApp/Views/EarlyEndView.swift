@@ -55,17 +55,28 @@ struct EarlyEndView: View {
 
     private var receiptMessage: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet ? "PHONE AWAY ENDED" : AppCopy.EarlyEnd.eyebrow.value)
+            Text(phoneAwayReceipt?.eyebrow ?? (viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet ? "PHONE AWAY ENDED" : AppCopy.EarlyEnd.eyebrow.value))
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.secondaryText)
-            Text(viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
+            Text(phoneAwayReceipt?.title ?? (viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
                 ? "Phone Away ended early. The time you completed is saved in Nights."
-                : AppCopy.EarlyEnd.title.value)
+                : AppCopy.EarlyEnd.title.value))
                 .font(pixelFont(.title3))
-            Text(minutesAwayText + " Tonight can simply be a fresh start.")
+            Text(phoneAwayReceipt?.message ?? (minutesAwayText + " Tonight can simply be a fresh start."))
                 .font(pixelFont(.body))
                 .foregroundStyle(AppColors.secondaryText)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(phoneAwayReceipt?.accessibilityLabel ?? minutesAwayText + " Tonight can simply be a fresh start.")
+    }
+
+    private var phoneAwayReceipt: PhoneAwayReceiptPresentation? {
+        guard let run = viewModel.activeRun,
+              run.nightWatchPlan?.role == .additionalQuiet,
+              let record = viewModel.phoneAwaySearchSettlement(for: run.id) else {
+            return nil
+        }
+        return .make(record: record)
     }
 
     private var minutesAwayText: String {

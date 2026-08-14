@@ -2,6 +2,7 @@ import Foundation
 
 enum PhoneAwaySearchMeter {
     static let maximumMinutes = 100
+    static let perRunCreditCap = maximumMinutes
     static let minimumEligibleMinutes = 15
     static let maximumPendingMinutes = maximumMinutes * 2
 }
@@ -192,7 +193,7 @@ struct SheepTrailMapPresentation: Equatable {
 }
 
 struct SheepSearchState: Codable, Equatable {
-    static let currentSchemaVersion = 3
+    static let currentSchemaVersion = 4
 
     var schemaVersion: Int
     var outcomes: [SheepSearchOutcome]
@@ -202,6 +203,7 @@ struct SheepSearchState: Codable, Equatable {
     var totalTrailDistance: Double
     var showExactOdds: Bool
     var trailMap: SheepTrailMapState
+    var phoneAwaySettlements: [PhoneAwaySearchSettlementRecord]
 
     static let empty = SheepSearchState(
         schemaVersion: currentSchemaVersion,
@@ -211,7 +213,8 @@ struct SheepSearchState: Codable, Equatable {
         phoneBreakConsecutiveNoFinds: 0,
         totalTrailDistance: 0,
         showExactOdds: false,
-        trailMap: SheepTrailMapState()
+        trailMap: SheepTrailMapState(),
+        phoneAwaySettlements: []
     )
 
     var lastOutcome: SheepSearchOutcome? { outcomes.last }
@@ -222,6 +225,15 @@ struct SheepSearchState: Codable, Equatable {
 
     func phoneBreakOutcome(for runID: UUID) -> SheepSearchOutcome? {
         outcomes.first { $0.origin == .phoneBreak && $0.runID == runID }
+    }
+
+    func phoneAwaySettlement(for runID: UUID) -> PhoneAwaySearchSettlementRecord? {
+        phoneAwaySettlements.first { $0.runID == runID }
+    }
+
+    mutating func appendPhoneAwaySettlement(_ settlement: PhoneAwaySearchSettlementRecord) {
+        guard !phoneAwaySettlements.contains(where: { $0.runID == settlement.runID }) else { return }
+        phoneAwaySettlements.append(settlement)
     }
 
     mutating func append(_ outcome: SheepSearchOutcome) {
@@ -250,7 +262,7 @@ struct SheepSearchState: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, outcomes, foundSheepIDs, consecutiveNoFinds, phoneBreakConsecutiveNoFinds, totalTrailDistance
-        case showExactOdds, trailMap
+        case showExactOdds, trailMap, phoneAwaySettlements
     }
 
     init(
@@ -261,7 +273,8 @@ struct SheepSearchState: Codable, Equatable {
         phoneBreakConsecutiveNoFinds: Int = 0,
         totalTrailDistance: Double,
         showExactOdds: Bool,
-        trailMap: SheepTrailMapState = SheepTrailMapState()
+        trailMap: SheepTrailMapState = SheepTrailMapState(),
+        phoneAwaySettlements: [PhoneAwaySearchSettlementRecord] = []
     ) {
         self.schemaVersion = schemaVersion
         self.outcomes = outcomes
@@ -271,6 +284,7 @@ struct SheepSearchState: Codable, Equatable {
         self.totalTrailDistance = totalTrailDistance
         self.showExactOdds = showExactOdds
         self.trailMap = trailMap
+        self.phoneAwaySettlements = phoneAwaySettlements
     }
 
     init(from decoder: Decoder) throws {
@@ -283,7 +297,8 @@ struct SheepSearchState: Codable, Equatable {
             phoneBreakConsecutiveNoFinds: try container.decodeIfPresent(Int.self, forKey: .phoneBreakConsecutiveNoFinds) ?? 0,
             totalTrailDistance: try container.decodeIfPresent(Double.self, forKey: .totalTrailDistance) ?? 0,
             showExactOdds: try container.decodeIfPresent(Bool.self, forKey: .showExactOdds) ?? false,
-            trailMap: try container.decodeIfPresent(SheepTrailMapState.self, forKey: .trailMap) ?? SheepTrailMapState()
+            trailMap: try container.decodeIfPresent(SheepTrailMapState.self, forKey: .trailMap) ?? SheepTrailMapState(),
+            phoneAwaySettlements: try container.decodeIfPresent([PhoneAwaySearchSettlementRecord].self, forKey: .phoneAwaySettlements) ?? []
         )
     }
 }

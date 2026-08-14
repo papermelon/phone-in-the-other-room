@@ -22,6 +22,14 @@ struct WindDownStartContext: Equatable {
     var isAdditionalQuiet: Bool { kind != .primary }
     var isPractice: Bool { kind == .practice }
 
+    static func isPracticeOccurrence(
+        sourceID: UUID?,
+        practicePeriodID: UUID?
+    ) -> Bool {
+        guard let sourceID, let practicePeriodID else { return false }
+        return sourceID == practicePeriodID
+    }
+
     init(
         period: WindDownSchedulePeriod,
         practicePeriodID: UUID?

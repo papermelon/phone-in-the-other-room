@@ -17,7 +17,9 @@ struct NightWatchReceiptCard: View {
                     icon: "iphone.slash",
                     title: "Phone-away time",
                     value: elapsedLabel,
-                    detail: "Elapsed from the moment Wind Down began"
+                    detail: run?.nightWatchPlan?.role == .additionalQuiet
+                        ? "Elapsed from the moment Phone Away began"
+                        : "Elapsed from the moment Wind Down began"
                 )
 
                 if let run, run.isNightWatch {

@@ -294,6 +294,9 @@ final class PersistenceService {
     var farmState: FarmState {
         get {
             let stored = load(FarmState.self, key: farmStateKey)
+            // Search settlement is persisted before Farm projection. Replaying
+            // all persisted outcomes here closes the termination window between
+            // those two local writes; FarmMigration.recordArrival is idempotent.
             let reconciled = FarmMigration.migrated(
                 existing: stored,
                 searchState: sheepSearchState

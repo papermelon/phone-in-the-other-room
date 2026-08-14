@@ -141,16 +141,19 @@ struct FocusRunConfiguration: Equatable {
     var duration: TimeInterval
     var guardKind: SessionGuardKind
     var nightWatchPlan: NightWatchPlan?
+    var isPractice: Bool
 
-    init(duration: TimeInterval, guardKind: SessionGuardKind) {
+    init(duration: TimeInterval, guardKind: SessionGuardKind, isPractice: Bool = false) {
         self.duration = max(FocusRunRules.minimumMeaningfulDurationSeconds, duration)
         self.guardKind = guardKind
         self.nightWatchPlan = nil
+        self.isPractice = isPractice
     }
 
-    init(nightWatchPlan: NightWatchPlan, guardKind: SessionGuardKind) {
+    init(nightWatchPlan: NightWatchPlan, guardKind: SessionGuardKind, isPractice: Bool = false) {
         self.duration = 0
         self.guardKind = guardKind
         self.nightWatchPlan = nightWatchPlan
+        self.isPractice = isPractice
     }
 }

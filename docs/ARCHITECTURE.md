@@ -268,16 +268,25 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    routing make Home the default. ActiveRunPresentation supplies role-aware copy,
    accessibility, guidance, exit, and shielding-status affordances; Phone Away uses
    its actual plan end date and never borrows primary Wind Down phase language. Terminal
-   receipts temporarily replace the shell.
+   receipts temporarily replace the shell. Completed Phone Away receipts read the persisted
+   per-run settlement record, distinguishing practice, below-minimum time, credited banking,
+   a full locked meter, and a resolved Phone Away bonus search in Search Journal; they never
+   infer progress from the current meter.
 10. `NightJourneyProgress` resolves overall, phase, and segment progress from the active
     `FocusRun`; `NightJourneyTerrainProfile` supplies a periodic height and derivative used by
     both the Canvas foreground and Ollie's foot alignment. Backdrops pan/zoom only within safe
     crop bounds, and deterministic clues at 20/55/82 percent never affect search resolution.
-11. Successful Phone Away runs atomically credit their actual quiet minutes, up to the centrally
-   configured 100-minute meter, to the versioned `SheepTrailMapState` nested in `SheepSearchState`. The state
-   carries remainder minutes, retains bounded credited run IDs for idempotency, and resolves at
-   most one separate bonus search per completed break after three protected Wind Downs. The
-   deterministic 20/30/40/50/100 ladder and Phone Away clue counter never alter Wind Down odds.
+11. Successful Phone Away runs settle through pure Shared logic. The settlement applies at least
+   15 credited minutes and the centrally configured 100-minute per-run cap to the versioned
+   `SheepTrailMapState` nested in `SheepSearchState`; it banks one full locked meter before
+   three protected Wind Downs, then keeps one carried remainder after unlock. A per-run
+   `PhoneAwaySearchSettlementRecord` stores eligibility, applied delta, meter before/after, and
+   any stable outcome ID. The coordinator persists that search snapshot before projecting Farm,
+   and `PersistenceService.farmState` replays persisted found outcomes on launch through the
+   existing idempotent Farm arrival path. Practice and early endings settle as ineligible, and
+   no Phone Away settlement changes protected-night progress, Wind Down drought/starter state,
+   rewards, wool, or Slumber Party state. The deterministic 20/30/40/50/100 ladder and Phone
+   Away clue counter never alter Wind Down odds.
    Home and the Phone Away schedule offer a separate **Start now** action. It creates a
    temporary bounded occurrence for the single start transaction; Not now rolls it back, while
    starting consumes it. Scheduled rows keep their exact occurrence identity through
