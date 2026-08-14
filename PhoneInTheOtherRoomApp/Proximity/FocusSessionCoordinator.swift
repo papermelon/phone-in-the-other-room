@@ -116,6 +116,7 @@ final class FocusSessionCoordinator: ObservableObject {
             appShieldingRequested: appShieldingRequested,
             liveActivityRequested: liveActivityRequested
         )
+        newRun.isPractice = configuration.isPractice
         let isAdditionalQuiet = newRun.nightWatchPlan?.role == .additionalQuiet
         if !configuration.guardKind.needsPlacementConfirmation || autoConfirmPlacement {
             newRun.phoneAwayValidatedAt = startedAt
@@ -374,6 +375,10 @@ final class FocusSessionCoordinator: ObservableObject {
     private func restoreActiveRunIfNeeded() {
         guard var storedRun = persistence.lastRun else { return }
         guard ![.completed, .endedEarly, .setup].contains(storedRun.state) else {
+            // A terminal lastRun is deliberately persisted before its Phone
+            // Away settlement. If termination happened in that small window,
+            // settle it now before returning the receipt to the UI.
+            settlePhoneAwayIfNeeded(for: storedRun)
             run = storedRun
             return
         }
@@ -537,39 +542,11 @@ final class FocusSessionCoordinator: ObservableObject {
         persistence.progress = progress
         persistence.rewards = rewards
         persistence.lastRun = finalRun
-        if finalRun.completedSuccessfully,
-           finalRun.nightWatchPlan?.role == .additionalQuiet,
-           finalRun.creditedQuietMinutes >= PhoneAwaySearchMeter.minimumEligibleMinutes {
-            let phoneBreakSearchUnlocked = progress.totalCompletedRuns >= SheepSearchEngine.starterGuaranteeRuns
-            sheepSearchState.trailMap.credit(
-                runID: finalRun.id,
-                minutes: min(PhoneAwaySearchMeter.maximumMinutes, finalRun.creditedQuietMinutes),
-                pendingCap: phoneBreakSearchUnlocked
-                    ? SheepTrailMapState.maximumPendingMinutes
-                    : SheepTrailMapState.maximumMappedMinutes
-            )
-
-            // Phone Away runs bank their own search meter. Once three protected
-            // Wind Downs exist, the next completed Phone Away that fills the
-            // meter resolves one separate, deterministic bonus search.
-            if phoneBreakSearchUnlocked,
-               sheepSearchState.trailMap.isReadyForBonusSearch,
-               sheepSearchState.phoneBreakOutcome(for: finalRun.id) == nil {
-                sheepSearchState.trailMap.consumeBonusSearchMeter()
-                let calculation = SheepSearchEngine.calculatePhoneBreak(
-                    runID: finalRun.id,
-                    protectedNightNumber: progress.totalCompletedRuns,
-                    state: sheepSearchState,
-                    trackedSheepID: farmState.trackedSheepDefinitionID,
-                    now: finalRun.endedAt ?? Date()
-                )
-                sheepSearchState.append(calculation.outcome)
-                farmState.recordArrival(calculation.outcome)
-                persistence.farmState = farmState
-                latestSheepSearchOutcome = calculation.outcome
-            }
-            persistence.sheepSearchState = sheepSearchState
-        }
+        // Search state is the settlement journal. Write it, including the
+        // consumed meter and any outcome, before projecting Farm arrivals.
+        // Launch recovery calls the same idempotent helper if termination
+        // happened after lastRun but before this write.
+        settlePhoneAwayIfNeeded(for: finalRun)
         if finalRun.completedSuccessfully && finalRun.isProgressionEligibleNightWatch {
             let plan = finalRun.nightWatchPlan
             let evidence = SheepSearchEvidence(
@@ -632,6 +609,27 @@ final class FocusSessionCoordinator: ObservableObject {
 #if DEBUG
         logResourceState(event: "finish complete")
 #endif
+    }
+
+    private func settlePhoneAwayIfNeeded(for terminalRun: FocusRun) {
+        guard let input = PhoneAwaySearchSettlementInput.terminalRun(
+            terminalRun,
+            protectedWindDownCount: progress.totalCompletedRuns,
+            trackedSheepID: farmState.trackedSheepDefinitionID
+        ) else { return }
+
+        let settlement = PhoneAwaySearchSettlementEngine.settle(
+            input: input,
+            state: sheepSearchState
+        )
+        sheepSearchState = settlement.state
+        persistence.sheepSearchState = sheepSearchState
+
+        if let outcome = settlement.outcome {
+            farmState.recordArrival(outcome)
+            persistence.farmState = farmState
+            latestSheepSearchOutcome = outcome
+        }
     }
 
 

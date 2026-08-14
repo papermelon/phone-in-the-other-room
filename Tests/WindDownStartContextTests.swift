@@ -1,6 +1,32 @@
 import XCTest
 
 final class WindDownStartContextTests: XCTestCase {
+    func testMissingSourceAndPracticeIDsDoNotMarkAnOrdinaryStartAsPractice() {
+        XCTAssertFalse(
+            WindDownStartContext.isPracticeOccurrence(
+                sourceID: nil,
+                practicePeriodID: nil
+            )
+        )
+    }
+
+    func testPracticeOccurrenceRequiresMatchingNonNilIDs() {
+        let practiceID = UUID()
+
+        XCTAssertTrue(
+            WindDownStartContext.isPracticeOccurrence(
+                sourceID: practiceID,
+                practicePeriodID: practiceID
+            )
+        )
+        XCTAssertFalse(
+            WindDownStartContext.isPracticeOccurrence(
+                sourceID: UUID(),
+                practicePeriodID: practiceID
+            )
+        )
+    }
+
     func testPracticeUsesPersistedPeriodIdentityInsteadOfTitle() {
         let practiceID = UUID()
         let interval = DateInterval(start: Date(), duration: 5 * 60)

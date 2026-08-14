@@ -122,6 +122,9 @@ struct FocusRun: Codable, Identifiable, Equatable {
     var placementEvidence: PlacementEvidence
     var nightWatchPlan: NightWatchPlan?
     var briefAccessUseCount: Int
+    /// The optional five-minute orientation practice is a real recorded run,
+    /// but it must never earn Phone Away search credit.
+    var isPractice: Bool
     /// A per-run choice. This prevents "start without app limits" from
     /// changing the person's saved shielding preference.
     var appShieldingRequested: Bool
@@ -158,6 +161,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         self.placementEvidence = .notRequired(for: guardKind)
         self.nightWatchPlan = nightWatchPlan
         self.briefAccessUseCount = 0
+        self.isPractice = false
         self.appShieldingRequested = appShieldingRequested
         self.liveActivityRequested = liveActivityRequested
     }
@@ -166,7 +170,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         case id, plannedDurationSeconds, actualDurationSeconds, startedAt, plannedEndAt, endedAt
         case state, phoneAwayValidatedAt, proximityHistory, warningCount, completedSuccessfully
         case endedEarlyReason, earnedRewardIDs, guardKind, placementStatus, placementEvidence, nightWatchPlan
-        case briefAccessUseCount, appShieldingRequested, liveActivityRequested
+        case briefAccessUseCount, isPractice, appShieldingRequested, liveActivityRequested
     }
 
     init(from decoder: Decoder) throws {
@@ -191,6 +195,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
             ?? .notRequired(for: guardKind)
         nightWatchPlan = try container.decodeIfPresent(NightWatchPlan.self, forKey: .nightWatchPlan)
         briefAccessUseCount = max(0, try container.decodeIfPresent(Int.self, forKey: .briefAccessUseCount) ?? 0)
+        isPractice = try container.decodeIfPresent(Bool.self, forKey: .isPractice) ?? false
         appShieldingRequested = try container.decodeIfPresent(Bool.self, forKey: .appShieldingRequested) ?? true
         liveActivityRequested = try container.decodeIfPresent(Bool.self, forKey: .liveActivityRequested) ?? true
     }

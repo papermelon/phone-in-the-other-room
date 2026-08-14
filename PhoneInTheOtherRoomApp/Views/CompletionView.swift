@@ -5,10 +5,20 @@ struct CompletionView: View {
 
     private var run: FocusRun? { viewModel.activeRun }
     private var minutes: Int { run?.creditedQuietMinutes ?? 0 }
+    private var isPhoneAway: Bool { run?.nightWatchPlan?.role == .additionalQuiet }
     private var persistedOutcome: SheepSearchOutcome? {
         guard let run else { return nil }
-        guard run.isProgressionEligibleNightWatch || run.nightWatchPlan?.role == .additionalQuiet else { return nil }
+        guard isPhoneAway || run.isProgressionEligibleNightWatch else { return nil }
         return viewModel.sheepSearchOutcome(for: run.id)
+    }
+    private var phoneAwayReceipt: PhoneAwayReceiptPresentation {
+        guard let run else {
+            return .make(record: nil)
+        }
+        return .make(
+            record: viewModel.phoneAwaySearchSettlement(for: run.id),
+            outcome: persistedOutcome
+        )
     }
 
     var body: some View {
@@ -36,24 +46,28 @@ struct CompletionView: View {
                     .accessibilityHint("Opens the shared pasture result for this completed Wind Down")
                 }
 
-                if run?.nightWatchPlan?.role == .additionalQuiet, let persistedOutcome {
-                    NavigationLink {
-                        WindDownRevealView(
-                            outcome: persistedOutcome,
-                            showExactOdds: viewModel.sheepSearchState.showExactOdds,
-                            farmState: viewModel.farmState,
-                            onReturnToFarm: returnToFarm
-                        )
-                    } label: {
-                        Label("Open the Phone Away search result", systemImage: "note.text")
-                            .frame(maxWidth: .infinity)
+                if isPhoneAway {
+                    AdditionalQuietMapReceipt(presentation: phoneAwayReceipt)
+
+                    if let persistedOutcome, phoneAwayReceipt.showsSearchLink {
+                        NavigationLink {
+                            WindDownRevealView(
+                                outcome: persistedOutcome,
+                                showExactOdds: viewModel.sheepSearchState.showExactOdds,
+                                farmState: viewModel.farmState,
+                                onReturnToFarm: returnToFarm
+                            )
+                        } label: {
+                            Label(
+                                phoneAwayReceipt.searchLinkTitle ?? "Open Phone Away bonus search in Search Journal",
+                                systemImage: "note.text"
+                            )
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(PixelPrimaryButtonStyle())
+                        .accessibilityLabel(phoneAwayReceipt.searchLinkTitle ?? "Open Phone Away bonus search in Search Journal")
+                        .accessibilityHint(phoneAwayReceipt.searchLinkHint ?? "Opens the Phone Away bonus search in Search Journal")
                     }
-                    .buttonStyle(PixelPrimaryButtonStyle())
-                } else if run?.nightWatchPlan?.role == .additionalQuiet {
-                    AdditionalQuietMapReceipt(
-                        map: viewModel.sheepSearchState.trailMap,
-                        protectedWindDownCount: viewModel.coordinator.progress.totalCompletedRuns
-                    )
                 } else if run?.isProgressionEligibleNightWatch == true {
                     NavigationLink {
                         WindDownRevealView(
@@ -138,8 +152,7 @@ private struct CompletionHeader: View {
 }
 
 private struct AdditionalQuietMapReceipt: View {
-    let map: SheepTrailMapState
-    let protectedWindDownCount: Int
+    let presentation: PhoneAwayReceiptPresentation
 
     var body: some View {
         PixelCard {
@@ -149,26 +162,20 @@ private struct AdditionalQuietMapReceipt: View {
                     .foregroundStyle(AppColors.grass)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("EXTRA SEARCH PROGRESS UPDATED")
+                    Text(presentation.eyebrow)
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text(receiptMessage)
+                    Text(presentation.title)
+                        .font(AppTypography.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(presentation.message)
                         .font(AppTypography.body)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .accessibilityElement(children: .combine)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(presentation.accessibilityLabel)
         }
-    }
-
-    private var receiptMessage: String {
-        let minutes = min(map.pendingMappedMinutes, SheepTrailMapState.maximumMappedMinutes)
-        if map.isReadyForBonusSearch {
-            return protectedWindDownCount < SheepSearchEngine.starterGuaranteeRuns
-                ? "The trail is full. It will wait until three Wind Downs are complete."
-                : "Extra search progress is full. Complete another Phone Away to open one bonus search."
-        }
-        return "\(minutes) of \(SheepTrailMapState.maximumMappedMinutes) minutes are saved as extra search progress."
     }
 }
 

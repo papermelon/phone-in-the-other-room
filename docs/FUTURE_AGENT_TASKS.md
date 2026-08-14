@@ -11,6 +11,15 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Recently completed
 
+- **2026-08-14 · Codex:** Made Phone Away search settlement recoverable and idempotent. Pure
+  Shared rules now centralize the 15-minute floor, approved 100-minute per-run cap, practice /
+  early-ending exclusions, locked banking, carried remainder, deterministic bonus ladder, and
+  isolated Phone Away drought. Each terminal Phone Away run persists a per-run settlement record
+  with eligibility, applied delta, meter before/after, and outcome ID before Farm projection;
+  launch reconciliation replays missing Farm arrivals from persisted outcomes. Existing
+  `SheepSearchState` / `FarmState` data remains backwards-decodable, and no project targets,
+  entitlements, App Groups, or backend paths changed.
+
 - **2026-08-13 · Codex:** Implemented the progressive three-step Home guide with one-time
   contextual spotlights that reuse the Home coach-mark language, the capitalized Phone Away mode,
   its carried 100-minute bonus-search meter
