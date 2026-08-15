@@ -365,6 +365,20 @@ struct SettingsView: View {
     private var aboutSection: some View {
         VStack(spacing: AppSpacing.md) {
             sectionHeader("About", icon: "info.circle.fill")
+#if SLUMBER_PARTY_QA
+            NavigationLink {
+                NightFlockQADiagnosticsView(
+                    viewModel: viewModel.nightFlockViewModel
+                )
+            } label: {
+                settingsRow(
+                    "Slumber Party QA diagnostics",
+                    icon: "stethoscope",
+                    detail: "Internal build configuration only; no network checks"
+                )
+            }
+            .buttonStyle(.plain)
+#endif
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("Counting Sheep")
