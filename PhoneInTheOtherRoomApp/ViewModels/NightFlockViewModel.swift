@@ -17,7 +17,12 @@ final class NightFlockViewModel: ObservableObject {
     }
 
     @Published private(set) var phase: Phase
-    @Published private(set) var accountState: NightFlockAccountState
+    @Published private(set) var diagnostics: NightFlockDiagnostics
+    @Published private(set) var accountState: NightFlockAccountState {
+        didSet {
+            diagnostics = diagnostics.updatingAccountState(accountState)
+        }
+    }
     @Published private(set) var snapshot: NightFlockSnapshot?
     @Published private(set) var latestInviteCode: String?
     @Published private(set) var latestInviteID: UUID?
@@ -54,13 +59,19 @@ final class NightFlockViewModel: ObservableObject {
         outbox: NightFlockOutboxService? = nil,
         previewSnapshot: NightFlockSnapshot? = nil,
         previewPhase: Phase? = nil,
-        previewAccountState: NightFlockAccountState = .anonymous
+        previewAccountState: NightFlockAccountState = .anonymous,
+        diagnostics: NightFlockDiagnostics? = nil
     ) {
         self.featureEnabled = featureEnabled
         self.accountService = accountService
         self.service = service
         self.outbox = outbox
         snapshot = previewSnapshot
+        self.diagnostics = diagnostics ?? NightFlockDiagnostics.initial(
+            featureFlag: featureEnabled ? .enabled : .disabled,
+            configuration: featureEnabled ? .valid : .notEvaluated,
+            accountState: previewAccountState
+        )
         accountState = previewAccountState
         phase = previewPhase ?? (featureEnabled ? .idle : .hidden)
         guard featureEnabled, let outbox else { return }
@@ -77,16 +88,33 @@ final class NightFlockViewModel: ObservableObject {
     }
 
     static func configured(bundle: Bundle = .main, defaults: UserDefaults = .standard) -> NightFlockViewModel {
-        guard let configuration = try? SupabaseConfiguration.load(bundle: bundle),
-              configuration.nightFlockEnabled else {
-            return NightFlockViewModel(featureEnabled: false)
+        let featureFlag = SupabaseConfiguration.nightFlockFeatureFlag(bundle: bundle)
+        guard featureFlag == .enabled else {
+            return NightFlockViewModel(
+                featureEnabled: false,
+                diagnostics: .initial(featureFlag: featureFlag, configuration: .notEvaluated)
+            )
+        }
+
+        let configuration: SupabaseConfiguration
+        do {
+            configuration = try SupabaseConfiguration.load(bundle: bundle)
+        } catch {
+            return NightFlockViewModel(
+                featureEnabled: false,
+                diagnostics: .initial(
+                    featureFlag: featureFlag,
+                    configuration: .invalid(SupabaseConfiguration.nightFlockConfigurationIssue(for: error))
+                )
+            )
         }
         let provider = ConfiguredSupabaseClientProvider(configuration: configuration)
         return NightFlockViewModel(
             featureEnabled: true,
             accountService: NightFlockAccountService(provider: provider),
             service: NightFlockService(provider: provider),
-            outbox: NightFlockOutboxService(defaults: defaults)
+            outbox: NightFlockOutboxService(defaults: defaults),
+            diagnostics: .initial(featureFlag: featureFlag, configuration: .valid)
         )
     }
 

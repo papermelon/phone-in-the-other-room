@@ -24,6 +24,24 @@ struct SupabaseConfiguration: Equatable, Sendable {
     let feedbackEnabled: Bool
     let nightFlockEnabled: Bool
 
+    static func nightFlockFeatureFlag(bundle: Bundle = .main) -> NightFlockFeatureFlagResolution {
+        let value = bundle.object(forInfoDictionaryKey: "SUPABASE_NIGHT_FLOCK_ENABLED")
+        if let bool = value as? Bool {
+            return bool ? .enabled : .disabled
+        }
+        return NightFlockFeatureFlagResolution.resolve(rawValue: value as? String)
+    }
+
+    static func nightFlockConfigurationIssue(for error: Error) -> NightFlockConfigurationIssue {
+        guard let error = error as? ConfigurationError else { return .unavailable }
+        switch error {
+        case .missingURL: return .missingURL
+        case .malformedURL: return .malformedURL
+        case .missingPublishableKey: return .missingPublishableKey
+        case .nonPublishableKey: return .nonPublishableKey
+        }
+    }
+
     static func load(bundle: Bundle = .main) throws -> SupabaseConfiguration {
         guard let rawURL = bundle.object(forInfoDictionaryKey: "SUPABASE_URL") as? String,
               !rawURL.isEmpty,
@@ -46,9 +64,7 @@ struct SupabaseConfiguration: Equatable, Sendable {
         let feedbackValue = bundle.object(forInfoDictionaryKey: "SUPABASE_FEEDBACK_ENABLED")
         let feedbackEnabled = (feedbackValue as? Bool)
             ?? ((feedbackValue as? String)?.uppercased() == "YES")
-        let nightFlockValue = bundle.object(forInfoDictionaryKey: "SUPABASE_NIGHT_FLOCK_ENABLED")
-        let nightFlockEnabled = (nightFlockValue as? Bool)
-            ?? ((nightFlockValue as? String)?.uppercased() == "YES")
+        let nightFlockEnabled = nightFlockFeatureFlag(bundle: bundle) == .enabled
         return SupabaseConfiguration(
             url: url,
             publishableKey: key,

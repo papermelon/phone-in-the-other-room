@@ -13,6 +13,10 @@ options:
   deploymentTarget:
     iOS: "17.0"
     watchOS: "10.0"
+configs:
+  Debug: debug
+  SlumberPartyQA: debug
+  Release: release
 settings:
   base:
     SWIFT_VERSION: 5.9
@@ -30,6 +34,7 @@ targets:
     platform: iOS
     configFiles:
       Debug: Config/Supabase.xcconfig
+      SlumberPartyQA: Config/Supabase.slumber-party-qa.xcconfig
       Release: Config/Supabase.release.xcconfig
     info:
       path: PhoneInTheOtherRoomApp/Info.plist
@@ -69,6 +74,9 @@ targets:
       configs:
         Debug:
           CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomApp/PhoneInTheOtherRoom.debug.entitlements
+        SlumberPartyQA:
+          CODE_SIGN_ENTITLEMENTS: PhoneInTheOtherRoomApp/PhoneInTheOtherRoom.debug.entitlements
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SCREEN_TIME_REPORTS SLUMBER_PARTY_QA"
     dependencies:
       - package: Supabase
       - target: PhoneInTheOtherRoomWatchApp
@@ -188,6 +196,24 @@ schemes:
     test:
       targets:
         - name: PhoneInTheOtherRoomTests
+  PhoneInTheOtherRoomSlumberPartyQA:
+    build:
+      targets:
+        PhoneInTheOtherRoom: all
+        PhoneInTheOtherRoomWatchApp: all
+        PhoneInTheOtherRoomTests: [test]
+    run:
+      config: SlumberPartyQA
+    test:
+      config: SlumberPartyQA
+      targets:
+        - name: PhoneInTheOtherRoomTests
+    analyze:
+      config: SlumberPartyQA
+    profile:
+      config: Release
+    archive:
+      config: Release
   PhoneInTheOtherRoomScreenTimeReport:
     build:
       targets:
