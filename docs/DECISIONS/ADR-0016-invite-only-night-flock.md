@@ -1,6 +1,6 @@
 # ADR-0016: Invite-Only Slumber Party
 
-- Status: Accepted; implementation is disabled by default pending hosted and physical QA
+- Status: Accepted; TestFlight/Release archives enable Slumber Party as of 2026-08-16
 - Date: 2026-08-16
 - Decider: Founder
 - Supersedes: the positive-only presentation portion of the 2026-08-12 decision
@@ -54,7 +54,8 @@ fail-open emergency exit.
 
 The v1 `phoneTucked` and `morningQuietCompleted` outbox records remain decodable and continue to
 route through the v1 function. New commitment commands use an explicit schema version 2 rather
-than silently changing the v1 contract. The release flag remains `NO`.
+than silently changing the v1 contract. Ordinary Debug stays `NO`. TestFlight/Release archives
+enable the feature.
 
 ### Screen Time and Instagram
 
@@ -105,7 +106,10 @@ wording that promises a smaller early reward rather than sheep.
 - Apple Sign in, Family Controls distribution, hosted migration/functions, moderation ownership,
   retention scheduling, privacy disclosures, and two-account physical QA are release gates.
 - The older v1 schema and anonymous positive-state clients remain compatible during migration.
-- The release feature flag stays disabled until hosted deployment and physical QA are explicitly
-  authorized.
+- On 2026-08-16 the founder authorized TestFlight/Release archives to compile with
+  `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. Ordinary Debug remains disabled. The dedicated
+  `SlumberPartyQA` configuration stays the local forced-`YES` lane with QA diagnostics.
+  Hosted deployment, moderation ownership, privacy publication, and two-account physical QA
+  remain operational evidence, not a reason to keep the Release flag off.
 - Existing `NightFlock*`, `night_flock_*`, `ollie.*`, and persisted enum identifiers remain
   implementation names for compatibility; only user-facing copy uses Counting Sheep language.

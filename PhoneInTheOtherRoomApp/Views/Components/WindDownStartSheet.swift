@@ -64,7 +64,7 @@ struct WindDownStartSheet: View {
                 ? " Selected apps will be limited until then."
                 : " No apps will be limited."
             if viewModel.pendingWindDownStartContext?.isPractice == true {
-                return "This practice ends at \(end). It appears in Nights. Completing it can bring a welcome gift sheep home, without counting as a Wind Down.\(protection)"
+                return "This practice ends at \(end). It creates a real Nights record. It is not a protected night, and it does not add to the usual Phone Away search meter. Finishing this one-time introduction lets Ollie bring home the second starter sheep.\(protection)"
             }
             return "This Phone Away period ends at \(end). Its minutes begin when you start, and it stays separate from Wind Down.\(protection)"
         }

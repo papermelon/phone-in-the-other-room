@@ -46,6 +46,10 @@ execute without human sign-off mid-task (final merge review still applies per
   release setup remains App Shielding (timer) or NFC + App Shielding. Prepared four 46 mm Watch
   listing candidates. Dynamic Type and a complete timer/NFC overnight remain physical QA items.
 
+- **2026-08-16 · Cursor:** Founder authorized TestFlight/Release archives to compile with
+  `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. Ordinary Debug stays off. The SlumberPartyQA scheme remains
+  the local diagnostics lane. No hosted deployment, archive, or TestFlight upload was performed.
+
 - **2026-08-12 · Codex:** Implemented the ADR-0016 invite-only Slumber Party source slice behind
   `SUPABASE_NIGHT_FLOCK_ENABLED=NO`: Apple identity linking that preserves the Supabase Auth UUID,
   normalized schema/RLS/service RPCs, typed functions and app contracts, monotonic local outbox,
@@ -53,13 +57,24 @@ execute without human sign-off mid-task (final merge review still applies per
   controls, privacy-safe aggregation, retention implementation, and Swift/SQL/Deno tests. Nothing
   was deployed; the external release task below remains mandatory before enablement.
 
+- **2026-08-16 · Cursor:** Addressed first-run review P1s: questionnaire completion owns the
+  wearable even if the result screen is skipped; Resume restores the current surface and practice
+  sheet; coaches still appear without a spotlight target; claim and equip remain separate Farm
+  lessons. Founder review of copy and tour flow remains the D6 merge gate. No `project.yml`,
+  entitlement, or hosted backend work.
+
+- **2026-08-16 · Cursor:** Implemented Phase 2 of the first-run journey: narrative welcome,
+  Wind Down starting-point questionnaire UI, sourced recommendation result, profile-gift
+  announcement, and a versioned resumable in-app guide through Home, five-minute practice,
+  Farm, Slumber Party, Settings, and Nights. Existing onboarding/orientation JSON migrates.
+  No `project.yml`, entitlement, or hosted backend work.
+
 - **2026-08-16 · Cursor:** Implemented the production foundation for the founder-directed
   first-run journey (ADR-0018): one starter sheep on a fresh Farm, a local non-clinical Wind
   Down starting-point questionnaire domain, a pending shepherd wearable gift, a one-time
   onboarding-practice sheep that consumes neither guarantee counter nor the Phone Away meter,
   independent first-three guarantees for qualifying protected-night and Phone Away meter
-  searches, and a 420-minute protected-span rule. Existing settled outcomes remain intact. No
-  onboarding UI redesign or hosted backend work.
+  searches, and a 420-minute protected-span rule. Existing settled outcomes remain intact.
 
 - **2026-08-16 · Codex:** Reworked Slumber Party into the founder-directed schema-two shared
   commitment: one bounded goal for 2–8 people, an explicit lobby/start gate, reusable hashed
@@ -284,8 +299,9 @@ execute without human sign-off mid-task (final merge review still applies per
   policy and App Privacy answers; then pass a physical two-Apple-account matrix for goal selection,
   reusable invite preview/redemption, lobby gating, all seven day boundaries, offline outbox,
   private/no-update state, coarse Instagram shielding evidence, fixed reactions, leave, block,
-  report, Slumber Party deletion, and full account deletion. Keep the release flag `NO` until every
-  item passes. Do not infer multi-device or Apple identity success from simulator tests.
+  report, Slumber Party deletion, and full account deletion. TestFlight/Release now compiles with
+  `YES`; keep ordinary Debug `NO`. Do not infer multi-device or Apple identity success from
+  simulator tests.
 
 ### D5. Workshop reward decision gate — superseded 2026-08-16
 - **Gate:** Founder choice required before any workshop copy promises a reward.
@@ -299,12 +315,14 @@ execute without human sign-off mid-task (final merge review still applies per
 - **Gate:** ADR-0018 domain, persistence, Search Journal/Barn/completion origin copy, and tests accepted.
 - **Mode:** Cursor Build · **Size:** M · **Autonomous:** no — user-facing copy and tour flow
   require founder review
-- **Accept:** present the local Wind Down starting-point questionnaire in first-run; persist
-  answers with `FocusRunViewModel.applyWindDownStartingPoint`; keep the wearable owned and
-  unequipped until a Farm tutorial claims it through `claimPendingWelcomeWearable`; keep
-  welcome-gift and “Ollie found a missing sheep” copy honest; do not diagnose, collect free
-  text, or add assets. Search Journal origin labels for `.starter` / `.onboardingPractice` are
-  already in this slice. No `project.yml`, entitlement, or backend changes.
+- **Accept:** Phase 2 implemented the universal first-run journey: narrative welcome, Wind Down
+  starting-point questionnaire, sourced recommendations, schedule/routine/shielding, pending
+  shepherd wearable announcement, then a resumable in-app guide across Home, practice, Farm,
+  Slumber Party, Settings, and Nights. Questionnaire completion owns the wearable; skip on the
+  result screen still grants it. Resume restores the current surface. Claim and equip stay
+  separate. Founder review of copy and tour flow remains the merge gate. No `project.yml`,
+  entitlement, or backend changes. Screenbook remains the five-scenario spike; additional
+  first-run states are covered by `#Preview`s.
 
 ## E. Later / explicitly postponed (do not start; citable refusals)
 

@@ -3,12 +3,17 @@ import Foundation
 @MainActor
 extension FocusRunViewModel {
     func shearFarmSheep(_ sheepID: UUID) {
+        var didShear = false
         mutateFarm { state in
             let amount = try state.shear(
                 sheepID: sheepID,
                 protectedNightCount: coordinator.progress.totalCompletedRuns
             )
+            didShear = true
             return "+\(amount) wool. The fleece will grow back over more Wind Downs."
+        }
+        if didShear {
+            recordFirstRunFarmAction(.sheared)
         }
     }
 
@@ -123,13 +128,19 @@ extension FocusRunViewModel {
     }
 
     func trackSheepDefinition(_ definitionID: String?) {
+        var didTrack = false
         mutateFarm { state in
             state.setTrackedSheep(definitionID)
+            didTrack = definitionID != nil
             guard let definitionID,
                   let sheep = SheepCatalog.definition(for: definitionID) else {
                 return "Ollie will follow whichever trail looks strongest."
             }
             return "Ollie will favour \(sheep.name)’s trail—not guarantee it."
+        }
+        if didTrack {
+            recordFirstRunFarmAction(.choseTrackedSheep)
+            recordFirstRunFarmAction(.visitedSearch)
         }
     }
 
@@ -189,10 +200,34 @@ extension FocusRunViewModel {
             persistence.welcomeRewardLedger = result.ledger
             if let itemID = result.ledger.claimedWearableGrant?.itemID,
                let title = FarmShopCatalog.item(for: itemID)?.title {
-                farmActionMessage = "\(title) is ready for Ollie."
+                farmActionMessage = "\(title) is waiting. Ollie can help you put it on."
+            } else {
+                farmActionMessage = "The welcome gift is yours. Put it on the shepherd when you are ready."
+            }
+            recordFirstRunFarmAction(.claimedWearable)
+        } catch let error as FarmActionError {
+            farmActionMessage = farmMessage(for: error)
+        } catch {
+            farmActionMessage = "The Farm could not save that change. Please try once more."
+        }
+    }
+
+    func equipPendingWelcomeWearable() {
+        do {
+            let result = try WelcomeRewardEngine.equipWearable(
+                farm: coordinator.farmState,
+                search: coordinator.sheepSearchState,
+                ledger: persistence.welcomeRewardLedger
+            )
+            coordinator.farmState = result.farm
+            persistence.farmState = result.farm
+            if let itemID = result.ledger.claimedWearableGrant?.itemID,
+               let title = FarmShopCatalog.item(for: itemID)?.title {
+                farmActionMessage = "\(title) is on the shepherd."
             } else {
                 farmActionMessage = "Your Shepherd is wearing the welcome gift."
             }
+            recordFirstRunFarmAction(.equippedWearable)
         } catch let error as FarmActionError {
             farmActionMessage = farmMessage(for: error)
         } catch {

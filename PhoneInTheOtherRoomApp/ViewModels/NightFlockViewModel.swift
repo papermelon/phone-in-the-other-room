@@ -32,6 +32,7 @@ final class NightFlockViewModel: ObservableObject {
     @Published var shareNextPrimaryRun = true
     @Published var selectedIdentity: NightFlockIdentity = .moonlitMeadow
     @Published var joinCode = ""
+    @Published var prefersJoinEntry = false
 
     let featureEnabled: Bool
     private let accountService: NightFlockAccountService?

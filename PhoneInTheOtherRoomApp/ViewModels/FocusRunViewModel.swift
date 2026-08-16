@@ -310,7 +310,43 @@ final class FocusRunViewModel: ObservableObject {
     var latestSheepSearchOutcome: SheepSearchOutcome? { coordinator.latestSheepSearchOutcome }
     var farmState: FarmState { coordinator.farmState }
 
-    var isOrientationActive: Bool { orientationState.isVisibleOnHome }
+    var isOrientationActive: Bool { orientationState.isGuideActive }
+
+    var firstRunAdvanceContext: FirstRunAdvanceContext {
+        let ledger = persistence.welcomeRewardLedger
+        let granted = ledger.pendingWearableGrant != nil || ledger.claimedWearableGrant != nil
+        let equipped = welcomeWearableIsEquipped
+        return FirstRunAdvanceContext(
+            practiceCompleted: orientationState.milestones.contains(.practiceCompleted),
+            slumberPartyAvailable: nightFlockViewModel.featureEnabled,
+            showClaimWearable: granted
+                && ledger.pendingWearableGrant != nil
+                && !orientationState.hasRecorded(.claimedWearable)
+                && !orientationState.skippedLessons.contains(.farmClaimWearable),
+            showEquipWearable: granted
+                && !equipped
+                && !orientationState.hasRecorded(.equippedWearable)
+                && !orientationState.skippedLessons.contains(.farmEquipWearable)
+        )
+    }
+
+    private var welcomeWearableIsEquipped: Bool {
+        let itemID = persistence.welcomeRewardLedger.claimedWearableGrant?.itemID
+            ?? persistence.welcomeRewardLedger.pendingWearableGrant?.itemID
+        guard let itemID else { return false }
+        return coordinator.farmState.shepherd.outfitItemID == itemID
+            || coordinator.farmState.shepherd.accessoryItemID == itemID
+    }
+
+    var firstRunRequestedTab: MainAppTab? {
+        guard orientationState.isGuideActive else { return nil }
+        switch FirstRunJourney.surface(for: orientationState.currentStep) {
+        case .home: return .home
+        case .farm: return .farm
+        case .settings: return .settings
+        case .nights: return .nights
+        }
+    }
 
     var isWindDownAppearanceActive: Bool {
         isRunning || (hasConfiguredNightWatch && canBeginNightWatchNow)
@@ -349,7 +385,7 @@ final class FocusRunViewModel: ObservableObject {
         from candidates: [CountingSheepContextualTip]
     ) -> CountingSheepContextualTip? {
         guard !isRunning else { return nil }
-        return orientationState.nextContextualTip(from: candidates)
+        return orientationState.nextContextualTip(from: candidates, isWindDownActive: isRunning)
     }
 
     func acknowledgeContextualTip(_ tip: CountingSheepContextualTip) {
@@ -368,13 +404,23 @@ final class FocusRunViewModel: ObservableObject {
         persistence.orientationState = orientationState
     }
 
+    func dismissFirstRunContinueCard() {
+        orientationState.dismissContinueCard()
+        persistence.orientationState = orientationState
+    }
+
     func advanceOrientationTour() {
-        orientationState.advanceTour()
+        orientationState.advanceTour(context: firstRunAdvanceContext)
+        persistence.orientationState = orientationState
+    }
+
+    func skipOrientationLesson() {
+        orientationState.skipCurrentLesson(context: firstRunAdvanceContext)
         persistence.orientationState = orientationState
     }
 
     func moveBackInOrientationTour() {
-        orientationState.moveBack()
+        orientationState.moveBack(context: firstRunAdvanceContext)
         persistence.orientationState = orientationState
     }
 
@@ -388,8 +434,28 @@ final class FocusRunViewModel: ObservableObject {
         persistence.orientationState = orientationState
     }
 
+    var lastPracticeGrantBroughtSheep: Bool {
+        coordinator.lastOnboardingPracticeGrantedSheep
+    }
+
     func replayOrientation() {
         orientationState.replay()
+        persistence.orientationState = orientationState
+    }
+
+    func recordFirstRunFarmAction(_ action: FirstRunFarmAction) {
+        guard !orientationState.hasRecorded(action) else { return }
+        orientationState.recordFarmAction(action)
+        persistence.orientationState = orientationState
+    }
+
+    func markPracticeRewardRoutedToFarm() {
+        orientationState.markPracticeRewardRoutedToFarm()
+        persistence.orientationState = orientationState
+    }
+
+    func acknowledgeSlumberPartyUnavailable() {
+        orientationState.acknowledgeSlumberPartyUnavailable()
         persistence.orientationState = orientationState
     }
 
@@ -497,6 +563,8 @@ final class FocusRunViewModel: ObservableObject {
               run.id == practiceRunID,
               run.completedSuccessfully else { return }
         markOrientation(.practiceCompleted)
+        orientationState.recordPracticeCompleted(context: firstRunAdvanceContext)
+        persistence.orientationState = orientationState
     }
 
     func markOrientationPracticeRecordViewedIfPresent() {

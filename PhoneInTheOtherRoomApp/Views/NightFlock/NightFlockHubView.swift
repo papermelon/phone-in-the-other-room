@@ -6,25 +6,32 @@ struct NightFlockHubView: View {
     @State private var showOrientation = false
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                NightFlockHeader()
-                content
+        ScrollViewReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    NightFlockHeader()
+                    content
+                }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.top, AppSpacing.sm)
+                .padding(.bottom, AppSpacing.xxl)
             }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.top, AppSpacing.sm)
-            .padding(.bottom, AppSpacing.xxl)
+            .scrollBounceBehavior(.basedOnSize)
+            .onAppear {
+                viewModel.entryAppeared()
+                showOrientation = viewModel.orientationState.shouldShowIntro
+                if viewModel.prefersJoinEntry {
+                    DispatchQueue.main.async {
+                        proxy.scrollTo("slumber-party-join", anchor: .center)
+                    }
+                }
+            }
         }
-        .scrollBounceBehavior(.basedOnSize)
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Slumber Party")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
-        .onAppear {
-            viewModel.entryAppeared()
-            showOrientation = viewModel.orientationState.shouldShowIntro
-        }
         .sheet(isPresented: $showOrientation) {
             NightFlockOrientationView(viewModel: viewModel)
         }
@@ -117,6 +124,7 @@ private struct NightFlockAccountEntry: View {
 
 private struct NightFlockCreateJoinView: View {
     @ObservedObject var viewModel: NightFlockViewModel
+    @FocusState private var joinFieldFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -188,6 +196,7 @@ private struct NightFlockCreateJoinView: View {
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                         .textFieldStyle(.roundedBorder)
+                        .focused($joinFieldFocused)
                         .accessibilityLabel("Slumber Party code")
                     Button("Preview invitation", action: viewModel.previewSharedInvite)
                         .frame(maxWidth: .infinity)
@@ -204,6 +213,12 @@ private struct NightFlockCreateJoinView: View {
                         }
                         .padding(.top, AppSpacing.xs)
                     }
+                }
+            }
+            .id("slumber-party-join")
+            .onAppear {
+                if viewModel.prefersJoinEntry {
+                    joinFieldFocused = true
                 }
             }
         }

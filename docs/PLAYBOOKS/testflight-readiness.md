@@ -102,8 +102,8 @@ xcodebuild archive \
 - [ ] Debug and Release expose exactly Home, Nights, Farm, and Settings by default.
 - [ ] Legacy Friends/Farm/Shop, the legacy shelf, `MVPMockData`, manual analytics, and QA data are
       unreachable without `-ollie.debug.enableMockScreens YES`, and always unreachable in Release.
-      The production Farm/Shop remain real-data surfaces; Slumber Party is separate and hidden when
-      `SUPABASE_NIGHT_FLOCK_ENABLED=NO`.
+      The production Farm/Shop remain real-data surfaces; Slumber Party is present in
+      TestFlight/Release when `SUPABASE_NIGHT_FLOCK_ENABLED=YES`, and hidden in ordinary Debug.
 - [ ] No customer surface calls the ritual a Focus Run or generic productivity session.
 - [ ] Current setup exposes App Shielding or NFC + App Shielding. Legacy timer, Watch, and QR
       values remain decodable but are not offered to new configurations.
@@ -218,8 +218,9 @@ xcodebuild archive \
       full account deletion.
 - [ ] During active Wind Down there is no Slumber Party UI, reaction surface, realtime subscription,
       or notification, and backend failure never delays or changes the local run/reward/Farm result.
-- [ ] The public policy and App Store review notes match the enabled behavior. Keep
-      `SUPABASE_NIGHT_FLOCK_ENABLED=NO` until every preceding item passes.
+- [ ] The public policy and App Store review notes match the enabled behavior. Release compiles
+      with `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. Hosted backend, Apple provider, moderation, and
+      two-account physical evidence still need to be current before inviting testers.
 
 ## 10. Privacy, accessibility, and review copy
 

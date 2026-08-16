@@ -1,14 +1,15 @@
 # Slumber Party deployment runbook
 
-Preparation only. This runbook was not executed. The release flag remains `NO`, and no hosted
-Supabase project was changed.
+Preparation only. This runbook was not executed against hosted production. Ordinary Debug
+remains `NO`. TestFlight/Release archives compile with `SUPABASE_NIGHT_FLOCK_ENABLED=YES`.
 
 1. Backup and preflight
 
    - Confirm the target Supabase project, migration head, Edge Function revisions, Auth provider
      settings, Cron jobs, moderation owner, privacy policy, and App Store disclosures.
    - Take a database backup and record the migration version and function checksums.
-   - Confirm ordinary Release still resolves `SUPABASE_NIGHT_FLOCK_ENABLED=NO`.
+   - Confirm ordinary Release resolves `SUPABASE_NIGHT_FLOCK_ENABLED=YES` and does not define
+     `SLUMBER_PARTY_QA`.
    - Confirm two Apple-linked test accounts, a support contact, and a rollback owner.
 
 2. Migration ordering
@@ -65,10 +66,10 @@ Supabase project was changed.
 
 9. Feature-flag rollout
 
-   - Keep `SUPABASE_NIGHT_FLOCK_ENABLED=NO` during migration and QA.
-   - After written approval of hosted, privacy, moderation, and physical gates, enable only the
-     dedicated staged environment first, inspect logs and support signals, then consider a narrow
-     production cohort. Never enable the flag as part of migration deployment.
+   - Ordinary Debug stays `NO` during local development.
+   - TestFlight/Release compiles with `YES`. Hosted migration, functions, Apple provider,
+     retention, and moderation still need a live production project before testers can complete
+     a party. Never treat a compile-flag change as a hosted deployment.
 
 10. Rollback criteria and commands
 

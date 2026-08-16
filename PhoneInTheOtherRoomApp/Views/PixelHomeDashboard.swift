@@ -13,7 +13,9 @@ struct PixelHomeDashboard: View {
     }
 
     var body: some View {
-        PixelHomeDashboardContent(
+        VStack(spacing: AppSpacing.lg) {
+            firstRunCards
+            PixelHomeDashboardContent(
             progress: viewModel.coordinator.progress,
             preferences: viewModel.nightWatchPreferences,
             purpose: viewModel.offlinePurpose,
@@ -74,6 +76,59 @@ struct PixelHomeDashboard: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(viewModel.windDownScheduleError ?? "Try again after the current phone-away time ends.")
+        }
+        }
+    }
+
+    @ViewBuilder
+    private var firstRunCards: some View {
+        let step = viewModel.orientationState.currentStep.normalized
+        if viewModel.orientationState.isGuideActive, step == .practiceReward {
+            FirstRunPracticeRewardCard(
+                grantedNewSheep: viewModel.lastPracticeGrantBroughtSheep,
+                onSeeFarm: {
+                    viewModel.markPracticeRewardRoutedToFarm()
+                    viewModel.advanceOrientationTour()
+                    NotificationCenter.default.post(name: .countingSheepShowFarm, object: nil)
+                },
+                onSkip: viewModel.skipOrientationLesson
+            )
+        }
+        if viewModel.orientationState.isGuideActive, step == .slumberParty {
+            FirstRunSlumberPartyIntroCard(
+                isAvailable: viewModel.nightFlockViewModel.featureEnabled,
+                onCreate: {
+                    viewModel.advanceOrientationTour()
+                    NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: nil)
+                },
+                onJoin: {
+                    viewModel.advanceOrientationTour()
+                    NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: "join")
+                },
+                onLater: {
+                    if !viewModel.nightFlockViewModel.featureEnabled {
+                        viewModel.acknowledgeSlumberPartyUnavailable()
+                    }
+                    viewModel.skipOrientationLesson()
+                }
+            )
+        }
+        if viewModel.orientationState.isGuideActive, step == .completion {
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text(FirstRunGuideCopy.title(for: .completion))
+                        .font(AppTypography.headline)
+                    Text(FirstRunGuideCopy.message(for: .completion))
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Button("Done") {
+                        viewModel.completeOrientationTour()
+                    }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: true))
+                    .frame(minHeight: 44)
+                }
+            }
         }
     }
 }

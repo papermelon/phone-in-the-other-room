@@ -65,8 +65,10 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ ScreenTimeIntegration.swift   Screen Time scopes + report context IDs (phone-other.*)
 ├─ SleepIntervalMath.swift       merge sleep intervals → SleepSummary
 ├─ MorningCheckIn.swift          private, optional morning reflections (no score/reward)
-├─ Onboarding.swift              first-run Wind Down setup draft and protection choices
+├─ Onboarding.swift              first-run Wind Down setup draft, questionnaire skip/grant rules, and protection choices
 ├─ WindDownProfile.swift          local questionnaire answers and Wind Down starting point
+├─ WindDownProfilePresentation.swift  questionnaire and recommendation copy
+├─ FirstRunJourney.swift          resumable Home/practice/Farm/Settings/Nights guide steps
 ├─ WelcomeReward.swift            starter sheep, pending wearable gift, and practice grant ledger
 ├─ SheepSearchWelcome.swift       starter and onboarding-practice search calculations
 ├─ SheepSearchPresentation.swift  user-facing welcome-gift and homecoming copy
@@ -77,7 +79,7 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ FarmEconomyRules.swift          capacity, shearing, regrowth, sale, and balance invariants
 ├─ FarmMigration.swift             deterministic outcome/legacy-flock reconciliation
 ├─ FarmShop.swift                  fixed local catalogue, purchase, upgrade, and equipment rules
-├─ Orientation.swift                versioned three-step Home tour + contextual-tip migration
+├─ Orientation.swift                versioned first-run guide (schema 5) + contextual-tip migration
 ├─ AppFeedback.swift             validated feedback draft/attachment/receipt protocol
 ├─ DistanceProvider.swift        protocol: async stream of distance readings
 └─ Formatting.swift              OllieFormat timer/minute formatting
@@ -303,16 +305,20 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    confirmation, and the future-period editor does not participate in this path. Starting one
    never changes progress by itself. An eligible completion can fill the Phone Away meter and
    open its separate bonus search, but never changes protected-night progress or Wind Down odds.
-12. After first-run setup, the `HomeView` shell presents a finite three-step app tour persisted
-    as `ollie.orientation.state`; one-time contextual spotlights cover Nights, Farm, Settings,
-    Phone Away, the first Search Journal entry, and first Barn capacity. Each uses the same dimmed coach-mark
-    language as Home and points to real interface beneath it; no guide step is styled as ordinary
-    app content. A dimmed modal layer spotlights the real
-    Tonight plan and bottom navigation without becoming part of Home's scroll. Finishing or dismissing the
-    tour is independent of tab visits and real Wind Down actions. The optional five-minute
-    practice is offered only after the tour and uses the normal additional-quiet path, so it
-    is recorded without protected-night progress or sheep resolution. Settings can resume or
-    replay the tour and start practice separately. Version-one milestone data remains decodable.
+12. After first-run setup, the `HomeView` shell presents a versioned, resumable first-run
+    guide persisted as `ollie.orientation.state` (schema 5). Initial setup covers narrative
+    welcome pages, the Wind Down starting-point questionnaire, sourced recommendations, schedule,
+    optional shielding, a profile-gift announcement, and the saved-plan summary. The in-app
+    guide then walks Home, a five-minute practice, Farm, Slumber Party, Settings, and Nights
+    using coach marks and lightweight task cards on the real production interfaces. A persistent
+    “Continue getting to know Counting Sheep” card remains until the journey is completed or
+    dismissed. Completing the questionnaire owns the pending wearable even if the result screen
+    is skipped; skipping the questions themselves does not grant it. Farm claim and equip remain
+    separate lessons. Resume returns to the current surface, including the practice sheet, and a
+    coach still appears if a spotlight target is missing. Skipping a lesson does not grant rewards.
+    Practice grants the second starter sheep only after a successful five-minute completion.
+    Contextual tips stay suppressed during an active Wind Down. Settings can resume or replay the
+    guide. Older three-step tour JSON remains decodable.
 
 ### Slumber Party run boundary
 
@@ -448,7 +454,7 @@ by the iPhone.
 | `ollie.onboarding.draft` | `OnboardingDraft` | resumable first-run setup choices |
 | `ollie.windDown.profile` | `WindDownProfileRecord` | local Wind Down starting-point answers and deterministic recommendations |
 | `ollie.welcome.rewards` | `WelcomeRewardLedger` | idempotent starter, pending wearable gift, and practice-sheep grants |
-| `ollie.orientation.state` | `CountingSheepOrientationState` | versioned orientation status, real-action milestones, and practice run identity |
+| `ollie.orientation.state` | `CountingSheepOrientationState` | versioned first-run guide status, lessons, Farm tutorial actions, practice run identity, and continue-card dismissal |
 | `ollie.notifications.preferences` | `NotificationPreferences` | cadence, authorization choices, sounds, optional channels, and versioned local message overrides |
 | `ollie.notifications.remindersEnabled` | `Bool` | backwards-compatible mirror of the notification master switch |
 | `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes including starter/practice/Wind Down/Phone Away origins, trail-map minutes/run IDs, separate guarantee counters, trail distance, no-find protection, odds preference |
@@ -504,9 +510,9 @@ retries every ten minutes up to five attempts and purges rows/private objects af
 iOS form then uses Mail instead. ADR-0005/0007 and `ACTIVITYKIT_PUSH_BACKEND.md` define the
 cloud boundaries.
 
-Slumber Party is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` (default `NO`). With
-the flag off, its app surfaces are absent and it does not create a Supabase session or make a
-request. Entry creates or restores an anonymous session only when needed, then Sign in with Apple
+Slumber Party is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` (ordinary Debug `NO`;
+TestFlight/Release `YES`). With the flag off, its app surfaces are absent and it does not create a
+Supabase session or make a request. Entry creates or restores an anonymous session only when needed, then Sign in with Apple
 links that identity in place and verifies the Auth UUID did not change. Slumber Party server RPCs
 also require Apple in Auth app metadata, so another non-anonymous provider is insufficient.
 
@@ -556,9 +562,10 @@ migration/functions, Apple provider, and moderation operating process remain dep
 9. **Feedback delivery is disabled by default.** Resend secrets/domain, scheduled retry,
    hosted migration, private-object behavior, mailbox retention, and a physical-device
    upload must all pass before enabling it. Email fallback is the release-safe path.
-10. **Slumber Party is disabled by default.** The local contract, app surfaces, schema, RLS tests,
-    and Edge Functions are versioned, but hosted deployment, Apple/Supabase configuration,
-    moderation operations, retention scheduling, and physical two-account QA remain external.
+10. **Slumber Party is compiled on for TestFlight/Release and off for ordinary Debug.** Hosted
+    deployment, Apple/Supabase configuration, moderation operations, retention scheduling, and
+    physical two-account QA remain operational evidence for a working party, not a compile-flag
+    gate.
 
 ## 8. Recommended architecture direction
 

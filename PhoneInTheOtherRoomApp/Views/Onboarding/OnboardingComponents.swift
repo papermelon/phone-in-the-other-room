@@ -2,6 +2,7 @@ import SwiftUI
 
 struct OnboardingProgressHeader: View {
     let step: CountingSheepOnboardingStep
+    var showsBack = false
     let onBack: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -34,7 +35,7 @@ struct OnboardingProgressHeader: View {
             }
             .frame(maxWidth: .infinity)
 
-            if step != .welcome {
+            if showsBack {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
                         .font(.subheadline.weight(.black))
@@ -205,9 +206,9 @@ struct OnboardingTimeline: View {
 
 #Preview("Onboarding progress") {
     VStack(spacing: AppSpacing.xl) {
-        OnboardingProgressHeader(step: .welcome, onBack: {})
-        OnboardingProgressHeader(step: .quiet, onBack: {})
-        OnboardingProgressHeader(step: .ready, onBack: {})
+        OnboardingProgressHeader(step: .welcome, showsBack: false, onBack: {})
+        OnboardingProgressHeader(step: .quiet, showsBack: true, onBack: {})
+        OnboardingProgressHeader(step: .ready, showsBack: true, onBack: {})
     }
     .padding()
     .background(AppColors.paper)

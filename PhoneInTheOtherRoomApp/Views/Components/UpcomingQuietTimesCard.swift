@@ -77,6 +77,7 @@ struct UpcomingQuietTimesCard: View {
                 }
             }
         }
+        .orientationTourTarget(.phoneAway)
     }
 
     private var summary: String {

@@ -230,6 +230,9 @@ extension FarmState {
     }
 
     mutating func claimWelcomeWearable(itemID: String) throws {
-        try equip(itemID: itemID)
+        guard ownedShopItemIDs.contains(itemID) else { throw FarmActionError.itemNotOwned }
+        guard WelcomeRewardCatalog.isFinishedShepherdWearable(itemID) else {
+            throw FarmActionError.itemNotEquippable
+        }
     }
 }
