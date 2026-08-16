@@ -317,7 +317,7 @@ enum SheepSearchEngine {
         return min(1, max(0, Double(value) / Double(planned)))
     }
 
-    private static func weightedSheep(
+    static func weightedSheep(
         from candidates: [SheepDefinition],
         score: Int,
         trackedSheepID: String?,
@@ -339,7 +339,7 @@ enum SheepSearchEngine {
         return candidates.last
     }
 
-    private static func stableSeed(runID: UUID, protectedNightNumber: Int) -> UInt64 {
+    static func stableSeed(runID: UUID, protectedNightNumber: Int) -> UInt64 {
         var value: UInt64 = UInt64(protectedNightNumber) &* 1_000_003
         for scalar in runID.uuidString.unicodeScalars {
             value = value &* 31 &+ UInt64(scalar.value)
@@ -352,7 +352,7 @@ enum SheepSearchEngine {
     }
 }
 
-private final class DeterministicSheepRandom {
+final class DeterministicSheepRandom {
     private var state: UInt64
 
     init(seed: UInt64) {

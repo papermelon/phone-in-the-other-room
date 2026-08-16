@@ -24,7 +24,7 @@ struct NightFlockAggregatePresentation: Equatable, Sendable {
             someTitle: "A quiet morning reached the pasture.",
             countTitle: { "\($0) quiet mornings reached the pasture." },
             emptyDetail: "Your group’s morning progress will appear here when someone chooses to share an update.",
-            positiveDetail: "Private or missing updates are not counted as completion."
+            positiveDetail: "No update shared is not counted as completion."
         )
     }
 
@@ -90,5 +90,65 @@ struct NightFlockHomeSummary: Equatable, Sendable {
             memberCount: snapshot.members.count
         )
         return Self(title: presentation.title, detail: presentation.detail, challengeDay: day)
+    }
+}
+
+struct NightFlockMemberBoardRow: Identifiable, Equatable, Sendable {
+    var memberID: UUID
+    var alias: String
+    var ready: Bool
+    var tonightStatus: NightFlockMemberNightStatus
+    var qualifyingNights: Int
+    var windDownMinutes: Int
+    var phoneAwayMinutes: Int
+    var shieldingTitle: String?
+    var sleepMinutes: Int?
+    var restfulnessTitle: String?
+    var sharedRoutineTitles: [String]
+
+    var id: UUID { memberID }
+}
+
+enum NightFlockMemberBoard {
+    static func rows(
+        from snapshot: NightFlockSnapshot,
+        at date: Date = Date(),
+        guidanceTitles: (String) -> String = { $0 }
+    ) -> [NightFlockMemberBoardRow] {
+        let day = NightFlockChallengeDayRules.challengeDay(at: date, challenge: snapshot.challenge)
+        let tonight = day.flatMap { value in snapshot.days.first(where: { $0.day == value }) }
+        return snapshot.members.map { member in
+            let setup = snapshot.memberSetups.first(where: { $0.memberID == member.id })
+            let sharing = setup?.sharing ?? NightFlockSharingPreferences(
+                shareGoalProgress: setup?.sharingEnabled ?? true,
+                shareRoutineIdeas: setup?.shareRoutineIdeas ?? false
+            )
+            let progress = snapshot.allMemberProgress.filter { $0.memberID == member.id }
+            let tonightProgress = tonight?.memberProgress.first(where: { $0.memberID == member.id })
+            let projectedTonight = tonightProgress.map {
+                NightFlockProjectionRules.projectedProgress($0, sharing: sharing)
+            }
+            let routines = snapshot.sharedRoutineIdeas
+                .filter { $0.memberID == member.id }
+                .map { guidanceTitles($0.guidanceID) }
+            return NightFlockMemberBoardRow(
+                memberID: member.id,
+                alias: member.alias,
+                ready: setup?.goalAccepted == true && setup?.setupReady == true,
+                tonightStatus: projectedTonight?.status ?? .privateNoUpdate,
+                qualifyingNights: NightFlockRewardRules.qualifyingNightCount(
+                    in: progress,
+                    memberID: member.id
+                ),
+                windDownMinutes: progress.compactMap(\.windDownMinutes).reduce(0, +),
+                phoneAwayMinutes: progress.compactMap(\.phoneAwayMinutes).reduce(0, +),
+                shieldingTitle: sharing.shareShieldingStatus
+                    ? projectedTonight?.shieldingEvidence.title
+                    : nil,
+                sleepMinutes: projectedTonight?.sleepDurationMinutes,
+                restfulnessTitle: projectedTonight?.restfulness?.title,
+                sharedRoutineTitles: sharing.shareRoutineIdeas ? routines : []
+            )
+        }
     }
 }

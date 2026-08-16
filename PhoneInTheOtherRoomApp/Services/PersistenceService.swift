@@ -28,6 +28,7 @@ final class PersistenceService {
     private let sheepSearchStateKey = "ollie.sheepSearch.state"
     private let farmStateKey = "ollie.farm.state"
     private let welcomeRewardLedgerKey = WelcomeRewardLedger.storageKey
+    private let nightFlockRewardLedgerKey = NightFlockRewardLedger.storageKey
     private let windDownProfileKey = WindDownProfileRecord.storageKey
     private let orientationStateKey = "ollie.orientation.state"
 #if DEBUG
@@ -239,6 +240,7 @@ final class PersistenceService {
             sheepSearchStateKey,
             farmStateKey,
             welcomeRewardLedgerKey,
+            nightFlockRewardLedgerKey,
             windDownProfileKey
         ].forEach { defaults.removeObject(forKey: $0) }
     }
@@ -325,6 +327,11 @@ final class PersistenceService {
     var welcomeRewardLedger: WelcomeRewardLedger {
         get { load(WelcomeRewardLedger.self, key: welcomeRewardLedgerKey) ?? .empty }
         set { save(newValue, key: welcomeRewardLedgerKey) }
+    }
+
+    var nightFlockRewardLedger: NightFlockRewardLedger {
+        get { load(NightFlockRewardLedger.self, key: nightFlockRewardLedgerKey) ?? .empty }
+        set { save(newValue, key: nightFlockRewardLedgerKey) }
     }
 
     var windDownProfileRecord: WindDownProfileRecord? {

@@ -22,7 +22,7 @@ struct NightFlockSharedPastureView: View {
                     .foregroundStyle(AppColors.grass)
                 Text("Encouragement for the seven nights.")
                     .font(AppTypography.title)
-                Text("Send a small fixed reaction to a shared update. Private/no update is never shown as completion.")
+                Text("Send a small fixed reaction to a shared update. No update shared is never shown as completion.")
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.secondaryText)
 
@@ -90,7 +90,7 @@ struct NightFlockResultCard: View {
                         .foregroundStyle(AppColors.grass)
                     Text("A shared goal update was posted.")
                         .font(AppTypography.headline)
-                    Text("This is a supportive group record. It adds no wool, sheep, rank, or reward.")
+                    Text("This is a supportive group record. Shared nights can bring a little wool, a small keepsake, or one Slumber Party sheep. Reactions do not.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }

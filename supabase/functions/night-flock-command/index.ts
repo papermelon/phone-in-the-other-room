@@ -10,9 +10,13 @@ Deno.serve((request) => handleNightFlockCommand(request, {
   },
   async execute(callerID, payload) {
     const admin = serviceClient();
-    const { data, error } = await admin.rpc(payload.schemaVersion === 2
-      ? "night_flock_commitment_command"
-      : "night_flock_command", {
+    const { data, error } = await admin.rpc(
+      payload.schemaVersion === 3
+        ? "night_flock_social_command"
+        : payload.schemaVersion === 2
+        ? "night_flock_commitment_command"
+        : "night_flock_command",
+      {
       p_user_id: callerID,
       p_command: payload,
     });

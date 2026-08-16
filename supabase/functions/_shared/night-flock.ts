@@ -33,18 +33,37 @@ const commitmentCommandFields: Record<string, string[]> = {
 };
 
 export type NightFlockCommandPayload = Record<string, unknown> & {
-  schemaVersion: 1 | 2;
+  schemaVersion: 1 | 2 | 3;
   command: string;
   idempotencyKey: string;
+};
+
+const socialCommandFields: Record<string, string[]> = {
+  setSharingPreferences: [
+    "schemaVersion", "command", "shareGoalProgress", "shareWindDownCompletion",
+    "shareWindDownMinutes", "sharePhoneAwayMinutes", "sharePhoneTuckedAway",
+    "shareShieldingStatus", "shareRoutineIdeas", "shareSleepDuration",
+    "shareRestfulness", "idempotencyKey",
+  ],
+  publishNightMetrics: [
+    "schemaVersion", "command", "challengeID", "day", "status", "shieldingEvidence",
+    "windDownMinutes", "phoneAwayMinutes", "sleepDurationMinutes", "restfulness",
+    "idempotencyKey",
+  ],
+  acknowledgeGrant: ["schemaVersion", "command", "grantID", "idempotencyKey"],
 };
 
 export function validateNightFlockCommand(
   body: Record<string, unknown>,
   headerIdempotencyKey: string | null,
 ): NightFlockCommandPayload {
-  if (body.schemaVersion !== 1 && body.schemaVersion !== 2) throw new Error("Unsupported schemaVersion");
+  if (body.schemaVersion !== 1 && body.schemaVersion !== 2 && body.schemaVersion !== 3) {
+    throw new Error("Unsupported schemaVersion");
+  }
   const command = requireString(body, "command");
-  const allowedFields = body.schemaVersion === 2
+  const allowedFields = body.schemaVersion === 3
+    ? socialCommandFields[command]
+    : body.schemaVersion === 2
     ? commitmentCommandFields[command]
     : commandFields[command];
   if (!allowedFields) throw new Error("Unsupported Slumber Party command");
@@ -55,7 +74,9 @@ export function validateNightFlockCommand(
     throw new Error("Idempotency key mismatch");
   }
 
-  if (body.schemaVersion === 2) {
+  if (body.schemaVersion === 3) {
+    validateSocialCommand(body, command);
+  } else if (body.schemaVersion === 2) {
     validateCommitmentCommand(body, command);
   } else switch (command) {
     case "createFlock":
@@ -103,9 +124,11 @@ export function validateNightFlockCommand(
   return { ...body, schemaVersion: body.schemaVersion, command, idempotencyKey } as NightFlockCommandPayload;
 }
 
-export function validateNightFlockState(body: Record<string, unknown>): { schemaVersion: 1 | 2 } {
+export function validateNightFlockState(body: Record<string, unknown>): { schemaVersion: 1 | 2 | 3 } {
   requireExactFields(body, ["schemaVersion"]);
-  if (body.schemaVersion !== 1 && body.schemaVersion !== 2) throw new Error("Unsupported schemaVersion");
+  if (body.schemaVersion !== 1 && body.schemaVersion !== 2 && body.schemaVersion !== 3) {
+    throw new Error("Unsupported schemaVersion");
+  }
   return { schemaVersion: body.schemaVersion };
 }
 
@@ -168,6 +191,50 @@ function validateCommitmentCommand(body: Record<string, unknown>, command: strin
         "sharedGoalCompleted", "morningQuietCompleted", "privateNoUpdate",
       ]);
       requireEnum(body, "shieldingEvidence", ["notRequested", "unavailable", "partial", "observed"]);
+      break;
+  }
+}
+
+function validateSocialCommand(body: Record<string, unknown>, command: string): void {
+  switch (command) {
+    case "setSharingPreferences":
+      for (const key of [
+        "shareGoalProgress", "shareWindDownCompletion", "shareWindDownMinutes",
+        "sharePhoneAwayMinutes", "sharePhoneTuckedAway", "shareShieldingStatus",
+        "shareRoutineIdeas", "shareSleepDuration", "shareRestfulness",
+      ]) {
+        if (typeof body[key] !== "boolean") throw new Error("Invalid sharing preferences");
+      }
+      break;
+    case "publishNightMetrics":
+      requireUUID(body, "challengeID");
+      if (typeof body.day !== "number" || !Number.isSafeInteger(body.day) || body.day < 1 || body.day > 7) {
+        throw new Error("Invalid day");
+      }
+      requireEnum(body, "status", [
+        "goalAccepted", "setupReady", "phoneTuckedAway", "partiallyCompleted",
+        "sharedGoalCompleted", "morningQuietCompleted", "privateNoUpdate",
+      ]);
+      requireEnum(body, "shieldingEvidence", ["notRequested", "unavailable", "partial", "observed"]);
+      if (typeof body.windDownMinutes !== "number" || !Number.isSafeInteger(body.windDownMinutes)
+          || body.windDownMinutes < 0 || body.windDownMinutes > 180) {
+        throw new Error("Values outside bounds");
+      }
+      if (typeof body.phoneAwayMinutes !== "number" || !Number.isSafeInteger(body.phoneAwayMinutes)
+          || body.phoneAwayMinutes < 0 || body.phoneAwayMinutes > 240) {
+        throw new Error("Values outside bounds");
+      }
+      if (body.sleepDurationMinutes !== null && body.sleepDurationMinutes !== undefined
+          && (typeof body.sleepDurationMinutes !== "number" || !Number.isSafeInteger(body.sleepDurationMinutes)
+            || body.sleepDurationMinutes < 0 || body.sleepDurationMinutes > 720)) {
+        throw new Error("Values outside bounds");
+      }
+      if (body.restfulness !== null && body.restfulness !== undefined) {
+        requireEnum(body, "restfulness", ["notMuch", "somewhat", "rested", "notSure"]);
+      }
+      break;
+    case "acknowledgeGrant":
+      requireUUID(body, "grantID");
       break;
   }
 }

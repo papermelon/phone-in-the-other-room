@@ -36,11 +36,12 @@ npx deno test --allow-env \
 
 The Slumber Party source contract is additive: the original migration and schema-one commands
 remain compatible, while `20260816100000_night_flock_shared_commitment_v2.sql` adds the bounded
-shared-goal lobby, member setup/sharing, reusable invite redemption, nightly progress, and coarse
-shielding evidence tables/RPCs. Schema-two requests are validated in the Edge Functions and never
-carry Family Controls tokens, selected-app lists, exact schedules, or raw Health data. Run the
-Night Flock SQL test after `db reset`; it covers the explicit host-start gate and member-only
-projection. Do not deploy this migration or the functions without the ADR-0016 release gates.
+shared-goal lobby and `20260816220000_night_flock_social_rewards_v3.sql` adds independently
+controlled sharing, nightly shared metrics, and server-authoritative Farm grants. Schema-two
+and schema-three requests are validated in the Edge Functions and never carry Family Controls
+tokens, selected-app lists, exact schedules, or raw Health data. Run the Night Flock SQL test
+after `db reset`. Do not deploy these migrations or the functions without the ADR-0016 release
+gates.
 
 ## Hosted development project
 
@@ -89,7 +90,8 @@ days. The support mailbox owner must follow the matching 180-day deletion proces
 
 Slumber Party additionally requires Supabase Auth's Apple provider, manual-linking support,
 deployment of `20260812120000_night_flock_mvp.sql` followed by
-`20260816100000_night_flock_shared_commitment_v2.sql`, both authenticated functions, and a daily
+`20260816100000_night_flock_shared_commitment_v2.sql` and
+`20260816220000_night_flock_social_rewards_v3.sql`, both authenticated functions, and a daily
 service-role schedule for `purge_night_flock_retention(now())`. Establish a moderation queue and
 document who can create service-only moderation actions before enabling the client. Do not reuse
 the impact or ActivityKit tables as Slumber Party sources. The deployment sequence and rollback

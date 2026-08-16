@@ -132,6 +132,7 @@ extension FarmState {
         switch origin {
         case .starter: return .starterGrant
         case .onboardingPractice: return .onboardingPracticeArrival
+        case .slumberParty: return .slumberPartyGrant
         case .windDown, .phoneBreak, .unspecified: return .arrival
         }
     }

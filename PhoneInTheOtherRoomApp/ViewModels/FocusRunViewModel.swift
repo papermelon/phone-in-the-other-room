@@ -76,7 +76,7 @@ final class FocusRunViewModel: ObservableObject {
     private let focusService = FocusModeSuggestionService()
     private let notifications = PhoneNotificationService.shared
     let persistence: PersistenceService
-    private let nowProvider: () -> Date
+    let nowProvider: () -> Date
     private let screenTimeService = ScreenTimeAuthorizationService()
     private let healthSleepService = HealthSleepService()
     private let phoneBedNFCService = PhoneBedNFCService()
@@ -172,10 +172,13 @@ final class FocusRunViewModel: ObservableObject {
         self.coordinator.onRunFinished = { [weak self] in
             guard let self else { return }
             if let run = self.activeRun {
-                self.nightFlockViewModel.handleTerminalRun(run)
+                self.publishSlumberPartyOutcome(for: run)
             }
             self.reconcileOrientationAfterRun()
             self.scheduleAutomaticWindDownIfNeeded()
+        }
+        self.nightFlockViewModel.onApplyRewardGrants = { [weak self] grants in
+            self?.applySlumberPartyGrants(grants)
         }
         screenTimeAuthorization = startsExternalServices ? screenTimeService.currentState() : .notDetermined
         if startsExternalServices {
@@ -188,7 +191,7 @@ final class FocusRunViewModel: ObservableObject {
             Task { @MainActor [weak self] in
                 await Task.yield()
                 guard let self, let run = self.activeRun else { return }
-                self.nightFlockViewModel.handleTerminalRun(run)
+                self.publishSlumberPartyOutcome(for: run)
             }
         }
         sleepAuthorization = startsExternalServices
@@ -2032,6 +2035,7 @@ final class FocusRunViewModel: ObservableObject {
         persistence.sheepSearchState = welcome.search
         persistence.farmState = welcome.farm
         persistence.welcomeRewardLedger = welcome.ledger
+        persistence.nightFlockRewardLedger = .empty
         farmActionMessage = nil
         coordinator.events = []
         coordinator.latestReward = nil
@@ -2201,6 +2205,16 @@ final class FocusRunViewModel: ObservableObject {
             return calendar.isDate(nightEndingDate, inSameDayAs: Date())
         }
         linkHealthOutcomesToRitualHistory()
+        let supplementWindow = calendar.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        if let lastNightSleep, let nightEndingDate = lastNightSleep.nightEndingDate ?? lastNightSleep.endDate {
+            publishSlumberPartyMetricSupplement(at: nightEndingDate)
+        }
+        for record in persistence.nightWatchHistory.records
+            where record.outcome == .completed
+            && record.role == .primarySleepBookend
+            && record.plan.wakeTime >= supplementWindow {
+            publishSlumberPartyMetricSupplement(at: record.plan.wakeTime)
+        }
         if impactSharingPreferences.isEnabled {
             await syncImpactData()
         }
@@ -2223,6 +2237,7 @@ final class FocusRunViewModel: ObservableObject {
                 )
             )
         }
+        publishSlumberPartyMetricSupplement(at: entry.day)
     }
 
     private func linkHealthOutcomesToRitualHistory() {

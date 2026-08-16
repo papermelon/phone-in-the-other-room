@@ -161,6 +161,66 @@ Deno.test("state endpoint rejects anonymous callers without reading social state
   assertEquals(readCount, 0);
 });
 
+Deno.test("schema three rejects tokens, out-of-bounds minutes, and extra fields", () => {
+  const v3Key = "d".repeat(64);
+  const accepted = validateNightFlockCommand({
+    schemaVersion: 3,
+    command: "publishNightMetrics",
+    challengeID,
+    day: 1,
+    status: "morningQuietCompleted",
+    shieldingEvidence: "observed",
+    windDownMinutes: 40,
+    phoneAwayMinutes: 10,
+    sleepDurationMinutes: 450,
+    restfulness: "rested",
+    idempotencyKey: v3Key,
+  }, v3Key);
+  assertEquals(accepted.schemaVersion, 3);
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 3,
+    command: "publishNightMetrics",
+    challengeID,
+    day: 1,
+    status: "morningQuietCompleted",
+    shieldingEvidence: "observed",
+    windDownMinutes: 40,
+    phoneAwayMinutes: 10,
+    sleepDurationMinutes: 450,
+    restfulness: "rested",
+    applicationTokens: ["opaque"],
+    idempotencyKey: v3Key,
+  }, v3Key), Error, "Unexpected field");
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 3,
+    command: "publishNightMetrics",
+    challengeID,
+    day: 1,
+    status: "morningQuietCompleted",
+    shieldingEvidence: "observed",
+    windDownMinutes: 181,
+    phoneAwayMinutes: 0,
+    sleepDurationMinutes: null,
+    restfulness: null,
+    idempotencyKey: v3Key,
+  }, v3Key), Error, "Values outside bounds");
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 3,
+    command: "publishNightMetrics",
+    challengeID,
+    day: 1,
+    status: "morningQuietCompleted",
+    shieldingEvidence: "observed",
+    windDownMinutes: 40,
+    phoneAwayMinutes: 0,
+    sleepDurationMinutes: null,
+    restfulness: null,
+    memberID: userID,
+    idempotencyKey: v3Key,
+  }, v3Key), Error, "Unexpected field");
+  assertEquals(validateNightFlockState({ schemaVersion: 3 }).schemaVersion, 3);
+});
+
 function commandRequest(body: Record<string, unknown> = {
   schemaVersion: 1,
   command: "publishCheckIn",

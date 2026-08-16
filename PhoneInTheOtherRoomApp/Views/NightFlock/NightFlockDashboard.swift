@@ -21,6 +21,7 @@ struct NightFlockDashboard: View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             tonightGoal
             mySetupCard
+            NightFlockRewardsCard(snapshot: snapshot)
             sevenNights
             routineIdeas
             ideasAndSources
@@ -130,7 +131,7 @@ struct NightFlockDashboard: View {
                     HStack(alignment: .center, spacing: AppSpacing.sm) {
                         Text("Night \(day.day)").font(AppTypography.body.weight(.semibold)).frame(width: 68, alignment: .leading)
                         if progresses.isEmpty {
-                            Text(snapshot.challenge.status == .pending ? "Waiting for the lobby" : "No shared update")
+                            Text(snapshot.challenge.status == .pending ? "Waiting for the lobby" : "No update shared")
                                 .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                         } else {
                             HStack(spacing: AppSpacing.xs) {
@@ -147,8 +148,15 @@ struct NightFlockDashboard: View {
                     }
                     .frame(minHeight: 44)
                 }
-                Text("Private/no update is not counted as completion. There are no rankings.")
+                Text("No update shared is not counted as completion. There are no rankings.")
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                NavigationLink {
+                    NightFlockMemberBoardView(snapshot: snapshot)
+                } label: {
+                    Label("Named progress", systemImage: "person.3.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 NightFlockTipCallout(
                     viewModel: viewModel,
                     tip: .groupProgress,

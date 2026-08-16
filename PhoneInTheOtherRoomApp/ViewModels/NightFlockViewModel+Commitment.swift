@@ -80,14 +80,6 @@ extension NightFlockViewModel {
         ))
     }
 
-    func saveSharingPreferences() {
-        performV2(.setSharingPreferences(
-            shareGoalProgress: commitmentDraft.sharing.shareGoalProgress,
-            shareRoutineIdeas: commitmentDraft.sharing.shareRoutineIdeas,
-            idempotencyKey: NightFlockV2Idempotency.command("sharing-preferences")
-        ))
-    }
-
     func saveSharedRoutineIdeas() {
         guard let challengeID = snapshot?.challenge.id else { return }
         let ids = Array(commitmentDraft.sharedRoutineIDs.prefix(3))
@@ -153,27 +145,17 @@ extension NightFlockViewModel {
     }
 
     func enqueueCommitmentProgress(state: NightFlockCheckInState, for context: NightFlockRunShareContext) {
-        guard let outbox else { return }
-        let status: NightFlockMemberNightStatus = state == .morningQuietCompleted
-            ? .morningQuietCompleted
-            : .phoneTuckedAway
         let evidence = snapshot?.memberSetups.first(where: { $0.memberID == context.memberID })?.shieldingEvidence
             ?? .notRequested
-        let record = NightFlockV2OutboxRecord(
-            challengeID: context.challengeID,
-            memberID: context.memberID,
-            challengeDay: context.challengeDay,
-            runID: context.runID,
-            status: status,
-            shieldingEvidence: evidence,
-            idempotencyKey: NightFlockV2Idempotency.command(
-                "progress-\(context.challengeDay)-\(status.rawValue)",
-                seed: context.runID
+        enqueueNightMetrics(
+            for: context,
+            metrics: NightFlockLocalNightMetrics(
+                windDownMinutes: 0,
+                phoneAwayMinutes: 0,
+                shieldingEvidence: evidence,
+                tuckedAway: true,
+                completedSuccessfully: state == .morningQuietCompleted
             )
         )
-        Task {
-            await outbox.enqueueV2(record)
-            await flushOutbox()
-        }
     }
 }

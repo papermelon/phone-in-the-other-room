@@ -239,6 +239,105 @@ extension FocusRunViewModel {
         farmActionMessage = nil
     }
 
+    func applySlumberPartyGrants(_ grants: [NightFlockRewardGrant]) {
+        guard !grants.isEmpty else { return }
+        let result = NightFlockRewardEngine.apply(
+            grants: grants,
+            farm: coordinator.farmState,
+            search: coordinator.sheepSearchState,
+            ledger: persistence.nightFlockRewardLedger,
+            protectedNightCount: max(1, coordinator.progress.totalCompletedRuns)
+        )
+        coordinator.farmState = result.farm
+        coordinator.sheepSearchState = result.search
+        if let outcome = result.outcome {
+            coordinator.latestSheepSearchOutcome = outcome
+        }
+        persistence.farmState = result.farm
+        persistence.sheepSearchState = result.search
+        persistence.nightFlockRewardLedger = result.ledger
+        if !result.applied.isEmpty {
+            nightFlockViewModel.acknowledgeAppliedGrants(result.applied.map(\.id))
+            if result.applied.contains(where: { $0.rewardKind == .sheepSearch }) {
+                farmActionMessage = "A Slumber Party gift reached the Farm."
+            } else if result.applied.contains(where: { $0.rewardKind == .itemOrWool }) {
+                farmActionMessage = "A small Slumber Party keepsake arrived."
+            } else if result.applied.contains(where: { $0.woolAmount > 0 }) {
+                farmActionMessage = "A little wool arrived from Slumber Party."
+            }
+        }
+    }
+
+    func publishSlumberPartyOutcome(for run: FocusRun) {
+        let metrics = slumberPartyMetrics(for: run)
+        if run.nightWatchPlan?.role == .additionalQuiet, run.completedSuccessfully {
+            nightFlockViewModel.sharePhoneAwayMetrics(metrics, for: run, at: nowProvider())
+            return
+        }
+        nightFlockViewModel.handleTerminalRun(run, metrics: metrics)
+    }
+
+    private func slumberPartyMetrics(for run: FocusRun) -> NightFlockLocalNightMetrics {
+        let isPhoneAway = run.nightWatchPlan?.role == .additionalQuiet
+        let wake = run.nightWatchPlan?.wakeTime
+        let sleepMinutes: Int? = {
+            guard let wake else { return nil }
+            return recentNightSleeps.first { summary in
+                guard let date = summary.nightEndingDate ?? summary.endDate else { return false }
+                return Calendar.current.isDate(date, inSameDayAs: wake)
+            }.map { Int($0.durationSeconds / 60) }
+        }()
+        return NightFlockLocalNightMetrics(
+            windDownMinutes: isPhoneAway ? 0 : run.creditedQuietMinutes,
+            phoneAwayMinutes: isPhoneAway ? run.creditedQuietMinutes : 0,
+            shieldingEvidence: snapshotShieldingEvidence(),
+            tuckedAway: run.phoneAwayValidatedAt != nil || run.completedSuccessfully,
+            completedSuccessfully: run.completedSuccessfully && !isPhoneAway,
+            sleepDurationMinutes: sleepMinutes,
+            restfulness: morningCheckIn(for: wake ?? nowProvider()).restfulness
+        )
+    }
+
+    func publishSlumberPartyMetricSupplement(at date: Date) {
+        guard let snapshot = nightFlockViewModel.snapshot else { return }
+        let sharing = snapshot.sharing
+        guard sharing.shareSleepDuration || sharing.shareRestfulness else { return }
+        let record = persistence.nightWatchHistory.records.first { candidate in
+            Calendar.current.isDate(candidate.plan.wakeTime, inSameDayAs: date)
+                && candidate.role == .primarySleepBookend
+        }
+        let sleepMinutes: Int? = sharing.shareSleepDuration
+            ? recentNightSleeps.first { summary in
+                guard let sleepDate = summary.nightEndingDate ?? summary.endDate else { return false }
+                return Calendar.current.isDate(sleepDate, inSameDayAs: date)
+            }.map { Int($0.durationSeconds / 60) }
+            : nil
+        let restfulness = sharing.shareRestfulness ? morningCheckIn(for: date).restfulness : nil
+        guard sleepMinutes != nil || restfulness != nil else { return }
+        let windDownMinutes = (record?.creditedWindDownMinutes ?? 0)
+            + (record?.creditedMorningQuietMinutes ?? 0)
+        nightFlockViewModel.shareSupplementalMetrics(
+            NightFlockLocalNightMetrics(
+                windDownMinutes: windDownMinutes,
+                phoneAwayMinutes: 0,
+                shieldingEvidence: snapshotShieldingEvidence(),
+                tuckedAway: record != nil,
+                completedSuccessfully: record?.outcome == .completed,
+                sleepDurationMinutes: sleepMinutes,
+                restfulness: restfulness
+            ),
+            runID: record?.id,
+            at: record?.plan.wakeTime ?? date
+        )
+    }
+
+    func snapshotShieldingEvidence() -> NightFlockShieldingEvidence {
+        nightFlockViewModel.snapshot?.memberSetups
+            .first(where: { $0.memberID == nightFlockViewModel.snapshot?.myMemberID })?
+            .shieldingEvidence
+            ?? nightFlockViewModel.commitmentDraft.shieldingEvidence
+    }
+
     private func mutateFarm(_ mutation: (inout FarmState) throws -> String?) {
         var state = coordinator.farmState
         do {

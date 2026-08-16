@@ -575,4 +575,277 @@ begin
 end;
 $$;
 
+insert into auth.users (
+  id, instance_id, aud, role, is_anonymous, raw_app_meta_data, created_at, updated_at
+) values
+(
+  '10000000-0000-4000-8000-000000000015',
+  '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', false,
+  '{"provider":"apple","providers":["apple"]}'::jsonb, now(), now()
+),
+(
+  '10000000-0000-4000-8000-000000000016',
+  '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', false,
+  '{"provider":"apple","providers":["apple"]}'::jsonb, now(), now()
+),
+(
+  '10000000-0000-4000-8000-000000000017',
+  '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', false,
+  '{"provider":"apple","providers":["apple"]}'::jsonb, now(), now()
+);
+
+do $$
+declare
+  owner_id uuid := '10000000-0000-4000-8000-000000000015';
+  member_id uuid := '10000000-0000-4000-8000-000000000016';
+  outsider_id uuid := '10000000-0000-4000-8000-000000000017';
+  result jsonb;
+  invite_code text;
+  challenge_id uuid;
+  owner_member uuid;
+  member_member uuid;
+  grant_count integer;
+  day_number integer;
+begin
+  result := public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'createParty', 'goalKind', 'phoneAway',
+    'targetMinutes', null, 'appDisplayName', null, 'identity', 'moonlitMeadow',
+    'timeZoneIdentifier', 'UTC', 'idempotencyKey', repeat('3a', 32)
+  ));
+  challenge_id := (result -> 'snapshot' -> 'challenge' ->> 'id')::uuid;
+  owner_member := (result -> 'snapshot' ->> 'myMemberID')::uuid;
+  result := public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'createInvite', 'idempotencyKey', repeat('3b', 32)
+  ));
+  invite_code := result ->> 'inviteCode';
+  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'redeemInvite', 'shortCode', invite_code,
+    'idempotencyKey', repeat('3c', 32)
+  ));
+  member_member := (public.night_flock_commitment_state(member_id) ->> 'myMemberID')::uuid;
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'acceptGoal', 'challengeID', challenge_id, 'idempotencyKey', repeat('3d', 32)
+  ));
+  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'acceptGoal', 'challengeID', challenge_id, 'idempotencyKey', repeat('3e', 32)
+  ));
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'setLocalSetup', 'challengeID', challenge_id,
+    'setupReady', true, 'shieldingEvidence', 'notRequested', 'idempotencyKey', repeat('3f', 32)
+  ));
+  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'setLocalSetup', 'challengeID', challenge_id,
+    'setupReady', true, 'shieldingEvidence', 'observed', 'idempotencyKey', repeat('40', 32)
+  ));
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'startChallenge', 'challengeID', challenge_id, 'idempotencyKey', repeat('41', 32)
+  ));
+
+  begin
+    perform public.night_flock_social_command(outsider_id, jsonb_build_object(
+      'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
+      'day', 1, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
+      'windDownMinutes', 40, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
+      'restfulness', null, 'idempotencyKey', repeat('42', 32)
+    ));
+    raise exception 'non-member published metrics';
+  exception when others then
+    if sqlerrm = 'non-member published metrics' then raise; end if;
+  end;
+
+  begin
+    perform public.night_flock_social_state(outsider_id);
+  exception when others then
+    null;
+  end;
+  if public.night_flock_social_state(outsider_id) is not null then
+    raise exception 'outsider read group metrics';
+  end if;
+
+  perform public.night_flock_social_command(member_id, jsonb_build_object(
+    'schemaVersion', 3, 'command', 'setSharingPreferences',
+    'shareGoalProgress', true, 'shareWindDownCompletion', true, 'shareWindDownMinutes', true,
+    'sharePhoneAwayMinutes', true, 'sharePhoneTuckedAway', true, 'shareShieldingStatus', true,
+    'shareRoutineIdeas', false, 'shareSleepDuration', true, 'shareRestfulness', true,
+    'idempotencyKey', repeat('43', 32)
+  ));
+  perform public.night_flock_social_command(member_id, jsonb_build_object(
+    'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
+    'day', 1, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
+    'windDownMinutes', 40, 'phoneAwayMinutes', 10, 'sleepDurationMinutes', 480,
+    'restfulness', 'rested', 'idempotencyKey', repeat('44', 32)
+  ));
+  perform public.night_flock_social_command(member_id, jsonb_build_object(
+    'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
+    'day', 1, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
+    'windDownMinutes', 40, 'phoneAwayMinutes', 10, 'sleepDurationMinutes', 480,
+    'restfulness', 'rested', 'idempotencyKey', repeat('45', 32)
+  ));
+  select count(*) into grant_count from public.night_flock_reward_grants
+  where member_id = member_member and milestone = 'qualifyingNight:1';
+  if grant_count <> 1 then raise exception 'progress replay duplicated a reward'; end if;
+  if (select count(*) from public.night_flock_shared_metrics
+      where member_id = owner_member) <> 0 then
+    raise exception 'member published metrics for another member';
+  end if;
+
+  result := public.night_flock_social_state(member_id);
+  if coalesce(result -> 'days' -> 0 -> 'memberProgress', '[]'::jsonb)::text not like '%480%' then
+    raise exception 'opted-in sleep minutes were not projected';
+  end if;
+  perform public.night_flock_social_command(member_id, jsonb_build_object(
+    'schemaVersion', 3, 'command', 'setSharingPreferences',
+    'shareGoalProgress', true, 'shareWindDownCompletion', true, 'shareWindDownMinutes', true,
+    'sharePhoneAwayMinutes', true, 'sharePhoneTuckedAway', true, 'shareShieldingStatus', true,
+    'shareRoutineIdeas', false, 'shareSleepDuration', false, 'shareRestfulness', false,
+    'idempotencyKey', repeat('46', 32)
+  ));
+  result := public.night_flock_social_state(owner_id);
+  if (result -> 'days' -> 0 -> 'memberProgress')::text like '%480%' then
+    raise exception 'disabled sleep sharing still projected sleep minutes';
+  end if;
+  if result::text ~* 'selectedApps|applicationTokens|healthKit' then
+    raise exception 'schema-three projection exposed local tokens';
+  end if;
+
+  perform public.night_flock_social_command(member_id, jsonb_build_object(
+    'schemaVersion', 3, 'command', 'setSharingPreferences',
+    'shareGoalProgress', true, 'shareWindDownCompletion', false, 'shareWindDownMinutes', true,
+    'sharePhoneAwayMinutes', true, 'sharePhoneTuckedAway', true, 'shareShieldingStatus', true,
+    'shareRoutineIdeas', false, 'shareSleepDuration', false, 'shareRestfulness', false,
+    'idempotencyKey', repeat('47', 32)
+  ));
+  result := public.night_flock_social_state(owner_id);
+  if (result -> 'days' -> 0 -> 'memberProgress')::text like '%morningQuietCompleted%' then
+    raise exception 'completion remained visible after it was turned off';
+  end if;
+  if (result -> 'days' -> 0 -> 'memberProgress')::text not like '%phoneTuckedAway%' then
+    raise exception 'hidden completion did not fall back to tucked away';
+  end if;
+
+  if coalesce(result -> 'days' -> 0 -> 'pasture' -> 0 ->> 'id', '') <> '' then
+    perform public.night_flock_command(owner_id, jsonb_build_object(
+      'command', 'react',
+      'checkInID', result -> 'days' -> 0 -> 'pasture' -> 0 ->> 'id',
+      'reaction', 'pawPrint',
+      'idempotencyKey', repeat('48', 32)
+    ));
+  end if;
+  if (select count(*) from public.night_flock_reward_grants where milestone like 'reaction%') <> 0 then
+    raise exception 'reactions produced rewards';
+  end if;
+
+  begin
+    perform public.night_flock_social_command(member_id, jsonb_build_object(
+      'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
+      'day', 1, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
+      'windDownMinutes', 400, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
+      'restfulness', null, 'idempotencyKey', repeat('49', 32)
+    ));
+    raise exception 'out-of-bounds minutes were accepted';
+  exception when others then
+    if sqlerrm = 'out-of-bounds minutes were accepted' then raise; end if;
+  end;
+
+  result := public.night_flock_social_state(member_id);
+  perform public.night_flock_social_command(member_id, jsonb_build_object(
+    'schemaVersion', 3, 'command', 'acknowledgeGrant',
+    'grantID', result -> 'pendingGrants' -> 0 ->> 'id',
+    'idempotencyKey', repeat('4a', 32)
+  ));
+  if (select claimed_at is null from public.night_flock_reward_grants
+      where member_id = member_member and milestone = 'qualifyingNight:1') then
+    raise exception 'acknowledged grant was not claimed';
+  end if;
+  if jsonb_array_length(coalesce(public.night_flock_social_state(member_id) -> 'pendingGrants', '[]'::jsonb)) <> 0 then
+    raise exception 'claimed grant remained pending';
+  end if;
+
+  perform public.night_flock_social_command(owner_id, jsonb_build_object(
+    'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
+    'day', 1, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
+    'windDownMinutes', 40, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
+    'restfulness', null, 'idempotencyKey', repeat('4b', 32)
+  ));
+  for day_number in 2..4 loop
+    perform public.night_flock_social_command(member_id, jsonb_build_object(
+      'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
+      'day', day_number, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
+      'windDownMinutes', 40, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
+      'restfulness', null, 'idempotencyKey', repeat('5' || day_number::text, 32)
+    ));
+    perform public.night_flock_social_command(owner_id, jsonb_build_object(
+      'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
+      'day', day_number, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
+      'windDownMinutes', 40, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
+      'restfulness', null, 'idempotencyKey', repeat('6' || day_number::text, 32)
+    ));
+  end loop;
+  update public.night_flock_challenges
+    set status = 'completed', completed_at = now()
+    where id = challenge_id;
+  perform public.night_flock_social_command(member_id, jsonb_build_object(
+    'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
+    'day', 4, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
+    'windDownMinutes', 40, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
+    'restfulness', null, 'idempotencyKey', repeat('4c', 32)
+  ));
+  perform public.night_flock_social_command(owner_id, jsonb_build_object(
+    'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
+    'day', 4, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
+    'windDownMinutes', 40, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
+    'restfulness', null, 'idempotencyKey', repeat('4f', 32)
+  ));
+  if not exists (
+    select 1 from public.night_flock_reward_grants
+    where member_id = member_member and milestone = 'sevenNightCompletion'
+  ) then raise exception 'seven-night grant was not created'; end if;
+  if not exists (
+    select 1 from public.night_flock_reward_grants
+    where member_id = member_member and milestone = 'groupCompletion'
+  ) then raise exception 'group completion grant was not created'; end if;
+  if not exists (
+    select 1 from public.night_flock_reward_grants
+    where member_id = owner_member and milestone = 'sevenNightCompletion'
+  ) then raise exception 'host seven-night grant was not created'; end if;
+
+  insert into public.night_flock_shared_metrics (
+    challenge_id, member_id, challenge_day, status, wind_down_minutes, created_at, updated_at
+  ) values (
+    challenge_id, owner_member, 7, 'morningQuietCompleted', 40,
+    now() - interval '91 days', now() - interval '91 days'
+  );
+  insert into public.night_flock_reward_grants (
+    challenge_id, member_id, milestone, reward_kind, wool_amount, created_at
+  ) values (
+    challenge_id, owner_member, 'qualifyingNight:7', 'wool', 1, now() - interval '13 months'
+  );
+  perform public.purge_night_flock_retention(now());
+  if exists (
+    select 1 from public.night_flock_shared_metrics
+    where member_id = owner_member and challenge_day = 7
+  ) then raise exception '90-day metrics retention did not purge'; end if;
+  if exists (
+    select 1 from public.night_flock_reward_grants
+    where member_id = owner_member and milestone = 'qualifyingNight:7'
+  ) then raise exception '12-month grant retention did not purge'; end if;
+
+  perform public.night_flock_command(member_id, jsonb_build_object(
+    'command', 'leave', 'idempotencyKey', repeat('4d', 32)
+  ));
+  result := public.night_flock_social_state(owner_id);
+  if result::text like '%' || member_member::text || '%' then
+    raise exception 'left member still appeared in social projection';
+  end if;
+
+  perform private.delete_night_flock_user_data(member_id);
+  if exists (
+    select 1 from public.night_flock_shared_metrics where member_id = member_member
+  ) then raise exception 'deleted account kept shared metrics'; end if;
+  if exists (
+    select 1 from public.night_flock_reward_grants where member_id = member_member
+  ) then raise exception 'deleted account kept reward grants'; end if;
+end;
+$$;
+
 rollback;

@@ -9,7 +9,7 @@ struct NightFlockOrientationView: View {
         ("Choose one goal together", "Your group agrees on one thing to practise for seven nights."),
         ("Keep your own routine", "Bedtimes and Wind Down routines can be different. Share only the ideas you want others to see."),
         ("Help one another follow through", "See nightly progress and send a small cheer. There are no rankings."),
-        ("You control what is shared", "Your app choices and exact schedule stay on your phone. Group sharing and impact sharing are separate choices.")
+        ("You control what is shared", "By joining, the group can see your name, whether you followed through, and rounded minutes. Sleep duration and how rested you felt stay off unless you turn them on. App choices and exact schedules stay on this iPhone.")
     ]
 
     var body: some View {
