@@ -13,7 +13,7 @@ enum SheepPosterFilter: String, CaseIterable, Identifiable {
         switch self {
         case .missing: return "Still searching"
         case .home: return "Home"
-        case .all: return "All trails"
+        case .all: return "All sheep"
         }
     }
 }

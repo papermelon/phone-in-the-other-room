@@ -63,16 +63,16 @@ struct UpcomingQuietTimesCard: View {
                 } else if let scheduledStart {
                     Button(action: startNow) {
                         Label("Start scheduled \(scheduledStart.title)", systemImage: "play.fill")
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: .infinity, minHeight: 44)
                     }
-                    .buttonStyle(PixelPrimaryButtonStyle())
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
                     .accessibilityHint("Starts the scheduled Phone Away period")
                 } else if immediateStartMinutes != nil {
                     Button(action: startNow) {
                         Label("Start now", systemImage: "timer")
-                            .frame(maxWidth: .infinity)
+                            .frame(maxWidth: .infinity, minHeight: 44)
                     }
-                    .buttonStyle(PixelPrimaryButtonStyle())
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
                     .accessibilityHint("Starts Phone Away without changing Wind Down")
                 }
             }
@@ -96,7 +96,7 @@ struct UpcomingQuietTimesCard: View {
     }
 }
 
-#Preview("Extra quiet · mapped trail") {
+#Preview("Extra quiet · mapped search") {
     UpcomingQuietTimesCard(
         nextPeriod: nil,
         additionalCount: 0,

@@ -41,7 +41,7 @@ final class NightFlockTests: XCTestCase {
             positiveCount: 0,
             memberCount: 2
         )
-        XCTAssertEqual(presentation.detail, "Shared moments will appear when someone chooses to share.")
+        XCTAssertEqual(presentation.detail, "Your group’s shared progress will appear here when someone chooses to share an update.")
         XCTAssertFalse(presentation.detail.localizedCaseInsensitiveContains("absence"))
         XCTAssertFalse(presentation.detail.localizedCaseInsensitiveContains("missed"))
     }
@@ -56,10 +56,10 @@ final class NightFlockTests: XCTestCase {
     }
 
     func testInvitationUsesTiredReaderPrivacyCopy() {
-        XCTAssertEqual(NightFlockHomeSummary.invitation.title, "Wind down with a small flock")
+        XCTAssertEqual(NightFlockHomeSummary.invitation.title, "Choose a Wind Down goal together")
         XCTAssertEqual(
             NightFlockHomeSummary.invitation.detail,
-            "Seven quiet nights with people you invite. Only tucked-away phones and completed mornings are shared."
+            "Invite people you know, share what helps, and keep one another going for seven nights."
         )
         XCTAssertFalse(NightFlockHomeSummary.invitation.detail.localizedCaseInsensitiveContains("missed"))
         XCTAssertFalse(NightFlockHomeSummary.invitation.detail.localizedCaseInsensitiveContains("schedule"))
@@ -86,6 +86,50 @@ final class NightFlockTests: XCTestCase {
     func testCheckInStateIsMonotonic() {
         XCTAssertLessThan(NightFlockCheckInState.none, .phoneTucked)
         XCTAssertLessThan(NightFlockCheckInState.phoneTucked, .morningQuietCompleted)
+    }
+
+    func testSharedGoalCatalogueIsBoundedAndInstagramKeepsAppChoiceLocal() {
+        XCTAssertEqual(NightFlockGoalKind.allCases.count, 3)
+        let request = NightFlockV2CommandRequest(command: .createParty(
+            goal: NightFlockSharedGoal(kind: .shieldInstagram, appDisplayName: "Instagram"),
+            identity: .moonlitMeadow,
+            timeZoneIdentifier: "Asia/Singapore",
+            idempotencyKey: String(repeating: "a", count: 64)
+        ))
+        let data = try! JSONEncoder().encode(request)
+        let object = try! XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertEqual(object["schemaVersion"] as? Int, 2)
+        XCTAssertEqual(object["goalKind"] as? String, "shieldInstagram")
+        XCTAssertNil(object["selectedApps"])
+        XCTAssertNil(object["applicationTokens"])
+        XCTAssertNil(object["familyActivitySelection"])
+    }
+
+    func testOrientationIsSeparateAndBackwardDecodable() throws {
+        let store = NightFlockOrientationStore(defaults: UserDefaults(suiteName: "NightFlockTests")!)
+        var state = NightFlockOrientationState.fresh
+        XCTAssertTrue(state.shouldShowIntro)
+        state.finishIntro()
+        state.markTipSeen(.sharedGoal)
+        store.save(state)
+        let decoded = store.load()
+        XCTAssertTrue(decoded.hasSeenIntro)
+        XCTAssertTrue(decoded.seenTips.contains(.sharedGoal))
+
+        let legacy = try JSONDecoder().decode(
+            NightFlockOrientationState.self,
+            from: Data(#"{"hasSeenIntro":true}"#.utf8)
+        )
+        XCTAssertTrue(legacy.hasSeenIntro)
+        XCTAssertEqual(legacy.schemaVersion, NightFlockOrientationState.currentSchemaVersion)
+    }
+
+    func testMemberProgressKeepsPrivateUpdateDistinctFromCompletion() {
+        let privateUpdate = NightFlockMemberNightProgress(
+            memberID: UUID(), day: 1, status: .privateNoUpdate, shieldingEvidence: .notRequested
+        )
+        XCTAssertNotEqual(privateUpdate.status, .sharedGoalCompleted)
+        XCTAssertNotEqual(privateUpdate.status, .morningQuietCompleted)
     }
 
     func testOutboxMergeUpgradesAndNeverDowngrades() {

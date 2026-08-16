@@ -53,13 +53,15 @@ account label A/B, expected result, actual result, and screenshot/log reference.
 | --- | --- |
 | QA configuration | Settings → Slumber Party QA diagnostics says flag enabled; Release build says disabled and contains no QA destination. |
 | Pre-link identity | Record each anonymous Supabase Auth UUID through approved redacted local/server tooling; after Sign in with Apple, each UUID is unchanged. |
-| Create and one-use invite | A creates a flock; create one invite, join it once on B, then prove the same invite cannot join again. |
+| Create and reusable invite | A chooses one bounded goal, creates a pending lobby, creates a reusable legible code, previews it on B, and verifies it works until revoked, expired, started, or capacity reaches eight. |
+| Lobby gate | Verify joining does not start the party. The host can start only after at least two members have accepted the same goal and completed required local setup. |
 | Locked timezone and seven boundaries | Create with a known IANA timezone, change each phone timezone afterward, and prove days 1–7 follow the locked challenge timezone; day 8 cannot publish. |
-| Positive check-ins | On eligible primary runs, observe only `phoneTucked` then `morningQuietCompleted`; prove additional quiet and early endings publish nothing. |
+| Shared-goal progress | Verify goal accepted, setup ready, phone tucked away, meaningful partial progress, shared goal completed, morning quiet completed, and private/no update. Private/no update is never completion. |
+| Instagram boundary | Each member uses FamilyActivityPicker locally and confirms Instagram is included. Verify no token, selected-app list, or server claim that Instagram was independently verified. Coarse shielding evidence may be not requested, unavailable, partial, or observed. |
 | Offline outbox and retry | Disconnect B before each allowed check-in, complete local Wind Down, reconnect in foreground, and capture one idempotent eventual delivery. |
 | Per-night private reset | Choose Keep tonight private, prove no check-in, then begin the next eligible preflight and prove sharing is offered again. |
 | Global sharing off | Disable sharing, verify queued records are purged and no new state is sent; re-enable only through the approved user flow. |
-| Completion and reactions | Complete seven days and verify factual group completion plus only fixed reactions; no names, rank, absence, exact time, or duration leaks. |
+| Completion and reactions | Complete seven days and verify named member progress plus only fixed reactions; no rank, absence explanation, exact time, duration, private routine, HealthKit, or impact data leaks. |
 | Active Wind Down suppression | During an active Wind Down, verify no Slumber Party UI, card, badge, or panel; no reactions, notifications, realtime subscription, or novelty. The only permitted shared work is queueing monotonic `phoneTucked` after barrier validation and, after successful completion, `morningQuietCompleted` via the outbox. Local timer, rewards, and Farm remain authoritative; backend failure never blocks them. |
 | Backend failure independence | Break backend connectivity or return a controlled function failure. Local start, completion, rewards, and Farm result still finish; social work is retryable or fails quietly. |
 | Leave and block | Verify leave removes the local active membership; on a fresh flock verify block creates mutual invisibility and removes the blocker from the flock. |

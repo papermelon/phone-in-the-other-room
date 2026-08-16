@@ -213,7 +213,7 @@ schemes:
     profile:
       config: Release
     archive:
-      config: Release
+      config: SlumberPartyQA
   PhoneInTheOtherRoomScreenTimeReport:
     build:
       targets:

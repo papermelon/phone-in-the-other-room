@@ -8,8 +8,10 @@ Deno.serve((request) => handleNightFlockState(request, {
     if (error || !data.user) throw new Error("Unauthorized");
     return { id: data.user.id, isAnonymous: data.user.is_anonymous === true };
   },
-  async read(callerID) {
-    const { data, error } = await serviceClient().rpc("night_flock_state", {
+  async read(callerID, schemaVersion) {
+    const { data, error } = await serviceClient().rpc(schemaVersion === 2
+      ? "night_flock_commitment_state"
+      : "night_flock_state", {
       p_user_id: callerID,
     });
     if (error) throw error;

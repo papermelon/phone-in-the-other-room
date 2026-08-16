@@ -78,7 +78,7 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
         return "NFC is not available on this iPhone. You can use a \(codeName) code instead."
     }
 
-    private func readFailureMessage(isAdditionalQuiet: Bool) -> String {
+    private nonisolated static func readFailureMessage(isAdditionalQuiet: Bool) -> String {
         let codeName = isAdditionalQuiet ? "phone-bed" : "Wind Down"
         return "Ollie could not read that tag. Try again, pair a replacement tag, or use a \(codeName) code."
     }
@@ -170,7 +170,7 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                 self.finishScan(
                     cancelled
                         ? .cancelled
-                        : .unavailable(self.readFailureMessage(isAdditionalQuiet: isAdditionalQuiet))
+                        : .unavailable(Self.readFailureMessage(isAdditionalQuiet: isAdditionalQuiet))
                 )
             case .provision:
                 self.finishProvision(
@@ -232,7 +232,7 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
             context.tag.readNDEF { message, error in
                 guard let message, error == nil else {
                     context.session.invalidate(
-                        errorMessage: self.readFailureMessage(isAdditionalQuiet: isAdditionalQuiet)
+                        errorMessage: Self.readFailureMessage(isAdditionalQuiet: isAdditionalQuiet)
                     )
                     return
                 }

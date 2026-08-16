@@ -342,7 +342,7 @@ struct FarmKeepsakeDisplay: View {
                         Text("KEEPSAKES ON DISPLAY")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.grass)
-                        Text("Small stories from the trail, kept close to the Barn.")
+                        Text("Small stories from the Farm, kept close to the Barn.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)

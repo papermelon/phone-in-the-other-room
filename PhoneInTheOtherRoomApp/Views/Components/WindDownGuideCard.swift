@@ -33,6 +33,8 @@ struct WindDownGuideCard: View {
                 .foregroundStyle(AppColors.grass)
             }
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Optional guidance: \(item.title)")
     }
 }
 
@@ -193,6 +195,7 @@ struct WindDownRoutineEditor: View {
                         )
                     )
                     .textFieldStyle(.roundedBorder)
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                     .accessibilityLabel("Custom \(phase == .evening ? "evening" : "morning") idea \(index + 1)")
                 } else {
                     Text(step.title)
@@ -201,29 +204,19 @@ struct WindDownRoutineEditor: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                Button {
-                    guard index > 0 else { return }
-                    steps.wrappedValue.swapAt(index, index - 1)
-                    onChange()
-                } label: {
-                    Image(systemName: "chevron.up")
-                        .frame(width: 44, height: 44)
+                if !dynamicTypeSize.isAccessibilitySize {
+                    reorderControls(step: step, index: index, steps: steps)
                 }
-                .buttonStyle(.bordered)
-                .disabled(index == 0)
-                .accessibilityLabel("Move \(step.title) up")
+            }
 
-                Button {
-                    guard index + 1 < steps.wrappedValue.count else { return }
-                    steps.wrappedValue.swapAt(index, index + 1)
-                    onChange()
-                } label: {
-                    Image(systemName: "chevron.down")
-                        .frame(width: 44, height: 44)
+            if dynamicTypeSize.isAccessibilitySize {
+                HStack(spacing: AppSpacing.sm) {
+                    Text("Order controls")
+                        .font(AppTypography.caption.weight(.semibold))
+                        .foregroundStyle(AppColors.muted)
+                    Spacer(minLength: AppSpacing.xs)
+                    reorderControls(step: step, index: index, steps: steps)
                 }
-                .buttonStyle(.bordered)
-                .disabled(index + 1 == steps.wrappedValue.count)
-                .accessibilityLabel("Move \(step.title) down")
             }
 
             HStack(spacing: AppSpacing.sm) {
@@ -249,6 +242,40 @@ struct WindDownRoutineEditor: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(phase == .evening ? "Evening" : "Morning") idea \(index + 1) of \(steps.wrappedValue.count)")
+    }
+
+    private func reorderControls(
+        step: WindDownRoutineStep,
+        index: Int,
+        steps: Binding<[WindDownRoutineStep]>
+    ) -> some View {
+        HStack(spacing: AppSpacing.xs) {
+            Button {
+                guard index > 0 else { return }
+                steps.wrappedValue.swapAt(index, index - 1)
+                onChange()
+            } label: {
+                Image(systemName: "chevron.up")
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.bordered)
+            .disabled(index == 0)
+            .accessibilityLabel("Move \(step.title) up, item \(index + 1) of \(steps.wrappedValue.count)")
+            .accessibilityHint(index == 0 ? "Already first" : "Moves this idea earlier")
+
+            Button {
+                guard index + 1 < steps.wrappedValue.count else { return }
+                steps.wrappedValue.swapAt(index, index + 1)
+                onChange()
+            } label: {
+                Image(systemName: "chevron.down")
+                    .frame(width: 44, height: 44)
+            }
+            .buttonStyle(.bordered)
+            .disabled(index + 1 == steps.wrappedValue.count)
+            .accessibilityLabel("Move \(step.title) down, item \(index + 1) of \(steps.wrappedValue.count)")
+            .accessibilityHint(index + 1 == steps.wrappedValue.count ? "Already last" : "Moves this idea later")
+        }
     }
 
     private func limit(for phase: WindDownRoutinePhase) -> Int {
@@ -411,6 +438,19 @@ struct WindDownHowItWorksView: View {
     WindDownGuideCard(item: WindDownGuidanceLibrary.items[0])
         .padding()
         .background(AppColors.paper)
+}
+
+#Preview("Routine rows · accessibility Dynamic Type") {
+    WindDownRoutineEditor(
+        eveningSteps: .constant([
+            .suggested(.read, phase: .evening),
+            .custom("Write one thought down", phase: .evening)
+        ]),
+        morningSteps: .constant([.suggested(.openCurtains, phase: .morning)])
+    )
+    .padding(AppSpacing.md)
+    .background(AppColors.paper)
+    .environment(\.dynamicTypeSize, .accessibility3)
 }
 
 #Preview("Guide") {

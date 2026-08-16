@@ -17,22 +17,20 @@ struct NightFlockSharedPastureView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                Text("SHARED PASTURE")
+                Text("SHARED CHEERS")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Quiet mornings, gathered gently.")
+                Text("Encouragement for the seven nights.")
                     .font(AppTypography.title)
-                Text(snapshot.members.count <= 3
-                    ? "A small flock's pasture stays qualitative. No count, absence, or private night is shown."
-                    : "Only completed quiet mornings appear. No absence or private night is named.")
+                Text("Send a small fixed reaction to a shared update. Private/no update is never shown as completion.")
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.secondaryText)
 
                 if entries.isEmpty {
                     NightFlockStatusCard(
                         symbol: "sun.horizon.fill",
-                        title: "The morning pasture is quiet.",
-                        detail: "Positive notes will settle here when they are shared."
+                        title: "No shared cheers yet.",
+                        detail: "Shared goal updates will appear here when someone chooses to share one."
                     )
                 } else {
                     ForEach(entries) { entry in
@@ -52,10 +50,10 @@ struct NightFlockSharedPastureView: View {
     private func pastureEntry(_ entry: NightFlockPastureEntry) -> some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Label("A quiet morning reached the pasture", systemImage: "sun.max.fill")
+                Label("A group member shared morning quiet", systemImage: "sun.max.fill")
                     .font(AppTypography.headline)
                     .foregroundStyle(AppColors.ink)
-                Text("Shared without a name, rank, exact time, or duration.")
+                Text("Send encouragement without sharing an exact time or duration.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                 HStack(spacing: AppSpacing.xs) {
@@ -64,18 +62,11 @@ struct NightFlockSharedPastureView: View {
                         Button {
                             viewModel.react(to: entry, with: reaction)
                         } label: {
-                            if snapshot.members.count <= 3 {
-                                Image(systemName: reaction.symbolName)
-                                    .accessibilityLabel(reaction.title)
-                            } else {
-                                Label("\(summary?.count ?? 0)", systemImage: reaction.symbolName)
-                                    .labelStyle(.titleAndIcon)
-                            }
+                            Label("\(summary?.count ?? 0)", systemImage: reaction.symbolName)
+                                .labelStyle(.titleAndIcon)
                         }
                         .buttonStyle(PixelChipButtonStyle(isSelected: summary?.reactedByMe == true))
-                        .accessibilityLabel(snapshot.members.count <= 3
-                            ? reaction.title
-                            : "\(reaction.title), \(summary?.count ?? 0) reactions")
+                        .accessibilityLabel("\(reaction.title), \(summary?.count ?? 0) reactions")
                     }
                 }
             }
@@ -97,9 +88,9 @@ struct NightFlockResultCard: View {
                     Text("SLUMBER PARTY")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("A quiet morning was shared.")
+                    Text("A shared goal update was posted.")
                         .font(AppTypography.headline)
-                    Text("This shared result is a record of positive check-ins. It adds no wool, sheep, rank, or reward.")
+                    Text("This is a supportive group record. It adds no wool, sheep, rank, or reward.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }

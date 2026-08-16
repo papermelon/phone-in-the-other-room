@@ -16,14 +16,12 @@ struct NightFlockHomeCard: View {
                     Text(summary.challengeDay.map { "SLUMBER PARTY · DAY \($0) OF 7" } ?? "SLUMBER PARTY")
                         .font(pixelFont(.caption2))
                         .foregroundStyle(AppColors.grass)
-                    if summary.title != "Slumber Party" {
-                        Text(summary.title)
-                            .font(AppTypography.body)
-                    }
+                    Text(summary.title)
+                        .font(AppTypography.body)
                     Text(summary.detail)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")

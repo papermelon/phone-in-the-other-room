@@ -119,8 +119,10 @@ flowchart LR
    ritual, reflection, and HealthKit history remains local. Separately consented impact
    records omit exact dates/times, source names, selected apps, and raw Health samples.
 7. When ADR-0016's disabled-by-default Slumber Party is enabled, an eligible shared primary run
-   queues only `phoneTucked` after validation and `morningQuietCompleted` after success. The
-   local run never waits for the network, and active Wind Down receives no social UI.
+   queues only the member's coarse shared-goal progress after validation and success. The local
+   run never waits for the network, and active Wind Down receives no social UI. Group progress
+   may be named inside the invite-only party; app tokens, exact schedules, and impact data remain
+   outside the social contract.
 
 The iPhone is the **authoritative** side of a run. The Watch displays state and reports a brief optional placement distance only.
 Persistence is UserDefaults + Codable JSON only — no CoreData or SwiftData. Core app
@@ -144,7 +146,10 @@ Shared/                        ← Pure domain logic compiled into all targets
   RewardEngine.swift             (protected-night progress + legacy reward/economy compatibility)
   FocusAnalytics.swift           (day records, correlations, CSV/JSON export)
   ImpactMeasurement.swift        (local sleep-outcome comparison + minimised upload contract)
-  NightFlockModels.swift          (pure seven-day and positive-only social domain)
+  NightFlockModels.swift          (seven-day social domain and persisted compatibility models)
+  NightFlockCommitment.swift      (bounded shared goals, setup, progress, and shielding limits)
+  NightFlockV2API.swift           (schema-version-2 shared-goal lobby contract)
+  NightFlockOrientation.swift     (separate Slumber Party orientation/tip persistence)
   NightFlockPresentation.swift    (aggregate and privacy-safe presentation derivations)
   NightFlockAPI.swift             (versioned command/state and local outbox contracts)
   NightWatchHistory.swift        (90-day session records + idempotent ritual events)
@@ -342,7 +347,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 | Farm Shop + Ollie/farm cosmetics | Implemented, nested in Farm | Fixed local catalogue; follow ADR-0015 |
 | Human avatar + cosmetics | Implemented local foundation | Keep inclusive and data-compatible; expand with finished assets |
 | Friends screens | Debug internal-preview launch flag only | ADR-0003; Slumber Party does not ungate them |
-| Invite-only Slumber Party | Implemented, disabled by default | ADR-0016; Apple/Supabase setup, hosted deployment, moderation operations, and physical two-account QA |
+| Invite-only Slumber Party | Implemented, disabled by default | ADR-0016; schema-v2 shared goal, Apple/Supabase setup, hosted deployment, moderation operations, and physical two-account QA |
 | Screen Time reports & pickers | Foundation enabled; physical-device QA pending | Family Controls distribution assigned to app + report extension |
 | HealthKit sleep duration/stages | Included for 1.0, optional and read-only | Physical-device reads + privacy disclosure |
 | NFC + app shielding for Night Watch | Included for 1.0, optional | New extension App IDs, Family Controls distribution, and physical overnight QA |
@@ -372,7 +377,10 @@ The invite-only seven-night Slumber Party exception was reconciled on 2026-08-12
 project brief, principles, architecture, privacy/release docs, backlog, ADR-0003/0005, and
 ADR-0016. The Phone Away rename, 100-minute balance, private suggestion sequence, guidance
 placement/source link, Settings grouping, and concrete Farm labels were reconciled on
-2026-08-13. General Friends and social-network restrictions still apply. Internal
+2026-08-13. On 2026-08-16 the founder-directed Slumber Party revision added one bounded shared
+Wind Down goal, a 2–8 person lobby, named member progress, reusable invite codes, optional
+source-linked routine ideas, separate sharing controls, and coarse Screen Time shielding
+evidence. General Friends and social-network restrictions still apply. Internal
 `additionalQuiet`, `PhoneBreak`, `QuietTime`, `NightWatch*`, persisted enum values, and `ollie.*`
 keys remain backward-compatible; none of those identifiers are user-facing copy.
 

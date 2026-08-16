@@ -67,6 +67,33 @@ final class ActiveRunPresentationTests: XCTestCase {
         }
     }
 
+    func testPrimaryActiveRunCopyDoesNotIntroducePhoneAwayProgress() {
+        let presentation = ActiveRunPresentation(
+            role: .primarySleepBookend,
+            phase: .overnight,
+            planEndDate: end,
+            nextTransitionDate: end,
+            now: now
+        )
+
+        let copy = [
+            presentation.eyebrow,
+            presentation.headline,
+            presentation.subheadline,
+            presentation.transitionCaption,
+            presentation.phaseStatusText,
+            presentation.returnBarAccessibilityHint,
+            presentation.timerAccessibilityLabel(remainingSeconds: 30 * 60)
+        ]
+        .joined(separator: " ")
+        .lowercased()
+
+        XCTAssertFalse(copy.contains("phone away"))
+        XCTAssertFalse(copy.contains("bonus search"))
+        XCTAssertFalse(copy.contains("extra search progress"))
+        XCTAssertTrue(copy.contains("wind down"))
+    }
+
     func testShieldingOutcomeMapsToTypedPresentationState() {
         XCTAssertEqual(
             ActiveRunShieldingState.from(.disabled),

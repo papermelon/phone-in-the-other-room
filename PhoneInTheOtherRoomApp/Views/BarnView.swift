@@ -271,7 +271,7 @@ struct BarnSheepDetailView: View {
                 viewModel.tradeFarmSheep(sheepID)
             }
         } message: {
-            Text("This sheep will move to another farm. Its discovery and every Trail Note will stay recorded.")
+            Text("This sheep will move to another farm. Its discovery and Search Journal history will stay recorded.")
         }
     }
 

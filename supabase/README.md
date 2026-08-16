@@ -34,6 +34,14 @@ npx deno test --allow-env \
   supabase/functions/_shared/night-flock_test.ts
 ```
 
+The Slumber Party source contract is additive: the original migration and schema-one commands
+remain compatible, while `20260816100000_night_flock_shared_commitment_v2.sql` adds the bounded
+shared-goal lobby, member setup/sharing, reusable invite redemption, nightly progress, and coarse
+shielding evidence tables/RPCs. Schema-two requests are validated in the Edge Functions and never
+carry Family Controls tokens, selected-app lists, exact schedules, or raw Health data. Run the
+Night Flock SQL test after `db reset`; it covers the explicit host-start gate and member-only
+projection. Do not deploy this migration or the functions without the ADR-0016 release gates.
+
 ## Hosted development project
 
 Authenticate and link interactively. Never place the access token or database password in
@@ -80,10 +88,12 @@ run, stops after five attempts, and removes feedback rows/private attachments af
 days. The support mailbox owner must follow the matching 180-day deletion process.
 
 Slumber Party additionally requires Supabase Auth's Apple provider, manual-linking support,
-deployment of `20260812120000_night_flock_mvp.sql`, both authenticated functions, and a daily
+deployment of `20260812120000_night_flock_mvp.sql` followed by
+`20260816100000_night_flock_shared_commitment_v2.sql`, both authenticated functions, and a daily
 service-role schedule for `purge_night_flock_retention(now())`. Establish a moderation queue and
 document who can create service-only moderation actions before enabling the client. Do not reuse
-the impact or ActivityKit tables as Slumber Party sources.
+the impact or ActivityKit tables as Slumber Party sources. The deployment sequence and rollback
+criteria are recorded in `docs/SLUMBER_PARTY_DEPLOYMENT_RUNBOOK.md`.
 
 For development, `APNS_HOST` is `https://api.sandbox.push.apple.com` and
 `APNS_ENVIRONMENT` is `sandbox`.

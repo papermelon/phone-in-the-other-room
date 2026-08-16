@@ -514,7 +514,7 @@ final class FocusRunViewModel: ObservableObject {
         nightsRecordFocusID = nil
     }
 
-    /// Reads the terminal Trail Note by its persisted run identity. The search
+    /// Reads the terminal Search Journal entry by its persisted run identity. The search
     /// engine resolves outcomes in the coordinator; terminal views only reveal
     /// the saved record and never calculate a new one.
     func sheepSearchOutcome(for runID: UUID) -> SheepSearchOutcome? {

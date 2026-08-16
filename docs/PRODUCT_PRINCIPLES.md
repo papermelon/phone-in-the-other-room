@@ -95,8 +95,9 @@ explicit founder direction.
 - **Keep Slumber Party outside the active ritual.** When enabled, Farm and Home may show one
   full-width contextual card that supports commitment and shared joy. During Wind Down there is
   no social panel, live update, reaction, notification, or novelty. Routines, schedules, absence,
-  Health data, and private details are never shared. The morning shared pasture is finite,
-  unnamed, and positive-only.
+  Health data, exact schedules, and private details are never shared. The invited group may
+  see named, coarse progress for the one shared goal, including setup readiness and meaningful
+  nightly states. Private/no update is not completion; the morning view stays finite and calm.
 - **Respect the morning.** Morning is when rewards land, stats are glanced at, and streak
   warmth is felt. Keep the chosen morning-quiet window calm; do not turn it into a routine
   checklist or an app-browsing session.
@@ -129,11 +130,13 @@ explicit founder direction.
   HealthKit samples, source names, app selections, and personal reflections stay local.
   Optional impact sharing must be purpose-limited, separately consented, date-free, minimal,
   inspectable in copy, stoppable, and deletable.
-- **Share the smallest social truth.** Slumber Party publishes only `phoneTucked` and
-  `morningQuietCompleted` for an explicitly shared eligible night. Private nights, additional
-  quiet, absence, early endings, times, durations, HealthKit, Screen Time, NFC, purpose,
-  notification, Farm, sheep, wool, and impact data do not enter its contracts. Small-flock
-  aggregates must not reveal which person is absent.
+- **Share the smallest social truth.** Slumber Party shares only the selected goal, member-level
+  setup/acceptance, coarse meaningful nightly progress, fixed reactions, and optionally selected
+  guidance IDs inside the invited group. Private/no update is never completion. Private nights,
+  exact schedules, durations, HealthKit, Screen Time tokens or app lists, NFC, purpose,
+  notification, Farm, sheep, wool, and impact data stay outside the social contract. Apple’s
+  opaque app token cannot prove an app name to the server: a member confirms Instagram locally,
+  while Counting Sheep may report only coarse shielding observation.
 
 ## Durable product commitments
 

@@ -22,9 +22,6 @@ struct SettingsView: View {
                 windDownSection
                 connectionsSection
                 helpAndGuideSection
-                dataAndPrivacySection
-                startOverSection
-                aboutSection
 #if DEBUG
                 if internalPreviewsEnabled {
                     internalPreviewsSection
@@ -98,7 +95,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Settings")
                 .font(AppTypography.display(34))
-            Text("Your Wind Down, connections, and a way to reach us.")
+            Text("Your Wind Down, connections, and a little help when you need it.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.muted)
         }
@@ -141,32 +138,13 @@ struct SettingsView: View {
                 settingsRow("About these ideas and sources", icon: "sparkles", detail: "Small, sourced ideas for settling and mornings")
             }
             .buttonStyle(.plain)
-            NavigationLink {
-                FeedbackFormView()
-                    .environmentObject(viewModel)
-            } label: {
-                settingsRow("Send feedback", icon: "bubble.left.and.text.bubble.right.fill")
-            }
-            .buttonStyle(.plain)
-            if let supportEmailURL = Self.supportEmailURL {
-                Link(destination: supportEmailURL) {
-                    settingsRow("Email support", icon: "envelope.fill")
-                }
-                .buttonStyle(.plain)
-            }
-            if let websiteURL = Self.websiteURL {
-                Link(destination: websiteURL) {
-                    settingsRow("Counting Sheep website", icon: "safari.fill")
-                }
-                .buttonStyle(.plain)
-            }
         }
         .contextualGuideTarget(.settings)
     }
 
     private var appearanceSection: some View {
         VStack(spacing: AppSpacing.md) {
-            sectionHeader("Appearance", icon: "circle.lefthalf.filled")
+            subsectionHeader("Appearance", icon: "circle.lefthalf.filled")
             AppearancePreferenceCard(
                 preference: viewModel.appearancePreference,
                 onSelect: viewModel.setAppearancePreference
@@ -183,7 +161,7 @@ struct SettingsView: View {
                         FocusRunSetupView()
                             .environmentObject(viewModel)
                     } label: {
-                        settingsRow("Plan & routine", icon: "slider.horizontal.3", detail: "Bedtime, wake time, and quiet bookends")
+                        settingsRow("Plan & routine", icon: "slider.horizontal.3", detail: "Bedtime, bookends, and private routine ideas")
                     }
                     .buttonStyle(.plain)
                 }
@@ -265,7 +243,7 @@ struct SettingsView: View {
                 settingsRow("Lock Screen Quiet Note", icon: "text.bubble.fill")
             }
             .buttonStyle(.plain)
-#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
+            #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
             if viewModel.screenTimeAuthorization == .approved {
                 ScreenTimeBookendCard(
                     showAppPicker: $showScreenTimePicker,
@@ -274,6 +252,9 @@ struct SettingsView: View {
                 .environmentObject(viewModel)
             }
 #endif
+            privacyAndSharingSection
+            supportAndDetailsSection
+            localDataSection
         }
     }
 
@@ -301,9 +282,9 @@ struct SettingsView: View {
         }
     }
 
-    private var dataAndPrivacySection: some View {
+    private var privacyAndSharingSection: some View {
         VStack(spacing: AppSpacing.md) {
-            sectionHeader("Data & Privacy", icon: "hand.raised.fill")
+            subsectionHeader("Privacy & optional sharing", icon: "hand.raised.fill")
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     Text("Optional impact data")
@@ -343,9 +324,9 @@ struct SettingsView: View {
         }
     }
 
-    private var startOverSection: some View {
+    private var localDataSection: some View {
         VStack(spacing: AppSpacing.md) {
-            sectionHeader("Start over", icon: "arrow.counterclockwise")
+            subsectionHeader("Local data", icon: "arrow.counterclockwise")
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text("Erase local data and start over")
@@ -362,9 +343,9 @@ struct SettingsView: View {
         }
     }
 
-    private var aboutSection: some View {
+    private var supportAndDetailsSection: some View {
         VStack(spacing: AppSpacing.md) {
-            sectionHeader("About", icon: "info.circle.fill")
+            subsectionHeader("Support & app details", icon: "info.circle.fill")
 #if SLUMBER_PARTY_QA
             NavigationLink {
                 NightFlockQADiagnosticsView(
@@ -379,6 +360,25 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
 #endif
+            NavigationLink {
+                FeedbackFormView()
+                    .environmentObject(viewModel)
+            } label: {
+                settingsRow("Send feedback", icon: "bubble.left.and.text.bubble.right.fill")
+            }
+            .buttonStyle(.plain)
+            if let supportEmailURL = Self.supportEmailURL {
+                Link(destination: supportEmailURL) {
+                    settingsRow("Email support", icon: "envelope.fill")
+                }
+                .buttonStyle(.plain)
+            }
+            if let websiteURL = Self.websiteURL {
+                Link(destination: websiteURL) {
+                    settingsRow("Counting Sheep website", icon: "safari.fill")
+                }
+                .buttonStyle(.plain)
+            }
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
                     Text("Counting Sheep")
@@ -462,6 +462,13 @@ struct SettingsView: View {
     private func sectionHeader(_ title: String, icon: String) -> some View {
         Label(title, systemImage: icon)
             .font(AppTypography.headline)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func subsectionHeader(_ title: String, icon: String) -> some View {
+        Label(title, systemImage: icon)
+            .font(AppTypography.caption.weight(.bold))
+            .foregroundStyle(AppColors.muted)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
@@ -573,7 +580,7 @@ struct SettingsView: View {
     .preferredColorScheme(.light)
 }
 
-#Preview("Settings · replay orientation") {
+#Preview("Settings · three groups · accessibility") {
     let viewModel = FocusRunViewModel()
     viewModel.orientationState = CountingSheepOrientationState(
         status: .dismissed,
@@ -583,7 +590,7 @@ struct SettingsView: View {
         SettingsView()
             .environmentObject(viewModel)
     }
-    .environment(\.dynamicTypeSize, .accessibility2)
+    .environment(\.dynamicTypeSize, .accessibility3)
     .preferredColorScheme(.dark)
 }
 

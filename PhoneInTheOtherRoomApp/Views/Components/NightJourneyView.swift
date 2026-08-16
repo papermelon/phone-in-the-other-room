@@ -4,7 +4,6 @@ import UIKit
 struct NightJourneyView: View {
     let run: FocusRun
     let reduceMotion: Bool
-    var phoneBreakMeterMinutes = 0
     var fixedDate: Date?
 
     @ViewBuilder
@@ -97,14 +96,7 @@ struct NightJourneyView: View {
                         .padding(.horizontal, AppSpacing.sm)
                         .padding(.vertical, AppSpacing.xs)
                         .background(.black.opacity(0.32), in: Capsule())
-                    Spacer()
-                    if phoneBreakMeterMinutes > 0 {
-                        Text("EXTRA SEARCH PROGRESS · \(min(phoneBreakMeterMinutes, SheepTrailMapState.maximumMappedMinutes)) / \(SheepTrailMapState.maximumMappedMinutes) MIN")
-                            .font(.system(size: 8, weight: .bold, design: .monospaced))
-                            .foregroundStyle(.white.opacity(0.88))
-                            .padding(7)
-                            .background(.black.opacity(0.28), in: Capsule())
-                    }
+                    Spacer(minLength: 0)
                 }
             }
             .padding(AppSpacing.sm)
@@ -222,11 +214,11 @@ struct NightJourneyView: View {
         let count = reachedClueCount(journey.overallFraction)
         if journey.phaseFraction >= 0.82 { return "The gate is just ahead." }
         if count > 0 { return "\(count) clue\(count == 1 ? "" : "s") mapped." }
-        return "A quiet trail, one step at a time."
+        return "Ollie follows a quiet trail, one step at a time."
     }
 
     private func remainingText(journey: NightJourneyProgress, at date: Date) -> String {
-        guard let transition = journey.nextTransition else { return "TRAIL COMPLETE" }
+        guard let transition = journey.nextTransition else { return "JOURNEY COMPLETE" }
         let seconds = max(0, Int(transition.timeIntervalSince(date)))
         if seconds >= 3600 {
             return "\(seconds / 3600)H \((seconds % 3600) / 60)M"
@@ -241,7 +233,7 @@ struct NightJourneyView: View {
         case .windDown: return "TO BEDTIME"
         case .overnight: return "TO MORNING"
         case .morningQuiet: return "QUIET LEFT"
-        case .complete: return "TRAIL NOTE READY"
+        case .complete: return "SEARCH JOURNAL ENTRY READY"
         }
     }
 
@@ -340,8 +332,7 @@ private struct JourneyAssetImage: View {
             state: .running,
             nightWatchPlan: NightWatchPreferences.defaults.makePlan()
         ),
-        reduceMotion: true,
-        phoneBreakMeterMinutes: 45
+        reduceMotion: true
     )
     .padding()
     .background(AppColors.paper)

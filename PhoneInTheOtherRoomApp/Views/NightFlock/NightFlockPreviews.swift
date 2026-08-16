@@ -23,7 +23,9 @@ private enum NightFlockPreviewData {
                 id: challengeID,
                 timeZoneIdentifier: TimeZone.current.identifier,
                 startsOn: NightFlockLocalDate(year: 2026, month: 8, day: 12),
-                status: status
+                status: status,
+                sharedGoal: NightFlockSharedGoal(kind: .phoneAway),
+                hostStartedAt: status == .pending ? nil : Date()
             ),
             days: (1...7).map { day in
                 NightFlockDaySummary(
@@ -33,7 +35,11 @@ private enum NightFlockPreviewData {
                     pasture: day == 1 ? [entry] : []
                 )
             },
-            sharingEnabled: true
+            sharingEnabled: true,
+            memberSetups: [
+                NightFlockMemberSetup(memberID: myMember.id, goalAccepted: true, setupReady: true, sharingEnabled: true, shareRoutineIdeas: true, shieldingEvidence: .notRequested),
+                NightFlockMemberSetup(memberID: peer.id, goalAccepted: status != .pending, setupReady: status != .pending, sharingEnabled: true, shareRoutineIdeas: false, shieldingEvidence: .notRequested)
+            ]
         )
     }
 }
@@ -58,6 +64,7 @@ private func previewModel(
             phase: .ready,
             snapshot: NightFlockPreviewData.snapshot()
         ))
+        .environmentObject(FocusRunViewModel(startsExternalServices: false))
     }
 }
 
@@ -67,6 +74,7 @@ private func previewModel(
             phase: .ready,
             snapshot: NightFlockPreviewData.snapshot(status: .completed)
         ))
+        .environmentObject(FocusRunViewModel(startsExternalServices: false))
     }
     .environment(\.dynamicTypeSize, .accessibility2)
 }

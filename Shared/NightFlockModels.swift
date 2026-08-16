@@ -90,11 +90,43 @@ struct NightFlockChallenge: Identifiable, Codable, Equatable, Sendable {
     var timeZoneIdentifier: String
     var startsOn: NightFlockLocalDate
     var status: Status
+    var sharedGoal: NightFlockSharedGoal?
+    var hostStartedAt: Date?
 
     enum Status: String, Codable, Sendable {
         case pending
         case active
         case completed
+    }
+
+    init(
+        id: UUID,
+        timeZoneIdentifier: String,
+        startsOn: NightFlockLocalDate,
+        status: Status,
+        sharedGoal: NightFlockSharedGoal? = nil,
+        hostStartedAt: Date? = nil
+    ) {
+        self.id = id
+        self.timeZoneIdentifier = timeZoneIdentifier
+        self.startsOn = startsOn
+        self.status = status
+        self.sharedGoal = sharedGoal
+        self.hostStartedAt = hostStartedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, timeZoneIdentifier, startsOn, status, sharedGoal, hostStartedAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        timeZoneIdentifier = try container.decode(String.self, forKey: .timeZoneIdentifier)
+        startsOn = try container.decode(NightFlockLocalDate.self, forKey: .startsOn)
+        status = try container.decode(Status.self, forKey: .status)
+        sharedGoal = try container.decodeIfPresent(NightFlockSharedGoal.self, forKey: .sharedGoal)
+        hostStartedAt = try container.decodeIfPresent(Date.self, forKey: .hostStartedAt)
     }
 }
 
@@ -202,6 +234,7 @@ struct NightFlockDaySummary: Identifiable, Codable, Equatable, Sendable {
     var phoneTuckedCount: Int
     var morningQuietCompletedCount: Int
     var pasture: [NightFlockPastureEntry]
+    var memberProgress: [NightFlockMemberNightProgress]
 
     var id: Int { day }
 
@@ -210,18 +243,21 @@ struct NightFlockDaySummary: Identifiable, Codable, Equatable, Sendable {
         case phoneTuckedCount
         case morningQuietCompletedCount
         case pasture
+        case memberProgress
     }
 
     init(
         day: Int,
         phoneTuckedCount: Int,
         morningQuietCompletedCount: Int,
-        pasture: [NightFlockPastureEntry]
+        pasture: [NightFlockPastureEntry],
+        memberProgress: [NightFlockMemberNightProgress] = []
     ) {
         self.day = day
         self.phoneTuckedCount = phoneTuckedCount
         self.morningQuietCompletedCount = morningQuietCompletedCount
         self.pasture = pasture
+        self.memberProgress = memberProgress
     }
 
     init(from decoder: Decoder) throws {
@@ -232,6 +268,10 @@ struct NightFlockDaySummary: Identifiable, Codable, Equatable, Sendable {
         pasture = try container.decodeIfPresent(
             [NightFlockPastureEntry].self,
             forKey: .pasture
+        ) ?? []
+        memberProgress = try container.decodeIfPresent(
+            [NightFlockMemberNightProgress].self,
+            forKey: .memberProgress
         ) ?? []
     }
 }
@@ -245,6 +285,9 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
     var challenge: NightFlockChallenge
     var days: [NightFlockDaySummary]
     var sharingEnabled: Bool
+    var memberSetups: [NightFlockMemberSetup]
+    var sharedRoutineIdeas: [NightFlockSharedRoutineIdea]
+    var invitePreview: NightFlockInvitePreview?
 
     var currentDay: NightFlockDaySummary? {
         days.last(where: { !$0.pasture.isEmpty }) ?? days.last
@@ -259,6 +302,9 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         case challenge
         case days
         case sharingEnabled
+        case memberSetups
+        case sharedRoutineIdeas
+        case invitePreview
     }
 
     init(
@@ -269,7 +315,10 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         members: [NightFlockMember],
         challenge: NightFlockChallenge,
         days: [NightFlockDaySummary],
-        sharingEnabled: Bool
+        sharingEnabled: Bool,
+        memberSetups: [NightFlockMemberSetup] = [],
+        sharedRoutineIdeas: [NightFlockSharedRoutineIdea] = [],
+        invitePreview: NightFlockInvitePreview? = nil
     ) {
         self.profile = profile
         self.flockID = flockID
@@ -279,6 +328,9 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         self.challenge = challenge
         self.days = days
         self.sharingEnabled = sharingEnabled
+        self.memberSetups = memberSetups
+        self.sharedRoutineIdeas = sharedRoutineIdeas
+        self.invitePreview = invitePreview
     }
 
     init(from decoder: Decoder) throws {
@@ -291,6 +343,12 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         challenge = try container.decode(NightFlockChallenge.self, forKey: .challenge)
         days = try container.decodeIfPresent([NightFlockDaySummary].self, forKey: .days) ?? []
         sharingEnabled = try container.decodeIfPresent(Bool.self, forKey: .sharingEnabled) ?? true
+        memberSetups = try container.decodeIfPresent([NightFlockMemberSetup].self, forKey: .memberSetups) ?? []
+        sharedRoutineIdeas = try container.decodeIfPresent(
+            [NightFlockSharedRoutineIdea].self,
+            forKey: .sharedRoutineIdeas
+        ) ?? []
+        invitePreview = try container.decodeIfPresent(NightFlockInvitePreview.self, forKey: .invitePreview)
     }
 }
 

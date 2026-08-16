@@ -93,7 +93,7 @@ struct TrailNotesArchiveView: View {
                 Image(systemName: "note.text")
                     .font(.title2)
                     .foregroundStyle(AppColors.grass)
-                Text("Your Search Journal is waiting.")
+                Text("No Search Journal entry saved.")
                     .font(AppTypography.headline)
                 Text("Complete Wind Down and Ollie will record a homecoming or clue.")
                     .font(AppTypography.caption)

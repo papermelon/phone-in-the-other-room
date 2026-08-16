@@ -62,14 +62,14 @@ extension FocusRunViewModel {
     func takeOffOllieAccessory(_ itemID: String) {
         mutateFarm { state in
             try state.takeOffOllieAccessory(itemID: itemID)
-            return "Ollie is ready for the next trail."
+            return "Ollie is ready for the next search."
         }
     }
 
     func wearShepherdOutfit(_ itemID: String) {
         mutateFarm { state in
             try state.wearShepherdOutfit(itemID: itemID)
-            return FarmShopCatalog.item(for: itemID).map { "\($0.title) is ready for the next trail." }
+            return FarmShopCatalog.item(for: itemID).map { "\($0.title) is ready for the next search." }
         }
     }
 

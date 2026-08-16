@@ -19,7 +19,7 @@ enum NotificationCadence: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .quiet: return "A few gentle boundary cues."
         case .balanced: return "A little more help inside the quiet windows."
-        case .supportive: return "The fullest trail of reminders Ollie offers."
+        case .supportive: return "The most reminders Ollie offers."
         }
     }
 

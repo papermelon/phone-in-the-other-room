@@ -127,7 +127,6 @@ struct ActiveRunView: View {
                 NightJourneyView(
                     run: run,
                     reduceMotion: reduceMotion,
-                    phoneBreakMeterMinutes: viewModel.sheepSearchState.trailMap.pendingMappedMinutes,
                     fixedDate: fixedNow
                 )
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
@@ -168,6 +167,12 @@ struct ActiveRunView: View {
                     shieldingBanner(banner)
                 }
                 actions
+                if !presentation.isAdditionalQuiet,
+                   let phase,
+                   let plan = run.nightWatchPlan,
+                   let guidance = WindDownGuidanceLibrary.activeGuidance(for: phase, plan: plan) {
+                    WindDownGuideCard(item: guidance, compact: true)
+                }
             }
             .padding(AppSpacing.md)
         }

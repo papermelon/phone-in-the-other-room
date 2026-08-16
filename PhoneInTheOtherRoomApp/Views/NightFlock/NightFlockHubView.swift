@@ -3,6 +3,7 @@ import SwiftUI
 
 struct NightFlockHubView: View {
     @ObservedObject var viewModel: NightFlockViewModel
+    @State private var showOrientation = false
 
     var body: some View {
         ScrollView {
@@ -20,7 +21,13 @@ struct NightFlockHubView: View {
         .navigationTitle("Slumber Party")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.visible, for: .navigationBar)
-        .onAppear(perform: viewModel.entryAppeared)
+        .onAppear {
+            viewModel.entryAppeared()
+            showOrientation = viewModel.orientationState.shouldShowIntro
+        }
+        .sheet(isPresented: $showOrientation) {
+            NightFlockOrientationView(viewModel: viewModel)
+        }
     }
 
     @ViewBuilder
@@ -28,95 +35,70 @@ struct NightFlockHubView: View {
         if !viewModel.featureEnabled {
             EmptyView()
         } else if viewModel.accountState != .linked {
-            accountEntry
+            NightFlockAccountEntry(viewModel: viewModel)
         } else {
             switch viewModel.phase {
             case .loading:
-                NightFlockStatusCard(
-                    symbol: "moon.stars.fill",
-                    title: "Opening the pasture…",
-                    detail: "Ollie is checking the gate."
-                )
-                .redacted(reason: .placeholder)
+                NightFlockStatusCard(symbol: "moon.stars.fill", title: "Opening Slumber Party…", detail: "Ollie is checking the gate.")
+                    .redacted(reason: .placeholder)
             case .offline:
-                NightFlockStatusCard(
-                    symbol: "wifi.slash",
-                    title: "The pasture is resting offline.",
-                    detail: "Wind Down still works. Shared notes will try again later."
-                )
+                NightFlockStatusCard(symbol: "wifi.slash", title: "Slumber Party is resting offline.", detail: "Wind Down still works. Shared updates will try again later.")
             case .expiredInvite:
-                NightFlockStatusCard(
-                    symbol: "clock.badge.xmark",
-                    title: "That invite has gone quiet.",
-                    detail: "Ask a flock member for a fresh code."
-                )
-                createOrJoin
+                NightFlockStatusCard(symbol: "clock.badge.xmark", title: "That invitation has gone quiet.", detail: "Ask your host for a fresh code.")
+                NightFlockCreateJoinView(viewModel: viewModel)
             case .fullFlock:
-                NightFlockStatusCard(
-                    symbol: "person.3.fill",
-                    title: "That pasture is full.",
-                    detail: "Slumber Parties have room for up to eight people."
-                )
-                createOrJoin
+                NightFlockStatusCard(symbol: "person.3.fill", title: "This Slumber Party is full.", detail: "A party has room for 2–8 people.")
+                NightFlockCreateJoinView(viewModel: viewModel)
             case .blocked:
-                NightFlockStatusCard(
-                    symbol: "hand.raised.fill",
-                    title: "That shared gate is closed.",
-                    detail: "No Slumber Party details are visible from this account."
-                )
+                NightFlockStatusCard(symbol: "hand.raised.fill", title: "That shared gate is closed.", detail: "No Slumber Party details are visible from this account.")
             case .error(let message):
-                NightFlockStatusCard(
-                    symbol: "exclamationmark.bubble.fill",
-                    title: "The pasture could not open.",
-                    detail: message
-                )
-                createOrJoin
+                NightFlockStatusCard(symbol: "exclamationmark.bubble.fill", title: "Slumber Party could not open.", detail: message)
+                NightFlockCreateJoinView(viewModel: viewModel)
             case .ready, .idle:
-                if let snapshot = viewModel.snapshot {
+                if let snapshot = viewModel.snapshot, snapshot.challenge.sharedGoal != nil {
                     NightFlockDashboard(viewModel: viewModel, snapshot: snapshot)
                 } else {
-                    createOrJoin
+                    NightFlockCreateJoinView(viewModel: viewModel)
                 }
             case .hidden:
                 EmptyView()
             }
         }
     }
+}
 
-    @ViewBuilder
-    private var accountEntry: some View {
+private struct NightFlockHeader: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("2–8 PEOPLE · 7 NIGHTS")
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.grass)
+            Text("Wind down together")
+                .font(AppTypography.display(27))
+            Text("Choose one bedtime goal as a group. Keep your own routine, share the parts that help, and encourage one another along the way.")
+                .font(AppTypography.body)
+                .foregroundStyle(AppColors.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct NightFlockAccountEntry: View {
+    @ObservedObject var viewModel: NightFlockViewModel
+
+    var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             switch viewModel.accountState {
             case .linking:
-                NightFlockStatusCard(
-                    symbol: "person.crop.circle.badge.clock",
-                    title: "Linking your Apple account…",
-                    detail: "Keep this screen open for a moment. Your existing Counting Sheep data stays with this account."
-                )
-                ProgressView()
-                    .tint(AppColors.grass)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityLabel("Linking Apple account")
+                NightFlockStatusCard(symbol: "person.crop.circle.badge.clock", title: "Linking your Apple account…", detail: "Your local Wind Down stays on this iPhone.")
+                ProgressView().tint(AppColors.grass).frame(maxWidth: .infinity)
             case .unavailable:
-                NightFlockStatusCard(
-                    symbol: "wifi.slash",
-                    title: "The account gate could not open.",
-                    detail: accountErrorMessage ?? "Check your connection and try again. Wind Down still works normally."
-                )
-                retryButton
+                NightFlockStatusCard(symbol: "wifi.slash", title: "The account gate could not open.", detail: "Check your connection and try again. Wind Down still works normally.")
+                Button("Try again", action: viewModel.retryAccountConnection)
+                    .frame(maxWidth: .infinity)
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
             case .anonymous:
-                NightFlockStatusCard(
-                    symbol: "person.crop.circle.badge.checkmark",
-                    title: "A linked account keeps this pasture private.",
-                    detail: "Link with Apple only when you are ready to create or join. Your local Wind Down stays local."
-                )
-                if let accountErrorMessage {
-                    NightFlockStatusCard(
-                        symbol: "exclamationmark.bubble.fill",
-                        title: "Apple sign-in did not link this account.",
-                        detail: accountErrorMessage
-                    )
-                }
+                NightFlockStatusCard(symbol: "person.crop.circle.badge.checkmark", title: "Link an Apple account when you are ready.", detail: "It keeps this invite-only group tied to the right person. Your local Wind Down stays local.")
                 SignInWithAppleButton(.continue) { request in
                     viewModel.prepareAppleSignInRequest(request)
                 } onCompletion: { result in
@@ -125,43 +107,10 @@ struct NightFlockHubView: View {
                 .signInWithAppleButtonStyle(.black)
                 .frame(height: 50)
                 .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-                .accessibilityHint("Links the existing anonymous online account without replacing it")
+                .accessibilityHint("Links this existing Counting Sheep account without replacing it")
             case .linked:
                 EmptyView()
             }
-        }
-    }
-
-    private var accountErrorMessage: String? {
-        guard case .error(let message) = viewModel.phase else { return nil }
-        return message
-    }
-
-    private var retryButton: some View {
-        Button(action: viewModel.retryAccountConnection) {
-            Label("Try the account gate again", systemImage: "arrow.clockwise")
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(PixelChipButtonStyle(isSelected: false))
-    }
-
-    private var createOrJoin: some View {
-        NightFlockCreateJoinView(viewModel: viewModel)
-    }
-}
-
-private struct NightFlockHeader: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("INVITE-ONLY · SEVEN NIGHTS")
-                .font(pixelFont(.caption))
-                .foregroundStyle(AppColors.grass)
-            Text("Slumber Party")
-                .font(AppTypography.display(27))
-            Text("Wind down with a small flock. Only tucked-away phones and completed mornings are shared.")
-                .font(AppTypography.body)
-                .foregroundStyle(AppColors.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
@@ -173,30 +122,58 @@ private struct NightFlockCreateJoinView: View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    Text("OPEN A PASTURE")
+                    Text("CHOOSE ONE GOAL")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("Choose a small flock to invite.")
+                    Text("What will your group practise for seven nights?")
                         .font(AppTypography.headline)
-                    ForEach(NightFlockIdentity.allCases) { identity in
+                    ForEach(NightFlockGoalKind.allCases) { kind in
                         Button {
-                            viewModel.selectedIdentity = identity
+                            viewModel.commitmentDraft.goal = NightFlockSharedGoal(
+                                kind: kind,
+                                targetMinutes: kind.defaultTargetMinutes,
+                                appDisplayName: kind == .shieldInstagram ? "Instagram" : nil
+                            )
                         } label: {
-                            HStack {
-                                Label(identity.title, systemImage: identity.symbolName)
-                                Spacer()
-                                if viewModel.selectedIdentity == identity {
-                                    Image(systemName: "checkmark.circle.fill")
+                            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                                Image(systemName: kind == viewModel.commitmentDraft.goal.kind ? "checkmark.circle.fill" : "circle")
+                                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                                    Text(kind.title).font(AppTypography.body.weight(.semibold))
+                                    Text(kind.detail).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                                 }
+                                Spacer(minLength: 0)
                             }
                             .frame(minHeight: 44)
                         }
                         .buttonStyle(.plain)
-                        .foregroundStyle(
-                            viewModel.selectedIdentity == identity ? AppColors.grass : AppColors.ink
+                        .foregroundStyle(kind == viewModel.commitmentDraft.goal.kind ? AppColors.grass : AppColors.ink)
+                    }
+                    if viewModel.commitmentDraft.goal.kind == .quietMinutes {
+                        Stepper(
+                            String(viewModel.commitmentDraft.goal.targetMinutes ?? 30) + " quiet minutes",
+                            value: Binding(
+                                get: { viewModel.commitmentDraft.goal.targetMinutes ?? 30 },
+                                set: { viewModel.commitmentDraft.goal.targetMinutes = min(max($0, 5), 180) }
+                            ),
+                            in: 5...180,
+                            step: 5
                         )
                     }
-                    Button("Create Slumber Party", action: viewModel.createFlock)
+                    Text("Choose a pasture identity")
+                        .font(AppTypography.caption.weight(.semibold))
+                    Picker("Pasture identity", selection: Binding(
+                        get: { viewModel.commitmentDraft.identity },
+                        set: { viewModel.commitmentDraft.identity = $0 }
+                    )) {
+                        ForEach(NightFlockIdentity.allCases) { identity in
+                            Text(identity.title).tag(identity)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    Text("Everyone accepts the same goal. Bedtimes and routines can still be different.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                    Button("Create lobby", action: viewModel.createSharedParty)
                         .frame(maxWidth: .infinity)
                         .buttonStyle(PixelPrimaryButtonStyle())
                 }
@@ -204,20 +181,29 @@ private struct NightFlockCreateJoinView: View {
 
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("JOIN BY CODE")
+                    Text("JOIN A LOBBY")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    TextField("Short invite code", text: $viewModel.joinCode)
+                    TextField("Party code", text: $viewModel.joinCode)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                         .textFieldStyle(.roundedBorder)
-                        .accessibilityLabel("Slumber Party invite code")
-                    Text("Only positive check-ins are shared for this challenge. Routine steps and private nights stay here.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryText)
-                    Button("Join Slumber Party", action: viewModel.joinFlock)
+                        .accessibilityLabel("Slumber Party code")
+                    Button("Preview invitation", action: viewModel.previewSharedInvite)
                         .frame(maxWidth: .infinity)
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    if let preview = viewModel.invitePreview {
+                        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                            Text(preview.goal.title).font(AppTypography.body.weight(.semibold))
+                            Text(String(preview.memberCount) + " people are in this lobby. The code can be reused until the host starts or the lobby fills.")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.secondaryText)
+                            Button("Join this lobby", action: viewModel.redeemSharedInvite)
+                                .frame(maxWidth: .infinity)
+                                .buttonStyle(PixelPrimaryButtonStyle())
+                        }
+                        .padding(.top, AppSpacing.xs)
+                    }
                 }
             }
         }
@@ -238,11 +224,8 @@ struct NightFlockStatusCard: View {
                     .frame(width: 36, height: 36)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(title)
-                        .font(AppTypography.headline)
-                    Text(detail)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryText)
+                    Text(title).font(AppTypography.headline)
+                    Text(detail).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                 }
             }
             .accessibilityElement(children: .combine)
