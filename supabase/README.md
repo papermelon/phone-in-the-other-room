@@ -122,10 +122,8 @@ privacy publication, mailbox retention, and physical-iPhone upload/accessibility
 remain external launch gates; until those pass, notification rows remain retryable and the
 iOS form offers its recoverable prefilled-email fallback after a backend failure.
 
-Keep `SUPABASE_NIGHT_FLOCK_ENABLED = NO` in every local and Release file until the hosted
-migration, functions, retention schedule, Apple provider, privacy publication, moderation runbook,
-and physical two-account create/join/share/private/block/report/delete matrix all pass. The tracked
-`Config/Supabase.slumber-party-qa.xcconfig` is the sole non-production exception: it enables the
-dedicated `PhoneInTheOtherRoomSlumberPartyQA` scheme after the ignored local development values are
-loaded. It does not authorize deployment or a production enablement. Never replace an existing
-local xcconfig or paste hosted credentials into a tracked example.
+Keep `SUPABASE_NIGHT_FLOCK_ENABLED = NO` in ordinary Debug/local files. TestFlight/Release
+archives compile with `YES`. The tracked `Config/Supabase.slumber-party-qa.xcconfig` remains the
+local forced-`YES` lane for the dedicated `PhoneInTheOtherRoomSlumberPartyQA` scheme after ignored
+local development values load. Never replace an existing local xcconfig or paste hosted
+credentials into a tracked example.

@@ -144,7 +144,8 @@ The feedback form uses private Supabase Storage and Resend only when its indepen
 flag is enabled. It accepts optional reply email, selected screenshots, and a narrow
 diagnostics opt-in. If that backend gate is off, the same validated draft opens in Mail.
 
-No sign-in or demo credentials are required for the core flow or while Slumber Party is disabled.
+No sign-in or demo credentials are required for the core Wind Down flow. Slumber Party is compiled
+into TestFlight/Release archives and requires Sign in with Apple to create or join.
 A short physical-device video showing NFC
 provisioning, continuous shielding through overnight, and early exit should be attached if
 App Review cannot reproduce the hardware path.
@@ -160,10 +161,10 @@ Active Wind Down has no social UI. There is no feed, chat, discovery, leaderboar
 transfer, or public posting. For an Instagram goal, the member confirms the local Apple picker
 selection; the server never receives the token or claims it independently verified Instagram.
 
-Keep `SUPABASE_NIGHT_FLOCK_ENABLED=NO` for App Review until the Apple capability/provider,
-hosted migration and functions, retention schedule, moderation operations, public policy/App
-Privacy answers, and physical two-account QA are complete. If enabled, attach review credentials
-or precise invite instructions and describe the block/report/account-deletion path.
+TestFlight/Release compiles with `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. Attach review credentials
+or precise invite instructions and describe the block/report/account-deletion path. Ordinary Debug
+stays off. Hosted Apple provider, retention, moderation, and two-account physical QA remain
+operational evidence for inviting testers.
 
 ## App Privacy answers
 

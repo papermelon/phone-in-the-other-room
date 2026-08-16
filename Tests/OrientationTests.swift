@@ -8,7 +8,7 @@ final class OrientationTests: XCTestCase {
 
         XCTAssertEqual(state.schemaVersion, CountingSheepOrientationState.currentSchemaVersion)
         XCTAssertEqual(state.status, .inProgress)
-        XCTAssertEqual(state.currentStep, .navigation)
+        XCTAssertEqual(state.currentStep, .phoneAway)
         XCTAssertTrue(state.milestones.contains(.homeExplained))
         XCTAssertTrue(state.milestones.contains(.windDownSaved))
         XCTAssertTrue(state.milestones.contains(.practiceStarted))
@@ -28,7 +28,7 @@ final class OrientationTests: XCTestCase {
         XCTAssertTrue(state.milestones.isEmpty)
     }
 
-    func testPracticeMilestonesDoNotGateTheThreeStepTour() {
+    func testPracticeMilestonesDoNotGrantRewardsWhenTheLessonIsSkipped() {
         var state = CountingSheepOrientationState.fresh
         let periodID = UUID()
         let runID = UUID()
@@ -55,11 +55,11 @@ final class OrientationTests: XCTestCase {
         state.advanceTour()
         XCTAssertEqual(state.currentStep, .start)
         XCTAssertEqual(state.status, .inProgress)
-        state.advanceTour()
-        XCTAssertEqual(state.currentStep, .navigation)
-        XCTAssertEqual(state.status, .inProgress)
-        state.advanceTour()
-        XCTAssertTrue(state.isComplete)
+        state.currentStep = .practiceOffer
+        state.skipCurrentLesson()
+        XCTAssertTrue(state.skippedLessons.contains(.practiceOffer))
+        XCTAssertEqual(state.currentStep, .farmMeetSheep)
+        XCTAssertFalse(state.isComplete)
     }
 
     func testDismissalIsResumableAndDoesNotEraseProgress() {
@@ -81,7 +81,7 @@ final class OrientationTests: XCTestCase {
         state.advanceTour()
         XCTAssertEqual(state.currentStep, .start)
         state.advanceTour()
-        XCTAssertEqual(state.currentStep, .navigation)
+        XCTAssertEqual(state.currentStep, .phoneAway)
         state.moveBack()
         XCTAssertEqual(state.currentStep, .start)
         state.moveBack()
@@ -94,13 +94,13 @@ final class OrientationTests: XCTestCase {
         XCTAssertEqual(state.currentStep, .home)
     }
 
-    func testVersionTwoNavigationStepRemainsAtNavigation() throws {
+    func testVersionTwoNavigationStepNormalizesToPhoneAway() throws {
         let data = Data(#"{"schemaVersion":2,"status":"inProgress","currentStep":"navigation","milestones":[]}"#.utf8)
 
         let state = try JSONDecoder().decode(CountingSheepOrientationState.self, from: data)
 
         XCTAssertEqual(state.schemaVersion, CountingSheepOrientationState.currentSchemaVersion)
-        XCTAssertEqual(state.currentStep, .navigation)
+        XCTAssertEqual(state.currentStep, .phoneAway)
     }
 
     func testCompletedLegacyTourCanShowNewContextualTips() throws {

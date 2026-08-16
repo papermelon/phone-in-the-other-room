@@ -1,9 +1,56 @@
 import Foundation
 
+enum OnboardingVisibleStepEffect: Equatable {
+    case none
+    case grantStartingPoint
+    case skipQuestionnaire
+    case keepCompletedProfile
+}
+
 enum CountingSheepOnboarding {
     static let currentVersion = 1
     static let versionKey = "ollie.onboarding.version"
     static let draftKey = "ollie.onboarding.draft"
+}
+
+enum OnboardingWelcomePage: Int, CaseIterable, Codable, Identifiable {
+    case countingSheep
+    case windDown
+    case phoneAway
+    case ollie
+
+    var id: Int { rawValue }
+
+    var eyebrow: String {
+        switch self {
+        case .countingSheep: return "COUNTING SHEEP"
+        case .windDown: return "WIND DOWN"
+        case .phoneAway: return "PHONE AWAY"
+        case .ollie: return "OLLIE"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .countingSheep: return "Give the phone a resting place."
+        case .windDown: return "Wind Down holds the whole night."
+        case .phoneAway: return "Phone Away is a shorter stretch."
+        case .ollie: return "Ollie keeps watch."
+        }
+    }
+
+    var detail: String {
+        switch self {
+        case .countingSheep:
+            return "Counting Sheep helps make room around sleep by giving the phone a resting place in another room."
+        case .windDown:
+            return "Wind Down spans quiet before bed, overnight phone separation, and quiet after waking."
+        case .phoneAway:
+            return "Phone Away is a shorter phone-free period outside the usual Wind Down. Optional app shielding can make selected apps harder to reopen while the phone rests."
+        case .ollie:
+            return "Ollie keeps watch and searches for missing sheep while you follow through."
+        }
+    }
 }
 
 enum CountingSheepOnboardingStep: Int, CaseIterable, Codable, Identifiable {
@@ -13,12 +60,17 @@ enum CountingSheepOnboardingStep: Int, CaseIterable, Codable, Identifiable {
     case protection
     case automaticStart
     case ready
+    case profile
+    case recommendation
+    case gift
 
     var id: Int { rawValue }
 
     /// Advanced notification choices remain in Settings. Keep the legacy case so an
     /// older saved draft still decodes, then normalize it in the flow to the plan screen.
-    static let visibleSteps: [Self] = [.welcome, .schedule, .quiet, .protection, .ready]
+    static let visibleSteps: [Self] = [
+        .welcome, .profile, .recommendation, .schedule, .quiet, .protection, .gift, .ready
+    ]
 
     var visibleIndex: Int {
         Self.visibleSteps.firstIndex(of: self) ?? Self.visibleSteps.count - 1
@@ -27,9 +79,12 @@ enum CountingSheepOnboardingStep: Int, CaseIterable, Codable, Identifiable {
     var title: String {
         switch self {
         case .welcome: return "Welcome"
+        case .profile: return "Starting point"
+        case .recommendation: return "Your starting point"
         case .quiet: return "Optional cues"
         case .schedule: return "Your night"
         case .protection: return "Optional shielding"
+        case .gift: return "Welcome gift"
         case .automaticStart: return "Advanced reminders"
         case .ready: return "Saved plan"
         }
@@ -72,6 +127,9 @@ enum OnboardingProtectionChoice: String, Codable, CaseIterable, Identifiable {
 
 struct OnboardingDraft: Codable, Equatable {
     var step: CountingSheepOnboardingStep = .welcome
+    var welcomePage: OnboardingWelcomePage = .countingSheep
+    var profileAnswers: WindDownProfileAnswer = .defaults
+    var profileSkipped = false
     var bedtimeHour = 23
     var bedtimeMinute = 0
     var wakeHour = 7
@@ -102,7 +160,8 @@ struct OnboardingDraft: Codable, Equatable {
     var morningReflectionReminderEnabled = false
 
     private enum CodingKeys: String, CodingKey {
-        case step, bedtimeHour, bedtimeMinute, wakeHour, wakeMinute
+        case step, welcomePage, profileAnswers, profileSkipped
+        case bedtimeHour, bedtimeMinute, wakeHour, wakeMinute
         case windDownMinutes, morningQuietMinutes, eveningActivity, morningActivity
         case eveningCueText, morningCueText, eveningRoutine, morningRoutine
         case purposeCategory, customPurpose, allowsCustomTextInNotifications
@@ -121,6 +180,9 @@ struct OnboardingDraft: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         step = try container.decodeIfPresent(CountingSheepOnboardingStep.self, forKey: .step) ?? .welcome
+        welcomePage = try container.decodeIfPresent(OnboardingWelcomePage.self, forKey: .welcomePage) ?? .countingSheep
+        profileAnswers = try container.decodeIfPresent(WindDownProfileAnswer.self, forKey: .profileAnswers) ?? .defaults
+        profileSkipped = try container.decodeIfPresent(Bool.self, forKey: .profileSkipped) ?? false
         bedtimeHour = try container.decodeIfPresent(Int.self, forKey: .bedtimeHour) ?? 23
         bedtimeMinute = try container.decodeIfPresent(Int.self, forKey: .bedtimeMinute) ?? 0
         wakeHour = try container.decodeIfPresent(Int.self, forKey: .wakeHour) ?? 7
@@ -164,6 +226,85 @@ struct OnboardingDraft: Codable, Equatable {
     }
 
     var selectedGuardKind: SessionGuardKind { protectionChoice.guardKind }
+
+    var profileRecommendation: WindDownProfileRecommendation {
+        WindDownProfileMapper.recommendation(for: profileAnswers)
+    }
+
+    mutating func applyRecommendation(_ recommendation: WindDownProfileRecommendation) {
+        bedtimeHour = recommendation.bedtimeHour
+        bedtimeMinute = recommendation.bedtimeMinute
+        wakeHour = recommendation.wakeHour
+        wakeMinute = recommendation.wakeMinute
+        windDownMinutes = recommendation.desiredWindDownMinutes
+        eveningRoutine = recommendation.eveningRoutine
+        morningRoutine = recommendation.morningRoutine
+        if let evening = recommendation.eveningRoutine.first(where: { $0.kind == .suggestion })?.activity {
+            eveningActivity = evening
+        }
+        if let morning = recommendation.morningRoutine.first(where: { $0.kind == .suggestion })?.activity {
+            morningActivity = morning
+        }
+    }
+
+    mutating func skipProfile() {
+        profileSkipped = true
+    }
+
+    /// Continue from the current visible setup page. Returning `.grantStartingPoint`
+    /// means the questionnaire was completed and the pending wearable should be saved.
+    @discardableResult
+    mutating func continueVisibleStep() -> OnboardingVisibleStepEffect {
+        if step == .welcome, let nextPage = OnboardingWelcomePage(rawValue: welcomePage.rawValue + 1) {
+            welcomePage = nextPage
+            return .none
+        }
+        if step == .profile {
+            profileSkipped = false
+            applyRecommendation(profileRecommendation)
+        }
+        let shouldGrant = (step == .profile || step == .recommendation) && !profileSkipped
+        moveToNextVisibleStep()
+        return shouldGrant ? .grantStartingPoint : .none
+    }
+
+    /// Skip the current visible setup page without finishing onboarding.
+    @discardableResult
+    mutating func skipVisibleStep() -> OnboardingVisibleStepEffect {
+        switch step {
+        case .welcome:
+            step = .profile
+            return .none
+        case .profile:
+            profileSkipped = true
+            step = .schedule
+            return .skipQuestionnaire
+        case .recommendation:
+            // The questionnaire already completed; skip only the result screen.
+            step = .schedule
+            return profileSkipped ? .skipQuestionnaire : .keepCompletedProfile
+        case .gift:
+            moveToNextVisibleStep()
+            return .none
+        default:
+            return .none
+        }
+    }
+
+    mutating func moveToNextVisibleStep() {
+        guard let index = CountingSheepOnboardingStep.visibleSteps.firstIndex(of: step),
+              index + 1 < CountingSheepOnboardingStep.visibleSteps.count else {
+            return
+        }
+        var next = CountingSheepOnboardingStep.visibleSteps[index + 1]
+        if profileSkipped, next == .recommendation || next == .gift {
+            next = CountingSheepOnboardingStep.visibleSteps
+                .dropFirst(index + 1)
+                .first { $0 != .recommendation && $0 != .gift }
+                ?? .schedule
+        }
+        step = next
+    }
 
     func makeNightWatchPreferences() -> NightWatchPreferences {
         NightWatchPreferences(

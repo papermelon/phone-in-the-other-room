@@ -111,16 +111,18 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
             settingsButton(
-                title: viewModel.orientationState.canResume ? "Resume app guide" : "Show app guide",
+                title: viewModel.orientationState.canResume || viewModel.orientationState.isGuideActive
+                    ? "Resume app guide"
+                    : "Show app guide",
                 icon: "map.fill",
-                detail: "A short map of Home and the four tabs."
+                detail: "A short guide on Home, Farm, Settings, and Nights."
             ) {
-                        if viewModel.orientationState.canResume {
+                        if viewModel.orientationState.canResume || viewModel.orientationState.isGuideActive {
                             viewModel.resumeOrientation()
                         } else {
                             viewModel.replayOrientation()
+                            NotificationCenter.default.post(name: .countingSheepShowHome, object: nil)
                         }
-                        NotificationCenter.default.post(name: .countingSheepShowHome, object: nil)
             }
             .disabled(viewModel.isRunning)
             settingsButton(
@@ -186,6 +188,7 @@ struct SettingsView: View {
             }
             .buttonStyle(.plain)
         }
+        .orientationTourTarget(.settingsWindDown)
     }
 
     private var chooseShieldingAppsAction: () -> Void {
@@ -210,14 +213,14 @@ struct SettingsView: View {
             sectionHeader("Connections", icon: "link")
             connectionCard(
                 title: "Apple Health",
-                detail: healthDetail,
+                detail: healthDetail + " " + FirstRunGuideCopy.healthPermission + " " + FirstRunGuideCopy.permissionCanDecline,
                 icon: "bed.double.fill",
                 actionTitle: viewModel.sleepAuthorization == .notRequested ? "Connect" : nil,
                 action: viewModel.connectAppleHealthSleep
             )
             connectionCard(
                 title: "Screen Time",
-                detail: screenTimeDetail,
+                detail: screenTimeDetail + " " + FirstRunGuideCopy.screenTimePermission + " " + FirstRunGuideCopy.permissionCanDecline,
                 icon: "iphone.slash",
                 actionTitle: viewModel.screenTimeAuthorization == .notDetermined ? "Connect" : nil,
                 action: viewModel.connectScreenTime
@@ -447,6 +450,7 @@ struct SettingsView: View {
                     Text(detail)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                     if let actionTitle {
                         Button(actionTitle, action: action)
                             .buttonStyle(PixelChipButtonStyle(isSelected: false))

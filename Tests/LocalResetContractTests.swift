@@ -64,7 +64,8 @@ final class LocalResetContractTests: XCTestCase {
         XCTAssertNil(standardDefaults.object(forKey: CountingSheepOnboarding.draftKey))
         XCTAssertNil(standardDefaults.object(forKey: "ollie.orientation.state"))
         XCTAssertEqual(OnboardingDraft.defaults().step, .welcome)
-        XCTAssertEqual(CountingSheepOrientationState.fresh, .fresh)
+        XCTAssertEqual(CountingSheepOrientationState.fresh.farmTutorialActions, [])
+        XCTAssertFalse(CountingSheepOrientationState.fresh.continueCardDismissed)
     }
 
     func testFreshNightWatchDefaultsHaveNoSavedPlanOrSchedule() {

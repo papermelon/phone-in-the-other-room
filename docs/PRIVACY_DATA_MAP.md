@@ -104,7 +104,7 @@ HealthKit data.
 ## Optional invite-only Slumber Party
 
 Slumber Party is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` and is hidden and
-network-silent when the flag is off. Entering it can create an anonymous Supabase session; before
+network-silent when the flag is off (ordinary Debug). TestFlight/Release archives compile it on. Entering it can create an anonymous Supabase session; before
 creating, joining, reading, or mutating a flock, the person must link that same Auth user to Sign
 in with Apple. The app requests no Apple name or email scope. Supabase and Apple still process the
 provider identity needed to authenticate the account, and the stable Auth user ID is linked data.

@@ -84,9 +84,12 @@ struct FarmDashboardContent: View {
                     onSelectSheep: onSelectSheep
                 )
                 .contextualGuideTarget(.farm)
+                .orientationTourTarget(.farmPasture)
                 priorityCard
                 FarmKeepsakeDisplay(state: state)
                 FarmBalanceBar(state: state, linksEnabled: true)
+                    .orientationTourTarget(.farmWool)
+                    .orientationTourTarget(.farmCapacity)
                 if let nightFlockSummary, !isWindDownActive {
                     NightFlockHomeCard(summary: nightFlockSummary, action: onOpenNightFlock)
                 }
@@ -240,12 +243,25 @@ struct FarmDashboardContent: View {
         }
     }
 
+    @ViewBuilder
     private var destinationGrid: some View {
-        LazyVGrid(columns: destinationColumns, spacing: AppSpacing.sm) {
-            destination("The Barn", detail: "Manage flock & wool", badge: "\(state.activeSheep.count) / \(state.activeCapacity)", icon: "house.lodge.fill") { FarmBarnView() }
-            destination("Ollie’s Search", detail: "Find missing sheep", badge: "\(searchableCount) available", icon: "map.fill") { TrailBoardView() }
-            destination("Farm Shop", detail: "Spend wool on the Farm", badge: "\(state.woolBalance) wool", icon: "storefront.fill") { FarmShopView() }
-            destination("Search Journal", detail: "Past arrivals & clues", badge: "\(searchState.outcomes.count) entries", icon: "note.text") { TrailNotesArchiveView() }
+        let columns = destinationColumns
+        Grid(horizontalSpacing: AppSpacing.sm, verticalSpacing: AppSpacing.sm) {
+            if columns.count == 1 {
+                GridRow { destination("The Barn", detail: "Manage flock & wool", badge: "\(state.activeSheep.count) / \(state.activeCapacity)", icon: "house.lodge.fill", tourTarget: .farmCapacity) { FarmBarnView() } }
+                GridRow { destination("Ollie’s Search", detail: "Find missing sheep", badge: "\(searchableCount) available", icon: "map.fill", tourTarget: .farmSearch) { TrailBoardView() } }
+                GridRow { destination("Farm Shop", detail: "Spend wool on the Farm", badge: "\(state.woolBalance) wool", icon: "storefront.fill", tourTarget: .farmShop) { FarmShopView() } }
+                GridRow { destination("Search Journal", detail: "Past arrivals & clues", badge: "\(searchState.outcomes.count) entries", icon: "note.text") { TrailNotesArchiveView() } }
+            } else {
+                GridRow {
+                    destination("The Barn", detail: "Manage flock & wool", badge: "\(state.activeSheep.count) / \(state.activeCapacity)", icon: "house.lodge.fill", tourTarget: .farmCapacity) { FarmBarnView() }
+                    destination("Ollie’s Search", detail: "Find missing sheep", badge: "\(searchableCount) available", icon: "map.fill", tourTarget: .farmSearch) { TrailBoardView() }
+                }
+                GridRow {
+                    destination("Farm Shop", detail: "Spend wool on the Farm", badge: "\(state.woolBalance) wool", icon: "storefront.fill", tourTarget: .farmShop) { FarmShopView() }
+                    destination("Search Journal", detail: "Past arrivals & clues", badge: "\(searchState.outcomes.count) entries", icon: "note.text") { TrailNotesArchiveView() }
+                }
+            }
         }
     }
 
@@ -260,6 +276,7 @@ struct FarmDashboardContent: View {
         detail: String,
         badge: String,
         icon: String,
+        tourTarget: OrientationTourTarget? = nil,
         @ViewBuilder destination: () -> Destination
     ) -> some View {
         NavigationLink(destination: destination()) {
@@ -268,6 +285,7 @@ struct FarmDashboardContent: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(title). \(detail). \(badge)")
+        .modifier(OptionalOrientationTarget(target: tourTarget))
     }
 
     private func destinationLabel(

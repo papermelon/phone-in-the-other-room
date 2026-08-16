@@ -21,6 +21,7 @@ struct FocusStatsView: View {
                         focusedRecordID: viewModel.nightsRecordFocusID
                     )
                     .contextualGuideTarget(.nights)
+                    .orientationTourTarget(.nightsRecord)
                     NightsSevenDaySection(viewModel: viewModel)
                     NightsMonthLink(viewModel: viewModel)
                     NightsContextSection(

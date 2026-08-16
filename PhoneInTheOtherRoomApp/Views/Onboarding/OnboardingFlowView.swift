@@ -38,50 +38,56 @@ struct OnboardingFlowView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            OnboardingProgressHeader(step: draft.step, onBack: previousStep)
+        NavigationStack {
+            VStack(spacing: 0) {
+                OnboardingProgressHeader(
+                    step: draft.step,
+                    showsBack: canGoBack,
+                    onBack: previousStep
+                )
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.top, AppSpacing.xs)
                 .padding(.bottom, AppSpacing.sm)
 
-            ScrollView {
-                stepContent
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, AppSpacing.md)
-                    .padding(.vertical, AppSpacing.sm)
-            }
-            .id(draft.step)
-
-            OnboardingPrimaryButton(
-                title: primaryButtonTitle,
-                action: advance,
-                isEnabled: canContinue
-            )
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.top, AppSpacing.sm)
-
-            if draft.step == .ready, !isReplay {
-                Button("Save and skip the tour") {
-                    finish(showTour: false)
+                ScrollView {
+                    stepContent
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, AppSpacing.md)
+                        .padding(.vertical, AppSpacing.sm)
                 }
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-                .frame(maxWidth: .infinity, minHeight: 44)
+                .id("\(draft.step.rawValue)-\(draft.welcomePage.rawValue)")
+
+                OnboardingPrimaryButton(
+                    title: primaryButtonTitle,
+                    action: advance,
+                    isEnabled: canContinue
+                )
                 .padding(.horizontal, AppSpacing.md)
-            }
+                .padding(.top, AppSpacing.sm)
 
-            Color.clear
-                .frame(height: AppSpacing.md)
-        }
-        .background(AppColors.paper.ignoresSafeArea())
-        .toolbar {
-            if let onCancel {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel", action: onCancel)
+                if let skipTitle = skipButtonTitle {
+                    Button(skipTitle) {
+                        skipCurrent()
+                    }
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .padding(.horizontal, AppSpacing.md)
+                }
+
+                Color.clear
+                    .frame(height: AppSpacing.md)
+            }
+            .background(AppColors.paper.ignoresSafeArea())
+            .toolbar {
+                if let onCancel {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel", action: onCancel)
+                    }
                 }
             }
+            .foregroundStyle(AppColors.ink)
         }
-        .foregroundStyle(AppColors.ink)
         .onChange(of: draft) { _, updatedDraft in
             viewModel.saveOnboardingDraft(updatedDraft)
         }
@@ -102,7 +108,11 @@ struct OnboardingFlowView: View {
     private var stepContent: some View {
         switch draft.step {
         case .welcome:
-            OnboardingWelcomeStep()
+            OnboardingWelcomeStep(page: draft.welcomePage)
+        case .profile:
+            OnboardingProfileStep(draft: $draft)
+        case .recommendation:
+            OnboardingRecommendationStep(recommendation: draft.profileRecommendation)
         case .schedule:
             OnboardingScheduleStep(draft: $draft)
         case .quiet:
@@ -114,13 +124,12 @@ struct OnboardingFlowView: View {
                 onChooseApps: chooseShieldedApps,
                 showsNFCChoice: isReplay
             )
-        case .automaticStart:
-            OnboardingReadyStep(
-                draft: draft,
-                showsTourHandoff: !isReplay,
-                showsSlumberParty: viewModel.nightFlockViewModel.featureEnabled
+        case .gift:
+            OnboardingGiftStep(
+                recommendation: draft.profileSkipped ? nil : draft.profileRecommendation,
+                profileSkipped: draft.profileSkipped
             )
-        case .ready:
+        case .automaticStart, .ready:
             OnboardingReadyStep(
                 draft: draft,
                 showsTourHandoff: !isReplay,
@@ -131,10 +140,36 @@ struct OnboardingFlowView: View {
 
     private var primaryButtonTitle: String {
         switch draft.step {
-        case .welcome: return "Set up my Wind Down"
-        case .ready: return isReplay ? "Save changes" : "Save and show me Home"
-        default: return "Continue"
+        case .welcome:
+            return draft.welcomePage == .ollie ? "Set up my Wind Down" : "Continue"
+        case .ready:
+            return isReplay ? "Save changes" : "Save and show me Home"
+        default:
+            return "Continue"
         }
+    }
+
+    private var skipButtonTitle: String? {
+        if draft.step == .ready, !isReplay {
+            return "Save and skip the tour"
+        }
+        if draft.step == .welcome || draft.step == .profile || draft.step == .recommendation {
+            return FirstRunGuideCopy.skipForNow
+        }
+        if draft.step == .protection {
+            return nil
+        }
+        if draft.step == .gift {
+            return FirstRunGuideCopy.skipForNow
+        }
+        return nil
+    }
+
+    private var canGoBack: Bool {
+        if draft.step == .welcome {
+            return draft.welcomePage != .countingSheep
+        }
+        return CountingSheepOnboardingStep.visibleSteps.firstIndex(of: draft.step) ?? 0 > 0
     }
 
     private var canContinue: Bool {
@@ -144,31 +179,50 @@ struct OnboardingFlowView: View {
     }
 
     private func previousStep() {
+        if draft.step == .welcome, let previous = OnboardingWelcomePage(rawValue: draft.welcomePage.rawValue - 1) {
+            draft.welcomePage = previous
+            return
+        }
         guard let index = CountingSheepOnboardingStep.visibleSteps.firstIndex(of: draft.step), index > 0 else {
             return
         }
-        draft.step = CountingSheepOnboardingStep.visibleSteps[index - 1]
+        var previous = CountingSheepOnboardingStep.visibleSteps[index - 1]
+        if draft.profileSkipped, previous == .gift || previous == .recommendation {
+            previous = .profile
+        }
+        draft.step = previous
+        if draft.step == .welcome {
+            draft.welcomePage = .ollie
+        }
     }
 
     private func advance() {
         if draft.step == .protection {
             draft.shieldingEnabled = draft.shieldingEnabled && viewModel.hasSelectedShieldingApps
         }
-
         if draft.step == .ready {
             finish(showTour: true)
             return
         }
-
         moveForward()
     }
 
-    private func moveForward() {
-        guard let index = CountingSheepOnboardingStep.visibleSteps.firstIndex(of: draft.step),
-              index + 1 < CountingSheepOnboardingStep.visibleSteps.count else {
+    private func skipCurrent() {
+        if draft.step == .ready {
+            finish(showTour: false)
             return
         }
-        draft.step = CountingSheepOnboardingStep.visibleSteps[index + 1]
+        let effect = draft.skipVisibleStep()
+        if effect == .keepCompletedProfile {
+            viewModel.applyWindDownStartingPoint(draft.profileAnswers)
+        }
+    }
+
+    private func moveForward() {
+        let effect = draft.continueVisibleStep()
+        if effect == .grantStartingPoint {
+            viewModel.applyWindDownStartingPoint(draft.profileAnswers)
+        }
     }
 
     private func finish(showTour: Bool) {
@@ -210,6 +264,30 @@ struct OnboardingFlowView: View {
 #Preview {
     OnboardingFlowView(onComplete: {})
         .environmentObject(FocusRunViewModel())
+}
+
+#Preview("Onboarding · questionnaire") {
+    OnboardingFlowView(initialDraft: OnboardingDraft(step: .profile), onComplete: {})
+        .environmentObject(FocusRunViewModel())
+}
+
+#Preview("Onboarding · recommendation") {
+    OnboardingFlowView(initialDraft: OnboardingDraft(step: .recommendation), onComplete: {})
+        .environmentObject(FocusRunViewModel())
+}
+
+#Preview("Onboarding · profile gift") {
+    OnboardingFlowView(initialDraft: OnboardingDraft(step: .gift), onComplete: {})
+        .environmentObject(FocusRunViewModel())
+}
+
+#Preview("Onboarding · shielding declined") {
+    let viewModel = FocusRunViewModel()
+    viewModel.screenTimeAuthorization = .denied("Preview")
+    var draft = OnboardingDraft(step: .protection)
+    draft.shieldingEnabled = false
+    return OnboardingFlowView(initialDraft: draft, onComplete: {})
+        .environmentObject(viewModel)
 }
 
 #Preview("Onboarding · dark · large type") {

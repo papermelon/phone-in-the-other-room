@@ -17,6 +17,7 @@ final class FocusSessionCoordinator: ObservableObject {
     @Published var sheepSearchState: SheepSearchState
     @Published var latestSheepSearchOutcome: SheepSearchOutcome?
     @Published var farmState: FarmState
+    @Published private(set) var lastOnboardingPracticeGrantedSheep = false
 
     private let persistence: PersistenceService
     private let rewardEngine = RewardEngine()
@@ -648,6 +649,7 @@ final class FocusSessionCoordinator: ObservableObject {
         persistence.sheepSearchState = result.search
         persistence.farmState = result.farm
         persistence.welcomeRewardLedger = result.ledger
+        lastOnboardingPracticeGrantedSheep = result.outcome != nil
         if let outcome = result.outcome {
             latestSheepSearchOutcome = outcome
         }

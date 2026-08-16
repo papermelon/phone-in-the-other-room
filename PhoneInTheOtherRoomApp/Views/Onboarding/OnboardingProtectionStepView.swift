@@ -15,7 +15,7 @@ struct OnboardingProtectionStep: View {
             onboardingTitle(
                 eyebrow: "OPTIONAL PROTECTION",
                 title: "Give the quiet a little help.",
-                detail: "App limits cover the selected apps from Wind Down start through your morning quiet window. Counting Sheep stays available, and you can use the emergency exit if you need your phone back."
+                detail: FirstRunGuideCopy.screenTimePermission + " " + FirstRunGuideCopy.permissionCanDecline
             )
 
             OnboardingChoiceCard(
@@ -117,11 +117,15 @@ struct OnboardingProtectionStep: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 } else {
+                    Text(FirstRunGuideCopy.screenTimePermission)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                        .fixedSize(horizontal: false, vertical: true)
                     Button("Allow Screen Time access") {
                         viewModel.connectScreenTime()
                     }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    Text("After permission, choose 1–3 apps or categories to limit. Counting Sheep never limits itself.")
+                    Text(FirstRunGuideCopy.permissionCanDecline)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }

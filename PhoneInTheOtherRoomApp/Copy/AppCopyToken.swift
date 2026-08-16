@@ -9,15 +9,15 @@ enum AppCopy {
     enum OnboardingWelcome {
         static let eyebrow = AppCopyToken(
             id: "iphone.onboarding.welcome.eyebrow",
-            value: "A QUIETER NIGHT"
+            value: "COUNTING SHEEP"
         )
         static let title = AppCopyToken(
             id: "iphone.onboarding.welcome.title",
-            value: "Put your phone to bed.\nWake before it does."
+            value: "Give the phone a resting place."
         )
         static let detail = AppCopyToken(
             id: "iphone.onboarding.welcome.detail",
-            value: "Counting Sheep helps you put the phone in another room before bed, then keeps the first quiet part of morning phone-free."
+            value: "Counting Sheep helps make room around sleep by giving the phone a resting place in another room."
         )
     }
 

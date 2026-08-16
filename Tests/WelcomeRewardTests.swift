@@ -92,8 +92,16 @@ final class WelcomeRewardTests: XCTestCase {
             now: Date(timeIntervalSince1970: 50)
         )
 
-        XCTAssertEqual(claimed.farm.shepherd.outfitItemID ?? claimed.farm.shepherd.accessoryItemID, recommendation.wearableItemID)
+        XCTAssertEqual(claimed.farm.ownedShopItemIDs, [recommendation.wearableItemID])
+        XCTAssertNil(claimed.farm.shepherd.outfitItemID)
+        XCTAssertNil(claimed.farm.shepherd.accessoryItemID)
         XCTAssertNotNil(claimed.ledger.claimedWearableGrant)
+        let equipped = try WelcomeRewardEngine.equipWearable(
+            farm: claimed.farm,
+            search: claimed.search,
+            ledger: claimed.ledger
+        )
+        XCTAssertEqual(equipped.farm.shepherd.outfitItemID ?? equipped.farm.shepherd.accessoryItemID, recommendation.wearableItemID)
         XCTAssertThrowsError(
             try WelcomeRewardEngine.claimWearable(
                 farm: claimed.farm,

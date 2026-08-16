@@ -3,7 +3,15 @@ import SwiftUI
 enum OrientationTourTarget: Hashable {
     case homePlan
     case startAction
+    case phoneAway
     case navigation
+    case farmPasture
+    case farmCapacity
+    case farmWool
+    case farmShop
+    case farmSearch
+    case settingsWindDown
+    case nightsRecord
 }
 
 struct OrientationTourTargetPreferenceKey: PreferenceKey {
@@ -25,9 +33,22 @@ extension View {
     }
 }
 
+struct OptionalOrientationTarget: ViewModifier {
+    let target: OrientationTourTarget?
+
+    func body(content: Content) -> some View {
+        if let target {
+            content.orientationTourTarget(target)
+        } else {
+            content
+        }
+    }
+}
+
 struct CountingSheepOrientationTourOverlay: View {
     let step: CountingSheepOrientationStep
-    let targetFrame: CGRect
+    var targetFrame: CGRect?
+    var context: FirstRunAdvanceContext = .defaults
     let onBack: () -> Void
     let onNext: () -> Void
     let onSkip: () -> Void
@@ -38,21 +59,27 @@ struct CountingSheepOrientationTourOverlay: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                OrientationSpotlightShape(
-                    targetFrame: highlightedFrame,
-                    cornerRadius: targetCornerRadius
-                )
-                    .fill(
-                        Color.black.opacity(0.64),
-                        style: FillStyle(eoFill: true)
+                if let highlightedFrame {
+                    OrientationSpotlightShape(
+                        targetFrame: highlightedFrame,
+                        cornerRadius: targetCornerRadius
                     )
+                        .fill(
+                            Color.black.opacity(0.64),
+                            style: FillStyle(eoFill: true)
+                        )
 
-                RoundedRectangle(cornerRadius: targetCornerRadius, style: .continuous)
-                    .stroke(AppColors.lavender, lineWidth: 4)
-                    .frame(width: highlightedFrame.width, height: highlightedFrame.height)
-                    .position(x: highlightedFrame.midX, y: highlightedFrame.midY)
-                    .shadow(color: AppColors.lavender.opacity(0.34), radius: 10)
-                    .accessibilityHidden(true)
+                    RoundedRectangle(cornerRadius: targetCornerRadius, style: .continuous)
+                        .stroke(AppColors.lavender, lineWidth: 4)
+                        .frame(width: highlightedFrame.width, height: highlightedFrame.height)
+                        .position(x: highlightedFrame.midX, y: highlightedFrame.midY)
+                        .shadow(color: AppColors.lavender.opacity(0.34), radius: 10)
+                        .accessibilityHidden(true)
+                } else {
+                    Color.black.opacity(0.54)
+                        .ignoresSafeArea()
+                        .accessibilityHidden(true)
+                }
 
                 coachMark
                     .padding(.horizontal, AppSpacing.md)
@@ -74,67 +101,58 @@ struct CountingSheepOrientationTourOverlay: View {
         .accessibilityElement(children: .contain)
     }
 
-    private var highlightedFrame: CGRect {
-        let inset: CGFloat
-        switch step {
-        case .home: inset = 6
-        case .start: inset = 5
-        case .navigation: inset = 4
-        }
-        return targetFrame.insetBy(dx: -inset, dy: -inset)
+    private var highlightedFrame: CGRect? {
+        targetFrame?.insetBy(dx: -5, dy: -5)
     }
 
-    private var targetCornerRadius: CGFloat {
-        switch step {
-        case .home: return AppRadius.lg + 4
-        case .start: return 15
-        case .navigation: return AppRadius.lg + 10
-        }
+    private var targetCornerRadius: CGFloat { AppRadius.lg + 4 }
+
+    private var stepNumber: Int { FirstRunJourney.number(for: step, context: context) }
+    private var stepCount: Int { FirstRunJourney.count(context: context) }
+    private var title: String { FirstRunGuideCopy.title(for: step) }
+    private var message: String { FirstRunGuideCopy.message(for: step) }
+    private var isFirstVisibleStep: Bool {
+        FirstRunJourney.visibleSteps(context: context).first == step.normalized
     }
 
     private var coachMark: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack(spacing: AppSpacing.xs) {
-                Label("QUICK TOUR", systemImage: "sparkles")
+                Label("GETTING TO KNOW COUNTING SHEEP", systemImage: "sparkles")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.lavender)
                 Spacer()
-                Text("\(step.number) OF \(CountingSheepOrientationStep.count)")
+                Text("\(stepNumber) OF \(stepCount)")
                     .font(AppTypography.monoCaption)
                     .foregroundStyle(AppColors.muted)
             }
 
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                Image(systemName: step == .home ? "arrow.up.circle.fill" : "arrow.down.circle.fill")
-                    .font(.title2.weight(.black))
-                    .foregroundStyle(AppColors.lavender)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(title)
-                        .font(AppTypography.title)
-                    Text(message)
-                        .font(AppTypography.body)
-                        .foregroundStyle(AppColors.secondaryText)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text(title)
+                    .font(AppTypography.title)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(message)
+                    .font(AppTypography.body)
+                    .foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             HStack(spacing: AppSpacing.sm) {
-                Button("Skip tour", action: onSkip)
+                Button(FirstRunGuideCopy.skipForNow, action: onSkip)
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                     .frame(minHeight: 44)
 
                 Spacer(minLength: 0)
 
-                if step != .home {
+                if !isFirstVisibleStep {
                     Button("Back", action: onBack)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.ink)
                         .frame(minHeight: 44)
                 }
 
-                Button(step == .navigation ? "Done" : "Next", action: onNext)
+                Button(step.normalized == .completion ? "Done" : "Continue", action: onNext)
                     .font(AppTypography.headline)
                     .foregroundStyle(.white)
                     .padding(.horizontal, AppSpacing.lg)
@@ -154,32 +172,16 @@ struct CountingSheepOrientationTourOverlay: View {
                 .stroke(AppColors.lavender, lineWidth: 3)
         }
         .shadow(color: Color.black.opacity(0.34), radius: 20, x: 0, y: 8)
-        .accessibilityLabel("Quick tour, step \(step.number) of \(CountingSheepOrientationStep.count). \(title). \(message)")
-    }
-
-    private var title: String {
-        switch step {
-        case .home: return "Tonight’s plan"
-        case .start: return "Start what’s ready"
-        case .navigation: return "Your four places"
-        }
-    }
-
-    private var message: String {
-        switch step {
-        case .home:
-            return "Bedtime, wake time, and both quiet windows live here."
-        case .start:
-            return "Begin tonight’s Wind Down—or a practice quiet—from this button."
-        case .navigation:
-            return "Nights keeps your records. Farm follows Ollie. Settings holds your plan."
-        }
+        .accessibilityLabel("Getting to know Counting Sheep, step \(stepNumber) of \(stepCount). \(title). \(message)")
     }
 
     private func coachMarkPosition(in size: CGSize) -> CGPoint {
         let margin = AppSpacing.sm
         let measuredHeight = max(220, coachMarkSize.height)
         let halfHeight = measuredHeight / 2
+        guard let highlightedFrame else {
+            return CGPoint(x: size.width / 2, y: min(size.height * 0.42, size.height - halfHeight - margin))
+        }
         let spaceBelow = size.height - highlightedFrame.maxY - margin
         let proposedY: CGFloat
         if spaceBelow >= measuredHeight + margin {
@@ -216,64 +218,6 @@ private struct OrientationCoachMarkSizePreferenceKey: PreferenceKey {
     }
 }
 
-struct CountingSheepPracticeOfferSheet: View {
-    let onStartPractice: () -> Void
-    let onMaybeLater: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            Label("TOUR COMPLETE", systemImage: "checkmark.circle.fill")
-                .font(pixelFont(.caption))
-                .foregroundStyle(AppColors.grass)
-
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("Want to test it?")
-                    .font(AppTypography.title)
-                Text("Start a real five-minute practice quiet. It appears in Nights and completing it brings a welcome gift sheep home, without counting as a Wind Down.")
-                    .font(AppTypography.body)
-                    .foregroundStyle(AppColors.secondaryText)
-            }
-
-            Button(action: onStartPractice) {
-                Label("Try 5 minutes", systemImage: "timer")
-                    .frame(maxWidth: .infinity, minHeight: 44)
-            }
-            .buttonStyle(PixelPrimaryButtonStyle())
-
-            Button("Maybe later", action: onMaybeLater)
-                .font(AppTypography.body)
-                .foregroundStyle(AppColors.muted)
-                .frame(maxWidth: .infinity, minHeight: 44)
-        }
-        .foregroundStyle(AppColors.ink)
-        .padding(AppSpacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(AppColors.paper.ignoresSafeArea())
-    }
-}
-
-struct OrientationRecordPrompt: View {
-    let onSeeNights: () -> Void
-
-    var body: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Label("YOUR PRACTICE RECORD", systemImage: "book.closed.fill")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                Text("Five minutes of quiet, recorded plainly.")
-                    .font(AppTypography.headline)
-                Text("It appears in Nights. Completing it can bring a welcome gift sheep home, without counting as a Wind Down.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                Button("See it in Nights", action: onSeeNights)
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    .frame(minHeight: 44, alignment: .leading)
-            }
-        }
-    }
-}
-
 #Preview("Home coach mark") {
     ZStack {
         AppColors.paper.ignoresSafeArea()
@@ -295,21 +239,30 @@ struct OrientationRecordPrompt: View {
     .preferredColorScheme(.dark)
 }
 
-#Preview("Practice offer") {
-    CountingSheepPracticeOfferSheet(onStartPractice: {}, onMaybeLater: {})
-}
-
-#Preview("Navigation coach mark · large type") {
+#Preview("Farm coach mark · large type") {
     ZStack {
         AppColors.paper.ignoresSafeArea()
         CountingSheepOrientationTourOverlay(
-            step: .navigation,
-            targetFrame: CGRect(x: 16, y: 720, width: 361, height: 82),
+            step: .farmMeetSheep,
+            targetFrame: CGRect(x: 16, y: 120, width: 361, height: 220),
             onBack: {},
             onNext: {},
             onSkip: {}
         )
     }
     .environment(\.dynamicTypeSize, .accessibility3)
-    .preferredColorScheme(.light)
+}
+
+#Preview("Farm coach mark · missing target") {
+    ZStack {
+        AppColors.paper.ignoresSafeArea()
+        CountingSheepOrientationTourOverlay(
+            step: .farmShop,
+            targetFrame: nil,
+            onBack: {},
+            onNext: {},
+            onSkip: {}
+        )
+    }
+    .environment(\.dynamicTypeSize, .accessibility3)
 }

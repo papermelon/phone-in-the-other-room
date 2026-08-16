@@ -1,10 +1,10 @@
 # Slumber Party non-production QA
 
-The tracked ordinary Debug default and Release remain disabled. The ignored
+The tracked ordinary Debug default remains disabled. The ignored
 `Config/Supabase.local.xcconfig` Debug override should also stay `NO`; the dedicated
-SlumberPartyQA configuration is the repeatable forced-`YES` lane. This playbook exercises that
-non-production lane only; it does not authorize deployment, TestFlight enablement, or production
-launch. Release must continue to resolve `SUPABASE_NIGHT_FLOCK_ENABLED = NO`.
+SlumberPartyQA configuration is the repeatable local forced-`YES` lane with QA diagnostics.
+TestFlight/Release archives compile with `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. This playbook
+exercises the local QA lane; it does not deploy hosted backends or upload TestFlight.
 
 ## Local preparation and repeatable checks
 
@@ -51,7 +51,7 @@ account label A/B, expected result, actual result, and screenshot/log reference.
 
 | Check | Required observation |
 | --- | --- |
-| QA configuration | Settings → Slumber Party QA diagnostics says flag enabled; Release build says disabled and contains no QA destination. |
+| QA configuration | Settings → Slumber Party QA diagnostics says flag enabled. Ordinary Debug says disabled. Release/TestFlight has Slumber Party and contains no QA diagnostics destination. |
 | Pre-link identity | Record each anonymous Supabase Auth UUID through approved redacted local/server tooling; after Sign in with Apple, each UUID is unchanged. |
 | Create and reusable invite | A chooses one bounded goal, creates a pending lobby, creates a reusable legible code, previews it on B, and verifies it works until revoked, expired, started, or capacity reaches eight. |
 | Lobby gate | Verify joining does not start the party. The host can start only after at least two members have accepted the same goal and completed required local setup. |
@@ -68,7 +68,7 @@ account label A/B, expected result, actual result, and screenshot/log reference.
 | Fixed-enum report | Submit each supported report enum, reject an unsupported value through the function/API, and capture no free-text report path. |
 | Slumber Party deletion | Delete Slumber Party data and verify challenge/social records are removed while local Wind Down, Nights, Farm, and rewards remain. |
 | Full account deletion | Delete the linked online account; verify local ritual data remains, the remote account/session is gone, and a new anonymous session does not inherit deleted party data. |
-| Final Release gate | Build/archive the ordinary `PhoneInTheOtherRoom` Release configuration, run the validation script, and capture `Release: SUPABASE_NIGHT_FLOCK_ENABLED=NO`. |
+| Final Release gate | Build/archive the ordinary `PhoneInTheOtherRoom` Release configuration, run the validation script, and capture `Release: SUPABASE_NIGHT_FLOCK_ENABLED=YES` with no `SLUMBER_PARTY_QA` compiler condition. |
 
 Do not mark the release gates complete until every row passes on two physical iPhones with two
 different Apple accounts and the ADR-0016 hosted, moderation, retention, privacy, and deployment

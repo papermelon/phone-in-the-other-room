@@ -39,7 +39,7 @@ assert_scheme_configuration TestAction SlumberPartyQA
 assert_scheme_configuration LaunchAction SlumberPartyQA
 assert_scheme_configuration AnalyzeAction SlumberPartyQA
 assert_scheme_configuration ProfileAction Release
-assert_scheme_configuration ArchiveAction Release
+assert_scheme_configuration ArchiveAction SlumberPartyQA
 
 build_settings() {
     configuration="$1"
@@ -69,7 +69,7 @@ release_conditions="$(printf '%s\n' "$release_settings" | setting_value SWIFT_AC
 debug_conditions="$(printf '%s\n' "$debug_settings" | setting_value SWIFT_ACTIVE_COMPILATION_CONDITIONS)"
 
 [ "$qa_flag" = "YES" ] || { echo "error: SlumberPartyQA flag is not YES" >&2; exit 1; }
-[ "$release_flag" = "NO" ] || { echo "error: Release flag is not NO" >&2; exit 1; }
+[ "$release_flag" = "YES" ] || { echo "error: Release flag is not YES" >&2; exit 1; }
 case " $qa_conditions " in
     *" SLUMBER_PARTY_QA "*) ;;
     *) echo "error: SlumberPartyQA compiler condition is missing" >&2; exit 1 ;;
@@ -84,5 +84,5 @@ case " $debug_conditions " in
 esac
 
 echo "SlumberPartyQA: SUPABASE_NIGHT_FLOCK_ENABLED=YES"
-echo "Release: SUPABASE_NIGHT_FLOCK_ENABLED=NO"
+echo "Release: SUPABASE_NIGHT_FLOCK_ENABLED=YES"
 echo "SlumberPartyQA compiler condition: present only in SlumberPartyQA"

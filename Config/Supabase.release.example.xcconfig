@@ -1,7 +1,7 @@
-// Release/TestFlight must use a separate production Supabase project.
+// Release/TestFlight uses a separate production Supabase project.
 // Copy these assignments to the ignored Supabase.release.local.xcconfig.
 SUPABASE_URL = https:/$()/YOUR_PRODUCTION_PROJECT_REF.supabase.co
 SUPABASE_PUBLISHABLE_KEY = sb_publishable_REPLACE_WITH_PRODUCTION_KEY
 SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED = NO
 SUPABASE_FEEDBACK_ENABLED = NO
-SUPABASE_NIGHT_FLOCK_ENABLED = NO
+SUPABASE_NIGHT_FLOCK_ENABLED = YES

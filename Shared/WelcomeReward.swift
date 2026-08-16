@@ -283,6 +283,27 @@ enum WelcomeRewardEngine {
         return WelcomeRewardReconciliation(farm: farm, search: search, ledger: ledger, outcome: nil)
     }
 
+    static func equipWearable(
+        itemID: String? = nil,
+        farm: FarmState,
+        search: SheepSearchState,
+        ledger: WelcomeRewardLedger
+    ) throws -> WelcomeRewardReconciliation {
+        var farm = farm
+        guard let grant = ledger.claimedWearableGrant ?? ledger.pendingWearableGrant else {
+            throw FarmActionError.itemNotOwned
+        }
+        let resolvedID = itemID ?? grant.itemID
+        guard let resolvedID, resolvedID == grant.itemID else {
+            throw FarmActionError.itemNotFound
+        }
+        guard grant.claimedAt != nil else {
+            throw FarmActionError.itemNotOwned
+        }
+        try farm.equip(itemID: resolvedID)
+        return WelcomeRewardReconciliation(farm: farm, search: search, ledger: ledger, outcome: nil)
+    }
+
     static func settlePractice(
         run: FocusRun,
         farm: FarmState,

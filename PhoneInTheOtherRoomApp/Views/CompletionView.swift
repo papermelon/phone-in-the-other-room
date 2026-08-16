@@ -90,13 +90,28 @@ struct CompletionView: View {
                     )
                 }
 
-                if run?.id == viewModel.orientationState.practiceRunID,
-                   run?.completedSuccessfully == true,
-                   !viewModel.orientationState.milestones.contains(.practiceRecordViewed) {
-                    OrientationRecordPrompt {
-                        viewModel.resetSetup()
-                        viewModel.focusNightsRecord(viewModel.orientationState.practiceRunID)
-                        NotificationCenter.default.post(name: .countingSheepShowNights, object: nil)
+                if let run, run.id == viewModel.orientationState.practiceRunID,
+                   run.completedSuccessfully {
+                    if viewModel.orientationState.currentStep.normalized == .practiceReward {
+                        FirstRunPracticeRewardCard(
+                            grantedNewSheep: viewModel.lastPracticeGrantBroughtSheep,
+                            onSeeFarm: {
+                                viewModel.markPracticeRewardRoutedToFarm()
+                                viewModel.advanceOrientationTour()
+                                viewModel.resetSetup()
+                                NotificationCenter.default.post(name: .countingSheepShowFarm, object: nil)
+                            },
+                            onSkip: {
+                                viewModel.skipOrientationLesson()
+                                viewModel.resetSetup()
+                            }
+                        )
+                    } else if !viewModel.orientationState.milestones.contains(.practiceRecordViewed) {
+                        OrientationRecordPrompt {
+                            viewModel.resetSetup()
+                            viewModel.focusNightsRecord(viewModel.orientationState.practiceRunID)
+                            NotificationCenter.default.post(name: .countingSheepShowNights, object: nil)
+                        }
                     }
                 }
 

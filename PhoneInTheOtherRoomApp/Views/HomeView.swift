@@ -42,7 +42,7 @@ struct HomeView: View {
                     shellFooter
                 }
             }
-            .accessibilityHidden(isOrientationTourPresented)
+            .accessibilityHidden(isOrientationCoachPresented)
         }
         .alert("Turn on Sleep Focus?", isPresented: $viewModel.showFocusModePrompt) {
             Button("Skip", role: .cancel) {
@@ -58,6 +58,7 @@ struct HomeView: View {
                         guard allowsLaunchRouting else { return }
                         viewModel.applyShortcutPreparationIfNeeded()
                         routePendingNotificationIfNeeded()
+                        restoreFirstRunSurface()
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepNotificationDestination)) { notification in
             guard let destination = notification.object as? NotificationDestination else { return }
@@ -71,8 +72,9 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowFarm)) { _ in
             select(.farm)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNightFlock)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNightFlock)) { notification in
             guard !viewModel.isRunning else { return }
+            viewModel.nightFlockViewModel.prefersJoinEntry = (notification.object as? String) == "join"
             select(.farm)
             opensNightFlock = true
         }
@@ -114,14 +116,15 @@ struct HomeView: View {
         }
         .overlayPreferenceValue(OrientationTourTargetPreferenceKey.self) { targets in
             GeometryReader { proxy in
-                if isOrientationTourPresented,
-                   let anchor = targets[activeOrientationTarget] {
+                if shouldPresentOrientationCoach {
+                    let frame = targets[activeOrientationTarget].map { proxy[$0] }
                     CountingSheepOrientationTourOverlay(
                         step: viewModel.orientationState.currentStep,
-                        targetFrame: proxy[anchor],
+                        targetFrame: frame,
+                        context: viewModel.firstRunAdvanceContext,
                         onBack: viewModel.moveBackInOrientationTour,
                         onNext: advanceOrientationTour,
-                        onSkip: viewModel.dismissOrientation
+                        onSkip: viewModel.skipOrientationLesson
                     )
                     .zIndex(50)
                 }
@@ -130,10 +133,25 @@ struct HomeView: View {
         .sheet(isPresented: $showOrientationPracticeOffer) {
             CountingSheepPracticeOfferSheet(
                 onStartPractice: startOrientationPractice,
-                onMaybeLater: { showOrientationPracticeOffer = false }
+                onSkip: {
+                    showOrientationPracticeOffer = false
+                    viewModel.skipOrientationLesson()
+                },
+                onMaybeLater: {
+                    showOrientationPracticeOffer = false
+                    viewModel.dismissOrientation()
+                }
             )
-            .presentationDetents([.medium])
+            .presentationDetents([.large])
             .presentationDragIndicator(.visible)
+        }
+        .onChange(of: viewModel.orientationState.currentStep) { _, step in
+            guard viewModel.orientationState.isGuideActive else { return }
+            recordVisibleFarmLesson(step.normalized)
+            restoreFirstRunSurface()
+        }
+        .onChange(of: viewModel.orientationState.status) { _, _ in
+            restoreFirstRunSurface()
         }
     }
 
@@ -165,6 +183,16 @@ struct HomeView: View {
                     CountingSheepTopBar()
                         .padding(.horizontal, 18)
                         .padding(.top, 10)
+                    if viewModel.orientationState.shouldShowContinueCard(
+                        isCoachMarkPresented: isOrientationCoachPresented
+                    ) {
+                        FirstRunContinueCard(
+                            onResume: resumeFirstRunGuide,
+                            onDismiss: viewModel.dismissFirstRunContinueCard
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.top, 10)
+                    }
                 }
 
                 if contentUsesOwnScroll {
@@ -193,27 +221,79 @@ struct HomeView: View {
         }
     }
 
-    private var isOrientationTourPresented: Bool {
+    private var shouldPresentOrientationCoach: Bool {
         viewModel.isOrientationActive
             && !viewModel.isRunning
-            && selectedTab == .home
+            && FirstRunJourney.usesCoachMark(viewModel.orientationState.currentStep)
+            && selectedTab == tab(for: FirstRunJourney.surface(for: viewModel.orientationState.currentStep))
     }
 
+    private var isOrientationCoachPresented: Bool { shouldPresentOrientationCoach }
+
     private var activeOrientationTarget: OrientationTourTarget {
-        switch viewModel.orientationState.currentStep {
+        switch viewModel.orientationState.currentStep.normalized {
         case .home: return .homePlan
         case .start: return .startAction
-        case .navigation: return .navigation
+        case .phoneAway, .navigation: return .phoneAway
+        case .farmMeetSheep: return .farmPasture
+        case .farmCapacity: return .farmCapacity
+        case .farmWool, .farmShear, .farmCurrency: return .farmWool
+        case .farmClaimWearable, .farmEquipWearable, .farmShop: return .farmShop
+        case .farmSearch: return .farmSearch
+        case .settings: return .settingsWindDown
+        case .nights: return .nightsRecord
+        default: return .homePlan
+        }
+    }
+
+    private func tab(for surface: FirstRunSurface) -> MainAppTab {
+        switch surface {
+        case .home: return .home
+        case .farm: return .farm
+        case .settings: return .settings
+        case .nights: return .nights
         }
     }
 
     private func advanceOrientationTour() {
-        if viewModel.orientationState.currentStep == .navigation {
-            viewModel.completeOrientationTour()
-            showOrientationPracticeOffer = true
-        } else {
-            viewModel.advanceOrientationTour()
+        let step = viewModel.orientationState.currentStep.normalized
+        if step == .farmClaimWearable {
+            viewModel.claimPendingWelcomeWearable()
         }
+        if step == .farmEquipWearable {
+            viewModel.equipPendingWelcomeWearable()
+        }
+        if step == .farmShear, !viewModel.orientationState.hasRecorded(.sheared) {
+            viewModel.recordFirstRunFarmAction(.skippedShear)
+        }
+        if step == .practiceOffer {
+            viewModel.advanceOrientationTour()
+            showOrientationPracticeOffer = true
+            return
+        }
+        if step == .practiceReward,
+           !viewModel.orientationState.practiceRewardRoutedToFarm {
+            viewModel.markPracticeRewardRoutedToFarm()
+            viewModel.advanceOrientationTour()
+            restoreFirstRunSurface()
+            return
+        }
+        viewModel.advanceOrientationTour()
+        restoreFirstRunSurface()
+    }
+
+    private func resumeFirstRunGuide() {
+        viewModel.resumeOrientation()
+        restoreFirstRunSurface()
+    }
+
+    private func restoreFirstRunSurface() {
+        guard viewModel.orientationState.isGuideActive else { return }
+        guard let destination = FirstRunJourney.resumeDestination(for: viewModel.orientationState) else {
+            return
+        }
+        select(tab(for: destination.surface), resetIfReselected: false)
+        showOrientationPracticeOffer = destination.presentPracticeOffer && !viewModel.isRunning
     }
 
     private func startOrientationPractice() {
@@ -221,6 +301,17 @@ struct HomeView: View {
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(350))
             _ = viewModel.startOrientationPractice()
+        }
+    }
+
+    private func recordVisibleFarmLesson(_ step: CountingSheepOrientationStep) {
+        switch step {
+        case .farmMeetSheep: viewModel.recordFirstRunFarmAction(.metSheep)
+        case .farmCapacity: viewModel.recordFirstRunFarmAction(.sawCapacity)
+        case .farmWool: viewModel.recordFirstRunFarmAction(.sawWool)
+        case .farmShop: viewModel.recordFirstRunFarmAction(.visitedShop)
+        case .farmSearch: viewModel.recordFirstRunFarmAction(.visitedSearch)
+        default: break
         }
     }
 
@@ -312,13 +403,15 @@ struct HomeView: View {
         return selectedTab != .home
     }
 
-    private func select(_ tab: MainAppTab) {
+    private func select(_ tab: MainAppTab, resetIfReselected: Bool = true) {
         let isReselection = selectedTab == tab
-        if tab == .farm {
+        if tab == .farm, !isReselection {
             farmVisitSeed = UInt64.random(in: UInt64.min...UInt64.max)
         }
         selectedTab = tab
-        if tab == .home || isReselection {
+        if tab == .home {
+            resetNavigation(for: .home)
+        } else if resetIfReselected, isReselection {
             resetNavigation(for: tab)
         }
     }

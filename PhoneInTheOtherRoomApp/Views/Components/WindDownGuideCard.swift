@@ -356,20 +356,8 @@ struct WindDownGuideView: View {
     }
 
     private func sourceLabel(for item: WindDownGuidanceItem) -> String {
-        let labels = item.sourceIDs.compactMap { sourceTitle(for: $0) }
-        return labels.isEmpty ? "Counting Sheep guidance" : "Sources: " + labels.joined(separator: " · ")
-    }
-
-    private func sourceTitle(for id: String) -> String? {
-        switch id {
-        case "nhlbi-healthy-sleep": return "NHLBI healthy sleep habits"
-        case "nhlbi-sleep-wake-cycle": return "NHLBI sleep/wake cycle"
-        case "nhlbi-circadian-treatment": return "NHLBI circadian guidance"
-        case "va-stimulus-control": return "VA stimulus-control guidance"
-        case "counting-sheep-principles": return "Counting Sheep product principles"
-        case "counting-sheep-booklet": return "Counting Sheep wellness booklet"
-        default: return nil
-        }
+        let label = WindDownGuidanceSourcePresentation.combinedLabel(for: item)
+        return label == "Counting Sheep guidance" ? label : "Sources: " + label
     }
 }
 

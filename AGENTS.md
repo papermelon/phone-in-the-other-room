@@ -118,7 +118,7 @@ flowchart LR
    `UserDefaults` under `ollie.*`, including a 90-day session-and-event history. Detailed
    ritual, reflection, and HealthKit history remains local. Separately consented impact
    records omit exact dates/times, source names, selected apps, and raw Health samples.
-7. When ADR-0016's disabled-by-default Slumber Party is enabled, an eligible shared primary run
+7. When ADR-0016's TestFlight/Release-enabled Slumber Party is on, an eligible shared primary run
    queues only the member's coarse shared-goal progress after validation and success. The local
    run never waits for the network, and active Wind Down receives no social UI. Group progress
    may be named inside the invite-only party; app tokens, exact schedules, and impact data remain
@@ -127,7 +127,10 @@ flowchart LR
 The iPhone is the **authoritative** side of a run. The Watch displays state and reports a brief optional placement distance only.
 Persistence is UserDefaults + Codable JSON only — no CoreData or SwiftData. Core app
 state remains in standard defaults; scoped Screen Time selections and the explicit Quiet
-Note widget value use the `group.com.ngawangchime.countingsheep` App Group.
+Note widget value use the `group.com.ngawangchime.countingsheep` App Group. After first-run
+setup, Home presents a versioned resumable guide (`ollie.orientation.state`, schema 5) across
+Home, practice, Farm, Slumber Party, Settings, and Nights. Completing the Wind Down starting-point
+questionnaire owns the pending shepherd wearable; a later Farm tutorial claims it, then equips it.
 
 Full detail: `docs/ARCHITECTURE.md`.
 
@@ -159,6 +162,10 @@ Shared/                        ← Pure domain logic compiled into all targets
   ScreenTimeIntegration.swift    (Screen Time scopes + report context IDs)
   SleepIntervalMath.swift        (sleep interval merging)
   MorningCheckIn.swift           (private optional morning reflections; no score/reward)
+  Onboarding.swift               (first-run setup draft, questionnaire skip/grant rules)
+  FirstRunJourney.swift          (resumable Home/practice/Farm/Settings/Nights guide)
+  Orientation.swift              (schema-5 first-run guide persistence + contextual tips)
+  WelcomeReward.swift            (starter sheep, pending wearable, practice grant ledger)
 PhoneInTheOtherRoomApp/        ← iOS app
   App/                           (@main, App Intents / Shortcuts)
   Design/                        (Theme.swift, PixelComponents.swift — the design system)
@@ -360,7 +367,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 | Farm Shop + Ollie/farm cosmetics | Implemented, nested in Farm | Fixed local catalogue; follow ADR-0015 |
 | Human avatar + cosmetics | Implemented local foundation | Keep inclusive and data-compatible; expand with finished assets |
 | Friends screens | Debug internal-preview launch flag only | ADR-0003; Slumber Party does not ungate them |
-| Invite-only Slumber Party | Implemented, disabled by default | ADR-0016; schema-v2 shared goal, Apple/Supabase setup, hosted deployment, moderation operations, and physical two-account QA |
+| Invite-only Slumber Party | Implemented; TestFlight/Release enabled | ADR-0016; ordinary Debug stays off; hosted deployment, moderation operations, and physical two-account QA remain operational evidence |
 | Screen Time reports & pickers | Foundation enabled; physical-device QA pending | Family Controls distribution assigned to app + report extension |
 | HealthKit sleep duration/stages | Included for 1.0, optional and read-only | Physical-device reads + privacy disclosure |
 | NFC + app shielding for Night Watch | Included for 1.0, optional | New extension App IDs, Family Controls distribution, and physical overnight QA |
@@ -393,12 +400,14 @@ placement/source link, Settings grouping, and concrete Farm labels were reconcil
 2026-08-13. On 2026-08-16 the founder-directed Slumber Party revision added one bounded shared
 Wind Down goal, a 2–8 person lobby, named member progress, reusable invite codes, optional
 source-linked routine ideas, separate sharing controls, and coarse Screen Time shielding
-evidence. The same day’s first-run revision added a universal Wind Down starting point, one
-starter sheep, a pending shepherd wearable gift, a one-time onboarding-practice sheep,
-independent protected-night and Phone Away guarantee counters, and a 420-minute protected-span
-rule for qualifying Wind Down searches. Existing settled outcomes remain intact. General
-Friends and social-network restrictions still apply. Internal
-`additionalQuiet`, `PhoneBreak`, `QuietTime`, `NightWatch*`, persisted enum values, and `ollie.*`
-keys remain backward-compatible; none of those identifiers are user-facing copy.
+evidence. On 2026-08-16 the founder authorized TestFlight/Release archives to compile with
+`SUPABASE_NIGHT_FLOCK_ENABLED=YES`; ordinary Debug remains disabled. The same day’s first-run
+revision added a universal Wind Down starting point, one starter sheep, a pending shepherd
+wearable gift, a one-time onboarding-practice sheep, independent protected-night and Phone Away
+guarantee counters, and a 420-minute protected-span rule for qualifying Wind Down searches.
+Existing settled outcomes remain intact. General Friends and social-network restrictions still
+apply. Internal `additionalQuiet`, `PhoneBreak`, `QuietTime`, `NightWatch*`, persisted enum
+values, and `ollie.*` keys remain backward-compatible; none of those identifiers are user-facing
+copy.
 
 Continue to verify documentation claims against code and `project.yml` as the implementation moves.

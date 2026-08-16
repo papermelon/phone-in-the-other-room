@@ -4,9 +4,11 @@ final class OnboardingTests: XCTestCase {
     func testFirstRunUsesFiveVisibleStepsAndKeepsLegacyReminderCaseDecodable() throws {
         XCTAssertEqual(
             CountingSheepOnboardingStep.visibleSteps,
-            [.welcome, .schedule, .quiet, .protection, .ready]
+            [.welcome, .profile, .recommendation, .schedule, .quiet, .protection, .gift, .ready]
         )
         XCTAssertEqual(CountingSheepOnboardingStep.ready.progress, 1)
+        XCTAssertEqual(CountingSheepOnboardingStep.welcome.rawValue, 0)
+        XCTAssertEqual(CountingSheepOnboardingStep.ready.rawValue, 5)
 
         var legacyDraft = OnboardingDraft()
         legacyDraft.step = .automaticStart
