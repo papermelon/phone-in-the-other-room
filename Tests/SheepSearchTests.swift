@@ -193,7 +193,7 @@ final class SheepSearchTests: XCTestCase {
     func testTrailBoardFilterTitlesUseSearchLanguage() {
         XCTAssertEqual(SheepPosterFilter.missing.title, "Still searching")
         XCTAssertEqual(SheepPosterFilter.home.title, "Home")
-        XCTAssertEqual(SheepPosterFilter.all.title, "All trails")
+        XCTAssertEqual(SheepPosterFilter.all.title, "All sheep")
     }
 
     func testTrackedTrailChangesSelectionWeightButNotEncounterOdds() {

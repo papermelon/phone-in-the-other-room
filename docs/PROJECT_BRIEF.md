@@ -121,12 +121,13 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   one favoured lead; **Search Journal** for persisted results; and the nested Farm Shop plus
   Your Shepherd customization. Discovery history remains after an owned sheep is traded.
   The feature-flagged **Slumber Party** experience appears as a full-width contextual card on
-  Farm and Home when enabled. Two to eight Apple-linked,
-  invited members share only positive phone-tucked and quiet-morning states through one
-  seven-night challenge. It has preset identities, system aliases, fixed reactions, safety and
-  deletion controls, and no feed, chat, discovery, leaderboard, reward, or Farm economy effect.
-  Slumber Party may support commitment and shared joy, but routines, schedules, absence, Health
-  data, and private details remain unshared; active Wind Down has no social UI.
+  Farm and Home when enabled. The product promise is: “Slumber Party lets 2–8 people choose one
+  Wind Down goal, try routines that work for them, and encourage one another for seven nights.”
+  A lobby waits for at least two members, goal acceptance, local setup readiness, and an explicit
+  host start. Members keep their own bedtimes and routines; selected source-linked routine ideas
+  are optional. Named member progress, fixed reactions, safety controls, deletion, and reusable
+  invite codes stay inside the invite-only group. There is no feed, chat, discovery, leaderboard,
+  reward, or Farm economy effect. Active Wind Down has no social UI.
 - **Settings**: **Your Wind Down**, **Connections**, and **Help & app guide**. Your Wind Down
   contains Appearance, schedule, bookends, App Shielding or NFC + App Shielding, and automatic
   Wind Down and shielding. Help & app guide contains “How Wind Down works,” guidance beside

@@ -145,7 +145,7 @@ struct TrailBoardView: View {
                 Text(filter == .searching ? "Ollie has no new sheep to search for yet." : "No sheep are recorded here yet.")
                     .font(AppTypography.headline)
                 Text(filter == .searching
-                    ? "More sheep become available as protected Wind Downs add new trails."
+                    ? "More sheep become available as protected Wind Downs open new searches."
                     : "Complete a protected Wind Down to begin the Search Journal.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)

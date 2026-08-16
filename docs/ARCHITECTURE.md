@@ -3,7 +3,7 @@
 Practical architecture reference for humans and agents. Canonical rules live in
 [`AGENTS.md`](../AGENTS.md); this file goes deeper on structure, data flow, and risk.
 
-Last verified against code: 12 August 2026.
+Last verified against code: 16 August 2026.
 
 ## 1. Stack and build system
 
@@ -52,7 +52,10 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ RewardEngine.swift            protected-night progress + legacy reward updates
 ├─ FocusAnalytics.swift          day records, correlations, CSV/JSON export
 ├─ ImpactMeasurement.swift       local outcome comparison + minimised sharing record
-├─ NightFlockModels.swift        seven-day rules and positive-only social domain
+├─ NightFlockModels.swift        seven-day rules and backward-compatible social domain
+├─ NightFlockCommitment.swift    bounded shared goals, member status, setup, and shielding evidence
+├─ NightFlockV2API.swift         explicit schema-two commitment commands and responses
+├─ NightFlockOrientation.swift   persisted Slumber Party guide and contextual tips
 ├─ NightFlockPresentation.swift  aggregate and privacy presentation derivations
 ├─ NightFlockAPI.swift           versioned commands/state + monotonic outbox contracts
 ├─ NightWatchHistory.swift       90-day aggregate records + idempotent ritual events
@@ -101,7 +104,7 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ SupabaseLiveActivityRemoteSink.swift     disabled-by-default push registration sink
 │  ├─ NightFlockAccountService.swift           anonymous-to-Apple identity linking
 │  ├─ NightFlockService.swift                  typed Edge Function client
-│  └─ NightFlockOutboxService.swift            local monotonic positive-state retry queue
+│  └─ NightFlockOutboxService.swift            local monotonic v1/v2 retry queue
 ├─ ViewModels/FocusRunViewModel.swift          root view model, owns coordinator + Slumber Party VM
 ├─ ViewModels/NightFlockViewModel.swift        feature-gated social presentation and intents
 ├─ Views/
@@ -190,7 +193,10 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    guard. Suggestions have no checkmarks, verification, reward, score, streak, or completion claim.
    Outside the start window, the app saves the plan and schedules a wind-down reminder.
    The user-facing actions are **Put phone away**, **Start now**, and **Plan**. Guidance sits beside
-   routine choices, on Home, and in phase-appropriate moments. The full source library is local
+   routine choices, on Home, and in phase-appropriate moments. Home selects at most one compact
+   routine-linked idea below the primary Wind Down action; active primary Wind Down selects at
+   most one item for the current evening or morning phase after essential controls, and suppresses
+   guidance overnight. Phone Away has no guidance placement. The full source library is local
    and reached from the secondary **About these ideas and sources** link; “finite guide” is not
    user-facing copy.
 2. `FocusRunViewModel.requestStartNightWatch()` anchors a `NightWatchPlan` to tonight and
@@ -259,9 +265,9 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    and report configuration. Chosen report windows do not
    alter Wind Down or Phone Away. Missing data is never estimated.
    When ADR-0016's flag is enabled, Home and Farm may show one full-width contextual Slumber Party
-   card supporting commitment and shared joy; routines, schedules, absence, Health data, and
-   private details remain unshared. A successful eligible completion may show one
-   finite link to its anonymous shared-pasture result. None of these surfaces changes rewards.
+   card supporting the shared seven-night goal; routines, schedules, absence, Health data, and
+   private details remain unshared. Members may see named coarse progress inside the invited
+   group. None of these surfaces changes rewards.
 9. During an active Night Watch, Home is replaced by the live journey while Nights, Farm,
    and Settings remain mounted in the same four-tab shell. A persistent return strip resets
    nested navigation and returns to Home. Run start, app activation, and active-run notification
@@ -317,6 +323,27 @@ made the run valid. That callback enqueues `phoneTucked`; successful primary com
 additional-quiet runs have no context and therefore cannot publish. Stable
 challenge/member/day/run-derived hashes make retries idempotent, and foreground activation drains
 the monotonic UserDefaults outbox. Network work is asynchronous and never gates local run state.
+
+### Slumber Party shared commitment v2
+
+The v2 path is additive to the v1 positive-state path. `NightFlockCommitment.swift` owns the
+bounded goal catalogue, member setup/status, optional guidance IDs, and coarse shielding evidence.
+`NightFlockV2API.swift` encodes schema-two commands; the Edge Functions validate them and route to
+the timestamped commitment RPCs in `20260816100000_night_flock_shared_commitment_v2.sql`. The
+database keeps a pending lobby until at least two members have accepted the goal and completed
+local setup; only the host can explicitly start it. Reusable invites are hashed and capacity
+limited. RLS exposes projections only to current members, while service RPCs enforce Apple-linked
+authentication, idempotency, blocks, reports, retention, and deletion.
+
+The member projection contains only coarse setup and nightly states. It never contains Family
+Controls tokens, selected-app lists, raw Screen Time reports, exact schedules, or exact shield
+timestamps. Instagram is a member confirmation plus coarse local shielding observation, not a
+server-verifiable app identity. Social sharing uses its own preferences and outbox; impact and
+research sharing remains a separate local/cloud contract.
+
+The UI persists first-entry orientation at `ollie.nightFlock.orientation`, and v2 pending records
+at `ollie.nightFlock.commitmentOutbox`. Both are backward-compatible JSON. Active Wind Down still
+removes Slumber Party navigation and queues any allowed social event asynchronously.
 
 Home and Farm remove Slumber Party navigation when a run becomes active. `ActiveRunView` has no
 Slumber Party dependency, state, panel, badge, reaction, notification, or realtime subscription.

@@ -16,24 +16,28 @@ final class NightFlockViewModel: ObservableObject {
         case error(String)
     }
 
-    @Published private(set) var phase: Phase
+    @Published var phase: Phase
     @Published private(set) var diagnostics: NightFlockDiagnostics
     @Published private(set) var accountState: NightFlockAccountState {
         didSet {
             diagnostics = diagnostics.updatingAccountState(accountState)
         }
     }
-    @Published private(set) var snapshot: NightFlockSnapshot?
-    @Published private(set) var latestInviteCode: String?
-    @Published private(set) var latestInviteID: UUID?
+    @Published var snapshot: NightFlockSnapshot?
+    @Published var latestInviteCode: String?
+    @Published var latestInviteID: UUID?
+    @Published var invitePreview: NightFlockInvitePreview?
+    @Published var orientationState: NightFlockOrientationState
+    @Published var commitmentDraft = NightFlockCommitmentDraft()
     @Published var shareNextPrimaryRun = true
     @Published var selectedIdentity: NightFlockIdentity = .moonlitMeadow
     @Published var joinCode = ""
 
     let featureEnabled: Bool
     private let accountService: NightFlockAccountService?
-    private let service: NightFlockService?
-    private let outbox: NightFlockOutboxService?
+    let service: NightFlockService?
+    let outbox: NightFlockOutboxService?
+    let orientationStore: NightFlockOrientationStore
     private var pendingAppleNonce: String?
     private var runContexts: [UUID: NightFlockRunShareContext] = [:]
 
@@ -60,12 +64,16 @@ final class NightFlockViewModel: ObservableObject {
         previewSnapshot: NightFlockSnapshot? = nil,
         previewPhase: Phase? = nil,
         previewAccountState: NightFlockAccountState = .anonymous,
-        diagnostics: NightFlockDiagnostics? = nil
+        diagnostics: NightFlockDiagnostics? = nil,
+        orientationStore: NightFlockOrientationStore = NightFlockOrientationStore(),
+        previewOrientationState: NightFlockOrientationState? = nil
     ) {
         self.featureEnabled = featureEnabled
         self.accountService = accountService
         self.service = service
         self.outbox = outbox
+        self.orientationStore = orientationStore
+        orientationState = previewOrientationState ?? orientationStore.load()
         snapshot = previewSnapshot
         self.diagnostics = diagnostics ?? NightFlockDiagnostics.initial(
             featureFlag: featureEnabled ? .enabled : .disabled,
@@ -372,7 +380,11 @@ final class NightFlockViewModel: ObservableObject {
         guard let service else { return }
         if showLoading { phase = .loading }
         do {
-            snapshot = try await service.state()
+            do {
+                snapshot = try await service.stateV2()
+            } catch {
+                snapshot = try await service.state()
+            }
             phase = .ready
         } catch {
             phase = snapshot == nil ? .offline : .ready
@@ -409,6 +421,10 @@ final class NightFlockViewModel: ObservableObject {
 
     private func enqueue(state: NightFlockCheckInState, for context: NightFlockRunShareContext) {
         guard let outbox else { return }
+        if snapshot?.challenge.sharedGoal != nil {
+            enqueueCommitmentProgress(state: state, for: context)
+            return
+        }
         let record = NightFlockOutboxRecord(
             challengeID: context.challengeID,
             memberID: context.memberID,
@@ -429,8 +445,27 @@ final class NightFlockViewModel: ObservableObject {
         }
     }
 
-    private func flushOutbox() async {
+    func flushOutbox() async {
         guard accountState == .linked, let outbox, let service else { return }
+        for record in await outbox.v2Records() {
+            let status: NightFlockMemberNightStatus = record.status
+            do {
+                let response = try await service.sendV2(.publishProgress(
+                    challengeID: record.challengeID,
+                    day: record.challengeDay,
+                    status: status,
+                    shieldingEvidence: record.shieldingEvidence,
+                    idempotencyKey: record.idempotencyKey
+                ))
+                guard response.accepted else { throw NightFlockServiceError.unsupportedResponse }
+                await outbox.removeV2(record.id)
+                if let updated = response.snapshot { snapshot = updated }
+            } catch {
+                await outbox.markV2Attempt(record.id)
+                phase = snapshot == nil ? .offline : phase
+                return
+            }
+        }
         for record in await outbox.records() {
             do {
                 let response = try await service.send(.publishCheckIn(

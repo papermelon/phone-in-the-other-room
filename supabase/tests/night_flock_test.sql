@@ -477,4 +477,102 @@ begin
 end;
 $$;
 
+insert into auth.users (
+  id, instance_id, aud, role, is_anonymous, raw_app_meta_data, created_at, updated_at
+) values
+(
+  '10000000-0000-4000-8000-000000000013',
+  '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', false,
+  '{"provider":"apple","providers":["apple"]}'::jsonb, now(), now()
+),
+(
+  '10000000-0000-4000-8000-000000000014',
+  '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', false,
+  '{"provider":"apple","providers":["apple"]}'::jsonb, now(), now()
+);
+
+do $$
+declare
+  owner_id uuid := '10000000-0000-4000-8000-000000000013';
+  member_id uuid := '10000000-0000-4000-8000-000000000014';
+  result jsonb;
+  invite_code text;
+  challenge_id uuid;
+  owner_member_id uuid;
+begin
+  result := public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'createParty', 'goalKind', 'quietMinutes',
+    'targetMinutes', 30, 'appDisplayName', null, 'identity', 'moonlitMeadow',
+    'timeZoneIdentifier', 'UTC', 'idempotencyKey', repeat('1a', 32)
+  ));
+  challenge_id := (result -> 'snapshot' -> 'challenge' ->> 'id')::uuid;
+  owner_member_id := (result -> 'snapshot' ->> 'myMemberID')::uuid;
+  if (result -> 'snapshot' -> 'challenge' ->> 'status') <> 'pending' then
+    raise exception 'schema-two party did not start in a lobby';
+  end if;
+  if result -> 'snapshot' -> 'challenge' -> 'sharedGoal' ->> 'kind' <> 'quietMinutes' then
+    raise exception 'schema-two goal was not projected';
+  end if;
+
+  result := public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'createInvite', 'idempotencyKey', repeat('1b', 32)
+  ));
+  invite_code := result ->> 'inviteCode';
+  result := public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'previewInvite', 'shortCode', invite_code,
+    'idempotencyKey', repeat('1c', 32)
+  ));
+  if result -> 'invitePreview' ->> 'isReusable' <> 'true' then raise exception 'invite was not reusable'; end if;
+  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'redeemInvite', 'shortCode', invite_code,
+    'idempotencyKey', repeat('1d', 32)
+  ));
+  if (select status from public.night_flock_challenges where id = challenge_id) <> 'pending' then
+    raise exception 'joining started the schema-two lobby';
+  end if;
+
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'acceptGoal', 'challengeID', challenge_id, 'idempotencyKey', repeat('1e', 32)
+  ));
+  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'acceptGoal', 'challengeID', challenge_id, 'idempotencyKey', repeat('1f', 32)
+  ));
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'setLocalSetup', 'challengeID', challenge_id,
+    'setupReady', true, 'shieldingEvidence', 'notRequested', 'idempotencyKey', repeat('20', 32)
+  ));
+  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'setLocalSetup', 'challengeID', challenge_id,
+    'setupReady', true, 'shieldingEvidence', 'observed', 'idempotencyKey', repeat('21', 32)
+  ));
+  result := public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'startChallenge', 'challengeID', challenge_id, 'idempotencyKey', repeat('22', 32)
+  ));
+  if (result -> 'snapshot' -> 'challenge' ->> 'status') <> 'active' then raise exception 'host could not start ready lobby'; end if;
+  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'publishProgress', 'challengeID', challenge_id,
+    'day', 1, 'status', 'partiallyCompleted', 'shieldingEvidence', 'observed', 'idempotencyKey', repeat('23', 32)
+  ));
+  result := public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'schemaVersion', 2, 'command', 'publishProgress', 'challengeID', challenge_id,
+    'day', 1, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed', 'idempotencyKey', repeat('24', 32)
+  ));
+  if result -> 'snapshot' -> 'days' -> 0 -> 'memberProgress' is null then raise exception 'member progress was not projected'; end if;
+  if result -> 'snapshot' -> 'days' -> 0 -> 'pasture' -> 0 ->> 'state' <> 'morningQuietCompleted' then
+    raise exception 'schema-two progress did not preserve reaction-compatible check-in';
+  end if;
+  perform public.night_flock_command(owner_id, jsonb_build_object(
+    'command', 'react',
+    'checkInID', result -> 'snapshot' -> 'days' -> 0 -> 'pasture' -> 0 ->> 'id',
+    'reaction', 'warmWave',
+    'idempotencyKey', repeat('25', 32)
+  ));
+  result := public.night_flock_commitment_state(owner_id);
+  if result -> 'days' -> 0 -> 'pasture' -> 0 -> 'reactions' -> 0 ->> 'kind' <> 'warmWave' then
+    raise exception 'fixed reaction was not projected for schema-two progress';
+  end if;
+  if result::text ~* 'selectedApps|applicationTokens|healthKit|exactBedtime|wakeTime|runID' then raise exception 'schema-two projection exposed local data'; end if;
+end;
+$$;
+
 rollback;

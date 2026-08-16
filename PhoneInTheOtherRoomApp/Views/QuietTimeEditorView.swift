@@ -33,6 +33,7 @@ struct QuietTimeEditorView: View {
     @State private var selectedWeekdays = Set(2...6)
     @State private var enabled = true
     @State private var error: String?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     init(mode: Mode, onComplete: @escaping (Bool) -> Void, initialError: String? = nil) {
         let defaultWindow = QuietPeriodScheduling.defaultWindow()
@@ -191,9 +192,13 @@ struct QuietTimeEditorView: View {
     }
 
     private var weekdayPicker: some View {
-        let labels = Calendar.current.shortWeekdaySymbols
-        return LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 7), spacing: AppSpacing.xs) {
-            ForEach(1...7, id: \.self) { day in
+        let calendar = Calendar.current
+        let labels = calendar.shortWeekdaySymbols
+        let columns = dynamicTypeSize.isAccessibilitySize
+            ? Array(repeating: GridItem(.flexible(), spacing: AppSpacing.xs), count: 3)
+            : Array(repeating: GridItem(.flexible(), spacing: AppSpacing.xs), count: 7)
+        return LazyVGrid(columns: columns, spacing: AppSpacing.xs) {
+            ForEach(weekdayOrder(calendar: calendar), id: \.self) { day in
                 Button(labels[day - 1]) {
                     if selectedWeekdays.contains(day) {
                         selectedWeekdays.remove(day)
@@ -202,23 +207,32 @@ struct QuietTimeEditorView: View {
                     }
                 }
                 .buttonStyle(PixelChipButtonStyle(isSelected: selectedWeekdays.contains(day)))
-                .accessibilityLabel(labels[day - 1])
+                .frame(minHeight: 44)
+                .accessibilityLabel(calendar.weekdaySymbols[day - 1])
                 .accessibilityValue(selectedWeekdays.contains(day) ? "Selected" : "Not selected")
+                .accessibilityHint("Double-tap to select or clear this day")
             }
+        }
+    }
+
+    private func weekdayOrder(calendar: Calendar) -> [Int] {
+        let firstWeekday = min(7, max(1, calendar.firstWeekday))
+        return (0..<7).map { offset in
+            ((firstWeekday - 1 + offset) % 7) + 1
         }
     }
 
     private func load() {
         if let oneTimeID,
            let item = viewModel.windDownSchedule.oneTimePeriods.first(where: { $0.id == oneTimeID }) {
-            title = item.title
+            title = PhoneAwayTerminology.editableTitle(item.title, role: item.role)
             starts = item.interval.start
             ends = item.interval.end
             enabled = item.enabled
         }
         if let routineID,
            let routine = viewModel.windDownSchedule.routines.first(where: { $0.id == routineID }) {
-            title = routine.title
+            title = PhoneAwayTerminology.editableTitle(routine.title, role: routine.role)
             let calendar = Calendar.current
             starts = routine.start.date(on: Date(), calendar: calendar)
             ends = routine.end.date(on: Date(), calendar: calendar)
@@ -316,6 +330,14 @@ struct QuietTimeEditorView: View {
         QuietTimeEditorView(mode: .oneTime(nil), onComplete: { _ in })
             .environmentObject(FocusRunViewModel())
             .environment(\.dynamicTypeSize, .accessibility2)
+    }
+}
+
+#Preview("Repeating Phone Away editor · accessibility Dynamic Type") {
+    NavigationStack {
+        QuietTimeEditorView(mode: .routine(nil), onComplete: { _ in })
+            .environmentObject(FocusRunViewModel())
+            .environment(\.dynamicTypeSize, .accessibility3)
     }
 }
 

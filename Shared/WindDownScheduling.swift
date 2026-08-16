@@ -12,9 +12,19 @@ enum WindDownOccurrenceRole: String, Codable, CaseIterable, Hashable {
 }
 
 enum PhoneAwayTerminology {
+    static let legacyDefaultTitle = "Phone Break"
+    static let defaultTitle = "Phone Away"
+
     static func userFacingTitle(_ title: String, role: WindDownOccurrenceRole) -> String {
-        guard role == .additionalQuiet, title == "Phone Break" else { return title }
-        return "Phone Away"
+        guard role == .additionalQuiet, title == legacyDefaultTitle else { return title }
+        return defaultTitle
+    }
+
+    /// The editor starts from the display value. Saving that unchanged value
+    /// therefore safely migrates only the legacy default, while custom titles
+    /// continue to pass through untouched.
+    static func editableTitle(_ title: String, role: WindDownOccurrenceRole) -> String {
+        userFacingTitle(title, role: role)
     }
 }
 

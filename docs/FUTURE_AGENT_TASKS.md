@@ -53,6 +53,13 @@ execute without human sign-off mid-task (final merge review still applies per
   controls, privacy-safe aggregation, retention implementation, and Swift/SQL/Deno tests. Nothing
   was deployed; the external release task below remains mandatory before enablement.
 
+- **2026-08-16 · Codex:** Reworked Slumber Party into the founder-directed schema-two shared
+  commitment: one bounded goal for 2–8 people, an explicit lobby/start gate, reusable hashed
+  invites, named coarse member progress, optional stable guidance IDs, local Family Controls
+  confirmation with coarse shielding evidence, separate social/impact controls, persisted
+  orientation and replayable contextual tips, and updated copy/privacy/QA contracts. The v1
+  outbox and decoder remain compatible; no hosted deployment or production flag change occurred.
+
 - **2026-08-11 · Codex:** Completed the Farm presentation pass: rebuilt the Farm Shop as a
   non-clipping category catalogue with one wool balance, owned progress, compact responsive item
   cards, and explicit affordability/equipment states; clarified Ollie's Search tracking copy and
@@ -263,13 +270,22 @@ execute without human sign-off mid-task (final merge review still applies per
 - **Gate:** ADR-0016 source implementation reviewed and local database validation green.
 - **Mode:** Human + Codex support · **Size:** M · **Autonomous:** no
 - **Accept:** enable Sign in with Apple for the main App ID and regenerate provisioning; configure
-  Supabase Apple Auth/manual linking; review and deploy migration `20260812120000_night_flock_mvp.sql`
-  and both Slumber Party functions; schedule daily retention; establish a staffed moderation and
-  deletion runbook; publish the updated privacy policy and App Privacy answers; then pass a physical
-  two-Apple-account matrix for create, one-use invite, join, all seven day boundaries, offline
-  outbox, per-night private reset, global sharing-off purge, completion/reactions, leave, block,
+  Supabase Apple Auth/manual linking; review and deploy the v1 migration plus
+  `20260816100000_night_flock_shared_commitment_v2.sql` and both Slumber Party functions; schedule
+  daily retention; establish a staffed moderation and deletion runbook; publish the updated privacy
+  policy and App Privacy answers; then pass a physical two-Apple-account matrix for goal selection,
+  reusable invite preview/redemption, lobby gating, all seven day boundaries, offline outbox,
+  private/no-update state, coarse Instagram shielding evidence, fixed reactions, leave, block,
   report, Slumber Party deletion, and full account deletion. Keep the release flag `NO` until every
   item passes. Do not infer multi-device or Apple identity success from simulator tests.
+
+### D5. Workshop reward decision gate
+- **Gate:** Founder choice required before any workshop copy promises a reward.
+- **Mode:** Human · **Size:** S · **Autonomous:** no
+- **Accept:** choose exactly one: an approved onboarding/starter gift; a dedicated workshop/demo
+  mode using production models; or wording that promises a smaller early reward rather than sheep.
+  Do not alter `RewardEngine` or grant sheep for a five-minute Wind Down test as part of Slumber
+  Party work.
 
 ## E. Later / explicitly postponed (do not start; citable refusals)
 

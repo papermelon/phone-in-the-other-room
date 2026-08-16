@@ -253,10 +253,10 @@ struct WindDownRecordDetailView: View {
                 if let outcome = searchOutcome {
                     PixelCard {
                         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text("OLLIE’S TRAIL NOTE")
+                            Text("SEARCH JOURNAL RESULT")
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.grass)
-                            Text(outcome.sheepID.flatMap(SheepCatalog.definition).map { "Found \($0.name)" } ?? "Trail clue saved")
+                            Text(outcome.sheepID.flatMap(SheepCatalog.definition).map { "Found \($0.name)" } ?? "Search clue saved")
                                 .font(AppTypography.headline)
                             Text(outcome.origin == .phoneBreak ? "Opened by \(PhoneAwaySearchMeter.maximumMinutes) Phone Away minutes" : "Opened by this Wind Down")
                                 .font(AppTypography.caption)

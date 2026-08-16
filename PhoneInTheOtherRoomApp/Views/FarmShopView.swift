@@ -422,14 +422,14 @@ private extension FarmShopCategory {
         case .ollie: return "FOR OLLIE"
         case .shepherd: return "YOUR WARDROBE"
         case .farm: return "AROUND THE FARM"
-        case .collectibles: return "TRAIL KEEPSAKES"
+        case .collectibles: return "FARM KEEPSAKES"
         }
     }
 
     var shopDescription: String {
         switch self {
         case .barn: return "Open another pasture when your flock needs more room."
-        case .ollie: return "Small trail treasures for the collie who brings everyone home."
+        case .ollie: return "Small farm treasures for the collie who brings everyone home."
         case .shepherd: return "Clothes and field gear for your place beside Ollie."
         case .farm: return "Add warm corners and familiar landmarks to the pasture."
         case .collectibles: return "Keep a few objects from the stories behind the flock."

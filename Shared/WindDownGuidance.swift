@@ -124,6 +124,34 @@ enum WindDownGuidanceLibrary {
         items.filter { $0.phase == phase }
     }
 
+    /// Returns one stable Home idea from the person's selected routines. The
+    /// routine order is intentional: evening ideas are the primary Home
+    /// context, with morning ideas as the finite fallback.
+    static func homeGuidance(
+        eveningRoutine: [WindDownRoutineStep],
+        morningRoutine: [WindDownRoutineStep]
+    ) -> WindDownGuidanceItem? {
+        selectedGuidance(in: eveningRoutine, expectedPhase: .windDown)
+            ?? selectedGuidance(in: morningRoutine, expectedPhase: .morningQuiet)
+    }
+
+    /// Returns one idea only when it belongs to the selected routine for the
+    /// current Wind Down phase. Overnight and complete phases intentionally
+    /// have no active guidance placement.
+    static func activeGuidance(
+        for phase: NightWatchPhase,
+        plan: NightWatchPlan
+    ) -> WindDownGuidanceItem? {
+        switch phase {
+        case .windDown:
+            return selectedGuidance(in: plan.eveningRoutine, expectedPhase: .windDown)
+        case .morningQuiet:
+            return selectedGuidance(in: plan.morningRoutine, expectedPhase: .morningQuiet)
+        case .overnight, .complete:
+            return nil
+        }
+    }
+
     static func featured(for phase: NightWatchPhase, seed: UUID) -> WindDownGuidanceItem? {
         let choices = items(for: phase)
         guard !choices.isEmpty else { return nil }
@@ -131,5 +159,21 @@ enum WindDownGuidanceLibrary {
             (partial &* 31) &+ UInt(scalar.value)
         }
         return choices[Int(seedValue % UInt(choices.count))]
+    }
+
+    private static func selectedGuidance(
+        in routine: [WindDownRoutineStep],
+        expectedPhase: NightWatchPhase
+    ) -> WindDownGuidanceItem? {
+        routine.lazy
+            .compactMap { step -> WindDownGuidanceItem? in
+                guard let guidanceID = step.guidanceID,
+                      let item = items.first(where: { $0.id == guidanceID }),
+                      item.phase == expectedPhase else {
+                    return nil
+                }
+                return item
+            }
+            .first
     }
 }

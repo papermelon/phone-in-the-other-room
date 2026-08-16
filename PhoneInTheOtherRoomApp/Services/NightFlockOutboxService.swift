@@ -2,6 +2,7 @@ import Foundation
 
 actor NightFlockOutboxService {
     static let outboxKey = "ollie.nightFlock.outbox"
+    static let v2OutboxKey = "ollie.nightFlock.commitmentOutbox"
     static let runContextsKey = "ollie.nightFlock.runContexts"
 
     private let defaults: UserDefaults
@@ -30,6 +31,36 @@ actor NightFlockOutboxService {
         guard let index = queued.firstIndex(where: { $0.id == id }) else { return }
         queued[index].attemptCount += 1
         save(queued, key: Self.outboxKey)
+    }
+
+    func v2Records() -> [NightFlockV2OutboxRecord] {
+        load([NightFlockV2OutboxRecord].self, key: Self.v2OutboxKey) ?? []
+    }
+
+    func enqueueV2(_ record: NightFlockV2OutboxRecord) {
+        var queued = v2Records()
+        if let index = queued.firstIndex(where: {
+            $0.challengeID == record.challengeID && $0.memberID == record.memberID
+                && $0.challengeDay == record.challengeDay && $0.runID == record.runID
+        }) {
+            if queued[index].status != .morningQuietCompleted {
+                queued[index] = record
+            }
+        } else {
+            queued.append(record)
+        }
+        save(Array(queued.sorted { $0.createdAt < $1.createdAt }.suffix(64)), key: Self.v2OutboxKey)
+    }
+
+    func markV2Attempt(_ id: UUID) {
+        var queued = v2Records()
+        guard let index = queued.firstIndex(where: { $0.id == id }) else { return }
+        queued[index].attemptCount += 1
+        save(queued, key: Self.v2OutboxKey)
+    }
+
+    func removeV2(_ id: UUID) {
+        save(v2Records().filter { $0.id != id }, key: Self.v2OutboxKey)
     }
 
     func remove(_ id: UUID) {
@@ -61,6 +92,7 @@ actor NightFlockOutboxService {
 
     func clear() {
         defaults.removeObject(forKey: Self.outboxKey)
+        defaults.removeObject(forKey: Self.v2OutboxKey)
         defaults.removeObject(forKey: Self.runContextsKey)
     }
 

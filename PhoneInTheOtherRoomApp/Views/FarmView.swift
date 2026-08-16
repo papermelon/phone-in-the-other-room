@@ -60,6 +60,8 @@ struct FarmDashboardContent: View {
     var onOpenNightFlock: () -> Void = {}
     let onSelectSheep: (FlockSheep) -> Void
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     private var latestOutcome: SheepSearchOutcome? { searchState.outcomes.last }
     private var readyCount: Int {
         state.activeSheep.filter {
@@ -169,8 +171,8 @@ struct FarmDashboardContent: View {
             } label: {
                 priorityLabel(
                     icon: "note.text",
-                    eyebrow: "LATEST TRAIL NOTE",
-                    title: latestOutcome.result == .found ? "Ollie brought a sheep home." : "Ollie saved a clue for the next trail.",
+                    eyebrow: "LATEST SEARCH JOURNAL ENTRY",
+                    title: latestOutcome.result == .found ? "Ollie brought a sheep home." : "Ollie saved a clue for the next search.",
                     detail: "Open Search Journal for the full search record."
                 )
             }
@@ -190,9 +192,9 @@ struct FarmDashboardContent: View {
         } else {
             priorityLabel(
                 icon: "pawprint.fill",
-                eyebrow: "THE FIRST TRAIL",
+                eyebrow: "THE FIRST SEARCH",
                 title: "The pasture is ready.",
-                detail: "Complete a protected Wind Down and Ollie will bring back a Trail Note.",
+                detail: "Complete a protected Wind Down and Ollie will bring back a Search Journal entry.",
                 showsDisclosure: false
             )
         }
@@ -237,12 +239,18 @@ struct FarmDashboardContent: View {
     }
 
     private var destinationGrid: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: AppSpacing.sm) {
+        LazyVGrid(columns: destinationColumns, spacing: AppSpacing.sm) {
             destination("The Barn", detail: "Manage flock & wool", badge: "\(state.activeSheep.count) / \(state.activeCapacity)", icon: "house.lodge.fill") { FarmBarnView() }
             destination("Ollie’s Search", detail: "Find missing sheep", badge: "\(searchableCount) available", icon: "map.fill") { TrailBoardView() }
             destination("Farm Shop", detail: "Spend wool on the Farm", badge: "\(state.woolBalance) wool", icon: "storefront.fill") { FarmShopView() }
             destination("Search Journal", detail: "Past arrivals & clues", badge: "\(searchState.outcomes.count) entries", icon: "note.text") { TrailNotesArchiveView() }
         }
+    }
+
+    private var destinationColumns: [GridItem] {
+        dynamicTypeSize.isAccessibilitySize
+            ? [GridItem(.flexible())]
+            : [GridItem(.flexible()), GridItem(.flexible())]
     }
 
     private func destination<Destination: View>(
@@ -256,6 +264,8 @@ struct FarmDashboardContent: View {
             destinationLabel(title, detail: detail, badge: badge, icon: icon)
         }
         .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title). \(detail). \(badge)")
     }
 
     private func destinationLabel(
@@ -273,23 +283,24 @@ struct FarmDashboardContent: View {
                 Text(badge)
                     .font(pixelFont(.caption2))
                     .foregroundStyle(AppColors.grass)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             Text(title)
                 .font(AppTypography.headline)
                 .foregroundStyle(AppColors.ink)
                 .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
             Text(detail)
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
-            Spacer(minLength: 0)
+                .fixedSize(horizontal: false, vertical: true)
             Image(systemName: "arrow.right")
                 .font(.caption.weight(.bold))
                 .foregroundStyle(AppColors.grass)
                 .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .frame(maxWidth: .infinity, minHeight: 126, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .padding(AppSpacing.md)
         .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.lg))
         .overlay {
@@ -451,7 +462,7 @@ struct FarmDashboardContent: View {
             onSelectSheep: { _ in }
         )
     }
-    .environment(\.sizeCategory, .accessibilityExtraExtraLarge)
+    .environment(\.dynamicTypeSize, .accessibility3)
 }
 
 #Preview("Farm · one sheep") {

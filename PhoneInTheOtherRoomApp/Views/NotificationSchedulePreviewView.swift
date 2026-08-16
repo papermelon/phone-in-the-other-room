@@ -52,7 +52,7 @@ struct NotificationSchedulePreviewView: View {
         if preview.isAdditionalQuiet {
             return "Starts \(date). These cues end with this Phone Away period and stay separate from the overnight ritual."
         }
-        return "Starts \(date). This is the finite cue schedule for this Wind Down. Usage-aware cues appear only after selected-app activity."
+        return "Starts \(date). These are the upcoming cues for this Wind Down. Usage-aware cues appear only after selected-app activity."
     }
 
     private func phaseSection(

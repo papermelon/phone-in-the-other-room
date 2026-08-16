@@ -1,238 +1,276 @@
 import SwiftUI
+import UIKit
+
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+import FamilyControls
+#endif
 
 struct NightFlockDashboard: View {
+    @EnvironmentObject private var focusViewModel: FocusRunViewModel
     @ObservedObject var viewModel: NightFlockViewModel
     let snapshot: NightFlockSnapshot
-    @State private var showLeaveConfirmation = false
-    @State private var showDataDeletionConfirmation = false
-    @State private var showAccountDeletionConfirmation = false
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+    @State private var showInstagramPicker = false
+#endif
 
-    private var challengeDay: Int? {
-        NightFlockChallengeDayRules.challengeDay(at: Date(), challenge: snapshot.challenge)
-    }
-
-    private var currentSummary: NightFlockDaySummary? {
-        challengeDay.flatMap { value in snapshot.days.first(where: { $0.day == value }) }
+    private var mySetup: NightFlockMemberSetup? {
+        snapshot.memberSetups.first(where: { $0.memberID == snapshot.myMemberID })
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            identityCard
-            NightFlockChallengeTrail(snapshot: snapshot)
-            aggregateCard
+            tonightGoal
+            mySetupCard
+            sevenNights
+            routineIdeas
+            ideasAndSources
+            inviteCard
             NavigationLink {
-                NightFlockSharedPastureView(viewModel: viewModel, snapshot: snapshot)
+                NightFlockSharingAccountView(viewModel: viewModel, snapshot: snapshot)
             } label: {
-                Label("Open the shared pasture", systemImage: "sunrise.fill")
+                Label("Sharing and account", systemImage: "lock.shield.fill")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(PixelPrimaryButtonStyle())
-
-            inviteCard
-            memberRoster
-            privacyControls
+            .buttonStyle(PixelChipButtonStyle(isSelected: false))
         }
-        .confirmationDialog("Leave this Slumber Party?", isPresented: $showLeaveConfirmation) {
-            Button("Leave Slumber Party", role: .destructive, action: viewModel.leave)
-        } message: {
-            Text("Shared pasture access ends immediately. Your local nights and Farm stay unchanged.")
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        .familyActivityPicker(
+            headerText: "Choose the apps to shield during Wind Down. Confirm that Instagram is included.",
+            footerText: "Apple keeps the selection on this iPhone. Counting Sheep does not receive the token or app list.",
+            isPresented: $showInstagramPicker,
+            selection: $focusViewModel.bedtimeActivitySelection
+        )
+        .onChange(of: focusViewModel.bedtimeActivitySelection) { _, _ in
+            focusViewModel.saveScreenTimeSelection(.bedtime)
         }
-        .confirmationDialog("Delete your Slumber Party data?", isPresented: $showDataDeletionConfirmation) {
-            Button("Delete Slumber Party data", role: .destructive, action: viewModel.deleteNightFlockData)
-        } message: {
-            Text("This removes your membership, check-ins, reactions, invites, and profile from Slumber Party.")
-        }
-        .confirmationDialog("Delete the full online account?", isPresented: $showAccountDeletionConfirmation) {
-            Button("Delete online account", role: .destructive, action: viewModel.deleteOnlineAccount)
-        } message: {
-            Text("This deletes the Supabase account and all online rows it owns. Local Counting Sheep data stays on this phone.")
-        }
+#endif
     }
 
-    private var identityCard: some View {
+    private var tonightGoal: some View {
         PixelCard {
-            HStack(spacing: AppSpacing.md) {
-                Image(systemName: snapshot.identity.symbolName)
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(AppColors.lavender)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(snapshot.identity.title)
-                        .font(AppTypography.title)
-                    Text(snapshot.challenge.status == .pending
-                        ? "Seven quiet nights begin when a second person joins."
-                        : "Day \(challengeDay ?? 7) of seven · \(snapshot.members.count) members")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryText)
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("TONIGHT’S SHARED GOAL").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+                if let goal = snapshot.challenge.sharedGoal {
+                    Text(goal.title).font(AppTypography.title)
+                    Text("Everyone chose this same goal. Your bedtime and routine can still be your own.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                    NightFlockTipCallout(
+                        viewModel: viewModel,
+                        tip: .sharedGoal,
+                        title: "Shared goal",
+                        message: "Everyone chose this same goal. Your bedtime and routine can still be your own."
+                    )
+                    if snapshot.challenge.status == .pending {
+                        Text("Lobby · " + String(snapshot.members.count) + " of 8 people").font(AppTypography.caption.weight(.semibold))
+                    } else if let day = NightFlockChallengeDayRules.challengeDay(at: Date(), challenge: snapshot.challenge) {
+                        Text("Night " + String(day) + " of 7").font(AppTypography.caption.weight(.semibold))
+                    } else if snapshot.challenge.status == .completed {
+                        Text("Seven nights complete").font(AppTypography.caption.weight(.semibold))
+                    }
                 }
             }
         }
     }
 
-    private var aggregateCard: some View {
-        let presentation = NightFlockAggregatePresentation.nighttime(
-            positiveCount: currentSummary?.phoneTuckedCount ?? 0,
-            memberCount: snapshot.members.count
-        )
-        return NightFlockStatusCard(
-            symbol: "iphone.slash",
-            title: presentation.title,
-            detail: presentation.detail
-        )
+    private var mySetupCard: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("MY SETUP").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+                Text(mySetup?.setupReady == true ? "Your shared-goal setup is ready." : "Set up the shared goal on this iPhone.")
+                    .font(AppTypography.headline)
+                Text("App choices stay here. Exact bedtime and wake time stay here too.")
+                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                NightFlockTipCallout(
+                    viewModel: viewModel,
+                    tip: .mySetup,
+                    title: "My setup",
+                    message: "Set up the shared goal on this iPhone. App choices stay here."
+                )
+                if snapshot.challenge.sharedGoal?.kind == .shieldInstagram {
+                    Text(mySetup?.shieldingEvidence.title ?? "Choose Instagram locally, then confirm it here.")
+                        .font(AppTypography.caption.weight(.semibold))
+                    Button("Choose apps on this iPhone") {
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+                        showInstagramPicker = true
+#else
+                        viewModel.commitmentDraft.shieldingEvidence = .unavailable
+#endif
+                    }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    Text("You confirm Instagram is included. Counting Sheep can only report coarse app-shielding observation.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                    Toggle("I confirmed Instagram is included", isOn: Binding(
+                        get: { viewModel.commitmentDraft.shieldingEvidence == .observed },
+                        set: {
+                            viewModel.commitmentDraft.shieldingEvidence = $0 ? .observed : .partial
+                        }
+                    ))
+                }
+                if mySetup?.goalAccepted != true {
+                    Button("Accept shared goal", action: viewModel.acceptSharedGoal)
+                        .frame(maxWidth: .infinity).buttonStyle(PixelPrimaryButtonStyle())
+                } else if mySetup?.setupReady != true {
+                    Button("Mark setup ready", action: viewModel.saveSharedSetup)
+                        .frame(maxWidth: .infinity).buttonStyle(PixelPrimaryButtonStyle())
+                } else {
+                    Label("Ready for the lobby", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(AppColors.grass)
+                }
+            }
+        }
+    }
+
+    private var sevenNights: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("OUR SEVEN NIGHTS").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+                Text("Follow through together").font(AppTypography.headline)
+                ForEach(snapshot.days) { day in
+                    let progresses = day.memberProgress
+                    HStack(alignment: .center, spacing: AppSpacing.sm) {
+                        Text("Night \(day.day)").font(AppTypography.body.weight(.semibold)).frame(width: 68, alignment: .leading)
+                        if progresses.isEmpty {
+                            Text(snapshot.challenge.status == .pending ? "Waiting for the lobby" : "No shared update")
+                                .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                        } else {
+                            HStack(spacing: AppSpacing.xs) {
+                                ForEach(progresses) { progress in
+                                    Label(progress.status.title, systemImage: progress.status.symbolName)
+                                        .font(AppTypography.caption)
+                                        .labelStyle(.iconOnly)
+                                        .foregroundStyle(statusColor(progress.status))
+                                        .accessibilityLabel("\(memberName(progress.memberID)), \(progress.status.title)")
+                                }
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .frame(minHeight: 44)
+                }
+                Text("Private/no update is not counted as completion. There are no rankings.")
+                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                NightFlockTipCallout(
+                    viewModel: viewModel,
+                    tip: .groupProgress,
+                    title: "Group progress",
+                    message: "See how the group is following through and send a small cheer."
+                )
+                NavigationLink {
+                    NightFlockSharedPastureView(viewModel: viewModel, snapshot: snapshot)
+                } label: {
+                    Label("Shared cheers", systemImage: "hands.clap.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                if snapshot.challenge.status == .pending && viewModel.isHost {
+                    Button("Start seven nights", action: viewModel.startSharedParty)
+                        .frame(maxWidth: .infinity)
+                        .buttonStyle(PixelPrimaryButtonStyle())
+                        .disabled(!viewModel.canStartSharedParty)
+                    Text(viewModel.canStartSharedParty ? "Everyone is ready." : "Start when two or more people have accepted the goal and finished local setup.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                }
+            }
+        }
+    }
+
+    private var routineIdeas: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("WHAT HELPS OUR GROUP WIND DOWN").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+                Text("Share routine ideas, if you want to").font(AppTypography.headline)
+                Text("These are ideas, not checklists. Different routines are expected.")
+                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                NightFlockTipCallout(
+                    viewModel: viewModel,
+                    tip: .sharedRoutineIdeas,
+                    title: "Shared routine ideas",
+                    message: "Share the ideas that help you. Different routines are expected."
+                )
+                Toggle("Share my selected ideas", isOn: Binding(
+                    get: { viewModel.commitmentDraft.sharing.shareRoutineIdeas },
+                    set: {
+                        viewModel.commitmentDraft.sharing.shareRoutineIdeas = $0
+                        viewModel.saveSharingPreferences()
+                    }
+                ))
+                ForEach(WindDownGuidanceLibrary.items.prefix(6)) { item in
+                    Button {
+                        if viewModel.commitmentDraft.sharedRoutineIDs.contains(item.id) {
+                            viewModel.commitmentDraft.sharedRoutineIDs.removeAll { $0 == item.id }
+                        } else if viewModel.commitmentDraft.sharedRoutineIDs.count < 3 {
+                            viewModel.commitmentDraft.sharedRoutineIDs.append(item.id)
+                        }
+                        viewModel.saveSharedRoutineIdeas()
+                    } label: {
+                        Label(item.title, systemImage: viewModel.commitmentDraft.sharedRoutineIDs.contains(item.id) ? "checkmark.square.fill" : "square")
+                            .frame(minHeight: 44, alignment: .leading)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+
+    private var ideasAndSources: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            NavigationLink {
+                NightFlockIdeasView()
+            } label: {
+                Label("Ideas and sources", systemImage: "book.closed.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+            NightFlockTipCallout(
+                viewModel: viewModel,
+                tip: .evidenceAndSources,
+                title: "Evidence and sources",
+                message: "These are general sleep-health ideas from Counting Sheep’s source library."
+            )
+        }
     }
 
     private var inviteCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("INVITE")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
+                Text("INVITE PEOPLE").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
                 if let code = viewModel.latestInviteCode {
-                    Text(code)
-                        .font(.system(.title2, design: .monospaced).weight(.bold))
-                        .textSelection(.enabled)
-                        .accessibilityLabel("Invite code \(code.map(String.init).joined(separator: " "))")
-                    Text("This one-use code expires in seven days.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryText)
-                    Button("Revoke code", role: .destructive, action: viewModel.revokeLatestInvite)
-                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                } else {
-                    Text("Invite one person at a time with a short code. No contacts access is needed.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryText)
-                    Button("Make an invite code", action: viewModel.createInvite)
-                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                        .disabled(snapshot.members.count >= 8)
-                }
-            }
-        }
-    }
-
-    private var memberRoster: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("FLOCK ROSTER")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                ForEach(snapshot.members) { member in
+                    Text(code).font(.system(.title2, design: .monospaced).weight(.bold)).textSelection(.enabled)
+                        .accessibilityLabel("Party code \(code.map(String.init).joined(separator: " "))")
+                    Text("Use this code until the lobby starts, expires, or reaches eight people.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                     HStack {
-                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text(member.alias)
-                                .font(AppTypography.body.weight(.semibold))
-                            Text(member.id == snapshot.myMemberID
-                                ? "You"
-                                : (member.role == .keeper ? "Pasture keeper" : "Flock member"))
-                                .font(AppTypography.caption)
-                                .foregroundStyle(AppColors.secondaryText)
-                        }
-                        Spacer()
-                        if member.id != snapshot.myMemberID {
-                            memberSafetyMenu(member)
-                        }
+                        Button("Copy code") { UIPasteboard.general.string = code }
+                        ShareLink(item: code) { Label("Share code", systemImage: "square.and.arrow.up") }
                     }
-                    .frame(minHeight: 44)
-                }
-            }
-        }
-    }
-
-    private func memberSafetyMenu(_ member: NightFlockMember) -> some View {
-        Menu {
-            ForEach(NightFlockReportReason.allCases) { reason in
-                Button("Report: \(reason.title)") {
-                    viewModel.report(member, reason: reason)
-                }
-            }
-            Button("Block and leave", role: .destructive) {
-                viewModel.block(member)
-            }
-        } label: {
-            Image(systemName: "ellipsis.circle")
-                .frame(width: 44, height: 44)
-        }
-        .accessibilityLabel("Safety options for \(member.alias)")
-    }
-
-    private var privacyControls: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("PRIVACY & ACCOUNT")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                Toggle("Allow positive check-ins", isOn: Binding(
-                    get: { snapshot.sharingEnabled },
-                    set: viewModel.setSharingEnabled
-                ))
-                    .tint(AppColors.grass)
-                Text("Only positive check-ins are shared. Routine steps, schedules, absence, missed nights, health data, app choices, and private details stay here.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-                Button("Leave Slumber Party") { showLeaveConfirmation = true }
-                Button("Delete my Slumber Party data") { showDataDeletionConfirmation = true }
-                Button("Delete full online account", role: .destructive) {
-                    showAccountDeletionConfirmation = true
-                }
-            }
-            .buttonStyle(PixelChipButtonStyle(isSelected: false))
-        }
-    }
-}
-
-struct NightFlockChallengeTrail: View {
-    let snapshot: NightFlockSnapshot
-
-    private var sharedDays: [NightFlockDaySummary] {
-        snapshot.days.filter {
-            $0.phoneTuckedCount > 0 || $0.morningQuietCompletedCount > 0
-        }
-    }
-
-    var body: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text(snapshot.challenge.status == .completed ? "SEVEN-NIGHT RESULT" : "SHARED MOMENTS")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                if sharedDays.isEmpty {
-                    Text("Shared moments will appear here when someone chooses to share.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryText)
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 } else {
-                    HStack(spacing: AppSpacing.xs) {
-                        ForEach(sharedDays) { summary in
-                            let day = summary.day
-                            VStack(spacing: AppSpacing.xxs) {
-                                Image(systemName: trailSymbol(for: summary))
-                                    .foregroundStyle(trailColor(summary: summary))
-                                Text("Day \(day)")
-                                    .font(pixelFont(.caption2))
-                            }
-                            .frame(maxWidth: .infinity)
-                            .accessibilityLabel(accessibilityLabel(day: day, summary: summary))
-                        }
-                    }
-                }
-                if snapshot.challenge.status == .completed {
-                    Text("Seven nights made room for shared moments. There is no rank or reward.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryText)
+                    Text("Invite people you know. The seven nights begin after everyone joins, accepts the goal, and the host starts.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                    NightFlockTipCallout(
+                        viewModel: viewModel,
+                        tip: .invitingPeople,
+                        title: "Inviting people",
+                        message: "Invite people you know. The seven nights begin after everyone has joined, accepted the goal, and the host starts."
+                    )
+                    Button("Create a reusable code", action: viewModel.createReusableInvite)
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 }
             }
         }
     }
 
-    private func trailSymbol(for summary: NightFlockDaySummary) -> String {
-        summary.morningQuietCompletedCount > 0 ? "sun.max.fill" : "moon.fill"
+    private func statusColor(_ status: NightFlockMemberNightStatus) -> Color {
+        switch status {
+        case .morningQuietCompleted: return AppColors.amber
+        case .sharedGoalCompleted: return AppColors.grass
+        case .partiallyCompleted: return AppColors.lavender
+        case .privateNoUpdate: return AppColors.muted
+        default: return AppColors.ink
+        }
     }
 
-    private func trailColor(summary: NightFlockDaySummary) -> Color {
-        summary.morningQuietCompletedCount > 0 ? AppColors.amber : AppColors.lavender
-    }
-
-    private func accessibilityLabel(day: Int, summary: NightFlockDaySummary) -> String {
-        summary.morningQuietCompletedCount > 0
-            ? "Day \(day), quiet morning shared"
-            : "Day \(day), phone tucked shared"
+    private func memberName(_ id: UUID) -> String {
+        snapshot.members.first(where: { $0.id == id })?.alias ?? "A group member"
     }
 }

@@ -137,6 +137,43 @@ final class WindDownSchedulingTests: XCTestCase {
         XCTAssertEqual(eligible.title, "Phone Away")
     }
 
+    func testLegacyRepeatingPhoneBreakTitleRendersAsPhoneAwayWithoutChangingStoredTitle() throws {
+        let routine = WindDownRoutine(
+            title: "Phone Break",
+            role: .additionalQuiet,
+            start: WindDownClockTime(hour: 20, minute: 0),
+            end: WindDownClockTime(hour: 21, minute: 0),
+            recurrence: .daily
+        )
+        let state = WindDownScheduleState(routines: [routine])
+        let period = try XCTUnwrap(
+            WindDownScheduleEngine.futureOccurrences(
+                in: state,
+                after: try date(2026, 8, 3, 19, 0),
+                calendar: calendar,
+                limit: 1
+            ).first
+        )
+
+        XCTAssertEqual(routine.title, PhoneAwayTerminology.legacyDefaultTitle)
+        XCTAssertEqual(PhoneAwayTerminology.editableTitle(routine.title, role: routine.role), "Phone Away")
+        XCTAssertEqual(routine.userFacingTitle, "Phone Away")
+        XCTAssertEqual(period.title, "Phone Away")
+    }
+
+    func testCustomPhoneAwayTitlesRemainUnchangedInEditorAndSchedule() {
+        let title = "A little room"
+
+        XCTAssertEqual(
+            PhoneAwayTerminology.editableTitle(title, role: .additionalQuiet),
+            title
+        )
+        XCTAssertEqual(
+            PhoneAwayTerminology.userFacingTitle(title, role: .additionalQuiet),
+            title
+        )
+    }
+
     func testRecurringPrimaryRestartIgnoresConsumedOccurrenceStateWithinProtectedWindow() throws {
         let preferences = NightWatchPreferences(
             bedtimeHour: 23,

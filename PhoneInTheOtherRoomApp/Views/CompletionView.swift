@@ -211,10 +211,10 @@ struct WindDownRevealView: View {
                 } else {
                     PixelCard {
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text("NO TRAIL NOTE SAVED")
+                            Text("No Search Journal entry saved.")
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.grass)
-                    Text("This Wind Down has no saved Trail Note.")
+                    Text("This Wind Down has no saved Search Journal entry.")
                         .font(AppTypography.headline)
                     Text("Your quiet-time receipt is still saved in Nights.")
                                 .font(AppTypography.body)
@@ -276,7 +276,7 @@ private struct FieldNoteTitle: View {
             Image(systemName: "leaf.fill")
                 .foregroundStyle(AppColors.grass)
                 .accessibilityHidden(true)
-            Text("TRAIL NOTE")
+            Text("SEARCH JOURNAL ENTRY")
                 .font(pixelFont(.title3))
                 .foregroundStyle(AppColors.ink)
         }
@@ -403,7 +403,7 @@ private struct TrailOnlyNote: View {
             FieldNoteMetric(
                 title: "Next eligible lead",
                 value: nextLead.map { "\($0.rarity.title) · \($0.habitat.title)" }
-                    ?? "All current trails explored"
+                    ?? "All current searches explored"
             )
             FieldNoteTrailDetails(outcome: outcome, showExactOdds: showExactOdds)
         }
@@ -416,7 +416,7 @@ private struct FieldNoteTrailDetails: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("TRAIL DETAILS")
+            Text("SEARCH DETAILS")
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
             if outcome.origin == .phoneBreak {
@@ -427,7 +427,7 @@ private struct FieldNoteTrailDetails: View {
                 )
             } else {
                 FieldNoteMetric(title: "Distance", value: String(format: "%.1f km", outcome.trailDistance))
-                FieldNoteMetric(title: "Trail strength", value: strengthLabel)
+                FieldNoteMetric(title: "Search strength", value: strengthLabel)
             }
             if outcome.origin == .windDown, outcome.trailMapBonusPercentagePoints > 0 {
                 FieldNoteMetric(
@@ -481,7 +481,7 @@ extension Notification.Name {
     static let countingSheepShowNightFlock = Notification.Name("countingSheep.showNightFlock")
 }
 
-#Preview("Trail Note found") {
+#Preview("Search Journal entry found") {
     NavigationStack {
         WindDownRevealView(
             outcome: SheepSearchOutcome(
@@ -497,7 +497,7 @@ extension Notification.Name {
     .environmentObject(FocusRunViewModel())
 }
 
-#Preview("Trail Note trail only · Reduce Motion") {
+#Preview("Search Journal clue only · Reduce Motion") {
     NavigationStack {
         WindDownRevealView(
             outcome: SheepSearchOutcome(

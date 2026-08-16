@@ -60,7 +60,7 @@ Counting Sheep includes:
 
 Only if Slumber Party is enabled for this submission, append:
 
-`• An optional invite-only seven-night Slumber Party with positive-only shared check-ins`
+`• An optional invite-only Slumber Party where 2–8 people choose one Wind Down goal and encourage one another for seven nights`
 
 NFC tags are optional. Wind Down always has a no-hardware path, and shielding always has a
 gentle early exit through the registered Wind Down tag or Counting Sheep.
@@ -153,10 +153,12 @@ SLUMBER PARTY (ONLY WHEN `SUPABASE_NIGHT_FLOCK_ENABLED=YES`)
 
 Slumber Party is nested under Farm and requires Sign in with Apple to create or join. It links the
 existing anonymous Supabase identity in place; it does not replace ownership or make the local
-Wind Down require an account. Reviewers need two Apple-linked test accounts and a one-use invite
-code to exercise the full flow. The feature shares only positive phone-tucked and completed
-quiet-morning states. Active Wind Down has no social UI. There is no feed, chat, discovery,
-leaderboard, reward, Farm transfer, free text, or named completion.
+Wind Down require an account. Reviewers need two Apple-linked test accounts and a reusable invite
+code to exercise the full flow. The group chooses one bounded Wind Down goal and may see named,
+coarse progress, setup readiness, fixed reactions, and optional source-linked routine ideas.
+Active Wind Down has no social UI. There is no feed, chat, discovery, leaderboard, reward, Farm
+transfer, or public posting. For an Instagram goal, the member confirms the local Apple picker
+selection; the server never receives the token or claims it independently verified Instagram.
 
 Keep `SUPABASE_NIGHT_FLOCK_ENABLED=NO` for App Review until the Apple capability/provider,
 hosted migration and functions, retention schedule, moderation operations, public policy/App

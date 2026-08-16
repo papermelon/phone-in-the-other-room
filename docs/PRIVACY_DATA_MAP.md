@@ -106,32 +106,35 @@ creating, joining, reading, or mutating a flock, the person must link that same 
 in with Apple. The app requests no Apple name or email scope. Supabase and Apple still process the
 provider identity needed to authenticate the account, and the stable Auth user ID is linked data.
 
-Slumber Party stores:
+Slumber Party stores a separate v2 commitment and lobby, one bounded goal, member acceptance and
+local-setup readiness, member sharing preferences, optional stable guidance IDs, coarse nightly
+progress, coarse shielding evidence, fixed reactions, hashed reusable invite data,
+expiry/revocation/redemption state, blocks, fixed-enum reports, service-only moderation actions,
+retention metadata, and ordinary security/operational logs maintained by Supabase. Current members
+may see approved display names and member-level progress inside the invited group.
 
-- a preset flock identity and server-generated member aliases;
-- current membership/role and the member's sharing setting;
-- a locked IANA timezone and one seven-day challenge date range;
-- only positive `phoneTucked` and `morningQuietCompleted` state by challenge day;
-- fixed reactions, hashed invite tokens, expiry/revocation/redemption state;
-- blocks, fixed-enum reports, and service-only moderation actions; and
-- ordinary security/operational logs maintained by Supabase.
+The shared projection can say goal accepted, setup ready, phone tucked away, meaningful partial
+progress, shared goal completed, morning quiet completed, or private/no update. Private/no update
+is not completion. The projection does not include Auth owner IDs, local run IDs, exact dates or
+times, exact schedules, absence explanations, private routines, or exact shield timestamps.
 
-Peer projections include roster aliases and positive aggregate state. Shared-pasture completion
-entries are unnamed. They do not include Auth owner IDs, local run IDs, exact event timestamps,
-private-night state, or any list of who did not check in. For a two- or three-member flock, copy
-suppresses an exact positive count where it would reveal an individual's absence.
+For an Instagram goal, Apple Family Controls supplies an opaque local token. The member selects
+apps in Apple's picker and confirms that Instagram is included. The token and selected-app list
+never reach Supabase. The app may share only not requested, unavailable, partial, or observed
+shielding evidence; the server does not claim it verified Instagram by name.
 
-Slumber Party never receives exact bedtime, wake time, run duration, early-ending reason, additional
-quiet, routine steps, schedules, absence, HealthKit or raw sleep data, Screen Time selections,
-selected apps, NFC information, purpose/cue text, notification state, Farm inventory, sheep, wool, transaction data, or
-`impact_nights`. These sources remain logically and permission-wise separate.
+Slumber Party never receives exact bedtime, wake time, run duration, early-ending reason,
+additional quiet, private routine steps, HealthKit or raw sleep data, raw Screen Time reports,
+selected-app tokens/lists, NFC information, purpose/cue text, notification state, Farm inventory,
+sheep, wool, transaction data, or `impact_nights`. Optional minimized impact/research sharing is
+a separate setting and record; neither consent enables the other.
 
 The app provides leave, block, report, sharing, Slumber Party deletion, and full online-account
 deletion controls. Blocking removes mutual visibility immediately and removes the blocker from
-the shared flock. Invite rows purge after 30 days (codes stop working after seven), raw check-ins
-and reactions after 90 days, and completed aggregate summaries after no more than 12 months unless
-deleted sooner. The hosted retention schedule and moderation process must be verified before the
-feature flag is enabled.
+the shared flock. Invite rows purge after 30 days (codes stop working after seven), nightly
+progress and reactions after 90 days, and completed commitment summaries after no more than 12
+months unless deleted sooner. The hosted retention schedule and moderation process must be
+verified before the feature flag is enabled.
 
 ## Optional feedback
 
@@ -165,8 +168,8 @@ the 1.0 implementation, expect at least:
 - Health & Fitness → Health (optional impact sharing);
 - Usage Data → Product Interaction (quiet/completion/shield evidence);
 - Identifiers → User ID (anonymous Supabase identity);
-- User Content → Other User Content (Slumber Party positive check-ins, fixed reactions, blocks,
-  and fixed-enum safety reports when Slumber Party is enabled);
+- User Content → Other User Content (Slumber Party shared-goal progress, optional routine ideas,
+  fixed reactions, blocks, and fixed-enum safety reports when Slumber Party is enabled);
 - Identifiers → Device ID (app installation ID and ActivityKit delivery identity);
 - Contact Info → Email Address (optional feedback replies);
 - User Content → Customer Support and Other User Content (feedback text);

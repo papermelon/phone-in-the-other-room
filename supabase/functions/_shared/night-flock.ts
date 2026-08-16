@@ -16,8 +16,24 @@ const commandFields: Record<string, string[]> = {
   deleteAccount: ["schemaVersion", "command", "idempotencyKey"],
 };
 
+const commitmentCommandFields: Record<string, string[]> = {
+  createParty: [
+    "schemaVersion", "command", "goalKind", "targetMinutes", "appDisplayName",
+    "identity", "timeZoneIdentifier", "idempotencyKey",
+  ],
+  createInvite: ["schemaVersion", "command", "idempotencyKey"],
+  previewInvite: ["schemaVersion", "command", "shortCode", "idempotencyKey"],
+  redeemInvite: ["schemaVersion", "command", "shortCode", "idempotencyKey"],
+  acceptGoal: ["schemaVersion", "command", "challengeID", "idempotencyKey"],
+  setLocalSetup: ["schemaVersion", "command", "challengeID", "setupReady", "shieldingEvidence", "idempotencyKey"],
+  setSharingPreferences: ["schemaVersion", "command", "shareGoalProgress", "shareRoutineIdeas", "idempotencyKey"],
+  setRoutineIdeas: ["schemaVersion", "command", "challengeID", "guidanceIDs", "idempotencyKey"],
+  startChallenge: ["schemaVersion", "command", "challengeID", "idempotencyKey"],
+  publishProgress: ["schemaVersion", "command", "challengeID", "day", "status", "shieldingEvidence", "idempotencyKey"],
+};
+
 export type NightFlockCommandPayload = Record<string, unknown> & {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   command: string;
   idempotencyKey: string;
 };
@@ -26,9 +42,11 @@ export function validateNightFlockCommand(
   body: Record<string, unknown>,
   headerIdempotencyKey: string | null,
 ): NightFlockCommandPayload {
-  if (body.schemaVersion !== 1) throw new Error("Unsupported schemaVersion");
+  if (body.schemaVersion !== 1 && body.schemaVersion !== 2) throw new Error("Unsupported schemaVersion");
   const command = requireString(body, "command");
-  const allowedFields = commandFields[command];
+  const allowedFields = body.schemaVersion === 2
+    ? commitmentCommandFields[command]
+    : commandFields[command];
   if (!allowedFields) throw new Error("Unsupported Slumber Party command");
   requireExactFields(body, allowedFields);
   const idempotencyKey = requireString(body, "idempotencyKey").toLowerCase();
@@ -37,7 +55,9 @@ export function validateNightFlockCommand(
     throw new Error("Idempotency key mismatch");
   }
 
-  switch (command) {
+  if (body.schemaVersion === 2) {
+    validateCommitmentCommand(body, command);
+  } else switch (command) {
     case "createFlock":
       requireEnum(body, "identity", ["moonlitMeadow", "orchardGate", "starlightHill"]);
       if (!/^[A-Za-z0-9_+\-/]{1,64}$/.test(requireString(body, "timeZoneIdentifier"))) {
@@ -80,13 +100,76 @@ export function validateNightFlockCommand(
       break;
   }
 
-  return { ...body, schemaVersion: 1, command, idempotencyKey } as NightFlockCommandPayload;
+  return { ...body, schemaVersion: body.schemaVersion, command, idempotencyKey } as NightFlockCommandPayload;
 }
 
-export function validateNightFlockState(body: Record<string, unknown>): { schemaVersion: 1 } {
+export function validateNightFlockState(body: Record<string, unknown>): { schemaVersion: 1 | 2 } {
   requireExactFields(body, ["schemaVersion"]);
-  if (body.schemaVersion !== 1) throw new Error("Unsupported schemaVersion");
-  return { schemaVersion: 1 };
+  if (body.schemaVersion !== 1 && body.schemaVersion !== 2) throw new Error("Unsupported schemaVersion");
+  return { schemaVersion: body.schemaVersion };
+}
+
+function validateCommitmentCommand(body: Record<string, unknown>, command: string): void {
+  switch (command) {
+    case "createParty":
+      requireEnum(body, "goalKind", ["phoneAway", "quietMinutes", "shieldInstagram"]);
+      requireEnum(body, "identity", ["moonlitMeadow", "orchardGate", "starlightHill"]);
+      if (body.targetMinutes !== undefined && body.targetMinutes !== null &&
+          (typeof body.targetMinutes !== "number" || !Number.isSafeInteger(body.targetMinutes) || body.targetMinutes < 5 || body.targetMinutes > 180)) {
+        throw new Error("Invalid targetMinutes");
+      }
+      if (body.appDisplayName !== undefined && body.appDisplayName !== null &&
+          (typeof body.appDisplayName !== "string" || body.appDisplayName.length > 40)) {
+        throw new Error("Invalid appDisplayName");
+      }
+      if (body.goalKind === "quietMinutes" &&
+          (typeof body.targetMinutes !== "number" || !Number.isSafeInteger(body.targetMinutes))) {
+        throw new Error("Invalid targetMinutes");
+      }
+      if (!/^[A-Za-z0-9_+\-/]{1,64}$/.test(requireString(body, "timeZoneIdentifier"))) {
+        throw new Error("Invalid timeZoneIdentifier");
+      }
+      break;
+    case "previewInvite":
+    case "redeemInvite":
+      if (!/^[A-HJ-NP-Z2-9]{12}$/.test(requireString(body, "shortCode").toUpperCase())) {
+        throw new Error("Invalid shortCode");
+      }
+      body.shortCode = requireString(body, "shortCode").toUpperCase();
+      break;
+    case "acceptGoal":
+    case "startChallenge":
+      requireUUID(body, "challengeID");
+      break;
+    case "setLocalSetup":
+      requireUUID(body, "challengeID");
+      if (typeof body.setupReady !== "boolean") throw new Error("Invalid setupReady");
+      requireEnum(body, "shieldingEvidence", ["notRequested", "unavailable", "partial", "observed"]);
+      break;
+    case "setSharingPreferences":
+      if (typeof body.shareGoalProgress !== "boolean" || typeof body.shareRoutineIdeas !== "boolean") {
+        throw new Error("Invalid sharing preferences");
+      }
+      break;
+    case "setRoutineIdeas":
+      requireUUID(body, "challengeID");
+      if (!Array.isArray(body.guidanceIDs) || body.guidanceIDs.length > 3 ||
+          body.guidanceIDs.some((value) => typeof value !== "string" || value.length < 1 || value.length > 80)) {
+        throw new Error("Invalid guidanceIDs");
+      }
+      break;
+    case "publishProgress":
+      requireUUID(body, "challengeID");
+      if (typeof body.day !== "number" || !Number.isSafeInteger(body.day) || body.day < 1 || body.day > 7) {
+        throw new Error("Invalid day");
+      }
+      requireEnum(body, "status", [
+        "goalAccepted", "setupReady", "phoneTuckedAway", "partiallyCompleted",
+        "sharedGoalCompleted", "morningQuietCompleted", "privateNoUpdate",
+      ]);
+      requireEnum(body, "shieldingEvidence", ["notRequested", "unavailable", "partial", "observed"]);
+      break;
+  }
 }
 
 function requireExactFields(body: Record<string, unknown>, fields: string[]): void {

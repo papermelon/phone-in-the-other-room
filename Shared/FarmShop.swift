@@ -118,8 +118,8 @@ enum FarmShopCatalog {
         FarmShopItem(id: "barn_paddock_60", title: "Wide Pasture", detail: "The full 60-sheep Farm.", category: .barn, woolCost: 170, symbolName: "sun.horizon.fill", visualStyle: "amber", effect: .capacity(level: 4)),
 
         FarmShopItem(id: "ollie_moss_bandana", title: "Moss Bandana", detail: "A soft green knot for Ollie.", category: .ollie, woolCost: 3, symbolName: "leaf.fill", inventoryAssetName: "shop/shop_ollie_classic_moss_bandana", equippedRenderAsset: .ollieAccessory(overlayAssetName: "dog/dog_classic_farm_moss_bandana_equipped_overlay"), visualStyle: "grass", effect: .ollieAccessory),
-        FarmShopItem(id: "ollie_moon_kerchief", title: "Moon Kerchief", detail: "Night-sky wool for long trails.", category: .ollie, woolCost: 6, symbolName: "moon.stars.fill", inventoryAssetName: "shop/shop_ollie_classic_moon_kerchief", equippedRenderAsset: .ollieAccessory(overlayAssetName: "dog/dog_classic_farm_moon_kerchief_equipped_overlay"), visualStyle: "lavender", effect: .ollieAccessory),
-        FarmShopItem(id: "ollie_brass_bell", title: "Brass Trail Bell", detail: "A small bell for the pasture gate.", category: .ollie, woolCost: 4, symbolName: "bell.fill", inventoryAssetName: "shop/shop_ollie_classic_brass_trail_bell", equippedRenderAsset: .ollieAccessory(overlayAssetName: "dog/dog_classic_farm_brass_trail_bell_equipped_overlay"), visualStyle: "amber", effect: .ollieAccessory),
+        FarmShopItem(id: "ollie_moon_kerchief", title: "Moon Kerchief", detail: "Night-sky wool for long walks.", category: .ollie, woolCost: 6, symbolName: "moon.stars.fill", inventoryAssetName: "shop/shop_ollie_classic_moon_kerchief", equippedRenderAsset: .ollieAccessory(overlayAssetName: "dog/dog_classic_farm_moon_kerchief_equipped_overlay"), visualStyle: "lavender", effect: .ollieAccessory),
+        FarmShopItem(id: "ollie_brass_bell", title: "Brass Farm Bell", detail: "A small bell for the pasture gate.", category: .ollie, woolCost: 4, symbolName: "bell.fill", inventoryAssetName: "shop/shop_ollie_classic_brass_trail_bell", equippedRenderAsset: .ollieAccessory(overlayAssetName: "dog/dog_classic_farm_brass_trail_bell_equipped_overlay"), visualStyle: "amber", effect: .ollieAccessory),
 
         FarmShopItem(
             id: "shepherd_wool_hat",
@@ -144,10 +144,10 @@ enum FarmShopCatalog {
 
         FarmShopItem(id: "farm_flower_patch", title: "Clover Patch", detail: "A flowering corner for the pasture.", category: .farm, woolCost: 4, symbolName: "camera.macro", inventoryAssetName: "shop/shop_farm_flower_patch", visualStyle: "grass", effect: .farmDecoration),
         FarmShopItem(id: "farm_lanterns", title: "Barn Lanterns", detail: "A warm light beside the Barn.", category: .farm, woolCost: 3, symbolName: "lightbulb.fill", inventoryAssetName: "shop/shop_farm_lanterns", visualStyle: "amber", effect: .farmDecoration),
-        FarmShopItem(id: "farm_moon_gate", title: "Moon Gate", detail: "A silver marker for the night trail.", category: .farm, woolCost: 5, symbolName: "moon.fill", inventoryAssetName: "shop/shop_farm_moon_gate", visualStyle: "lavender", effect: .farmDecoration),
+        FarmShopItem(id: "farm_moon_gate", title: "Moon Gate", detail: "A silver marker for the night pasture.", category: .farm, woolCost: 5, symbolName: "moon.fill", inventoryAssetName: "shop/shop_farm_moon_gate", visualStyle: "lavender", effect: .farmDecoration),
         FarmShopItem(id: "farm_twilight_banner", title: "Twilight Banner", detail: "A wool banner above the fence.", category: .farm, woolCost: 7, symbolName: "flag.fill", inventoryAssetName: "shop/shop_farm_twilight_banner", visualStyle: "berry", effect: .farmDecoration),
 
-        FarmShopItem(id: "collectible_trail_pin", title: "Brass Trail Pin", detail: "A keepsake from Ollie’s first map.", category: .collectibles, woolCost: 3, symbolName: "mappin.and.ellipse", inventoryAssetName: "shop/shop_collectible_trail_pin", visualStyle: "amber", effect: .collectible),
+        FarmShopItem(id: "collectible_trail_pin", title: "Brass Search Pin", detail: "A keepsake from Ollie’s first map.", category: .collectibles, woolCost: 3, symbolName: "mappin.and.ellipse", inventoryAssetName: "shop/shop_collectible_trail_pin", visualStyle: "amber", effect: .collectible),
         FarmShopItem(id: "collectible_story_bell", title: "Storybook Bell", detail: "A tiny bell from Storybook Barn.", category: .collectibles, woolCost: 10, symbolName: "book.closed.fill", inventoryAssetName: "shop/shop_collectible_story_bell", visualStyle: "wood", effect: .collectible)
     ]
 

@@ -4,7 +4,7 @@ import {
   handleNightFlockState,
   NightFlockCommandDependencies,
 } from "./night-flock-handlers.ts";
-import { validateNightFlockCommand } from "./night-flock.ts";
+import { validateNightFlockCommand, validateNightFlockState } from "./night-flock.ts";
 
 const userID = "10000000-0000-4000-8000-000000000001";
 const challengeID = "20000000-0000-4000-8000-000000000001";
@@ -58,6 +58,41 @@ Deno.test("Slumber Party payload validates identifiers, enums, days, and invite 
     command: "leave",
     idempotencyKey: key,
   }, "b".repeat(64)), Error, "Idempotency key mismatch");
+});
+
+Deno.test("schema two accepts only bounded shared-goal and local setup fields", () => {
+  const v2Key = "c".repeat(64);
+  const create = validateNightFlockCommand({
+    schemaVersion: 2,
+    command: "createParty",
+    goalKind: "shieldInstagram",
+    targetMinutes: null,
+    appDisplayName: "Instagram",
+    identity: "moonlitMeadow",
+    timeZoneIdentifier: "Asia/Singapore",
+    idempotencyKey: v2Key,
+  }, v2Key);
+  assertEquals(create.schemaVersion, 2);
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 2,
+    command: "createParty",
+    goalKind: "quietMinutes",
+    targetMinutes: 181,
+    appDisplayName: null,
+    identity: "moonlitMeadow",
+    timeZoneIdentifier: "UTC",
+    idempotencyKey: v2Key,
+  }, v2Key), Error, "Invalid targetMinutes");
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 2,
+    command: "setLocalSetup",
+    challengeID,
+    setupReady: true,
+    shieldingEvidence: "observed",
+    appTokens: ["opaque"],
+    idempotencyKey: v2Key,
+  }, v2Key), Error, "Unexpected field");
+  assertEquals(validateNightFlockState({ schemaVersion: 2 }).schemaVersion, 2);
 });
 
 Deno.test("Slumber Party command rejects anonymous JWT callers", async () => {

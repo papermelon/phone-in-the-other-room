@@ -154,7 +154,7 @@ struct NightWatchGuidance {
             )
         case .morningMidpoint:
             return NightWatchNotificationCopy(
-                title: "Your morning trail is still here",
+                title: "Your morning quiet is still here",
                 body: tip ?? "Let the phone sleep a little longer and make room for your morning cue."
             )
         case .usageCue(let phase):
@@ -174,11 +174,11 @@ struct NightWatchGuidance {
                     title: "Your morning quiet is still here",
                     body: "The phone can sleep a little longer. Return to your morning cue when you are ready."
                 )
-            case .complete:
-                return NightWatchNotificationCopy(
-                    title: "The trail is complete",
-                    body: "Open Counting Sheep whenever you are ready."
-                )
+        case .complete:
+            return NightWatchNotificationCopy(
+                title: "Wind Down is complete",
+                body: "Open Counting Sheep whenever you are ready."
+            )
             }
         case .complete:
             return NightWatchNotificationCopy(

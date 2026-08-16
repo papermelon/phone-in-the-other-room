@@ -61,4 +61,13 @@ final class NightFlockDiagnosticsTests: XCTestCase {
         XCTAssertEqual(diagnostics.accountState, .linked)
         XCTAssertEqual(diagnostics.surface, .available)
     }
+
+    func testV2StateKeepsActiveWindDownSuppression() {
+        let diagnostics = NightFlockDiagnostics.initial(
+            featureFlag: .enabled,
+            configuration: .valid,
+            accountState: .linked
+        )
+        XCTAssertEqual(diagnostics.resolvingSurface(activeWindDown: true).surface, .suppressedForActiveWindDown)
+    }
 }

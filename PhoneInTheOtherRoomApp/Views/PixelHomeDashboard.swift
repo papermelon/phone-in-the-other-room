@@ -99,6 +99,13 @@ private struct PixelHomeDashboardContent: View {
     var onOpenNightFlock: () -> Void = {}
 
     private var latestNight: DailyFocusRecord? { progress.recentFocusRecords.first }
+    private var homeGuidance: WindDownGuidanceItem? {
+        guard preferences.isConfigured else { return nil }
+        return WindDownGuidanceLibrary.homeGuidance(
+            eveningRoutine: preferences.eveningRoutine,
+            morningRoutine: preferences.morningRoutine
+        )
+    }
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
@@ -129,6 +136,10 @@ private struct PixelHomeDashboardContent: View {
                 assetName: AssetSlot.Home.door,
                 action: onPrimaryAction
             )
+
+            if let guidance = homeGuidance {
+                WindDownGuideCard(item: guidance, compact: true)
+            }
 
             if let nightFlockSummary {
                 NightFlockHomeCard(summary: nightFlockSummary, action: onOpenNightFlock)
@@ -368,6 +379,33 @@ private struct NightWatchOverviewBlock: View {
                 upcomingAdditionalCount: 1,
                 immediateAdditionalQuietMinutes: nil,
                 phoneBreakMeterMinutes: PhoneAwaySearchMeter.maximumMinutes,
+                onPrimaryAction: {},
+                onEditTiming: {},
+                onQuietTimeSchedule: {},
+                onStartNow: {}
+            )
+            .padding(AppSpacing.md)
+        }
+        .background(AppColors.paper)
+    }
+}
+
+#Preview("Phone Away start now · secondary") {
+    NavigationStack {
+        ScrollView {
+            PixelHomeDashboardContent(
+                progress: .empty,
+                preferences: NightWatchPreferences.defaults,
+                purpose: OfflinePurposeProfile(category: .read),
+                watchReachable: false,
+                canBeginNow: false,
+                isNFCTagReady: true,
+                windDownStartContext: nil,
+                phoneAwayStartContext: nil,
+                nextUpcoming: nil,
+                upcomingAdditionalCount: 0,
+                immediateAdditionalQuietMinutes: 30,
+                phoneBreakMeterMinutes: 0,
                 onPrimaryAction: {},
                 onEditTiming: {},
                 onQuietTimeSchedule: {},

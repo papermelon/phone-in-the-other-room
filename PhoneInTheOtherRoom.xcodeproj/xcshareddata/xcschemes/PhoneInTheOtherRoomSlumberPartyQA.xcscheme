@@ -120,7 +120,7 @@
       buildConfiguration = "SlumberPartyQA">
    </AnalyzeAction>
    <ArchiveAction
-      buildConfiguration = "Release"
+      buildConfiguration = "SlumberPartyQA"
       revealArchiveInOrganizer = "YES">
    </ArchiveAction>
 </Scheme>
