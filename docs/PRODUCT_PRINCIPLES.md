@@ -23,14 +23,19 @@ Counting Sheep deliberately competes with the pull of social apps. It should bec
 habitual part of a sleep-bookends ritual—not by keeping people scrolling, but by making the
 phone-away choice feel warm, rewarding, and worth repeating.
 
-1. **One night, one search.** The first three completed protected nights guarantee a sheep.
-   After that, each completed night advances Ollie's search and may find a sheep. Encounter
-   odds, rarity, streak momentum, wanted posters, and a favoured Ollie's Search lead can shape
-   anticipation. Search outcomes are persisted once and protected by a bad-luck guarantee.
-   Completed Phone Away periods credit actual quiet minutes to a separate, centrally configured
-   100-minute meter (with carry-over),
-   then resolve one bonus search after the first three protected Wind Downs. Its chance ladder
-   is 20%, 30%, 40%, 50%, then guaranteed after four clue-only results; it never changes Wind Down odds.
+1. **One night, one homecoming.** A new Farm begins with one starter sheep. The first three
+   qualifying Wind Downs guarantee a sheep. A qualifying night needs a successfully completed
+   primary Wind Down whose protected span from eligible start through morning quiet is at
+   least 420 minutes; that span is never described as seven hours asleep.
+   After those three nights, each completed qualifying Wind Down may bring another sheep home.
+   Chance, rarity, wanted posters, and a favoured Ollie's Search lead can shape anticipation.
+   Outcomes are persisted once and protected by a bad-luck guarantee. Completed Phone Away
+   periods credit actual quiet minutes to a separate, centrally configured 100-minute meter
+   (with carry-over), then Ollie looks for a missing sheep after the first three Wind Downs.
+   The first three of those Phone Away finds also guarantee a sheep; later ones use a 20%,
+   30%, 40%, 50% ladder, then a guarantee after four clue-only results. Phone Away never
+   changes Wind Down odds. The onboarding-practice sheep consumes neither guarantee counter
+   nor the meter.
 2. **Discovery and ownership differ.** Search Journal and catalogue discoveries remain
    historical records. The active flock is finite inventory: sheep can stay, be sheared for
    wool, or be traded to another farm for wool without erasing the discovery.
@@ -39,8 +44,8 @@ phone-away choice feel warm, rewarding, and worth repeating.
    definitions; and a decorator can spend on Ollie, Your Shepherd, collectibles, and the Farm.
 4. **Capacity creates a decision.** A full Barn sends new sheep to a persisted arrival gate.
    The player makes room, expands, or sells; the app does not invent a silent outcome.
-5. **Progress stays linked to the ritual.** Wool regrowth advances through completed protected
-   nights. App opens, overnight hours, and passive wall-clock waiting do not manufacture Farm
+5. **Progress stays linked to the ritual.** Wool regrowth advances through completed Wind
+   Downs. App opens, overnight hours, and passive wall-clock waiting do not manufacture Farm
    output.
 6. **Blocking stays consensual.** The user picks
    what's blocked, shield copy is gentle, and an emergency exit is always available. We add

@@ -65,7 +65,7 @@ struct NightsRecordSection: View {
                 Label("LATEST NIGHT", systemImage: "moon.stars.fill")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Your first protected night will settle here.")
+                Text("Your first completed Wind Down will settle here.")
                     .font(AppTypography.headline)
                 Text("Quiet before bed and after waking will appear together after Wind Down.")
                     .font(AppTypography.caption)
@@ -102,7 +102,7 @@ struct NightsPrimaryResultCard: View {
     }
 
     private var statusTitle: String {
-        record.outcome == .completed ? "Protected night" : "Ended early"
+        record.outcome == .completed ? "Wind Down completed" : "Ended early"
     }
 
     var body: some View {

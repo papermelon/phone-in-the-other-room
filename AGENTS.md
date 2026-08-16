@@ -46,7 +46,7 @@ productivity timer or medical sleep tracker.
 - A Wind Down ritual app: put the phone away, wind down, and wake before it does
 - Warm, playful, cozy, emotionally safe — pixel-art farm aesthetic, gentle copy
 - Low friction: configure once, then one tap to start Wind Down; Phone Away stays optional
-- Honest about what it measures (quiet minutes around sleep, protected nights, and
+- Honest about what it measures (quiet minutes around sleep, and
   "nights your phone slept in the other room")
 - Purposeful gamification: sheep search, rarity, farm management, collection, trading,
   customization, and anticipation give Wind Down a meaningful narrative payoff
@@ -232,9 +232,16 @@ skills/                        ← portable agent skills (see skills/README.md)
   evaluated for clarity and fit with the bedtime ritual, not accepted or rejected through a
   generic checklist. See `skills/product-copy-review/SKILL.md`.
 - No medical claims ("improves sleep", "fixes insomnia"). Say "helps you wind down", "phone-away habit".
-- Habit formation is intentional: the first three completed protected nights settle a sheep;
-  later nights advance Ollie's search and can discover common, uncommon, rare, or legendary
-  sheep. Search odds, streak momentum, and wanted posters may create anticipation.
+- Habit formation is intentional: a new Farm starts with one starter sheep. Completing the
+  local Wind Down starting-point questionnaire grants a pending shepherd wearable. The first
+  successful five-minute onboarding practice grants one additional sheep without consuming a
+  protected-night or Phone Away guarantee. The first three qualifying protected Wind Down
+  searches, and independently the first three completed 100-minute Phone Away meter searches,
+  guarantee a sheep; later searches on each track use that track's chance and bad-luck
+  protection. A qualifying protected-night search requires a successfully completed primary
+  Wind Down whose protected span from eligible start through morning quiet is at least 420
+  minutes. That span is a progression rule, not a claim about hours asleep. Quiet credit
+  remains the two bookends.
 - Search outcomes are deterministic after resolution, persisted once, and protected against
   unreasonable bad luck. Missing data never lowers the search chance.
 - The Farm progression direction separates a permanent discovery/history record from the
@@ -254,8 +261,10 @@ skills/                        ← portable agent skills (see skills/README.md)
   does not need automatic sheep deletion after a missed night; future lifecycle mechanics remain
   open product decisions rather than assumed permanent restrictions.
 - Successfully completed additional-quiet periods map up to the centrally configured 100-minute
-  Phone Away search meter toward a future non-guaranteed search. They never resolve sheep;
-  guaranteed or early-ended primary runs consume no mapped minutes.
+  Phone Away search meter. After three protected Wind Downs, each completed meter opens one
+  Phone Away search. The first three of those meter searches guarantee a sheep; later ones use
+  the isolated 20/30/40/50 ladder and a four-clue bad-luck guarantee. They never change Wind
+  Down odds. Practice and early-ended runs consume no mapped minutes.
 - The user-facing action labels are **“Put phone away,” “Start now,”** and **“Plan.”** Copy does
   not force the mode name into awkward verbs.
 - Wind Down setup may hold up to three ordered evening suggestions and two morning suggestions.
@@ -265,8 +274,12 @@ skills/                        ← portable agent skills (see skills/README.md)
   **“About these ideas and sources”** link; “finite guide” is an internal description only.
 - Settings is organized as **Your Wind Down**, **Connections**, and **Help & app guide**. There is
   one Wind Down configuration route, not a duplicate Review Wind Down route.
-- Farm's user-facing task labels are **Ollie's Search** and **Search Journal**. Existing internal
-  search/history type names may remain stable while copy migrates.
+- Farm's user-facing task labels are **Ollie's Search** (the missing-sheep board) and
+  **Search Journal** (history). Do not call a completed Wind Down or Phone Away note a
+  “search” or a “protected night.” First-run sheep and the questionnaire wearable are
+  **welcome gifts**. After a completed Wind Down or Phone Away, a found sheep is “Ollie
+  found a missing sheep.” Existing internal search/history type names may remain stable
+  while copy migrates.
 - Use the belonging test in `docs/PRODUCT_PRINCIPLES.md` to clarify how a feature supports the
   product. It is a decision aid, not a veto over explicit founder direction.
 
@@ -380,7 +393,11 @@ placement/source link, Settings grouping, and concrete Farm labels were reconcil
 2026-08-13. On 2026-08-16 the founder-directed Slumber Party revision added one bounded shared
 Wind Down goal, a 2–8 person lobby, named member progress, reusable invite codes, optional
 source-linked routine ideas, separate sharing controls, and coarse Screen Time shielding
-evidence. General Friends and social-network restrictions still apply. Internal
+evidence. The same day’s first-run revision added a universal Wind Down starting point, one
+starter sheep, a pending shepherd wearable gift, a one-time onboarding-practice sheep,
+independent protected-night and Phone Away guarantee counters, and a 420-minute protected-span
+rule for qualifying Wind Down searches. Existing settled outcomes remain intact. General
+Friends and social-network restrictions still apply. Internal
 `additionalQuiet`, `PhoneBreak`, `QuietTime`, `NightWatch*`, persisted enum values, and `ollie.*`
 keys remain backward-compatible; none of those identifiers are user-facing copy.
 

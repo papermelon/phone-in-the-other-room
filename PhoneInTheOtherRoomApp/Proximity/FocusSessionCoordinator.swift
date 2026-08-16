@@ -56,10 +56,10 @@ final class FocusSessionCoordinator: ObservableObject {
         self.watch = watch
         self.progress = persistence.progress
         self.rewards = persistence.rewards
+        self.farmState = persistence.farmState
         let savedSearchState = persistence.sheepSearchState
         self.sheepSearchState = savedSearchState
         self.latestSheepSearchOutcome = savedSearchState.lastOutcome
-        self.farmState = persistence.farmState
         watch.onMessage = { [weak self] message in
             Task { @MainActor in self?.handle(message) }
         }
@@ -379,6 +379,7 @@ final class FocusSessionCoordinator: ObservableObject {
             // Away settlement. If termination happened in that small window,
             // settle it now before returning the receipt to the UI.
             settlePhoneAwayIfNeeded(for: storedRun)
+            settleOnboardingPracticeIfNeeded(for: storedRun)
             run = storedRun
             return
         }
@@ -547,7 +548,8 @@ final class FocusSessionCoordinator: ObservableObject {
         // Launch recovery calls the same idempotent helper if termination
         // happened after lastRun but before this write.
         settlePhoneAwayIfNeeded(for: finalRun)
-        if finalRun.completedSuccessfully && finalRun.isProgressionEligibleNightWatch {
+        settleOnboardingPracticeIfNeeded(for: finalRun)
+        if FocusRunRules.qualifiesForProtectedNightSearch(finalRun) {
             let plan = finalRun.nightWatchPlan
             let evidence = SheepSearchEvidence(
                 windDownMinutes: finalRun.creditedWindDownMinutes,
@@ -628,6 +630,25 @@ final class FocusSessionCoordinator: ObservableObject {
         if let outcome = settlement.outcome {
             farmState.recordArrival(outcome)
             persistence.farmState = farmState
+            latestSheepSearchOutcome = outcome
+        }
+    }
+
+    private func settleOnboardingPracticeIfNeeded(for terminalRun: FocusRun) {
+        guard terminalRun.isPractice else { return }
+        let result = WelcomeRewardEngine.settlePractice(
+            run: terminalRun,
+            farm: farmState,
+            search: sheepSearchState,
+            ledger: persistence.welcomeRewardLedger,
+            now: terminalRun.endedAt ?? Date()
+        )
+        sheepSearchState = result.search
+        farmState = result.farm
+        persistence.sheepSearchState = result.search
+        persistence.farmState = result.farm
+        persistence.welcomeRewardLedger = result.ledger
+        if let outcome = result.outcome {
             latestSheepSearchOutcome = outcome
         }
     }

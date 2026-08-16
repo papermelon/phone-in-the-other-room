@@ -13,12 +13,15 @@ guards the ritual and offers a private sequence of up to three evening and two m
 suggestions. This is a Wind Down ritual, not a productivity tool or sleep-quality tracker. The established
 `NightWatch*` names remain internal for persisted-data compatibility.
 
-First-run onboarding makes the promise legible: app shielding is the simplest no-hardware
+First-run onboarding makes the promise legible: a short local questionnaire produces a
+non-clinical Wind Down starting point, the Farm begins with one starter sheep, and a pending
+shepherd wearable waits to be claimed later. App shielding is the simplest no-hardware
 starting point, NFC is an optional second layer, and Wind Down also offers locally bundled,
 cautious screen-time and general sleep-health ideas beside private routine choices. These ideas
 are invitations, not insomnia treatment, scores, or a feed. Its final save action explicitly hands off to a short,
 dismissible app tour that spotlights the real Home plan, start action, and bottom navigation. A real
-five-minute practice is offered afterward but never gates finishing the tour.
+five-minute practice is offered afterward but never gates finishing the tour; completing that
+practice grants one additional Farm sheep as a welcome gift, without counting as a Wind Down.
 
 ## Target user
 

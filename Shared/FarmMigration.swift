@@ -120,12 +120,20 @@ extension FarmState {
         appendTransaction(FarmTransaction(
             id: UUID(),
             idempotencyKey: "arrival:\(outcome.id.uuidString)",
-            kind: .arrival,
+            kind: transactionKind(for: outcome.origin),
             sheepID: flockSheep.id,
             itemID: nil,
             woolDelta: 0,
             createdAt: outcome.createdAt
         ))
+    }
+
+    private func transactionKind(for origin: SheepSearchOrigin) -> FarmTransactionKind {
+        switch origin {
+        case .starter: return .starterGrant
+        case .onboardingPractice: return .onboardingPracticeArrival
+        case .windDown, .phoneBreak, .unspecified: return .arrival
+        }
     }
 
     private mutating func recordLegacyDiscovery(definitionID: String, now: Date) {

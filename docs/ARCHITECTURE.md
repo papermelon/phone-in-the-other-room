@@ -66,6 +66,10 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ SleepIntervalMath.swift       merge sleep intervals → SleepSummary
 ├─ MorningCheckIn.swift          private, optional morning reflections (no score/reward)
 ├─ Onboarding.swift              first-run Wind Down setup draft and protection choices
+├─ WindDownProfile.swift          local questionnaire answers and Wind Down starting point
+├─ WelcomeReward.swift            starter sheep, pending wearable gift, and practice grant ledger
+├─ SheepSearchWelcome.swift       starter and onboarding-practice search calculations
+├─ SheepSearchPresentation.swift  user-facing welcome-gift and homecoming copy
 ├─ WindDownGuidance.swift         finite, source-linked screen-time and sleep-habit ideas
 ├─ SheepSearch.swift               deterministic search outcomes, posters, rarity, habitats
 ├─ SheepSearchState.swift          versioned outcomes, trail-map credit, and persisted state
@@ -442,11 +446,13 @@ by the iPhone.
 | `ollie.morningCheckIns` | `MorningCheckInHistory` | up to 45 days of private optional morning reflections |
 | `ollie.onboarding.version` | `Int` | completed first-run onboarding version |
 | `ollie.onboarding.draft` | `OnboardingDraft` | resumable first-run setup choices |
+| `ollie.windDown.profile` | `WindDownProfileRecord` | local Wind Down starting-point answers and deterministic recommendations |
+| `ollie.welcome.rewards` | `WelcomeRewardLedger` | idempotent starter, pending wearable gift, and practice-sheep grants |
 | `ollie.orientation.state` | `CountingSheepOrientationState` | versioned orientation status, real-action milestones, and practice run identity |
 | `ollie.notifications.preferences` | `NotificationPreferences` | cadence, authorization choices, sounds, optional channels, and versioned local message overrides |
 | `ollie.notifications.remindersEnabled` | `Bool` | backwards-compatible mirror of the notification master switch |
-| `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes including applied map bonus, trail-map minutes/run IDs, trail distance, no-find protection, odds preference |
-| `ollie.farm.state` | `FarmState` | versioned individual flock, pending arrivals, discovery history, capacity, wool, Shop ownership/equipment, avatar, and transaction history; schema v2 folds legacy Farm cash into wool at 5:1, rounded up |
+| `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes including starter/practice/Wind Down/Phone Away origins, trail-map minutes/run IDs, separate guarantee counters, trail distance, no-find protection, odds preference |
+| `ollie.farm.state` | `FarmState` | versioned individual flock, pending arrivals, discovery history, capacity, wool, Shop ownership/equipment, avatar, and transaction history including starter and welcome-gift records; schema v2 folds legacy Farm cash into wool at 5:1, rounded up |
 | `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
 | `ollie.phoneBedNFCTag.registration` | `PhoneBedTagRegistration` | local tag UUID + digest metadata; raw token is not retained |
 | `ollie.impactSharing.preferences` | `ImpactSharingPreferences` | explicit optional-sharing state and consent date |

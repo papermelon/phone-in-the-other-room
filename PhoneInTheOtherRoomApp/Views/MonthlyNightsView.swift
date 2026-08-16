@@ -103,7 +103,7 @@ struct MonthlyNightsView: View {
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(monthSummary.protectedNightCount) protected nights, \(monthSummary.recordedQuietMinutes) recorded quiet minutes, \(monthSummary.totalOccurrenceCount) periods")
+            .accessibilityLabel("\(monthSummary.protectedNightCount) Wind Downs completed, \(monthSummary.recordedQuietMinutes) recorded quiet minutes, \(monthSummary.totalOccurrenceCount) periods")
         }
     }
 
@@ -121,7 +121,7 @@ struct MonthlyNightsView: View {
 
     private var legend: some View {
         HStack(spacing: AppSpacing.sm) {
-            legendItem("Protected", systemImage: "shield.fill", color: AppColors.grass)
+            legendItem("Wind Down", systemImage: "shield.fill", color: AppColors.grass)
             legendItem("Ended early", systemImage: "moon.stars.fill", color: AppColors.warning)
             legendItem("One-time", systemImage: "sparkles", color: AppColors.lavender)
         }
@@ -323,7 +323,7 @@ struct MonthlyNightsView: View {
         var parts = ["\(date), \(summary.totalOccurrenceCount) period\(summary.totalOccurrenceCount == 1 ? "" : "s")"]
         switch summary.primaryOutcome {
         case .protected:
-            parts.append("protected night")
+            parts.append("Wind Down completed")
         case .endedEarly:
             parts.append("ended early")
         case nil:

@@ -15,6 +15,7 @@ enum FarmActionError: Error, Equatable {
     case insufficientFunds
     case upgradeOutOfSequence
     case maximumCapacityReached
+    case welcomeGiftAlreadyClaimed
 }
 
 enum FarmEconomyRules {
@@ -203,5 +204,32 @@ extension FarmState {
         }
         transactions.append(transaction)
         transactions = Array(transactions.suffix(Self.maximumTransactions))
+    }
+
+    mutating func grantWelcomeWearable(itemID: String, at date: Date = Date()) throws {
+        guard let item = FarmShopCatalog.item(for: itemID) else { throw FarmActionError.itemNotFound }
+        guard WelcomeRewardCatalog.isFinishedShepherdWearable(item.id) else {
+            throw FarmActionError.itemNotEquippable
+        }
+        let idempotencyKey = WelcomeRewardCatalog.wearableGiftKey(itemID: item.id)
+        if ownedShopItemIDs.contains(item.id)
+            || transactions.contains(where: { $0.idempotencyKey == idempotencyKey }) {
+            return
+        }
+        ownedShopItemIDs.append(item.id)
+        ownedShopItemIDs.sort()
+        appendTransaction(FarmTransaction(
+            id: UUID(),
+            idempotencyKey: idempotencyKey,
+            kind: .welcomeGift,
+            sheepID: nil,
+            itemID: item.id,
+            woolDelta: 0,
+            createdAt: date
+        ))
+    }
+
+    mutating func claimWelcomeWearable(itemID: String) throws {
+        try equip(itemID: itemID)
     }
 }

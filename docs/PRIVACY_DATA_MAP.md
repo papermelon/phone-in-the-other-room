@@ -19,10 +19,13 @@ The publication draft is `docs/PUBLIC_PRIVACY_POLICY.md`; App Store field guidan
 | Shield schedule/status evidence | Apply/clear the two bookends and avoid claiming unobserved protection | App Group; bounded 40 status entries | No |
 | NFC phone-bed registration | Confirm the chosen physical tag | Standard UserDefaults; SHA-256 digest only | No |
 | Flock/progress and legacy reward fields | Local ritual feedback and compatible decoding | Standard UserDefaults | No |
+| Wind Down starting point | Local questionnaire answers and deterministic recommendations | Standard UserDefaults (`ollie.windDown.profile`) | No |
+| Welcome reward ledger | Idempotent starter sheep, pending wearable gift, and practice-sheep grants | Standard UserDefaults (`ollie.welcome.rewards`) | No |
 
 Wind Down routine suggestions are a private ordered sequence: up to three evening suggestions
 and two morning suggestions, with putting the phone away fixed first. They are not checklists and
-carry no verification, reward, score, streak, or completion claim.
+carry no verification, reward, score, streak, or completion claim. The Wind Down starting-point
+questionnaire is local by default and is not a clinical assessment.
 
 Counting Sheep requests **read access only** to HealthKit
 `HKCategoryTypeIdentifierSleepAnalysis`. It does not request HealthKit write access,

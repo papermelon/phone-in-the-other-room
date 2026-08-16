@@ -150,8 +150,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .legacy,
                 eyebrow: "PHONE AWAY RECEIPT",
                 title: "Phone Away time saved.",
-                message: "This older receipt has no saved Phone Away bonus-search settlement, so no bonus-search progress is shown here.",
-                accessibilityLabel: "Phone Away receipt. This older receipt has no saved Phone Away bonus-search settlement, so no bonus-search progress is shown here.",
+                message: "This older receipt has no saved Phone Away gift progress, so none is shown here.",
+                accessibilityLabel: "Phone Away receipt. This older receipt has no saved Phone Away gift progress, so none is shown here.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -162,8 +162,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .practice,
                 eyebrow: "PHONE AWAY PRACTICE",
                 title: "Practice complete.",
-                message: "This was practice. \(record.creditedMinutes) completed minutes were saved in Nights; no Phone Away bonus-search progress was added.",
-                accessibilityLabel: "Phone Away practice complete. This was practice. \(record.creditedMinutes) completed minutes were saved in Nights; no Phone Away bonus-search progress was added.",
+                message: "This was practice. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away gift progress was not added.",
+                accessibilityLabel: "Phone Away practice complete. This was practice. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away gift progress was not added.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -174,8 +174,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .endedEarly,
                 eyebrow: "PHONE AWAY ENDED",
                 title: "Phone Away ended early.",
-                message: "\(record.creditedMinutes) completed minutes were saved in Nights. Phone Away bonus-search progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
-                accessibilityLabel: "Phone Away ended early. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away bonus-search progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
+                message: "\(record.creditedMinutes) completed minutes were saved in Nights. Phone Away gift progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
+                accessibilityLabel: "Phone Away ended early. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away gift progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -186,8 +186,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .belowMinimum,
                 eyebrow: "PHONE AWAY RECEIPT",
                 title: "Phone Away time saved.",
-                message: "No Phone Away bonus-search progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
-                accessibilityLabel: "Phone Away time saved. No Phone Away bonus-search progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
+                message: "No Phone Away gift progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
+                accessibilityLabel: "Phone Away time saved. No Phone Away gift progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -198,14 +198,19 @@ struct PhoneAwayReceiptPresentation: Equatable {
             let remainder = remaining == 0
                 ? "The Phone Away meter is empty."
                 : "The Phone Away meter has \(remaining) of \(SheepTrailMapState.maximumMappedMinutes) minutes remaining."
+            let found = outcome?.result == .found
             return PhoneAwayReceiptPresentation(
                 state: .resolved,
-                eyebrow: "PHONE AWAY BONUS SEARCH",
-                title: "Bonus search saved in Search Journal.",
-                message: "Your Phone Away bonus search is saved in Search Journal. \(remainder)",
-                accessibilityLabel: "Phone Away bonus search resolved. Your Phone Away bonus search is saved in Search Journal. \(remainder)",
-                searchLinkTitle: "Open Phone Away bonus search in Search Journal",
-                searchLinkHint: "Opens the Phone Away bonus search in Search Journal"
+                eyebrow: found ? "OLLIE FOUND A MISSING SHEEP" : "OLLIE KEPT A CLUE",
+                title: found ? "Ollie found a missing sheep." : "Ollie kept a clue.",
+                message: found
+                    ? "Ollie found a missing sheep. It's saved in Search Journal. \(remainder)"
+                    : "Ollie kept a clue in Search Journal. \(remainder)",
+                accessibilityLabel: found
+                    ? "Ollie found a missing sheep. It's saved in Search Journal. \(remainder)"
+                    : "Ollie kept a clue in Search Journal. \(remainder)",
+                searchLinkTitle: SheepSearchPresentation.completionLinkTitle(for: .phoneBreak),
+                searchLinkHint: SheepSearchPresentation.completionLinkHint(for: .phoneBreak)
             )
         }
 
@@ -216,8 +221,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .meterFullWhileLocked,
                 eyebrow: "PHONE AWAY METER",
                 title: "Your saved meter is waiting.",
-                message: "Your Phone Away meter is full at \(record.meterAfter) of \(SheepTrailMapState.maximumMappedMinutes) minutes. No additional minutes were added this time; the saved meter is waiting until three protected Wind Downs are complete.",
-                accessibilityLabel: "Your saved Phone Away meter is waiting. The meter is full at \(record.meterAfter) of \(SheepTrailMapState.maximumMappedMinutes) minutes. No additional minutes were added this time; it is waiting until three protected Wind Downs are complete.",
+                message: "Your Phone Away meter is full at \(record.meterAfter) of \(SheepTrailMapState.maximumMappedMinutes) minutes. No additional minutes were added this time; the saved meter is waiting until three Wind Downs are complete.",
+                accessibilityLabel: "Your saved Phone Away meter is waiting. The meter is full at \(record.meterAfter) of \(SheepTrailMapState.maximumMappedMinutes) minutes. No additional minutes were added this time; it is waiting until three Wind Downs are complete.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -225,8 +230,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
 
         let delta = record.appliedCreditDelta
         let bankingMessage = record.protectedWindDownCount < SheepSearchEngine.starterGuaranteeRuns
-            ? "The saved meter is locked until three protected Wind Downs are complete, so these minutes are banking there."
-            : "A full meter opens one Phone Away bonus search."
+            ? "The saved meter is locked until three Wind Downs are complete, so these minutes are banking there."
+            : "A full meter is when Ollie looks for a missing sheep."
         return PhoneAwayReceiptPresentation(
             state: .credited,
             eyebrow: "PHONE AWAY PROGRESS",

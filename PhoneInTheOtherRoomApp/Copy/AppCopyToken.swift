@@ -61,11 +61,11 @@ enum AppCopy {
         )
         static let title = AppCopyToken(
             id: "iphone.farm.header-title",
-            value: "Your flock, wool, and next search"
+            value: "Your flock, wool, and Ollie's finds"
         )
         static let detail = AppCopyToken(
             id: "iphone.farm.header-detail",
-            value: "Wind Down grows the Farm. Choose what to do with your sheep, wool, and next search."
+            value: "Wind Down grows the Farm. Choose what to do with your sheep, wool, and Ollie's next find."
         )
     }
 }

@@ -97,7 +97,7 @@ struct TrailBoardView: View {
                         Text("Choose one missing sheep for Ollie to favour.")
                             .font(AppTypography.headline)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Ollie will look more closely there when a search begins. It never guarantees who comes home.")
+                        Text("Ollie will look more closely there after Wind Down. It never guarantees who comes home.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
@@ -142,11 +142,11 @@ struct TrailBoardView: View {
                 Image(systemName: filter == .known ? "house.fill" : "pawprint.fill")
                     .font(.title2)
                     .foregroundStyle(AppColors.grass)
-                Text(filter == .searching ? "Ollie has no new sheep to search for yet." : "No sheep are recorded here yet.")
+                Text(filter == .searching ? "Ollie has no new missing sheep to look for yet." : "No sheep are recorded here yet.")
                     .font(AppTypography.headline)
                 Text(filter == .searching
-                    ? "More sheep become available as protected Wind Downs open new searches."
-                    : "Complete a protected Wind Down to begin the Search Journal.")
+                    ? "More sheep become available as completed Wind Downs open new missing-sheep notes."
+                    : "Finish Wind Down to begin the Search Journal.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }
@@ -165,12 +165,12 @@ private struct TrailBoardCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack {
-                Text(isDiscovered ? "FOUND" : isEligible ? "STILL SEARCHING" : "NOT YET AVAILABLE")
+                Text(isDiscovered ? "FOUND" : isEligible ? "STILL MISSING" : "NOT YET AVAILABLE")
                     .font(pixelFont(.caption2))
                     .foregroundStyle(isDiscovered ? AppColors.success : AppColors.bark)
                 Spacer()
                 if isNew && !isDiscovered {
-                    Text("NEW SEARCH")
+                    Text("NEW")
                         .font(pixelFont(.caption2))
                         .foregroundStyle(AppColors.berry)
                 }

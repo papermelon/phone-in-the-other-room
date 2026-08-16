@@ -181,3 +181,5 @@ backend, or session state machine is introduced.
 - Economy tuning from observed player strategies
 - Whether any future commercial purchase layer belongs; this ADR adds no real-money path
 - Friends or social features, which remain a separate decision
+- First-run questionnaire UI, Farm tutorial claim/equip flow, and copy for the welcome
+  wearable (domain rules are in ADR-0018)

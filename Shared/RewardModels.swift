@@ -102,7 +102,7 @@ struct RewardItem: Codable, Identifiable, Equatable {
         case .pastureFind:
             return "The time away from the screen left a little more room for the evening and morning you chose."
         case .nightMarker:
-            return "Protected nights gather one at a time. A gap never takes the earlier ones away."
+            return "Quiet nights gather one at a time. A gap never takes the earlier ones away."
         case .freshStart:
             return "Even a shorter quiet window can help the phone-away ritual feel more familiar."
         }

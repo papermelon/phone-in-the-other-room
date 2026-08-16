@@ -26,6 +26,8 @@ enum CountingSheepOwnedStorage {
         "ollie.impactSharing.records",
         "ollie.sheepSearch.state",
         "ollie.farm.state",
+        "ollie.welcome.rewards",
+        "ollie.windDown.profile",
         "ollie.nightFlock.outbox",
         "ollie.nightFlock.runContexts",
         "ollie.orientation.state",

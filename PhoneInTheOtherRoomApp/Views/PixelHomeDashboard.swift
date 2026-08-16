@@ -251,11 +251,11 @@ private struct NightWatchOverviewBlock: View {
                 }
 
                 if let latestNight {
-                    Text("Latest protected night · \(latestNight.completedFocusMinutes) quiet minutes")
+                    Text("Latest Wind Down · \(latestNight.completedFocusMinutes) quiet minutes")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 } else {
-                    Text("Your first protected night will appear in Nights after you complete Wind Down.")
+                    Text("Your first completed Wind Down will appear in Nights.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }

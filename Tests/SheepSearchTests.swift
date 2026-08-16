@@ -25,6 +25,17 @@ final class SheepSearchTests: XCTestCase {
 
     func testOptionalSignalsOnlyIncreaseOdds() {
         let runID = UUID(uuidString: "00000000-0000-0000-0000-000000000042")!
+        var state = SheepSearchState.empty
+        for (index, id) in runIDs.enumerated() {
+            let guaranteed = SheepSearchEngine.calculate(
+                runID: id,
+                protectedNightNumber: index + 1,
+                evidence: .empty,
+                state: state,
+                seed: 0
+            )
+            state.append(guaranteed.outcome)
+        }
         var evidence = SheepSearchEvidence.empty
         evidence.windDownMinutes = 30
         evidence.morningQuietMinutes = 30
@@ -32,7 +43,7 @@ final class SheepSearchTests: XCTestCase {
             runID: runID,
             protectedNightNumber: 8,
             evidence: evidence,
-            state: .empty,
+            state: state,
             seed: 123
         )
         evidence.optionalBonusPoints = 5
@@ -40,7 +51,7 @@ final class SheepSearchTests: XCTestCase {
             runID: runID,
             protectedNightNumber: 8,
             evidence: evidence,
-            state: .empty,
+            state: state,
             seed: 123
         )
 
@@ -191,7 +202,7 @@ final class SheepSearchTests: XCTestCase {
     }
 
     func testTrailBoardFilterTitlesUseSearchLanguage() {
-        XCTAssertEqual(SheepPosterFilter.missing.title, "Still searching")
+        XCTAssertEqual(SheepPosterFilter.missing.title, "Still missing")
         XCTAssertEqual(SheepPosterFilter.home.title, "Home")
         XCTAssertEqual(SheepPosterFilter.all.title, "All sheep")
     }
@@ -244,7 +255,7 @@ final class SheepSearchTests: XCTestCase {
         let presentation = try XCTUnwrap(
             SheepTrailMapPresentation.home(pendingMappedMinutes: SheepTrailMapState.maximumMappedMinutes)
         )
-        XCTAssertEqual(presentation.title, "Extra search progress · 100 / 100 minutes")
+        XCTAssertEqual(presentation.title, "Phone Away gift progress · 100 / 100 minutes")
         XCTAssertTrue(presentation.detail.contains("Complete another Phone Away"))
     }
 
@@ -287,6 +298,18 @@ final class SheepSearchTests: XCTestCase {
 
     func testPhoneAwaySearchKeepsTheDeterministicLadderSeparate() {
         var state = SheepSearchState.empty
+        for index in 1...SheepSearchEngine.starterGuaranteeRuns {
+            let guaranteed = SheepSearchEngine.calculatePhoneBreak(
+                runID: UUID(),
+                protectedNightNumber: 4,
+                state: state,
+                seed: 1
+            )
+            XCTAssertEqual(guaranteed.outcome.encounterOdds, 1)
+            XCTAssertEqual(guaranteed.outcome.result, .found)
+            state.append(guaranteed.outcome)
+        }
+
         let odds: [(Int, Double)] = [(0, 0.20), (1, 0.30), (2, 0.40), (3, 0.50)]
         for (noFinds, expected) in odds {
             state.phoneBreakConsecutiveNoFinds = noFinds
@@ -325,6 +348,17 @@ final class SheepSearchTests: XCTestCase {
 
     func testNewWindDownSearchDoesNotConsumePhoneBreakMeter() {
         var state = SheepSearchState.empty
+        for (index, id) in runIDs.enumerated() {
+            state.append(
+                SheepSearchEngine.calculate(
+                    runID: id,
+                    protectedNightNumber: index + 1,
+                    evidence: .empty,
+                    state: state,
+                    seed: 0
+                ).outcome
+            )
+        }
         state.trailMap.credit(runID: UUID(), minutes: 100)
         var evidence = SheepSearchEvidence.empty
         evidence.windDownMinutes = 30
@@ -345,6 +379,26 @@ final class SheepSearchTests: XCTestCase {
 
     func testPhoneBreakSearchUsesSeparateOriginAndDroughtCounter() {
         var state = SheepSearchState.empty
+        for _ in 0..<SheepSearchEngine.starterGuaranteeRuns {
+            state.append(
+                SheepSearchOutcome(
+                    id: UUID(),
+                    runID: UUID(),
+                    origin: .phoneBreak,
+                    protectedNightNumber: 1,
+                    result: .found,
+                    sheepID: "mabel",
+                    rarity: .common,
+                    habitat: .starterPasture,
+                    trailStrength: 50,
+                    encounterOdds: 1,
+                    trailDistance: 1,
+                    consecutiveNoFinds: 0,
+                    bonusPoints: 0,
+                    createdAt: Date()
+                )
+            )
+        }
         state.phoneBreakConsecutiveNoFinds = 2
         let runID = UUID()
         let result = SheepSearchEngine.calculatePhoneBreak(
@@ -387,5 +441,113 @@ final class SheepSearchTests: XCTestCase {
         let state = try decoder.decode(SheepSearchState.self, from: stateJSON)
         XCTAssertEqual(state.trailMap, SheepTrailMapState())
         XCTAssertEqual(state.schemaVersion, SheepSearchState.currentSchemaVersion)
+    }
+
+    func testStarterAndPracticeOriginsDoNotConsumeGuaranteeCountersOrMeters() {
+        var state = SheepSearchState.empty
+        state.trailMap.credit(runID: UUID(), minutes: 40)
+        state.append(SheepSearchEngine.calculateStarter(now: Date(timeIntervalSince1970: 1)).outcome)
+        state.append(
+            SheepSearchEngine.calculateOnboardingPractice(
+                runID: UUID(uuidString: "00000000-0000-0000-0000-000000000088")!,
+                now: Date(timeIntervalSince1970: 2)
+            ).outcome
+        )
+
+        XCTAssertEqual(state.completedWindDownSearchCount, 0)
+        XCTAssertEqual(state.completedPhoneAwaySearchCount, 0)
+        XCTAssertEqual(state.consecutiveNoFinds, 0)
+        XCTAssertEqual(state.phoneBreakConsecutiveNoFinds, 0)
+        XCTAssertEqual(state.trailMap.pendingMappedMinutes, 40)
+
+        let firstNight = SheepSearchEngine.calculate(
+            runID: runIDs[0],
+            protectedNightNumber: 1,
+            evidence: .empty,
+            state: state,
+            seed: 0
+        )
+        XCTAssertEqual(firstNight.outcome.encounterOdds, 1)
+        XCTAssertEqual(firstNight.outcome.origin, .windDown)
+        XCTAssertNotEqual(firstNight.outcome.sheepID, WelcomeRewardCatalog.starterSheepID)
+        XCTAssertNotEqual(firstNight.outcome.sheepID, WelcomeRewardCatalog.practiceSheepID)
+    }
+
+    func testLaterProtectedNightSearchesUseChanceThenBadLuckProtection() {
+        var state = SheepSearchState.empty
+        for (index, runID) in runIDs.enumerated() {
+            let result = SheepSearchEngine.calculate(
+                runID: runID,
+                protectedNightNumber: index + 1,
+                evidence: .empty,
+                state: state,
+                seed: 0
+            )
+            XCTAssertEqual(result.outcome.encounterOdds, 1)
+            state.append(result.outcome)
+        }
+
+        let laterRunID = UUID(uuidString: "00000000-0000-0000-0000-000000000044")!
+        var later = SheepSearchEngine.calculate(
+            runID: laterRunID,
+            protectedNightNumber: 4,
+            evidence: .empty,
+            state: state,
+            seed: 0
+        )
+        var trailOnlySeed: UInt64 = 0
+        for seed in UInt64(0)..<8_000 {
+            later = SheepSearchEngine.calculate(
+                runID: laterRunID,
+                protectedNightNumber: 4,
+                evidence: .empty,
+                state: state,
+                seed: seed
+            )
+            if later.outcome.result == .trailOnly {
+                trailOnlySeed = seed
+                break
+            }
+        }
+        XCTAssertEqual(later.outcome.result, .trailOnly)
+        XCTAssertLessThan(later.outcome.encounterOdds, 1)
+        state.append(later.outcome)
+
+        var droughtState = state
+        for index in 0..<(SheepSearchEngine.hardGuaranteeAfterNoFinds - 1) {
+            droughtState.append(
+                SheepSearchOutcome(
+                    id: UUID(),
+                    runID: UUID(),
+                    protectedNightNumber: 5 + index,
+                    result: .trailOnly,
+                    sheepID: nil,
+                    rarity: nil,
+                    habitat: nil,
+                    trailStrength: 20,
+                    encounterOdds: 0.2,
+                    trailDistance: 1,
+                    consecutiveNoFinds: droughtState.consecutiveNoFinds,
+                    bonusPoints: 0,
+                    createdAt: Date()
+                )
+            )
+        }
+        let rescued = SheepSearchEngine.calculate(
+            runID: UUID(uuidString: "00000000-0000-0000-0000-000000000055")!,
+            protectedNightNumber: 10,
+            evidence: .empty,
+            state: droughtState,
+            seed: trailOnlySeed
+        )
+        XCTAssertEqual(rescued.outcome.result, .found)
+        XCTAssertEqual(rescued.outcome.encounterOdds, 1)
+    }
+
+    func testUnknownSearchOriginDecodesAsUnspecified() throws {
+        let json = Data(#""mystery""#.utf8)
+        XCTAssertEqual(try JSONDecoder().decode(SheepSearchOrigin.self, from: json), .unspecified)
+        XCTAssertFalse(SheepSearchOrigin.unspecified.countsTowardProtectedNightGuarantee)
+        XCTAssertFalse(SheepSearchOrigin.unspecified.countsTowardPhoneAwayGuarantee)
     }
 }

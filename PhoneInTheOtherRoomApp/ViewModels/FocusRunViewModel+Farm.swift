@@ -8,7 +8,7 @@ extension FocusRunViewModel {
                 sheepID: sheepID,
                 protectedNightCount: coordinator.progress.totalCompletedRuns
             )
-            return "+\(amount) wool. The fleece will grow back over more protected nights."
+            return "+\(amount) wool. The fleece will grow back over more Wind Downs."
         }
     }
 
@@ -147,6 +147,59 @@ extension FocusRunViewModel {
         }
     }
 
+    func applyWindDownStartingPoint(_ answers: WindDownProfileAnswer, at date: Date = Date()) {
+        let recommendation = WindDownProfileMapper.recommendation(for: answers)
+        let record = WindDownProfileRecord(
+            answers: answers,
+            recommendation: recommendation,
+            createdAt: persistence.windDownProfileRecord?.createdAt ?? date,
+            updatedAt: date
+        )
+        persistence.windDownProfileRecord = record
+        do {
+            let result = try WelcomeRewardEngine.recordProfileGift(
+                recommendation: recommendation,
+                farm: coordinator.farmState,
+                search: coordinator.sheepSearchState,
+                ledger: persistence.welcomeRewardLedger,
+                now: date
+            )
+            coordinator.farmState = result.farm
+            persistence.farmState = result.farm
+            persistence.welcomeRewardLedger = result.ledger
+            farmActionMessage = FarmShopCatalog.item(for: recommendation.wearableItemID).map {
+                "\($0.title) is waiting in Your Shepherd. Ollie can help you put it on."
+            }
+        } catch let error as FarmActionError {
+            farmActionMessage = farmMessage(for: error)
+        } catch {
+            farmActionMessage = "The Farm could not save that change. Please try once more."
+        }
+    }
+
+    func claimPendingWelcomeWearable() {
+        do {
+            let result = try WelcomeRewardEngine.claimWearable(
+                farm: coordinator.farmState,
+                search: coordinator.sheepSearchState,
+                ledger: persistence.welcomeRewardLedger
+            )
+            coordinator.farmState = result.farm
+            persistence.farmState = result.farm
+            persistence.welcomeRewardLedger = result.ledger
+            if let itemID = result.ledger.claimedWearableGrant?.itemID,
+               let title = FarmShopCatalog.item(for: itemID)?.title {
+                farmActionMessage = "\(title) is ready for Ollie."
+            } else {
+                farmActionMessage = "Your Shepherd is wearing the welcome gift."
+            }
+        } catch let error as FarmActionError {
+            farmActionMessage = farmMessage(for: error)
+        } catch {
+            farmActionMessage = "The Farm could not save that change. Please try once more."
+        }
+    }
+
     func clearFarmActionMessage() {
         farmActionMessage = nil
     }
@@ -172,7 +225,7 @@ extension FocusRunViewModel {
         case .sheepNotActive:
             return "That sheep has already moved on from the active flock."
         case .woolRegrowing:
-            return "The wool is still growing. The Barn shows how many protected nights remain."
+            return "The wool is still growing. The Barn shows how many Wind Downs remain."
         case .barnFull:
             return "The Barn is full. Trade a sheep to another farm or open another pasture first."
         case .itemNotFound:
@@ -195,6 +248,8 @@ extension FocusRunViewModel {
             return "Open the next pasture before expanding farther."
         case .maximumCapacityReached:
             return "All four expansions are open. The Farm can hold 60 sheep."
+        case .welcomeGiftAlreadyClaimed:
+            return "That welcome gift is already part of Your Shepherd."
         }
     }
 }

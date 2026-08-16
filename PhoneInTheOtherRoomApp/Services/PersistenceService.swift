@@ -27,6 +27,8 @@ final class PersistenceService {
     private let impactUploadRecordsKey = "ollie.impactSharing.records"
     private let sheepSearchStateKey = "ollie.sheepSearch.state"
     private let farmStateKey = "ollie.farm.state"
+    private let welcomeRewardLedgerKey = WelcomeRewardLedger.storageKey
+    private let windDownProfileKey = WindDownProfileRecord.storageKey
     private let orientationStateKey = "ollie.orientation.state"
 #if DEBUG
     private let energyLogger = Logger(
@@ -235,7 +237,9 @@ final class PersistenceService {
             nightWatchHistoryKey,
             impactUploadRecordsKey,
             sheepSearchStateKey,
-            farmStateKey
+            farmStateKey,
+            welcomeRewardLedgerKey,
+            windDownProfileKey
         ].forEach { defaults.removeObject(forKey: $0) }
     }
 
@@ -293,20 +297,39 @@ final class PersistenceService {
 
     var farmState: FarmState {
         get {
-            let stored = load(FarmState.self, key: farmStateKey)
+            let stored = load(FarmState.self, key: farmStateKey) ?? .empty
+            let search = sheepSearchState
+            let ledger = welcomeRewardLedger
             // Search settlement is persisted before Farm projection. Replaying
-            // all persisted outcomes here closes the termination window between
-            // those two local writes; FarmMigration.recordArrival is idempotent.
-            let reconciled = FarmMigration.migrated(
-                existing: stored,
-                searchState: sheepSearchState
+            // found outcomes and the one-time starter grant here closes the
+            // termination window between those local writes.
+            let reconciled = WelcomeRewardEngine.reconcile(
+                farm: stored,
+                search: search,
+                ledger: ledger
             )
-            if stored != reconciled {
-                save(reconciled, key: farmStateKey)
+            if reconciled.search != search {
+                save(reconciled.search, key: sheepSearchStateKey)
             }
-            return reconciled
+            if reconciled.ledger != ledger {
+                save(reconciled.ledger, key: welcomeRewardLedgerKey)
+            }
+            if stored != reconciled.farm {
+                save(reconciled.farm, key: farmStateKey)
+            }
+            return reconciled.farm
         }
         set { save(newValue, key: farmStateKey) }
+    }
+
+    var welcomeRewardLedger: WelcomeRewardLedger {
+        get { load(WelcomeRewardLedger.self, key: welcomeRewardLedgerKey) ?? .empty }
+        set { save(newValue, key: welcomeRewardLedgerKey) }
+    }
+
+    var windDownProfileRecord: WindDownProfileRecord? {
+        get { load(WindDownProfileRecord.self, key: windDownProfileKey) }
+        set { save(newValue, key: windDownProfileKey) }
     }
 
     func deleteImpactUploadRecords() {

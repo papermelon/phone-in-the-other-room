@@ -69,7 +69,7 @@ struct SettingsView: View {
             }
             Button("Keep my data", role: .cancel) {}
         } message: {
-            Text("This erases your Wind Down plan, protected nights, flock, rewards, reflections, local history, app selection, and paired NFC tag. Counting Sheep will return to the Welcome screen. System permissions already granted by iOS cannot be revoked here.")
+            Text("This erases your Wind Down plan, nights, flock, welcome gifts, reflections, local history, app selection, and paired NFC tag. Counting Sheep will return to the Welcome screen. System permissions already granted by iOS cannot be revoked here.")
         }
         .sheet(isPresented: $showAppShieldInfo) {
             AppShieldExplainerSheet {
@@ -260,21 +260,21 @@ struct SettingsView: View {
 
     private var sheepSearchSection: some View {
         VStack(spacing: AppSpacing.md) {
-            sectionHeader("Ollie's search", icon: "binoculars.fill")
+            sectionHeader("Ollie's finds", icon: "binoculars.fill")
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Toggle(
-                        "Show exact search odds",
+                        "Show the chance Ollie used",
                         isOn: Binding(
                             get: { viewModel.sheepSearchState.showExactOdds },
                             set: viewModel.setSheepSearchExactOddsEnabled
                         )
                     )
                     .font(AppTypography.headline)
-                    Text("A sheep search happens only after an eligible completed protected night. Turn this on to see the search percentage and what can shape it.")
+                    Text("After a completed Wind Down, Ollie may bring a missing sheep home. Turn this on to see the chance and what shaped that note.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
-                    Text("Optional signals can shape an eligible search. Missing data never lowers it.")
+                    Text("Optional signals can only help. Missing data never lowers the chance.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }

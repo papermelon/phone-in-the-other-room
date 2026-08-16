@@ -297,7 +297,7 @@ enum OllieDailyStatus: String, Codable, CaseIterable {
         switch self {
         case .waiting: return "Ollie is ready for tonight's Wind Down."
         case .warmedUp: return "Ollie is warmed up by a little phone-free time."
-        case .steady: return "Ollie is steady after a protected night."
+        case .steady: return "Ollie is steady after a quiet night."
         case .bright: return "Ollie is bright after a phone-free night."
         }
     }

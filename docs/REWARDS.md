@@ -1,9 +1,13 @@
 # Ollie's Search and Sheep Homecomings
 
 Counting Sheep marks the phone-away ritual, not time asleep and not time spent in the app.
-Ollie guards and guides. The first three completed protected nights bring a sheep home; later
-protected nights advance a probabilistic search with visible trail progress and bad-luck
-protection.
+Ollie guards and guides. A new Farm starts with one sheep. The first three qualifying
+protected nights bring another sheep home; later protected nights advance a probabilistic
+search with visible trail progress and bad-luck protection. A qualifying protected-night
+search needs a successfully completed primary Wind Down whose protected span from eligible
+start through morning quiet is at least 420 minutes. That span is a Farm progression rule,
+not a description of hours asleep, and overnight time still never becomes credited quiet
+minutes.
 
 ## The loop
 
@@ -27,13 +31,25 @@ wool yield, regrowth, trade value, art, and story.
 
 ## Canonical presentation
 
-The completion receipt offers one explicit “Open Search Journal” action. A found entry names
-the sheep and whether it entered the active flock or is waiting at The Barn gate. A clue note
-records honest search evidence and links to Ollie's Search. Farm owns the living flock,
-lifecycle, economy, and customization presentation. Exact search odds remain optional.
+The completion receipt offers one explicit “Open Search Journal” action. A found note names
+the sheep and whether it entered the active flock or is waiting at The Barn gate. After Wind
+Down or Phone Away, the note says Ollie found a missing sheep or kept a clue—not that a search
+is still happening. Welcome-gift notes use that name. Farm owns the living flock, lifecycle,
+economy, and customization presentation. Exact chance figures remain optional.
 
 An early-ended Night Watch adds no search outcome. It still receives the factual receipt. Sheep
 lifecycle changes occur through explicit Farm actions, not through the early-end settlement path.
+
+The first successful five-minute onboarding practice grants exactly one additional Farm sheep
+as a welcome gift on a new Farm. Existing farms do not receive that gift from a leftover
+completed-practice `lastRun`. That sheep is a real catalogue discovery, occupies Barn
+capacity, and can later be sheared or traded. It does not consume a protected-night
+guarantee, a Phone Away guarantee, or the 100-minute Phone Away meter. Incomplete or
+early-ended practice grants nothing. Settlement is idempotent by practice run identity, and
+only the first successful practice on a new Farm grants a sheep.
+
+Completing the local Wind Down starting-point questionnaire creates a pending one-time shepherd
+wearable from the production Farm Shop catalogue. The gift is owned, not silently equipped.
 
 ## Farm lifecycle and economy
 
@@ -99,8 +115,10 @@ Judge this loop by protected behavior, not collection engagement:
 
 - completed Night Watches in a tester's first 14 nights;
 - credited wind-down and morning-quiet minutes, kept separate;
-- whether users understand that the first three searches guarantee homecomings and later
-  searches can produce clues, odds, or rarer sheep;
+- whether users understand that the first three qualifying protected-night searches and the
+  first three Phone Away meter searches guarantee homecomings, that a 420-minute protected
+  span is required for a Wind Down search, and that later searches can produce clues, odds,
+  or rarer sheep;
 - selected-app use around sleep when the person explicitly enables Screen Time reports; and
 - whether users understand shearing, trading, pending arrivals, and Shop prices;
 - which play styles emerge and whether one balance path dominates; and

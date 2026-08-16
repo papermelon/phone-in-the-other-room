@@ -229,7 +229,7 @@ struct CountingSheepPracticeOfferSheet: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("Want to test it?")
                     .font(AppTypography.title)
-                Text("Start a real five-minute practice quiet. It will appear in Nights, but it will not count as a protected night or start Ollie’s sheep search.")
+                Text("Start a real five-minute practice quiet. It appears in Nights and completing it brings a welcome gift sheep home, without counting as a Wind Down.")
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.secondaryText)
             }
@@ -263,7 +263,7 @@ struct OrientationRecordPrompt: View {
                     .foregroundStyle(AppColors.grass)
                 Text("Five minutes of quiet, recorded plainly.")
                     .font(AppTypography.headline)
-                Text("It appears in Nights, but it does not count as a Wind Down or open a sheep search.")
+                Text("It appears in Nights. Completing it can bring a welcome gift sheep home, without counting as a Wind Down.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                 Button("See it in Nights", action: onSeeNights)

@@ -144,6 +144,8 @@ final class LocalResetContractTests: XCTestCase {
             "ollie.nightWatch.history",
             "ollie.sheepSearch.state",
             "ollie.farm.state",
+            "ollie.welcome.rewards",
+            "ollie.windDown.profile",
             AppAppearancePreference.key
         ]
         let requiredAppGroupKeys = [

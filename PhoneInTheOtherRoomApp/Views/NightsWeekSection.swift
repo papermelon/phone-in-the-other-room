@@ -71,7 +71,7 @@ struct NightsWeekBoard: View {
 
     private var legend: some View {
         HStack(spacing: AppSpacing.sm) {
-            legendItem("Protected", systemImage: "shield.fill", color: AppColors.grass)
+            legendItem("Wind Down", systemImage: "shield.fill", color: AppColors.grass)
             legendItem("Ended early", systemImage: "moon.stars.fill", color: AppColors.warning)
             legendItem("One-time", systemImage: "sparkles", color: AppColors.lavender)
         }
@@ -213,7 +213,7 @@ private struct NightsWeekDayCell: View {
         var parts: [String] = []
         switch day.primaryOutcome {
         case .protected:
-            parts.append("Protected night, \(day.protectedQuietMinutes) quiet minutes")
+            parts.append("Wind Down completed, \(day.protectedQuietMinutes) quiet minutes")
         case .endedEarly:
             parts.append("\(day.earlyEndedPrimaryCount) early-ended Wind Down\(day.earlyEndedPrimaryCount == 1 ? "" : "s")")
         case nil:

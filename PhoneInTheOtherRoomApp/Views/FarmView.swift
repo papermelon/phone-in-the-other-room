@@ -172,8 +172,10 @@ struct FarmDashboardContent: View {
                 priorityLabel(
                     icon: "note.text",
                     eyebrow: "LATEST SEARCH JOURNAL ENTRY",
-                    title: latestOutcome.result == .found ? "Ollie brought a sheep home." : "Ollie saved a clue for the next search.",
-                    detail: "Open Search Journal for the full search record."
+                    title: latestOutcome.result == .found
+                        ? SheepSearchPresentation.foundHeadline(for: latestOutcome.origin)
+                        : SheepSearchPresentation.trailHeadline(for: latestOutcome.origin),
+                    detail: "Open Search Journal for the full note."
                 )
             }
             .buttonStyle(.plain)
@@ -192,9 +194,9 @@ struct FarmDashboardContent: View {
         } else {
             priorityLabel(
                 icon: "pawprint.fill",
-                eyebrow: "THE FIRST SEARCH",
+                eyebrow: "THE PASTURE",
                 title: "The pasture is ready.",
-                detail: "Complete a protected Wind Down and Ollie will bring back a Search Journal entry.",
+                detail: "Finish Wind Down and Ollie may bring a missing sheep home.",
                 showsDisclosure: false
             )
         }
@@ -330,7 +332,7 @@ struct FarmDashboardContent: View {
                 } else {
                     Text("Ollie is watching the empty gate.")
                         .font(AppTypography.headline)
-                    Text("The first protected Wind Down will start the Farm story.")
+                    Text("The first completed Wind Down will start the Farm story.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }
@@ -368,6 +370,9 @@ struct FarmDashboardContent: View {
         case .purchase: return "Something new arrived from the Farm Shop."
         case .capacityUpgrade: return "The Barn opened another pasture."
         case .currencyConsolidation: return "The Farm now keeps one wool balance."
+        case .starterGrant: return "Ollie left a welcome gift in the pasture."
+        case .welcomeGift: return "A welcome gift is waiting to be tried on."
+        case .onboardingPracticeArrival: return "Practice brought a welcome gift home."
         }
     }
 
