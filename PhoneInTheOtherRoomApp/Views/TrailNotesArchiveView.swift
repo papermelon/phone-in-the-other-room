@@ -76,7 +76,7 @@ struct TrailNotesArchiveView: View {
                     Text("SEARCH JOURNAL")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("Homecomings and clues from Ollie’s searches.")
+                    Text("Homecomings and clues Ollie brought home.")
                         .font(AppTypography.headline)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("\(viewModel.sheepSearchState.outcomes.count) entries · \(viewModel.farmState.discoveries.count) sheep known")
@@ -160,7 +160,7 @@ private struct TrailNoteRow: View {
 
     private var statusLine: String {
         switch (outcome.result, ownedStatus) {
-        case (.trailOnly, _): return "Clue saved for another search"
+        case (.trailOnly, _): return "Clue saved for another night"
         case (.found, .pending): return "Waiting at The Barn gate"
         case (.found, .sold): return "Discovery kept · sheep moved on"
         case (.found, .active): return "Living in the active flock"
@@ -169,10 +169,7 @@ private struct TrailNoteRow: View {
     }
 
     private var originLine: String {
-        let date = outcome.createdAt.formatted(date: .abbreviated, time: .omitted)
-        return outcome.origin == .phoneBreak
-            ? "Phone Away bonus search · \(date)"
-            : "Wind Down \(outcome.protectedNightNumber) · \(date)"
+        SheepSearchPresentation.originLine(for: outcome)
     }
 }
 

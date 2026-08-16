@@ -38,7 +38,7 @@ struct NightsContextSection: View {
 
     private var contextSubtitle: String {
         guard let record else {
-            return "Optional local context appears after a protected night."
+            return "Optional local context appears after a completed Wind Down."
         }
         return "Night ending \(record.plan.wakeTime.formatted(.dateTime.weekday(.wide).month(.wide).day()))"
     }
@@ -206,7 +206,7 @@ struct NightsHealthContext: View {
         } else {
             comparisonText = "\(abs(difference)) minutes \(difference > 0 ? "longer" : "shorter")"
         }
-        return "Across \(comparison.protectedNightCount) protected and \(comparison.baselineNightCount) other measured nights, recorded sleep averaged \(comparisonText) on protected nights."
+        return "Across \(comparison.protectedNightCount) nights the phone slept in the other room and \(comparison.baselineNightCount) other measured nights, recorded sleep averaged \(comparisonText) on those phone-away nights."
     }
 
     private func stageMetric(_ title: String, seconds: TimeInterval) -> some View {

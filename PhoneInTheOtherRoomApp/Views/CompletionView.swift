@@ -8,7 +8,7 @@ struct CompletionView: View {
     private var isPhoneAway: Bool { run?.nightWatchPlan?.role == .additionalQuiet }
     private var persistedOutcome: SheepSearchOutcome? {
         guard let run else { return nil }
-        guard isPhoneAway || run.isProgressionEligibleNightWatch else { return nil }
+        guard isPhoneAway || run.isProgressionEligibleNightWatch || run.isPractice else { return nil }
         return viewModel.sheepSearchOutcome(for: run.id)
     }
     private var phoneAwayReceipt: PhoneAwayReceiptPresentation {
@@ -49,7 +49,7 @@ struct CompletionView: View {
                 if isPhoneAway {
                     AdditionalQuietMapReceipt(presentation: phoneAwayReceipt)
 
-                    if let persistedOutcome, phoneAwayReceipt.showsSearchLink {
+                    if let persistedOutcome, phoneAwayReceipt.showsSearchLink || persistedOutcome.origin == .onboardingPractice {
                         NavigationLink {
                             WindDownRevealView(
                                 outcome: persistedOutcome,
@@ -59,14 +59,14 @@ struct CompletionView: View {
                             )
                         } label: {
                             Label(
-                                phoneAwayReceipt.searchLinkTitle ?? "Open Phone Away bonus search in Search Journal",
+                                SheepSearchPresentation.completionLinkTitle(for: persistedOutcome.origin),
                                 systemImage: "note.text"
                             )
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(PixelPrimaryButtonStyle())
-                        .accessibilityLabel(phoneAwayReceipt.searchLinkTitle ?? "Open Phone Away bonus search in Search Journal")
-                        .accessibilityHint(phoneAwayReceipt.searchLinkHint ?? "Opens the Phone Away bonus search in Search Journal")
+                        .accessibilityLabel(SheepSearchPresentation.completionLinkTitle(for: persistedOutcome.origin))
+                        .accessibilityHint(SheepSearchPresentation.completionLinkHint(for: persistedOutcome.origin))
                     }
                 } else if run?.isProgressionEligibleNightWatch == true {
                     NavigationLink {
@@ -77,11 +77,17 @@ struct CompletionView: View {
                             onReturnToFarm: returnToFarm
                         )
                     } label: {
-                        Label("Open Search Journal", systemImage: "note.text")
+                        Label(
+                            persistedOutcome.map { SheepSearchPresentation.completionLinkTitle(for: $0.origin) } ?? "Open Search Journal",
+                            systemImage: "note.text"
+                        )
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelPrimaryButtonStyle())
-                    .accessibilityHint("Shows the saved sheep search result for this Wind Down")
+                    .accessibilityHint(
+                        persistedOutcome.map { SheepSearchPresentation.completionLinkHint(for: $0.origin) }
+                            ?? "Shows the Search Journal note for this Wind Down"
+                    )
                 }
 
                 if run?.id == viewModel.orientationState.practiceRunID,
@@ -214,7 +220,7 @@ struct WindDownRevealView: View {
                             Text("No Search Journal entry saved.")
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.grass)
-                    Text("This Wind Down has no saved Search Journal entry.")
+                    Text("This Wind Down has no saved Search Journal note.")
                         .font(AppTypography.headline)
                     Text("Your quiet-time receipt is still saved in Nights.")
                                 .font(AppTypography.body)
@@ -323,11 +329,15 @@ private struct FieldNotePaper: View {
                     .accessibilityLabel(flockSheep?.displayName ?? sheep.name)
 
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("A SHEEP FOUND ITS WAY HOME")
+                    Text(SheepSearchPresentation.foundEyebrow(for: outcome.origin))
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
                     Text(flockSheep?.displayName ?? sheep.name)
                         .font(AppTypography.display(32))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(SheepSearchPresentation.foundHeadline(for: outcome.origin))
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(sheep.story)
                         .font(AppTypography.body)
@@ -377,12 +387,10 @@ private struct TrailOnlyNote: View {
                     Text("OLLIE KEPT TO THE TRAIL")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text(outcome.origin == .phoneBreak ? "The extra search trail continues." : "The trail continues.")
+                    Text(SheepSearchPresentation.trailHeadline(for: outcome.origin))
                         .font(AppTypography.title)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(outcome.origin == .phoneBreak
-                        ? "Ollie didn't find a sheep on this Phone Away. The clue is saved for another search."
-                        : "Ollie didn't find a sheep on this trail. The clue is saved for another quiet night.")
+                    Text(SheepSearchPresentation.trailBody(for: outcome.origin))
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -416,18 +424,20 @@ private struct FieldNoteTrailDetails: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("SEARCH DETAILS")
+            Text(SheepSearchPresentation.detailsHeading(for: outcome.origin))
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
-            if outcome.origin == .phoneBreak {
-                FieldNoteMetric(title: "Search opened by", value: "\(SheepTrailMapState.maximumMappedMinutes) Phone Away minutes")
-                FieldNoteMetric(
-                    title: "Clues before this search",
-                    value: outcome.consecutiveNoFinds.description
-                )
-            } else {
-                FieldNoteMetric(title: "Distance", value: String(format: "%.1f km", outcome.trailDistance))
-                FieldNoteMetric(title: "Search strength", value: strengthLabel)
+            FieldNoteMetric(title: "How they arrived", value: SheepSearchPresentation.openedByLine(for: outcome.origin))
+            if SheepSearchPresentation.showsTrailMetrics(for: outcome.origin) {
+                if outcome.origin == .phoneBreak {
+                    FieldNoteMetric(
+                        title: "Clues before this note",
+                        value: outcome.consecutiveNoFinds.description
+                    )
+                } else {
+                    FieldNoteMetric(title: "Distance", value: String(format: "%.1f km", outcome.trailDistance))
+                    FieldNoteMetric(title: "Trail strength", value: strengthLabel)
+                }
             }
             if outcome.origin == .windDown, outcome.trailMapBonusPercentagePoints > 0 {
                 FieldNoteMetric(
@@ -435,9 +445,9 @@ private struct FieldNoteTrailDetails: View {
                     value: "+" + outcome.trailMapBonusPercentagePoints.description + " percentage points"
                 )
             }
-            if showExactOdds {
+            if showExactOdds, SheepSearchPresentation.showsTrailMetrics(for: outcome.origin) {
                 FieldNoteMetric(
-                    title: "Encounter odds",
+                    title: "Chance",
                     value: Int((outcome.encounterOdds * 100).rounded()).description + "%"
                 )
             }
@@ -490,6 +500,21 @@ extension Notification.Name {
                 trailStrength: 72, encounterOdds: 0.68, trailDistance: 4.2,
                 consecutiveNoFinds: 0, bonusPoints: 2, trailMapBonusPercentagePoints: 2,
                 createdAt: Date()
+            ),
+            showExactOdds: false
+        )
+    }
+    .environmentObject(FocusRunViewModel())
+}
+
+#Preview("Search Journal welcome gift") {
+    NavigationStack {
+        WindDownRevealView(
+            outcome: SheepSearchOutcome(
+                id: UUID(), runID: UUID(), origin: .starter, protectedNightNumber: 0,
+                result: .found, sheepID: "mabel", rarity: .common, habitat: .starterPasture,
+                trailStrength: 0, encounterOdds: 1, trailDistance: 0,
+                consecutiveNoFinds: 0, bonusPoints: 0, createdAt: Date()
             ),
             showExactOdds: false
         )

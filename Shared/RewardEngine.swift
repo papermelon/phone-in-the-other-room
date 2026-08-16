@@ -153,7 +153,7 @@ struct RewardEngine {
         case .ollieMail: return "A note Ollie carried back after Wind Down."
         case .letter: return "A little letter guarded until the phone woke."
         case .ribbon: return "A ribbon for keeping both edges of the night quiet."
-        case .trophy: return "A tiny marker for protected nights gathered over time."
+        case .trophy: return "A tiny marker for quiet nights gathered over time."
         case .tennisBall: return "A bright ball from the quiet side of the pasture."
         case .stick: return "A good stick from the other room. Possibly the best stick."
         case .postcard: return "A postcard from the place where the phone slept."

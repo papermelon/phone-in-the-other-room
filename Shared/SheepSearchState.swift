@@ -10,6 +10,23 @@ enum PhoneAwaySearchMeter {
 enum SheepSearchOrigin: String, Codable {
     case windDown
     case phoneBreak
+    case starter
+    case onboardingPractice
+    /// Forward-compatible stand-in so unknown future origins do not count as Wind Down.
+    case unspecified
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .unspecified
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    var countsTowardProtectedNightGuarantee: Bool { self == .windDown }
+    var countsTowardPhoneAwayGuarantee: Bool { self == .phoneBreak }
 }
 
 struct SheepSearchOutcome: Codable, Equatable, Identifiable {
@@ -178,15 +195,15 @@ struct SheepTrailMapPresentation: Equatable {
         let detail: String
         if isUnlocked {
             detail = minutes == SheepTrailMapState.maximumMappedMinutes
-                ? "Extra search progress is full. Complete another Phone Away to open one bonus search."
-                : "Every \(SheepTrailMapState.maximumMappedMinutes) completed Phone Away minutes opens one bonus search."
+                ? "Gift progress is full. Complete another Phone Away and Ollie will look for a missing sheep."
+                : "Every \(SheepTrailMapState.maximumMappedMinutes) completed Phone Away minutes, Ollie looks for a missing sheep."
         } else {
             detail = minutes == SheepTrailMapState.maximumMappedMinutes
-                ? "Extra search progress is full. It will wait until three Wind Downs are complete."
-                : "These minutes are saved. Bonus searches open after three Wind Downs."
+                ? "Gift progress is full. It will wait until three Wind Downs are complete."
+                : "These minutes are saved. Ollie looks for a missing sheep after three Wind Downs."
         }
         return Self(
-            title: "Extra search progress · \(minutes) / \(SheepTrailMapState.maximumMappedMinutes) minutes",
+            title: "Phone Away gift progress · \(minutes) / \(SheepTrailMapState.maximumMappedMinutes) minutes",
             detail: detail
         )
     }
@@ -220,7 +237,19 @@ struct SheepSearchState: Codable, Equatable {
     var lastOutcome: SheepSearchOutcome? { outcomes.last }
 
     var completedWindDownSearchCount: Int {
-        outcomes.filter { $0.origin == .windDown }.count
+        outcomes.filter { $0.origin.countsTowardProtectedNightGuarantee }.count
+    }
+
+    var completedPhoneAwaySearchCount: Int {
+        outcomes.filter { $0.origin.countsTowardPhoneAwayGuarantee }.count
+    }
+
+    func starterOutcome() -> SheepSearchOutcome? {
+        outcomes.first { $0.origin == .starter }
+    }
+
+    func onboardingPracticeOutcome(for runID: UUID) -> SheepSearchOutcome? {
+        outcomes.first { $0.origin == .onboardingPractice && $0.runID == runID }
     }
 
     func phoneBreakOutcome(for runID: UUID) -> SheepSearchOutcome? {
@@ -245,16 +274,22 @@ struct SheepSearchState: Codable, Equatable {
             if !foundSheepIDs.contains(sheepID) {
                 foundSheepIDs.append(sheepID)
             }
-            if outcome.origin == .phoneBreak {
+            switch outcome.origin {
+            case .phoneBreak:
                 phoneBreakConsecutiveNoFinds = 0
-            } else {
+            case .windDown:
                 consecutiveNoFinds = 0
+            case .starter, .onboardingPractice, .unspecified:
+                break
             }
         } else {
-            if outcome.origin == .phoneBreak {
+            switch outcome.origin {
+            case .phoneBreak:
                 phoneBreakConsecutiveNoFinds += 1
-            } else {
+            case .windDown:
                 consecutiveNoFinds += 1
+            case .starter, .onboardingPractice, .unspecified:
+                break
             }
         }
         totalTrailDistance += outcome.trailDistance

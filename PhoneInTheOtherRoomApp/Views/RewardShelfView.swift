@@ -43,7 +43,7 @@ private struct RewardShelfContent: View {
                     .foregroundStyle(AppColors.grass)
                 Text("Every keepsake marks a finished Wind Down or a kind fresh start.")
                     .font(pixelFont(.body))
-                Text("Three keepsake families take turns. Milestones count all protected nights. A gap takes nothing away.")
+                Text("Three keepsake families take turns. Milestones count completed Wind Downs. A gap takes nothing away.")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.muted)
             }
@@ -108,7 +108,7 @@ private struct RewardShelfContent: View {
                     }
 
                     if context.protectedNightNumber > 0 {
-                        Text("Protected night \(context.protectedNightNumber)")
+                        Text("Wind Down \(context.protectedNightNumber)")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.muted)
                     }

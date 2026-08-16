@@ -135,7 +135,7 @@ struct WindDownDayDetailView: View {
 
     private var summaryTitle: String {
         switch summary.primaryOutcome {
-        case .protected: return "Protected night"
+        case .protected: return "Wind Down completed"
         case .endedEarly: return "Ended early"
         case nil: return summary.additionalCount > 0 ? "Phone Away" : "No recorded quiet"
         }
@@ -253,12 +253,12 @@ struct WindDownRecordDetailView: View {
                 if let outcome = searchOutcome {
                     PixelCard {
                         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text("SEARCH JOURNAL RESULT")
+                            Text("SEARCH JOURNAL NOTE")
                                 .font(pixelFont(.caption))
                                 .foregroundStyle(AppColors.grass)
-                            Text(outcome.sheepID.flatMap(SheepCatalog.definition).map { "Found \($0.name)" } ?? "Search clue saved")
+                            Text(SheepSearchPresentation.journalResultHeadline(for: outcome))
                                 .font(AppTypography.headline)
-                            Text(outcome.origin == .phoneBreak ? "Opened by \(PhoneAwaySearchMeter.maximumMinutes) Phone Away minutes" : "Opened by this Wind Down")
+                            Text(SheepSearchPresentation.openedByLine(for: outcome.origin))
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.muted)
                             if outcome.trailMapBonusPercentagePoints > 0 {

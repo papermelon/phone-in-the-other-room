@@ -211,7 +211,7 @@ enum SheepSearchEngine {
         let baseOdds = 0.20 + Double(score) * 0.006
         let droughtBonus = Double(min(state.consecutiveNoFinds, hardGuaranteeAfterNoFinds)) * 0.08
         let oddsBeforeMap = min(0.92, baseOdds + droughtBonus)
-        let guaranteed = protectedNightNumber <= starterGuaranteeRuns
+        let guaranteed = state.completedWindDownSearchCount < starterGuaranteeRuns
             || state.consecutiveNoFinds >= hardGuaranteeAfterNoFinds
             // Phone Away runs now resolve through their own meter. Keep the legacy
         // evidence field decodable, but do not let new Wind Down searches
@@ -270,7 +270,8 @@ enum SheepSearchEngine {
         }
 
         let drought = max(0, state.phoneBreakConsecutiveNoFinds)
-        let guaranteed = drought >= 4
+        let guaranteed = state.completedPhoneAwaySearchCount < starterGuaranteeRuns
+            || drought >= hardGuaranteeAfterNoFinds
         let encounterOdds = guaranteed
             ? 1.0
             : [0.20, 0.30, 0.40, 0.50][min(drought, 3)]

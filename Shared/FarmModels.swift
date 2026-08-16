@@ -68,6 +68,19 @@ enum FarmTransactionKind: String, Codable {
     case purchase
     case capacityUpgrade
     case currencyConsolidation
+    case starterGrant
+    case welcomeGift
+    case onboardingPracticeArrival
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .arrival
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
 }
 
 struct FarmTransaction: Codable, Equatable, Identifiable {

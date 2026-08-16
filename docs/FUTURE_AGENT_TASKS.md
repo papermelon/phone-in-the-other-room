@@ -53,6 +53,14 @@ execute without human sign-off mid-task (final merge review still applies per
   controls, privacy-safe aggregation, retention implementation, and Swift/SQL/Deno tests. Nothing
   was deployed; the external release task below remains mandatory before enablement.
 
+- **2026-08-16 · Cursor:** Implemented the production foundation for the founder-directed
+  first-run journey (ADR-0018): one starter sheep on a fresh Farm, a local non-clinical Wind
+  Down starting-point questionnaire domain, a pending shepherd wearable gift, a one-time
+  onboarding-practice sheep that consumes neither guarantee counter nor the Phone Away meter,
+  independent first-three guarantees for qualifying protected-night and Phone Away meter
+  searches, and a 420-minute protected-span rule. Existing settled outcomes remain intact. No
+  onboarding UI redesign or hosted backend work.
+
 - **2026-08-16 · Codex:** Reworked Slumber Party into the founder-directed schema-two shared
   commitment: one bounded goal for 2–8 people, an explicit lobby/start gate, reusable hashed
   invites, named coarse member progress, optional stable guidance IDs, local Family Controls
@@ -279,13 +287,24 @@ execute without human sign-off mid-task (final merge review still applies per
   report, Slumber Party deletion, and full account deletion. Keep the release flag `NO` until every
   item passes. Do not infer multi-device or Apple identity success from simulator tests.
 
-### D5. Workshop reward decision gate
+### D5. Workshop reward decision gate — superseded 2026-08-16
 - **Gate:** Founder choice required before any workshop copy promises a reward.
 - **Mode:** Human · **Size:** S · **Autonomous:** no
-- **Accept:** choose exactly one: an approved onboarding/starter gift; a dedicated workshop/demo
-  mode using production models; or wording that promises a smaller early reward rather than sheep.
-  Do not alter `RewardEngine` or grant sheep for a five-minute Wind Down test as part of Slumber
-  Party work.
+- **Accept:** superseded by ADR-0018. The approved first-run contract is one starter sheep, a
+  pending shepherd wearable from the Wind Down starting point, and one onboarding-practice
+  sheep that does not consume protected-night or Phone Away guarantees. Do not grant extra
+  sheep for a five-minute Wind Down test as part of Slumber Party work.
+
+### D6. First-run questionnaire and Farm tutorial UI
+- **Gate:** ADR-0018 domain, persistence, Search Journal/Barn/completion origin copy, and tests accepted.
+- **Mode:** Cursor Build · **Size:** M · **Autonomous:** no — user-facing copy and tour flow
+  require founder review
+- **Accept:** present the local Wind Down starting-point questionnaire in first-run; persist
+  answers with `FocusRunViewModel.applyWindDownStartingPoint`; keep the wearable owned and
+  unequipped until a Farm tutorial claims it through `claimPendingWelcomeWearable`; keep
+  welcome-gift and “Ollie found a missing sheep” copy honest; do not diagnose, collect free
+  text, or add assets. Search Journal origin labels for `.starter` / `.onboardingPractice` are
+  already in this slice. No `project.yml`, entitlement, or backend changes.
 
 ## E. Later / explicitly postponed (do not start; citable refusals)
 

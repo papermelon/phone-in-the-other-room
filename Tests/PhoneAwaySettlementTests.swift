@@ -137,6 +137,26 @@ final class PhoneAwaySettlementTests: XCTestCase {
         let runID = UUID(uuidString: "00000000-0000-0000-0000-000000000702")!
         var state = SheepSearchState.empty
         state.consecutiveNoFinds = 8
+        for index in 1...SheepSearchEngine.starterGuaranteeRuns {
+            state.append(
+                SheepSearchOutcome(
+                    id: UUID(),
+                    runID: UUID(),
+                    origin: .phoneBreak,
+                    protectedNightNumber: index,
+                    result: .found,
+                    sheepID: "mabel",
+                    rarity: .common,
+                    habitat: .starterPasture,
+                    trailStrength: 50,
+                    encounterOdds: 1,
+                    trailDistance: 1,
+                    consecutiveNoFinds: 0,
+                    bonusPoints: 0,
+                    createdAt: settledAt
+                )
+            )
+        }
         state.phoneBreakConsecutiveNoFinds = 2
         state.trailMap.pendingMappedMinutes = 100
         let seed = trailOnlySeed(runID: runID, state: state)
@@ -278,10 +298,10 @@ final class PhoneAwaySettlementTests: XCTestCase {
 
         XCTAssertEqual(presentation.state, .practice)
         XCTAssertTrue(presentation.message.contains("practice"))
-        XCTAssertTrue(presentation.message.contains("no Phone Away bonus-search progress"))
+        XCTAssertTrue(presentation.message.contains("Phone Away gift progress was not added"))
         XCTAssertFalse(presentation.message.contains("protected"))
         XCTAssertFalse(presentation.message.contains("reward"))
-        XCTAssertEqual(presentation.accessibilityLabel, "Phone Away practice complete. This was practice. 5 completed minutes were saved in Nights; no Phone Away bonus-search progress was added.")
+        XCTAssertEqual(presentation.accessibilityLabel, "Phone Away practice complete. This was practice. 5 completed minutes were saved in Nights. Phone Away gift progress was not added.")
     }
 
     func testBelowMinimumReceiptExplainsTheFifteenMinuteStartWithoutFailureLanguage() {
@@ -289,7 +309,7 @@ final class PhoneAwaySettlementTests: XCTestCase {
         let presentation = PhoneAwayReceiptPresentation.make(record: result.record)
 
         XCTAssertEqual(presentation.state, .belowMinimum)
-        XCTAssertTrue(presentation.message.contains("No Phone Away bonus-search progress was added"))
+        XCTAssertTrue(presentation.message.contains("No Phone Away gift progress was added"))
         XCTAssertTrue(presentation.message.contains("15 completed minutes"))
         XCTAssertFalse(presentation.message.localizedCaseInsensitiveContains("failed"))
         XCTAssertNil(presentation.searchLinkTitle)
@@ -326,12 +346,12 @@ final class PhoneAwaySettlementTests: XCTestCase {
         let presentation = PhoneAwayReceiptPresentation.make(record: result.record, outcome: outcome)
 
         XCTAssertEqual(presentation.state, .resolved)
-        XCTAssertEqual(presentation.searchLinkTitle, "Open Phone Away bonus search in Search Journal")
-        XCTAssertEqual(presentation.searchLinkHint, "Opens the Phone Away bonus search in Search Journal")
-        XCTAssertTrue(presentation.message.contains("Phone Away bonus search"))
+        XCTAssertEqual(presentation.searchLinkTitle, "Open Search Journal")
+        XCTAssertEqual(presentation.searchLinkHint, "Shows the Search Journal note for this Phone Away")
         XCTAssertTrue(presentation.message.contains("Search Journal"))
         XCTAssertTrue(presentation.message.contains("15 of 100 minutes remaining"))
-        XCTAssertTrue(presentation.accessibilityLabel.contains("Phone Away bonus search resolved"))
+        XCTAssertTrue(presentation.title.contains("Ollie found a missing sheep") || presentation.title.contains("Ollie kept a clue"))
+        XCTAssertTrue(presentation.accessibilityLabel.contains("Search Journal"))
     }
 
     func testEarlyEndingReceiptDoesNotOfferBonusSearchCredit() {
@@ -349,7 +369,7 @@ final class PhoneAwaySettlementTests: XCTestCase {
         let presentation = PhoneAwayReceiptPresentation.make(record: nil)
 
         XCTAssertEqual(presentation.state, .legacy)
-        XCTAssertTrue(presentation.message.contains("no bonus-search progress is shown"))
+        XCTAssertTrue(presentation.message.contains("no saved Phone Away gift progress"))
         XCTAssertNil(presentation.searchLinkTitle)
     }
 

@@ -159,6 +159,10 @@ enum FarmShopCatalog {
         all.filter { $0.category == category }
     }
 
+    static func isFinishedShepherdWearable(_ itemID: String) -> Bool {
+        WelcomeRewardCatalog.isFinishedShepherdWearable(itemID)
+    }
+
     static func decorationAnchor(for itemID: String) -> FarmDecorationAnchor? {
         switch itemID {
         case "farm_flower_patch":

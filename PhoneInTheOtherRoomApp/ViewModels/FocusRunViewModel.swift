@@ -1950,6 +1950,20 @@ final class FocusRunViewModel: ObservableObject {
         coordinator.sheepSearchState = .empty
         coordinator.latestSheepSearchOutcome = nil
         coordinator.farmState = .empty
+        persistence.welcomeRewardLedger = .empty
+        persistence.windDownProfileRecord = nil
+        persistence.sheepSearchState = .empty
+        let welcome = WelcomeRewardEngine.reconcile(
+            farm: .empty,
+            search: .empty,
+            ledger: .empty
+        )
+        coordinator.sheepSearchState = welcome.search
+        coordinator.farmState = welcome.farm
+        coordinator.latestSheepSearchOutcome = welcome.outcome
+        persistence.sheepSearchState = welcome.search
+        persistence.farmState = welcome.farm
+        persistence.welcomeRewardLedger = welcome.ledger
         farmActionMessage = nil
         coordinator.events = []
         coordinator.latestReward = nil

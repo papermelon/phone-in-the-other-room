@@ -133,7 +133,7 @@ struct ActiveRunPresentation: Equatable {
         case .windDown: return "The evening can get quieter now."
         case .overnight: return "Phone resting. You can too."
         case .morningQuiet: return "Wake up before your phone does."
-        case .complete: return "A protected night."
+        case .complete: return "A quiet night kept."
         case nil: return "Phone resting. You can too."
         }
     }
@@ -180,7 +180,7 @@ struct ActiveRunPresentation: Equatable {
         case .windDown: return "Your phone is tucked away. Ollie is following the first trail."
         case .overnight: return "Sleep time is keeping. There is nothing else to do here."
         case .morningQuiet: return "This phone-free morning is yours. Ollie is taking the trail home."
-        case .complete: return "Both phone-free windows are protected."
+        case .complete: return "Both quiet windows were kept."
         case nil: return "Your phone-away time is yours now. Ollie will check in when it is done."
         }
     }

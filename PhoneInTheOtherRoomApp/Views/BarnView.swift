@@ -311,9 +311,9 @@ struct BarnSheepDetailView: View {
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
                 detail("Arrived", sheep.arrivedAt.formatted(date: .abbreviated, time: .omitted))
-                detail("Protected night", "\(sheep.protectedNightNumber)")
+                detail("How they arrived", arrivalLabel(for: sheep))
                 detail("Times sheared", "\(sheep.timesSheared)")
-                detail("Wool", remaining == 0 ? "Ready to shear" : "Ready after \(remaining) more protected \(remaining == 1 ? "night" : "nights")")
+                detail("Wool", remaining == 0 ? "Ready to shear" : "Ready after \(remaining) more \(remaining == 1 ? "Wind Down" : "Wind Downs")")
                 detail("Trade value now", "\(FarmEconomyRules.tradeWoolValue(for: sheep, protectedNightCount: protectedNights)) wool")
             }
         }
@@ -337,7 +337,7 @@ struct BarnSheepDetailView: View {
                             protectedNightCount: protectedNights
                         )
                         Label(
-                            "Wool ready after \(remaining) more protected \(remaining == 1 ? "night" : "nights")",
+                            "Wool ready after \(remaining) more \(remaining == 1 ? "Wind Down" : "Wind Downs")",
                             systemImage: "leaf.fill"
                         )
                         .font(AppTypography.body)
@@ -385,6 +385,12 @@ struct BarnSheepDetailView: View {
 
     private func definition(for sheep: FlockSheep) -> SheepDefinition? {
         SheepCatalog.definition(for: sheep.definitionID)
+    }
+
+    private func arrivalLabel(for sheep: FlockSheep) -> String {
+        let origin = viewModel.sheepSearchState.outcomes.first { $0.id == sheep.sourceOutcomeID }?.origin
+            ?? (sheep.protectedNightNumber == 0 ? .starter : .windDown)
+        return SheepSearchPresentation.barnArrivalLabel(for: origin)
     }
 
     private var tradeValue: Int {
