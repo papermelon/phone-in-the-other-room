@@ -22,7 +22,7 @@ export type NightFlockCommandDependencies = {
 
 export type NightFlockStateDependencies = {
   authenticate(request: Request): Promise<NightFlockCaller>;
-  read(callerID: string, schemaVersion: 1 | 2): Promise<unknown>;
+  read(callerID: string, schemaVersion: 1 | 2 | 3): Promise<unknown>;
 };
 
 export async function handleNightFlockCommand(

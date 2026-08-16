@@ -56,7 +56,7 @@ account label A/B, expected result, actual result, and screenshot/log reference.
 | Create and reusable invite | A chooses one bounded goal, creates a pending lobby, creates a reusable legible code, previews it on B, and verifies it works until revoked, expired, started, or capacity reaches eight. |
 | Lobby gate | Verify joining does not start the party. The host can start only after at least two members have accepted the same goal and completed required local setup. |
 | Locked timezone and seven boundaries | Create with a known IANA timezone, change each phone timezone afterward, and prove days 1–7 follow the locked challenge timezone; day 8 cannot publish. |
-| Shared-goal progress | Verify goal accepted, setup ready, phone tucked away, meaningful partial progress, shared goal completed, morning quiet completed, and private/no update. Private/no update is never completion. |
+| Shared-goal progress | Verify goal accepted, setup ready, phone tucked away, meaningful partial progress, shared goal completed, morning quiet completed, and no update shared. No update shared is never completion. |
 | Instagram boundary | Each member uses FamilyActivityPicker locally and confirms Instagram is included. Verify no token, selected-app list, or server claim that Instagram was independently verified. Coarse shielding evidence may be not requested, unavailable, partial, or observed. |
 | Offline outbox and retry | Disconnect B before each allowed check-in, complete local Wind Down, reconnect in foreground, and capture one idempotent eventual delivery. |
 | Per-night private reset | Choose Keep tonight private, prove no check-in, then begin the next eligible preflight and prove sharing is offered again. |

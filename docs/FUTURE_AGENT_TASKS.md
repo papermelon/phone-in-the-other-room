@@ -11,6 +11,18 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Recently completed
 
+- **2026-08-17 · Cursor:** Addressed schema-three review P1s: overnight terminal publish keeps
+  v3 metrics, sleep/restfulness can update after the morning note and HealthKit, join/create
+  disclose default-on fields, sharing flags project independently, out-of-bounds minutes are
+  rejected rather than clamped, and SQL tests cover leave/delete, retention, seven-night and
+  group grants, and grant acknowledgement. Ordinary Debug stays off. No hosted deploy.
+
+- **2026-08-16 · Cursor:** Implemented Slumber Party schema-three social metrics and bounded
+  Farm rewards: independently controlled sharing, named seven-night member progress, rounded
+  Wind Down and Phone Away minutes, optional sleep/restfulness, server-authoritative grants, and
+  an additive migration after v2. Ordinary Debug stays off. No hosted deploy or Release-flag
+  change.
+
 - **2026-08-14 · Codex:** Made Phone Away search settlement recoverable and idempotent. Pure
   Shared rules now centralize the 15-minute floor, approved 100-minute per-run cap, practice /
   early-ending exclusions, locked banking, carried remainder, deterministic bonus ladder, and
@@ -294,7 +306,8 @@ execute without human sign-off mid-task (final merge review still applies per
 - **Mode:** Human + Codex support · **Size:** M · **Autonomous:** no
 - **Accept:** enable Sign in with Apple for the main App ID and regenerate provisioning; configure
   Supabase Apple Auth/manual linking; review and deploy the v1 migration plus
-  `20260816100000_night_flock_shared_commitment_v2.sql` and both Slumber Party functions; schedule
+  `20260816100000_night_flock_shared_commitment_v2.sql`,
+  `20260816220000_night_flock_social_rewards_v3.sql`, and both Slumber Party functions; schedule
   daily retention; establish a staffed moderation and deletion runbook; publish the updated privacy
   policy and App Privacy answers; then pass a physical two-Apple-account matrix for goal selection,
   reusable invite preview/redemption, lobby gating, all seven day boundaries, offline outbox,

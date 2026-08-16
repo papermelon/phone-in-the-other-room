@@ -288,9 +288,15 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
     var memberSetups: [NightFlockMemberSetup]
     var sharedRoutineIdeas: [NightFlockSharedRoutineIdea]
     var invitePreview: NightFlockInvitePreview?
+    var sharing: NightFlockSharingPreferences
+    var pendingGrants: [NightFlockRewardGrant]
 
     var currentDay: NightFlockDaySummary? {
         days.last(where: { !$0.pasture.isEmpty }) ?? days.last
+    }
+
+    var allMemberProgress: [NightFlockMemberNightProgress] {
+        days.flatMap(\.memberProgress)
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -305,6 +311,8 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         case memberSetups
         case sharedRoutineIdeas
         case invitePreview
+        case sharing
+        case pendingGrants
     }
 
     init(
@@ -318,7 +326,9 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         sharingEnabled: Bool,
         memberSetups: [NightFlockMemberSetup] = [],
         sharedRoutineIdeas: [NightFlockSharedRoutineIdea] = [],
-        invitePreview: NightFlockInvitePreview? = nil
+        invitePreview: NightFlockInvitePreview? = nil,
+        sharing: NightFlockSharingPreferences? = nil,
+        pendingGrants: [NightFlockRewardGrant] = []
     ) {
         self.profile = profile
         self.flockID = flockID
@@ -331,6 +341,14 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         self.memberSetups = memberSetups
         self.sharedRoutineIdeas = sharedRoutineIdeas
         self.invitePreview = invitePreview
+        let myRoutineShare = memberSetups.first { setup in
+            setup.memberID == myMemberID
+        }?.shareRoutineIdeas ?? false
+        self.sharing = sharing ?? NightFlockSharingPreferences(
+            shareGoalProgress: sharingEnabled,
+            shareRoutineIdeas: myRoutineShare
+        )
+        self.pendingGrants = pendingGrants
     }
 
     init(from decoder: Decoder) throws {
@@ -349,6 +367,23 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
             forKey: .sharedRoutineIdeas
         ) ?? []
         invitePreview = try container.decodeIfPresent(NightFlockInvitePreview.self, forKey: .invitePreview)
+        var myRoutineShare = false
+        for setup in memberSetups where setup.memberID == myMemberID {
+            myRoutineShare = setup.shareRoutineIdeas
+            break
+        }
+        if let decodedSharing = try container.decodeIfPresent(
+            NightFlockSharingPreferences.self,
+            forKey: .sharing
+        ) {
+            sharing = decodedSharing
+        } else {
+            sharing = NightFlockSharingPreferences(
+                shareGoalProgress: sharingEnabled,
+                shareRoutineIdeas: myRoutineShare
+            )
+        }
+        pendingGrants = try container.decodeIfPresent([NightFlockRewardGrant].self, forKey: .pendingGrants) ?? []
     }
 }
 

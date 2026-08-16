@@ -51,6 +51,21 @@ only the first successful practice on a new Farm grants a sheep.
 Completing the local Wind Down starting-point questionnaire creates a pending one-time shepherd
 wearable from the production Farm Shop catalogue. The gift is owned, not silently equipped.
 
+## Slumber Party gifts
+
+Shared nights can grant modest Farm rewards, separate from Wind Down searches, Phone Away
+searches, and welcome gifts. Constants live in `NightFlockRewardRules`:
+
+- 1 wool for a qualifying shared night, once per member per challenge day;
+- an unowned cheap Farm item, or 3 wool, after three qualifying nights;
+- one guaranteed Slumber Party sheep search after the party completes with at least four
+  qualifying nights;
+- 2 wool as a group completion bonus when at least two members meet that four-night threshold.
+
+Opening the app, inviting, joining, sending reactions, or changing settings never creates a
+grant. The authenticated backend computes each grant once. The iPhone applies the backend grant
+ID once through `ollie.nightFlock.rewards`.
+
 ## Farm lifecycle and economy
 
 Every found outcome creates an individual `FlockSheep`. Catalogue discovery and Search Journal stay

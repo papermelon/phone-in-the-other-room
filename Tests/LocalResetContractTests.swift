@@ -146,6 +146,7 @@ final class LocalResetContractTests: XCTestCase {
             "ollie.sheepSearch.state",
             "ollie.farm.state",
             "ollie.welcome.rewards",
+            "ollie.nightFlock.rewards",
             "ollie.windDown.profile",
             AppAppearancePreference.key
         ]

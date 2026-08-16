@@ -55,6 +55,9 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ NightFlockModels.swift        seven-day rules and backward-compatible social domain
 ├─ NightFlockCommitment.swift    bounded shared goals, member status, setup, and shielding evidence
 ├─ NightFlockV2API.swift         explicit schema-two commitment commands and responses
+├─ NightFlockV3API.swift         schema-three nightly metrics and grant acknowledgements
+├─ NightFlockSharing.swift       independent sharing defaults, rounding, and projections
+├─ NightFlockRewards.swift       bounded Slumber Party Farm grant rules and local ledger
 ├─ NightFlockOrientation.swift   persisted Slumber Party guide and contextual tips
 ├─ NightFlockPresentation.swift  aggregate and privacy presentation derivations
 ├─ NightFlockAPI.swift           versioned commands/state + monotonic outbox contracts
@@ -329,10 +332,11 @@ the preflight was not private, the Slumber Party view model stores a local run-s
 
 The coordinator calls `onPhoneAwayValidated` only after the selected NFC/honor guard has actually
 made the run valid. That callback enqueues `phoneTucked`; successful primary completion enqueues
-`morningQuietCompleted`. An early end removes the context without a command. Automatic and
-additional-quiet runs have no context and therefore cannot publish. Stable
-challenge/member/day/run-derived hashes make retries idempotent, and foreground activation drains
-the monotonic UserDefaults outbox. Network work is asynchronous and never gates local run state.
+schema-three nightly metrics. A completed Phone Away can queue rounded minutes for the same
+challenge day. An early end removes the context without a command. Automatic runs have no
+context. Stable challenge/member/day/run-derived hashes make retries idempotent, and foreground
+activation drains the monotonic UserDefaults outbox. Network work is asynchronous and never
+gates local run state.
 
 ### Slumber Party shared commitment v2
 
@@ -345,15 +349,43 @@ local setup; only the host can explicitly start it. Reusable invites are hashed 
 limited. RLS exposes projections only to current members, while service RPCs enforce Apple-linked
 authentication, idempotency, blocks, reports, retention, and deletion.
 
-The member projection contains only coarse setup and nightly states. It never contains Family
-Controls tokens, selected-app lists, raw Screen Time reports, exact schedules, or exact shield
-timestamps. Instagram is a member confirmation plus coarse local shielding observation, not a
-server-verifiable app identity. Social sharing uses its own preferences and outbox; impact and
-research sharing remains a separate local/cloud contract.
+### Slumber Party social metrics and rewards v3
 
-The UI persists first-entry orientation at `ollie.nightFlock.orientation`, and v2 pending records
-at `ollie.nightFlock.commitmentOutbox`. Both are backward-compatible JSON. Active Wind Down still
-removes Slumber Party navigation and queues any allowed social event asynchronously.
+Schema three is additive. `NightFlockSharing.swift` owns independent sharing defaults and rounded
+minute bounds. `NightFlockV3API.swift` publishes nightly metrics and grant acknowledgements.
+`NightFlockRewards.swift` applies server-authoritative grants once through
+`ollie.nightFlock.rewards`. The migration `20260816220000_night_flock_social_rewards_v3.sql`
+stores member sharing columns, `night_flock_shared_metrics`, and `night_flock_reward_grants`.
+v1/v2 clients keep their contracts; unknown schema versions fail closed.
+
+Default-on fields after join consent: shared-goal progress, Wind Down completed/partly completed,
+rounded Wind Down minutes, rounded Phone Away minutes, phone tucked away, and coarse shielding
+status. Explicit opt-ins: sourced routine ideas, sleep duration, and restfulness. Hidden fields
+are omitted from member projections; goal progress does not force completion or tucked-away
+visibility. Sleep and restfulness never reuse impact-sharing consent. Join and lobby-create
+screens disclose the default-on fields before someone joins. Raw minute values outside the
+published bounds are rejected by the client helper and the API; they are not clamped-and-accepted.
+Terminal Wind Down publish restores the queued run context and keeps v3 metrics. Sleep duration
+and restfulness can update the same challenge day after the morning note or a later HealthKit
+read, without sending reflection text or raw samples.
+
+A qualifying shared night (`sharedGoalCompleted` or `morningQuietCompleted`) can grant 1 wool,
+once per member per challenge day. Three qualifying nights grant an unowned cheap Farm item or
+3 wool. Completing the party with at least four qualifying nights grants one guaranteed
+Slumber Party sheep search that does not consume Wind Down or Phone Away guarantees. A group
+completion bonus of 2 wool requires two members to meet that four-night threshold. Reactions,
+invites, joins, and setting changes never grant rewards. The client applies a pending grant
+once and acknowledges the backend grant ID.
+
+The member projection never contains Family Controls tokens, selected-app lists, raw Screen Time
+reports, exact schedules, exact shield timestamps, or raw HealthKit samples. Instagram remains a
+member confirmation plus coarse local shielding observation. Social sharing uses its own
+preferences and outbox; impact and research sharing remains a separate local/cloud contract.
+
+The UI persists first-entry orientation at `ollie.nightFlock.orientation`, v2 pending records at
+`ollie.nightFlock.commitmentOutbox`, and v3 metrics at `ollie.nightFlock.metricsOutbox`. Active
+Wind Down still removes Slumber Party navigation and queues any allowed social event
+asynchronously.
 
 Home and Farm remove Slumber Party navigation when a run becomes active. `ActiveRunView` has no
 Slumber Party dependency, state, panel, badge, reaction, notification, or realtime subscription.

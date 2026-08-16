@@ -63,6 +63,32 @@ actor NightFlockService {
         guard response.schemaVersion == 2 else { throw NightFlockServiceError.unsupportedResponse }
         return response
     }
+
+    func stateV3() async throws -> NightFlockSnapshot? {
+        let client = try provider.client()
+        let response: NightFlockV3StateResponse = try await client.functions.invoke(
+            "night-flock-state",
+            options: FunctionInvokeOptions(body: NightFlockV3StateRequest()),
+            decoder: decoder
+        )
+        guard response.schemaVersion == 3 else { throw NightFlockServiceError.unsupportedResponse }
+        return response.snapshot
+    }
+
+    func sendV3(_ command: NightFlockV3Command) async throws -> NightFlockV3CommandResponse {
+        let request = NightFlockV3CommandRequest(command: command)
+        let client = try provider.client()
+        let response: NightFlockV3CommandResponse = try await client.functions.invoke(
+            "night-flock-command",
+            options: FunctionInvokeOptions(
+                headers: ["Idempotency-Key": command.idempotencyKey],
+                body: request
+            ),
+            decoder: decoder
+        )
+        guard response.schemaVersion == 3 else { throw NightFlockServiceError.unsupportedResponse }
+        return response
+    }
 }
 
 enum NightFlockServiceError: LocalizedError {
@@ -92,6 +118,16 @@ private extension NightFlockV2Command {
              let .acceptGoal(_, key), let .setLocalSetup(_, _, _, key),
              let .setSharingPreferences(_, _, key), let .setRoutineIdeas(_, _, key),
              let .startChallenge(_, key), let .publishProgress(_, _, _, _, key):
+            return key
+        }
+    }
+}
+
+private extension NightFlockV3Command {
+    var idempotencyKey: String {
+        switch self {
+        case let .setSharingPreferences(_, key), let .publishNightMetrics(_, _, _, _, _, _, _, _, key),
+             let .acknowledgeGrant(_, key):
             return key
         }
     }

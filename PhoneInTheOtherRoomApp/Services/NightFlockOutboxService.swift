@@ -3,6 +3,7 @@ import Foundation
 actor NightFlockOutboxService {
     static let outboxKey = "ollie.nightFlock.outbox"
     static let v2OutboxKey = "ollie.nightFlock.commitmentOutbox"
+    static let v3OutboxKey = "ollie.nightFlock.metricsOutbox"
     static let runContextsKey = "ollie.nightFlock.runContexts"
 
     private let defaults: UserDefaults
@@ -63,6 +64,25 @@ actor NightFlockOutboxService {
         save(v2Records().filter { $0.id != id }, key: Self.v2OutboxKey)
     }
 
+    func v3Records() -> [NightFlockV3OutboxRecord] {
+        load([NightFlockV3OutboxRecord].self, key: Self.v3OutboxKey) ?? []
+    }
+
+    func enqueueV3(_ record: NightFlockV3OutboxRecord) {
+        save(NightFlockV3OutboxRules.merge(record, into: v3Records()), key: Self.v3OutboxKey)
+    }
+
+    func markV3Attempt(_ id: UUID) {
+        var queued = v3Records()
+        guard let index = queued.firstIndex(where: { $0.id == id }) else { return }
+        queued[index].attemptCount += 1
+        save(queued, key: Self.v3OutboxKey)
+    }
+
+    func removeV3(_ id: UUID) {
+        save(v3Records().filter { $0.id != id }, key: Self.v3OutboxKey)
+    }
+
     func remove(_ id: UUID) {
         let queued = records().filter { $0.id != id }
         save(queued, key: Self.outboxKey)
@@ -93,6 +113,7 @@ actor NightFlockOutboxService {
     func clear() {
         defaults.removeObject(forKey: Self.outboxKey)
         defaults.removeObject(forKey: Self.v2OutboxKey)
+        defaults.removeObject(forKey: Self.v3OutboxKey)
         defaults.removeObject(forKey: Self.runContextsKey)
     }
 

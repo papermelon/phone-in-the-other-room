@@ -119,9 +119,11 @@ flowchart LR
    ritual, reflection, and HealthKit history remains local. Separately consented impact
    records omit exact dates/times, source names, selected apps, and raw Health samples.
 7. When ADR-0016's TestFlight/Release-enabled Slumber Party is on, an eligible shared primary run
-   queues only the member's coarse shared-goal progress after validation and success. The local
-   run never waits for the network, and active Wind Down receives no social UI. Group progress
-   may be named inside the invite-only party; app tokens, exact schedules, and impact data remain
+   queues the member's independently controlled nightly metrics after validation and success.
+   Phone Away minutes can be queued separately. The local run never waits for the network, and
+   active Wind Down receives no social UI. Named member progress, rounded quiet minutes, optional
+   sleep/restfulness, and fixed reactions stay inside the invite-only party. Server-authoritative
+   Farm grants apply later from a local ledger. App tokens, exact schedules, and impact data remain
    outside the social contract.
 
 The iPhone is the **authoritative** side of a run. The Watch displays state and reports a brief optional placement distance only.
@@ -152,6 +154,9 @@ Shared/                        ← Pure domain logic compiled into all targets
   NightFlockModels.swift          (seven-day social domain and persisted compatibility models)
   NightFlockCommitment.swift      (bounded shared goals, setup, progress, and shielding limits)
   NightFlockV2API.swift           (schema-version-2 shared-goal lobby contract)
+  NightFlockV3API.swift           (schema-version-3 nightly metrics and grant acknowledgements)
+  NightFlockSharing.swift         (independent sharing defaults, rounding, and projections)
+  NightFlockRewards.swift         (bounded Slumber Party Farm grant rules and local ledger)
   NightFlockOrientation.swift     (separate Slumber Party orientation/tip persistence)
   NightFlockPresentation.swift    (aggregate and privacy-safe presentation derivations)
   NightFlockAPI.swift             (versioned command/state and local outbox contracts)
@@ -400,7 +405,9 @@ placement/source link, Settings grouping, and concrete Farm labels were reconcil
 2026-08-13. On 2026-08-16 the founder-directed Slumber Party revision added one bounded shared
 Wind Down goal, a 2–8 person lobby, named member progress, reusable invite codes, optional
 source-linked routine ideas, separate sharing controls, and coarse Screen Time shielding
-evidence. On 2026-08-16 the founder authorized TestFlight/Release archives to compile with
+evidence. A later schema-three slice added independently controlled Wind Down and Phone Away
+minutes, optional sleep duration and restfulness, and bounded server-authoritative Farm
+rewards. On 2026-08-16 the founder authorized TestFlight/Release archives to compile with
 `SUPABASE_NIGHT_FLOCK_ENABLED=YES`; ordinary Debug remains disabled. The same day’s first-run
 revision added a universal Wind Down starting point, one starter sheep, a pending shepherd
 wearable gift, a one-time onboarding-practice sheep, independent protected-night and Phone Away

@@ -91,7 +91,7 @@ enum NightFlockMemberNightStatus: String, Codable, CaseIterable, Sendable {
         case .partiallyCompleted: return "Partly completed"
         case .sharedGoalCompleted: return "Goal completed"
         case .morningQuietCompleted: return "Morning quiet completed"
-        case .privateNoUpdate: return "Private tonight"
+        case .privateNoUpdate: return "No update shared"
         }
     }
 
@@ -115,8 +115,60 @@ struct NightFlockMemberSetup: Codable, Equatable, Identifiable, Sendable {
     var sharingEnabled: Bool
     var shareRoutineIdeas: Bool
     var shieldingEvidence: NightFlockShieldingEvidence
+    var sharing: NightFlockSharingPreferences
 
     var id: UUID { memberID }
+
+    init(
+        memberID: UUID,
+        goalAccepted: Bool,
+        setupReady: Bool,
+        sharingEnabled: Bool,
+        shareRoutineIdeas: Bool,
+        shieldingEvidence: NightFlockShieldingEvidence,
+        sharing: NightFlockSharingPreferences? = nil
+    ) {
+        self.memberID = memberID
+        self.goalAccepted = goalAccepted
+        self.setupReady = setupReady
+        self.sharingEnabled = sharingEnabled
+        self.shareRoutineIdeas = shareRoutineIdeas
+        self.shieldingEvidence = shieldingEvidence
+        var resolved = sharing ?? NightFlockSharingPreferences(
+            shareGoalProgress: sharingEnabled,
+            shareRoutineIdeas: shareRoutineIdeas
+        )
+        resolved.shareGoalProgress = sharingEnabled
+        resolved.shareRoutineIdeas = shareRoutineIdeas
+        self.sharing = resolved
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case memberID, goalAccepted, setupReady, sharingEnabled, shareRoutineIdeas
+        case shieldingEvidence, sharing
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let sharingEnabled = try container.decodeIfPresent(Bool.self, forKey: .sharingEnabled) ?? true
+        let shareRoutineIdeas = try container.decodeIfPresent(Bool.self, forKey: .shareRoutineIdeas) ?? false
+        let decodedSharing = try container.decodeIfPresent(
+            NightFlockSharingPreferences.self,
+            forKey: .sharing
+        )
+        self.init(
+            memberID: try container.decode(UUID.self, forKey: .memberID),
+            goalAccepted: try container.decodeIfPresent(Bool.self, forKey: .goalAccepted) ?? false,
+            setupReady: try container.decodeIfPresent(Bool.self, forKey: .setupReady) ?? false,
+            sharingEnabled: sharingEnabled,
+            shareRoutineIdeas: shareRoutineIdeas,
+            shieldingEvidence: try container.decodeIfPresent(
+                NightFlockShieldingEvidence.self,
+                forKey: .shieldingEvidence
+            ) ?? .notRequested,
+            sharing: decodedSharing
+        )
+    }
 }
 
 struct NightFlockMemberNightProgress: Codable, Equatable, Identifiable, Sendable {
@@ -124,8 +176,32 @@ struct NightFlockMemberNightProgress: Codable, Equatable, Identifiable, Sendable
     var day: Int
     var status: NightFlockMemberNightStatus
     var shieldingEvidence: NightFlockShieldingEvidence
+    var windDownMinutes: Int?
+    var phoneAwayMinutes: Int?
+    var sleepDurationMinutes: Int?
+    var restfulness: MorningRestfulness?
 
     var id: String { "\(memberID.uuidString)-\(day)" }
+
+    init(
+        memberID: UUID,
+        day: Int,
+        status: NightFlockMemberNightStatus,
+        shieldingEvidence: NightFlockShieldingEvidence,
+        windDownMinutes: Int? = nil,
+        phoneAwayMinutes: Int? = nil,
+        sleepDurationMinutes: Int? = nil,
+        restfulness: MorningRestfulness? = nil
+    ) {
+        self.memberID = memberID
+        self.day = day
+        self.status = status
+        self.shieldingEvidence = shieldingEvidence
+        self.windDownMinutes = windDownMinutes
+        self.phoneAwayMinutes = phoneAwayMinutes
+        self.sleepDurationMinutes = sleepDurationMinutes
+        self.restfulness = restfulness
+    }
 }
 
 struct NightFlockSharedRoutineIdea: Codable, Equatable, Identifiable, Sendable {
@@ -133,16 +209,6 @@ struct NightFlockSharedRoutineIdea: Codable, Equatable, Identifiable, Sendable {
     var guidanceID: String
 
     var id: String { "\(memberID.uuidString)-\(guidanceID)" }
-}
-
-struct NightFlockSharingPreferences: Codable, Equatable, Sendable {
-    var shareGoalProgress: Bool
-    var shareRoutineIdeas: Bool
-
-    init(shareGoalProgress: Bool = true, shareRoutineIdeas: Bool = false) {
-        self.shareGoalProgress = shareGoalProgress
-        self.shareRoutineIdeas = shareRoutineIdeas
-    }
 }
 
 struct NightFlockCommitmentDraft: Equatable, Sendable {

@@ -102,7 +102,7 @@ explicit founder direction.
   no social panel, live update, reaction, notification, or novelty. Routines, schedules, absence,
   Health data, exact schedules, and private details are never shared. The invited group may
   see named, coarse progress for the one shared goal, including setup readiness and meaningful
-  nightly states. Private/no update is not completion; the morning view stays finite and calm.
+  nightly states. No update shared is not completion; the morning view stays finite and calm.
 - **Respect the morning.** Morning is when rewards land, stats are glanced at, and streak
   warmth is felt. Keep the chosen morning-quiet window calm; do not turn it into a routine
   checklist or an app-browsing session.
@@ -135,13 +135,17 @@ explicit founder direction.
   HealthKit samples, source names, app selections, and personal reflections stay local.
   Optional impact sharing must be purpose-limited, separately consented, date-free, minimal,
   inspectable in copy, stoppable, and deletable.
-- **Share the smallest social truth.** Slumber Party shares only the selected goal, member-level
-  setup/acceptance, coarse meaningful nightly progress, fixed reactions, and optionally selected
-  guidance IDs inside the invited group. Private/no update is never completion. Private nights,
-  exact schedules, durations, HealthKit, Screen Time tokens or app lists, NFC, purpose,
-  notification, Farm, sheep, wool, and impact data stay outside the social contract. Apple’s
-  opaque app token cannot prove an app name to the server: a member confirms Instagram locally,
-  while Counting Sheep may report only coarse shielding observation.
+- **Share a clear social truth.** Slumber Party shares named aliases and seven-night member
+  progress inside the invited group. Default-on join-consent fields are shared-goal progress,
+  Wind Down completed or partly completed, rounded Wind Down quiet minutes, rounded Phone Away
+  minutes, phone tucked away, and coarse shielding status. Explicit opt-ins are selected
+  sourced routine ideas, sleep duration, and morning restfulness. No update shared is never
+  completion. Exact schedules, private routine or reflection text, Family Controls tokens, app
+  lists, raw reports, raw HealthKit samples, NFC, purpose, notification, and impact data stay
+  outside the social contract. Apple’s opaque app token cannot prove an app name to the server:
+  a member confirms Instagram locally, while Counting Sheep may report only coarse shielding
+  observation. Bounded Farm grants may follow qualifying shared nights; opening the app,
+  inviting, joining, reacting, or changing settings never creates them.
 
 ## Durable product commitments
 

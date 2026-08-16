@@ -33,6 +33,7 @@ final class NightFlockViewModel: ObservableObject {
     @Published var selectedIdentity: NightFlockIdentity = .moonlitMeadow
     @Published var joinCode = ""
     @Published var prefersJoinEntry = false
+    var onApplyRewardGrants: (([NightFlockRewardGrant]) -> Void)?
 
     let featureEnabled: Bool
     private let accountService: NightFlockAccountService?
@@ -40,7 +41,7 @@ final class NightFlockViewModel: ObservableObject {
     let outbox: NightFlockOutboxService?
     let orientationStore: NightFlockOrientationStore
     private var pendingAppleNonce: String?
-    private var runContexts: [UUID: NightFlockRunShareContext] = [:]
+    var runContexts: [UUID: NightFlockRunShareContext] = [:]
 
     var homeSummary: NightFlockHomeSummary? {
         guard featureEnabled else { return nil }
@@ -333,27 +334,69 @@ final class NightFlockViewModel: ObservableObject {
         enqueue(state: .phoneTucked, for: context)
     }
 
-    func handleTerminalRun(_ run: FocusRun) {
-        guard var context = runContexts[run.id] else {
-            Task {
-                guard let restored = await outbox?.runContexts().first(where: { $0.runID == run.id }) else {
-                    return
-                }
-                runContexts[run.id] = restored
-                handleTerminalRun(run)
-            }
+    func handleTerminalRun(_ run: FocusRun, metrics: NightFlockLocalNightMetrics? = nil) {
+        if runContexts[run.id] != nil {
+            finishTerminalRun(run, metrics: metrics)
             return
         }
+        Task {
+            if let restored = await outbox?.runContexts().first(where: { $0.runID == run.id }) {
+                runContexts[run.id] = restored
+            }
+            finishTerminalRun(run, metrics: metrics)
+        }
+    }
+
+    private func finishTerminalRun(_ run: FocusRun, metrics: NightFlockLocalNightMetrics?) {
         guard run.completedSuccessfully, run.isProgressionEligibleNightWatch else {
             runContexts.removeValue(forKey: run.id)
             Task { await outbox?.removeRunContext(run.id) }
             return
         }
-        guard !context.morningQuietCompletedQueued else { return }
+        guard var context = NightFlockRunShareContextResolver.resolve(
+            runID: run.id,
+            memory: runContexts,
+            persisted: []
+        ) ?? synthesizedShareContext(for: run) else { return }
+        if context.morningQuietCompletedQueued, metrics == nil { return }
         context.phoneTuckedQueued = true
         context.morningQuietCompletedQueued = true
         runContexts[run.id] = context
-        enqueue(state: .morningQuietCompleted, for: context)
+        if let metrics {
+            enqueueNightMetrics(for: context, metrics: metrics)
+        } else {
+            enqueue(state: .morningQuietCompleted, for: context)
+        }
+    }
+
+    private func synthesizedShareContext(for run: FocusRun) -> NightFlockRunShareContext? {
+        guard let snapshot else { return nil }
+        let date = run.nightWatchPlan?.wakeTime ?? run.startedAt
+        guard let day = NightFlockChallengeDayRules.challengeDay(at: date, challenge: snapshot.challenge)
+                ?? NightFlockChallengeDayRules.challengeDay(at: run.startedAt, challenge: snapshot.challenge)
+        else { return nil }
+        return NightFlockRunShareContext(
+            runID: run.id,
+            challengeID: snapshot.challenge.id,
+            memberID: snapshot.myMemberID,
+            challengeDay: day,
+            createdAt: date
+        )
+    }
+
+    func sharePhoneAwayMetrics(_ metrics: NightFlockLocalNightMetrics, for run: FocusRun, at date: Date) {
+        guard let snapshot, snapshot.sharing.sharePhoneAwayMinutes,
+              let day = NightFlockChallengeDayRules.challengeDay(at: date, challenge: snapshot.challenge)
+        else { return }
+        let context = runContexts[run.id] ?? NightFlockRunShareContext(
+            runID: run.id,
+            challengeID: snapshot.challenge.id,
+            memberID: snapshot.myMemberID,
+            challengeDay: day,
+            createdAt: date
+        )
+        runContexts[run.id] = context
+        enqueueNightMetrics(for: context, metrics: metrics)
     }
 
     func hasSharedResult(for runID: UUID) -> Bool {
@@ -382,11 +425,17 @@ final class NightFlockViewModel: ObservableObject {
         if showLoading { phase = .loading }
         do {
             do {
-                snapshot = try await service.stateV2()
+                snapshot = try await service.stateV3()
             } catch {
-                snapshot = try await service.state()
+                do {
+                    snapshot = try await service.stateV2()
+                } catch {
+                    snapshot = try await service.state()
+                }
             }
+            syncDraftFromSnapshot()
             phase = .ready
+            applyPendingGrantsIfPossible()
         } catch {
             phase = snapshot == nil ? .offline : .ready
         }
@@ -448,6 +497,34 @@ final class NightFlockViewModel: ObservableObject {
 
     func flushOutbox() async {
         guard accountState == .linked, let outbox, let service else { return }
+        for record in await outbox.v3Records() {
+            do {
+                let response = try await service.sendV3(.publishNightMetrics(
+                    challengeID: record.challengeID,
+                    day: record.challengeDay,
+                    status: record.status,
+                    shieldingEvidence: record.shieldingEvidence,
+                    windDownMinutes: record.windDownMinutes,
+                    phoneAwayMinutes: record.phoneAwayMinutes,
+                    sleepDurationMinutes: record.sleepDurationMinutes,
+                    restfulness: record.restfulness,
+                    idempotencyKey: record.idempotencyKey
+                ))
+                guard response.accepted else { throw NightFlockServiceError.unsupportedResponse }
+                await outbox.removeV3(record.id)
+                if let updated = response.snapshot {
+                    snapshot = updated
+                    syncDraftFromSnapshot()
+                }
+                applyPendingGrantsIfPossible()
+            } catch {
+                // Keep v3 queued until schema-three is live, but still drain v2/v1
+                // so local Wind Down progress reaches a current hosted backend.
+                await outbox.markV3Attempt(record.id)
+                phase = snapshot == nil ? .offline : phase
+                break
+            }
+        }
         for record in await outbox.v2Records() {
             let status: NightFlockMemberNightStatus = record.status
             do {

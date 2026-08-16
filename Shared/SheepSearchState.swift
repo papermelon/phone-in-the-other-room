@@ -12,6 +12,7 @@ enum SheepSearchOrigin: String, Codable {
     case phoneBreak
     case starter
     case onboardingPractice
+    case slumberParty
     /// Forward-compatible stand-in so unknown future origins do not count as Wind Down.
     case unspecified
 
@@ -252,6 +253,10 @@ struct SheepSearchState: Codable, Equatable {
         outcomes.first { $0.origin == .onboardingPractice && $0.runID == runID }
     }
 
+    func slumberPartyOutcome(for grantID: UUID) -> SheepSearchOutcome? {
+        outcomes.first { $0.origin == .slumberParty && $0.runID == grantID }
+    }
+
     func phoneBreakOutcome(for runID: UUID) -> SheepSearchOutcome? {
         outcomes.first { $0.origin == .phoneBreak && $0.runID == runID }
     }
@@ -279,7 +284,7 @@ struct SheepSearchState: Codable, Equatable {
                 phoneBreakConsecutiveNoFinds = 0
             case .windDown:
                 consecutiveNoFinds = 0
-            case .starter, .onboardingPractice, .unspecified:
+            case .starter, .onboardingPractice, .slumberParty, .unspecified:
                 break
             }
         } else {
@@ -288,7 +293,7 @@ struct SheepSearchState: Codable, Equatable {
                 phoneBreakConsecutiveNoFinds += 1
             case .windDown:
                 consecutiveNoFinds += 1
-            case .starter, .onboardingPractice, .unspecified:
+            case .starter, .onboardingPractice, .slumberParty, .unspecified:
                 break
             }
         }

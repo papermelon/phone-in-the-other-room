@@ -129,8 +129,9 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   A lobby waits for at least two members, goal acceptance, local setup readiness, and an explicit
   host start. Members keep their own bedtimes and routines; selected source-linked routine ideas
   are optional. Named member progress, fixed reactions, safety controls, deletion, and reusable
-  invite codes stay inside the invite-only group. There is no feed, chat, discovery, leaderboard,
-  reward, or Farm economy effect. Active Wind Down has no social UI.
+  invite codes stay inside the invite-only group. Shared nights can grant a little wool, a small
+  Farm keepsake, or one guaranteed Slumber Party sheep search, separate from Wind Down and Phone
+  Away guarantees. There is no feed, chat, discovery, or leaderboard. Active Wind Down has no social UI.
 - **Settings**: **Your Wind Down**, **Connections**, and **Help & app guide**. Your Wind Down
   contains Appearance, schedule, bookends, App Shielding or NFC + App Shielding, and automatic
   Wind Down and shielding. Help & app guide contains “How Wind Down works,” guidance beside

@@ -391,6 +391,7 @@ struct FarmDashboardContent: View {
         case .starterGrant: return "Ollie left a welcome gift in the pasture."
         case .welcomeGift: return "A welcome gift is waiting to be tried on."
         case .onboardingPracticeArrival: return "Practice brought a welcome gift home."
+        case .slumberPartyGrant: return "A Slumber Party gift reached the Farm."
         }
     }
 

@@ -14,6 +14,7 @@ enum SheepSearchPresentation {
         switch origin {
         case .starter: return "Welcome gift"
         case .onboardingPractice: return "Practice gift"
+        case .slumberParty: return "Slumber Party gift"
         case .windDown: return "After Wind Down"
         case .phoneBreak: return "After Phone Away"
         case .unspecified: return "Farm note"
@@ -24,6 +25,8 @@ enum SheepSearchPresentation {
         switch origin {
         case .starter, .onboardingPractice:
             return "A WELCOME GIFT"
+        case .slumberParty:
+            return "A SLUMBER PARTY GIFT"
         case .windDown, .phoneBreak, .unspecified:
             return "OLLIE FOUND A MISSING SHEEP"
         }
@@ -35,6 +38,8 @@ enum SheepSearchPresentation {
             return "Ollie left a welcome gift in the pasture."
         case .onboardingPractice:
             return "Practice brought a welcome gift home."
+        case .slumberParty:
+            return "Your Slumber Party brought a missing sheep home."
         case .windDown, .phoneBreak, .unspecified:
             return "Ollie found a missing sheep."
         }
@@ -48,6 +53,8 @@ enum SheepSearchPresentation {
             return "Ollie kept a clue."
         case .starter, .onboardingPractice:
             return "This welcome gift is waiting in Search Journal."
+        case .slumberParty:
+            return "This Slumber Party gift is waiting in Search Journal."
         }
     }
 
@@ -59,6 +66,8 @@ enum SheepSearchPresentation {
             return "Ollie did not bring a sheep home this time. The clue is saved for another night."
         case .starter, .onboardingPractice:
             return "Welcome gifts are recorded here so the Farm can remember how they arrived."
+        case .slumberParty:
+            return "Slumber Party gifts are recorded here so the Farm can remember how they arrived."
         }
     }
 
@@ -68,6 +77,8 @@ enum SheepSearchPresentation {
             return "A welcome gift for a new Farm"
         case .onboardingPractice:
             return "A welcome gift from practice"
+        case .slumberParty:
+            return "A gift from seven nights together"
         case .windDown:
             return "After this Wind Down"
         case .phoneBreak:
@@ -85,6 +96,8 @@ enum SheepSearchPresentation {
         switch origin {
         case .starter, .onboardingPractice:
             return "See the welcome gift"
+        case .slumberParty:
+            return "See the Slumber Party gift"
         case .windDown, .phoneBreak, .unspecified:
             return "Open Search Journal"
         }
@@ -94,6 +107,8 @@ enum SheepSearchPresentation {
         switch origin {
         case .starter, .onboardingPractice:
             return "Shows the welcome gift saved in Search Journal"
+        case .slumberParty:
+            return "Shows the Slumber Party gift saved in Search Journal"
         case .phoneBreak:
             return "Shows the Search Journal note for this Phone Away"
         case .windDown, .unspecified:
@@ -106,6 +121,8 @@ enum SheepSearchPresentation {
             switch outcome.origin {
             case .starter, .onboardingPractice:
                 return "Welcome gift: \(name)"
+            case .slumberParty:
+                return "Slumber Party gift: \(name)"
             case .windDown, .phoneBreak, .unspecified:
                 return "Ollie found \(name)"
             }
@@ -117,6 +134,8 @@ enum SheepSearchPresentation {
         switch origin {
         case .starter, .onboardingPractice:
             return "WELCOME GIFT"
+        case .slumberParty:
+            return "SLUMBER PARTY GIFT"
         case .windDown, .phoneBreak, .unspecified:
             return "HOW THEY ARRIVED"
         }
