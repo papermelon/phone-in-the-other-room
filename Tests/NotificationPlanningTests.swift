@@ -3,12 +3,29 @@ import XCTest
 final class NotificationPlanningTests: XCTestCase {
     private let start = Date(timeIntervalSince1970: 1_000_000)
 
-    func testCadenceCountsMatchTheRitualTimeline() {
+    func testPrimaryWindDownCadenceExcludesIndependentMorningNotifications() {
         let plan = makePlan()
 
-        XCTAssertEqual(planFor(.quiet, plan: plan).count, 4)
-        XCTAssertEqual(planFor(.balanced, plan: plan).count, 7)
-        XCTAssertEqual(planFor(.supportive, plan: plan).count, 9)
+        // Screen-Free Morning owns its journal-backed start/end requests, so
+        // the primary Wind Down planner only contributes pre-bed/overnight cues.
+        XCTAssertEqual(planFor(.quiet, plan: plan).count, 2)
+        XCTAssertEqual(planFor(.balanced, plan: plan).count, 5)
+        XCTAssertEqual(planFor(.supportive, plan: plan).count, 6)
+
+        let legacyCounts = [NotificationCadence.quiet, .balanced, .supportive].map { cadence in
+            NightWatchNotificationPlanBuilder.scheduledNotifications(
+                for: plan,
+                startedAt: start,
+                cadence: cadence,
+                purpose: .defaultProfile,
+                seed: UUID(),
+                educationalTipsEnabled: false,
+                soundsEnabled: true,
+                includesIndependentScreenFreeMorning: false,
+                now: start.addingTimeInterval(-1)
+            ).count
+        }
+        XCTAssertEqual(legacyCounts, [4, 7, 9])
     }
 
     func testShortWindDownSkipsMidpointWhenSpacingWouldBeTooTight() {
@@ -137,6 +154,39 @@ final class NotificationPlanningTests: XCTestCase {
                 && !copy.contains("sleep")
                 && !copy.contains("morning")
         })
+    }
+
+    func testIndependentScreenFreeMorningOwnsPrimaryMorningNotificationIdentifiers() {
+        let independent = planFor(.supportive, plan: makePlan())
+        XCTAssertFalse(independent.contains { notification in
+            NightWatchNotificationPlanBuilder.supersededMorningIdentifiers.contains(notification.id)
+        })
+
+        let legacy = NightWatchNotificationPlanBuilder.scheduledNotifications(
+            for: makePlan(),
+            startedAt: start,
+            cadence: .supportive,
+            purpose: .defaultProfile,
+            seed: UUID(),
+            educationalTipsEnabled: false,
+            soundsEnabled: true,
+            includesIndependentScreenFreeMorning: false,
+            now: start
+        )
+        XCTAssertTrue(legacy.contains { $0.id == "night-watch-phone-free-morning" })
+        XCTAssertTrue(legacy.contains { $0.id == "focus-run-complete" })
+    }
+
+    func testNotificationGenerationRejectsStaleOrDisabledAsyncAdds() {
+        XCTAssertTrue(NotificationSchedulingGenerationPolicy.accepts(
+            requested: 4, current: 4, remindersEnabled: true
+        ))
+        XCTAssertFalse(NotificationSchedulingGenerationPolicy.accepts(
+            requested: 4, current: 5, remindersEnabled: true
+        ))
+        XCTAssertFalse(NotificationSchedulingGenerationPolicy.accepts(
+            requested: 5, current: 5, remindersEnabled: false
+        ))
     }
 
     func testLegacyNotificationPreferencesKeepOptionalChannelsOff() throws {

@@ -81,9 +81,16 @@ struct EarlyEndView: View {
 
     private var minutesAwayText: String {
         let run = viewModel.activeRun
-        let minutes = run?.isNightWatch == true
-            ? run?.creditedQuietMinutes ?? 0
-            : Int((run?.actualDurationSeconds ?? 0) / 60)
+        let minutes: Int
+        if let run, run.isProgressionEligibleNightWatch {
+            // Screen-Free Morning remains an independent factual occurrence;
+            // this terminal Wind Down receipt must not combine it again.
+            minutes = run.creditedWindDownMinutes
+        } else if run?.isNightWatch == true {
+            minutes = run?.creditedQuietMinutes ?? 0
+        } else {
+            minutes = Int((run?.actualDurationSeconds ?? 0) / 60)
+        }
         switch minutes {
         case 0: return "Your phone got a little time away."
         case 1: return "Your phone was away for a minute."

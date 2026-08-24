@@ -17,7 +17,9 @@ General screen-time tools offer broad schedules, strict modes, and productivity 
 but they do not make physical phone separation feel like a small bedtime ritual.
 
 Counting Sheep gives those two periods one memorable shape: tuck the phone into another
-room at wind-down, leave it there overnight, and let it wake after the user does.
+room at wind-down, leave it there overnight, and let it wake after the user does. The saved
+bookends remain part of the ritual/reporting shape; Wind Down reward credit is factual
+wind-down time, while Screen-Free Morning settles separately through Sunrise Trail.
 
 ## Core promise
 

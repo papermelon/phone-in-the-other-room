@@ -97,7 +97,7 @@ struct TrailBoardView: View {
                         Text("Choose one missing sheep for Ollie to favour.")
                             .font(AppTypography.headline)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Ollie will look more closely there after Wind Down. It never guarantees who comes home.")
+                        Text("Ollie may look more closely here after Wind Down, Sunrise Trail, or Phone Away. Choosing a sheep never guarantees who comes home.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)

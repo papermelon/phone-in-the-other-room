@@ -44,6 +44,20 @@ final class LocalResetContractTests: XCTestCase {
         })
     }
 
+    func testResetRemovesOnlyOwnedDynamicSensitiveRunKeys() {
+        let emergencyExitKey = "ollie.emergencyExit.reason.\(UUID().uuidString)"
+        let similarlyNamedUnrelatedKey = "ollie.emergencyExit.reasoning.unrelated"
+        standardDefaults.set("remove", forKey: emergencyExitKey)
+        standardDefaults.set("keep", forKey: similarlyNamedUnrelatedKey)
+        standardDefaults.set("keep", forKey: "ollie.installationID")
+
+        CountingSheepOwnedStorage.clearStandardDefaults(standardDefaults)
+
+        XCTAssertNil(standardDefaults.object(forKey: emergencyExitKey))
+        XCTAssertEqual(standardDefaults.string(forKey: similarlyNamedUnrelatedKey), "keep")
+        XCTAssertEqual(standardDefaults.string(forKey: "ollie.installationID"), "keep")
+    }
+
     func testOnboardingAndOrientationResetToFreshState() throws {
         standardDefaults.set(CountingSheepOnboarding.currentVersion, forKey: CountingSheepOnboarding.versionKey)
         standardDefaults.set(
@@ -141,12 +155,18 @@ final class LocalResetContractTests: XCTestCase {
     func testResetContractIncludesNFCScreenTimeShieldHistoryAndAppearanceKeys() {
         let requiredStandardKeys = [
             "ollie.phoneBedNFCTag.registration",
+            "ollie.phoneBedNFCTags.library",
             "ollie.screenTime.reportPreferences",
             "ollie.nightWatch.history",
             "ollie.sheepSearch.state",
             "ollie.farm.state",
             "ollie.welcome.rewards",
             "ollie.nightFlock.rewards",
+            "ollie.nightFlock.expectedLinkedUserID",
+            "ollie.nightFlock.stagedDestructiveEffect",
+            "ollie.nightFlock.pendingDestructiveIntent",
+            "ollie.nightFlock.pendingAccountDeletionIntent",
+            "ollie.nightFlock.acceptedAccountDeletion",
             "ollie.windDown.profile",
             AppAppearancePreference.key
         ]
@@ -165,5 +185,9 @@ final class LocalResetContractTests: XCTestCase {
     func testTransportIdentityIsAuditedButNotProductResetState() {
         XCTAssertEqual(CountingSheepOwnedStorage.preservedTransportKeys, ["ollie.installationID"])
         XCTAssertFalse(CountingSheepOwnedStorage.standardKeys.contains("ollie.installationID"))
+        XCTAssertEqual(
+            CountingSheepOwnedStorage.dynamicStandardKeyPrefixes,
+            ["ollie.emergencyExit.reason."]
+        )
     }
 }

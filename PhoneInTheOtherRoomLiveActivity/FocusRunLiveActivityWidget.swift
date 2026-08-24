@@ -65,6 +65,12 @@ struct FocusRunLiveActivityWidget: Widget {
         for state: FocusRunLiveActivityAttributes.ContentState,
         runID: UUID
     ) -> NightWatchLiveActivityGuidance {
+        if let morning = state.screenFreeMorning {
+            return NightWatchLiveActivityGuidance(
+                primary: morning.status.title,
+                secondary: morning.isActive ? "Ends at \(OllieFormat.time(morning.endsAt))" : nil
+            )
+        }
         if let terminalPresentation = state.terminalPresentation {
             return NightWatchLiveActivityGuidance(
                 primary: terminalPresentation.headline,
@@ -133,6 +139,19 @@ private enum FocusRunLiveActivityPreviewData {
         eveningActivityTitle: PhoneFreeActivity.read.title,
         morningActivityTitle: PhoneFreeActivity.openCurtains.title
     )
+
+    static let screenFreeMorningState = FocusRunLiveActivityAttributes.ContentState(
+        plannedEndAt: Date().addingTimeInterval(25 * 60),
+        isComplete: false,
+        screenFreeMorning: ScreenFreeMorningPresentation(
+            occurrence: MorningQuietOccurrence(
+                scheduledStart: Date().addingTimeInterval(-5 * 60),
+                scheduledEnd: Date().addingTimeInterval(25 * 60),
+                actualStart: Date().addingTimeInterval(-5 * 60),
+                outcome: .active
+            )
+        )
+    )
 }
 
 #Preview("Live Activity — compact, 38:55", as: .dynamicIsland(.compact), using: FocusRunLiveActivityPreviewData.attributes) {
@@ -193,6 +212,12 @@ private enum FocusRunLiveActivityPreviewData {
     FocusRunLiveActivityWidget()
 } contentStates: {
     FocusRunLiveActivityPreviewData.endedEarlyState
+}
+
+#Preview("Live Activity — Screen-Free Morning", as: .content, using: FocusRunLiveActivityPreviewData.attributes) {
+    FocusRunLiveActivityWidget()
+} contentStates: {
+    FocusRunLiveActivityPreviewData.screenFreeMorningState
 }
 
 private struct FocusRunLiveActivityView: View {
@@ -262,6 +287,7 @@ private struct FocusRunLiveActivityView: View {
     }
 
     private var headerText: String {
+        if let morning = state.screenFreeMorning { return morning.status.title.uppercased() }
         if let terminalPresentation = state.terminalPresentation {
             return terminalPresentation.headline
         }
@@ -281,6 +307,12 @@ private struct FocusRunLiveActivityView: View {
     }
 
     private var guidance: NightWatchLiveActivityGuidance {
+        if let morning = state.screenFreeMorning {
+            return NightWatchLiveActivityGuidance(
+                primary: morning.status.title,
+                secondary: morning.isActive ? "Ends at \(OllieFormat.time(morning.endsAt))" : nil
+            )
+        }
         if let terminalPresentation = state.terminalPresentation {
             return NightWatchLiveActivityGuidance(
                 primary: terminalPresentation.headline,
@@ -364,6 +396,7 @@ private extension FocusRunLiveActivityAttributes.ContentState {
     }
 
     var nextTransitionAt: Date {
+        if let morning = screenFreeMorning { return morning.endsAt }
         if isAdditionalQuiet { return plannedEndAt }
         switch currentPhase {
         case .windDown: return bedtimeAt ?? plannedEndAt

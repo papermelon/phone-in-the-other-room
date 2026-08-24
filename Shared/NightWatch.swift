@@ -84,9 +84,17 @@ enum PhoneFreeCue {
 
     static func normalized(_ text: String?) -> String? {
         guard let text else { return nil }
-        let collapsed = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
-        guard !collapsed.isEmpty else { return nil }
-        return String(collapsed.prefix(maximumTextLength))
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        // TextEditor drafts may contain a line break. Keep the persisted cue a
+        // single-line label, while preserving ordinary spaces exactly as the
+        // person entered them (including a space between words).
+        let singleLine = trimmed.contains(where: { $0.isNewline })
+            ? trimmed.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+            : trimmed
+        guard !singleLine.isEmpty else { return nil }
+        return String(singleLine.prefix(maximumTextLength))
     }
 }
 
@@ -272,8 +280,10 @@ struct NightWatchPreferences: Codable, Equatable {
         morningActivity: .openCurtains,
         eveningCueText: nil,
         morningCueText: nil,
-        eveningRoutine: [WindDownRoutineStep.suggested(.read, phase: .evening)],
-        morningRoutine: [WindDownRoutineStep.suggested(.openCurtains, phase: .morning)],
+        // Fresh plans show examples in the authoring UI, but do not enroll
+        // them without the person choosing them.
+        eveningRoutine: [],
+        morningRoutine: [],
         guardKind: .nfcTag,
         isConfigured: false,
         automaticStartEnabled: true
@@ -526,9 +536,12 @@ struct AutomaticWindDownSchedule: Codable, Equatable {
     let startedAt: Date
     let plan: NightWatchPlan
     let sourceOccurrenceID: UUID?
+    /// Captures future intent separately from Screen Time readiness. Older
+    /// schedules default on for backwards-compatible migration.
+    let appShieldingRequested: Bool
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, id, startedAt, plan, sourceOccurrenceID
+        case schemaVersion, id, startedAt, plan, sourceOccurrenceID, appShieldingRequested
     }
 
     init(
@@ -536,13 +549,15 @@ struct AutomaticWindDownSchedule: Codable, Equatable {
         id: UUID = UUID(),
         startedAt: Date,
         plan: NightWatchPlan,
-        sourceOccurrenceID: UUID? = nil
+        sourceOccurrenceID: UUID? = nil,
+        appShieldingRequested: Bool = true
     ) {
         self.schemaVersion = schemaVersion
         self.id = id
         self.startedAt = startedAt
         self.plan = plan
         self.sourceOccurrenceID = sourceOccurrenceID
+        self.appShieldingRequested = appShieldingRequested
     }
 
     init(from decoder: Decoder) throws {
@@ -552,6 +567,7 @@ struct AutomaticWindDownSchedule: Codable, Equatable {
         startedAt = try container.decode(Date.self, forKey: .startedAt)
         plan = try container.decode(NightWatchPlan.self, forKey: .plan)
         sourceOccurrenceID = try container.decodeIfPresent(UUID.self, forKey: .sourceOccurrenceID)
+        appShieldingRequested = try container.decodeIfPresent(Bool.self, forKey: .appShieldingRequested) ?? true
     }
 }
 
@@ -781,6 +797,10 @@ extension FocusRun {
     }
 
     private var quietCreditEndDate: Date? {
-        completedSuccessfully ? plannedEndAt : endedAt
+        // Qualification is independent from the factual bookends. An
+        // authorized terminal Wind Down may be entitled after 420 protected
+        // minutes without claiming a planned Screen-Free Morning that never
+        // happened.
+        endedAt ?? (completedSuccessfully ? plannedEndAt : nil)
     }
 }

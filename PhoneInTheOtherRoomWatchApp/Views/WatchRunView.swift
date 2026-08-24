@@ -90,6 +90,14 @@ struct WatchRunView: View {
     }
 
     private var statusText: String {
+        if let morning = viewModel.prioritizedScreenFreeMorning {
+            switch morning.status {
+            case .active: return "Phone is staying away"
+            case .scheduled: return "Planned on iPhone"
+            case .skipped: return "Skipped today"
+            case .finished: return "Finished on iPhone"
+            }
+        }
         if isLegacyWarning {
             return "Your phone wandered back"
         }
@@ -109,6 +117,9 @@ struct WatchRunView: View {
     }
 
     private var countdownCaption: String {
+        if let morning = viewModel.prioritizedScreenFreeMorning {
+            return morning.isActive ? "until Screen-Free Morning ends" : "Screen-Free Morning"
+        }
         if needsWatchPlacement { return viewModel.connectionText }
         if isLegacyWarning { return "Open Counting Sheep on iPhone" }
         if isAdditionalQuiet { return "remaining" }
@@ -121,6 +132,9 @@ struct WatchRunView: View {
     }
 
     private var phaseTitle: String {
+        if let morning = viewModel.prioritizedScreenFreeMorning {
+            return morning.status == .active ? "Morning" : "Planned"
+        }
         if isLegacyWarning { return "Nearby" }
         if needsWatchPlacement { return "Check" }
         if isAdditionalQuiet { return "Phone Away" }
@@ -134,6 +148,7 @@ struct WatchRunView: View {
     }
 
     private var phaseSymbol: String {
+        if viewModel.prioritizedScreenFreeMorning != nil { return "sunrise.fill" }
         if isLegacyWarning { return "iphone.gen3.radiowaves.left.and.right" }
         if needsWatchPlacement { return "location.fill" }
         if isAdditionalQuiet { return "leaf.fill" }
@@ -151,6 +166,7 @@ struct WatchRunView: View {
     }
 
     private var ollieMood: OllieMood {
+        if viewModel.prioritizedScreenFreeMorning?.isActive == true { return .happy }
         if isLegacyWarning { return .alert }
         if needsWatchPlacement { return .guarding }
         if isAdditionalQuiet { return .guarding }
@@ -180,6 +196,9 @@ struct WatchRunView: View {
 
     private var transitionRemainingSeconds: TimeInterval {
         let now = Date()
+        if let morning = viewModel.prioritizedScreenFreeMorning {
+            return max(0, morning.endsAt.timeIntervalSince(now))
+        }
         let transition = viewModel.run?.nightWatchPlan?.nextTransition(after: now)
             ?? viewModel.run?.plannedEndAt
             ?? now
@@ -187,7 +206,8 @@ struct WatchRunView: View {
     }
 
     private var nextTransitionDate: Date? {
-        viewModel.run?.nightWatchPlan?.nextTransition(after: phaseReferenceDate)
+        if let morning = viewModel.prioritizedScreenFreeMorning { return morning.endsAt }
+        return viewModel.run?.nightWatchPlan?.nextTransition(after: phaseReferenceDate)
             ?? viewModel.run?.plannedEndAt
     }
 
@@ -210,6 +230,11 @@ struct WatchRunView: View {
 
     private var timerAccessibilityLabel: String {
         let minutes = OllieFormat.minutes(transitionRemainingSeconds)
+        if let morning = viewModel.prioritizedScreenFreeMorning {
+            return morning.isActive
+                ? "\(minutes) minutes until Screen-Free Morning ends"
+                : "Screen-Free Morning planned for \(OllieFormat.time(morning.startsAt))"
+        }
         if isAdditionalQuiet {
             return "\(minutes) minutes until Phone Away ends"
         }

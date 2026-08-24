@@ -29,7 +29,15 @@ struct PixelHomeDashboard: View {
             immediateAdditionalQuietMinutes: viewModel.immediateAdditionalQuietMinutes,
             phoneBreakMeterMinutes: viewModel.sheepSearchState.trailMap.pendingMappedMinutes,
             nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
+            protectionPresentation: HomeProtectionStartPresentation.resolve(
+                readiness: viewModel.shieldingReadiness,
+                selectionSummary: viewModel.shieldingSelectionSummary
+            ),
             onPrimaryAction: {
+                guard viewModel.shieldingReadiness == .ready else {
+                    showRunSetup = true
+                    return
+                }
                 let methodIsReady = viewModel.selectedGuardKind != .nfcTag
                     || viewModel.hasRegisteredNFCTag
                 if viewModel.hasConfiguredNightWatch
@@ -45,6 +53,10 @@ struct PixelHomeDashboard: View {
             onEditTiming: { showTimingEditor = true },
             onQuietTimeSchedule: { showQuietTimeSchedule = true },
             onStartNow: {
+                guard viewModel.shieldingReadiness == .ready else {
+                    showRunSetup = true
+                    return
+                }
                 let started: Bool
                 if let context = viewModel.currentPhoneAwayStartContext {
                     viewModel.requestStartNightWatch(sourceID: context.sourceID)
@@ -147,6 +159,7 @@ private struct PixelHomeDashboardContent: View {
     var immediateAdditionalQuietMinutes: Int?
     var phoneBreakMeterMinutes: Int
     var nightFlockSummary: NightFlockHomeSummary? = nil
+    var protectionPresentation: HomeProtectionStartPresentation
     var onPrimaryAction: () -> Void
     var onEditTiming: () -> Void
     var onQuietTimeSchedule: () -> Void
@@ -183,6 +196,8 @@ private struct PixelHomeDashboardContent: View {
                     .multilineTextAlignment(.center)
             }
 
+            protectionCard
+
             PrimaryGreenCTA(
                 eyebrow: primaryEyebrow,
                 title: primaryTitle,
@@ -212,6 +227,7 @@ private struct PixelHomeDashboardContent: View {
                     pendingMappedMinutes: phoneBreakMeterMinutes,
                     protectedWindDownCount: progress.totalCompletedRuns
                 ),
+                protectionPresentation: protectionPresentation,
                 action: onQuietTimeSchedule,
                 startNow: onStartNow
             )
@@ -227,6 +243,7 @@ private struct PixelHomeDashboardContent: View {
         if preferences.guardKind == .nfcTag, !isNFCTagReady {
             return "Set up Wind Down tag"
         }
+        if case let .repair(title, _) = protectionPresentation { return title }
         return canBeginNow ? AppCopy.ConfiguredHome.startButton.value : "Plan Wind Down"
     }
 
@@ -237,7 +254,48 @@ private struct PixelHomeDashboardContent: View {
 
     private var primarySubtitle: String {
         guard preferences.isConfigured else { return "Choose when Wind Down runs" }
+        if case let .repair(_, detail) = protectionPresentation { return detail }
         return scheduleLabel
+    }
+
+    @ViewBuilder
+    private var protectionCard: some View {
+        switch protectionPresentation {
+        case let .ready(selectionSummary):
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image(systemName: "checkmark.shield.fill")
+                    .foregroundStyle(AppColors.grass)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("App protection ready")
+                        .font(AppTypography.body.weight(.semibold))
+                    Text(selectionSummary)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(AppSpacing.md)
+            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
+            .accessibilityElement(children: .combine)
+        case let .repair(title, detail):
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image(systemName: "shield.lefthalf.filled")
+                    .foregroundStyle(AppColors.lavender)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(title)
+                        .font(AppTypography.body.weight(.semibold))
+                    Text(detail)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(AppSpacing.md)
+            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
+            .accessibilityElement(children: .combine)
+        }
     }
 
     private var scheduleLabel: String {
@@ -361,6 +419,7 @@ private struct NightWatchOverviewBlock: View {
                 upcomingAdditionalCount: 0,
                 immediateAdditionalQuietMinutes: nil,
                 phoneBreakMeterMinutes: 0,
+                protectionPresentation: .repair(title: "Choose apps to pause", detail: ShieldingReadiness.noSelection.detail),
                 onPrimaryAction: {},
                 onEditTiming: {},
                 onQuietTimeSchedule: {},
@@ -401,6 +460,7 @@ private struct NightWatchOverviewBlock: View {
                 immediateAdditionalQuietMinutes: nil,
                 phoneBreakMeterMinutes: PhoneAwaySearchMeter.maximumMinutes,
                 nightFlockSummary: .invitation,
+                protectionPresentation: .ready(selectionSummary: "2 apps, 1 category"),
                 onPrimaryAction: {},
                 onEditTiming: {},
                 onQuietTimeSchedule: {},
@@ -434,6 +494,7 @@ private struct NightWatchOverviewBlock: View {
                 upcomingAdditionalCount: 1,
                 immediateAdditionalQuietMinutes: nil,
                 phoneBreakMeterMinutes: PhoneAwaySearchMeter.maximumMinutes,
+                protectionPresentation: .ready(selectionSummary: "2 apps"),
                 onPrimaryAction: {},
                 onEditTiming: {},
                 onQuietTimeSchedule: {},
@@ -461,6 +522,7 @@ private struct NightWatchOverviewBlock: View {
                 upcomingAdditionalCount: 0,
                 immediateAdditionalQuietMinutes: 30,
                 phoneBreakMeterMinutes: 0,
+                protectionPresentation: .repair(title: "Set up app protection", detail: ShieldingReadiness.authorizationRequired.detail),
                 onPrimaryAction: {},
                 onEditTiming: {},
                 onQuietTimeSchedule: {},

@@ -135,7 +135,7 @@ struct HomeView: View {
                 onStartPractice: startOrientationPractice,
                 onSkip: {
                     showOrientationPracticeOffer = false
-                    viewModel.skipOrientationLesson()
+                    viewModel.dismissPracticeOffer()
                 },
                 onMaybeLater: {
                     showOrientationPracticeOffer = false
@@ -179,7 +179,7 @@ struct HomeView: View {
     private var tabContent: some View {
         ZStack {
             VStack(spacing: 0) {
-                if showChrome {
+                if showHeaderChrome {
                     CountingSheepTopBar()
                         .padding(.horizontal, 18)
                         .padding(.top, 10)
@@ -187,6 +187,11 @@ struct HomeView: View {
                         isCoachMarkPresented: isOrientationCoachPresented
                     ) {
                         FirstRunContinueCard(
+                            title: FirstRunGuideCopy.continueCardTitle(for: viewModel.orientationState.activeChapter),
+                            detail: FirstRunGuideCopy.continueCardDetail(
+                                for: viewModel.orientationState.activeChapter,
+                                step: viewModel.orientationState.currentStep
+                            ),
                             onResume: resumeFirstRunGuide,
                             onDismiss: viewModel.dismissFirstRunContinueCard
                         )
@@ -224,6 +229,7 @@ struct HomeView: View {
     private var shouldPresentOrientationCoach: Bool {
         viewModel.isOrientationActive
             && !viewModel.isRunning
+            && viewModel.orientationState.presentationState == .active
             && FirstRunJourney.usesCoachMark(viewModel.orientationState.currentStep)
             && selectedTab == tab(for: FirstRunJourney.surface(for: viewModel.orientationState.currentStep))
     }
@@ -235,6 +241,7 @@ struct HomeView: View {
         case .home: return .homePlan
         case .start: return .startAction
         case .phoneAway, .navigation: return .phoneAway
+        case .rootTabs: return .navigation
         case .farmMeetSheep: return .farmPasture
         case .farmCapacity: return .farmCapacity
         case .farmWool, .farmShear, .farmCurrency: return .farmWool
@@ -256,28 +263,6 @@ struct HomeView: View {
     }
 
     private func advanceOrientationTour() {
-        let step = viewModel.orientationState.currentStep.normalized
-        if step == .farmClaimWearable {
-            viewModel.claimPendingWelcomeWearable()
-        }
-        if step == .farmEquipWearable {
-            viewModel.equipPendingWelcomeWearable()
-        }
-        if step == .farmShear, !viewModel.orientationState.hasRecorded(.sheared) {
-            viewModel.recordFirstRunFarmAction(.skippedShear)
-        }
-        if step == .practiceOffer {
-            viewModel.advanceOrientationTour()
-            showOrientationPracticeOffer = true
-            return
-        }
-        if step == .practiceReward,
-           !viewModel.orientationState.practiceRewardRoutedToFarm {
-            viewModel.markPracticeRewardRoutedToFarm()
-            viewModel.advanceOrientationTour()
-            restoreFirstRunSurface()
-            return
-        }
         viewModel.advanceOrientationTour()
         restoreFirstRunSurface()
     }
@@ -291,6 +276,9 @@ struct HomeView: View {
         guard viewModel.orientationState.isGuideActive else { return }
         guard let destination = FirstRunJourney.resumeDestination(for: viewModel.orientationState) else {
             return
+        }
+        if destination.resetNavigation {
+            resetNavigation(for: tab(for: destination.surface))
         }
         select(tab(for: destination.surface), resetIfReselected: false)
         showOrientationPracticeOffer = destination.presentPracticeOffer && !viewModel.isRunning
@@ -360,17 +348,12 @@ struct HomeView: View {
 
     @ViewBuilder
     private var content: some View {
-        if let run = viewModel.activeRun, run.state == .completed {
-            CompletionView()
-        } else if let run = viewModel.activeRun, run.state == .endedEarly {
-            EarlyEndView()
-        } else if viewModel.isRunning && (selectedTab == .home || viewModel.activeRun?.isNightWatch != true) {
-            ActiveRunView(now: activeRunNow)
+        if selectedTab == .home {
+            homeContent
         } else {
             switch selectedTab {
             case .home:
-                PixelHomeDashboard(watch: dashboardWatch)
-                    .environmentObject(viewModel)
+                EmptyView()
             case .nights:
                 FocusStatsView()
                     .environmentObject(viewModel)
@@ -387,10 +370,59 @@ struct HomeView: View {
         }
     }
 
+    @ViewBuilder
+    private var homeContent: some View {
+        switch viewModel.homeReceiptRoute {
+        case .activeScreenFreeMorning(let occurrenceID):
+            if let occurrence = viewModel.screenFreeMorningOccurrences.first(where: { $0.id == occurrenceID }) {
+                ScreenFreeMorningView(occurrence: occurrence)
+            } else {
+                PixelHomeDashboard(watch: dashboardWatch).environmentObject(viewModel)
+            }
+        case .deferredScreenFreeMorning(let occurrenceID, let unreadRunID):
+            VStack(spacing: AppSpacing.md) {
+                if let occurrence = viewModel.screenFreeMorningOccurrences.first(where: { $0.id == occurrenceID }) {
+                    HomeDeferredScreenFreeMorningCard(occurrence: occurrence)
+                }
+                if let unreadRunID { HomeWindDownReceiptRecoveryCard(runID: unreadRunID) }
+                PixelHomeDashboard(watch: dashboardWatch).environmentObject(viewModel)
+            }
+        case .terminalWindDownReceipt:
+            if viewModel.activeRun?.state == .completed {
+                CompletionView()
+            } else {
+                EarlyEndView()
+            }
+        case .activeWindDown:
+            ActiveRunView(now: activeRunNow)
+        case .unreadWindDownReceipt(let runID):
+            HomeWindDownReceiptRecoveryCard(runID: runID)
+        case .dashboard:
+            VStack(spacing: AppSpacing.md) {
+                if viewModel.orientationState.completedChapters.contains(.homeBasics),
+                   !viewModel.orientationState.deferredChapters.contains(.homeBasics),
+                   !viewModel.orientationState.completedChapters.contains(.farmTour) {
+                    FirstRunHomeChapterHandoffCard(
+                        onExplore: viewModel.dismissHomeHandoff,
+                        onPractice: { showOrientationPracticeOffer = true }
+                    )
+                }
+                PixelHomeDashboard(watch: dashboardWatch).environmentObject(viewModel)
+            }
+        }
+    }
+
     private var showChrome: Bool {
         guard viewModel.activeRun?.state != .completed,
               viewModel.activeRun?.state != .endedEarly else { return false }
         return !viewModel.isRunning || viewModel.activeRun?.isNightWatch == true
+    }
+
+    /// Active runs already provide their own compact title and journey header.
+    /// Keeping the general brand bar above them creates a large empty band,
+    /// especially in Light Mode, while the tab bar still needs to remain.
+    private var showHeaderChrome: Bool {
+        showChrome && !(viewModel.isRunning && selectedTab == .home)
     }
 
     private var contentUsesOwnScroll: Bool {
@@ -441,6 +473,67 @@ struct HomeView: View {
                 pingBannerVisible = false
             }
         }
+    }
+}
+
+private struct HomeDeferredScreenFreeMorningCard: View {
+    let occurrence: MorningQuietOccurrence
+
+    var body: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("SCREEN-FREE MORNING")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Text("Planned for \(OllieFormat.time(occurrence.scheduledStart))")
+                    .font(AppTypography.headline)
+                    .foregroundStyle(AppColors.ink)
+                Text("Your phone can stay away for this separate morning window.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
+private struct HomeWindDownReceiptRecoveryCard: View {
+    @EnvironmentObject private var viewModel: FocusRunViewModel
+    let runID: UUID
+    @State private var isOpen = false
+
+    var body: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("WIND DOWN RECEIPT")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Text(receiptText)
+                    .font(AppTypography.headline)
+                    .foregroundStyle(AppColors.ink)
+                if !isOpen {
+                    Button("Show receipt") {
+                        isOpen = true
+                    }
+                    .buttonStyle(PixelPrimaryButtonStyle())
+                    .accessibilityHint("Opens this finite Wind Down receipt")
+                } else {
+                    Button("Done with receipt") {
+                        viewModel.revealDeliveredWindDownBenefit(for: runID)
+                    }
+                    .buttonStyle(PixelPrimaryButtonStyle())
+                    .accessibilityHint("Marks this displayed Wind Down receipt as read")
+                }
+            }
+        }
+    }
+
+    private var receiptText: String {
+        guard isOpen else { return "A Wind Down receipt is ready when you are." }
+        guard let outcome = viewModel.sheepSearchOutcome(for: runID) else {
+            return "Your qualifying Wind Down was saved."
+        }
+        return SheepSearchPresentation.journalResultHeadline(for: outcome)
     }
 }
 

@@ -10,13 +10,31 @@ struct NightFlockAppleNonce: Equatable, Sendable {
 
 enum NightFlockAccountError: LocalizedError, Equatable {
     case identityChanged
+    case expectedIdentityMissing
+    case accountIsNotAnonymous
+    case existingIdentityBinding
+    case invalidExpectedIdentityBinding
+    case unsupportedAuthenticatedSession
+    case reauthenticationRequired
     case identityTokenMissing
     case nonceUnavailable
 
     var errorDescription: String? {
         switch self {
         case .identityChanged:
-            return "That Apple identity could not be linked without changing this account."
+            return "That Apple account does not match this Slumber Party. Your local Wind Down and shared updates were kept safe."
+        case .expectedIdentityMissing:
+            return "This Slumber Party cannot safely reconnect without its original account record. Your local Wind Down and shared updates were kept safe."
+        case .accountIsNotAnonymous:
+            return "This account is not anonymous, so Counting Sheep will not replace or relink it."
+        case .existingIdentityBinding:
+            return "This Slumber Party already has an Apple account binding, so Counting Sheep will not relink it."
+        case .invalidExpectedIdentityBinding:
+            return "This Slumber Party account record cannot be safely read, so Counting Sheep will not reconnect or replace it. Your local Wind Down and shared updates were kept safe."
+        case .unsupportedAuthenticatedSession:
+            return "This signed-in account is not linked to Apple for Slumber Party. Counting Sheep kept your local data safe."
+        case .reauthenticationRequired:
+            return "Reconnect your Apple account to reopen this Slumber Party. Your local Wind Down and queued updates are safe here."
         case .identityTokenMissing:
             return "Apple did not return an identity token. Please try again."
         case .nonceUnavailable:
@@ -26,27 +44,69 @@ enum NightFlockAccountError: LocalizedError, Equatable {
 }
 
 actor NightFlockAccountService {
+    static let expectedLinkedUserIDKey = "ollie.nightFlock.expectedLinkedUserID"
     private let provider: SupabaseClientProviding
+    private let defaults: UserDefaults
 
-    init(provider: SupabaseClientProviding) {
+    init(provider: SupabaseClientProviding, defaults: UserDefaults = .standard) {
         self.provider = provider
+        self.defaults = defaults
     }
 
     func currentState(createAnonymousIfMissing: Bool) async throws -> NightFlockAccountState {
         let client = try provider.client()
+        let binding = expectedLinkedUserID
+        let observed: NightFlockObservedAccountSession
         do {
             let user = try await client.auth.session.user
-            return Self.hasAppleIdentity(user) ? .linked : .anonymous
+            observed = Self.observedSession(for: user)
         } catch let error as AuthError where error == .sessionMissing {
-            guard createAnonymousIfMissing else { return .anonymous }
+            observed = .missing
+        }
+
+        switch NightFlockAccountSessionPolicy.decide(
+            observed: observed,
+            expectedIdentity: binding,
+            createAnonymousIfMissing: createAnonymousIfMissing
+        ) {
+        case .returnAnonymous:
+            return .anonymous
+        case .createAnonymous:
             _ = try await client.auth.signInAnonymously()
             return .anonymous
+        case let .returnLinked(adopting):
+            if let adopting { persistExpectedLinkedUserID(adopting) }
+            return .linked
+        case let .reauthenticateApple(signOutLocalSession):
+            if signOutLocalSession { try? await client.auth.signOut(scope: .local) }
+            throw NightFlockAccountError.reauthenticationRequired
+        case let .failClosed(signOutLocalSession):
+            if signOutLocalSession { try? await client.auth.signOut(scope: .local) }
+            throw Self.failureError(for: observed, binding: binding)
         }
     }
 
     func linkAppleIdentity(identityToken: String, nonce: String) async throws {
         let client = try provider.client()
         let originalUser = try await client.auth.session.user
+        let binding = expectedLinkedUserID
+        let observed = Self.observedSession(for: originalUser)
+        guard NightFlockAccountSessionPolicy.mayLinkAppleIdentity(
+            observed: observed,
+            expectedIdentity: binding
+        ) else {
+            if binding == .invalid {
+                try? await client.auth.signOut(scope: .local)
+                throw NightFlockAccountError.invalidExpectedIdentityBinding
+            }
+            if !binding.permitsInitialBinding {
+                throw NightFlockAccountError.existingIdentityBinding
+            }
+            if observed != .anonymous {
+                try? await client.auth.signOut(scope: .local)
+            }
+            throw NightFlockAccountError.accountIsNotAnonymous
+        }
         let session = try await client.auth.linkIdentityWithIdToken(
             credentials: OpenIDConnectCredentials(
                 provider: .apple,
@@ -55,14 +115,68 @@ actor NightFlockAccountService {
             )
         )
         guard session.user.id == originalUser.id else {
+            try? await client.auth.signOut(scope: .local)
             throw NightFlockAccountError.identityChanged
         }
         guard Self.hasAppleIdentity(session.user) else {
+            try? await client.auth.signOut(scope: .local)
             throw NightFlockAccountError.identityChanged
+        }
+        persistExpectedLinkedUserID(session.user.id)
+    }
+
+    /// Reauthentication is intentionally a sign-in exchange, not an identity
+    /// link. The returned Supabase UUID must equal the locally bound account.
+    func reauthenticateAppleIdentity(identityToken: String, nonce: String) async throws {
+        let binding = expectedLinkedUserID
+        guard let expected = binding.validUserID else {
+            if binding == .invalid {
+                throw NightFlockAccountError.invalidExpectedIdentityBinding
+            }
+            throw NightFlockAccountError.expectedIdentityMissing
+        }
+        let client = try provider.client()
+        do {
+            let session = try await client.auth.signInWithIdToken(
+                credentials: OpenIDConnectCredentials(
+                    provider: .apple,
+                    idToken: identityToken,
+                    nonce: nonce
+                )
+            )
+            guard session.user.id == expected, Self.hasAppleIdentity(session.user) else {
+                try? await client.auth.signOut(scope: .local)
+                throw NightFlockAccountError.identityChanged
+            }
+            persistExpectedLinkedUserID(session.user.id)
+        } catch {
+            if !(error is NightFlockAccountError) { throw error }
+            throw error
         }
     }
 
-    func signOutAfterAccountDeletion() async {
+    func signOutAfterAccountDeletion() async -> Bool {
+        guard let client = try? provider.client() else { return false }
+        do {
+            try await client.auth.signOut(scope: .local)
+            defaults.removeObject(forKey: Self.expectedLinkedUserIDKey)
+            return true
+        } catch let error as AuthError where error == .sessionMissing {
+            defaults.removeObject(forKey: Self.expectedLinkedUserIDKey)
+            return true
+        } catch {
+            return false
+        }
+    }
+
+    func currentLinkedAccountID() async throws -> UUID? {
+        let client = try provider.client()
+        let user = try await client.auth.session.user
+        guard !user.isAnonymous, Self.hasAppleIdentity(user) else { return nil }
+        return user.id
+    }
+
+    func signOutLocallyAfterFailedRecovery() async {
         guard let client = try? provider.client() else { return }
         try? await client.auth.signOut(scope: .local)
     }
@@ -109,5 +223,100 @@ actor NightFlockAccountService {
 
     private static func hasAppleIdentity(_ user: User) -> Bool {
         user.identities?.contains(where: { $0.provider == "apple" }) == true
+    }
+
+    private static func observedSession(for user: User) -> NightFlockObservedAccountSession {
+        if user.isAnonymous { return .anonymous }
+        if hasAppleIdentity(user) { return .appleLinked(user.id) }
+        return .unsupported
+    }
+
+    private static func failureError(
+        for observed: NightFlockObservedAccountSession,
+        binding: NightFlockExpectedIdentity
+    ) -> NightFlockAccountError {
+        if binding == .invalid { return .invalidExpectedIdentityBinding }
+        switch observed {
+        case .unsupported:
+            return .unsupportedAuthenticatedSession
+        case .appleLinked:
+            return .identityChanged
+        case .anonymous, .missing:
+            return .expectedIdentityMissing
+        }
+    }
+
+    private var expectedLinkedUserID: NightFlockExpectedIdentity {
+        NightFlockExpectedIdentityBinding.classify(
+            defaults.string(forKey: Self.expectedLinkedUserIDKey)
+        )
+    }
+
+    private func persistExpectedLinkedUserID(_ id: UUID) {
+        guard expectedLinkedUserID.permitsInitialBinding else { return }
+        defaults.set(id.uuidString.lowercased(), forKey: Self.expectedLinkedUserIDKey)
+    }
+}
+
+enum NightFlockInviteCredentialServiceError: LocalizedError {
+    case encoding
+    case keychain(OSStatus)
+    var errorDescription: String? {
+        "Counting Sheep could not safely keep this invitation on this phone. No invitation was sent."
+    }
+}
+
+@MainActor
+final class NightFlockInviteCredentialService {
+    private let service = "com.ngawangchime.countingsheep.night-flock-invite"
+    private let account = "active-invite-credential"
+
+    func load() throws -> NightFlockInviteCredential? {
+        var query = baseQuery
+        query[kSecReturnData as String] = true
+        query[kSecMatchLimit as String] = kSecMatchLimitOne
+        var result: CFTypeRef?
+        let status = SecItemCopyMatching(query as CFDictionary, &result)
+        if status == errSecItemNotFound { return nil }
+        guard status == errSecSuccess, let data = result as? Data else {
+            throw NightFlockInviteCredentialServiceError.keychain(status)
+        }
+        return try JSONDecoder().decode(NightFlockInviteCredential.self, from: data)
+    }
+
+    func save(_ credential: NightFlockInviteCredential) throws {
+        guard let data = try? JSONEncoder().encode(credential) else {
+            throw NightFlockInviteCredentialServiceError.encoding
+        }
+        var query = baseQuery
+        query[kSecValueData as String] = data
+        query[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        let status = SecItemAdd(query as CFDictionary, nil)
+        if status == errSecDuplicateItem {
+            let update = [
+                kSecValueData as String: data,
+                kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
+            ] as CFDictionary
+            let updateStatus = SecItemUpdate(baseQuery as CFDictionary, update)
+            guard updateStatus == errSecSuccess else { throw NightFlockInviteCredentialServiceError.keychain(updateStatus) }
+        } else if status != errSecSuccess {
+            throw NightFlockInviteCredentialServiceError.keychain(status)
+        }
+    }
+
+    func clear() throws {
+        let status = SecItemDelete(baseQuery as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw NightFlockInviteCredentialServiceError.keychain(status)
+        }
+    }
+
+    private var baseQuery: [String: Any] {
+        [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: service,
+            kSecAttrAccount as String: account,
+            kSecAttrSynchronizable as String: kCFBooleanFalse as Any,
+        ]
     }
 }

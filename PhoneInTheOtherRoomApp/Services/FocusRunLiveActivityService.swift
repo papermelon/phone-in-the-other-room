@@ -203,6 +203,53 @@ final class FocusRunLiveActivityService {
         }
     }
 
+    func startScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {
+        guard enabled, occurrence.outcome == .active else { return }
+        guard occurrence.liveActivityRequested else { return }
+        let runID = occurrence.linkedWindDownRunID ?? occurrence.id
+        let attributes = FocusRunLiveActivityAttributes(
+            runID: runID,
+            plannedDurationSeconds: occurrence.scheduledEnd.timeIntervalSince(occurrence.scheduledStart)
+        )
+        let state = FocusRunLiveActivityAttributes.ContentState(
+            plannedEndAt: occurrence.scheduledEnd,
+            isComplete: false,
+            screenFreeMorning: ScreenFreeMorningPresentation(occurrence: occurrence)
+        )
+        // A linked handoff reuses the parent run's surface. Updating it avoids
+        // a second Lock Screen activity and makes repeated restore/boundary
+        // reconciliation idempotent for the occurrence identity.
+        if let activity = activeActivity(for: runID) {
+            Task {
+                await activity.update(ActivityContent(state: state, staleDate: occurrence.scheduledEnd))
+            }
+            return
+        }
+        do {
+            _ = try Activity.request(
+                attributes: attributes,
+                content: ActivityContent(state: state, staleDate: occurrence.scheduledEnd),
+                pushType: nil
+            )
+        } catch {
+            logger.error("Screen-Free Morning activity failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    func finishScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {
+        let runID = occurrence.linkedWindDownRunID ?? occurrence.id
+        let state = FocusRunLiveActivityAttributes.ContentState(
+            plannedEndAt: occurrence.scheduledEnd,
+            isComplete: true,
+            screenFreeMorning: ScreenFreeMorningPresentation(occurrence: occurrence)
+        )
+        Task {
+            for activity in Activity<FocusRunLiveActivityAttributes>.activities where activity.attributes.runID == runID {
+                await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .after(Date().addingTimeInterval(60)))
+            }
+        }
+    }
+
     func endAll(reason: FocusRunLiveActivityCancellationReason = .reset) {
         let activities = Activity<FocusRunLiveActivityAttributes>.activities
         Task {
@@ -414,6 +461,8 @@ final class FocusRunLiveActivityService {
     func start(for run: FocusRun) {}
     func update(for run: FocusRun) {}
     func finish(for run: FocusRun) {}
+    func startScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {}
+    func finishScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {}
     func endAll(reason: FocusRunLiveActivityCancellationReason = .reset) {}
 }
 #endif

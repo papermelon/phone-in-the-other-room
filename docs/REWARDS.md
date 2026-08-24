@@ -3,9 +3,8 @@
 Counting Sheep marks the phone-away ritual, not time asleep and not time spent in the app.
 Ollie guards and guides. A new Farm starts with one sheep. The first three qualifying
 protected nights bring another sheep home; later protected nights advance a probabilistic
-search with visible trail progress and bad-luck protection. A qualifying protected-night
-search needs a successfully completed primary Wind Down whose protected span from eligible
-start through morning quiet is at least 420 minutes. That span is a Farm progression rule,
+search with visible trail progress and bad-luck protection. A qualifying Wind Down search
+needs a primary Wind Down whose eligible phone-away span reaches 420 minutes. That span is a Farm progression rule,
 not a description of hours asleep, and overnight time still never becomes credited quiet
 minutes.
 
@@ -24,10 +23,25 @@ flowchart LR
     Choice --> Plan
 ```
 
-Completion creates one persisted search outcome. The factual receipt keeps wind-down and
-morning-quiet minutes separate. Core ritual evidence affects trail strength; optional HealthKit,
+Reaching the boundary resolves one private persisted Wind Down outcome; an authorized terminal
+action delivers it and its receipt reveals it. The factual receipt keeps wind-down and
+Screen-Free Morning minutes separate. Morning minutes do not affect new Wind Down odds. Optional HealthKit,
 Screen Time, and self-reported habits can add search evidence. Rarity affects encounter weighting,
 wool yield, regrowth, trade value, art, and story.
+
+## Three independent Farm paths
+
+- **Wind Down:** reaching 420 eligible phone-away minutes creates one private result. Screen-Free
+  Morning never changes its result, odds, or drought state.
+- **Sunrise Trail:** at least 15 actual Screen-Free Morning minutes bank actual time capped by the
+  configured window. Each 100-minute fill grants 1 wool and one separate look. Its first three
+  looks guarantee a homecoming; later looks use its own 20/30/40/50 ladder, with the next look
+  guaranteed after four clues.
+- **Phone Away:** completed Phone Away minutes use a separate 100-minute meter and its own
+  first-three/ladder/bad-luck state. Brief Access does not subtract Sunrise elapsed minutes.
+
+Every fill and arrival is idempotent. Farm capacity still applies: a found sheep is recorded in
+Search Journal and waits at The Barn gate when the active flock is full.
 
 ## Canonical presentation
 
@@ -37,7 +51,8 @@ Down or Phone Away, the note says Ollie found a missing sheep or kept a clue—n
 is still happening. Welcome-gift notes use that name. Farm owns the living flock, lifecycle,
 economy, and customization presentation. Exact chance figures remain optional.
 
-An early-ended Night Watch adds no search outcome. It still receives the factual receipt. Sheep
+An ending before 420 minutes adds no Wind Down search outcome. An ending after a previously
+entitled boundary retains the already resolved outcome. It still receives the factual receipt. Sheep
 lifecycle changes occur through explicit Farm actions, not through the early-end settlement path.
 
 The first successful five-minute onboarding practice grants exactly one additional Farm sheep
@@ -129,7 +144,8 @@ Sources:
 Judge this loop by protected behavior, not collection engagement:
 
 - completed Night Watches in a tester's first 14 nights;
-- credited wind-down and morning-quiet minutes, kept separate;
+- factual wind-down and Screen-Free Morning minutes, kept separate; only the former feeds
+  Wind Down reward/progress, while the latter settles through Sunrise Trail;
 - whether users understand that the first three qualifying protected-night searches and the
   first three Phone Away meter searches guarantee homecomings, that a 420-minute protected
   span is required for a Wind Down search, and that later searches can produce clues, odds,

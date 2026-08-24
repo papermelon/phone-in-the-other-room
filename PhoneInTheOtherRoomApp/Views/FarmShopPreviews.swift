@@ -23,7 +23,6 @@ import SwiftUI
     .background(AppColors.paper.ignoresSafeArea())
     .environment(\.colorScheme, .dark)
     .environment(\.dynamicTypeSize, .accessibility2)
-    .previewDevice(PreviewDevice(rawValue: "iPhone SE (3rd generation)"))
 }
 
 #Preview("Farm equipment · light") {

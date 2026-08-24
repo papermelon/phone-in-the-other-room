@@ -15,7 +15,7 @@ final class FarmEconomyTests: XCTestCase {
         let encoded = try JSONEncoder().encode(migrated)
         let decodedAgain = try JSONDecoder().decode(FarmState.self, from: encoded)
 
-        XCTAssertEqual(migrated.schemaVersion, 2)
+        XCTAssertEqual(migrated.schemaVersion, FarmState.currentSchemaVersion)
         XCTAssertEqual(migrated.woolBalance, 4)
         XCTAssertEqual(migrated.transactions.count, 1)
         XCTAssertEqual(migrated.transactions.first?.kind, .currencyConsolidation)
@@ -192,11 +192,11 @@ final class FarmEconomyTests: XCTestCase {
         state.woolBalance = 50
 
         try state.purchase(itemID: "ollie_moss_bandana")
-        try state.purchase(itemID: "shepherd_moss_coat")
+        try state.purchase(itemID: "shepherd_moss_coat", qualifyingWindDowns: 25)
         try state.purchase(itemID: "farm_lanterns")
         try state.purchase(itemID: "collectible_trail_pin")
         try state.purchase(itemID: "ollie_moon_kerchief")
-        try state.purchase(itemID: "shepherd_moon_coat")
+        try state.purchase(itemID: "shepherd_moon_coat", qualifyingWindDowns: 25)
 
         XCTAssertEqual(state.equipment.ollieAccessoryItemID, "ollie_moon_kerchief")
         XCTAssertEqual(state.shepherd.outfitItemID, "shepherd_moon_coat")
@@ -209,7 +209,7 @@ final class FarmEconomyTests: XCTestCase {
         state.woolBalance = 40
         try state.purchase(itemID: "ollie_moss_bandana")
         try state.purchase(itemID: "shepherd_wool_hat")
-        try state.purchase(itemID: "shepherd_moss_coat")
+        try state.purchase(itemID: "shepherd_moss_coat", qualifyingWindDowns: 3)
         try state.purchase(itemID: "farm_lanterns")
         try state.purchase(itemID: "collectible_trail_pin")
 
@@ -230,7 +230,7 @@ final class FarmEconomyTests: XCTestCase {
         state.woolBalance = 30
         try state.purchase(itemID: "ollie_moss_bandana")
         try state.purchase(itemID: "shepherd_wool_hat")
-        try state.purchase(itemID: "shepherd_moss_coat")
+        try state.purchase(itemID: "shepherd_moss_coat", qualifyingWindDowns: 3)
         try state.purchase(itemID: "farm_lanterns")
         try state.purchase(itemID: "collectible_trail_pin")
         state.setShepherdSkinTone(.deep)
@@ -280,7 +280,7 @@ final class FarmEconomyTests: XCTestCase {
             FarmShopCatalog.decorationAnchor(for: $0.id)
         }
 
-        XCTAssertEqual(anchors.count, 4)
+        XCTAssertEqual(anchors.count, 8)
         XCTAssertTrue(anchors.allSatisfy(\.isBounded))
         XCTAssertEqual(
             FarmShopCatalog.decorationAnchor(for: "farm_moon_gate"),
@@ -316,10 +316,10 @@ final class FarmEconomyTests: XCTestCase {
             FarmShopCatalog.items(in: .barn).map(\.title),
             ["Second Pasture", "Hill Pasture", "Moon Pasture", "Wide Pasture"]
         )
-        XCTAssertGreaterThanOrEqual(FarmShopCatalog.items(in: .ollie).count, 3)
-        XCTAssertGreaterThanOrEqual(FarmShopCatalog.items(in: .shepherd).count, 3)
-        XCTAssertGreaterThanOrEqual(FarmShopCatalog.items(in: .farm).count, 4)
-        XCTAssertGreaterThanOrEqual(FarmShopCatalog.items(in: .collectibles).count, 2)
+        XCTAssertEqual(FarmShopCatalog.items(in: .ollie).count, 6)
+        XCTAssertEqual(FarmShopCatalog.items(in: .shepherd).count, 7)
+        XCTAssertEqual(FarmShopCatalog.items(in: .farm).count, 8)
+        XCTAssertEqual(FarmShopCatalog.items(in: .collectibles).count, 6)
         XCTAssertTrue(
             FarmShopCatalog.all
                 .filter { $0.category != .barn }
@@ -334,7 +334,15 @@ final class FarmEconomyTests: XCTestCase {
         XCTAssertEqual(SheepRarity.allCases.map(FarmEconomyRules.woolYield), [1, 2, 4, 7])
         XCTAssertEqual(SheepRarity.allCases.map(FarmEconomyRules.regrowthNights), [2, 3, 4, 5])
         XCTAssertEqual(SheepRarity.allCases.map(FarmEconomyRules.baseTradeWoolValue), [3, 6, 13, 30])
-        XCTAssertEqual(FarmShopCatalog.all.map(\.woolCost), [15, 36, 80, 170, 3, 6, 4, 4, 8, 14, 4, 3, 5, 7, 3, 10])
+        XCTAssertEqual(FarmShopCatalog.all.count, 31)
+        XCTAssertEqual(
+            FarmShopCatalog.all.filter { $0.category != .barn }.reduce(0) { $0 + $1.woolCost },
+            256
+        )
+        XCTAssertEqual(
+            FarmShopCatalog.items(in: .barn).map(\.woolCost),
+            FarmEconomyRules.capacityUpgradeWoolCosts
+        )
     }
 
     func testWoolVisualStateMovesFromShornThroughRegrowingToReady() {

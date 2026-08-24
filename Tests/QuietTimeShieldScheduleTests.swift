@@ -83,6 +83,8 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
             JSONSerialization.jsonObject(with: encoded) as? [String: Any]
         )
         legacyObject.removeValue(forKey: "role")
+        legacyObject.removeValue(forKey: "registryRevision")
+        legacyObject.removeValue(forKey: "registryEpoch")
         let legacyData = try JSONSerialization.data(withJSONObject: legacyObject)
 
         let decoded = try JSONDecoder().decode(
@@ -91,6 +93,8 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
         )
 
         XCTAssertEqual(decoded.role, .primaryWindDown)
+        XCTAssertEqual(decoded.registryRevision, 1)
+        XCTAssertEqual(decoded.registryEpoch, 1)
         XCTAssertEqual(decoded.schemaVersion, QuietTimeShieldScheduleSnapshot.currentSchemaVersion)
     }
 

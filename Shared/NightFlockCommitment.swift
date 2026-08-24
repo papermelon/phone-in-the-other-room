@@ -90,7 +90,9 @@ enum NightFlockMemberNightStatus: String, Codable, CaseIterable, Sendable {
         case .phoneTuckedAway: return "Phone tucked away"
         case .partiallyCompleted: return "Partly completed"
         case .sharedGoalCompleted: return "Goal completed"
-        case .morningQuietCompleted: return "Morning quiet completed"
+        // Raw value remains a wire-format compatibility case. It represents a
+        // qualifying terminal Wind Down, never a Screen-Free Morning report.
+        case .morningQuietCompleted: return "Qualifying Wind Down completed"
         case .privateNoUpdate: return "No update shared"
         }
     }
@@ -102,7 +104,7 @@ enum NightFlockMemberNightStatus: String, Codable, CaseIterable, Sendable {
         case .phoneTuckedAway: return "iphone.slash"
         case .partiallyCompleted: return "circle.lefthalf.filled"
         case .sharedGoalCompleted: return "checkmark.circle.fill"
-        case .morningQuietCompleted: return "sun.max.fill"
+        case .morningQuietCompleted: return "moon.stars.fill"
         case .privateNoUpdate: return "lock"
         }
     }

@@ -2,6 +2,14 @@ import Foundation
 
 @MainActor
 extension FocusRunViewModel {
+    var pastureSceneSnapshot: PastureSceneSnapshot? {
+        persistence.farmPastureSceneSnapshot
+    }
+
+    func persistPastureSceneSnapshot(_ snapshot: PastureSceneSnapshot) {
+        persistence.farmPastureSceneSnapshot = snapshot
+    }
+
     func shearFarmSheep(_ sheepID: UUID) {
         var didShear = false
         mutateFarm { state in
@@ -43,7 +51,10 @@ extension FocusRunViewModel {
 
     func purchaseFarmShopItem(_ itemID: String) {
         mutateFarm { state in
-            try state.purchase(itemID: itemID)
+            try state.purchase(
+                itemID: itemID,
+                qualifyingWindDowns: coordinator.sheepSearchState.completedWindDownSearchCount
+            )
             let title = FarmShopCatalog.item(for: itemID)?.title ?? "Farm Shop find"
             return "\(title) is yours and ready at the Farm."
         }
@@ -178,9 +189,6 @@ extension FocusRunViewModel {
             coordinator.farmState = result.farm
             persistence.farmState = result.farm
             persistence.welcomeRewardLedger = result.ledger
-            farmActionMessage = FarmShopCatalog.item(for: recommendation.wearableItemID).map {
-                "\($0.title) is waiting in Your Shepherd. Ollie can help you put it on."
-            }
         } catch let error as FarmActionError {
             farmActionMessage = farmMessage(for: error)
         } catch {
@@ -269,11 +277,20 @@ extension FocusRunViewModel {
     }
 
     func publishSlumberPartyOutcome(for run: FocusRun) {
-        let metrics = slumberPartyMetrics(for: run)
         if run.nightWatchPlan?.role == .additionalQuiet, run.completedSuccessfully {
+            let metrics = slumberPartyMetrics(for: run)
             nightFlockViewModel.sharePhoneAwayMetrics(metrics, for: run, at: nowProvider())
             return
         }
+        // Independent Screen-Free Morning occurrences never enter the social
+        // boundary. A primary Wind Down is eligible only after its authorized
+        // terminal delivery has been journaled.
+        guard run.isProgressionEligibleNightWatch,
+              run.completedSuccessfully,
+              persistence.windDownMorningSettlementJournal.benefit(for: run.id)?.isDelivered == true else {
+            return
+        }
+        let metrics = slumberPartyMetrics(for: run)
         nightFlockViewModel.handleTerminalRun(run, metrics: metrics)
     }
 
@@ -288,7 +305,7 @@ extension FocusRunViewModel {
             }.map { Int($0.durationSeconds / 60) }
         }()
         return NightFlockLocalNightMetrics(
-            windDownMinutes: isPhoneAway ? 0 : run.creditedQuietMinutes,
+            windDownMinutes: isPhoneAway ? 0 : run.creditedWindDownMinutes,
             phoneAwayMinutes: isPhoneAway ? run.creditedQuietMinutes : 0,
             shieldingEvidence: snapshotShieldingEvidence(),
             tuckedAway: run.phoneAwayValidatedAt != nil || run.completedSuccessfully,
@@ -314,8 +331,7 @@ extension FocusRunViewModel {
             : nil
         let restfulness = sharing.shareRestfulness ? morningCheckIn(for: date).restfulness : nil
         guard sleepMinutes != nil || restfulness != nil else { return }
-        let windDownMinutes = (record?.creditedWindDownMinutes ?? 0)
-            + (record?.creditedMorningQuietMinutes ?? 0)
+        let windDownMinutes = record?.creditedWindDownMinutes ?? 0
         nightFlockViewModel.shareSupplementalMetrics(
             NightFlockLocalNightMetrics(
                 windDownMinutes: windDownMinutes,
@@ -376,6 +392,10 @@ extension FocusRunViewModel {
             return "That decoration is already in the Farm store room."
         case .itemNotDisplayed:
             return "That keepsake is already tucked away."
+        case .displayFull:
+            return "The keepsake shelf is full. Store one keepsake before displaying another."
+        case .itemLocked:
+            return "That Farm Shop find is still waiting farther along Ollie’s trail."
         case .insufficientFunds:
             return "The till needs a little more wool."
         case .upgradeOutOfSequence:

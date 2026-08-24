@@ -13,29 +13,19 @@ struct OnboardingProtectionStep: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             onboardingTitle(
-                eyebrow: "OPTIONAL PROTECTION",
-                title: "Give the quiet a little help.",
-                detail: FirstRunGuideCopy.screenTimePermission + " " + FirstRunGuideCopy.permissionCanDecline
+                eyebrow: "APP LIMITS",
+                title: "Protect the quiet you’re making.",
+                detail: "Choose apps or categories in Apple’s picker to help keep the phone away during Wind Down. Counting Sheep stays available."
             )
 
             OnboardingChoiceCard(
                 title: "App limits",
-                detail: "Choose 1–3 apps or categories to limit through your full Wind Down.",
+                detail: "Choose social media or other distracting apps and categories to limit through the full Wind Down. Counting Sheep stays available.",
                 icon: "iphone.slash",
                 isSelected: draft.shieldingEnabled && draft.protectionChoice == .appShielding
             ) {
                 draft.protectionChoice = .appShielding
                 draft.shieldingEnabled = true
-            }
-
-            OnboardingChoiceCard(
-                title: "No app limits for now",
-                detail: "Keep the phone-away ritual without shielding. You can add apps later in Settings.",
-                icon: "moon.stars.fill",
-                isSelected: !draft.shieldingEnabled
-            ) {
-                draft.protectionChoice = .appShielding
-                draft.shieldingEnabled = false
             }
 
             if showsNFCChoice {
@@ -99,7 +89,7 @@ struct OnboardingProtectionStep: View {
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.grass)
                     } else {
-                        Text("Choose 1–3 apps or categories to limit.")
+                        Text("Try social media or another distracting app/category. You choose what stays limited; no app names leave this phone.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
                     }
@@ -108,12 +98,27 @@ struct OnboardingProtectionStep: View {
                         action: onChooseApps
                     )
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    Text("Does this include the apps that pull you back most often?")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    HStack {
+                        Button("Review", action: onChooseApps)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        Button(draft.protectionSelectionSelfConfirmed ? "Yes" : "Yes, continue") {
+                            draft.protectionSelectionSelfConfirmed = true
+                        }
+                        .disabled(!viewModel.hasSelectedShieldingApps)
+                        .buttonStyle(PixelChipButtonStyle(isSelected: draft.protectionSelectionSelfConfirmed))
+                    }
+                    Text("This is your own check. Counting Sheep does not verify named apps.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
                 } else if case .denied = viewModel.screenTimeAuthorization {
-                    Text("Screen Time access is off. Save Wind Down now; choose apps to limit later in Settings if you want app limits.")
+                        Text("Screen Time access is off. Restore it, then choose at least one app or category to continue.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 } else if viewModel.screenTimeAuthorization == .unavailable {
-                    Text("App limits are unavailable on this device. Wind Down still works on its own.")
+                        Text("App protection is unavailable on this device. A new Wind Down cannot start until it is available.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 } else {
@@ -125,16 +130,13 @@ struct OnboardingProtectionStep: View {
                         viewModel.connectScreenTime()
                     }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    Text(FirstRunGuideCopy.permissionCanDecline)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
                 }
 
                 if viewModel.shieldingReadiness != .ready {
                     Text(viewModel.shieldingReadiness.detail)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
-                    Text("Finish this choice, or choose no app limits, to continue.")
+                    Text("Finish app protection setup to continue.")
                         .font(AppTypography.caption.weight(.bold))
                         .foregroundStyle(AppColors.grass)
                 }

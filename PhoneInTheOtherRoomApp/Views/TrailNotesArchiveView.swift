@@ -95,7 +95,7 @@ struct TrailNotesArchiveView: View {
                     .foregroundStyle(AppColors.grass)
                 Text("No Search Journal entry saved.")
                     .font(AppTypography.headline)
-                Text("Complete Wind Down and Ollie will record a homecoming or clue.")
+                Text("Wind Down, Sunrise Trail, and Phone Away can each leave a homecoming or clue here.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }

@@ -10,6 +10,7 @@ enum PhoneAwaySearchMeter {
 enum SheepSearchOrigin: String, Codable {
     case windDown
     case phoneBreak
+    case sunrise
     case starter
     case onboardingPractice
     case slumberParty
@@ -28,6 +29,7 @@ enum SheepSearchOrigin: String, Codable {
 
     var countsTowardProtectedNightGuarantee: Bool { self == .windDown }
     var countsTowardPhoneAwayGuarantee: Bool { self == .phoneBreak }
+    var countsTowardSunriseGuarantee: Bool { self == .sunrise }
 }
 
 struct SheepSearchOutcome: Codable, Equatable, Identifiable {
@@ -271,7 +273,11 @@ struct SheepSearchState: Codable, Equatable {
     }
 
     mutating func append(_ outcome: SheepSearchOutcome) {
-        guard !outcomes.contains(where: { $0.runID == outcome.runID }) else { return }
+        if outcome.origin == .sunrise {
+            guard !outcomes.contains(where: { $0.id == outcome.id }) else { return }
+        } else {
+            guard !outcomes.contains(where: { $0.runID == outcome.runID }) else { return }
+        }
         outcomes.append(outcome)
         // The mapped-bonus field is retained for legacy Wind Down outcomes only.
         // New Phone Away searches consume the separate meter before settlement.
@@ -284,7 +290,7 @@ struct SheepSearchState: Codable, Equatable {
                 phoneBreakConsecutiveNoFinds = 0
             case .windDown:
                 consecutiveNoFinds = 0
-            case .starter, .onboardingPractice, .slumberParty, .unspecified:
+            case .sunrise, .starter, .onboardingPractice, .slumberParty, .unspecified:
                 break
             }
         } else {
@@ -293,7 +299,7 @@ struct SheepSearchState: Codable, Equatable {
                 phoneBreakConsecutiveNoFinds += 1
             case .windDown:
                 consecutiveNoFinds += 1
-            case .starter, .onboardingPractice, .slumberParty, .unspecified:
+            case .sunrise, .starter, .onboardingPractice, .slumberParty, .unspecified:
                 break
             }
         }

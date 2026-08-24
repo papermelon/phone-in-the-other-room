@@ -16,7 +16,8 @@ The publication draft is `docs/PUBLIC_PRIVACY_POLICY.md`; App Store field guidan
 | Morning reflection | Optional personal context | Standard UserDefaults; 45 days | No |
 | HealthKit `sleepAnalysis` | Sleep interval, duration, core/deep/REM/unspecified/awake where present | Read on demand; derived summaries in memory | No |
 | Screen Time selection | Reports and optional shield | App Group, opaque Apple tokens | No |
-| Shield schedule/status evidence | Apply/clear the two bookends and avoid claiming unobserved protection | App Group; bounded 40 status entries | No |
+| Settlement journal | Hidden Wind Down outcome, terminal delivery/reveal markers, linked Screen-Free Morning occurrences, and Sunrise replay markers | Standard UserDefaults (`ollie.windDownMorning.settlementJournal`) | No |
+| Shield schedule/status evidence | Derived multi-window schedule, bounded purpose cue, Brief Access state, and observed apply/clear evidence | App Group; revisioned/tombstoned bounded entries | No |
 | NFC phone-bed registration | Confirm the chosen physical tag | Standard UserDefaults; SHA-256 digest only | No |
 | Flock/progress and legacy reward fields | Local ritual feedback and compatible decoding | Standard UserDefaults | No |
 | Wind Down starting point | Local questionnaire answers and deterministic recommendations | Standard UserDefaults (`ollie.windDown.profile`) | No |
@@ -118,8 +119,14 @@ expiry/revocation/redemption state, blocks, fixed-enum reports, service-only mod
 retention metadata, and ordinary security/operational logs maintained by Supabase. Current members
 may see approved display names and member-level progress inside the invited group.
 
+Reusable invitation plaintext is kept only in a non-synchronizing Keychain item protected by
+`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`, bound to the local account and lobby. Supabase
+stores only the SHA-256 digest; host-only state contains only the active invite UUID and expiry.
+
 The shared projection can say goal accepted, setup ready, phone tucked away, meaningful partial
-progress, shared goal completed, morning quiet completed, or no update shared. No update shared
+progress, shared goal completed, qualifying Wind Down completed, or no update shared. The legacy
+wire value `morningQuietCompleted` remains decode-compatible but never means or reports a
+Screen-Free Morning. No update shared
 is not completion. Independently controlled fields may include rounded quiet minutes and, only
 with explicit opt-in, sleep duration or restfulness. The projection does not include Auth owner
 IDs, local run IDs, exact dates or times, exact schedules, absence explanations, private
@@ -132,7 +139,8 @@ shielding evidence; the server does not claim it verified Instagram by name.
 
 Slumber Party never receives exact bedtime, wake time, early-ending reason, private routine
 steps, raw HealthKit samples, raw Screen Time reports, selected-app tokens/lists, NFC
-information, purpose/cue text, notification state, or `impact_nights`. Optional minimized
+information, Screen-Free Morning occurrence/choice/minutes, Sunrise Trail, purpose/cue text,
+Brief Access state, notification state, or `impact_nights`. Optional minimized
 impact/research sharing is a separate setting and record; neither consent enables the other.
 Bounded Farm grants are computed by the authenticated backend and applied locally from a grant
 ledger; they are not impact records.
@@ -196,4 +204,6 @@ across other companies' apps/sites and must never be used for advertising or dat
 - Insights report sample sizes and associations. They do not diagnose, score sleep quality,
   or claim the ritual caused an improvement.
 - A denied or missing HealthKit read is not treated as failure and does not change rewards.
-- The honor timer, QR, NFC, shielding, and the entire ritual work without HealthKit.
+- HealthKit is optional. Current release Wind Down starts use required selected-app shielding
+  with either the timer guard or NFC + app shielding; legacy honor-timer, QR, and Watch guard
+  values remain local decode compatibility only and are not release-facing paths.

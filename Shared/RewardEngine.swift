@@ -12,7 +12,7 @@ struct RewardEngine {
             return consolation(for: run, earnedAt: earnedAt)
         }
 
-        let minutes = run.creditedQuietMinutes
+        let minutes = windDownProgressMinutes(for: run)
         if demoMode {
             return RewardItem(
                 id: UUID(),
@@ -59,7 +59,7 @@ struct RewardEngine {
     func consolation(for run: FocusRun, earnedAt: Date = Date()) -> RewardItem? {
         guard run.isProgressionEligibleNightWatch || !run.isNightWatch else { return nil }
         guard run.state == .endedEarly else { return nil }
-        let minutes = run.isNightWatch ? run.creditedQuietMinutes : max(0, Int(run.actualDurationSeconds / 60))
+        let minutes = run.isNightWatch ? windDownProgressMinutes(for: run) : max(0, Int(run.actualDurationSeconds / 60))
         return RewardItem(
             id: UUID(),
             type: .muddyPaw,
@@ -76,7 +76,7 @@ struct RewardEngine {
     func updatedProgress(after run: FocusRun, current: UserProgress, reward: RewardItem?) -> UserProgress {
         var progress = current
         if run.completedSuccessfully && (run.isProgressionEligibleNightWatch || !run.isNightWatch) {
-            let minutes = run.creditedQuietMinutes
+            let minutes = windDownProgressMinutes(for: run)
             progress.totalCompletedRuns += 1
             progress.totalFocusMinutes += minutes
             progress.currentStreak += 1
@@ -94,11 +94,15 @@ struct RewardEngine {
 
         return RewardContext(
             windDownMinutes: run.creditedWindDownMinutes,
-            morningQuietMinutes: run.creditedMorningQuietMinutes,
+            morningQuietMinutes: 0,
             eveningActivity: plan.eveningActivity,
             morningActivity: plan.morningActivity,
             protectedNightNumber: protectedNightNumber
         )
+    }
+
+    private func windDownProgressMinutes(for run: FocusRun) -> Int {
+        run.isProgressionEligibleNightWatch ? run.creditedWindDownMinutes : run.creditedQuietMinutes
     }
 
     private func rotatingType(for protectedNightNumber: Int) -> RewardType {
@@ -115,19 +119,19 @@ struct RewardEngine {
     private func milestone(for protectedNightNumber: Int) -> (type: RewardType, rarity: RewardRarity, title: String)? {
         switch protectedNightNumber {
         case 1:
-            return (.ribbon, .uncommon, "First Protected Night")
+            return (.ribbon, .uncommon, "First Wind Down")
         case 3:
-            return (.sheepBadge, .uncommon, "Three Protected Nights")
+            return (.sheepBadge, .uncommon, "Three Wind Downs")
         case 7:
-            return (.fieldMap, .rare, "Seven Protected Nights")
+            return (.fieldMap, .rare, "Seven Wind Downs")
         case 14:
-            return (.trophy, .rare, "Fourteen Protected Nights")
+            return (.trophy, .rare, "Fourteen Wind Downs")
         case 30:
-            return (.trophy, .legendary, "Thirty Protected Nights")
+            return (.trophy, .legendary, "Thirty Wind Downs")
         case 50:
-            return (.trophy, .legendary, "Fifty Protected Nights")
+            return (.trophy, .legendary, "Fifty Wind Downs")
         case 100:
-            return (.trophy, .legendary, "One Hundred Protected Nights")
+            return (.trophy, .legendary, "One Hundred Wind Downs")
         default:
             return nil
         }
@@ -152,13 +156,13 @@ struct RewardEngine {
         switch type {
         case .ollieMail: return "A note Ollie carried back after Wind Down."
         case .letter: return "A little letter guarded until the phone woke."
-        case .ribbon: return "A ribbon for keeping both edges of the night quiet."
+        case .ribbon: return "A ribbon Ollie saved from a phone-away Wind Down."
         case .trophy: return "A tiny marker for quiet nights gathered over time."
         case .tennisBall: return "A bright ball from the quiet side of the pasture."
         case .stick: return "A good stick from the other room. Possibly the best stick."
         case .postcard: return "A postcard from the place where the phone slept."
         case .sheepBadge: return "A small badge for a phone-away night with Ollie."
-        case .fieldMap: return "A map of the quiet path from wind-down to morning."
+        case .fieldMap: return "A map of Ollie's Wind Down path."
         case .muddyPaw: return "A soft reminder that shorter runs are allowed."
         }
     }

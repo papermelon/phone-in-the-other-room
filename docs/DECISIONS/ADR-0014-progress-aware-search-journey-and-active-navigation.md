@@ -4,6 +4,11 @@
 
 Accepted, 2026-08-07.
 
+**ADR-0019 cross-reference:** the active journey may show only factual Wind Down and
+Screen-Free Morning state. The 420-minute Wind Down result remains hidden until authorized
+terminal delivery, while Sunrise Trail has a separate 15-minute floor, 100-minute fills, and
+local Farm/Search Journal projection.
+
 ## Context
 
 The original active illustration repeated one background beneath a time-driven run cycle.

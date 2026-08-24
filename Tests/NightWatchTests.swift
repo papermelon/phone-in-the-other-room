@@ -1,6 +1,28 @@
 import XCTest
 
 final class NightWatchTests: XCTestCase {
+    func testQualifiedTerminalBeforeWakeKeepsFactualMorningCreditAtZero() {
+        let start = Date(timeIntervalSince1970: 1_700_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(30 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        var run = FocusRun(
+            plannedDurationSeconds: plan.protectedUntil.timeIntervalSince(start),
+            startedAt: start,
+            state: .completed,
+            guardKind: .honorTimer,
+            nightWatchPlan: plan
+        )
+        run.completedSuccessfully = true
+        run.endedAt = start.addingTimeInterval(7 * 60 * 60)
+        XCTAssertEqual(run.creditedMorningQuietMinutes, 0)
+    }
     private var calendar: Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -189,7 +211,7 @@ final class NightWatchTests: XCTestCase {
         XCTAssertEqual(plan.creditedQuietMinutes(startedAt: startedAt, through: startedAt), 0)
     }
 
-    func testCompletedNightWatchRewardsOnlyBookendMinutes() throws {
+    func testCompletedNightWatchProgressUsesOnlyWindDownBookend() throws {
         let startedAt = try date(2026, 7, 18, 22, 30)
         let plan = makePreferences().makePlan(startedAt: startedAt, calendar: calendar)
         var run = FocusRun(
@@ -205,11 +227,12 @@ final class NightWatchTests: XCTestCase {
 
         let progress = RewardEngine().updatedProgress(after: run, current: .empty, reward: nil)
 
-        XCTAssertEqual(run.creditedQuietMinutes, 60)
+        // Screen-Free Morning settles as its own occurrence/Sunrise Trail;
+        // Wind Down progress must not consume its legacy bookend aggregate.
         XCTAssertEqual(run.creditedWindDownMinutes, 30)
         XCTAssertEqual(run.creditedMorningQuietMinutes, 30)
-        XCTAssertEqual(progress.totalFocusMinutes, 60)
-        XCTAssertEqual(progress.record(for: plan.intendedBedtime, calendar: calendar)?.completedFocusMinutes, 60)
+        XCTAssertEqual(progress.totalFocusMinutes, 30)
+        XCTAssertEqual(progress.record(for: plan.intendedBedtime, calendar: calendar)?.completedFocusMinutes, 30)
         XCTAssertNil(progress.record(for: plan.protectedUntil, calendar: calendar))
     }
 

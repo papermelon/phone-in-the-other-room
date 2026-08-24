@@ -12,6 +12,13 @@ struct WindDownScheduleView: View {
             .sorted { $0.interval.start < $1.interval.start }
     }
 
+    private var protectionStartPresentation: HomeProtectionStartPresentation {
+        HomeProtectionStartPresentation.resolve(
+            readiness: viewModel.shieldingReadiness,
+            selectionSummary: viewModel.shieldingSelectionSummary
+        )
+    }
+
     var body: some View {
         List {
             Section {
@@ -20,12 +27,16 @@ struct WindDownScheduleView: View {
                     .foregroundStyle(AppColors.muted)
 
                 Button {
+                    guard viewModel.shieldingReadiness == .ready else {
+                        message = viewModel.shieldingReadiness.detail
+                        return
+                    }
                     let started = viewModel.startNewOneTimeAdditionalQuietNow()
                     if !started {
                         message = viewModel.windDownScheduleError ?? "Phone Away could not be started just now."
                     }
                 } label: {
-                    Label("Start now", systemImage: "timer")
+                    Label(phoneAwayStartTitle, systemImage: phoneAwayStartIcon)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .buttonStyle(PixelPrimaryButtonStyle())
@@ -43,6 +54,10 @@ struct WindDownScheduleView: View {
                         HStack(spacing: AppSpacing.sm) {
                             if isReady {
                                 Button {
+                                    guard viewModel.shieldingReadiness == .ready else {
+                                        message = viewModel.shieldingReadiness.detail
+                                        return
+                                    }
                                     viewModel.requestStartNightWatch(sourceID: period.id)
                                 } label: {
                                     scheduleRow(
@@ -54,8 +69,8 @@ struct WindDownScheduleView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
-                                .accessibilityLabel("Start scheduled \(period.userFacingTitle)")
-                                .accessibilityHint("Starts this scheduled Phone Away period")
+                                .accessibilityLabel(scheduledStartAccessibilityLabel(for: period))
+                                .accessibilityHint(scheduledStartAccessibilityHint)
                             } else {
                                 scheduleRow(
                                     title: period.userFacingTitle,
@@ -174,6 +189,25 @@ struct WindDownScheduleView: View {
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
+    }
+
+    private var phoneAwayStartTitle: String {
+        if case let .repair(title, _) = protectionStartPresentation { return title }
+        return "Start now"
+    }
+
+    private var phoneAwayStartIcon: String {
+        viewModel.shieldingReadiness == .ready ? "timer" : "shield.lefthalf.filled"
+    }
+
+    private func scheduledStartAccessibilityLabel(for period: WindDownOneTimePeriod) -> String {
+        if case let .repair(title, _) = protectionStartPresentation { return title }
+        return "Start scheduled \(period.userFacingTitle)"
+    }
+
+    private var scheduledStartAccessibilityHint: String {
+        if case let .repair(_, detail) = protectionStartPresentation { return detail }
+        return "Starts this scheduled Phone Away period"
     }
 
     private func scheduleRow(

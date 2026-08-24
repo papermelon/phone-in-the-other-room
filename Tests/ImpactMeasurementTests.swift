@@ -66,7 +66,7 @@ final class ImpactMeasurementTests: XCTestCase {
         XCTAssertEqual(records.first(where: { $0.relativeNight == 90 })?.sleepMinutes, 450)
     }
 
-    func testAdditionalQuietDoesNotClaimTheHealthSleepSample() {
+    func testIndependentScreenFreeMorningIsExcludedFromWindDownImpactMetric() {
         let bedtime = Date(timeIntervalSince1970: 1_800_000_000)
         let primaryPlan = NightWatchPlan(
             intendedBedtime: bedtime,
@@ -106,7 +106,9 @@ final class ImpactMeasurementTests: XCTestCase {
 
         XCTAssertEqual(samples.count, 1)
         XCTAssertTrue(samples[0].completedRitual)
-        XCTAssertEqual(samples[0].quietMinutes, 60)
+        // A new Wind Down impact row contains only its factual Wind Down
+        // bookend. Screen-Free Morning is private and settles separately.
+        XCTAssertEqual(samples[0].quietMinutes, 30)
     }
 
     private func sample(

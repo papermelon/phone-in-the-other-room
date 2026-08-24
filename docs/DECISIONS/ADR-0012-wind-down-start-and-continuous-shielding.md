@@ -1,7 +1,12 @@
 # ADR-0012: Wind Down start confirmation and continuous app barrier
 
-**Status:** Accepted for TestFlight build 10
+**Status:** Accepted; build 10 is historical, not the current release candidate
 **Date:** 2026-08-04
+
+**Superseded in part by ADR-0019:** protection readiness is now mandatory for every new Wind
+Down, Screen-Free Morning, and Phone Away start; a missing authorization/opaque selection blocks
+the start rather than providing a timer-only alternative. Runtime failure after a valid start
+still fails open and records no false observed barrier evidence.
 
 ## Context
 

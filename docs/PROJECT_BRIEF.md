@@ -84,8 +84,9 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   have no checkmarks, verification, reward, score, streak, or claim that they were completed.
   Custom wording stays in-app unless the person separately allows it in notifications. Home names
   the exact eligible ritual before it starts: the usual Wind Down, a bounded Phone Away, or the
-  optional five-minute practice. Actions use “Put phone away,” “Start now,” and “Plan.” App limits can be skipped for one run without changing
-  the saved shielding preference.
+  optional five-minute practice. Actions use “Put phone away,” “Start now,” and “Plan.” New
+  Wind Down, Screen-Free Morning, and Phone Away starts require Family Controls authorization
+  and a non-empty opaque app/category selection; runtime failure fails open and offers repair.
   NFC is the default Wind Down tag for new plans; App Shielding remains the simplest
   no-hardware path. A writable generic NDEF tag can be
   registered, replaced, or forgotten in place; NFC mode requires that same tag to end
@@ -93,7 +94,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   a chosen Quiet, Balanced, or Supportive cadence and schedule selected-app shielding at the
   saved start time while the app is closed. Optional usage-aware reminders can send one
   generic cue after three minutes in selected apps in each phase, including overnight.
-  Optional shielding limits only the selected apps from an eligible Wind Down start through
+  App protection limits only the selected apps from an eligible Wind Down start through
   morning quiet; the barrier spans overnight and always has an early exit through the
   registered Wind Down tag or Counting Sheep's emergency exit.
   Home stays focused on the saved plan and one-tap start; its schedule block opens the timing editor
@@ -132,17 +133,27 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   invite codes stay inside the invite-only group. Shared nights can grant a little wool, a small
   Farm keepsake, or one guaranteed Slumber Party sheep search, separate from Wind Down and Phone
   Away guarantees. There is no feed, chat, discovery, or leaderboard. Active Wind Down has no social UI.
-- **Settings**: **Your Wind Down**, **Connections**, and **Help & app guide**. Your Wind Down
-  contains Appearance, schedule, bookends, App Shielding or NFC + App Shielding, and automatic
+- **Settings**: **Your Wind Down**, **Connections**, **Privacy & data**, and **Help & app guide**.
+  The compact root uses focused detail screens, progressive disclosure, and contextual help. Your
+  Wind Down contains Appearance, Plan & routine, Protection & tags, Reminders & Lock Screen, and automatic
   Wind Down and shielding. Help & app guide contains “How Wind Down works,” guidance beside
   routine choices, and the secondary **“About these ideas and sources”** link to the full locally
   bundled source library. There is no duplicate Review Wind Down setup route. Connections contains
-  Apple Health, Screen Time, and notification connections; optional impact-sharing controls;
-  a destructive local reset that erases the saved Wind Down plan, NFC pairing, selections, and local history
-  before returning to Welcome; system permissions and remote impact records remain outside that reset;
-  privacy information; feedback and support; and app version information. Optional feedback
+  Apple Health, Screen Time, and Slumber Party when enabled and appropriate. Privacy & data contains the
+  privacy policy, optional impact-sharing controls, and a destructive local reset that erases the saved Wind Down plan,
+  NFC pairing, selections, and local history before returning to Welcome; system permissions and remote impact
+  records remain outside that reset. Help & app guide contains the guide, practice, sources, feedback, support,
+  and app details. Optional feedback
   can use private Supabase delivery only after its release gates pass, and otherwise uses a
   prefilled email fallback.
+
+  App protection is a required, consented readiness condition for every new Wind Down,
+  Screen-Free Morning, and Phone Away start. Family Controls authorization and a non-empty opaque
+  app/category selection are required; denial, revocation, unavailability, or an empty selection
+  routes to repair rather than a timer-only run. A runtime apply/restore failure after a valid
+  start fails open and remains factual, but asks for repair before the next start. Routine examples
+  are prompts rather than defaults; “Put phone away” remains the fixed first evening step, while
+  Phone Away keeps its simple title-and-purpose editor.
 
 **Gated out of normal navigation:** general Friends, the legacy mock Farm/Shop, the legacy keepsake
 shelf, and mock-data screens. Debug access requires `-ollie.debug.enableMockScreens YES`;

@@ -48,14 +48,17 @@ private enum NightFlockPreviewData {
 private func previewModel(
     phase: NightFlockViewModel.Phase,
     snapshot: NightFlockSnapshot? = nil,
-    account: NightFlockAccountState = .linked
+    account: NightFlockAccountState = .linked,
+    recovery: NightFlockAuthenticationAction = .none
 ) -> NightFlockViewModel {
-    NightFlockViewModel(
+    let model = NightFlockViewModel(
         featureEnabled: true,
         previewSnapshot: snapshot,
         previewPhase: phase,
         previewAccountState: account
     )
+    model.pendingAuthenticationRecovery = recovery
+    return model
 }
 
 #Preview("Slumber Party · active") {
@@ -96,6 +99,34 @@ private func previewModel(
         NightFlockHubView(viewModel: previewModel(
             phase: .error("Apple sign-in finished, but account linking is not available yet. Your current account and local data were left unchanged."),
             account: .anonymous
+        ))
+    }
+}
+
+#Preview("Slumber Party · reconnect Apple account") {
+    NavigationStack {
+        NightFlockHubView(viewModel: previewModel(
+            phase: .error("Your connection needs to be checked again."),
+            recovery: .reauthenticateApple
+        ))
+    }
+}
+
+#Preview("Slumber Party · link existing anonymous account") {
+    NavigationStack {
+        NightFlockHubView(viewModel: previewModel(
+            phase: .error("This account needs Apple sign-in."),
+            account: .anonymous,
+            recovery: .linkCurrentAnonymousApple
+        ))
+    }
+}
+
+#Preview("Slumber Party · account mismatch stayed closed") {
+    NavigationStack {
+        NightFlockHubView(viewModel: previewModel(
+            phase: .error("Counting Sheep could not prove this is the original account."),
+            recovery: .failClosed
         ))
     }
 }

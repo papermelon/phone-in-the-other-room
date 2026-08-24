@@ -23,6 +23,7 @@ struct NotificationSettingsView: View {
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Notifications")
         .navigationBarTitleDisplayMode(.inline)
+        .settingsHelp(.remindersLockScreen)
         .onAppear { viewModel.refreshNotificationAuthorization() }
     }
 

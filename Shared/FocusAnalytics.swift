@@ -133,10 +133,11 @@ struct AnalyticsExportPackage: Codable, Equatable {
     var privacyMode: AnalyticsExportPrivacyMode
     var days: [AnalyticsDayRecord]
     var correlations: [AnalyticsCorrelation]
+    var farmEconomy: FarmEconomySnapshot?
 }
 
 enum FocusAnalyticsEngine {
-    static let exportSchemaVersion = 2
+    static let exportSchemaVersion = 3
 
     static func dayRecords(
         progress: UserProgress,
@@ -231,13 +232,19 @@ enum FocusAnalyticsEngine {
         ]
     }
 
-    static func exportPackage(records: [AnalyticsDayRecord], privacyMode: AnalyticsExportPrivacyMode = .exactDates, generatedAt: Date = Date()) -> AnalyticsExportPackage {
+    static func exportPackage(
+        records: [AnalyticsDayRecord],
+        privacyMode: AnalyticsExportPrivacyMode = .exactDates,
+        farmEconomy: FarmEconomySnapshot? = nil,
+        generatedAt: Date = Date()
+    ) -> AnalyticsExportPackage {
         AnalyticsExportPackage(
             generatedAt: generatedAt,
             appSchemaVersion: exportSchemaVersion,
             privacyMode: privacyMode,
             days: records,
-            correlations: correlations(for: records)
+            correlations: correlations(for: records),
+            farmEconomy: farmEconomy
         )
     }
 

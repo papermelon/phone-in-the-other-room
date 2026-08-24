@@ -42,10 +42,16 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
         }
 
         if #available(iOS 26.4, *) {
-            // The system submenu is the confirmation on newer OS versions. Only
-            // its first item is affirmative; canceling or keeping quiet time
-            // leaves the shield in place without entering the grant ledger.
-            guard action == .firstSecondarySubmenuItemPressed else { return .none }
+            // Every role-specific submenu choice confirms the same bounded
+            // grant. The system-provided Cancel action is the sole no-op path.
+            switch action {
+            case .firstSecondarySubmenuItemPressed,
+                 .secondSecondarySubmenuItemPressed,
+                 .thirdSecondarySubmenuItemPressed:
+                break
+            default:
+                return .none
+            }
         } else {
             guard action == .secondaryButtonPressed else { return .none }
         }
@@ -73,6 +79,7 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
               !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty,
               schedule.isEligible(at: now),
               schedule.isShielded(at: now),
+              let identity = currentIdentity(for: schedule, defaults: defaults, at: now),
               let expiration = schedule.intervalEnd(at: now),
               min(now.addingTimeInterval(BriefAccessShieldActionStorage.duration), expiration)
                 .timeIntervalSince(now) >= BriefAccessShieldActionStorage.minimumDuration else {
@@ -83,9 +90,18 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
         if let stateData = defaults.data(forKey: BriefAccessShieldActionStorage.stateKey),
            let stored = try? JSONDecoder().decode(BriefAccessShieldActionState.self, from: stateData) {
             state = stored
-            if state.runID != schedule.runID || state.scheduleRevision != schedule.revision {
+            if state.runID != identity.runID
+                || state.occurrenceID != identity.occurrenceID
+                || state.scheduleRevision != identity.revision
+                || state.scheduleEpoch != identity.epoch {
                 DeviceActivityCenter().stopMonitoring([BriefAccessShieldActionStorage.restoreActivity])
-                state.carryingLedgerForward(to: schedule.runID, revision: schedule.revision, at: now)
+                state.carryingLedgerForward(
+                    to: identity.runID,
+                    occurrenceID: identity.occurrenceID,
+                    revision: identity.revision,
+                    epoch: identity.epoch,
+                    at: now
+                )
             } else if let activeGrant = state.activeGrant {
                 if activeGrant.expiresAt <= now {
                     state.archiveCurrentRun(at: now)
@@ -95,8 +111,10 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
             }
         } else {
             state = BriefAccessShieldActionState(
-                runID: schedule.runID,
-                scheduleRevision: schedule.revision,
+                runID: identity.runID,
+                occurrenceID: identity.occurrenceID,
+                scheduleRevision: identity.revision,
+                scheduleEpoch: identity.epoch,
                 updatedAt: now
             )
         }
@@ -106,8 +124,10 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
             expiration
         )
         let grant = BriefAccessShieldActionGrantFactory.make(
-            runID: schedule.runID,
-            revision: schedule.revision,
+            runID: identity.runID,
+            occurrenceID: identity.occurrenceID,
+            revision: identity.revision,
+            epoch: identity.epoch,
             requestedAt: now,
             expiresAt: expiresAt
         )
@@ -148,8 +168,10 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
               canCommitScheduledGrant(
                   state: currentState,
                   grant: grant,
-                  currentRunID: schedule.runID,
-                  currentRevision: schedule.revision
+                  currentRunID: identity.runID,
+                  currentOccurrenceID: identity.occurrenceID,
+                  currentRevision: identity.revision,
+                  currentEpoch: identity.epoch
               ) else {
             DeviceActivityCenter().stopMonitoring([BriefAccessShieldActionStorage.restoreActivity])
             return false
@@ -169,10 +191,18 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
         state: BriefAccessShieldActionState,
         grant: BriefAccessGrant,
         currentRunID: UUID,
-        currentRevision: Int
+        currentOccurrenceID: UUID,
+        currentRevision: Int,
+        currentEpoch: Int
     ) -> Bool {
         state.runID == currentRunID
+            && state.occurrenceID == currentOccurrenceID
             && state.scheduleRevision == currentRevision
+            && state.scheduleEpoch == currentEpoch
+            && grant.runID == currentRunID
+            && grant.occurrenceID == currentOccurrenceID
+            && grant.scheduleRevision == currentRevision
+            && grant.scheduleEpoch == currentEpoch
             && state.rejectedGrantNonce != grant.nonce
             && state.archivedAt == nil
             && state.activeGrant?.nonce == grant.nonce
@@ -183,6 +213,44 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
         guard let data = try? JSONEncoder().encode(state) else { return }
         defaults.set(data, forKey: BriefAccessShieldActionStorage.stateKey)
     }
+
+    private func currentIdentity(
+        for schedule: BriefAccessShieldActionSchedule,
+        defaults: UserDefaults,
+        at date: Date
+    ) -> BriefAccessShieldActionIdentity? {
+        let registry = BriefAccessShieldActionRegistryStorage.load(from: defaults)
+        guard !registry.entries.isEmpty || !registry.tombstones.isEmpty else {
+            return BriefAccessShieldActionIdentity(
+                runID: schedule.runID,
+                occurrenceID: schedule.occurrenceID,
+                revision: schedule.revision,
+                epoch: schedule.epoch
+            )
+        }
+        guard let entry = registry.entry(for: schedule.occurrenceID),
+              entry.interval.contains(date) else { return nil }
+        // Parse the stable DeviceActivity name we derive from the entry rather
+        // than trusting an unversioned snapshot field. This keeps a legacy
+        // grant from matching a newer registry revision by coincidence.
+        let dynamicActivity = BriefAccessShieldActionRegistryActivity(
+            occurrenceID: entry.occurrenceID,
+            revision: entry.revision,
+            epoch: entry.epoch
+        )
+        guard let parsed = BriefAccessShieldActionRegistryActivity(identifier: dynamicActivity.identifier),
+              registry.accepts(
+                  occurrenceID: parsed.occurrenceID,
+                  revision: parsed.revision,
+                  epoch: parsed.epoch
+              ) else { return nil }
+        return BriefAccessShieldActionIdentity(
+            runID: schedule.runID,
+            occurrenceID: parsed.occurrenceID,
+            revision: parsed.revision,
+            epoch: parsed.epoch
+        )
+    }
 }
 
 private enum BriefAccessSchedulingError: Error {
@@ -192,14 +260,18 @@ private enum BriefAccessSchedulingError: Error {
 private struct BriefAccessShieldActionGrantFactory {
     static func make(
         runID: UUID,
+        occurrenceID: UUID,
         revision: Int,
+        epoch: Int,
         requestedAt: Date,
         expiresAt: Date
     ) -> BriefAccessGrant {
         BriefAccessGrant(
             schemaVersion: 1,
             runID: runID,
+            occurrenceID: occurrenceID,
             scheduleRevision: revision,
+            scheduleEpoch: epoch,
             requestedAt: requestedAt,
             expiresAt: expiresAt,
             nonce: UUID(),
@@ -207,4 +279,11 @@ private struct BriefAccessShieldActionGrantFactory {
             status: .pending
         )
     }
+}
+
+private struct BriefAccessShieldActionIdentity {
+    let runID: UUID
+    let occurrenceID: UUID
+    let revision: Int
+    let epoch: Int
 }

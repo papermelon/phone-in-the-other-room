@@ -7,11 +7,15 @@ enum QuietTimeShieldWindow: String, Codable, CaseIterable, Equatable {
 }
 
 struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
-    static let currentSchemaVersion = 3
+    static let currentSchemaVersion = 4
 
     var schemaVersion: Int
     var runID: UUID
     var revision: Int
+    /// Registry identity is presentation-only and lets shield extensions
+    /// reject a bounded purpose cue from a replaced window.
+    var registryRevision: Int
+    var registryEpoch: Int
     var role: QuietTimeShieldRole
     /// The actual app-limit interval. Unlike the two credited bookends, this
     /// can span the overnight phase when the user chooses the NFC barrier.
@@ -25,6 +29,8 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
         schemaVersion: Int = currentSchemaVersion,
         runID: UUID,
         revision: Int,
+        registryRevision: Int = 1,
+        registryEpoch: Int = 1,
         role: QuietTimeShieldRole = .primaryWindDown,
         protectedSessionInterval: DateInterval? = nil,
         windDownInterval: DateInterval?,
@@ -35,6 +41,8 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
         self.schemaVersion = schemaVersion
         self.runID = runID
         self.revision = max(1, revision)
+        self.registryRevision = max(1, registryRevision)
+        self.registryEpoch = max(1, registryEpoch)
         self.role = role
         self.protectedSessionInterval = protectedSessionInterval
         self.windDownInterval = windDownInterval
@@ -44,7 +52,7 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, runID, revision, role, protectedSessionInterval, windDownInterval, morningQuietInterval
+        case schemaVersion, runID, revision, registryRevision, registryEpoch, role, protectedSessionInterval, windDownInterval, morningQuietInterval
         case updatedAt, repeatsDaily
     }
 
@@ -55,6 +63,8 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
         schemaVersion = max(storedSchemaVersion, Self.currentSchemaVersion)
         runID = try container.decode(UUID.self, forKey: .runID)
         revision = max(1, try container.decodeIfPresent(Int.self, forKey: .revision) ?? 1)
+        registryRevision = max(1, try container.decodeIfPresent(Int.self, forKey: .registryRevision) ?? 1)
+        registryEpoch = max(1, try container.decodeIfPresent(Int.self, forKey: .registryEpoch) ?? 1)
         role = try container.decodeIfPresent(QuietTimeShieldRole.self, forKey: .role)
             ?? .primaryWindDown
         protectedSessionInterval = try container.decodeIfPresent(DateInterval.self, forKey: .protectedSessionInterval)
@@ -163,6 +173,7 @@ struct QuietTimeShieldStatusSnapshot: Codable, Equatable {
 
 enum QuietTimeShieldSharedStorage {
     static let scheduleKey = "ollie.screenTime.shieldSchedule"
+    static let registryKey = QuietTimeShieldScheduleRegistryStorage.key
     static let statusKey = "ollie.screenTime.shieldStatus"
     static let statusHistoryKey = "ollie.screenTime.shieldStatusHistory"
     static let briefAccessStateKey = "ollie.screenTime.briefAccessState"

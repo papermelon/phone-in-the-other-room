@@ -147,6 +147,10 @@ explicit founder direction.
   observation. Bounded Farm grants may follow qualifying shared nights; opening the app,
   inviting, joining, reacting, or changing settings never creates them.
 
+  Screen-Free Morning choices, minutes, Sunrise Trail results, wool, purpose cues, and Brief
+  Access are private local data. The legacy social raw value `morningQuietCompleted` is retained
+  only for decoding and means a qualifying terminal Wind Down in new presentation.
+
 ## Durable product commitments
 
 1. Optimise for healthier bedtime behaviour, not time inside Counting Sheep.

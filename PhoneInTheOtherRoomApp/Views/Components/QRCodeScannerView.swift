@@ -75,7 +75,7 @@ struct PhoneBedScannerSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: AppSpacing.md) {
-                Text("Show Ollie your Wind Down code")
+                Text("Scan your Wind Down code")
                     .font(AppTypography.title)
                 Text("Scan your Wind Down code to confirm the app-access barrier.")
                     .font(AppTypography.body)

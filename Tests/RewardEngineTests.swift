@@ -3,7 +3,7 @@ import XCTest
 final class RewardEngineTests: XCTestCase {
     private let earnedAt = Date(timeIntervalSince1970: 2_000_000_000)
 
-    func testFirstCompletionCreatesCumulativeMilestoneWithBookendReceipt() throws {
+    func testFirstCompletionUsesWindDownBookendAndExcludesIndependentMorning() throws {
         let reward = try XCTUnwrap(
             RewardEngine().generateReward(
                 for: completedNightWatch(),
@@ -14,10 +14,10 @@ final class RewardEngineTests: XCTestCase {
 
         XCTAssertEqual(reward.type, .ribbon)
         XCTAssertEqual(reward.family, .nightMarker)
-        XCTAssertEqual(reward.title, "First Protected Night")
+        XCTAssertEqual(reward.title, "First Wind Down")
         XCTAssertEqual(reward.context?.windDownMinutes, 30)
-        XCTAssertEqual(reward.context?.morningQuietMinutes, 30)
-        XCTAssertEqual(reward.context?.quietMinutes, 60)
+        XCTAssertEqual(reward.context?.morningQuietMinutes, 0)
+        XCTAssertEqual(reward.context?.quietMinutes, 30)
         XCTAssertEqual(reward.context?.eveningActivity, .read)
         XCTAssertEqual(reward.context?.morningActivity, .openCurtains)
         XCTAssertEqual(reward.context?.protectedNightNumber, 1)
@@ -82,7 +82,7 @@ final class RewardEngineTests: XCTestCase {
         )
 
         XCTAssertEqual(reward.type, .sheepBadge)
-        XCTAssertEqual(reward.title, "Three Protected Nights")
+        XCTAssertEqual(reward.title, "Three Wind Downs")
         XCTAssertEqual(reward.context?.protectedNightNumber, 3)
     }
 

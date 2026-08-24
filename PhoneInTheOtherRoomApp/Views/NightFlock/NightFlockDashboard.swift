@@ -9,6 +9,7 @@ struct NightFlockDashboard: View {
     @EnvironmentObject private var focusViewModel: FocusRunViewModel
     @ObservedObject var viewModel: NightFlockViewModel
     let snapshot: NightFlockSnapshot
+    @State private var confirmsInviteReplacement = false
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     @State private var showInstagramPicker = false
 #endif
@@ -45,6 +46,16 @@ struct NightFlockDashboard: View {
             focusViewModel.saveScreenTimeSelection(.bedtime)
         }
 #endif
+        .confirmationDialog(
+            "Replace the invitation code?",
+            isPresented: $confirmsInviteReplacement,
+            titleVisibility: .visible
+        ) {
+            Button("Replace code", role: .destructive, action: viewModel.replaceReusableInvite)
+            Button("Keep current code", role: .cancel) {}
+        } message: {
+            Text("The current code will stop working. Ollie will make one new code for this lobby.")
+        }
     }
 
     private var tonightGoal: some View {
@@ -242,7 +253,7 @@ struct NightFlockDashboard: View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text("INVITE PEOPLE").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
-                if let code = viewModel.latestInviteCode {
+                if case let .code(code) = viewModel.inviteRecoveryPresentation {
                     Text(code).font(.system(.title2, design: .monospaced).weight(.bold)).textSelection(.enabled)
                         .accessibilityLabel("Party code \(code.map(String.init).joined(separator: " "))")
                     Text("Use this code until the lobby starts, expires, or reaches eight people.")
@@ -252,6 +263,16 @@ struct NightFlockDashboard: View {
                         ShareLink(item: code) { Label("Share code", systemImage: "square.and.arrow.up") }
                     }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                } else if viewModel.inviteRecoveryPresentation == .finishCreating {
+                    Text("Your code is safely waiting on this phone. Finish creating it when you’re ready.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                    Button("Finish creating", action: viewModel.finishCreatingReusableInvite)
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                } else if viewModel.inviteRecoveryPresentation == .replaceCode {
+                    Text("This lobby has a code, but it is no longer available on this phone.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                    Button("Replace code") { confirmsInviteReplacement = true }
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 } else {
                     Text("Invite people you know. The seven nights begin after everyone joins, accepts the goal, and the host starts.")
                         .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)

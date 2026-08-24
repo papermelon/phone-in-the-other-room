@@ -141,6 +141,21 @@ struct FarmShopItemImage: View {
     }
 }
 
+struct FarmDecorationSceneImage: View {
+    let item: FarmShopItem
+    let size: CGFloat
+
+    var body: some View {
+        FarmCatalogAssetImage(
+            assetName: item.sceneAssetName,
+            fallbackSymbol: item.symbolName,
+            fallbackColor: farmVisualColor(item.visualStyle),
+            size: size
+        )
+        .accessibilityHidden(true)
+    }
+}
+
 private struct FarmCatalogAssetImage: View {
     let assetName: String?
     let fallbackSymbol: String
@@ -186,7 +201,7 @@ struct OllieFarmAvatar: View {
               case .ollieAccessory(let assetName) = item.equippedRenderAsset else {
             return nil
         }
-        return assetName
+        return UIImage(named: assetName) == nil ? nil : assetName
     }
 
     var body: some View {
@@ -247,10 +262,19 @@ struct ShepherdAvatarView: View {
 
     private var accessoryRenderAssetName: String? {
         guard let accessory = profile.accessoryItemID.flatMap(FarmShopCatalog.item),
-              let equippedRenderAsset = accessory.equippedRenderAsset else {
+              let equippedRenderAsset = accessory.equippedRenderAsset,
+              let assetName = equippedRenderAsset.assetName(for: profile.hairStyle),
+              UIImage(named: assetName) != nil else {
             return nil
         }
-        return equippedRenderAsset.assetName(for: profile.hairStyle)
+        return assetName
+    }
+
+    private var outfitRenderAssetName: String? {
+        guard let render = outfit?.equippedRenderAsset,
+              case let .shepherdOutfit(assetName) = render,
+              UIImage(named: assetName) != nil else { return nil }
+        return assetName
     }
 
     var body: some View {
@@ -260,10 +284,12 @@ struct ShepherdAvatarView: View {
             avatarMask(avatarAssets.skinMask)
                 .foregroundStyle(shepherdSkinColor(profile.skinTone))
 
-            if let outfit {
+            if let outfit, outfitRenderAssetName == nil {
                 avatarMask(avatarAssets.outfitMask)
                     .foregroundStyle(farmVisualColor(outfit.visualStyle))
             }
+
+            FarmEquippedOverlayImage(assetName: outfitRenderAssetName, size: size)
 
             FarmEquippedOverlayImage(assetName: accessoryRenderAssetName, size: size)
         }
@@ -329,7 +355,9 @@ struct FarmKeepsakeDisplay: View {
     let state: FarmState
 
     private var displayedItems: [FarmShopItem] {
-        state.equipment.collectibleItemIDs.compactMap(FarmShopCatalog.item)
+        FarmCollectibleSlot.allCases
+            .compactMap { state.equipment.collectiblePlacements[$0] }
+            .compactMap(FarmShopCatalog.item)
             .filter { $0.effect == .collectible }
     }
 

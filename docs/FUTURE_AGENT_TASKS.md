@@ -11,6 +11,57 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Recently completed
 
+- **2026-08-24 · Codex:** Replaced the uninterrupted first-run journey with schema-6 Home Basics
+  and opt-in Around the Farm chapters. Added deterministic schema-five migration, paused-only
+  chapter Resume routing, compact Dynamic Type-safe coach actions, post-render Settings/Nights
+  contextual tips, an explicit Moonlit Coat keep-or-wear choice, and owned-gift Shop presentation.
+  Generic guide navigation no longer mutates Farm ownership or equipment. Full simulator tests
+  pass; physical iPhone 12 layout and VoiceOver proof remain manual follow-ups.
+
+- **2026-08-23 · Codex:** Added the independent Wind Down/Screen-Free Morning settlement
+  foundation: `ollie.windDownMorning.settlementJournal` is the local authority for the hidden
+  420-minute Wind Down result, delivery/reveal markers, linked Morning occurrences, and Sunrise
+  Trail replay. The App Group holds only a revisioned derived shield registry. New starts require
+  current Family Controls readiness and an opaque non-empty app/category selection; post-start
+  shield failures fail open and request repair. Sunrise fills are isolated from Wind Down and
+  Phone Away, and Slumber Party excludes all Screen-Free Morning data. Remaining work is physical
+  device validation (authorization/revocation, terminated monitoring, NFC, Watch/Live Activity,
+  notifications, accessibility) and final full-suite/release-candidate evidence; no upload or
+  final Screen-Free Morning candidate is claimed here.
+
+- **2026-08-23 · Codex:** Added a local-only production pasture scene: each sheep, Ollie, and
+  Your Shepherd keeps an independently draggable, footprint-clamped settled position outside
+  `FarmState`. Calm, single-sequence ambient motion and an occasional short Ollie/sheep chase are
+  ephemeral and disable under Reduce Motion. Pure layout/decoding/planning coverage was added.
+  Simulator/manual checks still required: ordinary sheep/Ollie/Shepherd taps, long-press drag and
+  interrupted-drag recovery, and an immediate horizontal swipe from a character hit target.
+
+- **2026-08-23 · Codex + Luna/High:** Added `group.com.ngawangchime.countingsheep` to the Shield
+  Configuration source entitlement, regenerated XcodeGen output, and verified the Release
+  simulator build. The development Release archive succeeded for build 11; deep code-sign
+  verification and the embedded Xcode-managed development profile both contain Family Controls
+  plus the exact App Group. Portal capability assignment and seven valid App Store distribution
+  profiles were completed, including corrected main profile `Counting Sheep Main App Store
+  Corrected`; manual App Store Connect export succeeded at
+  `/tmp/counting-sheep-shield-app-group.fMCmji/Export7/Counting Sheep.ipa`, and the exported
+  Shield Configuration profile/entitlements plus deep signature verification passed. Upload and
+  physical four-presentation QA remain open.
+
+- **2026-08-23 · Codex + Luna/High:** Moved Brief Access's post-use check-in into the iOS 26.4+
+  app/category shield submenu, removed the in-app reflection sheet and redundant Keep Wind Down /
+  Keep Phone Away item, and added a run-scoped pause/allotted-minute tracker to the shield and
+  active-run UI. The generic iOS Simulator build succeeded, and the iPhone 17 / iOS 26.4.1
+  simulator evidence reports 487 tests passed; physical-device QA remains required for shield
+  refresh, submenu routing, and accessibility.
+
+- **2026-08-22 · Codex:** Implemented the Farm Shop economy architecture expansion while leaving
+  final artwork uninstalled for founder review: a 31-item fixed catalogue with the established
+  wool and capacity rules, permanent 3/10/25-Wind-Down-or-4/8/12-discovery unlock tiers enforced
+  in `FarmState.purchase`, named pasture-zone exclusivity, four bounded keepsake slots, schema-v3
+  migration, item-detail preview infrastructure, and a privacy-minimised aggregate economy export.
+  Deterministic collector, decorator, and duplicate-trader simulations cover the stated early,
+  14-Wind-Down, and 60-Wind-Down balance targets.
+
 - **2026-08-17 · Cursor:** Addressed schema-three review P1s: overnight terminal publish keeps
   v3 metrics, sleep/restfulness can update after the morning note and HealthKit, join/create
   disclose default-on fields, sharing flags project independently, out-of-bounds minutes are
@@ -302,12 +353,19 @@ execute without human sign-off mid-task (final merge review still applies per
   nighttime interaction requirement. Any future expansion still needs product review.
 
 ### D4. Slumber Party hosted release and two-account proof
+- Include recoverable-invite evidence: lost response, relaunch without mutation, same-account
+  credential reveal, explicit CAS replacement, stale-CAS preservation, and no plaintext,
+  digest, or idempotency material in logs or support captures.
 - **Gate:** ADR-0016 source implementation reviewed and local database validation green.
 - **Mode:** Human + Codex support · **Size:** M · **Autonomous:** no
 - **Accept:** enable Sign in with Apple for the main App ID and regenerate provisioning; configure
-  Supabase Apple Auth/manual linking; review and deploy the v1 migration plus
-  `20260816100000_night_flock_shared_commitment_v2.sql`,
-  `20260816220000_night_flock_social_rewards_v3.sql`, and both Slumber Party functions; schedule
+  Supabase Apple Auth/manual linking. Roll out in this fixed order: apply every historical
+  migration through `20260816220000_night_flock_social_rewards_v3.sql`; then apply
+  `20260824150000_night_flock_invite_recovery.sql`; then deploy the matching updated Slumber
+  Party state and command functions from the same reviewed revision. Validate hosted non-production
+  with legacy and new clients concurrently before physical two-account QA. Only after those gates
+  pass may a new app/TestFlight build ship; production follows afterward with explicit human
+  approval. Schedule
   daily retention; establish a staffed moderation and deletion runbook; publish the updated privacy
   policy and App Privacy answers; then pass a physical two-Apple-account matrix for goal selection,
   reusable invite preview/redemption, lobby gating, all seven day boundaries, offline outbox,
@@ -337,8 +395,21 @@ execute without human sign-off mid-task (final merge review still applies per
   entitlement, or backend changes. Screenbook remains the five-scenario spike; additional
   first-run states are covered by `#Preview`s.
 
+### D7. Review the expanded Farm economy after four weeks of TestFlight data
+- **Gate:** at least four weeks of real TestFlight use with user-initiated economy exports.
+- **Mode:** Product decision before code · **Size:** M · **Autonomous:** no
+- **Accept:** review first-purchase timing, balances, ownership, shearing, and duplicate trading
+  against the checked-in simulations. Prefer repricing only new items if progression is slow. If
+  balances accumulate too quickly, consider permanent 30/45/60-wool environment themes before
+  changing established wool yields or trade returns.
+
 ## E. Later / explicitly postponed (do not start; citable refusals)
 
+- **Expanded Shop art installation** — generated exploration drafts remain outside the asset
+  catalogue pending founder review for pixel style, palette, lighting, outline weight, transparent
+  bounds, avatar fit across all five hairstyles, and pasture scale. Do not delete or replace the
+  existing production assets until the approved inventory, equipped-overlay, and scene-prop set is
+  selected and visually verified.
 - **Screenbook Phase 2+** — after founder acceptance of the five-scenario technical spike,
   separately approve production hardening, the broader iPhone catalogue, copy application,
   localization, secondary Apple surfaces, and any private hosting. Keep investigating simulator
@@ -552,3 +623,8 @@ execute without human sign-off mid-task (final merge review still applies per
 - **2026-07-07 · Cursor/Fable:** A7 (iOS) + B2 (run flow). VoiceOver labels/hints on
   the run flow, decorative scenes hidden, 44pt stepper targets; early-end screen made
   shame-free (happy Ollie), jargon removed. Watch views remain — see A7b/B2b.
+## Pending human gates — 2026-08-23
+
+- Obtain explicit approval before adding the proposed NFC usage description: “Counting Sheep reads the NFC tags you pair to start and end Wind Down and Phone Away.”
+- Execute hosted and physical-device Slumber Party authentication recovery evidence for controlled 401 and `linked_account_required` across v1/v2/v3 state, direct-command, and outbox lanes. Do not record account IDs, tokens, or unredacted snapshots.
+- Brief Access has no `BriefAccessReflectionSheet` and no app-side reflection persistence key. It uses the existing extension/system purpose confirmation and run-scoped tracker; preserve emergency-exit reason storage separately.

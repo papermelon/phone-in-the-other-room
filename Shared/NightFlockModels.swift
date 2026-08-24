@@ -277,6 +277,11 @@ struct NightFlockDaySummary: Identifiable, Codable, Equatable, Sendable {
 }
 
 struct NightFlockSnapshot: Codable, Equatable, Sendable {
+    struct ActiveInvite: Codable, Equatable, Sendable {
+        var id: UUID
+        var expiresAt: Date
+    }
+
     var profile: NightFlockProfile
     var flockID: UUID
     var identity: NightFlockIdentity
@@ -288,6 +293,7 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
     var memberSetups: [NightFlockMemberSetup]
     var sharedRoutineIdeas: [NightFlockSharedRoutineIdea]
     var invitePreview: NightFlockInvitePreview?
+    var activeInvite: ActiveInvite?
     var sharing: NightFlockSharingPreferences
     var pendingGrants: [NightFlockRewardGrant]
 
@@ -311,6 +317,7 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         case memberSetups
         case sharedRoutineIdeas
         case invitePreview
+        case activeInvite
         case sharing
         case pendingGrants
     }
@@ -327,6 +334,7 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         memberSetups: [NightFlockMemberSetup] = [],
         sharedRoutineIdeas: [NightFlockSharedRoutineIdea] = [],
         invitePreview: NightFlockInvitePreview? = nil,
+        activeInvite: ActiveInvite? = nil,
         sharing: NightFlockSharingPreferences? = nil,
         pendingGrants: [NightFlockRewardGrant] = []
     ) {
@@ -341,6 +349,7 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
         self.memberSetups = memberSetups
         self.sharedRoutineIdeas = sharedRoutineIdeas
         self.invitePreview = invitePreview
+        self.activeInvite = activeInvite
         let myRoutineShare = memberSetups.first { setup in
             setup.memberID == myMemberID
         }?.shareRoutineIdeas ?? false
@@ -367,6 +376,7 @@ struct NightFlockSnapshot: Codable, Equatable, Sendable {
             forKey: .sharedRoutineIdeas
         ) ?? []
         invitePreview = try container.decodeIfPresent(NightFlockInvitePreview.self, forKey: .invitePreview)
+        activeInvite = try container.decodeIfPresent(ActiveInvite.self, forKey: .activeInvite)
         var myRoutineShare = false
         for setup in memberSetups where setup.memberID == myMemberID {
             myRoutineShare = setup.shareRoutineIdeas

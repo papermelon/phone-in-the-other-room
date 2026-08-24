@@ -44,6 +44,8 @@ struct WindDownRoutineEditor: View {
     var onChange: () -> Void = {}
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @FocusState private var focusedCustomStepID: UUID?
+    @State private var rawDrafts: [UUID: String] = [:]
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
@@ -63,6 +65,10 @@ struct WindDownRoutineEditor: View {
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.muted)
         }
+        .onChange(of: focusedCustomStepID) { oldValue, _ in
+            if let oldValue { commitDraft(for: oldValue) }
+        }
+        .onDisappear { commitAllDrafts() }
     }
 
     private func routineSection(
@@ -180,23 +186,19 @@ struct WindDownRoutineEditor: View {
                     .accessibilityHidden(true)
 
                 if step.kind == .custom {
-                    TextField(
-                        "A quiet idea",
+                    TextEditor(
                         text: Binding(
-                            get: { steps.wrappedValue[index].customText ?? "" },
-                            set: { newValue in
-                                steps.wrappedValue[index] = .custom(
-                                    newValue,
-                                    phase: phase,
-                                    id: steps.wrappedValue[index].id
-                                )
-                                onChange()
-                            }
+                            get: { rawDrafts[step.id] ?? step.customText ?? "" },
+                            set: { rawDrafts[step.id] = $0 }
                         )
                     )
-                    .textFieldStyle(.roundedBorder)
-                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .font(AppTypography.body)
+                    .frame(maxWidth: .infinity, minHeight: 88, alignment: .leading)
+                    .scrollContentBackground(.hidden)
+                    .padding(AppSpacing.xs)
+                    .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.sm))
                     .accessibilityLabel("Custom \(phase == .evening ? "evening" : "morning") idea \(index + 1)")
+                    .focused($focusedCustomStepID, equals: step.id)
                 } else {
                     Text(step.title)
                         .font(AppTypography.body.weight(.semibold))
@@ -204,20 +206,12 @@ struct WindDownRoutineEditor: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
-                if !dynamicTypeSize.isAccessibilitySize {
-                    reorderControls(step: step, index: index, steps: steps)
-                }
             }
 
-            if dynamicTypeSize.isAccessibilitySize {
-                HStack(spacing: AppSpacing.sm) {
-                    Text("Order controls")
-                        .font(AppTypography.caption.weight(.semibold))
-                        .foregroundStyle(AppColors.muted)
-                    Spacer(minLength: AppSpacing.xs)
-                    reorderControls(step: step, index: index, steps: steps)
-                }
-            }
+            Text("Order")
+                .font(AppTypography.caption.weight(.semibold))
+                .foregroundStyle(AppColors.muted)
+            reorderControls(step: step, index: index, steps: steps)
 
             HStack(spacing: AppSpacing.sm) {
                 Button("Remove \(step.title)", role: .destructive) {
@@ -276,6 +270,37 @@ struct WindDownRoutineEditor: View {
             .accessibilityLabel("Move \(step.title) down, item \(index + 1) of \(steps.wrappedValue.count)")
             .accessibilityHint(index + 1 == steps.wrappedValue.count ? "Already last" : "Moves this idea later")
         }
+    }
+
+    /// Commits only when editing ends so a trailing space remains available to
+    /// the TextEditor. Empty custom ideas use the existing remove semantics.
+    private func commitDraft(for id: UUID) {
+        guard let raw = rawDrafts.removeValue(forKey: id) else { return }
+        if let index = eveningSteps.firstIndex(where: { $0.id == id }) {
+            commit(raw, at: index, phase: .evening, in: &eveningSteps)
+        } else if let index = morningSteps.firstIndex(where: { $0.id == id }) {
+            commit(raw, at: index, phase: .morning, in: &morningSteps)
+        }
+    }
+
+    private func commit(
+        _ raw: String,
+        at index: Int,
+        phase: WindDownRoutinePhase,
+        in steps: inout [WindDownRoutineStep]
+    ) {
+        let id = steps[index].id
+        guard let normalized = PhoneFreeCue.normalized(raw) else {
+            steps.remove(at: index)
+            onChange()
+            return
+        }
+        steps[index] = .custom(normalized, phase: phase, id: id)
+        onChange()
+    }
+
+    private func commitAllDrafts() {
+        for id in Array(rawDrafts.keys) { commitDraft(for: id) }
     }
 
     private func limit(for phase: WindDownRoutinePhase) -> Int {

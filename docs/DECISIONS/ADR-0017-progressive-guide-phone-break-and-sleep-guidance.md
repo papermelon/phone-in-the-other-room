@@ -6,13 +6,14 @@ Accepted, 2026-08-13.
 
 ## Decision
 
-Counting Sheep keeps a short three-step Home orientation and introduces the four root tabs and
-consequential first-use moments through one-time contextual spotlights. These reuse Home's dimmed
-screen, highlighted real control, and floating coach mark so guidance cannot be mistaken for app
-content. They are optional, VoiceOver-friendly, dismissible, and suppressed during an active Wind
-Down or Phone Away. A tip is marked seen only when acknowledged; leaving the screen does not erase
-it. A completed legacy tour may receive each new spotlight once; skipped or dismissed guidance
-remains quiet until replay or resume.
+Counting Sheep keeps a four-tip Home Basics chapter and offers a separate four-tip Around the Farm
+chapter only after a user-initiated Farm visit. Practice, the four root tabs, Slumber Party, Settings,
+and Nights are contextual destinations. Each chapter pauses for ordinary exploration instead of
+chaining into another surface. These reuse the real surface's highlighted control where possible so
+guidance cannot be mistaken for app content. They are optional, VoiceOver-friendly, dismissible,
+and suppressed during an active Wind Down or Phone Away. A tip is marked seen only when acknowledged;
+leaving the screen does not erase it. Legacy uninterrupted-tour state migrates to the nearest valid
+chapter or contextual destination and never performs Farm mutations.
 
 **Wind Down** is the capitalized nightly sleep-bookends ritual. **Phone Away** is the capitalized
 secondary start-now, scheduled, or repeating phone-away mode. Its actions are **Put phone away**,

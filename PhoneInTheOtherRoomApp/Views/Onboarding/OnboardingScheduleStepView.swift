@@ -8,7 +8,7 @@ struct OnboardingScheduleStep: View {
             onboardingTitle(
                 eyebrow: "YOUR NIGHT",
                 title: "Set the edges of your night.",
-                detail: "Wind Down starts before bedtime, keeps the phone away overnight, and continues through your morning quiet window. You can change the times later."
+                detail: "Wind Down starts before bedtime and keeps the phone away overnight. Screen-Free Morning is a linked, separate morning plan you can change later."
             )
 
             OnboardingTimeline(draft: draft)

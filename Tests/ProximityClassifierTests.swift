@@ -627,6 +627,6 @@ final class ProximityClassifierTests: XCTestCase {
         let package = FocusAnalyticsEngine.exportPackage(records: [], privacyMode: .relativeDays)
 
         XCTAssertEqual(package.privacyMode, .relativeDays)
-        XCTAssertEqual(package.appSchemaVersion, 2)
+        XCTAssertEqual(package.appSchemaVersion, FocusAnalyticsEngine.exportSchemaVersion)
     }
 }

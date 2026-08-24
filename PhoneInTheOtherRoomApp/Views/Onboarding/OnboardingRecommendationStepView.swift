@@ -62,6 +62,9 @@ struct OnboardingRecommendationStep: View {
                     Text(FirstRunGuideCopy.recommendedRoutine)
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
+                    Text("These are examples, not a checklist. Put phone away stays first; choose the next step yourself in Optional cues.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
                     routineGroup("Evening", steps: [WindDownRoutineStep.phoneAwayTitle] + recommendation.eveningRoutine.map(\.title))
                     Divider()
                     routineGroup("Morning", steps: recommendation.morningRoutine.map(\.title))
@@ -72,22 +75,6 @@ struct OnboardingRecommendationStep: View {
                 }
             }
 
-            if let wearable = recommendation.wearableItem {
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text(FirstRunGuideCopy.freeWearable)
-                            .font(pixelFont(.caption))
-                            .foregroundStyle(AppColors.grass)
-                        Text(wearable.title)
-                            .font(AppTypography.headline)
-                        Text("This welcome gift waits in Farm. Claiming it later does not spend wool.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .accessibilityElement(children: .combine)
-            }
         }
     }
 

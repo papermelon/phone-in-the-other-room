@@ -10,10 +10,12 @@ enum AppColors {
         light: UIColor(red: 0.99, green: 0.985, blue: 0.965, alpha: 1),
         dark: UIColor(red: 0.075, green: 0.095, blue: 0.078, alpha: 1)
     )
-    /// The live Wind Down is intentionally quieter than the lifted paper shell.
-    /// It stays stable across appearance choices so a tired user sees one calm,
-    /// matte surface throughout the active ritual.
-    static let activeWindDownBackground = Color(red: 0.055, green: 0.050, blue: 0.046)
+    /// The live Wind Down is quieter than the lifted paper shell while still
+    /// honoring the user's appearance choice. Light is warm and low-glare.
+    static let activeWindDownBackground = adaptive(
+        light: UIColor(red: 0.965, green: 0.945, blue: 0.885, alpha: 1),
+        dark: UIColor(red: 0.055, green: 0.050, blue: 0.046, alpha: 1)
+    )
     static let surface = adaptive(light: .white, dark: UIColor(red: 0.12, green: 0.15, blue: 0.12, alpha: 1))
     static let surfaceMuted = adaptive(
         light: UIColor(red: 0.93, green: 0.91, blue: 0.84, alpha: 1),

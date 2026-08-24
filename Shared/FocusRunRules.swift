@@ -29,15 +29,22 @@ enum FocusRunRules {
     /// Overnight time is included in this span for search eligibility only; quiet
     /// credit remains the two bookends.
     static func protectedSpanMinutes(for run: FocusRun) -> Int {
+        protectedSpanMinutes(for: run, at: run.endedAt ?? run.nightWatchPlan?.protectedUntil ?? run.plannedEndAt)
+    }
+
+    /// Uses the current wall clock for monotonic entitlement reconciliation
+    /// while a Wind Down remains active. Terminal calculations still pass the
+    /// saved end time through the existing overload above.
+    static func protectedSpanMinutes(for run: FocusRun, at date: Date) -> Int {
         guard let plan = run.nightWatchPlan, plan.role.isProgressionEligible else {
-            let end = run.endedAt ?? run.plannedEndAt
+            let end = min(run.endedAt ?? date, run.plannedEndAt)
             return max(0, Int(end.timeIntervalSince(run.startedAt) / 60))
         }
         let plannedStart = plan.intendedBedtime.addingTimeInterval(
             TimeInterval(-plan.windDownMinutes * 60)
         )
         let eligibleStart = max(run.startedAt, plannedStart)
-        let completion = min(run.endedAt ?? plan.protectedUntil, plan.protectedUntil)
+        let completion = min(run.endedAt ?? date, plan.protectedUntil)
         return max(0, Int(completion.timeIntervalSince(eligibleStart) / 60))
     }
 

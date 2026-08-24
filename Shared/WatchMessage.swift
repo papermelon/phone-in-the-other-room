@@ -13,15 +13,18 @@ struct WatchMessage: Codable {
     var run: FocusRun?
     var proximity: ProximityState?
     var reward: RewardItem?
+    /// A bounded, reward-free projection. Missing on older phone/watch pairs.
+    var screenFreeMorning: ScreenFreeMorningPresentation?
     var tokenData: Data?
     var distanceMeters: Double?
     var sentAt: Date
 
-    init(type: WatchMessageType, run: FocusRun? = nil, proximity: ProximityState? = nil, reward: RewardItem? = nil, tokenData: Data? = nil, distanceMeters: Double? = nil, sentAt: Date = Date()) {
+    init(type: WatchMessageType, run: FocusRun? = nil, proximity: ProximityState? = nil, reward: RewardItem? = nil, screenFreeMorning: ScreenFreeMorningPresentation? = nil, tokenData: Data? = nil, distanceMeters: Double? = nil, sentAt: Date = Date()) {
         self.type = type
         self.run = run
         self.proximity = proximity
         self.reward = reward
+        self.screenFreeMorning = screenFreeMorning
         self.tokenData = tokenData
         self.distanceMeters = distanceMeters
         self.sentAt = sentAt

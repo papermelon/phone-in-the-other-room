@@ -293,7 +293,12 @@ extension FocusRun {
             startMethod: guardKind,
             outcome: outcome,
             creditedWindDownMinutes: outcome == .active ? 0 : creditedWindDownMinutes,
-            creditedMorningQuietMinutes: outcome == .active ? 0 : creditedMorningQuietMinutes,
+            // New Screen-Free Morning occurrences are journaled and presented
+            // independently. Keep this compatibility Wind Down record from
+            // claiming those minutes a second time; legacy decoded records are
+            // preserved as stored.
+            creditedMorningQuietMinutes: outcome == .active || nightWatchPlan.role == .primarySleepBookend
+                ? 0 : creditedMorningQuietMinutes,
             shieldedWindDownMinutes: shieldedWindDownMinutes,
             shieldedMorningQuietMinutes: shieldedMorningQuietMinutes,
             shieldProtectionEvidence: shieldProtectionEvidence,

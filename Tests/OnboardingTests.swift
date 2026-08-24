@@ -29,6 +29,18 @@ final class OnboardingTests: XCTestCase {
         XCTAssertTrue(draft.remindersEnabled)
         XCTAssertEqual(draft.windDownMinutes, 30)
         XCTAssertEqual(draft.morningQuietMinutes, 30)
+        XCTAssertTrue(draft.eveningRoutine.isEmpty)
+        XCTAssertTrue(draft.morningRoutine.isEmpty)
+    }
+
+    func testRecommendationShowsExamplesWithoutEnrollingThem() {
+        var draft = OnboardingDraft()
+        let recommendation = draft.profileRecommendation
+        draft.applyRecommendation(recommendation)
+
+        XCTAssertTrue(draft.eveningRoutine.isEmpty)
+        XCTAssertTrue(draft.morningRoutine.isEmpty)
+        XCTAssertEqual(draft.windDownMinutes, recommendation.desiredWindDownMinutes)
     }
 
     func testDraftMapsToConfiguredNightWatchAndPrivatePurpose() {

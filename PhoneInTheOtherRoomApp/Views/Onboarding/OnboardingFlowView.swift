@@ -93,13 +93,14 @@ struct OnboardingFlowView: View {
         }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
-            headerText: "Choose 1–3 apps or categories to limit during Wind Down, from the start through your morning quiet window.",
+            headerText: "Choose 1–3 apps or categories to pause for Wind Down and the linked Screen-Free Morning.",
             footerText: "Counting Sheep limits this selection during Wind Down and always stays available. Websites are ignored.",
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection
         )
         .onChange(of: viewModel.bedtimeActivitySelection) { _, _ in
             viewModel.saveScreenTimeSelection(.bedtime)
+            draft.protectionSelectionSelfConfirmed = false
         }
 #endif
     }
@@ -127,7 +128,9 @@ struct OnboardingFlowView: View {
         case .gift:
             OnboardingGiftStep(
                 recommendation: draft.profileSkipped ? nil : draft.profileRecommendation,
-                profileSkipped: draft.profileSkipped
+                profileSkipped: draft.profileSkipped,
+                onKeepCurrentOutfit: {},
+                onWearMoonlitCoat: { itemID in viewModel.wearShepherdOutfit(itemID) }
             )
         case .automaticStart, .ready:
             OnboardingReadyStep(
@@ -175,7 +178,7 @@ struct OnboardingFlowView: View {
     private var canContinue: Bool {
         guard draft.step == .protection else { return true }
         guard draft.protectionChoice != .nfcAndAppShielding || viewModel.hasRegisteredNFCTag else { return false }
-        return !draft.shieldingEnabled || viewModel.shieldingReadiness == .ready
+        return viewModel.shieldingReadiness == .ready && draft.protectionSelectionSelfConfirmed
     }
 
     private func previousStep() {

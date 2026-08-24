@@ -2,11 +2,60 @@ import Foundation
 import UIKit
 import UserNotifications
 
+/// Serializes async notification planning without making the service itself a
+/// global actor. A later edit/disable invalidates every earlier task before it
+/// can add a stale request after authorization returns.
+private enum NotificationOwnershipChannel: Hashable {
+    case windDown
+    case screenFreeMorning
+    case automatic
+}
+
+private final class NotificationGenerationLedger {
+    private let lock = NSLock()
+    private var values: [NotificationOwnershipChannel: Int] = [:]
+
+    func begin(_ channel: NotificationOwnershipChannel) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        let next = (values[channel] ?? 0) + 1
+        values[channel] = next
+        return next
+    }
+
+    func accepts(_ generation: Int, for channel: NotificationOwnershipChannel) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return values[channel] == generation
+    }
+
+    func current(_ channel: NotificationOwnershipChannel) -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return values[channel] ?? 0
+    }
+
+    /// Holds ownership through the synchronous replacement operation, closing
+    /// the check-then-remove race with an active-run invalidation.
+    func performIfCurrent(
+        _ generation: Int,
+        for channel: NotificationOwnershipChannel,
+        _ operation: () -> Void
+    ) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard values[channel] == generation else { return false }
+        operation()
+        return true
+    }
+}
+
 final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate {
     static let shared = PhoneNotificationService()
     static let remindersEnabledKey = "ollie.notifications.remindersEnabled"
     static let preferencesKey = "ollie.notifications.preferences"
     static let pendingDestinationKey = "ollie.notifications.pendingDestination"
+    static let screenFreeMorningIdentifierPrefix = "ollie.screenFreeMorning."
 
     private let notificationIdentifiers = [
         "night-watch-lead-in-60",
@@ -26,6 +75,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         "night-watch-usage-morningQuiet",
         "night-watch-shielding-failed"
     ]
+    private let notificationGenerations = NotificationGenerationLedger()
 
     private override init() {
         super.init()
@@ -90,8 +140,14 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
             cancelAllNightWatchNotifications()
             return
         }
+        // An active run owns the static identifiers now. Invalidate a pending
+        // automatic-auth task before it can remove or recreate them.
+        _ = notificationGenerations.begin(.automatic)
+        let generation = notificationGenerations.begin(.windDown)
         Task {
-            guard await requestAuthorizationIfNeeded() else { return }
+            guard await requestAuthorizationIfNeeded(),
+                  notificationGenerations.accepts(generation, for: .windDown),
+                  preferences.remindersEnabled else { return }
             let center = UNUserNotificationCenter.current()
             center.removePendingNotificationRequests(withIdentifiers: notificationIdentifiers)
             if !preferences.hasChosenCadence {
@@ -100,7 +156,8 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                     purpose: purpose,
                     soundsEnabled: preferences.soundsEnabled,
                     preferences: preferences,
-                    center: center
+                    center: center,
+                    generation: generation
                 )
                 return
             }
@@ -115,7 +172,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                 copyOverrides: preferences.copyOverrides
             )
             for notification in planned {
-                await add(notification, to: center)
+                await add(notification, to: center, generation: generation, channel: .windDown)
             }
             if plan.role == .primarySleepBookend,
                preferences.morningReflectionReminderEnabled,
@@ -123,7 +180,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                    at: plan.protectedUntil.addingTimeInterval(60 * 60),
                    copyOverrides: preferences.copyOverrides
                ) {
-                await add(reflection, to: center)
+                await add(reflection, to: center, generation: generation, channel: .windDown)
             }
         }
     }
@@ -136,16 +193,23 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         preferences: NotificationPreferences = PhoneNotificationService.shared.preferences
     ) {
         guard preferences.remindersEnabled, startDate > Date() else { return }
+        let generation = notificationGenerations.begin(.automatic)
         Task {
-            guard await requestAuthorizationIfNeeded() else { return }
+            guard await requestAuthorizationIfNeeded(),
+                  notificationGenerations.accepts(generation, for: .automatic),
+                  preferences.remindersEnabled else { return }
             let center = UNUserNotificationCenter.current()
-            center.removePendingNotificationRequests(withIdentifiers: notificationIdentifiers)
+            guard notificationGenerations.performIfCurrent(generation, for: .automatic, {
+                center.removePendingNotificationRequests(withIdentifiers: notificationIdentifiers)
+            }) else { return }
             if !preferences.hasChosenCadence {
                 await addLegacyAutomaticReminders(
                     at: startDate,
                     purpose: purpose,
                     preferences: preferences,
-                    center: center
+                    center: center,
+                    generation: generation,
+                    channel: .automatic
                 )
                 return
             }
@@ -160,7 +224,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                 copyOverrides: preferences.copyOverrides
             )
             for notification in planned {
-                await add(notification, to: center)
+                await add(notification, to: center, generation: generation, channel: .automatic)
             }
             if plan.role == .primarySleepBookend,
                preferences.morningReflectionReminderEnabled,
@@ -168,7 +232,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                    at: plan.protectedUntil.addingTimeInterval(60 * 60),
                    copyOverrides: preferences.copyOverrides
                ) {
-                await add(reflection, to: center)
+                await add(reflection, to: center, generation: generation, channel: .automatic)
             }
         }
     }
@@ -272,6 +336,80 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         }
     }
 
+    /// Replaces only the independent Morning cues. Wind Down's active or next
+    /// automatic notifications remain intact, and no message hints at a
+    /// receipt, sheep, or reward.
+    func reconcileScreenFreeMorningNotifications(
+        occurrences: [MorningQuietOccurrence],
+        now: Date = Date()
+    ) {
+        guard preferences.remindersEnabled else { return }
+        let generation = notificationGenerations.begin(.screenFreeMorning)
+        let current = occurrences.filter { $0.outcome == .scheduled || $0.outcome == .active }
+        Task {
+            guard await requestAuthorizationIfNeeded(),
+                  notificationGenerations.accepts(generation, for: .screenFreeMorning),
+                  preferences.remindersEnabled else { return }
+            let center = UNUserNotificationCenter.current()
+            let pending = await center.pendingNotificationRequests()
+            let owned = pending.map(\.identifier).filter {
+                $0.hasPrefix(Self.screenFreeMorningIdentifierPrefix)
+            }
+            center.removePendingNotificationRequests(withIdentifiers: owned)
+            // Once a journal-backed Morning exists, its start/end cues replace
+            // the legacy FocusRun morning/midpoint/completion requests.
+            if !current.isEmpty {
+                center.removePendingNotificationRequests(
+                    withIdentifiers: NightWatchNotificationPlanBuilder.supersededMorningIdentifiers
+                )
+            }
+            for occurrence in current {
+                let base = Self.screenFreeMorningIdentifierPrefix + occurrence.id.uuidString.lowercased()
+                if occurrence.outcome == .scheduled, occurrence.scheduledStart > now {
+                    await add(
+                        PlannedNotification(
+                            id: base + ".start",
+                            date: occurrence.scheduledStart,
+                            title: "Screen-Free Morning",
+                            body: "Your planned phone-away morning time can begin now.",
+                            phase: .morningQuiet,
+                            importance: .active,
+                            playsSound: preferences.soundsEnabled,
+                            destination: .home
+                        ),
+                        to: center,
+                        generation: generation,
+                        channel: .screenFreeMorning
+                    )
+                }
+                if occurrence.scheduledEnd > now {
+                    await add(
+                        PlannedNotification(
+                            id: base + ".end",
+                            date: occurrence.scheduledEnd,
+                            title: "Screen-Free Morning",
+                            body: "Your planned phone-away morning time has ended.",
+                            phase: .morningQuiet,
+                            importance: .active,
+                            playsSound: preferences.soundsEnabled,
+                            destination: .home
+                        ),
+                        to: center,
+                        generation: generation,
+                        channel: .screenFreeMorning
+                    )
+                }
+            }
+        }
+    }
+
+    func cancelScreenFreeMorningNotifications(for occurrenceID: UUID) {
+        let base = Self.screenFreeMorningIdentifierPrefix + occurrenceID.uuidString.lowercased()
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: [base + ".start", base + ".end"]
+        )
+    }
+
     func scheduleUsageNotification(for phase: NightWatchPhase, at date: Date = Date()) {
         guard preferences.remindersEnabled,
               preferences.usageAwareRemindersEnabled,
@@ -306,9 +444,13 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
     }
 
     func cancelAllNightWatchNotifications() {
+        _ = notificationGenerations.begin(.windDown)
+        let morningGeneration = notificationGenerations.begin(.screenFreeMorning)
+        _ = notificationGenerations.begin(.automatic)
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: notificationIdentifiers)
         center.removeDeliveredNotifications(withIdentifiers: notificationIdentifiers)
+        cancelScreenFreeMorningNotifications(on: center, generation: morningGeneration)
         cancelUpcomingWindDownNotifications(on: center)
     }
 
@@ -323,7 +465,13 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
     }
 
     func cancelRunCompletion() {
-        cancelAllNightWatchNotifications()
+        _ = notificationGenerations.begin(.windDown)
+        let windDownTerminalIDs = notificationIdentifiers.filter {
+            $0 != "night-watch-phone-free-morning" && $0 != "night-watch-morning-midpoint"
+        }
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: windDownTerminalIDs)
+        center.removeDeliveredNotifications(withIdentifiers: windDownTerminalIDs)
     }
 
     func cancelNightWatchReminder() {
@@ -359,6 +507,24 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         }
     }
 
+    private func cancelScreenFreeMorningNotifications(
+        on center: UNUserNotificationCenter,
+        generation: Int
+    ) {
+        Task {
+            let pending = await center.pendingNotificationRequests()
+            let delivered = await center.deliveredNotifications()
+            let identifiers = Set(
+                pending.map(\.identifier) + delivered.map(\.request.identifier)
+            ).filter { $0.hasPrefix(Self.screenFreeMorningIdentifierPrefix) }
+            guard notificationGenerations.accepts(generation, for: .screenFreeMorning),
+                  !identifiers.isEmpty else { return }
+            let owned = Array(identifiers)
+            center.removePendingNotificationRequests(withIdentifiers: owned)
+            center.removeDeliveredNotifications(withIdentifiers: owned)
+        }
+    }
+
     func consumePendingDestination() -> NotificationDestination? {
         guard let rawValue = UserDefaults.standard.string(forKey: Self.pendingDestinationKey),
               let destination = NotificationDestination(rawValue: rawValue) else {
@@ -383,8 +549,20 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         }
     }
 
-    private func add(_ notification: PlannedNotification, to center: UNUserNotificationCenter) async {
-        guard notification.date > Date() else { return }
+    private func add(
+        _ notification: PlannedNotification,
+        to center: UNUserNotificationCenter,
+        generation: Int? = nil,
+        channel: NotificationOwnershipChannel = .windDown
+    ) async {
+        let acceptsGeneration = generation.map {
+            NotificationSchedulingGenerationPolicy.accepts(
+                requested: $0,
+                current: notificationGenerations.current(channel),
+                remindersEnabled: preferences.remindersEnabled
+            )
+        } ?? preferences.remindersEnabled
+        guard notification.date > Date(), acceptsGeneration else { return }
         let content = UNMutableNotificationContent()
         content.title = notification.title
         content.body = notification.body
@@ -409,7 +587,8 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         purpose: OfflinePurposeProfile,
         soundsEnabled: Bool,
         preferences: NotificationPreferences,
-        center: UNUserNotificationCenter
+        center: UNUserNotificationCenter,
+        generation: Int
     ) async {
         if plan.role == .additionalQuiet {
             let quietCopy = NightWatchGuidance.notificationCopy(for: .quietPeriodComplete)
@@ -424,7 +603,8 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                     playsSound: soundsEnabled,
                     destination: .nights
                 ),
-                to: center
+                to: center,
+                generation: generation
             )
             return
         }
@@ -445,60 +625,20 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                 playsSound: false,
                 destination: .activeRun
             ),
-            to: center
+            to: center,
+            generation: generation
         )
-        let morning = NotificationCopyResolver.resolve(
-            id: .phoneFreeMorning,
-            moment: .phoneFreeMorning,
-            context: NotificationCopyContext(
-                activityTitle: plan.morningNotificationActivityTitle(
-                    allowsPersonalText: purpose.allowsCustomTextInNotifications
-                ),
-                purpose: purpose.reminderPhrase,
-                tip: purpose.reminderPhrase,
-                date: plan.wakeTime
-            ),
-            overrides: preferences.copyOverrides
-        )
-        await add(
-            PlannedNotification(
-                id: "night-watch-phone-free-morning",
-                date: plan.wakeTime,
-                title: morning.title,
-                body: morning.body,
-                phase: .morningQuiet,
-                importance: .passive,
-                playsSound: false,
-                destination: .activeRun
-            ),
-            to: center
-        )
-        let complete = NotificationCopyResolver.resolve(
-            id: .complete,
-            moment: .complete,
-            context: NotificationCopyContext(date: plan.protectedUntil),
-            overrides: preferences.copyOverrides
-        )
-        await add(
-            PlannedNotification(
-                id: "focus-run-complete",
-                date: plan.protectedUntil,
-                title: complete.title,
-                body: complete.body,
-                phase: .complete,
-                importance: .active,
-                playsSound: soundsEnabled,
-                destination: .nights
-            ),
-            to: center
-        )
+        // The journal-backed Screen-Free Morning owns its own start/end cues.
+        // Do not reintroduce the former FocusRun morning/completion requests.
     }
 
     private func addLegacyAutomaticReminders(
         at startDate: Date,
         purpose: OfflinePurposeProfile,
         preferences: NotificationPreferences,
-        center: UNUserNotificationCenter
+        center: UNUserNotificationCenter,
+        generation: Int,
+        channel: NotificationOwnershipChannel
     ) async {
         for minutes in [60, 30, 10] {
             let templateID: NotificationTemplateID
@@ -527,7 +667,9 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                     playsSound: false,
                     destination: .home
                 ),
-                to: center
+                to: center,
+                generation: generation,
+                channel: channel
             )
         }
         let copy = NotificationCopyResolver.resolve(
@@ -551,7 +693,9 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                 playsSound: false,
                 destination: .home
             ),
-            to: center
+            to: center,
+            generation: generation,
+            channel: channel
         )
     }
 

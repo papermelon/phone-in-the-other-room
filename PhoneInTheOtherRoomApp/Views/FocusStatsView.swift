@@ -34,7 +34,10 @@ struct FocusStatsView: View {
             .background(AppColors.paper.ignoresSafeArea())
             .onAppear {
                 viewModel.markOrientation(.nightsExplored)
-                contextualTip = viewModel.contextualTip(from: [.nights])
+                Task { @MainActor in
+                    await Task.yield()
+                    contextualTip = viewModel.contextualTip(from: [.nights])
+                }
                 focusRecord(using: proxy)
             }
             .onChange(of: viewModel.nightsRecordFocusID) { _, _ in

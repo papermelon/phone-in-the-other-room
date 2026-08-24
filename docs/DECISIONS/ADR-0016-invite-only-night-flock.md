@@ -15,6 +15,13 @@ tired reader and usable in a workshop without developer explanation.
 
 ## Decision
 
+Authentication recovery never creates an anonymous user. A 401 accepts Apple ID-token
+reauthentication only when its Supabase UUID matches the locally bound account.
+`linked_account_required` may link Apple only to a current anonymous session and must keep the
+same UUID. Missing, changed, or unexpected identities fail closed without exposing another
+account's snapshot; local snapshot, ritual contexts, and outboxes remain intact while state is
+reconciled after validation.
+
 Slumber Party lets **2–8 people choose one Wind Down goal, try routines that work for them, and
 encourage one another for seven nights.** The group chooses one bounded goal from the catalogue:
 
@@ -37,6 +44,13 @@ does not auto-start the challenge. A reusable, legible invite code works until i
 expires, the party starts, or capacity reaches eight. Preview and redemption require an
 authenticated Apple-linked account; the server stores a secure digest and redemption metadata
 where feasible, never the reusable plaintext after its intended response.
+
+The host device journals that plaintext before transport in a non-synchronizing,
+this-device-only Keychain item bound to the Apple-linked account and lobby. Only its digest is
+sent or stored remotely. Host-only pending-lobby state exposes the active invite UUID and expiry
+for lost-response and relaunch reconciliation. If the local credential is unavailable,
+replacement requires explicit confirmation and an atomic compare-and-swap; relaunch never
+replaces it automatically.
 
 Members have server-generated or user-approved display names within the invite-only group. This
 does not authorize a general identity directory or public profile system.
@@ -119,6 +133,9 @@ for a practice run.
 - Apple Sign in, Family Controls distribution, hosted migration/functions, moderation ownership,
   retention scheduling, privacy disclosures, and two-account physical QA are release gates.
 - The older v1 schema and anonymous positive-state clients remain compatible during migration.
+- Mixed-version rollout is migration-first: historical migrations, the invite-recovery migration,
+  matching state/command functions, hosted non-production legacy/new-client validation, physical
+  two-account QA, then a new app/TestFlight build. Production remains human-gated after that order.
 - On 2026-08-16 the founder authorized TestFlight/Release archives to compile with
   `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. Ordinary Debug remains disabled. The dedicated
   `SlumberPartyQA` configuration stays the local forced-`YES` lane with QA diagnostics.

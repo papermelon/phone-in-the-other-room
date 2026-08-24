@@ -7,6 +7,7 @@ struct WindDownStartSheet: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var showScreenTimePicker = false
+    @State private var selectionConfirmed = false
 
     private var usesNFC: Bool { viewModel.selectedGuardKind == .nfcTag }
 
@@ -60,20 +61,15 @@ struct WindDownStartSheet: View {
         }
         if viewModel.pendingNightWatchIsAdditionalQuiet {
             let end = viewModel.pendingNightWatchEndsAt.map(OllieFormat.time) ?? "the saved end time"
-            let protection = viewModel.willShieldPendingNightWatch
-                ? " Selected apps will be limited until then."
-                : " No apps will be limited."
+            let protection = " Your chosen apps and categories will pause until then."
             if viewModel.pendingWindDownStartContext?.isPractice == true {
                 return "This practice ends at \(end). It creates a real Nights record. It is not a protected night, and it does not add to the usual Phone Away search meter. Finishing this one-time introduction lets Ollie bring home the second starter sheep.\(protection)"
             }
             return "This Phone Away period ends at \(end). Its minutes begin when you start, and it stays separate from Wind Down.\(protection)"
         }
-        guard viewModel.willShieldPendingNightWatch else {
-            return "Wind Down will keep time and record your quiet. No apps will be limited."
-        }
         return usesNFC
-            ? "Selected apps will be limited after you tap your Wind Down tag and through morning quiet. Counting Sheep stays available."
-            : "Selected apps will be limited from Wind Down start through morning quiet. Counting Sheep stays available."
+            ? "Your chosen apps and categories will pause after you tap your Wind Down tag. Counting Sheep stays available."
+            : "Your chosen apps and categories will pause from Wind Down start. Counting Sheep stays available."
     }
 
     var body: some View {
@@ -90,7 +86,7 @@ struct WindDownStartSheet: View {
                         .foregroundStyle(AppColors.muted)
 
                     if isAdHocQuiet, usesNFC {
-                        Text("Tap your registered phone-bed tag after choosing Start now.")
+                        Text("Tap your registered Phone Away tag after choosing Start now.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
                     }
@@ -122,7 +118,11 @@ struct WindDownStartSheet: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(PixelPrimaryButtonStyle())
-                    .disabled(viewModel.isScanningNFCForStart)
+                    .disabled(
+                        viewModel.isScanningNFCForStart
+                            || !viewModel.shieldingReadiness.canStartProtectedSession
+                            || !selectionConfirmed
+                    )
 
                     Button("Not now") {
                         viewModel.cancelNightWatchStart()
@@ -148,9 +148,10 @@ struct WindDownStartSheet: View {
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection
         )
-        .onChange(of: viewModel.bedtimeActivitySelection) { _, _ in
-            viewModel.saveScreenTimeSelection(.bedtime)
-            viewModel.appShieldingChoiceForNextRun = viewModel.shieldingReadiness == .ready
+            .onChange(of: viewModel.bedtimeActivitySelection) { _, _ in
+                viewModel.saveScreenTimeSelection(.bedtime)
+                viewModel.appShieldingChoiceForNextRun = viewModel.shieldingReadiness == .ready
+                selectionConfirmed = false
         }
 #endif
     }
@@ -173,7 +174,7 @@ struct WindDownStartSheet: View {
                     .disabled(!viewModel.nightFlockViewModel.isChallengeSharingEnabled)
 
                     Text(viewModel.nightFlockViewModel.isChallengeSharingEnabled
-                        ? "If off, only positive phone-tucked and quiet-morning states can be shared."
+                        ? "When this is on, nothing from tonight is shared. When it is off, your Slumber Party sharing choices apply independently."
                         : "Slumber Party sharing is already off in your privacy settings.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
@@ -184,32 +185,47 @@ struct WindDownStartSheet: View {
 
     @ViewBuilder
     private var shieldingChoice: some View {
-        if viewModel.pendingStartNeedsShieldingSetup {
-            PixelCard {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Label(
-                        "Selected apps aren’t set up",
-                        systemImage: "apps.iphone"
-                    )
-                        .font(AppTypography.headline)
-                    Text(
-                        isAdHocQuiet
-                            ? "You can start without app limits, or choose apps and categories first."
-                            : "You can start Wind Down without app limits, or choose apps first."
-                    )
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Label("App protection", systemImage: "apps.iphone")
+                    .font(AppTypography.headline)
+
+                switch viewModel.shieldingReadiness {
+                case .ready:
+                    Text("App protection is ready")
+                        .font(AppTypography.body.weight(.semibold))
+                    Text("Selected: \(viewModel.shieldingSelectionSummary). Does this include the apps that pull you back most often?")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.grass)
+                    HStack {
+                        Button("Review", action: chooseAppsToRest)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        Button(selectionConfirmed ? "Yes" : "Yes, continue") {
+                            selectionConfirmed = true
+                        }
+                        .buttonStyle(PixelChipButtonStyle(isSelected: selectionConfirmed))
+                    }
+                    Text("Counting Sheep cannot verify named apps. Your answer is revisitable here or in Settings.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
-                    Button("Choose apps to limit", action: chooseAppsToRest)
+                case .authorizationRequired, .noSelection, .revoked, .runtimeFailure:
+                    Text("Start with social feeds and short-form video, then add video, news, games, shopping, or other apps you open on autopilot. Counting Sheep can show only the private item count.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    Button("Set up app protection", action: chooseAppsToRest)
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                case .denied:
+                    Text("Screen Time access is off. Restore it, then choose at least one app or category to continue.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    Button("Set up app protection", action: chooseAppsToRest)
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                case .unavailable:
+                    Text("App protection is unavailable on this device. It must be ready before a new session can start.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
                 }
             }
-        } else if viewModel.shieldingEnabled, viewModel.shieldingReadiness == .ready {
-            Toggle(
-                "Limit selected apps",
-                isOn: $viewModel.appShieldingChoiceForNextRun
-            )
-                .font(AppTypography.body)
-                .tint(AppColors.grass)
         }
     }
 
@@ -223,7 +239,7 @@ struct WindDownStartSheet: View {
     }
 }
 
-#Preview("Start without app limits") {
+#Preview("Start requires app protection") {
     WindDownStartSheet()
         .environmentObject(FocusRunViewModel())
 }

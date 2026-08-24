@@ -29,17 +29,24 @@ enum CountingSheepOrientationStep: String, Codable, Equatable {
     case completion
     /// Legacy three-step tour case. Decodes, then normalizes to `.phoneAway`.
     case navigation
+    /// The fourth Home chapter tip. The old `.navigation` raw value remains
+    /// reserved for legacy data and continues to normalize to `.phoneAway`.
+    case rootTabs
 
     var normalized: Self { self == .navigation ? .phoneAway : self }
 
     var number: Int {
-        FirstRunJourney.number(for: self, context: .defaults)
+        if let chapter = FirstRunJourney.chapter(for: self) {
+            return FirstRunJourney.number(for: self, chapter: chapter)
+        }
+        return FirstRunJourney.number(for: self, context: .defaults)
     }
 
-    static let count = FirstRunJourney.orderedSteps.count
+    static let count = FirstRunJourney.count(for: .homeBasics)
 }
 
 enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identifiable {
+    case practice
     case nights
     case farm
     case settings
@@ -51,6 +58,7 @@ enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identi
 
     var title: String {
         switch self {
+        case .practice: return "Try a five-minute practice"
         case .nights: return "Your nights, kept together"
         case .farm: return "Ollie’s finds lead here"
         case .settings: return "Your plan lives here"
@@ -62,6 +70,8 @@ enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identi
 
     var message: String {
         switch self {
+        case .practice:
+            return "A short, optional Wind Down practice creates a real Nights record. It does not count as a protected night."
         case .nights:
             return "Wind Down is your nightly ritual.\nPhone Away stays here as a smaller, separate record."
         case .farm:
@@ -90,11 +100,11 @@ enum CountingSheepOrientationMilestone: String, Codable, CaseIterable, Hashable 
 }
 
 /// The resumable first-run guide is separate from the Wind Down state machine.
-/// Schema 5 expands the three-step Home tour into a Home, practice, Farm,
-/// Slumber Party, Settings, and Nights journey. Legacy milestones remain
-/// decodable and do not gate finishing.
+/// Schema 6 stores chapter-scoped progress while retaining the schema-five
+/// fields so existing first-run JSON can migrate without changing rewards or
+/// Farm ownership.
 struct CountingSheepOrientationState: Codable, Equatable {
-    static let currentSchemaVersion = 5
+    static let currentSchemaVersion = 6
 
     var schemaVersion: Int
     var status: CountingSheepOrientationStatus
@@ -109,6 +119,12 @@ struct CountingSheepOrientationState: Codable, Equatable {
     var continueCardDismissed: Bool
     var practiceRewardRoutedToFarm: Bool
     var slumberPartyUnavailableAcknowledged: Bool
+    var activeChapter: FirstRunGuideChapter?
+    var chapterStepIndex: Int
+    var completedChapters: Set<FirstRunGuideChapter>
+    var deferredChapters: Set<FirstRunGuideChapter>
+    var presentationState: FirstRunGuidePresentationState
+    var scrollAnchor: String?
 
     static let fresh = Self(
         schemaVersion: currentSchemaVersion,
@@ -123,7 +139,13 @@ struct CountingSheepOrientationState: Codable, Equatable {
         farmTutorialActions: [],
         continueCardDismissed: false,
         practiceRewardRoutedToFarm: false,
-        slumberPartyUnavailableAcknowledged: false
+        slumberPartyUnavailableAcknowledged: false,
+        activeChapter: .homeBasics,
+        chapterStepIndex: 0,
+        completedChapters: [],
+        deferredChapters: [],
+        presentationState: .active,
+        scrollAnchor: nil
     )
 
     init(
@@ -139,7 +161,13 @@ struct CountingSheepOrientationState: Codable, Equatable {
         farmTutorialActions: Set<FirstRunFarmAction> = [],
         continueCardDismissed: Bool = false,
         practiceRewardRoutedToFarm: Bool = false,
-        slumberPartyUnavailableAcknowledged: Bool = false
+        slumberPartyUnavailableAcknowledged: Bool = false,
+        activeChapter: FirstRunGuideChapter? = .homeBasics,
+        chapterStepIndex: Int = 0,
+        completedChapters: Set<FirstRunGuideChapter> = [],
+        deferredChapters: Set<FirstRunGuideChapter> = [],
+        presentationState: FirstRunGuidePresentationState = .active,
+        scrollAnchor: String? = nil
     ) {
         self.schemaVersion = max(schemaVersion, Self.currentSchemaVersion)
         self.status = status
@@ -154,24 +182,33 @@ struct CountingSheepOrientationState: Codable, Equatable {
         self.continueCardDismissed = continueCardDismissed
         self.practiceRewardRoutedToFarm = practiceRewardRoutedToFarm
         self.slumberPartyUnavailableAcknowledged = slumberPartyUnavailableAcknowledged
+        self.activeChapter = status == .completed || status == .skipped ? nil : activeChapter
+        self.chapterStepIndex = max(0, chapterStepIndex)
+        self.completedChapters = completedChapters
+        self.deferredChapters = deferredChapters
+        self.presentationState = status == .completed || status == .skipped
+            ? .idle
+            : status == .dismissed ? .paused : presentationState
+        self.scrollAnchor = scrollAnchor
     }
 
-    var isGuideActive: Bool { status == .notStarted || status == .inProgress }
+    var isGuideActive: Bool {
+        status != .skipped && status != .completed && activeChapter != nil
+    }
 
     var isVisibleOnHome: Bool {
-        isGuideActive && FirstRunJourney.surface(for: currentStep) == .home
+        isGuideActive && presentationState == .active && FirstRunJourney.surface(for: currentStep) == .home
     }
 
-    var canResume: Bool { status == .dismissed }
+    var canResume: Bool { presentationState == .paused }
 
     var isComplete: Bool { status == .completed }
 
     func shouldShowContinueCard(isCoachMarkPresented: Bool) -> Bool {
-        guard status != .skipped, status != .completed else { return false }
+        guard status != .skipped, status != .completed, activeChapter != nil else { return false }
         if continueCardDismissed { return false }
-        if status == .dismissed { return true }
-        if isCoachMarkPresented { return false }
-        return isGuideActive
+        guard presentationState == .paused else { return false }
+        return !isCoachMarkPresented
     }
 
     mutating func mark(_ milestone: CountingSheepOrientationMilestone) {
@@ -189,37 +226,36 @@ struct CountingSheepOrientationState: Codable, Equatable {
     mutating func advanceTour(context: FirstRunAdvanceContext = .defaults) {
         guard isGuideActive else { return }
         markLessonSeen()
-        if let next = FirstRunJourney.next(after: currentStep, context: context) {
-            currentStep = next
+        guard let chapter = activeChapter else { return }
+        let steps = FirstRunJourney.visibleSteps(for: chapter)
+        if let currentIndex = steps.firstIndex(of: currentStep.normalized), currentIndex + 1 < steps.count {
+            chapterStepIndex = currentIndex + 1
+            currentStep = steps[chapterStepIndex]
             status = .inProgress
+            presentationState = .active
+            continueCardDismissed = false
         } else {
-            completeTour()
+            completeChapter(chapter)
         }
     }
 
     mutating func moveBack(context: FirstRunAdvanceContext = .defaults) {
         guard isGuideActive else { return }
-        if let previous = FirstRunJourney.previous(before: currentStep, context: context) {
-            currentStep = previous
+        guard let chapter = activeChapter else { return }
+        let steps = FirstRunJourney.visibleSteps(for: chapter)
+        if let currentIndex = steps.firstIndex(of: currentStep.normalized), currentIndex > 0 {
+            chapterStepIndex = currentIndex - 1
+            currentStep = steps[chapterStepIndex]
         }
         status = .inProgress
+        presentationState = .active
+        continueCardDismissed = false
+        _ = context
     }
 
     mutating func skipCurrentLesson(context: FirstRunAdvanceContext = .defaults) {
         guard isGuideActive else { return }
         skippedLessons.insert(currentStep.normalized)
-        var context = context
-        if currentStep.normalized == .farmShear {
-            recordFarmAction(.skippedShear)
-        }
-        if currentStep.normalized == .farmClaimWearable {
-            skippedLessons.insert(.farmEquipWearable)
-            context.showClaimWearable = false
-            context.showEquipWearable = false
-        }
-        if currentStep.normalized == .slumberParty, !context.slumberPartyAvailable {
-            slumberPartyUnavailableAcknowledged = true
-        }
         advanceTour(context: context)
     }
 
@@ -228,6 +264,45 @@ struct CountingSheepOrientationState: Codable, Equatable {
         status = .completed
         currentStep = .completion
         continueCardDismissed = true
+        activeChapter = nil
+        presentationState = .idle
+    }
+
+    mutating func completeChapter(_ chapter: FirstRunGuideChapter) {
+        completedChapters.insert(chapter)
+        activeChapter = nil
+        chapterStepIndex = 0
+        presentationState = .idle
+        continueCardDismissed = true
+        status = .inProgress
+        currentStep = chapter == .homeBasics ? .completion : .farmSearch
+    }
+
+    mutating func offerChapter(_ chapter: FirstRunGuideChapter) {
+        guard status != .skipped, status != .completed,
+              !completedChapters.contains(chapter) else { return }
+        activeChapter = chapter
+        chapterStepIndex = 0
+        currentStep = FirstRunJourney.steps(for: chapter)[0]
+        presentationState = .offered
+        continueCardDismissed = false
+        status = .inProgress
+    }
+
+    mutating func startOfferedChapter() {
+        guard activeChapter != nil, presentationState == .offered else { return }
+        presentationState = .active
+        status = .inProgress
+        continueCardDismissed = false
+    }
+
+    mutating func deferActiveChapter() {
+        guard let activeChapter else { return }
+        deferredChapters.insert(activeChapter)
+        self.activeChapter = activeChapter
+        presentationState = .paused
+        continueCardDismissed = true
+        status = .dismissed
     }
 
     mutating func recordPracticePeriod(_ periodID: UUID) {
@@ -274,25 +349,31 @@ struct CountingSheepOrientationState: Codable, Equatable {
     mutating func dismiss() {
         guard status != .skipped, status != .completed else { return }
         status = .dismissed
+        presentationState = .paused
     }
 
     mutating func dismissContinueCard() {
         continueCardDismissed = true
-        if isGuideActive {
+        if activeChapter != nil {
             status = .dismissed
+            presentationState = .paused
         }
     }
 
     mutating func resume() {
-        guard status == .dismissed || status == .inProgress else { return }
+        guard activeChapter != nil,
+              status == .dismissed || presentationState == .paused else { return }
         status = .inProgress
         continueCardDismissed = false
+        presentationState = .active
     }
 
     mutating func skipPermanently() {
         guard status != .completed else { return }
         status = .skipped
         continueCardDismissed = true
+        activeChapter = nil
+        presentationState = .idle
     }
 
     var canShowContextualTips: Bool {
@@ -322,6 +403,7 @@ struct CountingSheepOrientationState: Codable, Equatable {
     mutating func replay() {
         self = .fresh
         status = .inProgress
+        presentationState = .active
     }
 
     private mutating func markLessonSeen() {
@@ -353,6 +435,8 @@ struct CountingSheepOrientationState: Codable, Equatable {
         case skippedLessons, farmTutorialActions
         case continueCardDismissed, practiceRewardRoutedToFarm
         case slumberPartyUnavailableAcknowledged
+        case activeChapter, chapterStepIndex, completedChapters, deferredChapters
+        case presentationState, scrollAnchor
         case homeExplained, nightsExplored, farmExplored, settingsExplored
         case windDownSaved, practiceStarted, practiceCompleted, practiceRecordViewed
         case dismissed, skipped, completed
@@ -425,6 +509,106 @@ struct CountingSheepOrientationState: Codable, Equatable {
         continueCardDismissed = try container.decodeIfPresent(Bool.self, forKey: .continueCardDismissed) ?? false
         practiceRewardRoutedToFarm = try container.decodeIfPresent(Bool.self, forKey: .practiceRewardRoutedToFarm) ?? false
         slumberPartyUnavailableAcknowledged = try container.decodeIfPresent(Bool.self, forKey: .slumberPartyUnavailableAcknowledged) ?? false
+
+        if storedVersion >= Self.currentSchemaVersion {
+            activeChapter = try container.decodeIfPresent(FirstRunGuideChapter.self, forKey: .activeChapter)
+            chapterStepIndex = try container.decodeIfPresent(Int.self, forKey: .chapterStepIndex) ?? 0
+            completedChapters = try container.decodeIfPresent(Set<FirstRunGuideChapter>.self, forKey: .completedChapters) ?? []
+            deferredChapters = try container.decodeIfPresent(Set<FirstRunGuideChapter>.self, forKey: .deferredChapters) ?? []
+            presentationState = try container.decodeIfPresent(FirstRunGuidePresentationState.self, forKey: .presentationState) ?? .idle
+            scrollAnchor = try container.decodeIfPresent(String.self, forKey: .scrollAnchor)
+        } else {
+            let migration = Self.migrateLegacyJourney(
+                step: decodedStep.normalized,
+                status: decodedStatus,
+                skippedLessons: skippedLessons
+            )
+            activeChapter = migration.chapter
+            chapterStepIndex = migration.index
+            completedChapters = migration.completedChapters
+            deferredChapters = migration.deferredChapters
+            presentationState = migration.presentationState
+            scrollAnchor = nil
+            currentStep = migration.step
+            if migration.contextualTip != nil {
+                activeChapter = nil
+                presentationState = .paused
+                if decodedStatus == .dismissed {
+                    status = .inProgress
+                }
+            }
+        }
+    }
+
+    private struct LegacyJourneyMigration {
+        var step: CountingSheepOrientationStep
+        var chapter: FirstRunGuideChapter?
+        var index: Int
+        var completedChapters: Set<FirstRunGuideChapter>
+        var deferredChapters: Set<FirstRunGuideChapter>
+        var presentationState: FirstRunGuidePresentationState
+        var contextualTip: CountingSheepContextualTip?
+    }
+
+    private static func migrateLegacyJourney(
+        step: CountingSheepOrientationStep,
+        status: CountingSheepOrientationStatus,
+        skippedLessons: Set<CountingSheepOrientationStep>
+    ) -> LegacyJourneyMigration {
+        if status == .completed || step == .completion {
+            return LegacyJourneyMigration(
+                step: .completion,
+                chapter: nil,
+                index: 0,
+                completedChapters: Set(FirstRunGuideChapter.allCases),
+                deferredChapters: [],
+                presentationState: .idle,
+                contextualTip: nil
+            )
+        }
+
+        let normalized = step.normalized
+        if normalized == .practiceOffer || normalized == .practiceReward {
+            return LegacyJourneyMigration(
+                step: normalized,
+                chapter: nil,
+                index: 0,
+                completedChapters: [],
+                deferredChapters: [],
+                presentationState: .paused,
+                contextualTip: .practice
+            )
+        }
+        if normalized == .settings || normalized == .nights || normalized == .slumberParty {
+            let tip: CountingSheepContextualTip? = normalized == .settings
+                ? .settings
+                : normalized == .nights ? .nights : nil
+            return LegacyJourneyMigration(
+                step: normalized,
+                chapter: nil,
+                index: 0,
+                completedChapters: [],
+                deferredChapters: normalized == .slumberParty ? [.farmTour] : [],
+                presentationState: .paused,
+                contextualTip: tip
+            )
+        }
+
+        let chapter = FirstRunJourney.chapter(for: normalized) ?? .homeBasics
+        let steps = FirstRunJourney.steps(for: chapter)
+        let migrationStep: CountingSheepOrientationStep = normalized == .farmWool || normalized == .farmShear || normalized == .farmCurrency || normalized == .farmClaimWearable || normalized == .farmEquipWearable
+            ? .farmCapacity
+            : normalized == .navigation ? .rootTabs : normalized
+        let index = steps.firstIndex(of: migrationStep) ?? 0
+        return LegacyJourneyMigration(
+            step: migrationStep,
+            chapter: chapter,
+            index: index,
+            completedChapters: [],
+            deferredChapters: [],
+            presentationState: status == .dismissed ? .paused : .active,
+            contextualTip: nil
+        )
     }
 
     func encode(to encoder: Encoder) throws {
@@ -442,5 +626,11 @@ struct CountingSheepOrientationState: Codable, Equatable {
         try container.encode(continueCardDismissed, forKey: .continueCardDismissed)
         try container.encode(practiceRewardRoutedToFarm, forKey: .practiceRewardRoutedToFarm)
         try container.encode(slumberPartyUnavailableAcknowledged, forKey: .slumberPartyUnavailableAcknowledged)
+        try container.encodeIfPresent(activeChapter, forKey: .activeChapter)
+        try container.encode(chapterStepIndex, forKey: .chapterStepIndex)
+        try container.encode(completedChapters, forKey: .completedChapters)
+        try container.encode(deferredChapters, forKey: .deferredChapters)
+        try container.encode(presentationState, forKey: .presentationState)
+        try container.encodeIfPresent(scrollAnchor, forKey: .scrollAnchor)
     }
 }

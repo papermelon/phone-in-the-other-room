@@ -16,6 +16,7 @@ enum SheepSearchPresentation {
         case .onboardingPractice: return "Practice gift"
         case .slumberParty: return "Slumber Party gift"
         case .windDown: return "After Wind Down"
+        case .sunrise: return "Sunrise Trail"
         case .phoneBreak: return "After Phone Away"
         case .unspecified: return "Farm note"
         }
@@ -27,7 +28,7 @@ enum SheepSearchPresentation {
             return "A WELCOME GIFT"
         case .slumberParty:
             return "A SLUMBER PARTY GIFT"
-        case .windDown, .phoneBreak, .unspecified:
+        case .windDown, .sunrise, .phoneBreak, .unspecified:
             return "OLLIE FOUND A MISSING SHEEP"
         }
     }
@@ -40,7 +41,7 @@ enum SheepSearchPresentation {
             return "Practice brought a welcome gift home."
         case .slumberParty:
             return "Your Slumber Party brought a missing sheep home."
-        case .windDown, .phoneBreak, .unspecified:
+        case .windDown, .sunrise, .phoneBreak, .unspecified:
             return "Ollie found a missing sheep."
         }
     }
@@ -49,6 +50,8 @@ enum SheepSearchPresentation {
         switch origin {
         case .phoneBreak:
             return "Ollie kept a clue from Phone Away."
+        case .sunrise:
+            return "Ollie kept a clue from Sunrise Trail."
         case .windDown, .unspecified:
             return "Ollie kept a clue."
         case .starter, .onboardingPractice:
@@ -62,6 +65,8 @@ enum SheepSearchPresentation {
         switch origin {
         case .phoneBreak:
             return "Ollie did not bring a sheep home this time. The clue is saved for another Phone Away."
+        case .sunrise:
+            return "Ollie did not bring a sheep home this time. The clue is saved for another Sunrise Trail fill."
         case .windDown, .unspecified:
             return "Ollie did not bring a sheep home this time. The clue is saved for another night."
         case .starter, .onboardingPractice:
@@ -81,6 +86,8 @@ enum SheepSearchPresentation {
             return "A gift from seven nights together"
         case .windDown:
             return "After this Wind Down"
+        case .sunrise:
+            return "After a Sunrise Trail fill"
         case .phoneBreak:
             return "After \(PhoneAwaySearchMeter.maximumMinutes) Phone Away minutes"
         case .unspecified:
@@ -98,7 +105,7 @@ enum SheepSearchPresentation {
             return "See the welcome gift"
         case .slumberParty:
             return "See the Slumber Party gift"
-        case .windDown, .phoneBreak, .unspecified:
+        case .windDown, .sunrise, .phoneBreak, .unspecified:
             return "Open Search Journal"
         }
     }
@@ -111,6 +118,8 @@ enum SheepSearchPresentation {
             return "Shows the Slumber Party gift saved in Search Journal"
         case .phoneBreak:
             return "Shows the Search Journal note for this Phone Away"
+        case .sunrise:
+            return "Shows the Search Journal note for this Sunrise Trail fill"
         case .windDown, .unspecified:
             return "Shows the Search Journal note for this Wind Down"
         }
@@ -123,11 +132,15 @@ enum SheepSearchPresentation {
                 return "Welcome gift: \(name)"
             case .slumberParty:
                 return "Slumber Party gift: \(name)"
-            case .windDown, .phoneBreak, .unspecified:
+            case .windDown, .sunrise, .phoneBreak, .unspecified:
                 return "Ollie found \(name)"
             }
         }
-        return outcome.origin == .phoneBreak ? "Ollie kept a Phone Away clue" : "Ollie kept a clue"
+        switch outcome.origin {
+        case .phoneBreak: return "Ollie kept a Phone Away clue"
+        case .sunrise: return "Ollie kept a Sunrise Trail clue"
+        default: return "Ollie kept a clue"
+        }
     }
 
     static func detailsHeading(for origin: SheepSearchOrigin) -> String {
@@ -136,13 +149,13 @@ enum SheepSearchPresentation {
             return "WELCOME GIFT"
         case .slumberParty:
             return "SLUMBER PARTY GIFT"
-        case .windDown, .phoneBreak, .unspecified:
+        case .windDown, .sunrise, .phoneBreak, .unspecified:
             return "HOW THEY ARRIVED"
         }
     }
 
     static func showsTrailMetrics(for origin: SheepSearchOrigin) -> Bool {
-        origin == .windDown || origin == .phoneBreak
+        origin == .windDown || origin == .sunrise || origin == .phoneBreak
     }
 
     static func emptyJournalDetail(isPhoneAway: Bool) -> String {

@@ -55,13 +55,24 @@ struct WindDownTimingView: View {
         HStack {
             Text(title).font(AppTypography.headline)
             Spacer()
-            Picker(title, selection: selection) {
+            Picker(selection: selection) {
                 ForEach(QuietTimeDurationOptions.including(selection.wrappedValue), id: \.self) { minutes in
                     Text(QuietTimeDurationOptions.label(for: minutes)).tag(minutes)
                 }
+            } label: {
+                Text(QuietTimeDurationOptions.label(for: selection.wrappedValue))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
             }
             .pickerStyle(.menu)
             .tint(AppColors.grass)
+            .padding(.horizontal, AppSpacing.sm)
+            .frame(minWidth: 148, minHeight: 54)
+            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
+                    .stroke(AppColors.stroke.opacity(0.48), lineWidth: 1.5)
+            }
         }
     }
 

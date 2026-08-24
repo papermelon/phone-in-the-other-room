@@ -2,6 +2,11 @@ import Foundation
 
 enum NightWatchNotificationPlanBuilder {
     static let minimumMidpointSpacing: TimeInterval = 10 * 60
+    static let supersededMorningIdentifiers = [
+        "night-watch-phone-free-morning",
+        "night-watch-morning-midpoint",
+        "focus-run-complete"
+    ]
 
     static func scheduledNotifications(
         for plan: NightWatchPlan,
@@ -12,6 +17,7 @@ enum NightWatchNotificationPlanBuilder {
         educationalTipsEnabled: Bool,
         soundsEnabled: Bool,
         copyOverrides: [NotificationCopyOverride] = [],
+        includesIndependentScreenFreeMorning: Bool = true,
         now: Date = Date()
     ) -> [PlannedNotification] {
         let plannedStart = plan.intendedBedtime.addingTimeInterval(
@@ -116,34 +122,17 @@ enum NightWatchNotificationPlanBuilder {
                 copyOverrides: copyOverrides
             )
         )
-        candidates.append(
-            copy(
-                id: "night-watch-phone-free-morning",
-                date: plan.wakeTime,
-                phase: .morningQuiet,
-                moment: .phoneFreeMorning,
-                activityTitle: plan.morningNotificationActivityTitle(
-                    allowsPersonalText: purpose.allowsCustomTextInNotifications
-                ),
-                tip: purpose.reminderPhrase,
-                purposeText: purpose.reminderPhrase,
-                importance: .passive,
-                playsSound: false,
-                destination: .activeRun,
-                copyOverrides: copyOverrides
-            )
-        )
-
-        if cadence.includesMorningMidpoint {
+        if !includesIndependentScreenFreeMorning {
             candidates.append(
                 copy(
-                    id: "night-watch-morning-midpoint",
-                    date: midpoint(from: plan.wakeTime, to: plan.protectedUntil),
+                    id: "night-watch-phone-free-morning",
+                    date: plan.wakeTime,
                     phase: .morningQuiet,
-                    moment: .morningMidpoint,
+                    moment: .phoneFreeMorning,
                     activityTitle: plan.morningNotificationActivityTitle(
                         allowsPersonalText: purpose.allowsCustomTextInNotifications
                     ),
+                    tip: purpose.reminderPhrase,
                     purposeText: purpose.reminderPhrase,
                     importance: .passive,
                     playsSound: false,
@@ -151,20 +140,37 @@ enum NightWatchNotificationPlanBuilder {
                     copyOverrides: copyOverrides
                 )
             )
-        }
-
-        candidates.append(
-            copy(
-                id: "focus-run-complete",
-                date: plan.protectedUntil,
-                phase: .complete,
-                moment: .complete,
-                importance: .active,
-                playsSound: soundsEnabled,
-                destination: .nights,
-                copyOverrides: copyOverrides
+            if cadence.includesMorningMidpoint {
+                candidates.append(
+                    copy(
+                        id: "night-watch-morning-midpoint",
+                        date: midpoint(from: plan.wakeTime, to: plan.protectedUntil),
+                        phase: .morningQuiet,
+                        moment: .morningMidpoint,
+                        activityTitle: plan.morningNotificationActivityTitle(
+                            allowsPersonalText: purpose.allowsCustomTextInNotifications
+                        ),
+                        purposeText: purpose.reminderPhrase,
+                        importance: .passive,
+                        playsSound: false,
+                        destination: .activeRun,
+                        copyOverrides: copyOverrides
+                    )
+                )
+            }
+            candidates.append(
+                copy(
+                    id: "focus-run-complete",
+                    date: plan.protectedUntil,
+                    phase: .complete,
+                    moment: .complete,
+                    importance: .active,
+                    playsSound: soundsEnabled,
+                    destination: .nights,
+                    copyOverrides: copyOverrides
+                )
             )
-        )
+        }
 
         return spaced(candidates.sorted { $0.date < $1.date })
             .filter { $0.date > now }
@@ -265,6 +271,12 @@ enum NightWatchNotificationPlanBuilder {
             playsSound: playsSound,
             destination: destination
         )
+    }
+}
+
+enum NotificationSchedulingGenerationPolicy {
+    static func accepts(requested: Int, current: Int, remindersEnabled: Bool) -> Bool {
+        remindersEnabled && requested == current
     }
 }
 
