@@ -20,7 +20,7 @@ enum AppAppearancePreference: String, Codable, CaseIterable, Identifiable {
     var detail: String {
         switch self {
         case .automatic:
-            return "Follow iPhone appearance, with dark mode during a ready or active Wind Down."
+            return "Follow iPhone appearance, including during Wind Down."
         case .light:
             return "Keep Counting Sheep light, including during Wind Down."
         case .dark:
@@ -43,7 +43,9 @@ enum AppAppearancePreference: String, Codable, CaseIterable, Identifiable {
     func resolution(isWindDownReadyOrActive: Bool) -> AppAppearanceResolution {
         switch self {
         case .automatic:
-            return isWindDownReadyOrActive ? .dark : .system
+            // A ready or active ritual changes the surface palette, not the
+            // user's appearance choice. Light Mode remains usable at bedtime.
+            return .system
         case .light:
             return .light
         case .dark:

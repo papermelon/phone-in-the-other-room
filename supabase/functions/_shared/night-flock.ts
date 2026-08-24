@@ -22,6 +22,7 @@ const commitmentCommandFields: Record<string, string[]> = {
     "identity", "timeZoneIdentifier", "idempotencyKey",
   ],
   createInvite: ["schemaVersion", "command", "idempotencyKey"],
+  replaceInvite: ["schemaVersion", "command", "expectedInviteID", "inviteID", "inviteDigest", "idempotencyKey"],
   previewInvite: ["schemaVersion", "command", "shortCode", "idempotencyKey"],
   redeemInvite: ["schemaVersion", "command", "shortCode", "idempotencyKey"],
   acceptGoal: ["schemaVersion", "command", "challengeID", "idempotencyKey"],
@@ -67,7 +68,11 @@ export function validateNightFlockCommand(
     ? commitmentCommandFields[command]
     : commandFields[command];
   if (!allowedFields) throw new Error("Unsupported Slumber Party command");
-  requireExactFields(body, allowedFields);
+  const exactFields = body.schemaVersion === 2 && command === "createInvite" &&
+      (body.inviteID !== undefined || body.inviteDigest !== undefined)
+    ? [...allowedFields, "inviteID", "inviteDigest"]
+    : allowedFields;
+  requireExactFields(body, exactFields);
   const idempotencyKey = requireString(body, "idempotencyKey").toLowerCase();
   if (!idempotencyPattern.test(idempotencyKey)) throw new Error("Invalid idempotencyKey");
   if (headerIdempotencyKey?.toLowerCase() !== idempotencyKey) {
@@ -134,6 +139,21 @@ export function validateNightFlockState(body: Record<string, unknown>): { schema
 
 function validateCommitmentCommand(body: Record<string, unknown>, command: string): void {
   switch (command) {
+    case "createInvite": {
+      const hasID = body.inviteID !== undefined;
+      const hasDigest = body.inviteDigest !== undefined;
+      if (hasID !== hasDigest) throw new Error("Invalid invite credential pair");
+      if (hasID) {
+        requireUUID(body, "inviteID");
+        requireDigest(body, "inviteDigest");
+      }
+      break;
+    }
+    case "replaceInvite":
+      requireUUID(body, "expectedInviteID");
+      requireUUID(body, "inviteID");
+      requireDigest(body, "inviteDigest");
+      break;
     case "createParty":
       requireEnum(body, "goalKind", ["phoneAway", "quietMinutes", "shieldInstagram"]);
       requireEnum(body, "identity", ["moonlitMeadow", "orchardGate", "starlightHill"]);
@@ -255,6 +275,13 @@ function requireUUID(body: Record<string, unknown>, key: string): string {
   const value = requireString(body, key);
   if (!uuidPattern.test(value)) throw new Error(`Invalid ${key}`);
   return value.toLowerCase();
+}
+
+function requireDigest(body: Record<string, unknown>, key: string): string {
+  const value = requireString(body, key).toLowerCase();
+  if (!idempotencyPattern.test(value)) throw new Error(`Invalid ${key}`);
+  body[key] = value;
+  return value;
 }
 
 function requireEnum(body: Record<string, unknown>, key: string, values: string[]): string {

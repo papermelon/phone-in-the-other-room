@@ -42,8 +42,8 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ RewardModels.swift            legacy keepsake compatibility types and context
 ├─ ProximityClassifier.swift     legacy/shared distance buckets (placement only)
 ├─ FocusRunRules.swift           timing and completion eligibility
-├─ SessionGuard.swift            honor timer / Watch placement / QR / NFC guard metadata
-├─ NightWatch.swift              saved sleep-bookend plan, phases, activities, quiet credit
+├─ SessionGuard.swift            shielding-timer/NFC guard metadata; Watch/QR legacy decode values
+├─ NightWatch.swift              saved sleep-bookend plan, phases, activities, factual bookend timing
 ├─ WindDownScheduling.swift      versioned schedule state, recurrence, one-time periods, overlap rules, aggregation
 ├─ NightsHistorySummary.swift    wake-day/start-day presentation summaries for week, month, and day history
 ├─ NightJourneyProgress.swift    run/phase-aware wall-clock journey reducer
@@ -62,7 +62,8 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ NightFlockPresentation.swift  aggregate and privacy presentation derivations
 ├─ NightFlockAPI.swift           versioned commands/state + monotonic outbox contracts
 ├─ NightWatchHistory.swift       90-day aggregate records + idempotent ritual events
-├─ PhoneBedTag.swift             local NDEF registration digest
+├─ PhoneBedTag.swift             named primary/backup NDEF tag library and purpose rules
+├─ PastureScene.swift             versioned local pasture layout, settling, and deterministic ambient plans
 ├─ QuietTimeShieldSchedule.swift schedule/status/evidence App Group contract
 ├─ WatchMessage.swift            typed phone↔watch message envelope + codec
 ├─ ScreenTimeIntegration.swift   Screen Time scopes + report context IDs (phone-other.*)
@@ -82,7 +83,7 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ FarmEconomyRules.swift          capacity, shearing, regrowth, sale, and balance invariants
 ├─ FarmMigration.swift             deterministic outcome/legacy-flock reconciliation
 ├─ FarmShop.swift                  fixed local catalogue, purchase, upgrade, and equipment rules
-├─ Orientation.swift                versioned first-run guide (schema 5) + contextual-tip migration
+├─ Orientation.swift                versioned first-run guide (schema 6) + contextual-tip migration
 ├─ AppFeedback.swift             validated feedback draft/attachment/receipt protocol
 ├─ DistanceProvider.swift        protocol: async stream of distance readings
 └─ Formatting.swift              OllieFormat timer/minute formatting
@@ -129,18 +130,18 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ NightsDayDetailView.swift                grouped day occurrences + factual record detail
 │  ├─ FarmView.swift                           production Farm dashboard and destination routing
 │  ├─ NightFlock/                              invite, hub, trail, pasture, safety, result views
-│  ├─ FarmPastureView.swift                    paged, grounded, visit-shuffled living flock scene
+│  ├─ FarmPastureView.swift                    paged, grounded living flock scene with local character placement
 │  ├─ BarnView.swift                           owned flock, capacity, lifecycle, and pending arrivals
 │  ├─ TrailBoardView.swift                     internal view name for Ollie's Search
 │  ├─ TrailNotesArchiveView.swift              internal view name for Search Journal
 │  ├─ FarmShopView.swift                       local purchases, upgrades, and equipment
 │  ├─ ShepherdCustomizationView.swift          local player-avatar editor
-│  ├─ MoreView.swift                           Settings root: Your Wind Down, Connections, Help & app guide
+│  ├─ MoreView.swift                           Compact Settings root: Your Wind Down, Connections, Privacy & data, Help & app guide
 │  ├─ WindDownTimingView.swift                  compact saved schedule editor
 │  ├─ WindDownScheduleView.swift                 finite Once / Repeats / Usual Wind Down editor
 │  ├─ FeedbackFormView.swift                   validated form + email fallback
 │  ├─ RewardShelfView.swift                    Debug internal preview only
-│  ├─ Components/QRCodeScannerView.swift       Wind Down code scanner + manual fallback
+│  ├─ Components/QRCodeScannerView.swift       retained legacy compatibility component (not release-facing)
 │  ├─ Components/NightWatchReceiptCard.swift   elapsed/bookend/sleep/data-status receipt
 │  ├─ Components/MorningCheckInCard.swift       collapsed, optional morning reflection
 │  ├─ Components/GameComponents.swift          legacy UI retained outside run flow
@@ -179,11 +180,8 @@ supabase/                       versioned ADR-0005 migrations and Edge Functions
 ```mermaid
 stateDiagram-v2
     [*] --> setup
-    setup --> placementGrace: optional Watch / QR guard selected
-    setup --> windDown: phone-away timer selected
-    placementGrace --> windDown: placement confirmed or user continues as timer
-    placementGrace --> waitingForPhoneAway: Watch check unavailable
-    waitingForPhoneAway --> windDown: user continues as timer
+    setup --> windDown: required app protection + timer guard authorized
+    setup --> windDown: required app protection + NFC guard authenticated
     windDown --> overnight: intended bedtime reached
     overnight --> morningQuiet: saved wake time reached
     morningQuiet --> completed: morning bookend elapsed
@@ -209,8 +207,9 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    and reached from the secondary **About these ideas and sources** link; “finite guide” is not
    user-facing copy.
 2. `FocusRunViewModel.requestStartNightWatch()` anchors a `NightWatchPlan` to tonight and
-   starts `FocusSessionCoordinator`. One persisted run spans wind-down, overnight, and
-   morning quiet; there is no second morning timer or competing state machine.
+   starts `FocusSessionCoordinator`. One phone-authoritative coordinator owns Wind Down and a
+   linked, independently settled Screen-Free Morning occurrence; there is no competing app-root
+   state machine.
 3. The iPhone coordinator creates the run and schedules one foreground timer for the next
    semantic boundary (bedtime, wake time, or `plan.protectedUntil`), never a repeating
    countdown timer. SwiftUI renders visible countdowns from absolute dates. The view model
@@ -222,11 +221,16 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
 4. The honor-timer path completes without either device being foregrounded. Current release
    setup offers App Shielding (`.honorTimer`) or NFC + App Shielding (`.nfcTag`). Legacy
    `.watchPlacement` and `.qrCode` values remain decodable and normalize to the timer for new
-   release flows; their older implementation is not user-selectable. `.nfcTag`
-   reads a provisioned NDEF record and compares its local token digest. A failed
-   tag scan can explicitly pair a replacement writable tag without restarting the
-   current run; the new digest is committed only after a successful write, and supersedes
-   the previous tag for normal ending. When automatic Wind Down is enabled, the saved plan
+   release flows; their older implementation is not user-selectable. `.nfcTag` reads a
+   provisioned NDEF record and compares its local token digest against a versioned library.
+   The library supports one named primary and one optional named backup; either can be assigned
+   to Wind Down, Phone Away, or both. A failed scan can explicitly pair a replacement writable
+   tag without restarting the current run. The old slot remains authoritative until a successful
+   write, duplicate credentials are rejected, and only a tag assigned to the active mode can
+   authenticate it. Replaced credentials are retained as local digests so a retired physical tag
+   is rejected with a resync-from-Settings message instead of receiving success feedback or being
+   silently overwritten. Names and purposes remain local and are never written to NFC. When automatic
+   Wind Down is enabled, the saved plan
    schedules the selected local notification cadence and future DeviceActivity shielding
    while the app is closed; optional usage-aware monitoring is installed independently for
    wind-down, overnight, and morning quiet, with one generic three-minute cue per phase.
@@ -238,10 +242,13 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    protection notices bypass overrides.
 5. The Watch mirrors the authoritative run and never starts one from schedule defaults.
    An explicit no-run state from the iPhone clears any stale Watch application context.
-6. Optional shielding derives a protected-session DeviceActivity schedule from this same
-   `NightWatchPlan`. The start confirmation carries a per-run shielding choice, so a person
-   can continue one practice or quiet period without app limits while preserving their saved
-   preference. After an eligible start (or the registered NFC tag confirmation),
+6. Required app protection derives a protected-session DeviceActivity schedule from this same
+   `NightWatchPlan`. Every new Wind Down, Screen-Free Morning, and Phone Away start requires
+   Family Controls authorization plus a non-empty opaque app/category selection. Runtime apply
+   failure fails open and routes to repair; it is not a timer-only alternative. Readiness is a
+   separate Screen Time state; changing the future preference cannot lift an active run's
+   requested barrier. NFC authenticates start/end only and does not decide whether shielding is
+   requested. After an eligible start (or the registered NFC tag confirmation),
    ManagedSettings applies through wind-down, overnight, and morning quiet, then clears
    on terminal/reset/replacement. A bounded App Group status history distinguishes observed
    shield time from a requested schedule; legacy two-bookend snapshots remain decodable.
@@ -258,16 +265,19 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    quiet and uses the protected-session interval—not a bookend—as the displayed end time.
    Its Ollie/sheep icon is decorative; the companion sheep is not a search result, reward,
    or owned flock item.
-7. On finish, `RewardEngine` retains compatibility updates while crediting only elapsed
-   wind-down and morning-quiet minutes. The coordinator resolves one deterministic search outcome
-   per run, persists it, and reconciles one individual `FlockSheep` arrival into `FarmState`.
+7. At 420 eligible minutes, the coordinator privately resolves one immutable Wind Down outcome in
+   the standard-defaults settlement journal. On authorized terminal delivery, `RewardEngine`
+   retains compatibility updates while crediting only the factual Wind Down bookend; Screen-Free
+   Morning settles independently into Sunrise Trail from actual eligible minutes. The journal
+   then projects the resolved result and one individual `FlockSheep` arrival into `FarmState`.
    Available arrivals enter the active flock; capacity overflow remains pending. The completed
    protected-night count also advances wool regrowth. Progress is attributed to the intended-
    bedtime date, then `PersistenceService` saves and the Watch gets the terminal message. See
    `docs/REWARDS.md` and ADR-0015.
 8. `HomeView` routes to `CompletionView` / `EarlyEndView` based on `activeRun.state`.
-   Both outcomes show the same factual receipt: elapsed phone-away time, credited quiet
-   bookends, optional Apple Health sleep context, and an explicit Screen Time availability
+   Both outcomes show the same factual receipt: elapsed phone-away time, the Wind Down
+   bookend, and a separate Screen-Free Morning factual row where applicable, plus optional
+   Apple Health sleep context and an explicit Screen Time availability
    state. The separate Nights tab stays finite and observational: seven-day results, monthly
    drill-down, reflection, Health context, and consented selected-app results. Farm owns the
    active flock, lifecycle, catalogue, Shop, and customization presentation; Settings owns plan
@@ -309,16 +319,19 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    never changes progress by itself. An eligible completion can fill the Phone Away meter and
    open its separate bonus search, but never changes protected-night progress or Wind Down odds.
 12. After first-run setup, the `HomeView` shell presents a versioned, resumable first-run
-    guide persisted as `ollie.orientation.state` (schema 5). Initial setup covers narrative
+    guide persisted as `ollie.orientation.state` (schema 6). Initial setup covers narrative
     welcome pages, the Wind Down starting-point questionnaire, sourced recommendations, schedule,
     optional shielding, a profile-gift announcement, and the saved-plan summary. The in-app
-    guide then walks Home, a five-minute practice, Farm, Slumber Party, Settings, and Nights
-    using coach marks and lightweight task cards on the real production interfaces. A persistent
-    “Continue getting to know Counting Sheep” card remains until the journey is completed or
-    dismissed. Completing the questionnaire owns the pending wearable even if the result screen
-    is skipped; skipping the questions themselves does not grant it. Farm claim and equip remain
-    separate lessons. Resume returns to the current surface, including the practice sheet, and a
-    coach still appears if a spotlight target is missing. Skipping a lesson does not grant rewards.
+    guide offers a four-tip Home Basics chapter, pauses for exploration, and offers a four-tip
+    Around the Farm chapter only after a user-initiated Farm visit. Practice, Slumber Party,
+    Settings, and Nights are contextual destinations. Chapter presentation and resume routing are
+    persisted while legacy journey JSON migrates to the nearest valid destination. A chapter-specific
+    Resume card appears only for a genuinely paused chapter and can be dismissed. Completing the
+    questionnaire owns the pending wearable even if the result screen
+    is skipped; skipping the questions themselves does not grant it. Onboarding presents a direct
+    keep-or-wear choice, and generic guide navigation never equips the gift. Resume returns
+    to the current surface, including the practice sheet, and a coach still appears if a spotlight
+    target is missing. Skipping a lesson does not grant rewards.
     Practice grants the second starter sheep only after a successful five-minute completion.
     Contextual tips stay suppressed during an active Wind Down. Settings can resume or replay the
     guide. Older three-step tour JSON remains decodable.
@@ -349,6 +362,12 @@ local setup; only the host can explicitly start it. Reusable invites are hashed 
 limited. RLS exposes projections only to current members, while service RPCs enforce Apple-linked
 authentication, idempotency, blocks, reports, retention, and deletion.
 
+Invitation creation remains schema two but is recoverable. Before create or replacement, the
+client stores one account-and-lobby-bound plaintext candidate in the non-synchronizing,
+this-device-only Keychain. The server receives only its UUID, SHA-256 digest, and stable
+idempotency key. Host-only snapshots expose the active invite UUID and expiry. Relaunch only
+reconciles; replacing a missing local code is an explicit compare-and-swap mutation.
+
 ### Slumber Party social metrics and rewards v3
 
 Schema three is additive. `NightFlockSharing.swift` owns independent sharing defaults and rounded
@@ -376,6 +395,22 @@ Slumber Party sheep search that does not consume Wind Down or Phone Away guarant
 completion bonus of 2 wool requires two members to meet that four-night threshold. Reactions,
 invites, joins, and setting changes never grant rewards. The client applies a pending grant
 once and acknowledges the backend grant ID.
+
+### Farm Shop economy
+
+`FarmShopCatalog` is the single fixed source for the 31 production items: four sequential Barn
+capacity upgrades and 27 permanent discretionary purchases. Wool remains the only currency.
+Tiered items stay visible, but both presentation and `FarmState.purchase` evaluate the same
+`FarmShopUnlockRequirement`: tier 1 at 3 qualifying Wind Downs or 4 discoveries, tier 2 at 10 or
+8, and tier 3 at 25 or all 12. `FarmState.unlockedShopTier` makes an achieved tier permanent.
+
+Equipment is separate from ownership. Ollie and Shepherd slots replace only the matching worn
+item. Decorations occupy named pasture zones, with one visible item per zone; replacement stores
+the prior prop without removing ownership. Keepsakes use four deterministic display slots, and
+overflow remains safely owned. Schema-v3 decoding maps legacy arrays into those zones and slots
+in stable order. The user-initiated analytics export includes only aggregate wool earned/spent by
+transaction kind, current balance, owned count, and flock/capacity counts—no Farm names or
+transaction timestamps.
 
 The member projection never contains Family Controls tokens, selected-app lists, raw Screen Time
 reports, exact schedules, exact shield timestamps, or raw HealthKit samples. Instagram remains a
@@ -486,18 +521,34 @@ by the iPhone.
 | `ollie.onboarding.draft` | `OnboardingDraft` | resumable first-run setup choices |
 | `ollie.windDown.profile` | `WindDownProfileRecord` | local Wind Down starting-point answers and deterministic recommendations |
 | `ollie.welcome.rewards` | `WelcomeRewardLedger` | idempotent starter, pending wearable gift, and practice-sheep grants |
-| `ollie.orientation.state` | `CountingSheepOrientationState` | versioned first-run guide status, lessons, Farm tutorial actions, practice run identity, and continue-card dismissal |
+| `ollie.orientation.state` | `CountingSheepOrientationState` | schema-6 chapter-scoped guide status, presentation state, contextual tips, Farm tutorial actions, practice identity, and resume routing |
 | `ollie.notifications.preferences` | `NotificationPreferences` | cadence, authorization choices, sounds, optional channels, and versioned local message overrides |
 | `ollie.notifications.remindersEnabled` | `Bool` | backwards-compatible mirror of the notification master switch |
 | `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes including starter/practice/Wind Down/Phone Away origins, trail-map minutes/run IDs, separate guarantee counters, trail distance, no-find protection, odds preference |
-| `ollie.farm.state` | `FarmState` | versioned individual flock, pending arrivals, discovery history, capacity, wool, Shop ownership/equipment, avatar, and transaction history including starter and welcome-gift records; schema v2 folds legacy Farm cash into wool at 5:1, rounded up |
+| `ollie.farm.state` | `FarmState` | versioned individual flock, pending arrivals, discovery history, capacity, wool, Shop ownership/equipment, avatar, and transaction history including starter and welcome-gift records; schema v3 retains the v2 cash-to-wool migration and adds permanent Shop unlock tiers plus named decoration zones and four bounded keepsake slots |
+| `ollie.farm.pastureScene` | `PastureSceneSnapshot` | versioned local-only normalized placement for active sheep and each pasture's Ollie and Shepherd; autonomous behavior stays ephemeral and stale entities are pruned |
 | `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
-| `ollie.phoneBedNFCTag.registration` | `PhoneBedTagRegistration` | local tag UUID + digest metadata; raw token is not retained |
+| `ollie.phoneBedNFCTags.library` | `PhoneBedTagLibrary` | only SHA-256 digests (including local retired-credential history) plus local name, purpose, and timestamps persist in defaults; the generated UUID bearer credential is written only to the physical NDEF tag; names and purposes are never written to NFC; the credential, name, and purpose are never transmitted |
 | `ollie.impactSharing.preferences` | `ImpactSharingPreferences` | explicit optional-sharing state and consent date |
 | `ollie.impactSharing.records` | `[ImpactUploadRecord]` | date-free retry cache for consented impact rows |
 | `ollie.nightFlock.outbox` | `[NightFlockOutboxRecord]` | bounded local retry queue containing only positive state contracts |
 | `ollie.nightFlock.runContexts` | `[NightFlockRunShareContext]` | up to 32 local consent/idempotency contexts; never uploaded as run IDs |
+| `ollie.nightFlock.stagedDestructiveEffect` | `NightFlockDestructiveLocalEffect` | local-only no-replay recovery journal for an accepted destructive command awaiting authoritative state; the outbox actor clears it last, after all v1/v2/v3/context lanes, so relaunch reconciles before any flush |
+| `ollie.nightFlock.pendingDestructiveIntent` | `NightFlockPendingDestructiveIntent` | local-only preflight journal for a leave, block, sharing-off, or Slumber Party-data deletion command; restart loads authoritative state to determine whether it applied, never replays the command, and keeps all outbox lanes paused until resolved |
+| `ollie.nightFlock.pendingAccountDeletionIntent` | `Bool` | durable preflight journal for a full online-account deletion; it closes all Slumber Party transport and local producers before the request, and an ambiguous response remains local fail-closed with no account inspection, recovery, flush, or remote deletion replay |
+| `ollie.nightFlock.acceptedAccountDeletion` | `Bool` | durable local tombstone written after an accepted full account-deletion response; relaunch finalizes local lane clearing and local sign-out before removing it, never replaying the remote deletion |
+| `ollie.nightFlock.expectedLinkedUserID` | valid UUID string | local-only expected Supabase account binding used solely to reject wrong-account recovery; an invalid persisted value fails closed rather than being treated as absent; it is never uploaded as a new social field and local reset/confirmed online-account deletion clear it |
 | `ollie.appearance.preference` | `AppAppearancePreference` | Automatic, Light, or Dark app appearance choice |
+
+For destructive Slumber Party changes, a pending ordinary intent resolves from authoritative state before
+any flush. Full account deletion is stricter: a pending preflight closes all Slumber Party activity and
+never replays remotely; only an accepted tombstone continues through local lane clearing, verified sign-out,
+and final tombstone removal.
+
+The older `ollie.phoneBedNFCTag` and `ollie.phoneBedNFCTag.registration` keys are migration-only.
+On first library access, either legacy value becomes one primary tag named “Wind Down tag,”
+assigned to Wind Down and Phone Away, and both legacy keys are removed. Local reset clears all
+three keys.
 
 - No CoreData / SwiftData. Core state stays in standard defaults. The App Group is limited
   to Screen Time selections plus shield schedule/status contracts needed by extensions;
@@ -545,7 +596,12 @@ cloud boundaries.
 Slumber Party is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` (ordinary Debug `NO`;
 TestFlight/Release `YES`). With the flag off, its app surfaces are absent and it does not create a
 Supabase session or make a request. Entry creates or restores an anonymous session only when needed, then Sign in with Apple
-links that identity in place and verifies the Auth UUID did not change. Slumber Party server RPCs
+links that identity in place and verifies the Auth UUID did not change. A successful link and a
+validated linked session bind the Supabase UUID locally. Recovery never creates an anonymous
+session: a 401 requires Apple ID-token reauthentication to that same UUID, while
+`linked_account_required` may only link the current valid anonymous session in place. Missing,
+changed, or unprovable identities fail closed, preserve the snapshot, run contexts, and all three
+outboxes, then reconcile rather than replay a direct mutation. Slumber Party server RPCs
 also require Apple in Auth app metadata, so another non-anonymous provider is insufficient.
 
 `night-flock-command` and `night-flock-state` derive the caller from the JWT, validate exact
@@ -562,20 +618,32 @@ migration/functions, Apple provider, and moderation operating process remain dep
 
 ## 7. Known architectural risks
 
-1. **Placement evidence is intentionally light.** The honor timer is an honest fallback,
-   not tamper-proof verification. Watch and QR provide optional start signals. NFC also
-   authenticates the normal end action with the same registered tag; a multi-step emergency
-   bypass remains available and is recorded locally.
+1. **Protection evidence is intentionally bounded.** Current release starts require a selected-app
+   barrier, using either the timer guard or NFC + app shielding. Honor timer, Watch-placement, and
+   QR values remain persisted-data compatibility only; they are not release-facing fallbacks or
+   start signals. NFC authenticates the normal end action with the same registered tag; a multi-step emergency
+   bypass remains available and is recorded locally. For an active NFC-tag run, the iPhone
+   coordinator owns an ephemeral, run-bound two-step reason reflection before it accepts
+   that bypass: the user names what they need the phone for, then retypes that reason with
+   forgiving local normalization. The reason is stored only on the iPhone under an `ollie.*` key;
+   it is never persisted in the shared run payload, logged, uploaded, or available to the Watch.
+   Successful authentication consumes the challenge before notification, usage-monitor, shield,
+   Live Activity, and automatic-schedule cleanup begins. A timer-guard run can use the ordinary
+   authorized end path; it does not represent an unshielded alternative.
 2. **Night Watch intentionally crosses midnight.** Date boundaries, daylight-saving
    changes, timezone changes, termination, and background restoration need physical-device
    QA in addition to the pure scheduling tests. The continuous app barrier is not progression;
-   only quiet bookends count as progress.
+   Wind Down progression uses its factual wind-down bookend, while Screen-Free Morning settles
+   independently through Sunrise Trail (ADR-0019).
 3. **Screen Time needs physical-device QA.** The report/monitor/configuration/action
    extensions are embedded locally, but the three new shield bundle IDs still need Family
    Controls distribution assignment and continuous barrier transitions need physical proof.
-   App/category shields use the iOS 26.4+ system submenu for Brief Access; older OS versions
-   use the direct five-minute button, and web domains never advertise Brief Access. Continue
-   Wind Down opens Counting Sheep on iOS 26.5+ and keeps the close fallback on older systems.
+   App/category shields use the iOS 26.4+ system submenu for Brief Access, with role-specific
+   protected-time-purpose choices serving as the five-minute confirmation; system Cancel is the
+   only no-op. The run-scoped pause/allotted-minute tracker appears on both the shield and active-
+   run UI. Older OS versions use the direct five-minute button, and web domains never advertise
+   Brief Access. Continue Wind Down opens Counting Sheep on iOS 26.5+ and keeps the close fallback
+   on older systems.
    Authorization, picker persistence, report rendering, empty states, and distribution
    profiles must still be exercised on a physical iPhone.
 4. **Legacy mock layer remains compiled in Debug.** Friends and the old Farm/Shop/reward shelf
@@ -606,8 +674,9 @@ migration/functions, Apple provider, and moderation operating process remain dep
 - Keep wind-down, overnight, and morning quiet as phases of the same persisted run. New
   morning features must extend `NightWatchPlan`, not introduce a parallel session model.
 - The session-guard seam retains `SessionGuardKind` (`.honorTimer`, `.watchPlacement`,
-  `.qrCode`, `.nfcTag`) for persisted-data compatibility. Current release UI exposes only
-  `.honorTimer` and `.nfcTag`. Keep completion phone-authoritative and preserve an emergency exit.
+  `.qrCode`, `.nfcTag`) for persisted-data compatibility. Current release UI exposes only the
+  shielding timer (`.honorTimer` raw compatibility) and NFC + app shielding; Watch-placement and
+  QR never reappear as release-facing starts. Keep completion phone-authoritative and preserve an emergency exit.
 - Keep the App Group limited to Screen Time/Shield extension contracts; do not migrate
   unrelated progress, rewards, HealthKit history, or reflections into it.
 - Converge run-screen UI onto the pixel Theme; retire `GameComponents` gradually.
@@ -626,7 +695,8 @@ migration/functions, Apple provider, and moderation operating process remain dep
 4. `HealthSleepService` uses requested/no-data/error states because HealthKit does not
    disclose whether read access was denied. Do not regress to an “authorized” read state.
 5. Manually validate NFC tag lifecycle, background/terminated shielding, HealthKit stages,
-   optional impact deletion, run restore, and QR/Watch fallbacks on physical hardware.
+   optional impact deletion, run restore, and Watch timer mirroring on physical hardware; QR and
+   Watch-placement remain legacy decode/migration coverage rather than release flows.
 6. Accessibility pass on the core run flow (timer, proximity state, Watch views).
 7. Keep backend feedback disabled unless every ADR-0007/TestFlight gate is proven.
 

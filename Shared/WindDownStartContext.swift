@@ -7,6 +7,17 @@ enum WindDownStartKind: String, Codable, Equatable {
     case repeatingQuiet
 }
 
+enum WindDownStartSourcePolicy {
+    /// Keeps a resolved saved occurrence attached to a pending preflight. The
+    /// caller consumes it only after authorization and coordinator start.
+    static func sourceID(
+        explicitSourceID: UUID?,
+        eligible: WindDownSchedulePeriod?
+    ) -> UUID? {
+        explicitSourceID ?? eligible?.sourceID
+    }
+}
+
 /// Stable identity for the exact quiet period a start action will claim.
 /// Views use this instead of inferring intent from the saved nightly plan.
 struct WindDownStartContext: Equatable {

@@ -4,7 +4,14 @@ struct CompletionView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
 
     private var run: FocusRun? { viewModel.activeRun }
-    private var minutes: Int { run?.creditedQuietMinutes ?? 0 }
+    /// A Wind Down receipt reports its own factual bookend. A linked
+    /// Screen-Free Morning has a separate occurrence card and Sunrise ledger.
+    private var minutes: Int {
+        guard let run else { return 0 }
+        return run.isProgressionEligibleNightWatch
+            ? run.creditedWindDownMinutes
+            : run.creditedQuietMinutes
+    }
     private var isPhoneAway: Bool { run?.nightWatchPlan?.role == .additionalQuiet }
     private var persistedOutcome: SheepSearchOutcome? {
         guard let run else { return nil }
@@ -30,8 +37,15 @@ struct CompletionView: View {
                     run: run,
                     sleepSummary: viewModel.lastNightSleep,
                     sleepAuthorization: viewModel.sleepAuthorization,
-                    screenTimeAuthorization: viewModel.screenTimeAuthorization
+                    screenTimeAuthorization: viewModel.screenTimeAuthorization,
+                    screenFreeMorning: viewModel.deferredScreenFreeMorning ?? viewModel.latestScreenFreeMorning
                 )
+
+                if let deferred = viewModel.deferredScreenFreeMorning {
+                    DeferredScreenFreeMorningCard(occurrence: deferred)
+                } else if let latestMorning = viewModel.latestScreenFreeMorning {
+                    ScreenFreeMorningReceiptCard(occurrence: latestMorning)
+                }
 
                 if let run,
                    run.completedSuccessfully,
@@ -132,12 +146,59 @@ struct CompletionView: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .background(AppColors.paper.ignoresSafeArea())
-        .onAppear(perform: viewModel.refreshSleepSummary)
+        .onAppear {
+            viewModel.refreshSleepSummary()
+            if let run, run.isProgressionEligibleNightWatch {
+                viewModel.revealDeliveredWindDownBenefit(for: run.id)
+            }
+        }
     }
 
     private func returnToFarm() {
         NotificationCenter.default.post(name: .countingSheepShowFarm, object: nil)
         viewModel.resetSetup()
+    }
+}
+
+private struct DeferredScreenFreeMorningCard: View {
+    let occurrence: MorningQuietOccurrence
+
+    var body: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("SCREEN-FREE MORNING")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Text("Planned for \(OllieFormat.time(occurrence.scheduledStart))")
+                    .font(AppTypography.headline)
+                    .foregroundStyle(AppColors.ink)
+                Text("Your Wind Down receipt is saved here while this next quiet window waits.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Screen-Free Morning planned for \(OllieFormat.time(occurrence.scheduledStart)). Your Wind Down receipt is saved here.")
+        }
+    }
+}
+
+private struct ScreenFreeMorningReceiptCard: View {
+    let occurrence: MorningQuietOccurrence
+
+    var body: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("SCREEN-FREE MORNING")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Text(occurrence.outcome == .skipped ? "Skipped today" : "Finished")
+                    .font(AppTypography.headline)
+                    .foregroundStyle(AppColors.ink)
+                Text("\(occurrence.eligibleElapsedMinutes(at: occurrence.endedAt ?? Date())) actual minutes recorded privately.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+            }
+        }
     }
 }
 

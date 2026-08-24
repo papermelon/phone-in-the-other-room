@@ -7,6 +7,7 @@ struct UpcomingQuietTimesCard: View {
     var scheduledStart: WindDownStartContext?
     var windDownIsReady: Bool
     var trailMapPresentation: SheepTrailMapPresentation?
+    var protectionPresentation: HomeProtectionStartPresentation
     var action: () -> Void
     var startNow: () -> Void
 
@@ -60,6 +61,14 @@ struct UpcomingQuietTimesCard: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                         .accessibilityAddTraits(.isStaticText)
+                } else if case let .repair(title, detail) = protectionPresentation,
+                          scheduledStart != nil || immediateStartMinutes != nil {
+                    Button(action: startNow) {
+                        Label(title, systemImage: "shield.lefthalf.filled")
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    .accessibilityHint(detail)
                 } else if let scheduledStart {
                     Button(action: startNow) {
                         Label("Start scheduled \(scheduledStart.title)", systemImage: "play.fill")
@@ -105,6 +114,7 @@ struct UpcomingQuietTimesCard: View {
         scheduledStart: nil,
         windDownIsReady: false,
         trailMapPresentation: SheepTrailMapPresentation.home(availableBonusPercentagePoints: 5),
+        protectionPresentation: .ready(selectionSummary: "2 apps"),
         action: {},
         startNow: {}
     )
@@ -120,6 +130,7 @@ struct UpcomingQuietTimesCard: View {
         scheduledStart: nil,
         windDownIsReady: true,
         trailMapPresentation: nil,
+        protectionPresentation: .ready(selectionSummary: "2 apps"),
         action: {},
         startNow: {}
     )

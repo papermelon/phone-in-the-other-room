@@ -12,6 +12,8 @@ enum FarmActionError: Error, Equatable {
     case itemNotEquipped
     case itemNotPlaced
     case itemNotDisplayed
+    case displayFull
+    case itemLocked
     case insufficientFunds
     case upgradeOutOfSequence
     case maximumCapacityReached

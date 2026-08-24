@@ -28,7 +28,7 @@ final class OrientationTests: XCTestCase {
         XCTAssertTrue(state.milestones.isEmpty)
     }
 
-    func testPracticeMilestonesDoNotGrantRewardsWhenTheLessonIsSkipped() {
+    func testPracticeMilestonesStayIndependentFromChapterNavigation() {
         var state = CountingSheepOrientationState.fresh
         let periodID = UUID()
         let runID = UUID()
@@ -55,10 +55,9 @@ final class OrientationTests: XCTestCase {
         state.advanceTour()
         XCTAssertEqual(state.currentStep, .start)
         XCTAssertEqual(state.status, .inProgress)
-        state.currentStep = .practiceOffer
-        state.skipCurrentLesson()
-        XCTAssertTrue(state.skippedLessons.contains(.practiceOffer))
-        XCTAssertEqual(state.currentStep, .farmMeetSheep)
+        state.markContextualTipSeen(.practice)
+        XCTAssertTrue(state.seenContextualTips.contains(.practice))
+        XCTAssertEqual(state.currentStep, .start)
         XCTAssertFalse(state.isComplete)
     }
 
@@ -86,8 +85,9 @@ final class OrientationTests: XCTestCase {
         XCTAssertEqual(state.currentStep, .start)
         state.moveBack()
         XCTAssertEqual(state.currentStep, .home)
-        state.completeTour()
-        XCTAssertTrue(state.isComplete)
+        for _ in 0..<4 { state.advanceTour() }
+        XCTAssertEqual(state.completedChapters, [.homeBasics])
+        XCTAssertFalse(state.isComplete)
 
         state.replay()
         XCTAssertEqual(state.status, .inProgress)

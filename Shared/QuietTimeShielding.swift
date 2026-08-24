@@ -9,9 +9,22 @@ enum QuietTimeShieldingOutcome: Equatable {
     case failed(String)
 }
 
+enum QuietTimeShieldingIntentPolicy {
+    /// Readiness (authorization and selection) is intentionally not folded into
+    /// this durable preference. Missing storage is the recommended default;
+    /// only an explicit saved false opts out.
+    static func savedIntent(_ value: Bool?) -> Bool {
+        value ?? true
+    }
+}
+
 enum QuietTimeShieldingPolicy {
     static func shouldShield(run: FocusRun?, at date: Date, isEnabled: Bool) -> Bool {
-        guard isEnabled, let run,
+        // `isEnabled` is retained for source compatibility with older callers;
+        // active-run intent is immutable and lives on FocusRun.
+        _ = isEnabled
+        guard let run,
+              run.appShieldingRequested,
               ![.setup, .completed, .endedEarly].contains(run.state) else { return false }
         if run.guardKind == .nfcTag && run.placementStatus != .confirmed {
             return false

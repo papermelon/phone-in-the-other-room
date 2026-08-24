@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct WindDownDayDetailView: View {
+    @EnvironmentObject private var viewModel: FocusRunViewModel
     let day: Date
     let records: [NightWatchRecord]
     @State private var showsPrimaryRecords = false
@@ -16,6 +17,10 @@ struct WindDownDayDetailView: View {
 
     private var additionalRecords: [NightWatchRecord] {
         records.filter { $0.occurrenceRole == .additionalQuiet }
+    }
+
+    private var screenFreeMorningOccurrences: [MorningQuietOccurrence] {
+        viewModel.screenFreeMorningOccurrences(on: day)
     }
 
     var body: some View {
@@ -46,6 +51,7 @@ struct WindDownDayDetailView: View {
                         accent: AppColors.lavender,
                         isExpanded: $showsAdditionalRecords
                     )
+                    screenFreeMorningGroup
                 }
             }
             .padding(AppSpacing.md)
@@ -53,6 +59,52 @@ struct WindDownDayDetailView: View {
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Day record")
         .navigationBarTitleDisplayMode(.inline)
+    }
+
+    @ViewBuilder
+    private var screenFreeMorningGroup: some View {
+        if !screenFreeMorningOccurrences.isEmpty {
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("SCREEN-FREE MORNING")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.amber)
+                    ForEach(screenFreeMorningOccurrences) { occurrence in
+                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                            HStack {
+                                Text(occurrence.scheduledStart.formatted(date: .omitted, time: .shortened))
+                                    .font(AppTypography.headline)
+                                Spacer()
+                                Text(morningStatus(occurrence))
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.secondaryText)
+                            }
+                            Text(morningDetail(occurrence))
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.muted)
+                        }
+                        if occurrence.id != screenFreeMorningOccurrences.last?.id { Divider() }
+                    }
+                }
+            }
+        }
+    }
+
+    private func morningStatus(_ occurrence: MorningQuietOccurrence) -> String {
+        switch occurrence.outcome {
+        case .scheduled: return "Planned"
+        case .active: return "In progress"
+        case .skipped: return "Skipped"
+        case .finished: return "Finished"
+        }
+    }
+
+    private func morningDetail(_ occurrence: MorningQuietOccurrence) -> String {
+        let minutes = occurrence.eligibleElapsedMinutes(at: occurrence.endedAt ?? Date())
+        if occurrence.outcome == .finished, minutes < SunriseTrailRules.minimumOccurrenceMinutes {
+            return "\(minutes) actual minutes · below the 15-minute Sunrise Trail minimum"
+        }
+        return "\(minutes) actual minutes · tracked independently from Wind Down"
     }
 
     private var daySummary: some View {

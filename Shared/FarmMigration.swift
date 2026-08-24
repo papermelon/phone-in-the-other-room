@@ -133,7 +133,7 @@ extension FarmState {
         case .starter: return .starterGrant
         case .onboardingPractice: return .onboardingPracticeArrival
         case .slumberParty: return .slumberPartyGrant
-        case .windDown, .phoneBreak, .unspecified: return .arrival
+        case .windDown, .sunrise, .phoneBreak, .unspecified: return .arrival
         }
     }
 

@@ -1,19 +1,13 @@
 import SwiftUI
 
-#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
-import FamilyControls
-#endif
-
 struct FocusRunSetupView: View {
+    private enum PlanRoutineSection { case schedule, routine }
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var purposeCategory: OfflinePurposeCategory = .rest
     @State private var customPurpose = ""
     @State private var includePurposeInNotifications = false
-    @State private var showTagReplacementConfirmation = false
-#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
-    @State private var showBedtimeAppPicker = false
-#endif
+    @State private var expandedSection: PlanRoutineSection? = .schedule
 
     var body: some View {
         ScrollView {
@@ -29,9 +23,31 @@ struct FocusRunSetupView: View {
                         .foregroundStyle(AppColors.muted)
                     }
                 }
-                tonightPlanCard
-                privateRoutineCard
-                protectionCard
+                tonightPlanAccordion
+                privateRoutineAccordion
+                NavigationLink {
+                    SettingsProtectionTagsView()
+                        .environmentObject(viewModel)
+                } label: {
+                    PixelCard {
+                        HStack(spacing: AppSpacing.sm) {
+                            Image(systemName: "lock.shield.fill")
+                                .foregroundStyle(AppColors.grass)
+                            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                                Text("Protection & tags")
+                                    .font(AppTypography.headline)
+                                Text("Manage app limits, NFC tags, and automatic start.")
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.muted)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .foregroundStyle(AppColors.muted)
+                        }
+                        .frame(minHeight: 44)
+                    }
+                }
+                .buttonStyle(.plain)
             }
             .padding(AppSpacing.md)
             .padding(.bottom, AppSpacing.sm)
@@ -39,6 +55,7 @@ struct FocusRunSetupView: View {
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Wind Down")
         .navigationBarTitleDisplayMode(.inline)
+        .settingsHelp(.planRoutine)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             setupActionBar
         }
@@ -46,28 +63,6 @@ struct FocusRunSetupView: View {
         .onChange(of: viewModel.isRunning) { _, isRunning in
             if isRunning { dismiss() }
         }
-        .alert(
-            "Replace Wind Down tag?",
-            isPresented: $showTagReplacementConfirmation
-        ) {
-            Button("Keep current tag", role: .cancel) {}
-            Button("Replace tag") {
-                viewModel.provisionNFCTag()
-            }
-        } message: {
-            Text("We’ll write a new tag now. The current tag will stop working after the new one is saved.")
-        }
-#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
-        .familyActivityPicker(
-            headerText: "Choose the apps or categories that can rest during Wind Down.",
-            footerText: "Counting Sheep uses this selection only for your two quiet windows. Websites are ignored.",
-            isPresented: $showBedtimeAppPicker,
-            selection: $viewModel.bedtimeActivitySelection
-        )
-        .onChange(of: viewModel.bedtimeActivitySelection) { _, _ in
-            viewModel.saveScreenTimeSelection(.bedtime)
-        }
-#endif
     }
 
     private var hero: some View {
@@ -130,6 +125,22 @@ struct FocusRunSetupView: View {
         }
     }
 
+    private var tonightPlanAccordion: some View {
+        DisclosureGroup(isExpanded: expansionBinding(for: .schedule)) {
+            tonightPlanCard
+                .padding(.top, AppSpacing.xs)
+        } label: {
+            setupSectionHeader(
+                title: "Tonight’s plan",
+                detail: viewModel.nightWatchScheduleLabel,
+                systemImage: "moon.stars.fill"
+            )
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
+        .accessibilityHint("Shows bedtime, wake time, and quiet windows")
+    }
+
     private func setupSectionHeader(title: String, detail: String, systemImage: String) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
             Image(systemName: systemImage)
@@ -167,7 +178,7 @@ struct FocusRunSetupView: View {
             .pickerStyle(.menu)
             .tint(AppColors.ink)
             .padding(.horizontal, AppSpacing.sm)
-            .frame(minHeight: 44)
+            .frame(minWidth: 148, minHeight: 54)
             .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
             .overlay {
                 RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
@@ -200,6 +211,35 @@ struct FocusRunSetupView: View {
         }
     }
 
+    private var privateRoutineAccordion: some View {
+        DisclosureGroup(isExpanded: expansionBinding(for: .routine)) {
+            privateRoutineCard
+                .padding(.top, AppSpacing.xs)
+        } label: {
+            setupSectionHeader(
+                title: "Private routine",
+                detail: routineSummary,
+                systemImage: "book.closed.fill"
+            )
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
+        .accessibilityHint("Shows optional evening and morning ideas")
+    }
+
+    private func expansionBinding(for section: PlanRoutineSection) -> Binding<Bool> {
+        Binding(
+            get: { expandedSection == section },
+            set: { expandedSection = $0 ? section : nil }
+        )
+    }
+
+    private var routineSummary: String {
+        let evening = viewModel.nightWatchPreferences.eveningRoutine.count
+        let morning = viewModel.nightWatchPreferences.morningRoutine.count
+        return "\(evening) evening · \(morning) morning ideas"
+    }
+
     private func routineBinding(for phase: WindDownRoutinePhase) -> Binding<[WindDownRoutineStep]> {
         Binding(
             get: {
@@ -229,184 +269,6 @@ struct FocusRunSetupView: View {
         viewModel.saveNightWatchPreferences()
     }
 
-    private var purposeCard: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("What is this quiet for?")
-                    .font(AppTypography.headline)
-                Text("Optional. Counting Sheep can bring your reason back into the app when it helps.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-
-                Picker("Purpose", selection: $purposeCategory) {
-                    ForEach(OfflinePurposeCategory.allCases) { category in
-                        Text(category.title).tag(category)
-                    }
-                }
-                .pickerStyle(.menu)
-                .onChange(of: purposeCategory) { _, _ in savePurpose() }
-
-                if purposeCategory == .custom {
-                    TextField(
-                        "Purpose",
-                        text: $customPurpose,
-                        prompt: Text("A book, project, person, or quiet moment")
-                            .foregroundStyle(AppColors.muted)
-                    )
-                        .windDownTextFieldSurface()
-                        .onChange(of: customPurpose) { _, _ in savePurpose() }
-                    Toggle("Use my words in reminders", isOn: $includePurposeInNotifications)
-                        .font(AppTypography.body)
-                        .onChange(of: includePurposeInNotifications) { _, _ in savePurpose() }
-                    Text(
-                        includePurposeInNotifications
-                            ? "Your words may appear on the Lock Screen."
-                            : "Your words stay inside Counting Sheep."
-                    )
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                }
-            }
-        }
-    }
-
-    private var protectionCard: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                setupSectionHeader(
-                    title: "Automatic start and protection",
-                    detail: "Choose when Ollie starts and how the quiet is guarded.",
-                    systemImage: "lock.shield.fill"
-                )
-                Toggle(
-                    "Start Wind Down automatically",
-                    isOn: Binding(
-                        get: { viewModel.nightWatchPreferences.automaticStartEnabled },
-                        set: viewModel.setAutomaticStartEnabled
-                    )
-                )
-                .font(AppTypography.headline)
-                Text("Ollie will let you know 60, 30, and 10 minutes before Wind Down. At the scheduled time, selected apps can be limited automatically when app limits are enabled.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                Text(
-                    viewModel.selectedGuardKind == .nfcTag
-                        ? "The app cannot open itself from a notification, so open Counting Sheep whenever you want to see the active Wind Down. Your Wind Down tag is still required to end normally."
-                        : "The app cannot open itself from a notification, so open Counting Sheep whenever you want to see the active Wind Down."
-                )
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                if viewModel.selectedGuardKind == .nfcTag && !viewModel.hasRegisteredNFCTag {
-                    Text("Pair a Wind Down NFC tag to use automatic NFC Wind Down.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.grass)
-                }
-
-                Divider()
-                Text("How will you start?")
-                    .font(AppTypography.body.weight(.semibold))
-                ForEach(WindDownProtectionChoice.allCases) { choice in
-                    Button {
-                        viewModel.selectProtectionChoice(choice)
-                    } label: {
-                        HStack(spacing: AppSpacing.sm) {
-                            Image(systemName: choice.systemImage)
-                                .foregroundStyle(AppColors.grass)
-                            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                                Text(choice.title)
-                                    .font(AppTypography.body.weight(.semibold))
-                                Text(choice.detail)
-                                    .font(AppTypography.caption)
-                                    .foregroundStyle(AppColors.muted)
-                            }
-                            Spacer()
-                            if viewModel.selectedGuardKind == choice.guardKind {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .foregroundStyle(AppColors.grass)
-                            }
-                        }
-                        .padding(AppSpacing.sm)
-                        .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
-                        .background(
-                            viewModel.selectedGuardKind == choice.guardKind
-                                ? AppColors.grass.opacity(0.16)
-                                : AppColors.surfaceMuted,
-                            in: RoundedRectangle(cornerRadius: AppRadius.md)
-                        )
-                        .overlay {
-                            RoundedRectangle(cornerRadius: AppRadius.md)
-                                .stroke(
-                                    viewModel.selectedGuardKind == choice.guardKind
-                                        ? AppColors.grass
-                                        : AppColors.stroke.opacity(0.45),
-                                    lineWidth: 2
-                                )
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                if viewModel.selectedGuardKind == .nfcTag {
-                    Divider()
-                    if viewModel.phoneBedTagRegistration == nil {
-                        Text("Prepare one writable NFC tag to use as your Wind Down barrier.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                        Button("Set up Wind Down tag") {
-                            viewModel.provisionNFCTag()
-                        }
-                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                    } else {
-                        Label("Wind Down tag is ready", systemImage: "checkmark.circle.fill")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.grass)
-                        HStack(spacing: AppSpacing.sm) {
-                            Button("Replace tag") {
-                                showTagReplacementConfirmation = true
-                            }
-                            .frame(minHeight: 44)
-                            Button("Forget tag", role: .destructive, action: viewModel.resetNFCTag)
-                                .frame(minHeight: 44)
-                        }
-                        .font(AppTypography.caption)
-                        .frame(minHeight: 44)
-                    }
-                    if !viewModel.nfcStatus.isEmpty {
-                        Text(viewModel.nfcStatus)
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    }
-                }
-
-                Divider()
-                Text("Selected apps stay limited from Wind Down start through morning quiet. Counting Sheep stays available, and the emergency exit lifts the limits immediately.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-
-#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
-                if viewModel.screenTimeAuthorization != .approved {
-                    Button("Allow Screen Time access", action: viewModel.connectScreenTime)
-                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                } else if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
-                    Button("Choose apps to limit", action: { showBedtimeAppPicker = true })
-                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                } else {
-                    Text(viewModel.bedtimeActivitySelection.phoneOtherSelectionSummary)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.grass)
-                    Button("Change shielded apps", action: { showBedtimeAppPicker = true })
-                        .font(AppTypography.caption)
-                        .buttonStyle(.plain)
-                        .frame(minHeight: 44, alignment: .leading)
-                }
-#endif
-            }
-        }
-    }
-
     private var setupActionBar: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text(viewModel.isRunning
@@ -421,9 +283,9 @@ struct FocusRunSetupView: View {
             Button(action: saveOrStart) {
                 Label(primaryActionTitle, systemImage: "door.left.hand.open")
                     .font(AppTypography.headline)
-                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .frame(maxWidth: .infinity, minHeight: 44)
             }
-            .buttonStyle(PixelPrimaryButtonStyle())
+            .buttonStyle(PixelChipButtonStyle(isSelected: true))
             .accessibilityHint(primaryActionHint)
         }
         .padding(.horizontal, AppSpacing.md)
@@ -480,30 +342,6 @@ struct FocusRunSetupView: View {
 
 }
 
-private struct WindDownTextFieldSurface: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .textFieldStyle(.plain)
-            .font(AppTypography.body)
-            .foregroundStyle(AppColors.ink)
-            .tint(AppColors.grass)
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.vertical, AppSpacing.xs)
-            .frame(minHeight: 48, alignment: .leading)
-            .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
-            .overlay {
-                RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous)
-                    .stroke(AppColors.stroke.opacity(0.62), lineWidth: 1.5)
-            }
-    }
-}
-
-private extension View {
-    func windDownTextFieldSurface() -> some View {
-        modifier(WindDownTextFieldSurface())
-    }
-}
-
 #Preview("Wind Down setup") {
     NavigationStack {
         FocusRunSetupView()
@@ -533,7 +371,6 @@ private extension View {
         FocusRunSetupView()
             .environmentObject(FocusRunViewModel())
     }
-    .previewDevice(PreviewDevice(rawValue: "iPhone SE (3rd generation)"))
 }
 
 #Preview("Wind Down setup · accessibility") {

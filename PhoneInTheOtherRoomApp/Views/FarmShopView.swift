@@ -4,13 +4,20 @@ struct FarmShopView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var category: FarmShopCategory
+    @State private var previewItem: FarmShopItem?
 
     init(initialCategory: FarmShopCategory = .ollie) {
         _category = State(initialValue: initialCategory)
     }
 
     private var state: FarmState { viewModel.farmState }
+    private var shopProgress: FarmShopProgress {
+        state.shopProgress(
+            qualifyingWindDowns: viewModel.sheepSearchState.completedWindDownSearchCount
+        )
+    }
     private var items: [FarmShopItem] { FarmShopCatalog.items(in: category) }
+    private var welcomeGiftItemID: String? { viewModel.persistence.welcomeRewardLedger.grant(of: .profileWearable)?.itemID }
     private var ownedCount: Int { items.filter { state.ownedShopItemIDs.contains($0.id) }.count }
     private var itemColumns: [GridItem] {
         dynamicTypeSize.isAccessibilitySize
@@ -27,7 +34,13 @@ struct FarmShopView: View {
                 if category == .shepherd { shepherdLink }
                 LazyVGrid(columns: itemColumns, alignment: .leading, spacing: AppSpacing.sm) {
                     ForEach(items) { item in
-                        FarmShopItemCard(item: item, state: state)
+                        FarmShopItemCard(
+                            item: item,
+                            state: state,
+                            progress: shopProgress,
+                            isWelcomeGift: item.id == welcomeGiftItemID,
+                            onPreview: { previewItem = item }
+                        )
                     }
                 }
                 .animation(AppMotion.navigation, value: category)
@@ -41,6 +54,12 @@ struct FarmShopView: View {
         .navigationTitle("Farm Shop")
         .navigationBarTitleDisplayMode(.inline)
         .farmActionAlert(viewModel: viewModel)
+        .sheet(item: $previewItem) { item in
+            NavigationStack {
+                FarmShopItemDetailView(item: item, progress: shopProgress)
+                    .environmentObject(viewModel)
+            }
+        }
     }
 
     private var shopHeader: some View {
@@ -191,9 +210,13 @@ private struct FarmShopItemCard: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     let item: FarmShopItem
     let state: FarmState
+    let progress: FarmShopProgress
+    let isWelcomeGift: Bool
+    let onPreview: () -> Void
 
     private var isOwned: Bool { state.ownedShopItemIDs.contains(item.id) }
     private var canAfford: Bool { state.woolBalance >= item.woolCost }
+    private var isUnlocked: Bool { isOwned || item.isUnlocked(for: progress) }
     private var isActive: Bool {
         switch item.effect {
         case .capacity(let level): return state.barnCapacityLevel >= level
@@ -240,15 +263,28 @@ private struct FarmShopItemCard: View {
     }
 
     private var art: some View {
-        ZStack {
-            LinearGradient(
-                colors: [farmVisualColor(item.visualStyle).opacity(0.18), AppColors.wool.opacity(0.26)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            FarmShopItemImage(item: item, size: 108)
-                .padding(AppSpacing.xs)
+        Button(action: onPreview) {
+            ZStack {
+                LinearGradient(
+                    colors: [farmVisualColor(item.visualStyle).opacity(0.18), AppColors.wool.opacity(0.26)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                FarmShopItemImage(item: item, size: 108)
+                    .padding(AppSpacing.xs)
+                    .saturation(isUnlocked ? 1 : 0)
+                    .opacity(isUnlocked ? 1 : 0.30)
+                if !isUnlocked {
+                    Image(systemName: "lock.fill")
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(AppColors.bark)
+                        .padding(AppSpacing.xs)
+                        .background(AppColors.paper.opacity(0.9), in: Circle())
+                }
+            }
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Preview \(item.title)")
         .frame(maxWidth: .infinity)
         .frame(height: 116)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
@@ -256,7 +292,6 @@ private struct FarmShopItemCard: View {
             RoundedRectangle(cornerRadius: AppRadius.md)
                 .stroke(farmVisualColor(item.visualStyle).opacity(0.22), lineWidth: 1)
         }
-        .accessibilityHidden(true)
     }
 
     @ViewBuilder
@@ -265,6 +300,8 @@ private struct FarmShopItemCard: View {
             shopBadge(activeStatusTitle, color: AppColors.success)
         } else if isOwned {
             shopBadge("OWNED", color: AppColors.grass)
+        } else if !isUnlocked {
+            shopBadge("LOCKED", color: AppColors.bark)
         }
     }
 
@@ -288,10 +325,17 @@ private struct FarmShopItemCard: View {
 
     private var priceRow: some View {
         HStack(spacing: AppSpacing.xxs) {
-            Image(systemName: "cloud.fill")
-                .accessibilityHidden(true)
-            Text("\(item.woolCost) wool")
-                .font(AppTypography.caption.weight(.bold))
+            if isWelcomeGift {
+                Image(systemName: "gift.fill")
+                    .accessibilityHidden(true)
+                Text("Welcome gift · Owned")
+                    .font(AppTypography.caption.weight(.bold))
+            } else {
+                Image(systemName: "cloud.fill")
+                    .accessibilityHidden(true)
+                Text("\(item.woolCost) wool")
+                    .font(AppTypography.caption.weight(.bold))
+            }
             Spacer(minLength: 0)
             if !canAfford && !isOwned {
                 Text("\(item.woolCost - state.woolBalance) short")
@@ -341,6 +385,12 @@ private struct FarmShopItemCard: View {
                     EmptyView()
                 }
             }
+        } else if !isUnlocked {
+            Text(item.unlockRequirement.description ?? "Waiting farther along Ollie’s trail.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .multilineTextAlignment(.center)
         } else if !isNextCapacityUpgrade {
             Text("Open the previous pasture first")
                 .font(AppTypography.caption)
@@ -371,68 +421,5 @@ private struct FarmShopItemCard: View {
     private var capacityOwnedLabel: String {
         guard case .capacity(let level) = item.effect else { return "Open" }
         return "\(FarmEconomyRules.capacity(forLevel: level))-sheep space"
-    }
-}
-
-private struct WoolBalanceBadge: View {
-    let value: Int
-
-    var body: some View {
-        VStack(spacing: 2) {
-            Image(systemName: "cloud.fill")
-                .font(.headline.weight(.bold))
-            Text("\(value)")
-                .font(PixelTypography.mono(.headline))
-            Text("WOOL")
-                .font(pixelFont(.caption2))
-        }
-        .foregroundStyle(AppColors.bark)
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.vertical, AppSpacing.xs)
-        .background(AppColors.wool.opacity(0.72), in: RoundedRectangle(cornerRadius: AppRadius.md))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(value) wool available")
-    }
-}
-
-private extension FarmShopCategory {
-    var shopTitle: String {
-        switch self {
-        case .barn: return "Barn"
-        case .ollie: return "Ollie"
-        case .shepherd: return "Shepherd"
-        case .farm: return "Farm"
-        case .collectibles: return "Keepsakes"
-        }
-    }
-
-    var shopSymbol: String {
-        switch self {
-        case .barn: return "house.lodge.fill"
-        case .ollie: return "pawprint.fill"
-        case .shepherd: return "person.fill"
-        case .farm: return "leaf.fill"
-        case .collectibles: return "shippingbox.fill"
-        }
-    }
-
-    var shopEyebrow: String {
-        switch self {
-        case .barn: return "ROOM TO GROW"
-        case .ollie: return "FOR OLLIE"
-        case .shepherd: return "YOUR WARDROBE"
-        case .farm: return "AROUND THE FARM"
-        case .collectibles: return "FARM KEEPSAKES"
-        }
-    }
-
-    var shopDescription: String {
-        switch self {
-        case .barn: return "Open another pasture when your flock needs more room."
-        case .ollie: return "Small farm treasures for the collie who brings everyone home."
-        case .shepherd: return "Clothes and field gear for your place beside Ollie."
-        case .farm: return "Add warm corners and familiar landmarks to the pasture."
-        case .collectibles: return "Keep a few objects from the stories behind the flock."
-        }
     }
 }

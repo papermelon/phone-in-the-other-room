@@ -201,7 +201,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
     }
 }
 
-enum EarlyEndReason: String, Codable {
+enum EarlyEndReason: String, Codable, Equatable {
     case userEnded
     case nfcTagAuthenticated
     case emergencyBypass

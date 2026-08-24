@@ -30,14 +30,16 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
         let snapshot = presentationSnapshot
         let role = snapshot?.role ?? .primaryWindDown
         let group = snapshot?.cueGroup(at: now) ?? .windDown
-        let cue = ShieldCueCatalog.cue(
+        let defaultCue = ShieldCueCatalog.cue(
             for: group,
             runID: snapshot?.runID,
             date: now
         )
+        let cue = purposeCue(for: snapshot)?.shieldText ?? defaultCue
+        let tracker = briefAccessTrackerSummary(for: snapshot?.runID)
         let subtitleText = snapshot?.protectedEndDate.map {
-            "\(cue)\nEnds at \($0.formatted(date: .omitted, time: .shortened))"
-        } ?? cue
+            "\(cue)\nEnds at \($0.formatted(date: .omitted, time: .shortened))\n\(tracker.subtitle)"
+        } ?? "\(cue)\n\(tracker.subtitle)"
         let secondaryLabel = allowsBriefAccess
             ? ShieldConfiguration.Label(
                 text: secondaryButtonTitle,
@@ -69,10 +71,7 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
                 primaryButtonLabel: primary,
                 primaryButtonBackgroundColor: buttonBackground,
                 secondaryButtonLabel: secondaryLabel,
-                secondaryButtonSubmenuItems: [
-                    "Use for about 5 minutes",
-                    keepRunningButtonTitle(for: role)
-                ]
+                secondaryButtonSubmenuItems: secondarySubmenuItems(for: role)
             )
         }
 
@@ -97,6 +96,27 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
         return QuietTimeShieldPresentationSnapshot.load(from: defaults)
     }
 
+    private func briefAccessTrackerSummary(for runID: UUID?) -> QuietTimeBriefAccessTrackerSummary {
+        guard let defaults = UserDefaults(
+            suiteName: QuietTimeShieldPresentationStorage.appGroupIdentifier
+        ) else {
+            return QuietTimeBriefAccessTrackerSummary()
+        }
+        return QuietTimeBriefAccessTrackerSummary.load(for: runID, from: defaults)
+    }
+
+    private func purposeCue(for snapshot: QuietTimeShieldPresentationSnapshot?) -> QuietPurposeCue? {
+        guard let snapshot,
+              let defaults = UserDefaults(
+                  suiteName: QuietTimeShieldPresentationStorage.appGroupIdentifier
+              ),
+              let cue = QuietPurposeCueState.load(from: defaults),
+              cue.occurrenceID == snapshot.runID,
+              cue.revision == snapshot.registryRevision,
+              cue.epoch == snapshot.registryEpoch else { return nil }
+        return cue.cue
+    }
+
     private var ollieIcon: UIImage {
         if let image = UIImage(
             named: "ollie_sheep_storybook_shield",
@@ -117,17 +137,39 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
     }
 
     private func primaryButtonTitle(for role: QuietTimeShieldRole) -> String {
-        role == .additionalQuiet ? "Return to Phone Away" : "Return to Wind Down"
+        switch role {
+        case .primaryWindDown: return "Return to Wind Down"
+        case .additionalQuiet: return "Return to Phone Away"
+        case .screenFreeMorning: return "Return to Screen-Free Morning"
+        }
     }
 
-    private func keepRunningButtonTitle(for role: QuietTimeShieldRole) -> String {
-        role == .additionalQuiet ? "Keep Phone Away running" : "Keep Wind Down"
+    private func secondarySubmenuItems(for role: QuietTimeShieldRole) -> [String] {
+        if role == .additionalQuiet {
+            return [
+                "Read a book · Use 5 min",
+                "Focus on work · Use 5 min",
+                "Something else · Use 5 min"
+            ]
+        }
+        if role == .screenFreeMorning {
+            return [
+                "Read a book · Use 5 min",
+                "Something offline · Use 5 min",
+                "Something else · Use 5 min"
+            ]
+        }
+        return [
+            "Prepare for sleep · Use 5 min",
+            "Something offline · Use 5 min",
+            "Something else · Use 5 min"
+        ]
     }
 
     private var secondaryButtonTitle: String {
         if #available(iOS 26.4, *) {
             return "Use Briefly"
         }
-        return "Use for about 5 minutes"
+        return "Use for 5 minutes"
     }
 }

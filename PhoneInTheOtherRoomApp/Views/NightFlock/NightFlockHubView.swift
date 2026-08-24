@@ -41,34 +41,47 @@ struct NightFlockHubView: View {
     private var content: some View {
         if !viewModel.featureEnabled {
             EmptyView()
-        } else if viewModel.accountState != .linked {
+        } else if viewModel.pendingAuthenticationRecovery != .none || viewModel.accountState != .linked {
             NightFlockAccountEntry(viewModel: viewModel)
         } else {
-            switch viewModel.phase {
-            case .loading:
-                NightFlockStatusCard(symbol: "moon.stars.fill", title: "Opening Slumber Party…", detail: "Ollie is checking the gate.")
-                    .redacted(reason: .placeholder)
-            case .offline:
-                NightFlockStatusCard(symbol: "wifi.slash", title: "Slumber Party is resting offline.", detail: "Wind Down still works. Shared updates will try again later.")
-            case .expiredInvite:
-                NightFlockStatusCard(symbol: "clock.badge.xmark", title: "That invitation has gone quiet.", detail: "Ask your host for a fresh code.")
-                NightFlockCreateJoinView(viewModel: viewModel)
-            case .fullFlock:
-                NightFlockStatusCard(symbol: "person.3.fill", title: "This Slumber Party is full.", detail: "A party has room for 2–8 people.")
-                NightFlockCreateJoinView(viewModel: viewModel)
-            case .blocked:
-                NightFlockStatusCard(symbol: "hand.raised.fill", title: "That shared gate is closed.", detail: "No Slumber Party details are visible from this account.")
-            case .error(let message):
-                NightFlockStatusCard(symbol: "exclamationmark.bubble.fill", title: "Slumber Party could not open.", detail: message)
-                NightFlockCreateJoinView(viewModel: viewModel)
-            case .ready, .idle:
-                if let snapshot = viewModel.snapshot, snapshot.challenge.sharedGoal != nil {
-                    NightFlockDashboard(viewModel: viewModel, snapshot: snapshot)
-                } else {
-                    NightFlockCreateJoinView(viewModel: viewModel)
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                if let warmNotice = viewModel.warmNotice {
+                    NightFlockStatusCard(symbol: "pawprint.fill", title: "A warm welcome back", detail: warmNotice, requestReference: viewModel.requestReference)
                 }
-            case .hidden:
-                EmptyView()
+                switch viewModel.phase {
+                case .loading:
+                    NightFlockStatusCard(symbol: "moon.stars.fill", title: "Opening Slumber Party…", detail: "Ollie is checking the gate.")
+                        .redacted(reason: .placeholder)
+                case .offline:
+                    NightFlockStatusCard(symbol: "wifi.slash", title: "Slumber Party is resting offline.", detail: "Wind Down still works. Shared updates will try again later.", requestReference: viewModel.requestReference)
+                    Button("Refresh lobby", action: viewModel.retryNightFlockRequest)
+                        .frame(maxWidth: .infinity)
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                case .expiredInvite:
+                    NightFlockStatusCard(symbol: "clock.badge.xmark", title: "That invitation has gone quiet.", detail: "Ask your host for a fresh code.", requestReference: viewModel.requestReference)
+                    NightFlockCreateJoinView(viewModel: viewModel)
+                case .fullFlock:
+                    NightFlockStatusCard(symbol: "person.3.fill", title: "This Slumber Party is full.", detail: "A party has room for 2–8 people.", requestReference: viewModel.requestReference)
+                    NightFlockCreateJoinView(viewModel: viewModel)
+                case .blocked:
+                    NightFlockStatusCard(symbol: "hand.raised.fill", title: "That shared gate is closed.", detail: "No Slumber Party details are visible from this account.", requestReference: viewModel.requestReference)
+                case .error(let message):
+                    NightFlockStatusCard(symbol: "exclamationmark.bubble.fill", title: "Slumber Party could not open.", detail: message, requestReference: viewModel.requestReference)
+                    if viewModel.canRetryNightFlockRequest {
+                        Button("Retry", action: viewModel.retryNightFlockRequest)
+                            .frame(maxWidth: .infinity)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    }
+                    NightFlockCreateJoinView(viewModel: viewModel)
+                case .ready, .idle:
+                    if let snapshot = viewModel.snapshot, snapshot.challenge.sharedGoal != nil {
+                        NightFlockDashboard(viewModel: viewModel, snapshot: snapshot)
+                    } else {
+                        NightFlockCreateJoinView(viewModel: viewModel)
+                    }
+                case .hidden:
+                    EmptyView()
+                }
             }
         }
     }
@@ -95,6 +108,21 @@ private struct NightFlockAccountEntry: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
+            if viewModel.pendingAuthenticationRecovery == .reauthenticateApple {
+                recoveryEntry(
+                    title: "Reconnect your Apple account",
+                    detail: "Ollie will only reopen this Slumber Party when it is the same Apple-linked account. Your local Wind Down and queued updates stay safe here.",
+                    action: .signIn
+                )
+            } else if viewModel.pendingAuthenticationRecovery == .linkCurrentAnonymousApple {
+                recoveryEntry(
+                    title: "Link this existing account",
+                    detail: "This Slumber Party needs Apple sign-in. It will link only the anonymous account already on this iPhone, without replacing it.",
+                    action: .continue
+                )
+            } else if viewModel.pendingAuthenticationRecovery == .failClosed {
+                NightFlockStatusCard(symbol: "lock.fill", title: "Slumber Party stayed closed for safety.", detail: "Counting Sheep could not prove this is the original account. Your local Wind Down and shared updates were kept safe here.", requestReference: viewModel.requestReference)
+            } else {
             switch viewModel.accountState {
             case .linking:
                 NightFlockStatusCard(symbol: "person.crop.circle.badge.clock", title: "Linking your Apple account…", detail: "Your local Wind Down stays on this iPhone.")
@@ -118,6 +146,25 @@ private struct NightFlockAccountEntry: View {
             case .linked:
                 EmptyView()
             }
+            }
+        }
+    }
+
+    private func recoveryEntry(
+        title: String,
+        detail: String,
+        action: SignInWithAppleButton.Label
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            NightFlockStatusCard(symbol: "person.crop.circle.badge.arrow.clockwise", title: title, detail: detail, requestReference: viewModel.requestReference)
+            SignInWithAppleButton(action) { request in
+                viewModel.prepareAppleSignInRequest(request)
+            } onCompletion: { result in
+                viewModel.completeAppleSignIn(result)
+            }
+            .signInWithAppleButtonStyle(.black)
+            .frame(height: 50)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
         }
     }
 }
@@ -237,6 +284,14 @@ struct NightFlockStatusCard: View {
     let symbol: String
     let title: String
     let detail: String
+    let requestReference: String?
+
+    init(symbol: String, title: String, detail: String, requestReference: String? = nil) {
+        self.symbol = symbol
+        self.title = title
+        self.detail = detail
+        self.requestReference = requestReference
+    }
 
     var body: some View {
         PixelCard {
@@ -249,6 +304,12 @@ struct NightFlockStatusCard: View {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(title).font(AppTypography.headline)
                     Text(detail).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                    if let requestReference {
+                        Text(requestReference)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.secondaryText)
+                            .textSelection(.enabled)
+                    }
                 }
             }
             .accessibilityElement(children: .combine)

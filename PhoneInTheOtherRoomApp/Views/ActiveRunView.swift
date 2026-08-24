@@ -7,8 +7,12 @@ struct ActiveRunView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let fixedNow: Date?
     @State private var emergencyExitExpanded = false
-    @State private var showEmergencyExitConfirmation = false
+    @State private var showEarlyEndConfirmation = false
+    @State private var showEmergencyExitSheet = false
+    @State private var emergencyExitReason = ""
+    @State private var emergencyExitConfirmation = ""
     @State private var showNFCTagReplacementConfirmation = false
+    @State private var showEarlyWakeSheet = false
 
     init(now: Date? = nil) {
         fixedNow = now
@@ -50,7 +54,7 @@ struct ActiveRunView: View {
     }
 
     private var tagReplacementTitle: String {
-        presentation?.isAdditionalQuiet == true ? "Pair a new phone-bed tag?" : "Pair a new Wind Down tag?"
+        presentation?.isAdditionalQuiet == true ? "Pair a new Phone Away tag?" : "Pair a new Wind Down tag?"
     }
 
     private var tagReplacementMessage: String {
@@ -69,6 +73,12 @@ struct ActiveRunView: View {
                         hero
                         ritualStatus
                         phoneFreeCue
+                        if let run {
+                            let tracker = viewModel.briefAccessTrackerSummary(for: run)
+                            if tracker.pauseCount > 0 {
+                                briefAccessNotice(summary: tracker)
+                            }
+                        }
                         if let message = viewModel.coordinator.backgroundReturnMessage {
                             returnBanner(message)
                         }
@@ -93,20 +103,32 @@ struct ActiveRunView: View {
                 : "Phone-away time"
         )
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(
+            run?.isNightWatch == true ? AppColors.activeWindDownBackground : AppColors.paper,
+            for: .navigationBar
+        )
+        .toolbarBackground(.visible, for: .navigationBar)
         .alert(
             (presentation?.exit ?? fallbackExit).confirmationTitle,
-            isPresented: $showEmergencyExitConfirmation
+            isPresented: $showEarlyEndConfirmation
         ) {
             Button((presentation?.exit ?? fallbackExit).cancelTitle, role: .cancel) {}
             Button((presentation?.exit ?? fallbackExit).confirmTitle, role: .destructive) {
-                if presentation?.isAdditionalQuiet == true {
-                    viewModel.endWindDownEarly()
-                } else {
-                    viewModel.emergencyEndWindDown()
-                }
+                viewModel.endWindDownEarly()
             }
         } message: {
             Text((presentation?.exit ?? fallbackExit).confirmationBody)
+        }
+        .sheet(isPresented: $showEmergencyExitSheet, onDismiss: cancelEmergencyExit) {
+            emergencyExitSheet
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showEarlyWakeSheet) {
+            EarlyWakeSheet()
+                .environmentObject(viewModel)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .alert(
             tagReplacementTitle,
@@ -114,7 +136,13 @@ struct ActiveRunView: View {
         ) {
             Button("Keep current tag", role: .cancel) {}
             Button("Pair new tag") {
-                viewModel.provisionNFCTag(forActiveRun: true)
+                let current = viewModel.primaryPhoneBedTag
+                viewModel.provisionNFCTag(
+                    forActiveRun: true,
+                    role: .primary,
+                    name: current?.name ?? NamedPhoneBedTagRegistration.defaultName,
+                    purposes: current?.purposes ?? NamedPhoneBedTagRegistration.allPurposes
+                )
             }
         } message: {
             Text(tagReplacementMessage)
@@ -139,14 +167,17 @@ struct ActiveRunView: View {
                         .foregroundStyle(AppColors.grass)
                     Text(headline)
                         .font(AppTypography.headline)
+                        .foregroundStyle(AppColors.ink)
                     if fixedNow != nil {
                         Text(OllieFormat.timer(transitionRemainingSeconds))
                             .font(.system(size: 34, weight: .black, design: .monospaced))
+                            .foregroundStyle(AppColors.ink)
                             .monospacedDigit()
                             .accessibilityLabel(timerAccessibilityLabel)
                     } else {
                         Text(timerInterval: countdownInterval, countsDown: true, showsHours: true)
                             .font(.system(size: 34, weight: .black, design: .monospaced))
+                            .foregroundStyle(AppColors.ink)
                             .monospacedDigit()
                             .accessibilityLabel(timerAccessibilityLabel)
                     }
@@ -155,9 +186,11 @@ struct ActiveRunView: View {
                         .foregroundStyle(AppColors.muted)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                if run.briefAccessUseCount > 0 {
-                    briefAccessNotice(count: run.briefAccessUseCount)
+                let tracker = viewModel.briefAccessTrackerSummary(for: run)
+                if tracker.pauseCount > 0 {
+                    briefAccessNotice(summary: tracker)
                 }
+                purposeCuePicker
                 if run.placementStatus == .awaitingConfirmation {
                     ritualStatus
                 } else if let message = viewModel.coordinator.backgroundReturnMessage {
@@ -191,6 +224,7 @@ struct ActiveRunView: View {
                             .foregroundStyle(AppColors.secondaryText)
                         Text(headline)
                             .font(pixelFont(.title2))
+                            .foregroundStyle(AppColors.ink)
                         Text(subheadline)
                             .font(pixelFont(.body))
                             .foregroundStyle(AppColors.secondaryText)
@@ -265,7 +299,7 @@ struct ActiveRunView: View {
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.secondaryText)
                     }
-                    Button(viewModel.hasRegisteredNFCTag ? "Pair a new tag instead" : "Pair this tag") {
+                    Button(hasCompatibleRegisteredTag ? "Pair a new tag instead" : "Pair this tag") {
                         showNFCTagReplacementConfirmation = true
                     }
                     .font(pixelFont(.caption))
@@ -380,6 +414,17 @@ struct ActiveRunView: View {
 
     private var actions: some View {
         VStack(spacing: 10) {
+            if presentation?.phase == .overnight,
+               presentation?.isAdditionalQuiet == false,
+               viewModel.isEarlyWakeAvailable {
+                Button("I'm awake early") {
+                    showEarlyWakeSheet = true
+                }
+                .frame(maxWidth: .infinity)
+                .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                .accessibilityHint("Choose how to handle Screen-Free Morning tonight")
+            }
+
             if guardKind == .watchPlacement {
                 Button {
                     viewModel.coordinator.pingPhone()
@@ -390,21 +435,22 @@ struct ActiveRunView: View {
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
             }
 
-            if presentation?.isAdditionalQuiet == true {
-                Button(presentation?.exit.actionTitle ?? "End Wind Down early") {
-                    showEmergencyExitConfirmation = true
+            if guardKind == .nfcTag, run != nil {
+                Button(presentation?.nfcExitActionTitle ?? "Tap tag to end Wind Down") {
+                    viewModel.requestEndWindDown()
                 }
-                .font(pixelFont(.caption))
-                .foregroundStyle(AppColors.secondaryText)
-            } else if guardKind == .nfcTag,
-               run?.isNightWatch == true,
-               run?.placementStatus != .awaitingConfirmation {
-                DisclosureGroup(
-                    "Need your phone early?",
-                    isExpanded: $emergencyExitExpanded
-                ) {
+                .buttonStyle(PixelPrimaryButtonStyle())
+
+                if !viewModel.nfcStatus.isEmpty {
+                    Text(viewModel.nfcStatus)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                DisclosureGroup(isExpanded: $emergencyExitExpanded) {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("Your Wind Down tag is active. Ollie keeps watch until the scheduled finish. Use the emergency exit if you need your phone back sooner.")
+                        Text("Pair a replacement if you can. Emergency exit ends without the tag.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                         Button("Pair a replacement tag") {
@@ -412,15 +458,34 @@ struct ActiveRunView: View {
                         }
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
-                        Button((presentation?.exit ?? fallbackExit).actionTitle) {
-                            showEmergencyExitConfirmation = true
+                        .accessibilityHint("Opens tag settings so you can pair a replacement without ending this session")
+                        Button(
+                            presentation?.emergencyExit.actionTitle
+                                ?? "End Wind Down without the tag"
+                        ) {
+                            guard viewModel.beginEmergencyExitChallenge() else { return }
+                            emergencyExitReason = ""
+                            emergencyExitConfirmation = ""
+                            showEmergencyExitSheet = true
                         }
                         .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryText)
+                        .foregroundStyle(AppColors.amber)
+                        .accessibilityHint("Opens a deliberate confirmation before ending without your registered tag")
                     }
                     .padding(.top, AppSpacing.xs)
                 }
-                .font(AppTypography.caption)
+                label: {
+                    Label("Can’t use your tag?", systemImage: "questionmark.circle")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.amber)
+                }
+                .accessibilityLabel("Can’t use your tag?")
+                .accessibilityHint("Shows tag replacement and emergency exit options")
+            } else if presentation?.isAdditionalQuiet == true {
+                Button(presentation?.exit.actionTitle ?? "End Wind Down early") {
+                    showEarlyEndConfirmation = true
+                }
+                .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.secondaryText)
             } else {
                 Button(run?.isNightWatch == true
@@ -433,6 +498,114 @@ struct ActiveRunView: View {
                 .foregroundStyle(AppColors.secondaryText)
             }
         }
+    }
+
+    private var purposeCuePicker: some View {
+        PixelCard {
+            Menu {
+                ForEach(QuietPurposeCue.allCases, id: \.self) { cue in
+                    Button(cue.shieldText) { viewModel.setCurrentPurposeCue(cue) }
+                }
+            } label: {
+                HStack {
+                    Label("Purpose", systemImage: "leaf.fill")
+                    Spacer()
+                    Text(viewModel.currentPurposeCue?.shieldText ?? "Choose")
+                }
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.ink)
+            }
+            .accessibilityLabel("Current purpose: \(viewModel.currentPurposeCue?.shieldText ?? "not chosen")")
+            .accessibilityHint("Sets a short local purpose cue for this protected occurrence")
+        }
+    }
+
+    private var emergencyExitSheet: some View {
+        let emergency = presentation?.emergencyExit ?? fallbackExit
+        let challenge = viewModel.emergencyExitChallenge
+        return NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    Image(systemName: "exclamationmark.shield.fill")
+                        .font(.title.weight(.bold))
+                        .foregroundStyle(AppColors.grass)
+                        .accessibilityHidden(true)
+                    Text("Emergency exit")
+                        .font(AppTypography.display(30))
+                    if challenge?.stage == .readyToConfirm,
+                       let reason = challenge?.reason {
+                        Text("Keep your reason in mind.")
+                            .font(AppTypography.body)
+                        Text("You said:")
+                            .font(AppTypography.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.muted)
+                        Text(reason)
+                            .font(AppTypography.headline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(AppSpacing.sm)
+                            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.sm))
+                        Text("Type your reason again to end this session without your tag.")
+                            .font(AppTypography.body)
+                            .foregroundStyle(AppColors.muted)
+                        TextField("Type your reason again", text: $emergencyExitConfirmation)
+                            .textInputAutocapitalization(.sentences)
+                            .font(AppTypography.headline)
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel("Type your reason again")
+                            .onChange(of: emergencyExitConfirmation) { _, newValue in
+                                _ = viewModel.submitEmergencyExitConfirmation(newValue)
+                            }
+                    } else {
+                        Text("What do you need your phone for?")
+                            .font(AppTypography.title)
+                        Text("Take a moment to name what you’re reaching for.")
+                            .font(AppTypography.body)
+                            .foregroundStyle(AppColors.muted)
+                        TextField("e.g. Reply to a message", text: $emergencyExitReason)
+                            .textInputAutocapitalization(.sentences)
+                            .font(AppTypography.headline)
+                            .textFieldStyle(.roundedBorder)
+                            .accessibilityLabel("What do you need your phone for?")
+                    }
+                    Button(challenge?.stage == .readyToConfirm ? emergency.confirmTitle : "Continue") {
+                        if challenge?.stage == .readyToConfirm {
+                            guard viewModel.confirmEmergencyExit() else { return }
+                            emergencyExitReason = ""
+                            emergencyExitConfirmation = ""
+                            showEmergencyExitSheet = false
+                        } else {
+                            _ = viewModel.submitEmergencyExitReason(emergencyExitReason)
+                        }
+                    }
+                    .buttonStyle(PixelPrimaryButtonStyle())
+                    .disabled(challenge?.stage == .readyToConfirm
+                        ? challenge?.canConfirm != true
+                        : EmergencyExitChallenge.normalizedReason(emergencyExitReason).isEmpty)
+                    .accessibilityHint("Continues to a second confirmation before ending without your tag")
+                    Button(emergency.cancelTitle) {
+                        showEmergencyExitSheet = false
+                    }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                }
+                .padding(AppSpacing.lg)
+            }
+            .background(AppColors.paper.ignoresSafeArea())
+            .navigationTitle("Emergency exit")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    private func cancelEmergencyExit() {
+        emergencyExitReason = ""
+        emergencyExitConfirmation = ""
+        viewModel.cancelEmergencyExitChallenge()
+        showEmergencyExitSheet = false
+    }
+
+    private var hasCompatibleRegisteredTag: Bool {
+        viewModel.hasRegisteredNFCTag(
+            for: presentation?.isAdditionalQuiet == true ? .phoneAway : .windDown
+        )
     }
 
     private func returnBanner(_ message: String) -> some View {
@@ -462,15 +635,15 @@ struct ActiveRunView: View {
         .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
     }
 
-    private func briefAccessNotice(count: Int) -> some View {
+    private func briefAccessNotice(summary: QuietTimeBriefAccessTrackerSummary) -> some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text("SHORT BREAKS")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("\(count) short break\(count == 1 ? "" : "s")")
+                Text(summary.subtitle)
                     .font(AppTypography.body)
-                Text("A little distance can make room for rest.")
+                Text("Ollie is keeping count for this session.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }

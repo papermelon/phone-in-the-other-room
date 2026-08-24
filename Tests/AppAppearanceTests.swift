@@ -7,7 +7,7 @@ final class AppAppearanceTests: XCTestCase {
 
     func testAutomaticFollowsSystemDuringOrdinaryUseAndDarkensWindDown() {
         XCTAssertEqual(AppAppearancePreference.automatic.resolution(isWindDownReadyOrActive: false), .system)
-        XCTAssertEqual(AppAppearancePreference.automatic.resolution(isWindDownReadyOrActive: true), .dark)
+        XCTAssertEqual(AppAppearancePreference.automatic.resolution(isWindDownReadyOrActive: true), .system)
     }
 
     func testExplicitChoicesWinDuringWindDownAndOnboarding() {

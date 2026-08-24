@@ -46,7 +46,7 @@ enum OnboardingWelcomePage: Int, CaseIterable, Codable, Identifiable {
         case .windDown:
             return "Wind Down spans quiet before bed, overnight phone separation, and quiet after waking."
         case .phoneAway:
-            return "Phone Away is a shorter phone-free period outside the usual Wind Down. Optional app shielding can make selected apps harder to reopen while the phone rests."
+            return "Phone Away is a shorter phone-free period outside the usual Wind Down. App protection pauses the chosen apps and categories while the phone rests."
         case .ollie:
             return "Ollie keeps watch and searches for missing sheep while you follow through."
         }
@@ -83,7 +83,7 @@ enum CountingSheepOnboardingStep: Int, CaseIterable, Codable, Identifiable {
         case .recommendation: return "Your starting point"
         case .quiet: return "Optional cues"
         case .schedule: return "Your night"
-        case .protection: return "Optional shielding"
+        case .protection: return "App protection"
         case .gift: return "Welcome gift"
         case .automaticStart: return "Advanced reminders"
         case .ready: return "Saved plan"
@@ -118,9 +118,9 @@ enum OnboardingProtectionChoice: String, Codable, CaseIterable, Identifiable {
     var detail: String {
         switch self {
         case .appShielding:
-            return "Choose apps to limit from Wind Down start through your morning quiet window. No tag needed. Counting Sheep stays available."
+            return "Choose apps to pause for Wind Down and Screen-Free Morning. No tag needed. Counting Sheep stays available."
         case .nfcAndAppShielding:
-            return "A Wind Down tag starts the app limits; selected apps stay limited through your morning quiet window. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
+            return "A Wind Down tag starts app protection; selected apps are paused for Wind Down and Screen-Free Morning. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
         }
     }
 }
@@ -140,17 +140,18 @@ struct OnboardingDraft: Codable, Equatable {
     var morningActivity: PhoneFreeActivity = .openCurtains
     var eveningCueText: String?
     var morningCueText: String?
-    var eveningRoutine: [WindDownRoutineStep] = [
-        .suggested(.read, phase: .evening)
-    ]
-    var morningRoutine: [WindDownRoutineStep] = [
-        .suggested(.openCurtains, phase: .morning)
-    ]
+    // Examples belong in the recommendation/editor UI. A fresh onboarding
+    // draft waits for the person to author or add a routine idea.
+    var eveningRoutine: [WindDownRoutineStep] = []
+    var morningRoutine: [WindDownRoutineStep] = []
     var purposeCategory: OfflinePurposeCategory = .rest
     var customPurpose: String?
     var allowsCustomTextInNotifications = false
     var protectionChoice: OnboardingProtectionChoice = .appShielding
     var shieldingEnabled = true
+    /// Opaque, user-authored confirmation only. Older drafts decode as false;
+    /// it never represents named-app inspection or retroactive verification.
+    var protectionSelectionSelfConfirmed = false
     var automaticStartEnabled = true
     var remindersEnabled = true
     var notificationCadence: NotificationCadence = .balanced
@@ -165,7 +166,7 @@ struct OnboardingDraft: Codable, Equatable {
         case windDownMinutes, morningQuietMinutes, eveningActivity, morningActivity
         case eveningCueText, morningCueText, eveningRoutine, morningRoutine
         case purposeCategory, customPurpose, allowsCustomTextInNotifications
-        case protectionChoice, shieldingEnabled, automaticStartEnabled
+        case protectionChoice, shieldingEnabled, protectionSelectionSelfConfirmed, automaticStartEnabled
         case remindersEnabled, notificationCadence, notificationSoundsEnabled
         case educationalTipsEnabled, usageAwareRemindersEnabled, morningReflectionReminderEnabled
     }
@@ -216,6 +217,10 @@ struct OnboardingDraft: Codable, Equatable {
         allowsCustomTextInNotifications = try container.decodeIfPresent(Bool.self, forKey: .allowsCustomTextInNotifications) ?? false
         protectionChoice = try container.decodeIfPresent(OnboardingProtectionChoice.self, forKey: .protectionChoice) ?? .appShielding
         shieldingEnabled = try container.decodeIfPresent(Bool.self, forKey: .shieldingEnabled) ?? true
+        protectionSelectionSelfConfirmed = try container.decodeIfPresent(
+            Bool.self,
+            forKey: .protectionSelectionSelfConfirmed
+        ) ?? false
         automaticStartEnabled = try container.decodeIfPresent(Bool.self, forKey: .automaticStartEnabled) ?? true
         remindersEnabled = try container.decodeIfPresent(Bool.self, forKey: .remindersEnabled) ?? true
         notificationCadence = try container.decodeIfPresent(NotificationCadence.self, forKey: .notificationCadence) ?? .balanced
@@ -237,14 +242,8 @@ struct OnboardingDraft: Codable, Equatable {
         wakeHour = recommendation.wakeHour
         wakeMinute = recommendation.wakeMinute
         windDownMinutes = recommendation.desiredWindDownMinutes
-        eveningRoutine = recommendation.eveningRoutine
-        morningRoutine = recommendation.morningRoutine
-        if let evening = recommendation.eveningRoutine.first(where: { $0.kind == .suggestion })?.activity {
-            eveningActivity = evening
-        }
-        if let morning = recommendation.morningRoutine.first(where: { $0.kind == .suggestion })?.activity {
-            morningActivity = morning
-        }
+        // Recommendations are examples and timing cues, not silent routine
+        // enrollment. Existing authored arrays remain untouched.
     }
 
     mutating func skipProfile() {

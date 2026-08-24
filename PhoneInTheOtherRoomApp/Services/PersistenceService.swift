@@ -13,9 +13,11 @@ final class PersistenceService {
     private let phoneBedQRCodeKey = "ollie.phoneBedQRCode"
     private let phoneBedNFCTagKey = "ollie.phoneBedNFCTag"
     private let phoneBedNFCTagRegistrationKey = "ollie.phoneBedNFCTag.registration"
+    private let phoneBedNFCTagLibraryKey = "ollie.phoneBedNFCTags.library"
     private let installationIDKey = "ollie.installationID"
     private let nightWatchPreferencesKey = "ollie.nightWatch.preferences"
     private let automaticWindDownScheduleKey = "ollie.nightWatch.automaticSchedule"
+    private let automaticWindDownProtectionRepairKey = "ollie.nightWatch.automaticProtectionRepair"
     private let windDownScheduleKey = "ollie.nightWatch.schedule"
     private let windDownRoutinesKey = "ollie.nightWatch.routines"
     private let nextWindDownOverrideKey = "ollie.nightWatch.nextOverride"
@@ -27,10 +29,12 @@ final class PersistenceService {
     private let impactUploadRecordsKey = "ollie.impactSharing.records"
     private let sheepSearchStateKey = "ollie.sheepSearch.state"
     private let farmStateKey = "ollie.farm.state"
+    private let farmPastureSceneKey = "ollie.farm.pastureScene"
     private let welcomeRewardLedgerKey = WelcomeRewardLedger.storageKey
     private let nightFlockRewardLedgerKey = NightFlockRewardLedger.storageKey
     private let windDownProfileKey = WindDownProfileRecord.storageKey
     private let orientationStateKey = "ollie.orientation.state"
+    private let windDownMorningSettlementJournalKey = WindDownMorningSettlementJournal.storageKey
 #if DEBUG
     private let energyLogger = Logger(
         subsystem: "com.ngawangchime.countingsheep",
@@ -64,6 +68,16 @@ final class PersistenceService {
         set { save(newValue, key: lastRunKey) }
     }
 
+    /// Emergency reasons stay local to this iPhone and are keyed by run. They
+    /// are intentionally not part of FocusRun, Watch messages, or any upload.
+    func saveEmergencyExitReason(_ reason: String, for runID: UUID) {
+        defaults.set(reason, forKey: EmergencyExitReasonStorage.key(for: runID))
+    }
+
+    func emergencyExitReason(for runID: UUID) -> String? {
+        defaults.string(forKey: EmergencyExitReasonStorage.key(for: runID))
+    }
+
     var manualAnalyticsEntries: [ManualAnalyticsEntry] {
         get { load([ManualAnalyticsEntry].self, key: manualAnalyticsKey) ?? [] }
         set { save(newValue, key: manualAnalyticsKey) }
@@ -84,9 +98,40 @@ final class PersistenceService {
         set { save(newValue, key: phoneBedNFCTagRegistrationKey) }
     }
 
+    var phoneBedTagLibrary: PhoneBedTagLibrary {
+        get {
+            if let stored = load(PhoneBedTagLibrary.self, key: phoneBedNFCTagLibraryKey) {
+                let normalized = PhoneBedTagLibrary(
+                    schemaVersion: stored.schemaVersion,
+                    tags: stored.tags,
+                    previouslyPairedTokenDigests: stored.previouslyPairedTokenDigests
+                )
+                if normalized != stored {
+                    save(normalized, key: phoneBedNFCTagLibraryKey)
+                }
+                return normalized
+            }
+
+            let migrated = PhoneBedTagLibrary.migrated(
+                from: phoneBedNFCTagRegistration,
+                legacyDigest: phoneBedNFCTag
+            ) ?? PhoneBedTagLibrary()
+            save(migrated, key: phoneBedNFCTagLibraryKey)
+            defaults.removeObject(forKey: phoneBedNFCTagKey)
+            defaults.removeObject(forKey: phoneBedNFCTagRegistrationKey)
+            return migrated
+        }
+        set {
+            save(newValue, key: phoneBedNFCTagLibraryKey)
+            defaults.removeObject(forKey: phoneBedNFCTagKey)
+            defaults.removeObject(forKey: phoneBedNFCTagRegistrationKey)
+        }
+    }
+
     func resetPhoneBedNFCTag() {
         defaults.removeObject(forKey: phoneBedNFCTagKey)
         defaults.removeObject(forKey: phoneBedNFCTagRegistrationKey)
+        defaults.removeObject(forKey: phoneBedNFCTagLibraryKey)
     }
 
     var nightWatchPreferences: NightWatchPreferences {
@@ -97,6 +142,14 @@ final class PersistenceService {
     var automaticWindDownSchedule: AutomaticWindDownSchedule? {
         get { load(AutomaticWindDownSchedule.self, key: automaticWindDownScheduleKey) }
         set { save(newValue, key: automaticWindDownScheduleKey) }
+    }
+
+    /// A scheduled Wind Down that could not safely begin because the current
+    /// Screen Time consent or opaque selection needs repair. This is local UI
+    /// state only; it is never shield evidence or a fabricated run.
+    var automaticWindDownProtectionRepairNeeded: Bool {
+        get { defaults.bool(forKey: automaticWindDownProtectionRepairKey) }
+        set { defaults.set(newValue, forKey: automaticWindDownProtectionRepairKey) }
     }
 
     /// The versioned schedule is the source of truth. The two older keys are
@@ -209,6 +262,17 @@ final class PersistenceService {
         set { save(newValue, key: nightWatchHistoryKey) }
     }
 
+    /// Domain authority for hidden Wind Down settlement and independent
+    /// Screen-Free Morning/Sunrise replay markers. Farm, history, and search
+    /// state remain projections so an overnight result cannot surface early.
+    var windDownMorningSettlementJournal: WindDownMorningSettlementJournal {
+        get {
+            load(WindDownMorningSettlementJournal.self, key: windDownMorningSettlementJournalKey)
+                ?? WindDownMorningSettlementJournal()
+        }
+        set { save(newValue, key: windDownMorningSettlementJournalKey) }
+    }
+
     func upsertNightWatchRecord(_ record: NightWatchRecord, now: Date = Date()) {
         var history = nightWatchHistory
         history.upsert(record, now: now)
@@ -236,9 +300,11 @@ final class PersistenceService {
             manualAnalyticsKey,
             morningCheckInsKey,
             nightWatchHistoryKey,
+            windDownMorningSettlementJournalKey,
             impactUploadRecordsKey,
             sheepSearchStateKey,
             farmStateKey,
+            farmPastureSceneKey,
             welcomeRewardLedgerKey,
             nightFlockRewardLedgerKey,
             windDownProfileKey
@@ -322,6 +388,13 @@ final class PersistenceService {
             return reconciled.farm
         }
         set { save(newValue, key: farmStateKey) }
+    }
+
+    /// Character placement is visual preference, kept separate from Farm
+    /// progression so a drag never changes the FarmState schema.
+    var farmPastureSceneSnapshot: PastureSceneSnapshot? {
+        get { load(PastureSceneSnapshot.self, key: farmPastureSceneKey) }
+        set { save(newValue, key: farmPastureSceneKey) }
     }
 
     var welcomeRewardLedger: WelcomeRewardLedger {

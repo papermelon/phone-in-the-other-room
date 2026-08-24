@@ -149,27 +149,118 @@ enum ShieldingReadiness: Equatable {
     case ready
     case authorizationRequired
     case denied
+    case revoked
     case noSelection
     case unavailable
+    case runtimeFailure
 
     var title: String {
         switch self {
-        case .ready: return "Selected apps are ready"
-        case .authorizationRequired: return "Screen Time access is needed"
-        case .denied: return "Screen Time access is off"
-        case .noSelection: return "Choose apps to limit"
-        case .unavailable: return "App limits are unavailable"
+        case .ready: return "App protection is ready"
+        case .authorizationRequired, .denied, .revoked, .noSelection, .unavailable, .runtimeFailure:
+            return "Set up app protection"
         }
     }
 
     var detail: String {
         switch self {
-        case .ready: return "App limits will run from Wind Down start through morning quiet. Counting Sheep stays available."
-        case .authorizationRequired: return "Allow Screen Time access, then choose at least one app or category."
-        case .denied: return "Wind Down can still run as phone-away time without app limits."
-        case .noSelection: return "Choose at least one app or category for app limits, or continue without app limits."
-        case .unavailable: return "This device cannot provide optional app limits."
+        case .ready: return "Your chosen apps and categories will pause during protected time. Counting Sheep stays available."
+        case .authorizationRequired: return "Allow Screen Time access, then choose at least one app or category to continue."
+        case .denied: return "Screen Time access is off. Restore it and choose at least one app or category to continue."
+        case .revoked: return "Screen Time access changed. Restore it and review your selected apps or categories before another start."
+        case .noSelection: return "Choose at least one app or category to continue. Counting Sheep cannot verify the names you chose."
+        case .unavailable: return "This device cannot set up app protection right now."
+        case .runtimeFailure: return "App protection did not stay active. This run remains factual; repair protection before another start."
         }
+    }
+
+    var canStartProtectedSession: Bool { self == .ready }
+}
+
+enum ScreenTimeSelectionSelfConfirmation: Equatable {
+    case needsSelection
+    case needsConfirmation(appCount: Int, categoryCount: Int)
+    case confirmed(appCount: Int, categoryCount: Int)
+
+    var prompt: String {
+        switch self {
+        case .needsSelection: return "Choose at least one app or category in Apple’s picker."
+        case .needsConfirmation, .confirmed:
+            return "Does this include the apps that pull you back most often?"
+        }
+    }
+}
+
+enum ScreenTimeSelectionPresentation {
+    static func confirmation(
+        appCount: Int,
+        categoryCount: Int,
+        userConfirmed: Bool
+    ) -> ScreenTimeSelectionSelfConfirmation {
+        guard appCount + categoryCount > 0 else { return .needsSelection }
+        return userConfirmed
+            ? .confirmed(appCount: appCount, categoryCount: categoryCount)
+            : .needsConfirmation(appCount: appCount, categoryCount: categoryCount)
+    }
+}
+
+/// The picker is intentionally opaque. This policy never accepts a named app
+/// claim and makes every new session share the same protection prerequisite.
+enum ScreenTimeProtectionStartPolicy {
+    static func canStart(_ readiness: ShieldingReadiness) -> Bool {
+        readiness.canStartProtectedSession
+    }
+}
+
+/// An early-wake choice first crosses the existing Wind Down terminal
+/// authorization boundary. Only choices that create a new protected Morning
+/// window need current protection readiness; skipping never strands someone
+/// behind a revoked Family Controls selection.
+enum EarlyWakeProtectionStartPolicy {
+    static func requiresReadiness(for intent: MorningQuietIntent) -> Bool {
+        switch intent {
+        case .startNow, .deferToUsualTime:
+            return true
+        case .skipToday, .keepWindDownRunning:
+            return false
+        }
+    }
+
+    static func canCommit(intent: MorningQuietIntent, readiness: ShieldingReadiness) -> Bool {
+        !requiresReadiness(for: intent) || readiness.canStartProtectedSession
+    }
+}
+
+/// Home does not offer a timer-only alternative when the shared protection
+/// prerequisite needs repair. This remains pure so shortcuts, schedules, and
+/// the SwiftUI shell can present the same honest next action.
+enum HomeProtectionStartPresentation: Equatable {
+    case ready(selectionSummary: String)
+    case repair(title: String, detail: String)
+
+    static func resolve(
+        readiness: ShieldingReadiness,
+        selectionSummary: String
+    ) -> Self {
+        guard readiness == .ready else {
+            let title = readiness == .noSelection
+                ? "Choose apps to pause"
+                : "Set up app protection"
+            return .repair(title: title, detail: readiness.detail)
+        }
+        return .ready(selectionSummary: selectionSummary)
+    }
+}
+
+/// Automatic scheduling must never create a protected run from a stale
+/// authorization or selection. A repair state is a presentation outcome, not
+/// evidence that the shield applied.
+enum AutomaticWindDownProtectionDecision: Equatable {
+    case schedule
+    case needsRepair(ShieldingReadiness)
+
+    static func resolve(readiness: ShieldingReadiness) -> Self {
+        readiness.canStartProtectedSession ? .schedule : .needsRepair(readiness)
     }
 }
 

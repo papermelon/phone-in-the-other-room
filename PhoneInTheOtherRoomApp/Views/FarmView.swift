@@ -4,6 +4,8 @@ struct FarmView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var selectedSheepID: UUID?
     @State private var contextualTip: CountingSheepContextualTip?
+    @State private var presentsOllieShop = false
+    @State private var presentsShepherdCustomization = false
     let pastureVisitSeed: UInt64
     @Binding var opensNightFlock: Bool
 
@@ -19,8 +21,16 @@ struct FarmView: View {
             protectedNightCount: viewModel.coordinator.progress.totalCompletedRuns,
             isWindDownActive: viewModel.isRunning,
             pastureVisitSeed: pastureVisitSeed,
+            persistedScene: viewModel.pastureSceneSnapshot,
+            showsGuideOffer: viewModel.orientationState.activeChapter == .farmTour
+                && viewModel.orientationState.presentationState == .offered,
+            onShowGuide: viewModel.startFarmGuide,
+            onExploreWithoutGuide: viewModel.deferFarmGuide,
             nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
             onOpenNightFlock: { opensNightFlock = true },
+            onPersistScene: viewModel.persistPastureSceneSnapshot,
+            onSelectOllie: { presentsOllieShop = true },
+            onSelectShepherd: { presentsShepherdCustomization = true },
             onSelectSheep: { selectedSheepID = $0.id }
         )
         .navigationDestination(isPresented: Binding(
@@ -35,10 +45,20 @@ struct FarmView: View {
         .navigationDestination(isPresented: $opensNightFlock) {
             NightFlockHubView(viewModel: viewModel.nightFlockViewModel)
         }
+        .navigationDestination(isPresented: $presentsOllieShop) {
+            FarmShopView(initialCategory: .ollie)
+                .environmentObject(viewModel)
+        }
+        .navigationDestination(isPresented: $presentsShepherdCustomization) {
+            ShepherdCustomizationView()
+                .environmentObject(viewModel)
+        }
         .farmActionAlert(viewModel: viewModel)
         .onAppear {
             viewModel.markOrientation(.farmExplored)
+            viewModel.offerFarmGuideIfNeeded()
             contextualTip = viewModel.farmState.isBarnFull || !viewModel.farmState.pendingSheep.isEmpty
+                || viewModel.orientationState.activeChapter != nil
                 ? nil
                 : viewModel.contextualTip(from: [.farm])
         }
@@ -56,8 +76,15 @@ struct FarmDashboardContent: View {
     let protectedNightCount: Int
     let isWindDownActive: Bool
     var pastureVisitSeed: UInt64 = 0
+    var persistedScene: PastureSceneSnapshot? = nil
+    var showsGuideOffer = false
+    var onShowGuide: () -> Void = {}
+    var onExploreWithoutGuide: () -> Void = {}
     var nightFlockSummary: NightFlockHomeSummary? = nil
     var onOpenNightFlock: () -> Void = {}
+    var onPersistScene: (PastureSceneSnapshot) -> Void = { _ in }
+    var onSelectOllie: () -> Void = {}
+    var onSelectShepherd: () -> Void = {}
     let onSelectSheep: (FlockSheep) -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -77,11 +104,21 @@ struct FarmDashboardContent: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
+                if showsGuideOffer {
+                    FirstRunFarmTourOfferCard(
+                        onShow: onShowGuide,
+                        onExplore: onExploreWithoutGuide
+                    )
+                }
                 FarmPastureView(
                     state: state,
                     protectedNightCount: protectedNightCount,
                     layoutSeed: pastureVisitSeed,
-                    onSelectSheep: onSelectSheep
+                    onSelectSheep: onSelectSheep,
+                    persistedScene: persistedScene,
+                    onPersistScene: onPersistScene,
+                    onSelectOllie: onSelectOllie,
+                    onSelectShepherd: onSelectShepherd
                 )
                 .contextualGuideTarget(.farm)
                 .orientationTourTarget(.farmPasture)
@@ -90,6 +127,12 @@ struct FarmDashboardContent: View {
                 FarmBalanceBar(state: state, linksEnabled: true)
                     .orientationTourTarget(.farmWool)
                     .orientationTourTarget(.farmCapacity)
+                NavigationLink {
+                    SheepSearchExplainerView()
+                } label: {
+                    searchSourcesCard
+                }
+                .buttonStyle(.plain)
                 if let nightFlockSummary, !isWindDownActive {
                     NightFlockHomeCard(summary: nightFlockSummary, action: onOpenNightFlock)
                 }
@@ -120,6 +163,33 @@ struct FarmDashboardContent: View {
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+
+    private var searchSourcesCard: some View {
+        PixelCard {
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image(systemName: "map.fill")
+                    .foregroundStyle(AppColors.grass)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("HOW OLLIE’S SEARCHES WORK")
+                        .font(pixelFont(.caption2))
+                        .foregroundStyle(AppColors.grass)
+                    Text("Wind Down, Sunrise Trail, and Phone Away each keep their own path.")
+                        .font(AppTypography.body.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text("Open the three-source guide and each track’s separate rules.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .foregroundStyle(AppColors.muted)
+                    .accessibilityHidden(true)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("How Ollie’s searches work. Wind Down, Sunrise Trail, and Phone Away each keep their own path.")
     }
 
     @ViewBuilder
@@ -392,6 +462,7 @@ struct FarmDashboardContent: View {
         case .welcomeGift: return "A welcome gift is waiting to be tried on."
         case .onboardingPracticeArrival: return "Practice brought a welcome gift home."
         case .slumberPartyGrant: return "A Slumber Party gift reached the Farm."
+        case .sunriseTrail: return "A Sunrise Trail fill brought in wool."
         }
     }
 

@@ -6,6 +6,16 @@ SlumberPartyQA configuration is the repeatable local forced-`YES` lane with QA d
 TestFlight/Release archives compile with `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. This playbook
 exercises the local QA lane; it does not deploy hosted backends or upload TestFlight.
 
+## Mixed-version rollout order
+
+Never release the new client ahead of its recoverable-invite backend. Apply all historical
+migrations first, then `20260824150000_night_flock_invite_recovery.sql`, then deploy the updated
+state and command functions from that same revision. In hosted non-production, run a legacy v2
+client and the new digest-based client against the same lobby and exercise create, conflict, and
+replacement serialization. Next complete the physical two-account matrix below. A new
+app/TestFlight build comes only after those checks; production remains a separate human-approved
+gate.
+
 ## Local preparation and repeatable checks
 
 Use `PhoneInTheOtherRoomSlumberPartyQA` with the `SlumberPartyQA` configuration. It loads the
@@ -43,6 +53,44 @@ Capture the validation-script output, the diagnostics screen on each phone, Xcod
 summaries, function-check output, and redacted request/error evidence. Never include a URL, key,
 invite plaintext after its intended one-time recipient, or Apple identity token in the evidence.
 
+## Typed error and incident evidence
+
+### Authentication recovery matrix (not yet passed)
+
+Use controlled hosted 401 and `linked_account_required` injection for each v1/v2/v3 state,
+direct-command, and outbox lane. For every case, retain a dated redacted row proving the correct
+Apple account recovers only its bound UUID, a wrong/new account fails closed without exposing a
+snapshot, cancellation/offline does not create an anonymous account, and snapshot/run-context/all
+outbox preservation holds. Evidence fields may contain only build, device label, lane, HTTP status,
+typed code, result, and a redacted screenshot/log reference.
+
+| Date | Lane and injected result | Account case | Preservation / result | Redacted evidence |
+| --- | --- | --- | --- | --- |
+|  | v1/v2/v3 state/direct/outbox · 401 | correct / wrong-new / cancel-offline | pending human execution |  |
+|  | v1/v2/v3 state/direct/outbox · linked_account_required | anonymous / linked / missing | pending human execution |  |
+
+Authentication recovery is transport-quiescent: while reconnect, anonymous-account link, or
+fail-closed presentation is pending, no foreground refresh, reconciliation, direct command, state
+read, or v1/v2/v3 outbox lane may send another request. Capture this in the same redacted evidence
+rows; a successful same-UUID Apple recovery is the only event that resumes the intentional
+refresh/outbox pass. A fail-closed state remains network-silent.
+
+Night-Flock function responses always include a canonical `X-Request-ID` header and the same
+`requestID` in the JSON envelope. Error envelopes keep the stable `error` string for older
+clients and add a typed `code`, `retryable`, and `recovery`. Capture only the request ID,
+operation, HTTP status, and typed code in QA evidence; never copy raw function error data,
+account identifiers, invite codes, idempotency keys, tokens, app selections, Health data, or
+exact schedules. Unknown database details must appear to the client as a generic internal or
+service-unavailable message.
+
+When create-lobby or redeem-invite returns `active_membership_exists`, the app performs one
+state reconciliation and does not replay the mutation or delete the existing lobby. A recovered
+lobby shows: “You already have a Slumber Party. Ollie brought your lobby back.” If state cannot
+be recovered, the Retry action refreshes/reconciles first; it never blindly repeats the mutation.
+Verify the same behavior for a transient service/network failure. Only an explicit
+`unsupported_schema` response permits v3 → v2 → v1 state fallback; authentication,
+membership, network, and 5xx errors do not authorize schema fallback.
+
 ## Two physical iPhone / two Apple-account matrix
 
 Install the `PhoneInTheOtherRoomSlumberPartyQA` scheme on two physical iPhones signed in to two
@@ -54,9 +102,11 @@ account label A/B, expected result, actual result, and screenshot/log reference.
 | QA configuration | Settings → Slumber Party QA diagnostics says flag enabled. Ordinary Debug says disabled. Release/TestFlight has Slumber Party and contains no QA diagnostics destination. |
 | Pre-link identity | Record each anonymous Supabase Auth UUID through approved redacted local/server tooling; after Sign in with Apple, each UUID is unchanged. |
 | Create and reusable invite | A chooses one bounded goal, creates a pending lobby, creates a reusable legible code, previews it on B, and verifies it works until revoked, expired, started, or capacity reaches eight. |
+| Lost response and relaunch | Interrupt A after server acceptance but before the response appears. Relaunch and refresh reveal the same code only after the same account and invite UUID are confirmed; no mutation is sent automatically. |
+| Explicit replacement | Remove A's local credential while the invite remains active. Refresh shows no code. Confirm replacement once; the old code stops and the new code works. Repeating the same request leaves one active invite, while a stale expected UUID revokes nothing. |
 | Lobby gate | Verify joining does not start the party. The host can start only after at least two members have accepted the same goal and completed required local setup. |
 | Locked timezone and seven boundaries | Create with a known IANA timezone, change each phone timezone afterward, and prove days 1–7 follow the locked challenge timezone; day 8 cannot publish. |
-| Shared-goal progress | Verify goal accepted, setup ready, phone tucked away, meaningful partial progress, shared goal completed, morning quiet completed, and no update shared. No update shared is never completion. |
+| Shared-goal progress | Verify goal accepted, setup ready, phone tucked away, meaningful partial progress, shared goal completed, qualifying Wind Down completed, and no update shared. The legacy raw value remains decode-compatible; Screen-Free Morning is never shared. No update shared is never completion. |
 | Instagram boundary | Each member uses FamilyActivityPicker locally and confirms Instagram is included. Verify no token, selected-app list, or server claim that Instagram was independently verified. Coarse shielding evidence may be not requested, unavailable, partial, or observed. |
 | Offline outbox and retry | Disconnect B before each allowed check-in, complete local Wind Down, reconnect in foreground, and capture one idempotent eventual delivery. |
 | Per-night private reset | Choose Keep tonight private, prove no check-in, then begin the next eligible preflight and prove sharing is offered again. |

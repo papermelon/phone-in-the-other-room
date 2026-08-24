@@ -140,7 +140,7 @@ final class QuietTimeBriefAccessTests: XCTestCase {
         XCTAssertTrue(state.successfulUses.isEmpty)
     }
 
-    func testStaleRunAndRevisionAreRejected() throws {
+    func testStaleRunOccurrenceAndRevisionAreRejectedIndependently() throws {
         let now = Date(timeIntervalSince1970: 1_900_000_000)
         let schedule = makeSchedule(start: now, end: now.addingTimeInterval(20 * 60))
         let otherRun = QuietTimeShieldScheduleSnapshot(
@@ -167,8 +167,23 @@ final class QuietTimeBriefAccessTests: XCTestCase {
             .staleRun
         )
 
+        var staleOccurrence = state
+        staleOccurrence.runID = schedule.runID
+        staleOccurrence.scheduleRevision = schedule.revision
+        XCTAssertEqual(
+            QuietTimeBriefAccessPolicy.validate(
+                route: .category,
+                schedule: schedule,
+                state: staleOccurrence,
+                at: now,
+                hasApplicationOrCategorySelection: true
+            ),
+            .staleOccurrence
+        )
+
         var staleRevision = state
         staleRevision.runID = schedule.runID
+        staleRevision.occurrenceID = schedule.runID
         staleRevision.scheduleRevision = schedule.revision + 1
         XCTAssertEqual(
             QuietTimeBriefAccessPolicy.validate(
@@ -462,9 +477,139 @@ final class QuietTimeBriefAccessTests: XCTestCase {
         let state = try JSONDecoder().decode(QuietTimeBriefAccessState.self, from: data)
 
         XCTAssertEqual(state.successfulUseCount, 2)
+        XCTAssertEqual(state.occurrenceID, runID)
+        XCTAssertEqual(state.scheduleEpoch, 1)
         XCTAssertTrue(state.successfulUses.isEmpty)
         XCTAssertTrue(state.completedRunCounts.isEmpty)
         XCTAssertNil(state.activeGrant)
+    }
+
+    func testLegacyGrantDefaultsToItsRunIdentityAndFirstEpoch() throws {
+        let now = Date(timeIntervalSince1970: 1_900_000_000)
+        let runID = UUID()
+        let grant = QuietTimeBriefAccessGrant(
+            runID: runID,
+            occurrenceID: UUID(),
+            scheduleRevision: 4,
+            scheduleEpoch: 8,
+            requestedAt: now,
+            expiresAt: now.addingTimeInterval(60)
+        )
+        guard var object = try JSONSerialization.jsonObject(
+            with: JSONEncoder().encode(grant)
+        ) as? [String: Any] else {
+            return XCTFail("Expected a JSON grant object")
+        }
+        object.removeValue(forKey: "occurrenceID")
+        object.removeValue(forKey: "scheduleEpoch")
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+        let decoded = try JSONDecoder().decode(QuietTimeBriefAccessGrant.self, from: legacyData)
+
+        XCTAssertEqual(decoded.occurrenceID, runID)
+        XCTAssertEqual(decoded.scheduleEpoch, 1)
+    }
+
+    func testOccurrenceRevisionAndEpochMustAllMatchBeforeCommittingGrant() throws {
+        let now = Date(timeIntervalSince1970: 1_900_000_000)
+        let schedule = makeSchedule(start: now, end: now.addingTimeInterval(20 * 60))
+        let occurrenceID = UUID()
+        let grant = try XCTUnwrap(
+            QuietTimeBriefAccessPolicy.makeGrant(
+                runID: schedule.runID,
+                scheduleRevision: 7,
+                requestedAt: now,
+                schedule: schedule,
+                occurrenceID: occurrenceID,
+                scheduleEpoch: 11
+            )
+        )
+        var state = QuietTimeBriefAccessState(
+            runID: schedule.runID,
+            occurrenceID: occurrenceID,
+            scheduleRevision: 7,
+            scheduleEpoch: 11,
+            updatedAt: now
+        )
+        XCTAssertTrue(state.propose(grant, at: now))
+        XCTAssertTrue(
+            QuietTimeBriefAccessPolicy.canCommitScheduledGrant(
+                state: state,
+                grant: grant,
+                currentRunID: schedule.runID,
+                currentRevision: 7,
+                currentOccurrenceID: occurrenceID,
+                currentEpoch: 11
+            )
+        )
+        XCTAssertFalse(
+            QuietTimeBriefAccessPolicy.canCommitScheduledGrant(
+                state: state,
+                grant: grant,
+                currentRunID: schedule.runID,
+                currentRevision: 7,
+                currentOccurrenceID: occurrenceID,
+                currentEpoch: 12
+            )
+        )
+        XCTAssertFalse(
+            QuietTimeBriefAccessPolicy.canCommitScheduledGrant(
+                state: state,
+                grant: grant,
+                currentRunID: schedule.runID,
+                currentRevision: 7,
+                currentOccurrenceID: UUID(),
+                currentEpoch: 11
+            )
+        )
+    }
+
+    func testIdentityRolloverArchivesPriorLedgerWithoutAcceptingThePriorGrant() throws {
+        let now = Date(timeIntervalSince1970: 1_900_000_000)
+        let schedule = makeSchedule(start: now, end: now.addingTimeInterval(20 * 60))
+        let originalOccurrence = UUID()
+        let grant = try XCTUnwrap(
+            QuietTimeBriefAccessPolicy.makeGrant(
+                runID: schedule.runID,
+                scheduleRevision: 3,
+                requestedAt: now,
+                schedule: schedule,
+                occurrenceID: originalOccurrence,
+                scheduleEpoch: 5
+            )
+        )
+        var state = QuietTimeBriefAccessState(
+            runID: schedule.runID,
+            occurrenceID: originalOccurrence,
+            scheduleRevision: 3,
+            scheduleEpoch: 5,
+            updatedAt: now
+        )
+        XCTAssertTrue(state.propose(grant, at: now))
+        XCTAssertTrue(state.markScheduled(nonce: grant.nonce, at: now))
+
+        let nextRunID = UUID()
+        let nextOccurrence = UUID()
+        state.carryingLedgerForward(
+            to: nextRunID,
+            occurrenceID: nextOccurrence,
+            revision: 1,
+            epoch: 6,
+            at: now.addingTimeInterval(1)
+        )
+
+        XCTAssertEqual(state.durableCount(for: schedule.runID), 1)
+        XCTAssertEqual(state.occurrenceID, nextOccurrence)
+        XCTAssertEqual(state.scheduleEpoch, 6)
+        XCTAssertFalse(
+            QuietTimeBriefAccessPolicy.canCommitScheduledGrant(
+                state: state,
+                grant: grant,
+                currentRunID: nextRunID,
+                currentRevision: 1,
+                currentOccurrenceID: nextOccurrence,
+                currentEpoch: 6
+            )
+        )
     }
 
     func testWebDomainIsRejectedAndEmptySelectionIsIneligible() {

@@ -120,6 +120,10 @@ struct QuietTimeEditorView: View {
                     .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.sm))
                     .overlay(RoundedRectangle(cornerRadius: AppRadius.sm).stroke(AppColors.stroke.opacity(0.18), lineWidth: 1))
                     .accessibilityLabel("Phone Away name")
+                Text("Give this break a purpose if that helps: read, stretch, cook, or simply leave the phone resting.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                    .fixedSize(horizontal: false, vertical: true)
                 dateRow("Starts", selection: $starts, range: nil)
                 dateRow("Ends", selection: $ends, range: starts...)
                 if oneTimeID != nil {

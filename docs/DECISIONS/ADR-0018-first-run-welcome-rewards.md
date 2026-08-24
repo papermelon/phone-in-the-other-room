@@ -5,6 +5,9 @@
 - Decider: Founder
 - Related: ADR-0015, `docs/REWARDS.md`, `docs/PRODUCT_PRINCIPLES.md`
 
+ADR-0019 keeps welcome gifts separate from the new Sunrise Trail. Screen-Free Morning settlement
+never consumes a welcome, Wind Down, or Phone Away guarantee.
+
 ## Context
 
 The shipping Farm currently begins empty. Search guarantees are tied to completed protected
@@ -45,7 +48,9 @@ protected-night search also requires a 420-minute protected span.
 - A qualifying protected-night search requires a successfully completed primary Wind Down
   whose protected span from eligible Wind Down start through morning-quiet completion is at
   least 420 minutes. This is a product progression rule. Copy must not call it seven hours
-  asleep. Quiet credit remains the two bookends.
+  asleep. The former two-bookend credit clause is superseded by ADR-0019: Wind Down reward,
+  progress, and shared Wind Down metrics use its factual wind-down bookend; Screen-Free
+  Morning minutes settle independently through Sunrise Trail.
 - New `SheepSearchOrigin` values `.starter` and `.onboardingPractice`, new Farm transaction
   kinds, and the welcome ledger decode safely beside existing persisted data. Unknown future
   origins decode as `.unspecified` and do not consume guarantee counters. Settled historical
@@ -60,7 +65,9 @@ protected-night search also requires a 420-minute protected span.
 - New players see a living Farm before their first completed Wind Down.
 - Practice is a truthful welcome gift without inflating Wind Down progress. Existing farms do
   not receive that gift from a leftover completed-practice `lastRun`.
-- Short completed nights can still credit quiet bookends without opening a Wind Down find.
+- Short completed nights can still retain their factual Wind Down bookend without opening a
+  Wind Down find; Screen-Free Morning remains an independent Sunrise Trail occurrence under
+  ADR-0019.
 - Phase 2 still owes the questionnaire UI and Farm tutorial claim/equip flow. Search Journal,
   Barn, and completion origin copy for welcome gifts shipped with this domain slice.
   This ADR does not change `project.yml`, entitlements, tabs, or hosted backends.

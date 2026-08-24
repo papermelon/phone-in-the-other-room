@@ -54,6 +54,7 @@ struct CountingSheepOrientationTourOverlay: View {
     let onSkip: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var coachMarkSize: CGSize = .zero
 
     var body: some View {
@@ -76,12 +77,12 @@ struct CountingSheepOrientationTourOverlay: View {
                         .shadow(color: AppColors.lavender.opacity(0.34), radius: 10)
                         .accessibilityHidden(true)
                 } else {
-                    Color.black.opacity(0.54)
+                    Color.black.opacity(targetFrame == nil ? 0.18 : 0.54)
                         .ignoresSafeArea()
                         .accessibilityHidden(true)
                 }
 
-                coachMark
+                coachMark(in: proxy.size)
                     .padding(.horizontal, AppSpacing.md)
                     .background {
                         GeometryReader { coachProxy in
@@ -107,18 +108,22 @@ struct CountingSheepOrientationTourOverlay: View {
 
     private var targetCornerRadius: CGFloat { AppRadius.lg + 4 }
 
-    private var stepNumber: Int { FirstRunJourney.number(for: step, context: context) }
-    private var stepCount: Int { FirstRunJourney.count(context: context) }
+    private var chapter: FirstRunGuideChapter {
+        FirstRunJourney.chapter(for: step) ?? .homeBasics
+    }
+    private var stepNumber: Int { FirstRunJourney.number(for: step, chapter: chapter) }
+    private var stepCount: Int { FirstRunJourney.count(for: chapter) }
     private var title: String { FirstRunGuideCopy.title(for: step) }
     private var message: String { FirstRunGuideCopy.message(for: step) }
     private var isFirstVisibleStep: Bool {
-        FirstRunJourney.visibleSteps(context: context).first == step.normalized
+        FirstRunJourney.visibleSteps(for: chapter).first == step.normalized
     }
 
-    private var coachMark: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.md) {
+    private func coachMark(in size: CGSize) -> some View {
+        let compact = size.width < 390 || dynamicTypeSize.isAccessibilitySize
+        return VStack(alignment: .leading, spacing: AppSpacing.md) {
             HStack(spacing: AppSpacing.xs) {
-                Label("GETTING TO KNOW COUNTING SHEEP", systemImage: "sparkles")
+                Label(chapter.title, systemImage: "sparkles")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.lavender)
                 Spacer()
@@ -127,42 +132,66 @@ struct CountingSheepOrientationTourOverlay: View {
                     .foregroundStyle(AppColors.muted)
             }
 
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(title)
-                    .font(AppTypography.title)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(message)
-                    .font(AppTypography.body)
-                    .foregroundStyle(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            HStack(spacing: AppSpacing.sm) {
-                Button(FirstRunGuideCopy.skipForNow, action: onSkip)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                    .frame(minHeight: 44)
-
-                Spacer(minLength: 0)
-
-                if !isFirstVisibleStep {
-                    Button("Back", action: onBack)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.ink)
-                        .frame(minHeight: 44)
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(targetFrame == nil ? "Show me \(FirstRunJourney.surface(for: step).rawValue.capitalized)" : title)
+                        .font(AppTypography.title)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(targetFrame == nil ? "The highlighted area is not visible yet. You can take me there or leave this tip for later." : message)
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
+            }
+            .frame(maxHeight: compact ? size.height * 0.30 : size.height * 0.24)
 
-                Button(step.normalized == .completion ? "Done" : "Continue", action: onNext)
+            if compact {
+                Button(targetFrame == nil ? "Take me there" : (step.normalized == .completion ? "Done" : "Continue"), action: onNext)
                     .font(AppTypography.headline)
                     .foregroundStyle(.white)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .frame(minHeight: 44)
+                    .frame(maxWidth: .infinity, minHeight: 48)
                     .background(AppColors.lavender, in: RoundedRectangle(cornerRadius: AppRadius.lg))
+                HStack {
+                    if !isFirstVisibleStep {
+                        Button("Back", action: onBack)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.ink)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    Button(targetFrame == nil ? "Not now" : FirstRunGuideCopy.skipForNow, action: onSkip)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }
+            } else {
+                HStack(spacing: AppSpacing.sm) {
+                    if !isFirstVisibleStep {
+                        Button("Back", action: onBack)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.ink)
+                            .frame(minHeight: 44)
+                            .accessibilitySortPriority(2)
+                    }
+                    Button(FirstRunGuideCopy.skipForNow, action: onSkip)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                        .frame(minHeight: 44)
+                        .accessibilitySortPriority(1)
+                    Spacer(minLength: 0)
+                    Button(step.normalized == .completion ? "Done" : "Continue", action: onNext)
+                        .font(AppTypography.headline)
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, AppSpacing.lg)
+                        .frame(minWidth: 124, minHeight: 48)
+                        .background(AppColors.lavender, in: RoundedRectangle(cornerRadius: AppRadius.lg))
+                        .accessibilitySortPriority(3)
+                }
             }
         }
         .foregroundStyle(AppColors.ink)
         .padding(AppSpacing.lg)
-        .frame(maxWidth: 440, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxHeight: dynamicTypeSize.isAccessibilitySize ? size.height * 0.72 : size.height * 0.46)
         .background(
             AppColors.surface,
             in: RoundedRectangle(cornerRadius: AppRadius.lg + 6, style: .continuous)
@@ -172,7 +201,8 @@ struct CountingSheepOrientationTourOverlay: View {
                 .stroke(AppColors.lavender, lineWidth: 3)
         }
         .shadow(color: Color.black.opacity(0.34), radius: 20, x: 0, y: 8)
-        .accessibilityLabel("Getting to know Counting Sheep, step \(stepNumber) of \(stepCount). \(title). \(message)")
+        .accessibilityLabel("\(chapter.title), step \(stepNumber) of \(stepCount). \(title). \(message)")
+        .accessibilityAction(named: "Show highlighted area", onNext)
     }
 
     private func coachMarkPosition(in size: CGSize) -> CGPoint {

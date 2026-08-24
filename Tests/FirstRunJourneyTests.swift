@@ -40,46 +40,33 @@ final class FirstRunJourneyTests: XCTestCase {
         XCTAssertFalse(state.shouldShowContinueCard(isCoachMarkPresented: false))
     }
 
-    func testEveryJourneyStepResumesInOrderIncludingOptionalPracticeReward() {
+    func testHomeAndFarmChaptersStaySeparateAndChapterScoped() {
         var state = CountingSheepOrientationState.fresh
-        var context = FirstRunAdvanceContext.defaults
-        let expectedWithoutPractice = FirstRunJourney.visibleSteps(context: context)
-        XCTAssertFalse(expectedWithoutPractice.contains(.practiceReward))
+        XCTAssertEqual(FirstRunJourney.count(for: .homeBasics), 4)
+        XCTAssertEqual(FirstRunJourney.count(for: .farmTour), 4)
+        XCTAssertFalse(FirstRunJourney.visibleSteps(for: .homeBasics).contains(.practiceOffer))
 
-        for step in expectedWithoutPractice.dropLast() {
+        for step in FirstRunJourney.visibleSteps(for: .homeBasics).dropLast() {
             XCTAssertEqual(state.currentStep, step)
-            state.advanceTour(context: context)
+            state.advanceTour()
             XCTAssertEqual(state.status, .inProgress)
         }
-        XCTAssertEqual(state.currentStep, .completion)
-        state.advanceTour(context: context)
-        XCTAssertTrue(state.isComplete)
+        state.advanceTour()
+        XCTAssertEqual(state.completedChapters, [.homeBasics])
+        XCTAssertNil(state.activeChapter)
+        XCTAssertEqual(state.presentationState, .idle)
+        XCTAssertFalse(state.isComplete)
 
-        state = .fresh
-        context.practiceCompleted = true
-        state.currentStep = .practiceOffer
-        state.status = .inProgress
-        state.recordPracticeCompleted(context: context)
-        XCTAssertEqual(state.currentStep, .practiceReward)
-        state.advanceTour(context: context)
-        XCTAssertEqual(state.currentStep, .farmMeetSheep)
+        state.offerChapter(.farmTour)
+        XCTAssertEqual(FirstRunJourney.number(for: state.currentStep, chapter: .farmTour), 1)
+        XCTAssertEqual(FirstRunJourney.count(for: .farmTour), 4)
     }
 
     func testSkippingDoesNotGrantRewardsOrRepeatFarmActions() {
         var state = CountingSheepOrientationState.fresh
-        state.status = .inProgress
-        state.currentStep = .practiceOffer
-        state.skipCurrentLesson(context: .defaults)
-
-        XCTAssertTrue(state.skippedLessons.contains(.practiceOffer))
-        XCTAssertFalse(state.milestones.contains(.practiceCompleted))
-        XCTAssertNil(state.practiceRunID)
-        XCTAssertEqual(state.currentStep, .farmMeetSheep)
-
-        state.currentStep = .farmShear
-        state.skipCurrentLesson(context: .defaults)
-        XCTAssertTrue(state.hasRecorded(.skippedShear))
-        XCTAssertFalse(state.hasRecorded(.sheared))
+        state.skipCurrentLesson()
+        XCTAssertTrue(state.skippedLessons.contains(.home))
+        XCTAssertFalse(state.hasRecorded(.skippedShear))
 
         state.recordFarmAction(.sheared)
         state.recordFarmAction(.sheared)
@@ -95,10 +82,9 @@ final class FirstRunJourneyTests: XCTestCase {
 
     func testPracticeRewardRoutesToFarmOnce() {
         var state = CountingSheepOrientationState.fresh
-        state.status = .inProgress
-        state.currentStep = .practiceOffer
         state.recordPracticeCompleted()
-        XCTAssertEqual(state.currentStep, .practiceReward)
+        XCTAssertTrue(state.milestones.contains(.practiceCompleted))
+        XCTAssertEqual(state.currentStep, .home)
 
         XCTAssertFalse(state.practiceRewardRoutedToFarm)
         state.markPracticeRewardRoutedToFarm()
@@ -106,62 +92,14 @@ final class FirstRunJourneyTests: XCTestCase {
         XCTAssertTrue(state.practiceRewardRoutedToFarm)
     }
 
-    func testProfileGiftRemainsPendingUntilClaimedAndSkipLeavesItPending() {
-        var state = CountingSheepOrientationState.fresh
-        let pendingContext = FirstRunAdvanceContext(
-            practiceCompleted: false,
-            slumberPartyAvailable: false,
-            showClaimWearable: true,
-            showEquipWearable: true
-        )
-        XCTAssertTrue(FirstRunJourney.visibleSteps(context: pendingContext).contains(.farmClaimWearable))
-
-        state.status = .inProgress
-        state.currentStep = .farmClaimWearable
-        state.skipCurrentLesson(context: pendingContext)
-        XCTAssertTrue(state.skippedLessons.contains(.farmClaimWearable))
-        XCTAssertTrue(state.skippedLessons.contains(.farmEquipWearable))
-        XCTAssertFalse(state.hasRecorded(.claimedWearable))
-        XCTAssertEqual(state.currentStep, .farmShop)
-
-        let claimedContext = FirstRunAdvanceContext(
-            practiceCompleted: false,
-            slumberPartyAvailable: false,
-            showClaimWearable: false,
-            showEquipWearable: true
-        )
-        XCTAssertFalse(FirstRunJourney.visibleSteps(context: claimedContext).contains(.farmClaimWearable))
-        XCTAssertTrue(FirstRunJourney.visibleSteps(context: claimedContext).contains(.farmEquipWearable))
-
-        var claimedState = CountingSheepOrientationState.fresh
-        claimedState.status = .inProgress
-        claimedState.currentStep = .farmClaimWearable
-        claimedState.recordFarmAction(.claimedWearable)
-        claimedState.advanceTour(context: claimedContext)
-        XCTAssertEqual(claimedState.currentStep, .farmEquipWearable)
+    func testProfileGiftIsNotPartOfTheFarmChapter() {
+        XCTAssertFalse(FirstRunJourney.visibleSteps(for: .farmTour).contains(.farmClaimWearable))
+        XCTAssertFalse(FirstRunJourney.visibleSteps(for: .farmTour).contains(.farmEquipWearable))
     }
 
-    func testSlumberPartyUnavailabilityDoesNotBlockCompletion() {
-        var state = CountingSheepOrientationState.fresh
-        state.status = .inProgress
-        state.currentStep = .slumberParty
-        let context = FirstRunAdvanceContext(
-            practiceCompleted: false,
-            slumberPartyAvailable: false,
-            showClaimWearable: false,
-            showEquipWearable: false
-        )
-        state.acknowledgeSlumberPartyUnavailable()
-        state.skipCurrentLesson(context: context)
-
-        XCTAssertTrue(state.slumberPartyUnavailableAcknowledged)
-        XCTAssertEqual(state.currentStep, .settings)
-        state.advanceTour(context: context)
-        XCTAssertEqual(state.currentStep, .nights)
-        state.advanceTour(context: context)
-        XCTAssertEqual(state.currentStep, .completion)
-        state.advanceTour(context: context)
-        XCTAssertTrue(state.isComplete)
+    func testSlumberPartyIsNotInTheUniversalJourney() {
+        XCTAssertFalse(FirstRunJourney.visibleSteps(for: .homeBasics).contains(.slumberParty))
+        XCTAssertFalse(FirstRunJourney.visibleSteps(for: .farmTour).contains(.slumberParty))
     }
 
     func testContextualTipsDoNotAppearDuringAnActiveWindDown() {
@@ -175,26 +113,23 @@ final class FirstRunJourneyTests: XCTestCase {
     func testContinueCardPausesAndResumesWithoutErasingProgress() {
         var state = CountingSheepOrientationState.fresh
         state.advanceTour()
-        XCTAssertEqual(state.currentStep, .start)
+        state.dismiss()
         XCTAssertTrue(state.shouldShowContinueCard(isCoachMarkPresented: false))
-        XCTAssertFalse(state.shouldShowContinueCard(isCoachMarkPresented: true))
-
-        state.dismissContinueCard()
-        XCTAssertEqual(state.status, .dismissed)
-        XCTAssertEqual(state.currentStep, .start)
-        XCTAssertFalse(state.shouldShowContinueCard(isCoachMarkPresented: false))
-
         state.resume()
+        XCTAssertEqual(state.currentStep, .start)
+        XCTAssertFalse(state.shouldShowContinueCard(isCoachMarkPresented: true))
         XCTAssertEqual(state.status, .inProgress)
         XCTAssertEqual(state.currentStep, .start)
         XCTAssertFalse(state.continueCardDismissed)
-        XCTAssertTrue(state.shouldShowContinueCard(isCoachMarkPresented: false))
+        XCTAssertFalse(state.shouldShowContinueCard(isCoachMarkPresented: false))
     }
 
     func testResumeWhileInProgressKeepsTheCurrentLesson() {
         var state = CountingSheepOrientationState.fresh
-        state.status = .inProgress
+        state.offerChapter(.farmTour)
+        state.startOfferedChapter()
         state.currentStep = .farmShop
+        state.dismiss()
         state.resume()
         XCTAssertEqual(state.status, .inProgress)
         XCTAssertEqual(state.currentStep, .farmShop)
@@ -206,19 +141,54 @@ final class FirstRunJourneyTests: XCTestCase {
         XCTAssertEqual(FirstRunJourney.resumeDestination(for: state)?.presentPracticeOffer, true)
     }
 
-    func testSkippingAnAvailableSlumberPartyDoesNotMarkItUnavailable() {
+    func testFarmTourIsOfferedBeforeItCanBeActive() {
         var state = CountingSheepOrientationState.fresh
-        state.status = .inProgress
-        state.currentStep = .slumberParty
-        let available = FirstRunAdvanceContext(
-            practiceCompleted: false,
-            slumberPartyAvailable: true,
-            showClaimWearable: false,
-            showEquipWearable: false
-        )
-        state.skipCurrentLesson(context: available)
-        XCTAssertFalse(state.slumberPartyUnavailableAcknowledged)
-        XCTAssertEqual(state.currentStep, .settings)
+        state.completeChapter(.homeBasics)
+        state.offerChapter(.farmTour)
+        XCTAssertEqual(state.presentationState, .offered)
+        state.startOfferedChapter()
+        XCTAssertEqual(state.presentationState, .active)
+        XCTAssertEqual(state.currentStep, .farmMeetSheep)
+    }
+
+    func testEverySchemaFiveStepMigratesToARealChapterOrContextualDestination() throws {
+        let legacySteps: [CountingSheepOrientationStep] = [
+            .home, .start, .phoneAway, .practiceOffer, .practiceReward,
+            .farmMeetSheep, .farmCapacity, .farmWool, .farmShear, .farmCurrency,
+            .farmClaimWearable, .farmEquipWearable, .farmShop, .farmSearch,
+            .slumberParty, .settings, .nights, .completion
+        ]
+
+        for step in legacySteps {
+            let data = try JSONSerialization.data(withJSONObject: [
+                "schemaVersion": 5,
+                "status": "inProgress",
+                "currentStep": step.rawValue,
+                "milestones": []
+            ])
+            let state = try JSONDecoder().decode(CountingSheepOrientationState.self, from: data)
+            XCTAssertEqual(state.schemaVersion, CountingSheepOrientationState.currentSchemaVersion, step.rawValue)
+            if step == .completion {
+                XCTAssertEqual(state.completedChapters, Set(FirstRunGuideChapter.allCases))
+            } else {
+                XCTAssertNotNil(FirstRunJourney.resumeDestination(for: state), step.rawValue)
+            }
+            if step == .farmClaimWearable || step == .farmEquipWearable {
+                XCTAssertFalse(state.hasRecorded(.claimedWearable), step.rawValue)
+                XCTAssertFalse(state.hasRecorded(.equippedWearable), step.rawValue)
+            }
+        }
+    }
+
+    func testResumeDestinationIncludesPresentationAndRootReset() {
+        var state = CountingSheepOrientationState.fresh
+        state.advanceTour()
+        state.dismiss()
+        let destination = try! XCTUnwrap(FirstRunJourney.resumeDestination(for: state))
+        XCTAssertEqual(destination.surface, .home)
+        XCTAssertTrue(destination.resetNavigation)
+        XCTAssertEqual(destination.presentation, .coachMark)
+        XCTAssertEqual(destination.chapter, .homeBasics)
     }
 
     func testRecommendationPrefillDoesNotDiagnoseAndKeepsSourceIDs() {

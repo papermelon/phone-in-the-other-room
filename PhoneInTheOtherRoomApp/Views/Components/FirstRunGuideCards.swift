@@ -1,35 +1,46 @@
 import SwiftUI
 
 struct FirstRunContinueCard: View {
+    var title = FirstRunGuideCopy.continueCardTitle
+    var detail = FirstRunGuideCopy.continueCardDetail
     let onResume: () -> Void
     let onDismiss: () -> Void
 
     var body: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text(FirstRunGuideCopy.continueCardTitle)
+                Text(title)
                     .font(AppTypography.headline)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(FirstRunGuideCopy.continueCardDetail)
+                Text(detail)
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                     .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: AppSpacing.sm) {
-                    Button(FirstRunGuideCopy.continueCardResume, action: onResume)
-                        .buttonStyle(PixelChipButtonStyle(isSelected: true))
-                        .frame(minHeight: 44)
-                    Button(FirstRunGuideCopy.continueCardDismiss, action: onDismiss)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                        .frame(minHeight: 44)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Button(FirstRunGuideCopy.continueCardResume, action: onResume)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: true))
+                            .frame(minWidth: 124, minHeight: 44)
+                        Button(FirstRunGuideCopy.continueCardDismiss, action: onDismiss)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                            .frame(minHeight: 44)
+                    }
+                    VStack(spacing: AppSpacing.xs) {
+                        Button(FirstRunGuideCopy.continueCardResume, action: onResume)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: true))
+                            .frame(maxWidth: .infinity, minHeight: 48)
+                        Button(FirstRunGuideCopy.continueCardDismiss, action: onDismiss)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
                 }
             }
         }
-        .contentShape(Rectangle())
-        .onTapGesture(perform: onResume)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(FirstRunGuideCopy.continueCardTitle)
-        .accessibilityHint(FirstRunGuideCopy.continueCardDetail)
+        .accessibilityLabel(title)
+        .accessibilityHint(detail)
         .accessibilityAction(.default, onResume)
     }
 }
@@ -115,6 +126,84 @@ struct FirstRunPracticeRewardCard: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(FirstRunGuideCopy.practiceGiftTitle(grantedNewSheep: grantedNewSheep))
+    }
+}
+
+struct FirstRunFarmTourOfferCard: View {
+    let onShow: () -> Void
+    let onExplore: () -> Void
+
+    var body: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("AROUND THE FARM")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Text("Want the four-tip Farm tour?")
+                    .font(AppTypography.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Meet the flock, The Barn, the wardrobe, and Ollie’s Search.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Button("Show me", action: onShow)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: true))
+                        Button("Explore on my own", action: onExplore)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    }
+                    VStack(spacing: AppSpacing.xs) {
+                        Button("Show me", action: onShow)
+                            .buttonStyle(PixelPrimaryButtonStyle())
+                        Button("Explore on my own", action: onExplore)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+}
+
+struct FirstRunHomeChapterHandoffCard: View {
+    let onExplore: () -> Void
+    let onPractice: () -> Void
+
+    var body: some View {
+        PixelCard {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("HOME BASICS COMPLETE")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Text("That’s the four basics. Have a look around.")
+                    .font(AppTypography.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("The Farm tour will wait until you choose to explore it.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: AppSpacing.sm) {
+                        Button("Explore", action: onExplore)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: true))
+                        Button("Try a 5-minute practice", action: onPractice)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    }
+                    VStack(spacing: AppSpacing.xs) {
+                        Button("Explore", action: onExplore)
+                            .buttonStyle(PixelPrimaryButtonStyle())
+                        Button("Try a 5-minute practice", action: onPractice)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -204,6 +293,13 @@ struct OrientationRecordPrompt: View {
     FirstRunPracticeRewardCard(grantedNewSheep: false, onSeeFarm: {}, onSkip: {})
         .padding()
         .background(AppColors.paper)
+}
+
+#Preview("Farm tour offer · compact") {
+    FirstRunFarmTourOfferCard(onShow: {}, onExplore: {})
+        .padding()
+        .background(AppColors.paper)
+        .environment(\.dynamicTypeSize, .accessibility2)
 }
 
 #Preview("Slumber Party intro") {

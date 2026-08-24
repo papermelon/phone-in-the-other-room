@@ -20,21 +20,45 @@ Locally proven:
 - A Debug build targeted at the connected physical iPhone succeeds and the current
   development build is installed for NFC end-flow retesting.
 - The full unit suite passes; the latest run includes 128 tests.
-- A signed Release archive and App Store export succeed for build 10. The exported IPA has
-  distribution profiles with `get-task-allow=false` for the app, Watch, report, monitor,
-  shield configuration, and shield action targets.
+- A signed Release archive and App Store export were previously recorded for build 10. That is
+  historical evidence only; build 11 is the locally verified/exported build and the final
+  Screen-Free Morning candidate has not been created.
 - The exported app carries production Family Controls profiles for the containing app,
   report, monitor, shield configuration, and shield action targets.
 - The exported app contains the main and monitor privacy manifests.
 - Debug and Release navigation render Home, Nights, Farm, and Settings; internal previews require the
   explicit Debug launch argument.
 
+## Shield Configuration signing/export evidence — 2026-08-23
+
+Locally proven:
+
+- `PhoneInTheOtherRoomShieldConfiguration.entitlements` declares Family Controls and the exact
+  App Group `group.com.ngawangchime.countingsheep`; `xcodegen generate` completed and the Release
+  simulator build succeeded.
+- The development Release archive succeeded for build 11. Deep code-sign verification passed;
+  the built Shield Configuration and its embedded Xcode-managed development profile both contain
+  Family Controls and the exact App Group.
+- The corrected App Store distribution profile `Counting Sheep Main App Store Corrected` has
+  application identifier `4KZQPZR47B.com.ngawangchime.countingsheep`, `get-task-allow=false`, and
+  the required main-app capabilities. The seven valid target App Store profiles were installed and
+  checked for their target bundle identifiers and distribution state.
+- Manual `app-store-connect` export of build 11 succeeded. The IPA is
+  `/tmp/counting-sheep-shield-app-group.fMCmji/Export7/Counting Sheep.ipa`; its Shield
+  Configuration codesign entitlements and embedded distribution profile both contain Family
+  Controls, `get-task-allow=false`, and `group.com.ngawangchime.countingsheep`. Deep codesign
+  verification passed for the exported app.
+
+Still open:
+
+- Physical four-presentation Shield Configuration QA remains incomplete.
+
 Read-only external audit:
 
 - App Store Connect version 1.0 is Prepare for Submission.
 - TestFlight build 2 is processed and selected for App Store version 1.0.
-- Build 10 is prepared locally with preflight start, NFC-authenticated app-access barriers,
-  continuous shielding, per-run Live Activity consent, and the qualified six-frame journey.
+- Build 11 is verified/exported locally but not claimed uploaded or processed. The final
+  Screen-Free Morning candidate still needs creation after the physical gates below.
 - App Privacy and the public policy URL are not yet fully reconciled with the new feedback
   disclosures; screenshots, age rating, content rights, remaining legal declarations,
   build-10 upload, and final review submission remain.
@@ -59,9 +83,11 @@ Not locally provable:
   - `com.ngawangchime.countingsheep.DeviceActivityMonitor`
   - `com.ngawangchime.countingsheep.ShieldConfiguration`
   - `com.ngawangchime.countingsheep.ShieldAction`
-- [ ] Assign Family Controls distribution to the main app, Screen Time report, monitor,
-      shield configuration, and shield action App IDs. Regenerate distribution profiles
-      after approval.
+- [x] Assign Family Controls distribution to the main app, Screen Time report, monitor,
+      shield configuration, and shield action App IDs; seven valid App Store profiles were
+      installed and verified on 2026-08-23.
+- [x] Assign App Groups to the Shield Configuration App ID and regenerate its distribution
+      profile; verified in `Counting Sheep Shield Configuration App Store` on 2026-08-23.
 - [ ] HealthKit, NFC Tag Reading, App Groups, Live Activities/push, and Family Controls
       capabilities match the entitlements in `project.yml`.
 - [ ] Sign in with Apple is enabled for the main App ID and its regenerated development and
@@ -96,6 +122,9 @@ xcodebuild archive \
 - [ ] Validate/upload the archive through Xcode Organizer or App Store Connect before
       declaring 1.0 ready. Local `altool` validation is blocked until an App Store Connect
       JWT or app-specific password is provided.
+- [x] Re-run App Store export after the regenerated Shield Configuration distribution profile is
+      available; manual App Store Connect export and embedded-profile/effective-entitlement
+      inspection passed for build 11 at `/tmp/counting-sheep-shield-app-group.fMCmji/Export7`.
 
 ## 3. Release scope and product identity
 
@@ -116,31 +145,78 @@ xcodebuild archive \
 ## 4. Fresh-install permission sequence
 
 - [ ] Notifications are requested only when saving/starting a requested ritual.
-- [ ] Camera denial preserves QR manual fallback.
-- [ ] NFC unavailable/cancelled/read-only/full/multiple-tag states preserve honor/QR fallback.
-- [ ] Screen Time denial or empty selection preserves an unshielded Wind Down.
+- [ ] Legacy QR and Honor Timer values remain decode-only and are absent from release setup.
+- [ ] NFC unavailable/cancelled/read-only/full/multiple-tag states leave the requested start
+      uncommitted and preserve the app-protection repair path.
+- [ ] Screen Time denial, revocation, unavailability, or empty selection blocks every new Wind
+      Down, Screen-Free Morning, and Phone Away start and routes to repair; runtime failures
+      after a valid start fail open without false shield evidence.
 - [ ] HealthKit requests read access only to `HKCategoryTypeIdentifierSleepAnalysis`.
 - [ ] HealthKit no-data and denied-read ambiguity use honest requested/no-data copy.
 - [ ] No permission is requested just by browsing Home or Nights.
 
 ## 5. NFC physical-device matrix
 
-- [ ] Register a blank writable NDEF tag, confirm it on the next run, and verify only a
-      digest is persisted.
-- [ ] Replace the tag; the old tag no longer confirms.
+- [ ] With two blank writable NDEF tags, pair a named primary and named backup. Confirm the UUID
+      credential is present only in each physical NDEF payload; defaults, logs, and network traffic
+      contain no raw credential; defaults retain only its digest and local name/purpose/timestamps;
+      names, purposes, and place details are never written to NFC or transmitted.
+- [ ] Assign one tag to both Wind Down and Phone Away and prove it starts/ends each mode. Assign
+      the other to one mode and prove a wrong-purpose scan leaves the other mode active.
+- [ ] Attempt to pair the same physical Counting Sheep tag into both slots. The app must identify
+      its existing local name, avoid overwriting it, and direct the tester to Rename or Change uses.
+- [ ] Use Test on primary, backup, wrong-purpose, and unknown tags. A recognized scan reports its
+      local name and uses and updates only `lastVerifiedAt`; no run, reward, shield, schedule, or
+      history outcome changes. An unknown tag is never enrolled silently.
+- [ ] Replace each slot; the old tag no longer confirms that slot and the replacement keeps the
+      slot's stable local identity, edited name, and uses.
+- [ ] After replacing a slot, scan the retired old tag during replacement and Test. It must show a
+      clear previously paired/resync-from-Settings failure, never a success check, and must leave
+      the current registration unchanged.
+- [ ] Settings-only retired-tag resync — primary slot: select the primary slot, scan only its
+      locally retired physical tag, and confirm a fresh credential is written before the primary
+      registration changes. The old credential remains rejected by Test/start/end; the fresh
+      credential works, while the stable local ID, name, and purposes remain intact. Record dated,
+      redacted physical-device evidence; this is a human-authorized device gate, not TestFlight
+      upload evidence.
+- [ ] Settings-only retired-tag resync — backup slot: repeat the same check with the backup slot
+      selected. Confirm neither slot is changed by cancel, unreadable read, multi-record message,
+      unknown occupied data, query failure, or write failure; each old credential remains rejected
+      and the still-active credentials continue to work. Record only slot labels and a redacted
+      screenshot/log reference, never NFC credentials or digests.
 - [ ] From the active NFC recovery state, explicitly pair a replacement tag and
       verify the same Wind Down continues; after a replacement during a running Wind Down,
-      only the new tag can authenticate the normal end action.
-- [ ] Forget the tag; scanning does not silently re-enrol it.
+      the run and shield stay active throughout and only the replacement can authenticate the
+      normal end action.
+- [ ] Complete Lost this tag? for primary and backup without the old tag. Cancel once before the
+      write and force one write failure; the old registration must remain. After success, only
+      the replacement credential occupies that slot.
+- [ ] Forget primary with and without a backup, then forget backup; scanning does not silently
+      re-enrol either physical tag and a remaining backup normalizes safely to primary.
 - [ ] Verify a mismatched tag, repeated scan, cancellation, two tags, read-only tag, and
-      insufficient-capacity tag.
-- [ ] Confirm the registered tag works offline.
+      insufficient-capacity tag. Every failure preserves the old slot and any active run/shield.
+- [ ] Confirm pairing management, Test, NFC start, and authenticated end work offline.
 - [ ] Verify scan success followed by Screen Time scheduling failure still starts the local
       ritual and explains the shield fallback.
-- [ ] In NFC mode, the normal iPhone end action accepts only the registered tag; a
-      mismatched tag or cancelled scan leaves Wind Down and its shields active.
-- [ ] The Watch cannot end an NFC-protected Wind Down. The multi-step emergency exit on
-      iPhone remains reachable, records the bypass, and clears shields immediately.
+- [ ] In NFC mode, the normal iPhone end action accepts only a registered tag assigned to the
+      active mode; mismatch, wrong purpose, cancellation, unavailability, or missing local
+      registration leaves Wind Down/Phone Away and shields active.
+- [ ] The Watch cannot end NFC-protected Wind Down or Phone Away. The deliberately multi-step
+      iPhone emergency exit remains reachable during replacement, records `emergencyBypass`,
+      and clears current shields plus stale automatic schedules immediately. Authenticated exits
+      record `nfcTagAuthenticated` and perform the same safe cleanup.
+- [ ] For both NFC Wind Down and NFC Phone Away, verify the always-visible primary “Tap tag to
+      end …” action; wrong-purpose, cancelled, and unavailable scans leave the run and barrier
+      intact. Expand “Can’t use your tag?”, use the one lost/replacement route, then verify the
+      emergency sheet uses the two-step local reason reflection: enter a non-empty reason, then
+      retype it with trim/case/smart-apostrophe normalization; empty input, mismatch, dismiss,
+      replay, and a stale run
+      leave the run active; a confirmed exit immediately clears shield, notifications, usage
+      monitoring, Live Activity, and any automatic schedule. Repeat while offline and during an
+      active shield replacement. Check VoiceOver labels, dictation, and large Dynamic Type; prove
+      the Watch cannot invoke the emergency path. In Debug, confirm the support details identify
+      Ordinary Debug versus Slumber Party QA with version/build and feature status; verify no
+      development-build row appears in a Release archive.
 
 ## 6. Shielding physical-device matrix
 
@@ -223,6 +299,21 @@ xcodebuild archive \
       two-account physical evidence still need to be current before inviting testers.
 
 ## 10. Privacy, accessibility, and review copy
+
+### Authentication recovery evidence — human/hosted/device gate
+
+Do not record Apple, Supabase, or invite identifiers. For each row use a date, build, redacted
+device/account label, lane, outcome, and redacted screenshot/log reference only.
+
+| Date | Controlled case / lane | Expected evidence | Actual / redacted reference |
+| --- | --- | --- | --- |
+|  | 401: v1/v2/v3 state, direct command, and outbox | Same Apple account reconnects; snapshot, run contexts, and all outboxes remain until reconciliation/flush. |  |
+|  | linked_account_required: v1/v2/v3 state, direct command, and outbox | Only the active anonymous session can link in place; its Supabase UUID is unchanged. |  |
+|  | wrong/new Apple account | Fail closed; local state remains and no foreign snapshot is displayed. |  |
+|  | cancellation/offline | Pending recovery and all local state remain; no anonymous account is created. |  |
+
+Pending explicit human approval, the proposed NFC usage description is: “Counting Sheep reads the
+NFC tags you pair to start and end Wind Down and Phone Away.” Do not add it to the target until approved.
 
 - [ ] Purpose strings describe only actual NFC, camera, Nearby Interaction, and sleep reads.
 - [ ] Logs contain no raw tokens, Family Activity tokens, NFC registration token, sleep

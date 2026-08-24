@@ -14,6 +14,77 @@ enum BriefAccessShieldActionStorage {
     static let minimumRestoreMonitoringDuration: TimeInterval = 15 * 60
 }
 
+/// ShieldAction does not compile the main-app registry source. These minimal
+/// wire types intentionally decode only the identity fields needed to reject a
+/// stale Brief Access grant. Their key and activity format are kept in parity
+/// with `Shared/QuietTimeShieldScheduleRegistry.swift`; no selection or reward
+/// data is mirrored into this extension.
+enum BriefAccessShieldActionRegistryStorage {
+    static let key = "ollie.screenTime.shieldScheduleRegistry"
+
+    static func load(from defaults: UserDefaults) -> BriefAccessShieldActionRegistry {
+        guard let data = defaults.data(forKey: key) else { return .empty }
+        return (try? JSONDecoder().decode(BriefAccessShieldActionRegistry.self, from: data)) ?? .empty
+    }
+}
+
+struct BriefAccessShieldActionRegistry: Decodable {
+    static let empty = Self(entries: [], tombstones: [])
+
+    var entries: [Entry]
+    var tombstones: [Tombstone]
+
+    func entry(for occurrenceID: UUID) -> Entry? {
+        entries.first { $0.occurrenceID == occurrenceID }
+    }
+
+    func accepts(occurrenceID: UUID, revision: Int, epoch: Int) -> Bool {
+        guard let entry = entry(for: occurrenceID) else { return false }
+        return entry.revision == revision && entry.epoch == epoch
+    }
+
+    struct Entry: Decodable {
+        var occurrenceID: UUID
+        var revision: Int
+        var epoch: Int
+        var interval: DateInterval
+    }
+
+    struct Tombstone: Decodable {
+        var occurrenceID: UUID
+    }
+}
+
+struct BriefAccessShieldActionRegistryActivity: Equatable {
+    static let prefix = "ollie.quietTime.registry"
+
+    var occurrenceID: UUID
+    var revision: Int
+    var epoch: Int
+
+    var identifier: String {
+        "\(Self.prefix).\(occurrenceID.uuidString.lowercased()).r\(revision).e\(epoch)"
+    }
+
+    init(occurrenceID: UUID, revision: Int, epoch: Int) {
+        self.occurrenceID = occurrenceID
+        self.revision = max(1, revision)
+        self.epoch = max(1, epoch)
+    }
+
+    init?(identifier: String) {
+        let components = identifier.split(separator: ".")
+        guard components.count == 6,
+              components[0...2].joined(separator: ".") == Self.prefix,
+              let occurrenceID = UUID(uuidString: String(components[3])),
+              components[4].first == "r",
+              components[5].first == "e",
+              let revision = Int(components[4].dropFirst()),
+              let epoch = Int(components[5].dropFirst()) else { return nil }
+        self.init(occurrenceID: occurrenceID, revision: revision, epoch: epoch)
+    }
+}
+
 enum BriefAccessGrantStatus: String, Codable {
     case pending
     case scheduled
@@ -28,12 +99,61 @@ struct BriefAccessUse: Codable {
 struct BriefAccessGrant: Codable {
     let schemaVersion: Int
     let runID: UUID
+    let occurrenceID: UUID
     let scheduleRevision: Int
+    let scheduleEpoch: Int
     let requestedAt: Date
     let expiresAt: Date
     let nonce: UUID
     let restoreActivityIdentifier: String
     var status: BriefAccessGrantStatus
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, runID, occurrenceID, scheduleRevision, scheduleEpoch, requestedAt, expiresAt
+        case nonce, restoreActivityIdentifier, status
+    }
+
+    init(
+        schemaVersion: Int,
+        runID: UUID,
+        occurrenceID: UUID? = nil,
+        scheduleRevision: Int,
+        scheduleEpoch: Int = 1,
+        requestedAt: Date,
+        expiresAt: Date,
+        nonce: UUID,
+        restoreActivityIdentifier: String,
+        status: BriefAccessGrantStatus
+    ) {
+        self.schemaVersion = schemaVersion
+        self.runID = runID
+        self.occurrenceID = occurrenceID ?? runID
+        self.scheduleRevision = max(1, scheduleRevision)
+        self.scheduleEpoch = max(1, scheduleEpoch)
+        self.requestedAt = requestedAt
+        self.expiresAt = expiresAt
+        self.nonce = nonce
+        self.restoreActivityIdentifier = restoreActivityIdentifier
+        self.status = status
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let runID = try container.decode(UUID.self, forKey: .runID)
+        self.init(
+            schemaVersion: try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1,
+            runID: runID,
+            occurrenceID: try container.decodeIfPresent(UUID.self, forKey: .occurrenceID) ?? runID,
+            scheduleRevision: try container.decodeIfPresent(Int.self, forKey: .scheduleRevision) ?? 1,
+            scheduleEpoch: try container.decodeIfPresent(Int.self, forKey: .scheduleEpoch) ?? 1,
+            requestedAt: try container.decode(Date.self, forKey: .requestedAt),
+            expiresAt: try container.decode(Date.self, forKey: .expiresAt),
+            nonce: try container.decode(UUID.self, forKey: .nonce),
+            restoreActivityIdentifier: try container.decodeIfPresent(String.self, forKey: .restoreActivityIdentifier)
+                ?? "ollie.quietTime.briefAccessRestore",
+            status: try container.decodeIfPresent(BriefAccessGrantStatus.self, forKey: .status) ?? .pending
+        )
+    }
 }
 
 struct BriefAccessLedgerEntry: Codable {
@@ -47,7 +167,9 @@ struct BriefAccessShieldActionState: Codable {
 
     var schemaVersion: Int
     var runID: UUID
+    var occurrenceID: UUID
     var scheduleRevision: Int
+    var scheduleEpoch: Int
     var successfulUseCount: Int
     var successfulUses: [BriefAccessUse]
     var activeGrant: BriefAccessGrant?
@@ -57,10 +179,12 @@ struct BriefAccessShieldActionState: Codable {
     var archivedAt: Date?
     var updatedAt: Date
 
-    init(runID: UUID, scheduleRevision: Int, updatedAt: Date) {
+    init(runID: UUID, occurrenceID: UUID? = nil, scheduleRevision: Int, scheduleEpoch: Int = 1, updatedAt: Date) {
         self.schemaVersion = 1
         self.runID = runID
+        self.occurrenceID = occurrenceID ?? runID
         self.scheduleRevision = max(1, scheduleRevision)
+        self.scheduleEpoch = max(1, scheduleEpoch)
         self.successfulUseCount = 0
         self.successfulUses = []
         self.activeGrant = nil
@@ -72,7 +196,7 @@ struct BriefAccessShieldActionState: Codable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, runID, scheduleRevision, successfulUseCount
+        case schemaVersion, runID, occurrenceID, scheduleRevision, scheduleEpoch, successfulUseCount
         case successfulUses, activeGrant, completedRunCounts
         case rejectedGrantNonce, rejectedAt, archivedAt, updatedAt
     }
@@ -81,7 +205,9 @@ struct BriefAccessShieldActionState: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         schemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
         runID = try container.decode(UUID.self, forKey: .runID)
+        occurrenceID = try container.decodeIfPresent(UUID.self, forKey: .occurrenceID) ?? runID
         scheduleRevision = max(1, try container.decodeIfPresent(Int.self, forKey: .scheduleRevision) ?? 1)
+        scheduleEpoch = max(1, try container.decodeIfPresent(Int.self, forKey: .scheduleEpoch) ?? 1)
         successfulUseCount = max(0, try container.decodeIfPresent(Int.self, forKey: .successfulUseCount) ?? 0)
         successfulUses = try container.decodeIfPresent([BriefAccessUse].self, forKey: .successfulUses) ?? []
         successfulUseCount = max(successfulUseCount, successfulUses.count)
@@ -96,7 +222,9 @@ struct BriefAccessShieldActionState: Codable {
     mutating func propose(_ grant: BriefAccessGrant, at date: Date) -> Bool {
         guard activeGrant == nil,
               grant.runID == runID,
-              grant.scheduleRevision == scheduleRevision else { return false }
+              grant.occurrenceID == occurrenceID,
+              grant.scheduleRevision == scheduleRevision,
+              grant.scheduleEpoch == scheduleEpoch else { return false }
         activeGrant = grant
         rejectedGrantNonce = nil
         rejectedAt = nil
@@ -156,10 +284,12 @@ struct BriefAccessShieldActionState: Codable {
         updatedAt = date
     }
 
-    mutating func carryingLedgerForward(to runID: UUID, revision: Int, at date: Date) {
+    mutating func carryingLedgerForward(to runID: UUID, occurrenceID: UUID? = nil, revision: Int, epoch: Int = 1, at date: Date) {
         archiveCurrentRun(at: date)
         self.runID = runID
+        self.occurrenceID = occurrenceID ?? runID
         scheduleRevision = max(1, revision)
+        scheduleEpoch = max(1, epoch)
         successfulUseCount = 0
         successfulUses = []
         activeGrant = nil
@@ -197,11 +327,29 @@ struct BriefAccessRestorePlan {
 
 struct BriefAccessShieldActionSchedule: Codable {
     let runID: UUID
+    let occurrenceID: UUID
     let revision: Int
+    let epoch: Int
     let protectedSessionInterval: DateInterval?
     let windDownInterval: DateInterval?
     let morningQuietInterval: DateInterval
     let repeatsDaily: Bool
+
+    private enum CodingKeys: String, CodingKey {
+        case runID, occurrenceID, revision, epoch, protectedSessionInterval, windDownInterval, morningQuietInterval, repeatsDaily
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        runID = try container.decode(UUID.self, forKey: .runID)
+        occurrenceID = try container.decodeIfPresent(UUID.self, forKey: .occurrenceID) ?? runID
+        revision = max(1, try container.decodeIfPresent(Int.self, forKey: .revision) ?? 1)
+        epoch = max(1, try container.decodeIfPresent(Int.self, forKey: .epoch) ?? 1)
+        protectedSessionInterval = try container.decodeIfPresent(DateInterval.self, forKey: .protectedSessionInterval)
+        windDownInterval = try container.decodeIfPresent(DateInterval.self, forKey: .windDownInterval)
+        morningQuietInterval = try container.decode(DateInterval.self, forKey: .morningQuietInterval)
+        repeatsDaily = try container.decodeIfPresent(Bool.self, forKey: .repeatsDaily) ?? false
+    }
 
     func contains(_ date: Date, in interval: DateInterval?) -> Bool {
         guard let interval else { return false }

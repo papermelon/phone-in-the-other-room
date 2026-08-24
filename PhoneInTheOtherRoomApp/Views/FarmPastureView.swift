@@ -5,14 +5,23 @@ struct FarmPastureView: View {
     let protectedNightCount: Int
     let layoutSeed: UInt64
     let onSelectSheep: (FlockSheep) -> Void
+    var persistedScene: PastureSceneSnapshot? = nil
+    var onPersistScene: (PastureSceneSnapshot) -> Void = { _ in }
+    var onSelectOllie: () -> Void = {}
+    var onSelectShepherd: () -> Void = {}
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var sceneController = PastureSceneController()
+    @State private var selectedPasture = 0
 
     private var pastureCount: Int { max(1, state.activeCapacity / 12) }
 
     var body: some View {
-        TabView {
+        TabView(selection: $selectedPasture) {
             ForEach(0..<pastureCount, id: \.self) { pasture in
                 pasturePage(pasture)
                     .padding(.horizontal, 1)
+                    .tag(pasture)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: pastureCount > 1 ? .always : .never))
@@ -23,11 +32,16 @@ struct FarmPastureView: View {
                 .stroke(AppColors.stroke.opacity(0.28), lineWidth: 1)
         }
         .accessibilityLabel("Farm pasture, \(state.activeSheep.count) active sheep across \(pastureCount) pastures")
+        .onAppear(perform: configureScene)
+        .onChange(of: state) { _, _ in configureScene() }
+        .onChange(of: layoutSeed) { _, _ in configureScene() }
+        .onChange(of: reduceMotion) { _, _ in configureScene() }
+        .onChange(of: selectedPasture) { _, _ in configureScene() }
+        .onDisappear { sceneController.stop() }
     }
 
     private func pasturePage(_ pasture: Int) -> some View {
         let pageSheep = Array(state.activeSheep.dropFirst(pasture * 12).prefix(12))
-        let slots = slotAssignments(for: pageSheep)
         return GeometryReader { proxy in
             ZStack {
                 PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
@@ -37,56 +51,46 @@ struct FarmPastureView: View {
                     startPoint: .top,
                     endPoint: .bottom
                 )
-                if pasture == 0 {
-                    decorations(in: proxy.size)
-                }
+                if pasture == 0 { decorations(in: proxy.size) }
 
                 ForEach(pageSheep) { sheep in
-                    Button { onSelectSheep(sheep) } label: {
+                    let entity = PastureSceneEntityID.sheep(sheep.id, pastureIndex: pasture)
+                    character(
+                        entity: entity,
+                        in: proxy.size,
+                        coordinateSpace: coordinateSpace(for: pasture),
+                        label: sheepAccessibilityLabel(sheep),
+                        hint: "Double tap to open \(sheep.displayName) in The Barn. Long press and drag to place them in the pasture.",
+                        action: { onSelectSheep(sheep) }
+                    ) {
                         FarmSheepSprite(
                             sheep: sheep,
                             protectedNightCount: protectedNightCount,
-                            size: spriteSize(for: slots[sheep.id] ?? 0),
+                            size: sheepSpriteSize(for: sceneController.position(for: entity).y),
                             showsStatusBadge: false
                         )
                     }
-                    .buttonStyle(.plain)
-                    .position(
-                        position(
-                            for: slots[sheep.id] ?? 0,
-                            sheepID: sheep.id,
-                            pasture: pasture,
-                            in: proxy.size
-                        )
-                    )
-                    .zIndex(Double((slots[sheep.id] ?? 0) / 4))
-                    .accessibilityHint("Opens \(sheep.displayName) in The Barn")
                 }
 
-                OllieFarmAvatar(
-                    accessoryItemID: state.equipment.ollieAccessoryItemID,
-                    size: 72
-                )
-                .position(x: proxy.size.width * 0.10, y: proxy.size.height * 0.82)
+                character(
+                    entity: .ollie(pastureIndex: pasture),
+                    in: proxy.size,
+                    coordinateSpace: coordinateSpace(for: pasture),
+                    label: "Ollie in the pasture",
+                    hint: "Double tap to open Ollie’s Farm Shop items. Long press and drag to place Ollie in the pasture.",
+                    action: onSelectOllie
+                ) { OllieFarmAvatar(accessoryItemID: state.equipment.ollieAccessoryItemID, size: 72) }
 
-                ShepherdAvatarView(profile: state.shepherd, size: 72)
-                    .position(x: proxy.size.width * 0.94, y: proxy.size.height * 0.76)
+                character(
+                    entity: .shepherd(pastureIndex: pasture),
+                    in: proxy.size,
+                    coordinateSpace: coordinateSpace(for: pasture),
+                    label: "Your Shepherd in the pasture",
+                    hint: "Double tap to customize Your Shepherd. Long press and drag to place Your Shepherd in the pasture.",
+                    action: onSelectShepherd
+                ) { ShepherdAvatarView(profile: state.shepherd, size: 72) }
 
-                if pageSheep.isEmpty {
-                    VStack(spacing: AppSpacing.xs) {
-                        Text(pasture == 0 ? "The pasture is quiet." : "This pasture is open.")
-                            .font(AppTypography.headline)
-                        Text(pasture == 0
-                            ? "A completed Wind Down gives Ollie a trail to follow."
-                            : "New arrivals can settle here when they come home.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.secondaryText)
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(AppSpacing.md)
-                    .background(AppColors.paper.opacity(0.88), in: RoundedRectangle(cornerRadius: AppRadius.md))
-                    .position(x: proxy.size.width * 0.52, y: proxy.size.height * 0.42)
-                }
+                if pageSheep.isEmpty { emptyPastureMessage(pasture, in: proxy.size) }
 
                 Text("PASTURE \(pasture + 1)")
                     .font(pixelFont(.caption2))
@@ -98,77 +102,179 @@ struct FarmPastureView: View {
                     .padding(.leading, AppSpacing.lg)
                     .padding(.top, AppSpacing.sm)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .accessibilityHidden(true)
             }
+            .coordinateSpace(name: coordinateSpace(for: pasture))
         }
+    }
+
+    private func character<Content: View>(
+        entity: PastureSceneEntityID,
+        in size: CGSize,
+        coordinateSpace: String,
+        label: String,
+        hint: String,
+        action: @escaping () -> Void,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        let point = sceneController.position(for: entity)
+        let behavior = sceneController.behavior(for: entity)
+        return PastureCharacterHitTarget(
+            entity: entity,
+            controller: sceneController,
+            canvasSize: size,
+            coordinateSpace: coordinateSpace,
+            reduceMotion: reduceMotion,
+            label: label,
+            hint: hint,
+            action: action,
+            content: content
+        )
+        .position(x: size.width * point.x, y: size.height * point.y)
+        .animation(spatialAnimation(for: behavior), value: point)
+        .zIndex(point.y)
     }
 
     @ViewBuilder
     private func decorations(in size: CGSize) -> some View {
-        ForEach(state.equipment.farmDecorationItemIDs.sorted(), id: \.self) { itemID in
-            if let item = FarmShopCatalog.item(for: itemID),
-               let anchor = FarmShopCatalog.decorationAnchor(for: itemID),
-               anchor.isBounded {
-                FarmShopItemImage(item: item, size: CGFloat(anchor.size))
-                    .position(
-                        x: size.width * CGFloat(anchor.normalizedCenterX),
-                        y: size.height * CGFloat(anchor.normalizedGroundY) - CGFloat(anchor.size) / 2
-                    )
+        ForEach(FarmDecorationZone.allCases, id: \.self) { zone in
+            if let itemID = state.equipment.decorationPlacements[zone], let item = FarmShopCatalog.item(for: itemID) {
+                let anchor = FarmShopCatalog.decorationAnchor(for: zone)
+                FarmDecorationSceneImage(item: item, size: CGFloat(anchor.size))
+                    .position(x: size.width * CGFloat(anchor.normalizedCenterX), y: size.height * CGFloat(anchor.normalizedGroundY) - CGFloat(anchor.size) / 2)
                     .accessibilityHidden(true)
             }
         }
     }
 
-    private func position(
-        for index: Int,
-        sheepID: UUID,
-        pasture: Int,
-        in size: CGSize
-    ) -> CGPoint {
-        let positions: [(CGFloat, CGFloat)] = [
-            (0.25, 0.62), (0.41, 0.62), (0.57, 0.62), (0.73, 0.62),
-            (0.30, 0.75), (0.46, 0.75), (0.62, 0.75), (0.78, 0.75),
-            (0.25, 0.88), (0.41, 0.88), (0.57, 0.88), (0.73, 0.88)
-        ]
-        let value = positions[min(index, positions.count - 1)]
-        let random = stableHash(for: sheepID)
-            ^ layoutSeed
-            ^ (UInt64(pasture + 1) &* 11_400_714_819_323_198_485)
-        let xJitter = (CGFloat((random >> 11) % 1_001) / 1_000 - 0.5) * 0.026
-        let yJitter = (CGFloat((random >> 29) % 1_001) / 1_000 - 0.5) * 0.014
-        return CGPoint(
-            x: size.width * (value.0 + xJitter),
-            y: size.height * (value.1 + yJitter)
+    private func emptyPastureMessage(_ pasture: Int, in size: CGSize) -> some View {
+        VStack(spacing: AppSpacing.xs) {
+            Text(pasture == 0 ? "The pasture is quiet." : "This pasture is open.")
+                .font(AppTypography.headline)
+            Text(pasture == 0 ? "A completed Wind Down gives Ollie a trail to follow." : "New arrivals can settle here when they come home.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+                .multilineTextAlignment(.center)
+        }
+        .padding(AppSpacing.md)
+        .background(AppColors.paper.opacity(0.88), in: RoundedRectangle(cornerRadius: AppRadius.md))
+        .position(x: size.width * 0.52, y: size.height * 0.42)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func configureScene() {
+        sceneController.configure(
+            activeSheep: state.activeSheep,
+            pastureCount: pastureCount,
+            layoutSeed: layoutSeed,
+            activePastureIndex: selectedPasture,
+            persistedSnapshot: persistedScene,
+            reduceMotion: reduceMotion,
+            onPersist: onPersistScene
         )
     }
 
-    private func spriteSize(for index: Int) -> CGFloat {
-        switch index / 4 {
-        case 0: return 38
-        case 1: return 46
-        default: return 52
+    private func coordinateSpace(for pasture: Int) -> String { "FarmPasturePage-\(pasture)" }
+
+    private func sheepSpriteSize(for normalizedY: Double) -> CGFloat {
+        if normalizedY < 0.69 { return 38 }
+        if normalizedY < 0.80 { return 46 }
+        return 52
+    }
+
+    private func spatialAnimation(for behavior: PastureSceneBehavior) -> Animation? {
+        guard !reduceMotion, behavior != .dragging else { return nil }
+        return AppMotion.settle
+    }
+
+    private func sheepAccessibilityLabel(_ sheep: FlockSheep) -> String {
+        let ready = FarmEconomyRules.isWoolReady(for: sheep, protectedNightCount: protectedNightCount)
+        return "\(sheep.displayName), \(sheep.rarity.title), \(ready ? "wool ready" : "wool regrowing")"
+    }
+}
+
+private struct PastureCharacterHitTarget<Content: View>: View {
+    let entity: PastureSceneEntityID
+    let controller: PastureSceneController
+    let canvasSize: CGSize
+    let coordinateSpace: String
+    let reduceMotion: Bool
+    let label: String
+    let hint: String
+    let action: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        content()
+            .accessibilityHidden(true)
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+            .scaleEffect(visualScale)
+            .rotationEffect(.degrees(visualRotation))
+            .offset(y: visualOffset)
+            .animation(reduceMotion ? AppMotion.reducedFade : AppMotion.stateChange, value: controller.behavior(for: entity))
+            .onTapGesture {
+                if controller.shouldAcceptTap(for: entity) { action() }
+            }
+            .simultaneousGesture(dragGesture)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(label)
+            .accessibilityHint(hint)
+            .accessibilityAction {
+                guard controller.shouldAcceptTap(for: entity) else { return }
+                action()
+            }
+    }
+
+    private var dragGesture: some Gesture {
+        LongPressGesture(minimumDuration: 0.35, maximumDistance: 10)
+            .sequenced(before: DragGesture(minimumDistance: 0, coordinateSpace: .named(coordinateSpace)))
+            .onChanged { value in
+                guard case let .second(true, drag?) = value else { return }
+                controller.beginDrag(entity)
+                controller.updateDrag(
+                    entity,
+                    translation: PastureScenePoint(
+                        x: Double(drag.translation.width / max(canvasSize.width, 1)),
+                        y: Double(drag.translation.height / max(canvasSize.height, 1))
+                    )
+                )
+            }
+            .onEnded { value in
+                if case .second(true, _) = value { controller.finishDrag(entity) }
+                else { controller.cancelInteraction() }
+            }
+    }
+
+    private var visualScale: CGFloat {
+        guard !reduceMotion else { return controller.behavior(for: entity) == .dragging ? 1.02 : 1 }
+        switch controller.behavior(for: entity) {
+        case .dragging: return 1.04
+        case .chasing, .reacting: return 1.03
+        case .ambient(.graze): return 0.98
+        case .ambient(.tinyHop), .ambient(.wave): return 1.05
+        default: return 1
         }
     }
 
-    private func slotAssignments(for sheep: [FlockSheep]) -> [UUID: Int] {
-        var assignments: [UUID: Int] = [:]
-        var used = Set<Int>()
-        for entry in sheep.sorted(by: {
-            if $0.arrivedAt == $1.arrivedAt { return $0.id.uuidString < $1.id.uuidString }
-            return $0.arrivedAt < $1.arrivedAt
-        }) {
-            let preferred = Int((stableHash(for: entry.id) ^ layoutSeed) % 12)
-            let slot = (0..<12)
-                .map { (preferred + $0) % 12 }
-                .first { !used.contains($0) } ?? preferred
-            assignments[entry.id] = slot
-            used.insert(slot)
+    private var visualRotation: Double {
+        guard !reduceMotion else { return 0 }
+        switch controller.behavior(for: entity) {
+        case .chasing: return -4
+        case .reacting: return 4
+        case .ambient(.wave): return 3
+        case .ambient(.stanceShift): return -2
+        default: return 0
         }
-        return assignments
     }
 
-    private func stableHash(for id: UUID) -> UInt64 {
-        id.uuidString.utf8.reduce(UInt64(14_695_981_039_346_656_037)) { partial, byte in
-            (partial ^ UInt64(byte)) &* 1_099_511_628_211
+    private var visualOffset: CGFloat {
+        guard !reduceMotion else { return 0 }
+        switch controller.behavior(for: entity) {
+        case .wandering, .chasing: return -2
+        case .ambient(.tinyHop): return -5
+        case .ambient(.sniff): return 2
+        default: return 0
         }
     }
 }

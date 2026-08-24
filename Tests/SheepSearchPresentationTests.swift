@@ -27,4 +27,18 @@ final class SheepSearchPresentationTests: XCTestCase {
         XCTAssertFalse(SheepSearchPresentation.foundHeadline(for: .windDown).localizedCaseInsensitiveContains("search"))
         XCTAssertFalse(SheepSearchPresentation.originLabel(for: .windDown).localizedCaseInsensitiveContains("protected"))
     }
+
+    func testSunriseOriginAndThreeSourceExplanationStaySeparate() {
+        XCTAssertEqual(SheepSearchPresentation.originLabel(for: .sunrise), "Sunrise Trail")
+        XCTAssertEqual(SheepSearchExplainerPresentation.sources.map(\.id), [.windDown, .sunrise, .phoneBreak])
+        XCTAssertTrue(SheepSearchExplainerPresentation.rulesDetail.contains("first three"))
+        XCTAssertTrue(SheepSearchExplainerPresentation.rulesDetail.contains("20%, 30%, 40%, then 50%"))
+        XCTAssertTrue(SheepSearchExplainerPresentation.sources[0].detail.contains("does not change"))
+    }
+
+    func testLegacySocialRawValueHasTruthfulWindDownPresentation() {
+        XCTAssertEqual(NightFlockMemberNightStatus.morningQuietCompleted.rawValue, "morningQuietCompleted")
+        XCTAssertEqual(NightFlockMemberNightStatus.morningQuietCompleted.title, "Qualifying Wind Down completed")
+        XCTAssertFalse(NightFlockMemberNightStatus.morningQuietCompleted.title.localizedCaseInsensitiveContains("morning"))
+    }
 }

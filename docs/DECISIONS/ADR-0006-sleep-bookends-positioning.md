@@ -19,24 +19,31 @@ builder, or productivity mode, it would contradict the restraint established in 
 
 ## Decision
 
-**Counting Sheep protects the edges of sleep with one phase-aware Night Watch.**
+**Historical framing:** Counting Sheep once described one phase-aware Night Watch. ADR-0019
+supersedes that release-facing framing with Wind Down plus a linked, independently settled
+Screen-Free Morning; older `NightWatch*`/guard values remain compatibility internals.
 
 1. The user configures an intended bedtime and wake time, a wind-down bookend, and a
    morning-quiet bookend. The default is 30 minutes on each side, with modest alternatives.
 2. At the requested wind-down time, the user physically puts the phone in another room and
-   begins Night Watch. QR, Watch placement, and honor-based starts remain interchangeable
-   session guards.
-3. Night Watch has three phases: wind-down, overnight, and morning quiet. The morning is the
-   continuation of the same night, never an independent focus mode.
+   begins Wind Down with required selected-app protection. ADR-0019 supersedes this ADR's
+   interchangeable-guard clause: current release flows offer the shielding timer or optional
+   NFC + app shielding; QR, Watch-placement, and raw honor-timer values are decode compatibility only.
+3. Night Watch still has wind-down and overnight timing phases. ADR-0019 supersedes this ADR's
+   "never independent" Morning clause: Screen-Free Morning is a linked but independently
+   settled occurrence with its own factual minutes and Sunrise Trail ledger.
 4. The user may choose one offline evening cue and one morning cue. These are suggestions,
    never verified tasks or conditions for ending the session.
-5. Completion and economy credit only actual quiet minutes in the two bookends. Overnight
-   hours must never inflate focus minutes, stars, rewards, or other progress.
-6. Customer-facing language uses “Night Watch,” “protected night,” and “quiet bookend
-   minutes.” `FocusRun` remains an internal persisted type for backwards compatibility.
-7. Screen Time reports and consensual app shielding should eventually use one selected set
-   of distracting apps across both bookend windows. That work remains gated by ADR-0004 and
-   the Family Controls distribution entitlement.
+5. Historical credit language in this ADR is superseded by ADR-0019: Wind Down compatibility
+   reward/progress and shared Wind Down metrics use the factual wind-down bookend only.
+   Screen-Free Morning actual minutes settle independently through Sunrise Trail. Overnight
+   hours never inflate focus minutes, stars, rewards, or other progress.
+6. This ADR's customer-facing “Night Watch” / “protected night” nomenclature is superseded by
+   Wind Down, Screen-Free Morning, and Ollie's wording in ADR-0019. `FocusRun` remains an
+   internal persisted type for backwards compatibility.
+7. This ADR's future/gated shielding clause is superseded by ADR-0012 and ADR-0019: current
+   release starts require Family Controls authorization and one opaque selected app/category
+   set for app protection. Runtime failures fail open to repair after a valid start.
 8. HealthKit remains optional context. Counting Sheep does not score sleep, diagnose a
    condition, or claim that a Night Watch caused better sleep.
 
@@ -44,7 +51,9 @@ builder, or productivity mode, it would contradict the restraint established in 
 
 - The one-sentence pitch becomes: “Put your phone to bed. Wake up before it does.”
 - The existing phone-authoritative timer, restore path, session guards, Watch companion,
-  notifications, and Live Activity remain useful.
+  notifications, and Live Activity remain useful. Any implication here that an independent
+  Morning is out of scope or that a "protected night" is current release language is superseded
+  by ADR-0019's Wind Down plus Screen-Free Morning model.
 - The setup UI changes from duration selection to a saved schedule and two quiet bookends.
 - A requested wind-down reminder is appropriate; generic re-engagement notifications are not.
 - Product analytics should prioritize completed protected nights and screen time in the two

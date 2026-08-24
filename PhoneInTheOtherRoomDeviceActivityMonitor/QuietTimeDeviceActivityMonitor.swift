@@ -20,24 +20,97 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             _ = usage
             return
         }
-        guard QuietTimeShieldWindow(activityName: activity) != nil else { return }
-        reconcileCurrentProtection(at: Date())
+        guard QuietTimeShieldWindow(activityName: activity) != nil
+                || QuietTimeShieldRegistryActivity(deviceActivityName: activity) != nil else { return }
+        reconcileCurrentProtection(
+            at: Date(),
+            callback: QuietTimeShieldRegistryActivity(deviceActivityName: activity)
+        )
     }
 
-    private func reconcileCurrentProtection(at date: Date) {
+    private func reconcileCurrentProtection(
+        at date: Date,
+        callback: QuietTimeShieldRegistryActivity? = nil
+    ) {
+        let registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults ?? .standard)
+        let activeRegistryEntries = registry.activeEntries(at: date)
         guard let snapshot = loadSchedule() else {
-            // A stale callback after the app cancelled a schedule must not leave
-            // a ManagedSettings shield stranded on the device.
+            // The registry is the desired-state authority. A cross-process
+            // handoff may briefly replace the compatibility snapshot, but a
+            // stale callback must never clear another active registry window.
+            guard QuietTimeShieldRegistryPolicy.retainsActiveBarrier(
+                registry: registry,
+                snapshotOccurrenceID: nil,
+                at: date
+            ),
+                  let selection = loadSelection(),
+                  !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
+                store.clearAllSettings()
+                archiveBriefAccessState()
+                stopBriefAccessRestore()
+                return
+            }
+            store.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
+            store.shield.applicationCategories = selection.categoryTokens.isEmpty
+                ? nil : .specific(selection.categoryTokens)
+            return
+        }
+        if let callback {
+            switch QuietTimeShieldRegistryPolicy.reconciliation(
+                registry: registry,
+                occurrenceID: callback.occurrenceID,
+                revision: callback.revision,
+                epoch: callback.epoch,
+                at: date
+            ) {
+            case .ignoreStale:
+                // A callback from an old DeviceActivity window must have no
+                // effect on another currently desired shield.
+                return
+            case .apply, .clear:
+                break
+            }
+        }
+        let snapshotIsStale = registry.tombstones.contains(where: { $0.occurrenceID == snapshot.runID })
+            || (registry.entries.isEmpty == false && registry.entry(for: snapshot.runID) == nil)
+        if snapshotIsStale, QuietTimeShieldRegistryPolicy.retainsActiveBarrier(
+            registry: registry,
+            snapshotOccurrenceID: snapshot.runID,
+            at: date
+        ) {
+            // The compatibility snapshot can be stale during a handoff or
+            // terminal removal. Another registry entry is still authoritative
+            // and active, so a callback must retain its barrier rather than
+            // clearing ManagedSettings because the old snapshot was retired.
+            guard let selection = loadSelection(),
+                  !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
+                store.clearAllSettings()
+                archiveBriefAccessState()
+                stopBriefAccessRestore()
+                return
+            }
+            store.shield.applications = selection.applicationTokens.isEmpty
+                ? nil
+                : selection.applicationTokens
+            store.shield.applicationCategories = selection.categoryTokens.isEmpty
+                ? nil
+                : .specific(selection.categoryTokens)
+            return
+        }
+        if snapshotIsStale {
+            // A callback for an ended/replaced occurrence must not clear or
+            // apply a different desired window.
             store.clearAllSettings()
             archiveBriefAccessState()
             stopBriefAccessRestore()
             return
         }
         let activeWindow = QuietTimeShieldSchedulePolicy.activeWindow(in: snapshot, at: date)
+        let hasActiveRegistryProtection = !activeRegistryEntries.isEmpty
         guard let selection = loadSelection(),
               !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
             store.clearAllSettings()
-            if activeWindow == nil {
+            if activeWindow == nil && !hasActiveRegistryProtection {
                 writeStatus(.cleared, snapshot: snapshot, window: nil)
             } else {
                 writeStatus(.failed, snapshot: snapshot, window: activeWindow, failureCode: "missingSelection")
@@ -45,17 +118,18 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             }
             return
         }
-        guard let activeWindow else {
+        guard activeWindow != nil || hasActiveRegistryProtection else {
             store.clearAllSettings()
             writeStatus(.cleared, snapshot: snapshot, window: nil)
             return
         }
 
+        let identity = briefAccessIdentity(for: snapshot, registry: registry)
         if let state = loadBriefAccessState(),
            let grant = state.activeGrant,
            grant.status == .scheduled,
-           grant.runID == snapshot.runID,
-           grant.scheduleRevision == snapshot.revision,
+           activeRegistryEntries.count <= 1,
+           grantMatchesCurrentIdentity(grant, state: state, identity: identity),
            date < grant.expiresAt {
             return
         }
@@ -75,8 +149,12 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             reconcileBriefAccessRestore()
             return
         }
-        guard QuietTimeShieldWindow(activityName: activity) != nil else { return }
-        reconcileCurrentProtection(at: Date())
+        guard QuietTimeShieldWindow(activityName: activity) != nil
+                || QuietTimeShieldRegistryActivity(deviceActivityName: activity) != nil else { return }
+        reconcileCurrentProtection(
+            at: Date(),
+            callback: QuietTimeShieldRegistryActivity(deviceActivityName: activity)
+        )
     }
 
     override func intervalWillEndWarning(for activity: DeviceActivityName) {
@@ -139,13 +217,20 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         let now = Date()
         let state = loadBriefAccessState()
         let schedule = loadSchedule()
-        let currentRunID = schedule?.runID ?? state?.runID ?? UUID()
-        let currentRevision = schedule?.revision ?? state?.scheduleRevision ?? 1
+        let registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults ?? .standard)
+        let identity = schedule.flatMap { briefAccessIdentity(for: $0, registry: registry) }
+        let isLegacyRegistry = registry.entries.isEmpty && registry.tombstones.isEmpty
+        let currentRunID = identity?.runID ?? (isLegacyRegistry ? state?.runID ?? UUID() : UUID())
+        let currentRevision = identity?.revision ?? (isLegacyRegistry ? state?.scheduleRevision ?? 1 : 1)
+        let currentOccurrenceID = identity?.occurrenceID ?? (isLegacyRegistry ? state?.occurrenceID : UUID())
+        let currentEpoch = identity?.epoch ?? (isLegacyRegistry ? state?.scheduleEpoch ?? 1 : 1)
         switch QuietTimeBriefAccessPolicy.reconciliation(
             state: state,
             schedule: schedule,
             currentRunID: currentRunID,
             currentRevision: currentRevision,
+            currentOccurrenceID: currentOccurrenceID,
+            currentEpoch: currentEpoch,
             at: now
         ) {
         case .noActiveGrant:
@@ -163,7 +248,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         case .discardStaleGrant:
             switch QuietTimeBriefAccessPolicy.staleGrantAction(
                 schedule: schedule,
-                at: now
+                at: now,
+                hasActiveRegistryProtection: !registry.activeEntries(at: now).isEmpty
             ) {
             case .reapplyCurrentShield:
                 guard let schedule,
@@ -219,9 +305,15 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         schedule: QuietTimeShieldScheduleSnapshot?
     ) {
         guard let schedule,
-              let window = QuietTimeShieldSchedulePolicy.activeWindow(in: schedule, at: date),
               let selection = loadSelection(),
               !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
+            store.clearAllSettings()
+            return
+        }
+        let registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults ?? .standard)
+        let hasActiveRegistryProtection = !registry.activeEntries(at: date).isEmpty
+        guard let window = QuietTimeShieldSchedulePolicy.activeWindow(in: schedule, at: date)
+                ?? (hasActiveRegistryProtection ? .protectedSession : nil) else {
             store.clearAllSettings()
             return
         }
@@ -237,6 +329,46 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         at date: Date
     ) -> QuietTimeShieldWindow? {
         QuietTimeShieldWindow.allCases.first { snapshot.contains(date, in: $0) }
+    }
+
+    private func briefAccessIdentity(
+        for snapshot: QuietTimeShieldScheduleSnapshot,
+        registry: QuietTimeShieldScheduleRegistry
+    ) -> QuietTimeBriefAccessScheduleIdentity? {
+        guard !registry.entries.isEmpty || !registry.tombstones.isEmpty else {
+            return QuietTimeBriefAccessScheduleIdentity(
+                runID: snapshot.runID,
+                revision: snapshot.revision
+            )
+        }
+        guard let entry = registry.entry(for: snapshot.runID),
+              registry.accepts(
+                  occurrenceID: entry.occurrenceID,
+                  revision: entry.revision,
+                  epoch: entry.epoch
+              ) else { return nil }
+        return QuietTimeBriefAccessScheduleIdentity(
+            runID: snapshot.runID,
+            occurrenceID: entry.occurrenceID,
+            revision: entry.revision,
+            epoch: entry.epoch
+        )
+    }
+
+    private func grantMatchesCurrentIdentity(
+        _ grant: QuietTimeBriefAccessGrant,
+        state: QuietTimeBriefAccessState,
+        identity: QuietTimeBriefAccessScheduleIdentity?
+    ) -> Bool {
+        guard let identity else { return false }
+        return state.runID == identity.runID
+            && state.occurrenceID == identity.occurrenceID
+            && state.scheduleRevision == identity.revision
+            && state.scheduleEpoch == identity.epoch
+            && grant.runID == identity.runID
+            && grant.occurrenceID == identity.occurrenceID
+            && grant.scheduleRevision == identity.revision
+            && grant.scheduleEpoch == identity.epoch
     }
 
     private func loadBriefAccessState() -> QuietTimeBriefAccessState? {

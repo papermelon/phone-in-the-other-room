@@ -76,9 +76,9 @@ enum WindDownProtectionChoice: String, CaseIterable, Identifiable, Equatable {
     var detail: String {
         switch self {
         case .appShielding:
-            return "App limits run from Wind Down start through morning quiet. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
+            return "App protection supports Wind Down and Screen-Free Morning. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
         case .nfcAndAppShielding:
-            return "Tap your Wind Down tag to start the barrier; app limits stay active through morning quiet. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
+            return "Tap your Wind Down tag to start app protection. The same tag is used for the normal end; Screen-Free Morning is protected as its linked plan begins."
         }
     }
 
@@ -117,6 +117,127 @@ enum WindDownStartGate {
     ) -> Bool {
         guard !startInFlight, !scanInFlight else { return false }
         return forPendingStart ? !hasActiveRun : hasActiveRun
+    }
+}
+
+enum SessionExitSource: Equatable {
+    case phone
+    case watch
+}
+
+enum SessionExitAttempt: Equatable {
+    case directUserEnd
+    case authenticatedNFCTag
+    case emergencyBypass
+    case missingRegisteredNFCTag
+    case mismatchedNFCTag
+    case cancelledNFCScan
+    case unavailableNFCScan
+}
+
+enum SessionExitRejection: Equatable {
+    case nfcAuthenticationRequired
+    case missingRegisteredNFCTag
+    case mismatchedNFCTag
+    case cancelledNFCScan
+    case unavailableNFCScan
+    case watchCannotEndNFC
+    case emergencyChallengeRequired
+    case invalidAuthentication
+}
+
+enum SessionExitAuthorization: Equatable {
+    case authorized(EarlyEndReason)
+    case rejected(SessionExitRejection)
+
+    var reason: EarlyEndReason? {
+        guard case .authorized(let reason) = self else { return nil }
+        return reason
+    }
+}
+
+/// The coordinator remains the final authority, but NFC scan UI can consult the
+/// same pure policy before performing terminal cleanup. A direct `.userEnded`
+/// call therefore cannot turn an NFC run into an honor-timer exit.
+enum SessionExitAuthorizationPolicy {
+    static func authorization(
+        for guardKind: SessionGuardKind,
+        attempt: SessionExitAttempt,
+        source: SessionExitSource = .phone
+    ) -> SessionExitAuthorization {
+        if source == .watch, guardKind == .nfcTag {
+            return .rejected(.watchCannotEndNFC)
+        }
+
+        switch attempt {
+        case .missingRegisteredNFCTag:
+            return .rejected(.missingRegisteredNFCTag)
+        case .mismatchedNFCTag:
+            return .rejected(.mismatchedNFCTag)
+        case .cancelledNFCScan:
+            return .rejected(.cancelledNFCScan)
+        case .unavailableNFCScan:
+            return .rejected(.unavailableNFCScan)
+        case .directUserEnd:
+            return guardKind == .nfcTag
+                ? .rejected(.nfcAuthenticationRequired)
+                : .authorized(.userEnded)
+        case .authenticatedNFCTag:
+            guard source == .phone, guardKind == .nfcTag else {
+                return .rejected(.invalidAuthentication)
+            }
+            return .authorized(.nfcTagAuthenticated)
+        case .emergencyBypass:
+            return .rejected(.emergencyChallengeRequired)
+        }
+    }
+
+    static func authorization(
+        for guardKind: SessionGuardKind,
+        requestedReason: EarlyEndReason,
+        source: SessionExitSource = .phone
+    ) -> SessionExitAuthorization {
+        switch requestedReason {
+        case .userEnded:
+            return authorization(for: guardKind, attempt: .directUserEnd, source: source)
+        case .nfcTagAuthenticated:
+            return authorization(for: guardKind, attempt: .authenticatedNFCTag, source: source)
+        case .emergencyBypass:
+            return .rejected(.emergencyChallengeRequired)
+        case .phoneReturnedTooSoon, .signalLostTooLong, .appInterrupted, .unsupported:
+            if source == .watch, guardKind == .nfcTag {
+                return .rejected(.watchCannotEndNFC)
+            }
+            return .authorized(requestedReason)
+        }
+    }
+}
+
+/// The testable state transition used by `FocusSessionCoordinator.endEarly`.
+/// Returning `nil` means the active run must remain untouched.
+enum SessionExitTransition {
+    static func ending(
+        _ run: FocusRun,
+        requestedReason: EarlyEndReason,
+        source: SessionExitSource = .phone,
+        at date: Date = Date()
+    ) -> FocusRun? {
+        guard ![.completed, .endedEarly, .setup].contains(run.state),
+              case .authorized(let reason) = SessionExitAuthorizationPolicy.authorization(
+                for: run.guardKind,
+                requestedReason: requestedReason,
+                source: source
+              ) else { return nil }
+
+        var terminalRun = run
+        terminalRun.state = .endedEarly
+        terminalRun.endedAt = date
+        terminalRun.actualDurationSeconds = min(
+            run.plannedDurationSeconds,
+            max(0, date.timeIntervalSince(run.startedAt))
+        )
+        terminalRun.endedEarlyReason = reason
+        return terminalRun
     }
 }
 

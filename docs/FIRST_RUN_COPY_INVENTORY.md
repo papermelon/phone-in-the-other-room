@@ -11,14 +11,14 @@ diagnoses a sleep condition or promises better sleep.
 | Welcome · Ollie | Narrative 4 | Ollie keeps watch and searches for missing sheep while you follow through. | — | Introduces the mascot without urgency. |
 | Questionnaire | All questions | A few questions, kept on this iPhone. These answers help choose a starting point. They do not diagnose a sleep condition or name a disorder. | — | On-device; non-clinical. |
 | Recommendation | After answers | Your Wind Down starting point. Based on what you told us, these ideas may be useful places to begin. | Mapped `WindDownGuidanceLibrary` IDs | Honest mapping, sourced ideas, skip does not undo a completed questionnaire. |
-| Gift announcement | Questionnaire completed | A gift is waiting on the Farm. Claim it during the Farm guide; it does not spend wool. | Catalogue wearable ID | Pending gift, not a purchase. |
+| Gift announcement | Questionnaire completed | Moonlit Coat was added to your wardrobe. Keep my current outfit / Wear Moonlit Coat. | Catalogue wearable ID | Questionnaire owns the gift; wearing it is an explicit choice. |
 | Gift announcement | Questionnaire skipped | You can choose a starting point later. Wind Down still works. | — | Skip is first-class. |
 | Practice offer | Guide | This creates a real Nights record. It is not a protected night, and it does not add to the usual Phone Away search meter. | — | Honest about rewards and meters. |
 | Practice reward | New sheep granted | Ollie brought a second sheep home. | `pippin` | Only when this completion minted the sheep. |
 | Practice reward | Sheep already granted | Practice is in Nights. Your welcome-gift sheep is still on the Farm. | — | Replay must not pretend a second Pippin arrived. |
-| Farm claim | Pending wearable | Your Wind Down starting point left a free shepherd wearable waiting here. Claiming it does not spend wool. | Wearable item ID | Claim without equipping. |
-| Farm equip | Claimed, not worn | The gift is yours. Put it on the shepherd when you are ready. | — | Separate equip lesson. |
-| Continue card | Paused or off-surface | Continue getting to know Counting Sheep. Resume / Dismiss for now. | — | Pause and resume without guilt. |
+| Farm chapter offer | First user-initiated Farm visit | Want the four-tip Farm tour? Meet the flock, The Barn, the wardrobe, and Ollie’s Search. Show me / Explore on my own. | — | Farm guidance is opt-in after the Home exploration pause. |
+| Wardrobe | Gift owned | Welcome gift · Owned. Wear / Take off. | Wearable item ID | The gift is visible without a wool price or progression unlock. |
+| Continue card | Paused chapter only | Resume Home basics / Resume the Farm tour. Resume / Dismiss for now. | — | Resume changes the visible destination in the same interaction. |
 | Slumber Party | Available | Create a Slumber Party / Join with a code / Do this later. | — | Join focuses the code field. |
 | Slumber Party | Unavailable | Slumber Party is not available in this copy of Counting Sheep. Wind Down, the Farm, and Nights are ready. | — | No feature-flag language. |
 | Screen Time | Onboarding + Settings | App limits let Counting Sheep cover the apps you choose while Wind Down is active… You can decline and come back to this later in Settings. | — | Consent before the system prompt. |

@@ -597,7 +597,7 @@ insert into auth.users (
 do $$
 declare
   owner_id uuid := '10000000-0000-4000-8000-000000000015';
-  member_id uuid := '10000000-0000-4000-8000-000000000016';
+  member_user_id uuid := '10000000-0000-4000-8000-000000000016';
   outsider_id uuid := '10000000-0000-4000-8000-000000000017';
   result jsonb;
   invite_code text;
@@ -618,22 +618,22 @@ begin
     'schemaVersion', 2, 'command', 'createInvite', 'idempotencyKey', repeat('3b', 32)
   ));
   invite_code := result ->> 'inviteCode';
-  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+  perform public.night_flock_commitment_command(member_user_id, jsonb_build_object(
     'schemaVersion', 2, 'command', 'redeemInvite', 'shortCode', invite_code,
     'idempotencyKey', repeat('3c', 32)
   ));
-  member_member := (public.night_flock_commitment_state(member_id) ->> 'myMemberID')::uuid;
+  member_member := (public.night_flock_commitment_state(member_user_id) ->> 'myMemberID')::uuid;
   perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
     'schemaVersion', 2, 'command', 'acceptGoal', 'challengeID', challenge_id, 'idempotencyKey', repeat('3d', 32)
   ));
-  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+  perform public.night_flock_commitment_command(member_user_id, jsonb_build_object(
     'schemaVersion', 2, 'command', 'acceptGoal', 'challengeID', challenge_id, 'idempotencyKey', repeat('3e', 32)
   ));
   perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
     'schemaVersion', 2, 'command', 'setLocalSetup', 'challengeID', challenge_id,
     'setupReady', true, 'shieldingEvidence', 'notRequested', 'idempotencyKey', repeat('3f', 32)
   ));
-  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+  perform public.night_flock_commitment_command(member_user_id, jsonb_build_object(
     'schemaVersion', 2, 'command', 'setLocalSetup', 'challengeID', challenge_id,
     'setupReady', true, 'shieldingEvidence', 'observed', 'idempotencyKey', repeat('40', 32)
   ));
@@ -662,20 +662,20 @@ begin
     raise exception 'outsider read group metrics';
   end if;
 
-  perform public.night_flock_social_command(member_id, jsonb_build_object(
+  perform public.night_flock_social_command(member_user_id, jsonb_build_object(
     'schemaVersion', 3, 'command', 'setSharingPreferences',
     'shareGoalProgress', true, 'shareWindDownCompletion', true, 'shareWindDownMinutes', true,
     'sharePhoneAwayMinutes', true, 'sharePhoneTuckedAway', true, 'shareShieldingStatus', true,
     'shareRoutineIdeas', false, 'shareSleepDuration', true, 'shareRestfulness', true,
     'idempotencyKey', repeat('43', 32)
   ));
-  perform public.night_flock_social_command(member_id, jsonb_build_object(
+  perform public.night_flock_social_command(member_user_id, jsonb_build_object(
     'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
     'day', 1, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
     'windDownMinutes', 40, 'phoneAwayMinutes', 10, 'sleepDurationMinutes', 480,
     'restfulness', 'rested', 'idempotencyKey', repeat('44', 32)
   ));
-  perform public.night_flock_social_command(member_id, jsonb_build_object(
+  perform public.night_flock_social_command(member_user_id, jsonb_build_object(
     'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
     'day', 1, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
     'windDownMinutes', 40, 'phoneAwayMinutes', 10, 'sleepDurationMinutes', 480,
@@ -689,11 +689,11 @@ begin
     raise exception 'member published metrics for another member';
   end if;
 
-  result := public.night_flock_social_state(member_id);
+  result := public.night_flock_social_state(member_user_id);
   if coalesce(result -> 'days' -> 0 -> 'memberProgress', '[]'::jsonb)::text not like '%480%' then
     raise exception 'opted-in sleep minutes were not projected';
   end if;
-  perform public.night_flock_social_command(member_id, jsonb_build_object(
+  perform public.night_flock_social_command(member_user_id, jsonb_build_object(
     'schemaVersion', 3, 'command', 'setSharingPreferences',
     'shareGoalProgress', true, 'shareWindDownCompletion', true, 'shareWindDownMinutes', true,
     'sharePhoneAwayMinutes', true, 'sharePhoneTuckedAway', true, 'shareShieldingStatus', true,
@@ -708,7 +708,7 @@ begin
     raise exception 'schema-three projection exposed local tokens';
   end if;
 
-  perform public.night_flock_social_command(member_id, jsonb_build_object(
+  perform public.night_flock_social_command(member_user_id, jsonb_build_object(
     'schemaVersion', 3, 'command', 'setSharingPreferences',
     'shareGoalProgress', true, 'shareWindDownCompletion', false, 'shareWindDownMinutes', true,
     'sharePhoneAwayMinutes', true, 'sharePhoneTuckedAway', true, 'shareShieldingStatus', true,
@@ -736,7 +736,7 @@ begin
   end if;
 
   begin
-    perform public.night_flock_social_command(member_id, jsonb_build_object(
+    perform public.night_flock_social_command(member_user_id, jsonb_build_object(
       'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
       'day', 1, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
       'windDownMinutes', 400, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
@@ -747,8 +747,8 @@ begin
     if sqlerrm = 'out-of-bounds minutes were accepted' then raise; end if;
   end;
 
-  result := public.night_flock_social_state(member_id);
-  perform public.night_flock_social_command(member_id, jsonb_build_object(
+  result := public.night_flock_social_state(member_user_id);
+  perform public.night_flock_social_command(member_user_id, jsonb_build_object(
     'schemaVersion', 3, 'command', 'acknowledgeGrant',
     'grantID', result -> 'pendingGrants' -> 0 ->> 'id',
     'idempotencyKey', repeat('4a', 32)
@@ -757,7 +757,7 @@ begin
       where member_id = member_member and milestone = 'qualifyingNight:1') then
     raise exception 'acknowledged grant was not claimed';
   end if;
-  if jsonb_array_length(coalesce(public.night_flock_social_state(member_id) -> 'pendingGrants', '[]'::jsonb)) <> 0 then
+  if jsonb_array_length(coalesce(public.night_flock_social_state(member_user_id) -> 'pendingGrants', '[]'::jsonb)) <> 0 then
     raise exception 'claimed grant remained pending';
   end if;
 
@@ -768,7 +768,7 @@ begin
     'restfulness', null, 'idempotencyKey', repeat('4b', 32)
   ));
   for day_number in 2..4 loop
-    perform public.night_flock_social_command(member_id, jsonb_build_object(
+    perform public.night_flock_social_command(member_user_id, jsonb_build_object(
       'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
       'day', day_number, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
       'windDownMinutes', 40, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
@@ -784,7 +784,7 @@ begin
   update public.night_flock_challenges
     set status = 'completed', completed_at = now()
     where id = challenge_id;
-  perform public.night_flock_social_command(member_id, jsonb_build_object(
+  perform public.night_flock_social_command(member_user_id, jsonb_build_object(
     'schemaVersion', 3, 'command', 'publishNightMetrics', 'challengeID', challenge_id,
     'day', 4, 'status', 'morningQuietCompleted', 'shieldingEvidence', 'observed',
     'windDownMinutes', 40, 'phoneAwayMinutes', 0, 'sleepDurationMinutes', null,
@@ -830,7 +830,7 @@ begin
     where member_id = owner_member and milestone = 'qualifyingNight:7'
   ) then raise exception '12-month grant retention did not purge'; end if;
 
-  perform public.night_flock_command(member_id, jsonb_build_object(
+  perform public.night_flock_command(member_user_id, jsonb_build_object(
     'command', 'leave', 'idempotencyKey', repeat('4d', 32)
   ));
   result := public.night_flock_social_state(owner_id);
@@ -838,13 +838,256 @@ begin
     raise exception 'left member still appeared in social projection';
   end if;
 
-  perform private.delete_night_flock_user_data(member_id);
+  perform private.delete_night_flock_user_data(member_user_id);
   if exists (
     select 1 from public.night_flock_shared_metrics where member_id = member_member
   ) then raise exception 'deleted account kept shared metrics'; end if;
   if exists (
     select 1 from public.night_flock_reward_grants where member_id = member_member
   ) then raise exception 'deleted account kept reward grants'; end if;
+end;
+$$;
+
+do $$
+declare
+  owner_id uuid := '10000000-0000-4000-8000-000000000001';
+  member_id uuid := '10000000-0000-4000-8000-000000000002';
+  created_flock_id uuid;
+  first_id uuid := '70000000-0000-4000-8000-000000000001';
+  second_id uuid := '70000000-0000-4000-8000-000000000002';
+  stale_id uuid := '70000000-0000-4000-8000-000000000003';
+  rogue_id uuid := '70000000-0000-4000-8000-000000000006';
+  third_id uuid := '70000000-0000-4000-8000-000000000004';
+  fourth_id uuid := '70000000-0000-4000-8000-000000000005';
+  first_code text := 'ABCD23456789';
+  second_code text := 'BCDE3456789A';
+  moderation_action text;
+  create_candidate uuid;
+  replace_candidate uuid;
+  invite_count_before integer;
+  result jsonb;
+begin
+  if has_function_privilege(
+      'service_role',
+      'private.night_flock_commitment_snapshot_before_invite_recovery(uuid)',
+      'EXECUTE'
+    ) then
+    raise exception 'service role can execute renamed snapshot backup';
+  end if;
+  if has_function_privilege(
+      'service_role',
+      'public.night_flock_commitment_command_before_invite_recovery(uuid,jsonb)',
+      'EXECUTE'
+    ) then
+    raise exception 'service role can bypass invite recovery through renamed command backup';
+  end if;
+  if not has_function_privilege(
+      'service_role', 'public.night_flock_commitment_command(uuid,jsonb)', 'EXECUTE'
+    ) or not has_function_privilege(
+      'service_role', 'public.night_flock_commitment_state(uuid)', 'EXECUTE'
+    ) then
+    raise exception 'service role cannot execute current commitment wrapper and state';
+  end if;
+  perform private.delete_night_flock_user_data(owner_id);
+  perform private.delete_night_flock_user_data(member_id);
+  result := public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'command', 'createParty', 'goalKind', 'phoneAway', 'targetMinutes', null,
+    'appDisplayName', null, 'identity', 'moonlitMeadow', 'timeZoneIdentifier', 'UTC',
+    'idempotencyKey', repeat('7a', 32)
+  ));
+  created_flock_id := (result -> 'snapshot' ->> 'flockID')::uuid;
+  if public.night_flock_commitment_state(owner_id) ? 'activeInvite' then
+    raise exception 'no-invite projection contained active invite metadata';
+  end if;
+  if public.night_flock_social_state(owner_id) ? 'activeInvite' then
+    raise exception 'schema-three no-invite projection contained active invite metadata';
+  end if;
+
+  result := public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'command', 'createInvite', 'inviteID', first_id,
+    'inviteDigest', encode(extensions.digest(first_code, 'sha256'), 'hex'),
+    'idempotencyKey', repeat('7b', 32)
+  ));
+  if result ? 'inviteCode' and result ->> 'inviteCode' is not null then
+    raise exception 'recoverable invite returned plaintext';
+  end if;
+  if not exists (select 1 from public.night_flock_invites where id = first_id
+      and token_hash = extensions.digest(first_code, 'sha256')) then
+    raise exception 'recoverable invite did not store only its digest';
+  end if;
+  if not (public.night_flock_commitment_state(owner_id) ? 'activeInvite') then
+    raise exception 'keeper projection omitted active invite metadata';
+  end if;
+  if not (public.night_flock_social_state(owner_id) ? 'activeInvite') then
+    raise exception 'schema-three keeper projection dropped eligible active invite metadata';
+  end if;
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'command', 'createInvite', 'inviteID', first_id,
+    'inviteDigest', encode(extensions.digest(first_code, 'sha256'), 'hex'),
+    'idempotencyKey', repeat('7b', 32)
+  ));
+  if (select count(*) from public.night_flock_invites invite where invite.flock_id = created_flock_id) <> 1 then
+    raise exception 'identical recoverable invite replay inserted another row';
+  end if;
+
+  foreach moderation_action in array array['socialSuspension', 'accountSuspension', 'accountDeletion'] loop
+    create_candidate := gen_random_uuid();
+    replace_candidate := gen_random_uuid();
+    select count(*) into invite_count_before from public.night_flock_invites
+      where flock_id = created_flock_id;
+    insert into public.night_flock_moderation_actions (
+      target_user_id, action, reason, expires_at
+    ) values (
+      owner_id, moderation_action, 'invite recovery policy parity test', now() + interval '1 hour'
+    );
+
+    begin
+      perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+        'command', 'createInvite', 'inviteID', create_candidate,
+        'inviteDigest', repeat('c', 64),
+        'idempotencyKey', encode(extensions.digest(create_candidate::text, 'sha256'), 'hex')
+      ));
+      raise exception 'moderated digest create was accepted for %', moderation_action;
+    exception when sqlstate '42501' then
+      if sqlerrm <> 'Slumber Party unavailable for this account' then raise; end if;
+    end;
+
+    begin
+      perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+        'command', 'replaceInvite', 'expectedInviteID', first_id,
+        'inviteID', replace_candidate, 'inviteDigest', repeat('d', 64),
+        'idempotencyKey', encode(extensions.digest(replace_candidate::text, 'sha256'), 'hex')
+      ));
+      raise exception 'moderated digest replacement was accepted for %', moderation_action;
+    exception when sqlstate '42501' then
+      if sqlerrm <> 'Slumber Party unavailable for this account' then raise; end if;
+    end;
+
+    if (select count(*) from public.night_flock_invites where flock_id = created_flock_id) <> invite_count_before
+       or exists (select 1 from public.night_flock_invites where id in (create_candidate, replace_candidate))
+       or not exists (
+         select 1 from public.night_flock_invites where id = first_id
+           and revoked_at is null
+           and token_hash = extensions.digest(first_code, 'sha256')
+       ) then
+      raise exception 'moderation rejection mutated invitations for %', moderation_action;
+    end if;
+    delete from public.night_flock_moderation_actions
+      where target_user_id = owner_id and action = moderation_action
+        and reason = 'invite recovery policy parity test';
+  end loop;
+
+  insert into public.night_flock_moderation_actions (
+    target_user_id, action, reason, expires_at
+  ) values (
+    owner_id, 'socialSuspension', 'expired invite recovery policy parity test',
+    now() - interval '1 second'
+  );
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'command', 'createInvite', 'inviteID', first_id,
+    'inviteDigest', encode(extensions.digest(first_code, 'sha256'), 'hex'),
+    'idempotencyKey', repeat('7b', 32)
+  ));
+  delete from public.night_flock_moderation_actions
+    where target_user_id = owner_id and reason = 'expired invite recovery policy parity test';
+
+  insert into public.night_flock_invites (
+    id, flock_id, created_by_member_id, token_hash, idempotency_key, expires_at
+  ) select rogue_id, created_flock_id, member.id, decode(repeat('f', 64), 'hex'),
+      repeat('6f', 32), now() + interval '7 days'
+    from public.night_flock_members member
+    where member.user_id = owner_id and member.flock_id = created_flock_id and member.status = 'active';
+  begin
+    perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+      'command', 'createInvite', 'inviteID', stale_id,
+      'inviteDigest', repeat('c', 64), 'idempotencyKey', repeat('7c', 32)
+    ));
+    raise exception 'conflicting invite create was accepted';
+  exception when raise_exception then
+    if sqlerrm <> 'active_invite_exists' then raise; end if;
+  end;
+
+  begin
+    perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+      'command', 'replaceInvite', 'expectedInviteID', stale_id, 'inviteID', gen_random_uuid(),
+      'inviteDigest', repeat('e', 64), 'idempotencyKey', repeat('7e', 32)
+    ));
+    raise exception 'stale replacement was accepted';
+  exception when raise_exception then
+    if sqlerrm <> 'active_invite_exists' then raise; end if;
+  end;
+  if (select count(*) from public.night_flock_invites invite
+      where invite.flock_id = created_flock_id and invite.revoked_at is null
+        and invite.expires_at > now() and invite.redeemed_at is null) <> 2 then
+    raise exception 'stale replacement changed the deliberately duplicated active set';
+  end if;
+
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'command', 'replaceInvite', 'expectedInviteID', first_id, 'inviteID', second_id,
+    'inviteDigest', encode(extensions.digest(second_code, 'sha256'), 'hex'),
+    'idempotencyKey', repeat('7d', 32)
+  ));
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'command', 'replaceInvite', 'expectedInviteID', first_id, 'inviteID', second_id,
+    'inviteDigest', encode(extensions.digest(second_code, 'sha256'), 'hex'),
+    'idempotencyKey', repeat('7d', 32)
+  ));
+  if not exists (select 1 from public.night_flock_invites where id = first_id and revoked_at is not null)
+     or not exists (select 1 from public.night_flock_invites where id = rogue_id and revoked_at is not null)
+     or (select count(*) from public.night_flock_invites invite
+          where invite.flock_id = created_flock_id and invite.revoked_at is null
+            and invite.expires_at > now() and invite.redeemed_at is null) <> 1
+     or (select count(*) from public.night_flock_invites where id = second_id and revoked_at is null) <> 1 then
+    raise exception 'replacement did not revoke the full active set atomically';
+  end if;
+
+  perform public.night_flock_commitment_command(member_id, jsonb_build_object(
+    'command', 'redeemInvite', 'shortCode', second_code, 'idempotencyKey', repeat('7f', 32)
+  ));
+  if public.night_flock_commitment_state(member_id) ? 'activeInvite' then
+    raise exception 'non-host projection exposed active invite metadata';
+  end if;
+  if public.night_flock_social_state(member_id) ? 'activeInvite' then
+    raise exception 'schema-three non-host projection exposed active invite metadata';
+  end if;
+  update public.night_flock_invites set revoked_at = now() where id = second_id;
+  if public.night_flock_commitment_state(owner_id) ? 'activeInvite' then
+    raise exception 'revoked invite remained in host metadata';
+  end if;
+  result := public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'command', 'createInvite', 'idempotencyKey', repeat('8a', 32)
+  ));
+  if result ->> 'inviteCode' !~ '^[A-HJ-NP-Z2-9]{12}$' then
+    raise exception 'mixed-version legacy create did not preserve its plaintext response';
+  end if;
+  begin
+    perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+      'command', 'createInvite', 'inviteID', gen_random_uuid(), 'inviteDigest', repeat('c', 64),
+      'idempotencyKey', repeat('8d', 32)
+    ));
+    raise exception 'new create raced past a legacy active invitation';
+  exception when raise_exception then
+    if sqlerrm <> 'active_invite_exists' then raise; end if;
+  end;
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'command', 'replaceInvite', 'expectedInviteID', (result ->> 'inviteID')::uuid,
+    'inviteID', third_id, 'inviteDigest', repeat('a', 64), 'idempotencyKey', repeat('8c', 32)
+  ));
+  update public.night_flock_invites set expires_at = now() - interval '1 second' where id = third_id;
+  if public.night_flock_commitment_state(owner_id) ? 'activeInvite' then
+    raise exception 'expired invite remained in host metadata';
+  end if;
+  perform public.night_flock_commitment_command(owner_id, jsonb_build_object(
+    'command', 'createInvite', 'inviteID', fourth_id, 'inviteDigest', repeat('b', 64),
+    'idempotencyKey', repeat('8b', 32)
+  ));
+  update public.night_flock_challenges set status = 'active' where flock_id = created_flock_id;
+  if public.night_flock_commitment_state(owner_id) ? 'activeInvite' then
+    raise exception 'started lobby exposed active invite metadata';
+  end if;
+  if public.night_flock_social_state(owner_id) ? 'activeInvite' then
+    raise exception 'schema-three started lobby exposed active invite metadata';
+  end if;
 end;
 $$;
 

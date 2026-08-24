@@ -105,16 +105,21 @@ flowchart LR
 2. `NightWatchPreferences` creates an anchored `NightWatchPlan`; the iPhone persists and
    keeps its wall-clock transitions even while either app is backgrounded. Local reminders
    support the next requested wind-down and morning completion.
-3. New plans offer `.honorTimer` App Shielding or `.nfcTag` NFC + App Shielding, using a locally registered NDEF phone-bed tag for the latter. Legacy `.watchPlacement` and `.qrCode` values remain decodable but normalize to the timer for new release flows. An opted-in automatic Wind Down can schedule shielding while the app is closed, with the app reconciling the run on next activation.
+3. New plans offer `.honorTimer` App Shielding or `.nfcTag` NFC + App Shielding, using a locally registered NDEF phone-bed tag for the latter. Legacy `.watchPlacement` and `.qrCode` values remain decodable but normalize to the timer for new release flows. An opted-in automatic Wind Down can schedule shielding while the app is closed, with the app reconciling the run on next activation. A primary tag and optional backup keep only local digests and metadata. Retired physical tags can be resynced only from Settings by writing a fresh credential after a successful NFC write; the retired digest is never reactivated.
 4. The plan moves through `.windDown`, `.overnight`, and `.morningQuiet`. The Watch mirrors
    that run but does not authorize, advance, or end the current release's protection flow.
-5. If the user opted into shielding, the same consented Screen Time selection is shielded
-   from the eligible Wind Down start through the end of morning quiet, including overnight
+5. New Wind Down, Screen-Free Morning, and Phone Away starts require Family Controls authorization
+   and a non-empty opaque Screen Time app/category selection. The same consented selection is shielded
+   from the eligible Wind Down start through the end of Screen-Free Morning, including overnight
    separation. Counting Sheep and its fail-open emergency exit remain available. The monitor
    extension records observed apply/clear evidence in the App Group. This barrier is not
-   progression: only the two quiet bookends are credited (ADR-0012).
-6. On finish, `Shared/RewardEngine.swift` credits only the two quiet bookends—not the
-   overnight hours—then grants one completion reward. `PersistenceService` saves JSON in
+   progression: the Wind Down benefit and Sunrise Trail settle independently. Runtime
+   apply/restore failures fail open, record no false observed evidence, and route to repair before
+   another start (ADR-0012, ADR-0019).
+6. On finish, `Shared/RewardEngine.swift` credits Wind Down reward/progress and the shared
+   Wind Down metric from the factual wind-down bookend only—not overnight or Screen-Free
+   Morning minutes. Actual Screen-Free Morning minutes settle independently through Sunrise
+   Trail and remain separately presented/private. `PersistenceService` saves JSON in
    `UserDefaults` under `ollie.*`, including a 90-day session-and-event history. Detailed
    ritual, reflection, and HealthKit history remains local. Separately consented impact
    records omit exact dates/times, source names, selected apps, and raw Health samples.
@@ -124,15 +129,19 @@ flowchart LR
    active Wind Down receives no social UI. Named member progress, rounded quiet minutes, optional
    sleep/restfulness, and fixed reactions stay inside the invite-only party. Server-authoritative
    Farm grants apply later from a local ledger. App tokens, exact schedules, and impact data remain
-   outside the social contract.
+   outside the social contract. Recovery never creates an anonymous account: 401 reconnects only
+   the locally bound Apple-linked Supabase UUID, while `linked_account_required` links only the
+   current anonymous account in place.
 
 The iPhone is the **authoritative** side of a run. The Watch displays state and reports a brief optional placement distance only.
 Persistence is UserDefaults + Codable JSON only — no CoreData or SwiftData. Core app
 state remains in standard defaults; scoped Screen Time selections and the explicit Quiet
 Note widget value use the `group.com.ngawangchime.countingsheep` App Group. After first-run
-setup, Home presents a versioned resumable guide (`ollie.orientation.state`, schema 5) across
-Home, practice, Farm, Slumber Party, Settings, and Nights. Completing the Wind Down starting-point
-questionnaire owns the pending shepherd wearable; a later Farm tutorial claims it, then equips it.
+setup, Home presents a versioned resumable guide (`ollie.orientation.state`, schema 6) as short
+Home Basics and Around the Farm chapters. Practice, Slumber Party, Settings, and Nights guidance
+is contextual. Completing the Wind Down starting-point questionnaire owns the pending shepherd
+wearable; onboarding offers an explicit keep-or-wear choice and generic guide navigation never
+equips it.
 
 Full detail: `docs/ARCHITECTURE.md`.
 
@@ -252,8 +261,9 @@ skills/                        ← portable agent skills (see skills/README.md)
   guarantee a sheep; later searches on each track use that track's chance and bad-luck
   protection. A qualifying protected-night search requires a successfully completed primary
   Wind Down whose protected span from eligible start through morning quiet is at least 420
-  minutes. That span is a progression rule, not a claim about hours asleep. Quiet credit
-  remains the two bookends.
+  minutes. That span is a progression rule, not a claim about hours asleep. The configured
+  bookends remain factual receipt rows; Wind Down progression uses its factual wind-down
+  bookend, while Screen-Free Morning settles independently through Sunrise Trail.
 - Search outcomes are deterministic after resolution, persisted once, and protected against
   unreasonable bad luck. Missing data never lowers the search chance.
 - The Farm progression direction separates a permanent discovery/history record from the
@@ -284,8 +294,9 @@ skills/                        ← portable agent skills (see skills/README.md)
   claim that a suggestion was completed. Guidance appears beside those choices, on Home, and at
   phase-appropriate moments. The source library is bundled locally and reached from the secondary
   **“About these ideas and sources”** link; “finite guide” is an internal description only.
-- Settings is organized as **Your Wind Down**, **Connections**, and **Help & app guide**. There is
-  one Wind Down configuration route, not a duplicate Review Wind Down route.
+- Settings is organized as **Your Wind Down**, **Connections**, **Privacy & data**, and **Help &
+  app guide**. The compact root leads to focused detail screens with contextual help and progressive
+  disclosure; there is one Wind Down configuration route, not a duplicate Review Wind Down route.
 - Farm's user-facing task labels are **Ollie's Search** (the missing-sheep board) and
   **Search Journal** (history). Do not call a completed Wind Down or Phone Away note a
   “search” or a “protected night.” First-run sheep and the questionnaire wearable are

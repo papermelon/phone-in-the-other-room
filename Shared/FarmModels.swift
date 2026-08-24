@@ -72,6 +72,7 @@ enum FarmTransactionKind: String, Codable {
     case welcomeGift
     case onboardingPracticeArrival
     case slumberPartyGrant
+    case sunriseTrail
 
     init(from decoder: Decoder) throws {
         let raw = try decoder.singleValueContainer().decode(String.self)
@@ -190,20 +191,106 @@ struct ShepherdProfile: Codable, Equatable {
     )
 }
 
+enum FarmDecorationZone: String, Codable, CaseIterable, Hashable {
+    case leftMeadow
+    case rightMeadow
+    case centerHorizon
+    case leftFence
+    case waterEdge
+    case barnCorner
+}
+
+enum FarmCollectibleSlot: String, Codable, CaseIterable, Hashable {
+    case left
+    case centerLeft
+    case centerRight
+    case right
+}
+
 struct FarmEquipment: Codable, Equatable {
     var ollieAccessoryItemID: String?
-    var farmDecorationItemIDs: [String]
-    var collectibleItemIDs: [String]
+    var decorationPlacements: [FarmDecorationZone: String]
+    var collectiblePlacements: [FarmCollectibleSlot: String]
 
     static let empty = FarmEquipment(
         ollieAccessoryItemID: nil,
-        farmDecorationItemIDs: [],
-        collectibleItemIDs: []
+        decorationPlacements: [:],
+        collectiblePlacements: [:]
     )
+
+    var farmDecorationItemIDs: [String] {
+        get { FarmDecorationZone.allCases.compactMap { decorationPlacements[$0] } }
+        set {
+            decorationPlacements = Dictionary(uniqueKeysWithValues: zip(
+                FarmDecorationZone.allCases,
+                newValue.prefix(FarmDecorationZone.allCases.count)
+            ))
+        }
+    }
+
+    var collectibleItemIDs: [String] {
+        get { FarmCollectibleSlot.allCases.compactMap { collectiblePlacements[$0] } }
+        set {
+            collectiblePlacements = Dictionary(uniqueKeysWithValues: zip(
+                FarmCollectibleSlot.allCases,
+                newValue.prefix(FarmCollectibleSlot.allCases.count)
+            ))
+        }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ollieAccessoryItemID, decorationPlacements, collectiblePlacements
+        case farmDecorationItemIDs, collectibleItemIDs
+    }
+
+    init(
+        ollieAccessoryItemID: String?,
+        decorationPlacements: [FarmDecorationZone: String],
+        collectiblePlacements: [FarmCollectibleSlot: String]
+    ) {
+        self.ollieAccessoryItemID = ollieAccessoryItemID
+        self.decorationPlacements = decorationPlacements
+        self.collectiblePlacements = collectiblePlacements
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        ollieAccessoryItemID = try container.decodeIfPresent(String.self, forKey: .ollieAccessoryItemID)
+        decorationPlacements = try container.decodeIfPresent(
+            [FarmDecorationZone: String].self,
+            forKey: .decorationPlacements
+        ) ?? [:]
+        collectiblePlacements = try container.decodeIfPresent(
+            [FarmCollectibleSlot: String].self,
+            forKey: .collectiblePlacements
+        ) ?? [:]
+
+        if decorationPlacements.isEmpty {
+            let legacy = try container.decodeIfPresent([String].self, forKey: .farmDecorationItemIDs) ?? []
+            for itemID in legacy {
+                guard let zone = FarmShopCatalog.decorationZone(for: itemID),
+                      decorationPlacements[zone] == nil else { continue }
+                decorationPlacements[zone] = itemID
+            }
+        }
+        if collectiblePlacements.isEmpty {
+            let legacy = try container.decodeIfPresent([String].self, forKey: .collectibleItemIDs) ?? []
+            for (slot, itemID) in zip(FarmCollectibleSlot.allCases, legacy) {
+                collectiblePlacements[slot] = itemID
+            }
+        }
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(ollieAccessoryItemID, forKey: .ollieAccessoryItemID)
+        try container.encode(decorationPlacements, forKey: .decorationPlacements)
+        try container.encode(collectiblePlacements, forKey: .collectiblePlacements)
+    }
 }
 
 struct FarmState: Codable, Equatable {
-    static let currentSchemaVersion = 2
+    static let currentSchemaVersion = 3
     static let maximumTransactions = 256
     static let currencyConsolidationKey = "currency:wool-only:v2"
 
@@ -212,6 +299,7 @@ struct FarmState: Codable, Equatable {
     var discoveries: [SheepDiscoveryRecord]
     var barnCapacityLevel: Int
     var woolBalance: Int
+    var unlockedShopTier: Int
     var ownedShopItemIDs: [String]
     var equipment: FarmEquipment
     var shepherd: ShepherdProfile
@@ -224,6 +312,7 @@ struct FarmState: Codable, Equatable {
         discoveries: [],
         barnCapacityLevel: 0,
         woolBalance: 0,
+        unlockedShopTier: 0,
         ownedShopItemIDs: [],
         equipment: .empty,
         shepherd: .defaultProfile,
@@ -239,6 +328,7 @@ struct FarmState: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, sheep, discoveries, barnCapacityLevel, woolBalance, cashBalance
+        case unlockedShopTier
         case ownedShopItemIDs, equipment, shepherd, transactions, trackedSheepDefinitionID
     }
 
@@ -248,6 +338,7 @@ struct FarmState: Codable, Equatable {
         discoveries: [SheepDiscoveryRecord],
         barnCapacityLevel: Int,
         woolBalance: Int,
+        unlockedShopTier: Int,
         ownedShopItemIDs: [String],
         equipment: FarmEquipment,
         shepherd: ShepherdProfile,
@@ -259,6 +350,7 @@ struct FarmState: Codable, Equatable {
         self.discoveries = discoveries
         self.barnCapacityLevel = min(FarmEconomyRules.maximumCapacityLevel, max(0, barnCapacityLevel))
         self.woolBalance = max(0, woolBalance)
+        self.unlockedShopTier = min(3, max(0, unlockedShopTier))
         self.ownedShopItemIDs = Array(Set(ownedShopItemIDs)).sorted()
         self.equipment = equipment
         self.shepherd = shepherd
@@ -279,6 +371,7 @@ struct FarmState: Codable, Equatable {
             discoveries: try container.decodeIfPresent([SheepDiscoveryRecord].self, forKey: .discoveries) ?? [],
             barnCapacityLevel: try container.decodeIfPresent(Int.self, forKey: .barnCapacityLevel) ?? 0,
             woolBalance: (try container.decodeIfPresent(Int.self, forKey: .woolBalance) ?? 0) + convertedWool,
+            unlockedShopTier: try container.decodeIfPresent(Int.self, forKey: .unlockedShopTier) ?? 0,
             ownedShopItemIDs: try container.decodeIfPresent([String].self, forKey: .ownedShopItemIDs) ?? [],
             equipment: try container.decodeIfPresent(FarmEquipment.self, forKey: .equipment) ?? .empty,
             shepherd: try container.decodeIfPresent(ShepherdProfile.self, forKey: .shepherd) ?? .defaultProfile,
@@ -307,6 +400,7 @@ struct FarmState: Codable, Equatable {
         try container.encode(discoveries, forKey: .discoveries)
         try container.encode(barnCapacityLevel, forKey: .barnCapacityLevel)
         try container.encode(woolBalance, forKey: .woolBalance)
+        try container.encode(unlockedShopTier, forKey: .unlockedShopTier)
         try container.encode(ownedShopItemIDs, forKey: .ownedShopItemIDs)
         try container.encode(equipment, forKey: .equipment)
         try container.encode(shepherd, forKey: .shepherd)

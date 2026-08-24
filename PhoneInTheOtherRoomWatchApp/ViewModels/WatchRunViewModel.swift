@@ -8,6 +8,7 @@ final class WatchRunViewModel: ObservableObject {
     @Published var run: FocusRun?
     @Published var proximity: ProximityState = .initial
     @Published var reward: RewardItem?
+    @Published var screenFreeMorning: ScreenFreeMorningPresentation?
     @Published var connectionText = "Waiting for iPhone"
 
     private let watch = WatchConnectivityManagerWatch.shared
@@ -63,6 +64,14 @@ final class WatchRunViewModel: ObservableObject {
 
     var isAdditionalQuiet: Bool {
         run?.nightWatchPlan?.role == .additionalQuiet
+    }
+
+    var isScreenFreeMorningActive: Bool {
+        prioritizedScreenFreeMorning?.isActive == true
+    }
+
+    var prioritizedScreenFreeMorning: ScreenFreeMorningPresentation? {
+        ScreenFreeMorningWatchPresentationPolicy.preferred(morning: screenFreeMorning, run: run)
     }
 
     func pingPhone() {
@@ -134,8 +143,9 @@ final class WatchRunViewModel: ObservableObject {
     }
 
     private func handle(_ message: WatchMessage) {
-        // The iPhone is authoritative. A state update with no run must clear any
-        // application-context snapshot left on the Watch by an earlier session.
+        // The iPhone is authoritative. A nil-run state always clears any
+        // previous Wind Down, while a bounded Morning projection remains the
+        // current phone-authoritative surface.
         if message.type == .focusRunStateUpdate, message.run == nil {
             run = nil
             reward = nil
@@ -144,7 +154,17 @@ final class WatchRunViewModel: ObservableObject {
         }
         if let run = message.run { self.run = run }
         if let proximity = message.proximity { self.proximity = proximity }
-        if let reward = message.reward { self.reward = reward }
+        // The phone keeps receipt/reward disclosure private. Older messages
+        // may carry a reward, but routine state updates never promote it.
+        if message.type != .focusRunStateUpdate, let reward = message.reward { self.reward = reward }
+        // Routine legacy run updates may omit the bounded Morning projection.
+        // Preserve the last known active/planned occurrence unless the phone
+        // explicitly sends a replacement or clears both run and Morning.
+        if let screenFreeMorning = message.screenFreeMorning {
+            self.screenFreeMorning = screenFreeMorning
+        } else if message.run == nil {
+            self.screenFreeMorning = nil
+        }
         connectionText = "Connected to iPhone"
 
         switch message.type {
@@ -187,8 +207,8 @@ final class WatchRunViewModel: ObservableObject {
         case .endFocusRunEarly:
             stopNearbyInteraction()
             WKInterfaceDevice.current().play(.stop)
-        case .focusRunStateUpdate where message.run == nil:
-                connectionText = "No active Wind Down or Phone Away on iPhone"
+        case .focusRunStateUpdate where message.run == nil && message.screenFreeMorning?.isActive != true:
+            connectionText = "No active Wind Down or Phone Away on iPhone"
         default:
             break
         }

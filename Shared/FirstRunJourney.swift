@@ -9,6 +9,32 @@ enum FirstRunSurface: String, Codable, Equatable {
     case nights
 }
 
+enum FirstRunGuideChapter: String, Codable, CaseIterable, Hashable {
+    case homeBasics
+    case farmTour
+
+    var title: String {
+        switch self {
+        case .homeBasics: return "HOME BASICS"
+        case .farmTour: return "AROUND THE FARM"
+        }
+    }
+}
+
+enum FirstRunGuidePresentationState: String, Codable, Equatable {
+    case idle
+    case offered
+    case active
+    case paused
+}
+
+enum FirstRunGuidePresentation: String, Codable, Equatable {
+    case coachMark
+    case practiceSheet
+    case embeddedCard
+    case contextualTip
+}
+
 enum FirstRunFarmAction: String, Codable, CaseIterable, Hashable {
     case metSheep
     case sawCapacity
@@ -37,11 +63,34 @@ struct FirstRunAdvanceContext: Equatable {
         showEquipWearable: true
     )
 
-    /// Remaining Farm-gift lessons, used when skipping claim also skips equip.
+    /// Kept for decoding callers from the expanded schema-five journey.
     var wearableLessonsPending: Bool { showClaimWearable || showEquipWearable }
 }
 
 enum FirstRunJourney {
+    static let homeBasicsSteps: [CountingSheepOrientationStep] = [
+        .home, .start, .phoneAway, .rootTabs
+    ]
+
+    static let farmTourSteps: [CountingSheepOrientationStep] = [
+        .farmMeetSheep, .farmCapacity, .farmShop, .farmSearch
+    ]
+
+    static func steps(for chapter: FirstRunGuideChapter) -> [CountingSheepOrientationStep] {
+        switch chapter {
+        case .homeBasics: return homeBasicsSteps
+        case .farmTour: return farmTourSteps
+        }
+    }
+
+    static func chapter(for step: CountingSheepOrientationStep) -> FirstRunGuideChapter? {
+        switch step.normalized {
+        case .home, .start, .phoneAway, .rootTabs, .navigation: return .homeBasics
+        case .farmMeetSheep, .farmCapacity, .farmShop, .farmSearch: return .farmTour
+        default: return nil
+        }
+    }
+
     static let orderedSteps: [CountingSheepOrientationStep] = [
         .home,
         .start,
@@ -78,9 +127,13 @@ enum FirstRunJourney {
         }
     }
 
+    static func visibleSteps(for chapter: FirstRunGuideChapter) -> [CountingSheepOrientationStep] {
+        steps(for: chapter).map(\.normalized)
+    }
+
     static func surface(for step: CountingSheepOrientationStep) -> FirstRunSurface {
         switch step.normalized {
-        case .home, .start, .phoneAway, .practiceOffer, .practiceReward, .slumberParty, .completion, .navigation:
+        case .home, .start, .phoneAway, .rootTabs, .practiceOffer, .practiceReward, .slumberParty, .completion, .navigation:
             return .home
         case .farmMeetSheep, .farmCapacity, .farmWool, .farmShear, .farmCurrency,
              .farmClaimWearable, .farmEquipWearable, .farmShop, .farmSearch:
@@ -99,6 +152,17 @@ enum FirstRunJourney {
         default:
             return true
         }
+    }
+
+    static func number(
+        for step: CountingSheepOrientationStep,
+        chapter: FirstRunGuideChapter
+    ) -> Int {
+        (visibleSteps(for: chapter).firstIndex(of: step.normalized) ?? 0) + 1
+    }
+
+    static func count(for chapter: FirstRunGuideChapter) -> Int {
+        visibleSteps(for: chapter).count
     }
 
     static func next(
@@ -150,18 +214,37 @@ enum FirstRunJourney {
     static func resumeDestination(
         for state: CountingSheepOrientationState
     ) -> FirstRunResumeDestination? {
-        guard state.status == .inProgress || state.status == .dismissed else { return nil }
+        let isContextualDestination = state.activeChapter == nil
+            && [.practiceOffer, .practiceReward, .slumberParty, .settings, .nights].contains(state.currentStep.normalized)
+        guard state.presentationState == .paused || state.presentationState == .active || isContextualDestination else { return nil }
         let step = state.currentStep.normalized
+        let presentation: FirstRunGuidePresentation
+        switch step {
+        case .practiceOffer: presentation = .practiceSheet
+        case .practiceReward, .slumberParty, .completion: presentation = .embeddedCard
+        case .settings, .nights: presentation = .contextualTip
+        default: presentation = .coachMark
+        }
         return FirstRunResumeDestination(
             surface: surface(for: step),
-            presentPracticeOffer: step == .practiceOffer
+            resetNavigation: true,
+            presentation: presentation,
+            step: step,
+            chapter: state.activeChapter,
+            scrollAnchor: state.scrollAnchor
         )
     }
 }
 
 struct FirstRunResumeDestination: Equatable {
     var surface: FirstRunSurface
-    var presentPracticeOffer: Bool
+    var resetNavigation: Bool
+    var presentation: FirstRunGuidePresentation
+    var step: CountingSheepOrientationStep
+    var chapter: FirstRunGuideChapter?
+    var scrollAnchor: String?
+
+    var presentPracticeOffer: Bool { presentation == .practiceSheet }
 }
 
 enum FirstRunGuideCopy {
@@ -170,6 +253,7 @@ enum FirstRunGuideCopy {
         case .home: return "Tonight’s Wind Down"
         case .start: return "Start what’s ready"
         case .phoneAway: return "Phone Away"
+        case .rootTabs: return "Your four places to go"
         case .practiceOffer: return "A five-minute practice"
         case .practiceReward: return "A welcome gift came home"
         case .farmMeetSheep: return "Meet the flock"
@@ -197,6 +281,8 @@ enum FirstRunGuideCopy {
             return "When Wind Down is eligible, this starts it. Putting the phone away is always first."
         case .phoneAway:
             return "A shorter phone-free stretch outside your usual Wind Down. It stays a separate record."
+        case .rootTabs:
+            return "Home, Nights, Farm, and Settings stay close at the bottom of every screen."
         case .practiceOffer:
             return "This creates a real Nights record. It is not a protected night, and it does not add to the usual Phone Away search meter. Finishing this one-time introduction lets Ollie bring home the second starter sheep."
         case .practiceReward:
@@ -232,8 +318,22 @@ enum FirstRunGuideCopy {
         }
     }
 
-    static let continueCardTitle = "Continue getting to know Counting Sheep"
-    static let continueCardDetail = "A short guide is waiting on the real Home, Farm, Settings, and Nights screens."
+    static let continueCardTitle = "Resume Home basics"
+    static let continueCardDetail = "The next Home tip is waiting on the real screen."
+    static func continueCardTitle(for chapter: FirstRunGuideChapter?) -> String {
+        switch chapter {
+        case .homeBasics: return "Resume Home basics"
+        case .farmTour: return "Resume the Farm tour"
+        case nil: return "Resume your guide"
+        }
+    }
+    static func continueCardDetail(for chapter: FirstRunGuideChapter?, step: CountingSheepOrientationStep) -> String {
+        switch chapter {
+        case .homeBasics: return "Continue with \(title(for: step))."
+        case .farmTour: return "Continue with \(title(for: step)) on the Farm."
+        case nil: return "A guide tip is ready when you are."
+        }
+    }
     static let continueCardResume = "Resume"
     static let continueCardDismiss = "Dismiss for now"
     static let skipForNow = "Skip for now"

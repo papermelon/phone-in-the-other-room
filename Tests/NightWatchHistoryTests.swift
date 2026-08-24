@@ -12,6 +12,181 @@ final class NightWatchHistoryTests: XCTestCase {
         XCTAssertFalse(registration.matches(scannedDigest: "another-tag"))
     }
 
+    func testPhoneBedTagLibraryAuthenticatesPrimaryOrBackupOnlyForAssignedPurpose() {
+        let primary = makeNamedTag(
+            name: "Fridge",
+            digest: "primary",
+            role: .primary,
+            purposes: [.windDown]
+        )
+        let backup = makeNamedTag(
+            name: "Living Room",
+            digest: "backup",
+            role: .backup,
+            purposes: [.windDown, .phoneAway]
+        )
+        let library = PhoneBedTagLibrary(tags: [backup, primary])
+
+        XCTAssertEqual(
+            library.authenticatingTag(digest: "primary", purpose: .windDown)?.name,
+            "Fridge"
+        )
+        XCTAssertNil(library.authenticatingTag(digest: "primary", purpose: .phoneAway))
+        XCTAssertEqual(
+            library.authenticatingTag(digest: "backup", purpose: .phoneAway)?.name,
+            "Living Room"
+        )
+        XCTAssertNil(library.authenticatingTag(digest: "unknown", purpose: .windDown))
+    }
+
+    func testPhoneBedTagLibraryMigratesLegacyRegistrationToPrimaryForBothUses() throws {
+        let registeredAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let legacy = PhoneBedTagRegistration(
+            id: UUID(),
+            tokenDigest: "legacy-digest",
+            registeredAt: registeredAt
+        )
+        let library = try XCTUnwrap(
+            PhoneBedTagLibrary.migrated(from: legacy, legacyDigest: nil)
+        )
+
+        XCTAssertEqual(library.tags.count, 1)
+        XCTAssertEqual(library.primary?.name, "Wind Down tag")
+        XCTAssertNotEqual(library.primary?.id, legacy.id)
+        XCTAssertEqual(library.primary?.tokenDigest, "legacy-digest")
+        XCTAssertEqual(library.primary?.purposes, Set(PhoneBedTagPurpose.allCases))
+        XCTAssertNil(library.backup)
+    }
+
+    func testPhoneBedTagReplacementKeepsStableSlotIDAndDropsOldCredential() {
+        let slotID = UUID()
+        var library = PhoneBedTagLibrary(tags: [
+            makeNamedTag(
+                id: slotID,
+                name: "Fridge",
+                digest: "old",
+                role: .primary,
+                purposes: [.windDown]
+            )
+        ])
+        library.replace(
+            role: .primary,
+            with: makeNamedTag(
+                id: slotID,
+                name: "Kitchen",
+                digest: "new",
+                role: .primary,
+                purposes: [.windDown, .phoneAway]
+            )
+        )
+
+        XCTAssertEqual(library.primary?.id, slotID)
+        XCTAssertEqual(library.primary?.tokenDigest, "new")
+        XCTAssertNil(library.tag(matching: "old"))
+        XCTAssertTrue(library.wasPreviouslyPaired(digest: "old"))
+        XCTAssertNotNil(library.authenticatingTag(digest: "new", purpose: .phoneAway))
+    }
+
+    func testLibraryReplacementKeepsTheSlotAndRetiresTheOldDigest() {
+        let slotID = UUID()
+        var library = PhoneBedTagLibrary(tags: [
+            makeNamedTag(id: slotID, name: "Fridge", digest: "active", role: .primary, purposes: [.windDown, .phoneAway])
+        ])
+        library.replace(
+            role: .primary,
+            with: makeNamedTag(id: slotID, name: "Fridge", digest: "fresh", role: .primary, purposes: [.windDown, .phoneAway])
+        )
+
+        XCTAssertEqual(library.primary?.id, slotID)
+        XCTAssertEqual(library.primary?.name, "Fridge")
+        XCTAssertTrue(library.wasPreviouslyPaired(digest: "active"))
+        XCTAssertFalse(library.wasPreviouslyPaired(digest: "fresh"))
+    }
+
+    func testPhoneBedTagLibraryPersistsPreviousCredentialsWithoutRawTokens() throws {
+        var library = PhoneBedTagLibrary(tags: [
+            makeNamedTag(name: "Fridge", digest: "old", role: .primary, purposes: [.windDown])
+        ])
+        library.replace(
+            role: .primary,
+            with: makeNamedTag(name: "Shelf", digest: "new", role: .primary, purposes: [.windDown])
+        )
+
+        let data = try JSONEncoder().encode(library)
+        let restored = try JSONDecoder().decode(PhoneBedTagLibrary.self, from: data)
+        XCTAssertTrue(restored.wasPreviouslyPaired(digest: "old"))
+        XCTAssertFalse(restored.wasPreviouslyPaired(digest: "new"))
+        XCTAssertFalse(String(decoding: data, as: UTF8.self).contains("raw-token"))
+    }
+
+    func testPhoneBedTagLibraryNormalizesDuplicateCredentialAndPromotesBackup() {
+        let duplicatePrimary = makeNamedTag(
+            name: "Primary",
+            digest: "same",
+            role: .primary,
+            purposes: [.windDown]
+        )
+        let duplicateBackup = makeNamedTag(
+            name: "Backup",
+            digest: "same",
+            role: .backup,
+            purposes: [.phoneAway]
+        )
+        var library = PhoneBedTagLibrary(tags: [duplicateBackup, duplicatePrimary])
+
+        XCTAssertEqual(library.tags.count, 1)
+        XCTAssertEqual(library.primary?.name, "Primary")
+
+        library.forget(id: duplicatePrimary.id)
+        XCTAssertTrue(library.tags.isEmpty)
+
+        var backupOnly = PhoneBedTagLibrary(tags: [
+            makeNamedTag(
+                name: "Spare",
+                digest: "spare",
+                role: .backup,
+                purposes: [.phoneAway]
+            )
+        ])
+        XCTAssertEqual(backupOnly.primary?.name, "Spare")
+        XCTAssertNil(backupOnly.backup)
+        if let promotedID = backupOnly.primary?.id {
+            backupOnly.forget(id: promotedID)
+        }
+        XCTAssertTrue(backupOnly.tags.isEmpty)
+    }
+
+    func testPhoneBedTagTestVerificationUpdatesOnlyRecognizedTag() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        var library = PhoneBedTagLibrary(tags: [
+            makeNamedTag(
+                name: "Fridge",
+                digest: "known",
+                role: .primary,
+                purposes: [.windDown],
+                registeredAt: start
+            )
+        ])
+        let verifiedAt = start.addingTimeInterval(60)
+
+        XCTAssertNil(library.markVerified(digest: "unknown", at: verifiedAt))
+        XCTAssertNil(library.primary?.lastVerifiedAt)
+        XCTAssertNotNil(library.markVerified(digest: "known", at: verifiedAt))
+        XCTAssertEqual(library.primary?.lastVerifiedAt, verifiedAt)
+    }
+
+    func testPhoneBedTagNamesAreTrimmedUnicodeSafeAndNonEmpty() {
+        let longName = "  🐑" + String(repeating: "é", count: 60) + "  "
+        let normalized = NamedPhoneBedTagRegistration.normalizedName(longName)
+
+        XCTAssertEqual(normalized.count, NamedPhoneBedTagRegistration.maximumNameLength)
+        XCTAssertTrue(normalized.hasPrefix("🐑"))
+        XCTAssertEqual(
+            NamedPhoneBedTagRegistration.normalizedName("   \n"),
+            NamedPhoneBedTagRegistration.defaultName
+        )
+    }
+
     func testHistoryDeduplicatesIdempotentEventsAndOrdersByOccurrence() {
         let runID = UUID()
         let start = Date(timeIntervalSince1970: 1_800_000_000)
@@ -145,6 +320,24 @@ final class NightWatchHistoryTests: XCTestCase {
             state: .running,
             guardKind: .nfcTag,
             nightWatchPlan: plan
+        )
+    }
+
+    private func makeNamedTag(
+        id: UUID = UUID(),
+        name: String,
+        digest: String,
+        role: PhoneBedTagRole,
+        purposes: Set<PhoneBedTagPurpose>,
+        registeredAt: Date = Date(timeIntervalSince1970: 1_800_000_000)
+    ) -> NamedPhoneBedTagRegistration {
+        NamedPhoneBedTagRegistration(
+            id: id,
+            name: name,
+            tokenDigest: digest,
+            registeredAt: registeredAt,
+            role: role,
+            purposes: purposes
         )
     }
 }

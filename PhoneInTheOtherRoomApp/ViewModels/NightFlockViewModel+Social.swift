@@ -13,7 +13,7 @@ extension NightFlockViewModel {
         for context: NightFlockRunShareContext,
         metrics: NightFlockLocalNightMetrics
     ) {
-        guard let outbox else { return }
+        guard permitsLocalSocialMutation, let outbox else { return }
         let goal = snapshot?.challenge.sharedGoal
         let status = NightFlockProgressRules.status(
             for: goal,
@@ -30,6 +30,8 @@ extension NightFlockViewModel {
             stored.morningQuietCompletedQueued = true
         }
         runContexts[stored.runID] = stored
+        let generation = localSocialGeneration
+        let transportEpoch = transportRecoveryEpoch
         let compatibility = NightFlockV2OutboxRecord(
             challengeID: stored.challengeID,
             memberID: stored.memberID,
@@ -45,9 +47,12 @@ extension NightFlockViewModel {
         guard let windDown = metrics.roundedWindDownMinutes,
               let phoneAway = metrics.roundedPhoneAwayMinutes else {
             Task {
-                await outbox.saveRunContext(stored)
+                guard isCurrentLocalSocialGeneration(generation) else { return }
+                await outbox.saveRunContext(stored, epoch: generation)
+                guard isCurrentLocalSocialGeneration(generation) else { return }
                 if NightFlockProgressRules.statusRank(status) > 0 {
-                    await outbox.enqueueV2(compatibility)
+                    await outbox.enqueueV2(compatibility, epoch: generation)
+                    guard isCurrentLocalSocialGeneration(generation) else { return }
                 }
                 await flushOutbox()
             }
@@ -72,10 +77,14 @@ extension NightFlockViewModel {
             )
         )
         Task {
-            await outbox.saveRunContext(stored)
-            await outbox.enqueueV3(record)
+            guard isCurrentLocalSocialGeneration(generation) else { return }
+            await outbox.saveRunContext(stored, epoch: generation)
+            guard isCurrentLocalSocialGeneration(generation) else { return }
+            await outbox.enqueueV3(record, epoch: generation)
+            guard isCurrentLocalSocialGeneration(generation) else { return }
             if NightFlockProgressRules.statusRank(status) > 0 {
-                await outbox.enqueueV2(compatibility)
+                await outbox.enqueueV2(compatibility, epoch: generation)
+                guard isCurrentLocalSocialGeneration(generation) else { return }
             }
             await flushOutbox()
         }
@@ -120,23 +129,32 @@ extension NightFlockViewModel {
     }
 
     func performV3(_ command: NightFlockV3Command, showLoading: Bool = true) {
-        guard accountState == .linked, let service else { return }
+        guard accountState == .linked, permitsNightFlockNetwork, let service else { return }
+        let generation = localSocialGeneration
+        let transportEpoch = transportRecoveryEpoch
         if showLoading { phase = .loading }
         Task {
             do {
+                guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
                 let response = try await service.sendV3(command)
+                guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
                 guard response.accepted else { throw NightFlockServiceError.unsupportedResponse }
                 if let responseSnapshot = response.snapshot {
                     snapshot = responseSnapshot
                     syncDraftFromSnapshot()
                 } else {
-                    snapshot = try await service.stateV3()
+                    guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
+                    let reconciledSnapshot = try await service.stateV3()
+                    guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
+                    snapshot = reconciledSnapshot
                     syncDraftFromSnapshot()
                 }
+                guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
                 phase = .ready
                 applyPendingGrantsIfPossible()
             } catch {
-                phase = snapshot == nil ? .offline : .ready
+                guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
+                presentNightFlockError(error, lane: .directCommand(schema: 3))
             }
         }
     }

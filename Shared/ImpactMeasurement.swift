@@ -62,8 +62,10 @@ enum ImpactMeasurementEngine {
                 nightEndingDate: day,
                 plannedQuietMinutes: (record?.plan.windDownMinutes ?? 0)
                     + (record?.plan.morningQuietMinutes ?? 0),
-                quietMinutes: (record?.creditedWindDownMinutes ?? 0)
-                    + (record?.creditedMorningQuietMinutes ?? 0),
+                // Uploadable Wind Down impact remains a minimised compatibility
+                // metric. Independent Screen-Free Morning/Sunrise data stays
+                // local and must not be counted twice here.
+                quietMinutes: record?.creditedWindDownMinutes ?? 0,
                 completedRitual: record?.outcome == .completed,
                 startMethod: record?.startMethod,
                 shieldEvidence: record?.shieldProtectionEvidence ?? .notRequested,

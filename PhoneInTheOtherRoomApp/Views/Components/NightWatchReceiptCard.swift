@@ -5,6 +5,21 @@ struct NightWatchReceiptCard: View {
     let sleepSummary: SleepSummary?
     let sleepAuthorization: HealthSleepService.AuthorizationState
     let screenTimeAuthorization: ScreenTimeAuthorizationService.AuthorizationState
+    let screenFreeMorning: MorningQuietOccurrence?
+
+    init(
+        run: FocusRun?,
+        sleepSummary: SleepSummary?,
+        sleepAuthorization: HealthSleepService.AuthorizationState,
+        screenTimeAuthorization: ScreenTimeAuthorizationService.AuthorizationState,
+        screenFreeMorning: MorningQuietOccurrence? = nil
+    ) {
+        self.run = run
+        self.sleepSummary = sleepSummary
+        self.sleepAuthorization = sleepAuthorization
+        self.screenTimeAuthorization = screenTimeAuthorization
+        self.screenFreeMorning = screenFreeMorning
+    }
 
     var body: some View {
         PixelCard {
@@ -26,10 +41,10 @@ struct NightWatchReceiptCard: View {
                     receiptRow(
                         icon: "moon.zzz.fill",
                         title: run.nightWatchPlan?.role == .additionalQuiet ? "Phone Away" : "Phone-free time",
-                        value: "\(run.creditedQuietMinutes) min",
+                        value: "\(run.isProgressionEligibleNightWatch ? run.creditedWindDownMinutes : run.creditedQuietMinutes) min",
                         detail: run.nightWatchPlan?.role == .additionalQuiet
                             ? "A short phone-away period outside Wind Down"
-                            : "Wind-down and after waking only"
+                            : "Factual Wind Down time; Screen-Free Morning is tracked separately"
                     )
 
                     if run.briefAccessUseCount > 0 {
@@ -43,6 +58,14 @@ struct NightWatchReceiptCard: View {
                 }
 
                 if run?.nightWatchPlan?.role != .additionalQuiet {
+                    if let screenFreeMorning {
+                        receiptRow(
+                            icon: "sunrise.fill",
+                            title: "Screen-Free Morning",
+                            value: screenFreeMorningStatus(screenFreeMorning),
+                            detail: "\(screenFreeMorning.eligibleElapsedMinutes(at: screenFreeMorning.endedAt ?? Date())) actual minutes; tracked independently from Wind Down"
+                        )
+                    }
                     receiptRow(
                         icon: "bed.double.fill",
                         title: "Sleep from Apple Health",
@@ -58,6 +81,15 @@ struct NightWatchReceiptCard: View {
                     )
                 }
             }
+        }
+    }
+
+    private func screenFreeMorningStatus(_ occurrence: MorningQuietOccurrence) -> String {
+        switch occurrence.outcome {
+        case .scheduled: return "Planned"
+        case .active: return "In progress"
+        case .skipped: return "Skipped"
+        case .finished: return "Finished"
         }
     }
 

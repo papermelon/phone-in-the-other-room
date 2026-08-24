@@ -122,4 +122,81 @@ final class QuietTimeShieldPresentationTests: XCTestCase {
         XCTAssertFalse(fallback.contains("“"))
         XCTAssertFalse(fallback.contains("”"))
     }
+
+    func testBriefAccessTrackerUsesRunScopedDurationsAndRoundsUp() {
+        let runID = UUID()
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let uses = [
+                QuietTimeBriefAccessTrackerSummary.Use(
+                    requestedAt: start,
+                    expiresAt: start.addingTimeInterval(5 * 60 + 1)
+                ),
+                QuietTimeBriefAccessTrackerSummary.Use(
+                    requestedAt: start.addingTimeInterval(10 * 60),
+                    expiresAt: start.addingTimeInterval(15 * 60 + 1)
+                )
+            ]
+
+        let summary = QuietTimeBriefAccessTrackerSummary.make(
+            stateRunID: runID,
+            successfulUseCount: 2,
+            successfulUses: uses,
+            runID: runID
+        )
+
+        XCTAssertEqual(summary.pauseCount, 2)
+        XCTAssertEqual(summary.allottedMinutes, 11)
+        XCTAssertEqual(summary.subtitle, "2 pauses · 11 min allotted")
+    }
+
+    func testBriefAccessTrackerIgnoresAnotherRunAndFallsBackToLegacyCount() {
+        let runID = UUID()
+        let summary = QuietTimeBriefAccessTrackerSummary.make(
+            stateRunID: UUID(),
+            successfulUseCount: 4,
+            successfulUses: [],
+            runID: runID,
+            fallbackUseCount: 2
+        )
+
+        XCTAssertEqual(summary.pauseCount, 2)
+        XCTAssertEqual(summary.allottedMinutes, 10)
+        XCTAssertEqual(
+            QuietTimeBriefAccessTrackerSummary().subtitle,
+            "No pauses yet"
+        )
+    }
+
+    func testBriefAccessTrackerUsesStoredCountForLegacyCountOnlyState() {
+        let stateID = UUID()
+
+        let summary = QuietTimeBriefAccessTrackerSummary.make(
+            stateRunID: stateID,
+            successfulUseCount: 3,
+            successfulUses: [],
+            runID: stateID
+        )
+
+        XCTAssertEqual(summary.pauseCount, 3)
+        XCTAssertEqual(summary.allottedMinutes, 15)
+    }
+
+    func testBriefAccessTrackerAddsLegacyFallbackForMissingCappedUses() {
+        let runID = UUID()
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let summary = QuietTimeBriefAccessTrackerSummary.make(
+            stateRunID: runID,
+            successfulUseCount: 3,
+            successfulUses: [
+                QuietTimeBriefAccessTrackerSummary.Use(
+                    requestedAt: start,
+                    expiresAt: start.addingTimeInterval(2 * 60)
+                )
+            ],
+            runID: runID
+        )
+
+        XCTAssertEqual(summary.pauseCount, 3)
+        XCTAssertEqual(summary.allottedMinutes, 12)
+    }
 }

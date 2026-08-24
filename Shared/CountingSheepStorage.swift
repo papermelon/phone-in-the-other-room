@@ -13,6 +13,7 @@ enum CountingSheepOwnedStorage {
         "ollie.phoneBedQRCode",
         "ollie.phoneBedNFCTag",
         "ollie.phoneBedNFCTag.registration",
+        "ollie.phoneBedNFCTags.library",
         "ollie.nightWatch.preferences",
         "ollie.nightWatch.automaticSchedule",
         "ollie.nightWatch.schedule",
@@ -22,10 +23,12 @@ enum CountingSheepOwnedStorage {
         "ollie.screenTime.reportPreferences",
         "ollie.morningCheckIns",
         "ollie.nightWatch.history",
+        "ollie.windDownMorning.settlementJournal",
         "ollie.impactSharing.preferences",
         "ollie.impactSharing.records",
         "ollie.sheepSearch.state",
         "ollie.farm.state",
+        "ollie.farm.pastureScene",
         "ollie.welcome.rewards",
         "ollie.windDown.profile",
         "ollie.nightFlock.outbox",
@@ -33,7 +36,12 @@ enum CountingSheepOwnedStorage {
         "ollie.nightFlock.metricsOutbox",
         "ollie.nightFlock.rewards",
         "ollie.nightFlock.runContexts",
+        "ollie.nightFlock.stagedDestructiveEffect",
+        "ollie.nightFlock.acceptedAccountDeletion",
+        "ollie.nightFlock.pendingDestructiveIntent",
+        "ollie.nightFlock.pendingAccountDeletionIntent",
         "ollie.nightFlock.orientation",
+        "ollie.nightFlock.expectedLinkedUserID",
         "ollie.orientation.state",
         "ollie.onboarding.version",
         "ollie.onboarding.draft",
@@ -54,12 +62,18 @@ enum CountingSheepOwnedStorage {
     static let appGroupKeys: [String] = [
         QuietNoteText.storageKey,
         QuietTimeShieldSharedStorage.scheduleKey,
+        QuietTimeShieldSharedStorage.registryKey,
         QuietTimeShieldSharedStorage.statusKey,
         QuietTimeShieldSharedStorage.statusHistoryKey,
-        QuietTimeShieldSharedStorage.briefAccessStateKey
+        QuietTimeShieldSharedStorage.briefAccessStateKey,
+        QuietTimeShieldPresentationStorage.purposeCueKey
     ] + ScreenTimeSelectionScope.allCases.map {
         ScreenTimeSharedStorage.selectionKey(for: $0)
     }
+
+    static let dynamicStandardKeyPrefixes = [
+        "ollie.emergencyExit.reason."
+    ]
 
     /// This identity is transport metadata rather than user product state. It
     /// remains stable so a local reset does not re-identify optional remote
@@ -68,6 +82,9 @@ enum CountingSheepOwnedStorage {
 
     static func clearStandardDefaults(_ defaults: UserDefaults) {
         standardKeys.forEach { defaults.removeObject(forKey: $0) }
+        defaults.dictionaryRepresentation().keys
+            .filter { key in dynamicStandardKeyPrefixes.contains(where: key.hasPrefix) }
+            .forEach { defaults.removeObject(forKey: $0) }
     }
 
     static func clearAppGroupDefaults(_ defaults: UserDefaults) {

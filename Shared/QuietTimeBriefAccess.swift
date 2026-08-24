@@ -23,12 +23,37 @@ struct QuietTimeBriefAccessRunLedgerEntry: Codable, Equatable {
     let updatedAt: Date
 }
 
+/// The identity carried by a Brief Access grant. A legacy snapshot has no
+/// occurrence registry, so it deliberately maps to its run identifier at
+/// epoch one. Once a registry entry exists, all three values must match
+/// before an extension can clear or restore a shield.
+struct QuietTimeBriefAccessScheduleIdentity: Equatable {
+    let runID: UUID
+    let occurrenceID: UUID
+    let revision: Int
+    let epoch: Int
+
+    init(
+        runID: UUID,
+        occurrenceID: UUID? = nil,
+        revision: Int,
+        epoch: Int = 1
+    ) {
+        self.runID = runID
+        self.occurrenceID = occurrenceID ?? runID
+        self.revision = max(1, revision)
+        self.epoch = max(1, epoch)
+    }
+}
+
 struct QuietTimeBriefAccessGrant: Codable, Equatable {
     static let currentSchemaVersion = 1
 
     var schemaVersion: Int
     let runID: UUID
+    let occurrenceID: UUID
     let scheduleRevision: Int
+    let scheduleEpoch: Int
     let requestedAt: Date
     let expiresAt: Date
     let nonce: UUID
@@ -38,7 +63,9 @@ struct QuietTimeBriefAccessGrant: Codable, Equatable {
     init(
         schemaVersion: Int = currentSchemaVersion,
         runID: UUID,
+        occurrenceID: UUID? = nil,
         scheduleRevision: Int,
+        scheduleEpoch: Int = 1,
         requestedAt: Date,
         expiresAt: Date,
         nonce: UUID = UUID(),
@@ -47,12 +74,37 @@ struct QuietTimeBriefAccessGrant: Codable, Equatable {
     ) {
         self.schemaVersion = schemaVersion
         self.runID = runID
+        self.occurrenceID = occurrenceID ?? runID
         self.scheduleRevision = max(1, scheduleRevision)
+        self.scheduleEpoch = max(1, scheduleEpoch)
         self.requestedAt = requestedAt
         self.expiresAt = max(requestedAt, expiresAt)
         self.nonce = nonce
         self.restoreActivityIdentifier = restoreActivityIdentifier
         self.status = status
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, runID, occurrenceID, scheduleRevision, scheduleEpoch, requestedAt, expiresAt
+        case nonce, restoreActivityIdentifier, status
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let runID = try container.decode(UUID.self, forKey: .runID)
+        self.init(
+            schemaVersion: try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? Self.currentSchemaVersion,
+            runID: runID,
+            occurrenceID: try container.decodeIfPresent(UUID.self, forKey: .occurrenceID) ?? runID,
+            scheduleRevision: try container.decodeIfPresent(Int.self, forKey: .scheduleRevision) ?? 1,
+            scheduleEpoch: try container.decodeIfPresent(Int.self, forKey: .scheduleEpoch) ?? 1,
+            requestedAt: try container.decode(Date.self, forKey: .requestedAt),
+            expiresAt: try container.decode(Date.self, forKey: .expiresAt),
+            nonce: try container.decodeIfPresent(UUID.self, forKey: .nonce) ?? UUID(),
+            restoreActivityIdentifier: try container.decodeIfPresent(String.self, forKey: .restoreActivityIdentifier)
+                ?? QuietTimeBriefAccessConstants.restoreActivityIdentifier,
+            status: try container.decodeIfPresent(QuietTimeBriefAccessGrantStatus.self, forKey: .status) ?? .pending
+        )
     }
 }
 
@@ -62,7 +114,9 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
 
     var schemaVersion: Int
     var runID: UUID
+    var occurrenceID: UUID
     var scheduleRevision: Int
+    var scheduleEpoch: Int
     var successfulUseCount: Int
     var successfulUses: [QuietTimeBriefAccessUse]
     var activeGrant: QuietTimeBriefAccessGrant?
@@ -78,7 +132,9 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
     init(
         schemaVersion: Int = currentSchemaVersion,
         runID: UUID,
+        occurrenceID: UUID? = nil,
         scheduleRevision: Int,
+        scheduleEpoch: Int = 1,
         successfulUseCount: Int = 0,
         successfulUses: [QuietTimeBriefAccessUse] = [],
         activeGrant: QuietTimeBriefAccessGrant? = nil,
@@ -90,7 +146,9 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
     ) {
         self.schemaVersion = schemaVersion
         self.runID = runID
+        self.occurrenceID = occurrenceID ?? runID
         self.scheduleRevision = max(1, scheduleRevision)
+        self.scheduleEpoch = max(1, scheduleEpoch)
         self.successfulUseCount = max(successfulUseCount, successfulUses.count)
         self.successfulUses = Array(successfulUses.suffix(Self.maximumHistoryCount))
         self.activeGrant = activeGrant
@@ -102,7 +160,7 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case schemaVersion, runID, scheduleRevision, successfulUseCount
+        case schemaVersion, runID, occurrenceID, scheduleRevision, scheduleEpoch, successfulUseCount
         case successfulUses, activeGrant, completedRunCounts
         case rejectedGrantNonce, rejectedAt, archivedAt, updatedAt
     }
@@ -116,6 +174,8 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
             1,
             try container.decodeIfPresent(Int.self, forKey: .scheduleRevision) ?? 1
         )
+        occurrenceID = try container.decodeIfPresent(UUID.self, forKey: .occurrenceID) ?? runID
+        scheduleEpoch = max(1, try container.decodeIfPresent(Int.self, forKey: .scheduleEpoch) ?? 1)
         successfulUseCount = max(
             0,
             try container.decodeIfPresent(Int.self, forKey: .successfulUseCount) ?? 0
@@ -150,7 +210,9 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
     mutating func propose(_ grant: QuietTimeBriefAccessGrant, at date: Date) -> Bool {
         guard activeGrant == nil,
               grant.runID == runID,
-              grant.scheduleRevision == scheduleRevision else { return false }
+              grant.occurrenceID == occurrenceID,
+              grant.scheduleRevision == scheduleRevision,
+              grant.scheduleEpoch == scheduleEpoch else { return false }
         activeGrant = grant
         rejectedGrantNonce = nil
         rejectedAt = nil
@@ -220,12 +282,16 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
 
     mutating func carryingLedgerForward(
         to runID: UUID,
+        occurrenceID: UUID? = nil,
         revision: Int,
+        epoch: Int = 1,
         at date: Date
     ) {
         archiveCurrentRun(at: date)
         self.runID = runID
+        self.occurrenceID = occurrenceID ?? runID
         scheduleRevision = max(1, revision)
+        scheduleEpoch = max(1, epoch)
         successfulUseCount = 0
         successfulUses = []
         activeGrant = nil
@@ -294,7 +360,9 @@ enum QuietTimeBriefAccessValidation: Equatable {
     case webDomainRejected
     case missingSelection
     case staleRun
+    case staleOccurrence
     case staleRevision
+    case staleEpoch
     case outsideShieldedPhase
     case activeGrant
     case expiredGrant
@@ -319,6 +387,8 @@ enum QuietTimeBriefAccessPolicy {
         scheduleRevision: Int,
         requestedAt: Date,
         schedule: QuietTimeShieldScheduleSnapshot,
+        occurrenceID: UUID? = nil,
+        scheduleEpoch: Int = 1,
         nonce: UUID = UUID()
     ) -> QuietTimeBriefAccessGrant? {
         guard isShieldedPhase(schedule: schedule, at: requestedAt) else { return nil }
@@ -332,7 +402,9 @@ enum QuietTimeBriefAccessPolicy {
         }
         return QuietTimeBriefAccessGrant(
             runID: runID,
+            occurrenceID: occurrenceID,
             scheduleRevision: scheduleRevision,
+            scheduleEpoch: scheduleEpoch,
             requestedAt: requestedAt,
             expiresAt: expiresAt,
             nonce: nonce
@@ -344,7 +416,9 @@ enum QuietTimeBriefAccessPolicy {
         schedule: QuietTimeShieldScheduleSnapshot,
         state: QuietTimeBriefAccessState?,
         at date: Date,
-        hasApplicationOrCategorySelection: Bool
+        hasApplicationOrCategorySelection: Bool,
+        occurrenceID: UUID? = nil,
+        scheduleEpoch: Int = 1
     ) -> QuietTimeBriefAccessValidation {
         guard route != .webDomain else { return .webDomainRejected }
         guard hasApplicationOrCategorySelection else { return .missingSelection }
@@ -353,7 +427,9 @@ enum QuietTimeBriefAccessPolicy {
         }
         if let state {
             guard state.runID == schedule.runID else { return .staleRun }
+            guard state.occurrenceID == (occurrenceID ?? schedule.runID) else { return .staleOccurrence }
             guard state.scheduleRevision == schedule.revision else { return .staleRevision }
+            guard state.scheduleEpoch == max(1, scheduleEpoch) else { return .staleEpoch }
             if let grant = state.activeGrant {
                 return date < grant.expiresAt ? .activeGrant : .expiredGrant
             }
@@ -366,6 +442,8 @@ enum QuietTimeBriefAccessPolicy {
         schedule: QuietTimeShieldScheduleSnapshot?,
         currentRunID: UUID,
         currentRevision: Int,
+        currentOccurrenceID: UUID? = nil,
+        currentEpoch: Int = 1,
         at date: Date,
         terminal: Bool = false
     ) -> QuietTimeBriefAccessReconciliation {
@@ -374,8 +452,12 @@ enum QuietTimeBriefAccessPolicy {
               let schedule,
               state.runID == currentRunID,
               grant.runID == currentRunID,
+              state.occurrenceID == (currentOccurrenceID ?? currentRunID),
+              grant.occurrenceID == (currentOccurrenceID ?? currentRunID),
               state.scheduleRevision == currentRevision,
               grant.scheduleRevision == currentRevision,
+              state.scheduleEpoch == max(1, currentEpoch),
+              grant.scheduleEpoch == max(1, currentEpoch),
               grant.restoreActivityIdentifier == QuietTimeBriefAccessConstants.restoreActivityIdentifier,
               grant.status == .scheduled || grant.status == .pending else {
             return .discardStaleGrant
@@ -393,11 +475,19 @@ enum QuietTimeBriefAccessPolicy {
         state: QuietTimeBriefAccessState?,
         grant: QuietTimeBriefAccessGrant,
         currentRunID: UUID,
-        currentRevision: Int
+        currentRevision: Int,
+        currentOccurrenceID: UUID? = nil,
+        currentEpoch: Int = 1
     ) -> Bool {
         guard let state,
               state.runID == currentRunID,
+              state.occurrenceID == (currentOccurrenceID ?? currentRunID),
               state.scheduleRevision == currentRevision,
+              state.scheduleEpoch == max(1, currentEpoch),
+              grant.runID == currentRunID,
+              grant.occurrenceID == (currentOccurrenceID ?? currentRunID),
+              grant.scheduleRevision == currentRevision,
+              grant.scheduleEpoch == max(1, currentEpoch),
               state.rejectedGrantNonce != grant.nonce,
               state.archivedAt == nil,
               let activeGrant = state.activeGrant,
@@ -412,8 +502,10 @@ enum QuietTimeBriefAccessPolicy {
     /// schedule instead of treating the pending record as permission to clear.
     static func staleGrantAction(
         schedule: QuietTimeShieldScheduleSnapshot?,
-        at date: Date
+        at date: Date,
+        hasActiveRegistryProtection: Bool = false
     ) -> QuietTimeBriefAccessStaleGrantAction {
+        if hasActiveRegistryProtection { return .reapplyCurrentShield }
         guard let schedule,
               schedule.isEligible(at: date),
               isShieldedPhase(schedule: schedule, at: date) else {

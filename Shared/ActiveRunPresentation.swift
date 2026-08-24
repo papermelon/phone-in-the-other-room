@@ -219,7 +219,24 @@ struct ActiveRunPresentation: Equatable {
             confirmationTitle: "End Wind Down early?",
             confirmationBody: "This immediately lifts app limits and ends this Wind Down early.",
             cancelTitle: "Keep Wind Down running",
-            confirmTitle: "Use emergency exit"
+            confirmTitle: "End Wind Down"
+        )
+    }
+
+    var nfcExitActionTitle: String {
+        isAdditionalQuiet
+            ? "Tap tag to end Phone Away"
+            : "Tap tag to end Wind Down"
+    }
+
+    var emergencyExit: ActiveRunExitPresentation {
+        let runName = isAdditionalQuiet ? "Phone Away" : "Wind Down"
+        return ActiveRunExitPresentation(
+            actionTitle: "End \(runName) without the tag",
+            confirmationTitle: "End \(runName) without the tag?",
+            confirmationBody: "This ends \(runName) without the registered tag and immediately stops app limits.",
+            cancelTitle: "Keep \(runName) running",
+            confirmTitle: "End without tag"
         )
     }
 
@@ -239,12 +256,12 @@ struct ActiveRunPresentation: Equatable {
             switch failure {
             case .noSelection:
                 message = isAdditionalQuiet
-                    ? "App limits didn’t start. Your Phone Away timer is still running."
-                    : "No selected apps were set up, so Wind Down is continuing without app limits."
+                    ? "App protection did not start. Phone Away remains factual; repair protection before another start."
+                    : "App protection did not start. Wind Down remains factual; repair protection before another start."
             case .monitoring, .unavailable, .other:
                 message = isAdditionalQuiet
-                    ? "App limits didn’t start. Your Phone Away timer is still running."
-                    : "App limits didn’t start. Wind Down is still running, and you can try again next time."
+                    ? "App protection did not stay active. Phone Away remains factual; repair protection before another start."
+                    : "App protection did not stay active. Wind Down remains factual; repair protection before another start."
             }
         }
         return ActiveRunShieldingBanner(
