@@ -98,6 +98,12 @@ enum PastureSceneBehavior: Equatable {
     case dragging
     case chasing
     case reacting
+    case greeting
+    case petting
+    case squishing
+    case landing
+    case fetching
+    case observing
     case ambient(PastureSceneAmbientAction)
 }
 
@@ -145,7 +151,8 @@ enum PastureSceneLayout {
         let entityFootprint = footprint(for: entity)
         var settled = clamped(proposed, footprint: entityFootprint)
 
-        for other in positions.keys.sorted(by: { $0.id < $1.id }) where other != entity {
+        for other in positions.keys.sorted(by: { $0.id < $1.id })
+            where other != entity && other.pastureIndex == entity.pastureIndex {
             guard let otherPoint = positions[other] else { continue }
             let otherFootprint = footprint(for: other)
             let minimum = min(0.19, max(0.075, entityFootprint.halfWidth + otherFootprint.halfWidth))
