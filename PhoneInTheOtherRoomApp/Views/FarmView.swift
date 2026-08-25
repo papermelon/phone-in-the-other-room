@@ -115,6 +115,7 @@ struct FarmDashboardContent: View {
                     protectedNightCount: protectedNightCount,
                     layoutSeed: pastureVisitSeed,
                     onSelectSheep: onSelectSheep,
+                    isWindDownActive: isWindDownActive,
                     persistedScene: persistedScene,
                     onPersistScene: onPersistScene,
                     onSelectOllie: onSelectOllie,

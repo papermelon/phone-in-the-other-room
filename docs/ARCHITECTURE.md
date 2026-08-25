@@ -64,6 +64,7 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ NightWatchHistory.swift       90-day aggregate records + idempotent ritual events
 ├─ PhoneBedTag.swift             named primary/backup NDEF tag library and purpose rules
 ├─ PastureScene.swift             versioned local pasture layout, settling, and deterministic ambient plans
+├─ PastureInteraction.swift       catalogue personalities plus bounded, presentation-only play landing rules
 ├─ QuietTimeShieldSchedule.swift schedule/status/evidence App Group contract
 ├─ WatchMessage.swift            typed phone↔watch message envelope + codec
 ├─ ScreenTimeIntegration.swift   Screen Time scopes + report context IDs (phone-other.*)
@@ -411,6 +412,23 @@ overflow remains safely owned. Schema-v3 decoding maps legacy arrays into those 
 in stable order. The user-initiated analytics export includes only aggregate wool earned/spent by
 transaction kind, current balance, owned count, and flock/capacity counts—no Farm names or
 transaction timestamps.
+
+### Pasture play
+`FarmPastureView` may enter an explicit, local Play mode that keeps the ordinary accessible
+double-tap routes to The Barn and Ollie's Shop available. `PastureSceneController` composes its
+touch and VoiceOver actions with the existing long-press placement gesture, so a cancelled or
+page-interrupted gesture always restores a settled character. Sheep temperaments are deterministic
+derivations of their existing catalogue identities, while Ollie can observe, greet, and briefly
+fetch a ball. Petting, presses, toss landings, reciprocal reactions, effects, haptics, and ball
+choreography are finite cancellable presentation state; none persist or mutate Farm inventory,
+wool, Search odds, Wind Down progress, or care obligations. Only final settled character
+placement is written to `ollie.farm.pastureScene`.
+
+Active Wind Down gates Play mode and cancels its effects, ball, and autonomous pasture scheduler;
+Reduce Motion keeps feedback discreet and removes spatial fetch/toss choreography. The pasture
+remains browsable during a run, including its destination routes and placement recovery. The
+presentation layer supplies quiet visual feedback and accessible action labels without making
+the Farm a source of active-run progression.
 
 The member projection never contains Family Controls tokens, selected-app lists, raw Screen Time
 reports, exact schedules, exact shield timestamps, or raw HealthKit samples. Instagram remains a
