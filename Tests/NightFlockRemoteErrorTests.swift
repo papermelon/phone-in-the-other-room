@@ -659,6 +659,52 @@ final class NightFlockRemoteErrorTests: XCTestCase {
         )
     }
 
+    func testAppleIdentityEvidenceAcceptsServerMetadataWhenExpandedIdentitiesAreMissing() {
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.isLinked(
+            isAnonymous: false,
+            identityProviders: [],
+            primaryProvider: "apple",
+            providers: []
+        ))
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.isLinked(
+            isAnonymous: false,
+            identityProviders: [],
+            primaryProvider: nil,
+            providers: ["apple"]
+        ))
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.isLinked(
+            isAnonymous: false,
+            identityProviders: ["apple"],
+            primaryProvider: nil,
+            providers: []
+        ))
+    }
+
+    func testAppleIdentityEvidenceNeverUpgradesAnonymousOrDifferentAccount() {
+        let original = UUID()
+        XCTAssertFalse(NightFlockAppleIdentityEvidence.isLinked(
+            isAnonymous: true,
+            identityProviders: ["apple"],
+            primaryProvider: "apple",
+            providers: ["apple"]
+        ))
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.preservesOriginalAccount(
+            originalUserID: original,
+            recoveredUserID: original,
+            hasAppleIdentity: true
+        ))
+        XCTAssertFalse(NightFlockAppleIdentityEvidence.preservesOriginalAccount(
+            originalUserID: original,
+            recoveredUserID: UUID(),
+            hasAppleIdentity: true
+        ))
+        XCTAssertFalse(NightFlockAppleIdentityEvidence.preservesOriginalAccount(
+            originalUserID: original,
+            recoveredUserID: original,
+            hasAppleIdentity: false
+        ))
+    }
+
     func testAppleRecoveryIdentityFailuresAreFailClosedAndDoNotAuthorizeOverwrite() {
         XCTAssertEqual(
             NightFlockAppleRecoveryFailurePolicy.nextAction(

@@ -107,18 +107,26 @@ actor NightFlockAccountService {
             }
             throw NightFlockAccountError.accountIsNotAnonymous
         }
-        let session = try await client.auth.linkIdentityWithIdToken(
-            credentials: OpenIDConnectCredentials(
-                provider: .apple,
-                idToken: identityToken,
-                nonce: nonce
-            )
+        let credentials = OpenIDConnectCredentials(
+            provider: .apple,
+            idToken: identityToken,
+            nonce: nonce
         )
-        guard session.user.id == originalUser.id else {
-            try? await client.auth.signOut(scope: .local)
-            throw NightFlockAccountError.identityChanged
+        let session: Session
+        do {
+            session = try await client.auth.linkIdentityWithIdToken(credentials: credentials)
+        } catch let error as AuthError where error.errorCode == .identityAlreadyExists {
+            // A previous link request may have committed on the server before
+            // the client persisted its UUID. Signing in is safe only when it
+            // proves that Apple returns to the exact anonymous account that
+            // initiated this request.
+            session = try await client.auth.signInWithIdToken(credentials: credentials)
         }
-        guard Self.hasAppleIdentity(session.user) else {
+        guard NightFlockAppleIdentityEvidence.preservesOriginalAccount(
+            originalUserID: originalUser.id,
+            recoveredUserID: session.user.id,
+            hasAppleIdentity: Self.hasAppleIdentity(session.user)
+        ) else {
             try? await client.auth.signOut(scope: .local)
             throw NightFlockAccountError.identityChanged
         }
@@ -222,7 +230,12 @@ actor NightFlockAccountService {
     }
 
     private static func hasAppleIdentity(_ user: User) -> Bool {
-        user.identities?.contains(where: { $0.provider == "apple" }) == true
+        NightFlockAppleIdentityEvidence.isLinked(
+            isAnonymous: user.isAnonymous,
+            identityProviders: user.identities?.map(\.provider) ?? [],
+            primaryProvider: user.appMetadata["provider"]?.stringValue,
+            providers: user.appMetadata["providers"]?.arrayValue?.compactMap(\.stringValue) ?? []
+        )
     }
 
     private static func observedSession(for user: User) -> NightFlockObservedAccountSession {
