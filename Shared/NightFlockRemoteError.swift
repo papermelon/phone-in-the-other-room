@@ -82,6 +82,32 @@ enum NightFlockObservedAccountSession: Equatable, Sendable {
     case unsupported
 }
 
+/// Supabase can omit the expanded `identities` collection from a session
+/// payload even though its server-controlled app metadata already records the
+/// linked provider. Treat either representation as evidence, but never allow
+/// stale provider metadata to turn an anonymous session into a linked one.
+enum NightFlockAppleIdentityEvidence {
+    static func isLinked(
+        isAnonymous: Bool,
+        identityProviders: [String],
+        primaryProvider: String?,
+        providers: [String]
+    ) -> Bool {
+        guard !isAnonymous else { return false }
+        return identityProviders.contains("apple")
+            || primaryProvider == "apple"
+            || providers.contains("apple")
+    }
+
+    static func preservesOriginalAccount(
+        originalUserID: UUID,
+        recoveredUserID: UUID,
+        hasAppleIdentity: Bool
+    ) -> Bool {
+        originalUserID == recoveredUserID && hasAppleIdentity
+    }
+}
+
 enum NightFlockAccountSessionTransition: Equatable, Sendable {
     case returnAnonymous
     case createAnonymous
