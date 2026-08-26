@@ -1,96 +1,195 @@
-# Phone in the Other Room PRD
+# Counting Sheep — Product Requirements
 
-## Product Identity
+This PRD summarizes the implemented product. When it conflicts with `AGENTS.md`,
+`PROJECT_BRIEF.md`, `PRODUCT_PRINCIPLES.md`, or an accepted ADR, those documents win.
 
-Public project name: **Phone in the Other Room**.
+## Product identity
 
-In-app identity: **Phone in the Other Room**.
+- Shipping name: **Counting Sheep**
+- Repository/code name: **Phone in the Other Room**
+- Mascot: **Ollie**, a border collie who keeps Night Watch
+- Product line: **Put your phone to bed. Wake up before it does.**
 
-Mascot: Ollie, an original stylized brown-and-white Border Collie with upright ears, a white face blaze, brown eye patches, round expressive eyes, energetic posture, and a happy tongue-out personality.
+## Problem
 
-## Core Promise
+The last part of the evening and first part of the morning are easy to lose to scrolling.
+General screen-time tools offer broad schedules, strict modes, and productivity controls,
+but they do not make physical phone separation feel like a small bedtime ritual.
 
-Instead of fighting your phone, you send it to the other room and let Ollie guard your focus.
+Counting Sheep gives those two periods one memorable shape: tuck the phone into another
+room at wind-down, leave it there overnight, and let it wake after the user does. The saved
+bookends remain part of the ritual/reporting shape; Wind Down reward credit is factual
+wind-down time, while Screen-Free Morning settles separately through Sunrise Trail.
 
-The user starts a Focus Run, leaves the iPhone behind, and uses Apple Watch as the active companion. If the user stays away until the planned duration ends, Ollie returns with a reward. If the user comes back early and remains too close after a warning grace period, Ollie comes back sad but encouraging.
+## Core promise
 
-## MVP Scope
+Counting Sheep helps someone practice a phone-away ritual around sleep. It records completed
+Night Watches and quiet minutes in the two bookends. With permission it compares measured
+sleep outcomes as context. It does not score sleep, diagnose a condition, or claim that
+using the app caused an improvement.
 
-The MVP is an active foreground iOS plus watchOS focus-session game. The iPhone app remains open on a "leave me here" screen during a run. The Watch app is the glanceable active companion while the user is away.
+**Phone Away** is the optional secondary one-time or scheduled mode outside Wind Down. Its
+user-facing actions are **Put phone away**, **Start now**, and **Plan**. Completed Phone Away
+periods feed a centrally configured 100-minute search meter; that number is a game-balance choice,
+not a sleep-science claim. Internal `PhoneBreak`, `additionalQuiet`, `QuietTime`, and `NightWatch*`
+names and persisted values remain backward-compatible.
 
-The app is not a lost-phone product, a generic Pomodoro timer, a GPS tracker, an always-on detector, or a replacement for Find My.
+## Primary user
 
-## Core Loop
+Someone who scrolls in bed or reaches for the phone immediately after waking and wants a
+gentler physical boundary, without adopting a productivity system or punitive blocker.
 
-1. User opens Phone in the Other Room.
-2. User chooses a Focus Run duration with a minute/second picker.
-3. User taps **Send Ollie Out**.
-4. User sees a Focus Mode pop-up prompt and approves or skips it.
-5. Placement grace starts, defaulting to 60 seconds.
-6. User leaves the iPhone in another room.
-7. Apple Watch becomes the primary interface.
-8. Proximity is validated through Nearby Interaction or fallback state.
-9. Ollie guards the Focus Run.
-10. Completion grants a collectible reward.
-11. Early return warns first, then ends early only after sustained closeness.
+## Release scope
 
-## States
+The first release contains four tabs:
 
-Focus run states: setup, placementGrace, waitingForPhoneAway, running, warningPhoneTooClose, completed, endedEarly, signalLost, unsupported, demo.
+- **Home:** understand tonight's saved plan and purpose, then set/start Wind Down or edit it.
+- **Nights:** see protected nights, quiet-bookend minutes, recent history, optional sleep
+  duration/stages, selected-app Screen Time, and cautious local outcome comparisons.
+- **Farm:** tend the living flock, manage The Barn, use Ollie's Search, revisit the Search Journal,
+  and use wool for capacity and local customization
+  for cosmetic/story context; posters do not change progression value.
+- **Settings:** organize **Your Wind Down**, **Connections**, and **Help & app guide**; manage the
+  plan, connections, privacy, feedback, and app information through those groups. There is no
+  duplicate Review Wind Down setup route.
 
-Proximity buckets: withYou, sameRoom, doorway, probablyOtherRoom, signalLost, unsupported, demo.
+Farm, Friends, Shop, adaptive coaching, social features, and mock-backed features are not
+reachable in Release. Their gates are defined in ADR-0003 and ADR-0004.
 
-Ollie moods: waiting, excited, running, guarding, alert, proud, happy, sad, sleepy.
+## Core loop
 
-## Timing Defaults
+1. The user saves an intended bedtime and wake time.
+2. The user chooses 15–90 minute quiet bookends from the restrained presets presented by
+   the UI; defaults are 30 minutes before bed and 30 minutes after waking.
+3. The user chooses a private ordered sequence of up to three evening and two morning phone-free
+   suggestions. Putting the phone away is fixed first. Suggestions have no checkmarks,
+   verification, reward, score, streak, or completion requirement. General sleep-health guidance
+   appears beside these choices, on Home, and in phase-appropriate moments; the full local source
+   library is linked from “About these ideas and sources.”
+4. At wind-down, the user begins Night Watch and physically places the phone elsewhere.
+5. New plans default to the registered NFC phone-bed tag. The same tag confirms the initial
+   tuck-in and the normal end action; Watch, QR, and the honor timer remain explicit alternatives.
+   Automatic Wind Down can send 60/30/10-minute lead-ins and apply the selected-app shield at
+   the saved start even while the app is closed; the app reconciles the run when next opened.
+6. The same persisted session moves through wind-down, overnight, and morning quiet.
+7. At the end of morning quiet, Ollie presents one calm completion receipt and one equal
+   sheep settles into the cumulative flock.
+8. Ending early remains available at all times and receives kind, non-punitive copy.
 
-- Placement grace: 60 seconds
-- Warning grace: 60 seconds
-- Signal lost grace: 20 seconds
-- Default run: 25 minutes
+## Night Watch phases
 
-A run succeeds if the planned end time has passed and the run did not end early. Coming back after the planned duration counts as success. A run only fails early after phone-away was validated, the run is still before its planned end, the phone becomes too close, warning state appears first, and closeness remains sustained beyond warning grace.
+| Phase | Starts | Ends | Product behavior |
+|---|---|---|---|
+| Wind-down | Actual start | Intended bedtime | Show the evening cue and time until bedtime. |
+| Overnight | Intended bedtime | Saved wake time | Keep status glanceable; ask for no further interaction. |
+| Morning quiet | Saved wake time | Wake time + chosen bookend | Show the morning cue and time until the phone wakes. |
+| Complete | Morning bookend end | User dismisses receipt | Show the receipt and one equal flock arrival. |
 
-## Proximity Classifier
+Night Watch may begin late. A late start protects only the quiet time that remains and is
+attributed to the intended-bedtime date, including after-midnight starts.
 
-Default thresholds:
+## Protection choices
 
-- withYouMax: 1.5 meters
-- sameRoomMax: 5 meters
-- otherRoomMin: 8 meters
-- staleAfter: 8 seconds
-- sustainedSamples: 3 readings
+- **App Shielding:** selected apps rest during both quiet windows; no hardware setup is needed.
+- **NFC + App Shielding:** a registered phone-bed tag confirms the phone is away while selected
+  apps rest during both quiet windows.
 
-The classifier uses recent readings, freshness, source, support state, smoothing, confidence, and run context. It avoids flicker and never fails from one noisy sample.
+Legacy timer, Watch, and QR session-guard values remain decodable for existing data and active
+runs, but are not presented as current configuration choices.
 
-## Rewards and Progress
+The iPhone is authoritative for timing, persistence, restoration, completion, and flock progress.
+No later Watch distance can warn, punish, or end Night Watch.
 
-Completed runs earn Ollie-themed rewards such as Ollie Mail, First Run Ribbon, Tiny Tennis Ball, Field Map, Sheep Badge, and Focus Trophy. Early-ended runs do not earn a main reward but may earn a consolation Muddy Paw Print.
+## Phone-free cues
 
-Progress is local only: completed runs, focus minutes, streak, longest streak, rewards collected, and Ollie level.
+Evening options include reading a paper book, showering, preparing for tomorrow, gentle
+stretching, writing on paper, and making a warm drink. Morning options include opening the
+curtains, making breakfast, walking, getting ready, stretching, and writing.
+
+Cues must remain optional. The app does not request proof, photos, streak compliance, or a
+completed habit before restoring access or granting the Night Watch receipt.
+
+## Progress and the flock
+
+- Each completed primary sleep-bookend Wind Down resolves one persisted search; **Ollie's Search**
+  provides clues and catalogue context for named sheep.
+- Later completed nights resolve into a persisted search outcome: sheep found or trail advanced.
+- Factual receipts keep the ritual honest; rarity and the wool economy begin only after a
+  sheep arrives and never change essential access or quiet-time credit.
+- Optional HealthKit, Screen Time, and self-reported signals only add bonuses; missing data never
+  lowers the chance.
+- Only elapsed wind-down and morning-quiet minutes appear in the factual receipt. A separate
+  story-trail distance can drive search progress but is not a Health or GPS measurement.
+- Overnight hours never become quiet minutes or improve flock value.
+- Completed Night Watches update the record for the intended-bedtime date.
+- An early end advances no search and does not remove prior progress.
+- Exact odds are hidden by default and available through a More toggle. Rare sheep are cosmetic
+  and story rewards only.
+
+Legacy storage fields such as `totalFocusMinutes`, reward/economy fields, and the persisted
+`FocusRun` type retain their names for backwards compatibility. Protected-night count remains
+`totalCompletedRuns`; found sheep and search outcomes live in `SheepSearchState`.
+
+## Screen Time reports and optional shielding
+
+Screen Time is the flagship protection/measurement layer:
+
+- Report late-evening and early-morning selected-app use separately and together.
+- Reuse one consented app/category selection across both bookends.
+- Optional shielding applies only during those windows and lifts overnight.
+- Always provide an emergency exit and gentle early-unlock copy.
+- Do not infer sleep, shame the user, or block the whole night merely because Night Watch
+  is active.
+
+The report, monitor, configuration, and action extensions are embedded and share only the
+necessary Screen Time/shield contracts through the App Group. The 2026-07-30 App Store
+export produced Family Controls distribution profiles for every Screen Time target;
+physical-device QA and App Store server validation remain required.
+
+## Optional sleep context
+
+HealthKit optionally shows sleep interval, duration, and available stages. Empty data is
+not presented as permission denial. The local protected-versus-other comparison waits for
+two nights per group, reports sample sizes, and never frames correlation as causation.
+
+## Platform behavior
+
+- iOS 17+ and watchOS 10+
+- Wall-clock timing survives backgrounding and is reconciled on relaunch.
+- A local notification marks requested wind-down and morning completion.
+- A Live Activity presents phase and next transition on supported system surfaces.
+- WatchConnectivity mirrors the latest run and queues critical start/end/ping messages.
+- Unsupported UWB or an unreachable Watch degrades to the honor timer.
+- UserDefaults + Codable JSON remain the local persistence layer.
 
 ## Privacy
 
-No cloud database, analytics, GPS, room identity, third-party tracking, or uploaded distance readings. The prototype stores only lightweight local state, progress, rewards, calibration thresholds, and recent events.
+No GPS location or exact room identity is collected. Detailed schedules, history, HealthKit
+context, reflections, flock progress, legacy reward records, and placement evidence stay local. Separately
+consented impact rows are relative-night, purpose-limited, and deletable; see
+`PRIVACY_DATA_MAP.md`.
 
-## Prototyping Approach
+## Non-goals
 
-Failure and feedback paths should be tested deliberately: noisy readings, unsupported hardware, Watch reachability loss, early return, and warning recovery. The product should stay privacy-preserving, local-first, and kind: Ollie warns, recovers, and encourages rather than shaming the user.
+- Generic Pomodoro or daytime focus sessions
+- A morning routine builder or habit checklist
+- Medical sleep tracking or sleep scoring
+- Continuous proximity monitoring
+- Punitive app blocking, loss-aversion streaks, or shame
+- A social network
+- Paid randomness or rewards for app opens
 
-## Technical Requirements
+## Release acceptance
 
-- SwiftUI iOS app target
-- SwiftUI watchOS app target
-- Shared Swift models and engines
-- WatchConnectivity message plumbing
-- NearbyInteraction provider where supported
-- Friendly unsupported states when distance checks are unavailable
-- UserDefaults persistence
-- AVFAudio phone ping sound
-- WatchKit haptics
-- Focus Mode suggestion flow that never silently toggles Focus
-- Shortcuts/App Intent support for preparing a Focus Run so the user can build a Shortcut with Apple's Set Focus action and Open App action
-
-## Demo Acceptance
-
-The 3-minute demo must show: home, duration selection, Send Ollie Out, Focus prompt, placement grace, active guarding, warning/recovery on supported hardware, completion, reward reveal, reward shelf, and optional early-end path.
+- A fresh user can configure both bookends and save tonight's plan.
+- Inside the start window, one tap begins Night Watch.
+- Honor, Watch, QR, and NFC starts all reach the same phone-authoritative session.
+- Phase labels and next-transition timers are consistent across iPhone, Watch, and Live Activity.
+- Background/relaunch restoration reaches the correct phase and completion state.
+- Quiet-minute accounting excludes overnight time, including late starts and DST changes.
+- Early end is always available and never uses failure haptics or guilt copy.
+- Debug and Release show exactly Home, Nights, Farm, and Settings; mock UI requires the explicit Debug
+  internal-preview launch argument and is never reachable in Release.
+- Optional shields cover only the two selected quiet windows and always clear on early end.
+- HealthKit requests only read-only `sleepAnalysis` and labels available stage provenance.
+- Legacy persisted runs decode without a Night Watch plan and retain their previous behavior.

@@ -1,5 +1,6 @@
 import Foundation
 import NearbyInteraction
+import OSLog
 import WatchKit
 
 @MainActor
@@ -7,6 +8,8 @@ final class WatchRunViewModel: ObservableObject {
     @Published var run: FocusRun?
     @Published var proximity: ProximityState = .initial
     @Published var reward: RewardItem?
+    @Published var screenFreeMorning: ScreenFreeMorningPresentation?
+    @Published var slumberPartyCheer: SlumberPartyCheerFeedback?
     @Published var connectionText = "Waiting for iPhone"
 
     private let watch = WatchConnectivityManagerWatch.shared
@@ -14,20 +17,64 @@ final class WatchRunViewModel: ObservableObject {
     private let nearby = WatchNearbyInteractionSession()
     private var pairedPhoneTokenData: Data?
     private var sentNearbyTokenData: Data?
+    private var sentNearbyTokenAcknowledged = false
+    private var nearbyTokenRetryTask: Task<Void, Never>?
+    private var cheerDismissalTask: Task<Void, Never>?
+    private let nearbyTokenRetrySeconds: TimeInterval = 2
+    private let nearbyTokenRetryLimit = 6
+#if DEBUG
+    private let energyLogger = Logger(
+        subsystem: "com.ngawangchime.countingsheep",
+        category: "Energy.NearbyInteraction.Watch"
+    )
+#endif
 
     init() {
+#if DEBUG
+        if WatchCaptureFixture.applyIfRequested(to: self) {
+            return
+        }
+#endif
+        configureCallbacks()
+        requestCurrentRun()
+    }
+
+#if DEBUG
+    init(captureState: WatchCaptureState) {
+        WatchCaptureFixture.apply(captureState, to: self)
+    }
+#endif
+
+    private func configureCallbacks() {
         watch.onMessage = { [weak self] message in
             Task { @MainActor in self?.handle(message) }
         }
         nearby.onDistanceUpdate = { [weak self] distance in
             Task { @MainActor in self?.handleNearbyDistance(distance) }
         }
-        requestCurrentRun()
+    }
+
+    deinit {
+        nearbyTokenRetryTask?.cancel()
+        cheerDismissalTask?.cancel()
+        nearby.stop()
     }
 
     var remainingSeconds: TimeInterval {
         guard let run else { return 0 }
         return max(0, run.plannedEndAt.timeIntervalSince(Date()))
+    }
+
+    var isAdditionalQuiet: Bool {
+        run?.nightWatchPlan?.role == .additionalQuiet
+    }
+
+    var isScreenFreeMorningActive: Bool {
+        prioritizedScreenFreeMorning?.isActive == true
+    }
+
+    var prioritizedScreenFreeMorning: ScreenFreeMorningPresentation? {
+        ScreenFreeMorningWatchPresentationPolicy.preferred(morning: screenFreeMorning, run: run)
     }
 
     func pingPhone() {
@@ -46,49 +93,137 @@ final class WatchRunViewModel: ObservableObject {
     }
 
     func requestCurrentRun() {
-        connectionText = watch.isReachable ? "Looking for active run..." : "Open the iPhone app and start a run"
+        connectionText = watch.isReachable ? "Looking for Wind Down or Phone Away..." : "Open the iPhone app and begin Wind Down or Phone Away"
         watch.sendWithReply(WatchMessage(type: .pingWatch)) { [weak self] reply in
             Task { @MainActor in
                 guard let self else { return }
-                if let reply, reply.run != nil {
+                if let reply {
                     self.handle(reply)
                 } else if self.run == nil {
-                    self.connectionText = self.watch.isReachable ? "No active iPhone run found" : "iPhone not reachable"
+                    self.connectionText = self.watch.isReachable ? "No active Wind Down or Phone Away found" : "iPhone not reachable"
                 }
             }
         }
     }
 
     func endRun() {
-        WKInterfaceDevice.current().play(.failure)
+        guard run?.guardKind != .nfcTag else {
+            connectionText = isAdditionalQuiet
+                ? "Use iPhone and tap the phone-bed tag to end Phone Away"
+                : "Use iPhone and tap the phone-bed tag to end Wind Down"
+            return
+        }
+        WKInterfaceDevice.current().play(.stop)
         watch.send(WatchMessage(type: .endFocusRunEarly))
+        guard var run else { return }
+        run.state = .endedEarly
+        run.endedAt = Date()
+        run.actualDurationSeconds = run.endedAt?.timeIntervalSince(run.startedAt) ?? 0
+        run.endedEarlyReason = .userEnded
+        self.run = run
+        stopNearbyInteraction()
+    }
+
+    func clearRunSummary() {
+        run = nil
+        reward = nil
+        slumberPartyCheer = nil
+        proximity = .initial
+        connectionText = "Open the iPhone app for tonight's plan"
+    }
+
+    func requestDistanceCheck() {
+        guard run?.guardKind == .watchPlacement,
+              run?.placementStatus == .awaitingConfirmation else {
+                connectionText = isAdditionalQuiet
+                    ? "Phone Away is keeping time on iPhone"
+                : "Wind Down is keeping time on iPhone"
+            return
+        }
+        WKInterfaceDevice.current().play(.click)
+        connectionText = "Checking distance..."
+        watch.send(WatchMessage(type: .distanceCheckRequest, run: run, proximity: proximity))
+        startNearbyInteraction(with: nil)
     }
 
     private func handle(_ message: WatchMessage) {
+        // The iPhone is authoritative. A nil-run state always clears any
+        // previous Wind Down, while a bounded Morning projection remains the
+        // current phone-authoritative surface.
+        if message.type == .focusRunStateUpdate, message.run == nil {
+            run = nil
+            reward = nil
+            slumberPartyCheer = nil
+            proximity = .initial
+            stopNearbyInteraction()
+        }
         if let run = message.run { self.run = run }
         if let proximity = message.proximity { self.proximity = proximity }
-        if let reward = message.reward { self.reward = reward }
+        // The phone keeps receipt/reward disclosure private. Older messages
+        // may carry a reward, but routine state updates never promote it.
+        if message.type != .focusRunStateUpdate, let reward = message.reward { self.reward = reward }
+        // Routine legacy run updates may omit the bounded Morning projection.
+        // Preserve the last known active/planned occurrence unless the phone
+        // explicitly sends a replacement or clears both run and Morning.
+        if let screenFreeMorning = message.screenFreeMorning {
+            self.screenFreeMorning = screenFreeMorning
+        } else if message.run == nil {
+            self.screenFreeMorning = nil
+        }
         connectionText = "Connected to iPhone"
 
         switch message.type {
         case .startFocusRun:
             WKInterfaceDevice.current().play(.start)
-            notifications.scheduleRunStartedNotification()
-            startNearbyInteraction(with: message.tokenData)
+            notifications.scheduleRunStartedNotification(role: run?.nightWatchPlan?.role ?? .primarySleepBookend)
+            if run?.guardKind == .watchPlacement,
+               run?.placementStatus == .awaitingConfirmation {
+                startNearbyInteraction(with: message.tokenData)
+                connectionText = "One quick placement check"
+            } else {
+                stopNearbyInteraction()
+                connectionText = isAdditionalQuiet
+                    ? "Phone Away is keeping time on iPhone"
+                    : "Wind Down is keeping time on iPhone"
+            }
         case .nearbyDiscoveryToken:
-            startNearbyInteraction(with: message.tokenData)
-        case .proximityStateUpdate, .demoDistanceUpdate:
-            if message.run?.state == .warningPhoneTooClose {
-                WKInterfaceDevice.current().play(.notification)
-            } else if message.run?.phoneAwayValidatedAt != nil {
+            if run?.guardKind == .watchPlacement,
+               run?.placementStatus == .awaitingConfirmation {
+                startNearbyInteraction(with: message.tokenData)
+            }
+        case .nearbyDiscoveryTokenAcknowledged:
+            handleNearbyTokenAcknowledged(message.tokenData)
+        case .distanceCheckRequest:
+            if run?.guardKind == .watchPlacement,
+               run?.placementStatus == .awaitingConfirmation {
+                startNearbyInteraction(with: message.tokenData)
+                connectionText = "One quick placement check"
+            }
+        case .distanceCheckEnded:
+            stopNearbyInteraction()
+            connectionText = "Distance resting"
+        case .proximityStateUpdate:
+            if message.run?.placementStatus == .confirmed {
                 WKInterfaceDevice.current().play(.success)
             }
         case .rewardEarned:
             stopNearbyInteraction()
             WKInterfaceDevice.current().play(.success)
+        case .slumberPartyCheer:
+            // Slumber Party encouragement stays silent so it never invites the
+            // user to retrieve their phone during Wind Down.
+            slumberPartyCheer = message.slumberPartyCheer
+            cheerDismissalTask?.cancel()
+            cheerDismissalTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(12))
+                guard !Task.isCancelled else { return }
+                self?.slumberPartyCheer = nil
+            }
         case .endFocusRunEarly:
             stopNearbyInteraction()
-            WKInterfaceDevice.current().play(.failure)
+            WKInterfaceDevice.current().play(.stop)
+        case .focusRunStateUpdate where message.run == nil && message.screenFreeMorning?.isActive != true:
+            connectionText = "No active Wind Down or Phone Away on iPhone"
         default:
             break
         }
@@ -96,13 +231,14 @@ final class WatchRunViewModel: ObservableObject {
 
     private func startNearbyInteraction(with peerTokenData: Data?) {
         guard nearby.isSupported else {
-            connectionText = "Nearby Interaction unsupported"
+            connectionText = "Watch placement isn't available here"
             return
         }
 
         nearby.start()
         if let peerTokenData {
-            if pairedPhoneTokenData != peerTokenData {
+            acknowledgeNearbyToken(peerTokenData)
+            if pairedPhoneTokenData.map({ $0 != peerTokenData }) ?? true {
                 pairedPhoneTokenData = peerTokenData
                 nearby.run(withTokenData: peerTokenData)
             }
@@ -111,16 +247,66 @@ final class WatchRunViewModel: ObservableObject {
             connectionText = "Waiting for distance token"
         }
 
-        guard let tokenData = nearby.discoveryTokenData() else { return }
-        guard sentNearbyTokenData != tokenData else { return }
-        sentNearbyTokenData = tokenData
-        watch.send(WatchMessage(type: .nearbyDiscoveryToken, run: run, proximity: proximity, tokenData: tokenData))
+        sendNearbyToken()
     }
 
     private func stopNearbyInteraction() {
+        let hadRetryTask = nearbyTokenRetryTask != nil
+        nearbyTokenRetryTask?.cancel()
+        nearbyTokenRetryTask = nil
         nearby.stop()
         pairedPhoneTokenData = nil
         sentNearbyTokenData = nil
+        sentNearbyTokenAcknowledged = false
+#if DEBUG
+        if hadRetryTask {
+            energyLogger.debug("NI token retry task cancelled during stop")
+        }
+#endif
+    }
+
+    private func sendNearbyToken() {
+        guard let tokenData = nearby.discoveryTokenData() else { return }
+        if sentNearbyTokenData.map({ $0 != tokenData }) ?? true {
+            sentNearbyTokenData = tokenData
+            sentNearbyTokenAcknowledged = false
+        }
+        let message = WatchMessage(type: .nearbyDiscoveryToken, run: run, proximity: proximity, tokenData: tokenData)
+        watch.send(message)
+        startNearbyTokenRetry(tokenData: tokenData, message: message)
+    }
+
+    private func startNearbyTokenRetry(tokenData: Data, message: WatchMessage) {
+        nearbyTokenRetryTask?.cancel()
+#if DEBUG
+        energyLogger.debug(
+            "NI token retry task created intervalSeconds=\(self.nearbyTokenRetrySeconds, format: .fixed(precision: 0)) limit=\(self.nearbyTokenRetryLimit)"
+        )
+#endif
+        nearbyTokenRetryTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            for _ in 1...self.nearbyTokenRetryLimit {
+                try? await Task.sleep(for: .seconds(self.nearbyTokenRetrySeconds))
+                guard !Task.isCancelled else { return }
+                guard let sentNearbyTokenData = self.sentNearbyTokenData else { return }
+                guard sentNearbyTokenData == tokenData, !self.sentNearbyTokenAcknowledged else { return }
+                self.watch.send(message)
+            }
+        }
+    }
+
+    private func acknowledgeNearbyToken(_ tokenData: Data) {
+        watch.send(WatchMessage(type: .nearbyDiscoveryTokenAcknowledged, run: run, proximity: proximity, tokenData: tokenData))
+    }
+
+    private func handleNearbyTokenAcknowledged(_ tokenData: Data?) {
+        guard let tokenData, let sentNearbyTokenData, tokenData == sentNearbyTokenData else { return }
+        sentNearbyTokenAcknowledged = true
+        nearbyTokenRetryTask?.cancel()
+        nearbyTokenRetryTask = nil
+#if DEBUG
+        energyLogger.debug("NI token retry task cancelled after acknowledgement")
+#endif
     }
 
     private func handleNearbyDistance(_ distance: Double?) {
@@ -140,11 +326,11 @@ final class WatchRunViewModel: ObservableObject {
                 bucket = .probablyOtherRoom
             }
             status = bucket.label
-            detail = "Measured from NINearbyObject.distance on Apple Watch."
+            detail = "Measured between your Apple Watch and iPhone."
         } else {
-            bucket = .signalLost
-            status = ProximityBucket.signalLost.label
-            detail = "Waiting for NINearbyObject.distance."
+            bucket = .waitingForDistance
+            status = ProximityBucket.waitingForDistance.label
+            detail = "Waiting for a distance reading from your iPhone."
         }
 
         proximity = ProximityState(
@@ -157,6 +343,7 @@ final class WatchRunViewModel: ObservableObject {
             detailText: detail
         )
         connectionText = distance == nil ? "Waiting for distance" : "Distance active"
+        watch.send(WatchMessage(type: .watchDistanceReading, run: run, proximity: proximity, distanceMeters: distance))
     }
 }
 
@@ -164,6 +351,14 @@ private final class WatchNearbyInteractionSession: NSObject {
     private var session: NISession?
     private var runningPeerTokenData: Data?
     var onDistanceUpdate: ((Double?) -> Void)?
+#if DEBUG
+    private let energyLogger = Logger(
+        subsystem: "com.ngawangchime.countingsheep",
+        category: "Energy.NearbyInteraction.Watch"
+    )
+    private var debugStartedAt: Date?
+    private var debugUpdateCount = 0
+#endif
 
     var isSupported: Bool {
         NISession.deviceCapabilities.supportsPreciseDistanceMeasurement
@@ -174,6 +369,11 @@ private final class WatchNearbyInteractionSession: NSObject {
         let session = NISession()
         session.delegate = self
         self.session = session
+#if DEBUG
+        debugStartedAt = Date()
+        debugUpdateCount = 0
+        energyLogger.debug("NI started")
+#endif
     }
 
     func run(withTokenData tokenData: Data) {
@@ -191,19 +391,34 @@ private final class WatchNearbyInteractionSession: NSObject {
     }
 
     func stop() {
+        guard session != nil else { return }
         session?.invalidate()
         session = nil
         runningPeerTokenData = nil
+#if DEBUG
+        let duration = debugStartedAt.map { Date().timeIntervalSince($0) } ?? 0
+        energyLogger.debug(
+            "NI stopped durationSeconds=\(duration, format: .fixed(precision: 2)) updates=\(self.debugUpdateCount)"
+        )
+        debugStartedAt = nil
+        debugUpdateCount = 0
+#endif
     }
 }
 
 extension WatchNearbyInteractionSession: NISessionDelegate {
     func session(_ session: NISession, didUpdate nearbyObjects: [NINearbyObject]) {
+#if DEBUG
+        debugUpdateCount += 1
+#endif
         onDistanceUpdate?(nearbyObjects.first?.distance.map(Double.init))
     }
 
     func session(_ session: NISession, didInvalidateWith error: Error) {
         runningPeerTokenData = nil
+#if DEBUG
+        energyLogger.debug("NI invalidated error=\(error.localizedDescription, privacy: .public)")
+#endif
         onDistanceUpdate?(nil)
     }
 }

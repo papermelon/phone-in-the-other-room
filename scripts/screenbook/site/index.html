@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Counting Sheep Screenbook</title>
+  <meta name="description" content="Private local review gallery for deterministic Counting Sheep production screens.">
+  <link rel="stylesheet" href="screenbook.css">
+</head>
+<body>
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">COUNTING SHEEP · LOCAL ONLY</p>
+      <h1>Screenbook</h1>
+      <p class="lede">Five production states, captured from Swift. Review the screen, leave a note, and export a structured copy batch.</p>
+    </div>
+    <div class="masthead-actions">
+      <label class="batch-title">Batch title<input id="batch-title" value="Screenbook technical-spike review"></label>
+      <button id="export-review" class="primary">Export review JSON</button>
+      <label class="button secondary" for="import-review">Import review JSON</label>
+      <input id="import-review" type="file" accept="application/json" hidden>
+    </div>
+  </header>
+
+  <main>
+    <section class="filters" aria-label="Screenbook filters">
+      <label class="search">Search<input id="search" type="search" placeholder="Title, ID, state, tag, copy, or note"></label>
+      <label>Journey<select id="journey-filter"><option value="">All journeys</option></select></label>
+      <label>State<select id="state-filter"><option value="">All states</option></select></label>
+      <label>Review<select id="review-filter"><option value="">Any review status</option><option>open</option><option>approved</option><option>rejected</option><option>needs-discussion</option></select></label>
+      <label>Change<select id="change-filter"><option value="">Any change</option></select></label>
+      <label class="check"><input id="warning-filter" type="checkbox"> Warnings only</label>
+    </section>
+
+    <section class="summary" aria-live="polite">
+      <p id="result-count"></p>
+      <p id="manifest-summary"></p>
+    </section>
+    <section id="gallery" class="gallery" aria-label="Captured scenarios"></section>
+  </main>
+
+  <dialog id="detail-dialog">
+    <form method="dialog"><button class="dialog-close" aria-label="Close detail view">Close</button></form>
+    <div id="detail"></div>
+  </dialog>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+  <script src="data.js"></script>
+  <script src="screenbook.js"></script>
+</body>
+</html>

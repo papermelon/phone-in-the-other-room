@@ -12,13 +12,15 @@ final class WatchNotificationService: NSObject, UNUserNotificationCenterDelegate
         UNUserNotificationCenter.current().delegate = self
     }
 
-    func scheduleRunStartedNotification() {
+    func scheduleRunStartedNotification(role: WindDownOccurrenceRole = .primarySleepBookend) {
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
 
             let content = UNMutableNotificationContent()
-            content.title = "Focus Run started"
-            content.body = "Phone in the Other Room is running. Ollie is on your Watch."
+            content.title = role == .additionalQuiet ? "Ollie is keeping quiet" : "Ollie is on Wind Down"
+            content.body = role == .additionalQuiet
+                ? "Your Phone Away time is running."
+                : "Your phone is tucked in for the night."
             content.sound = .default
 
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)

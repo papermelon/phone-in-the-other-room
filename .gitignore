@@ -11,9 +11,14 @@ xcuserdata/
 # Build output
 build/
 DerivedData/
+tmp/
 *.ipa
 *.dSYM.zip
 *.dSYM
+
+# Python-generated cache files
+__pycache__/
+*.py[cod]
 
 # Swift Package Manager
 .build/
@@ -35,3 +40,5 @@ fastlane/test_output/
 .env.*
 *.env
 *.xcconfig.local
+Config/Supabase.local.xcconfig
+Config/Supabase.release.local.xcconfig

@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 import WatchConnectivity
 
 final class WatchConnectivityManager: NSObject, ObservableObject {
@@ -8,13 +9,28 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
     var onMessage: ((WatchMessage) -> Void)?
     var currentStateProvider: (() -> WatchMessage?)?
     private var latestStateMessage: WatchMessage?
+#if DEBUG
+    private let energyLogger = Logger(
+        subsystem: "com.ngawangchime.countingsheep",
+        category: "Energy.WatchConnectivity.Phone"
+    )
+    private var debugSendCount = 0
+    private var debugLastSendAt: Date?
+#endif
 
-    override private init() {
+    private init(activatesSession: Bool = true) {
         super.init()
+        guard activatesSession else { return }
         guard WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
     }
+
+#if DEBUG
+    static func inactiveForDeterministicCapture() -> WatchConnectivityManager {
+        WatchConnectivityManager(activatesSession: false)
+    }
+#endif
 
     func send(_ message: WatchMessage) {
         guard WCSession.isSupported() else { return }
@@ -22,13 +38,31 @@ final class WatchConnectivityManager: NSObject, ObservableObject {
             latestStateMessage = message
         }
         let dictionary = WatchMessageCodec.dictionary(from: message)
+#if DEBUG
+        debugSendCount += 1
+        let now = Date()
+        let interval = debugLastSendAt.map { now.timeIntervalSince($0) } ?? 0
+        debugLastSendAt = now
+        energyLogger.debug(
+            "send count=\(self.debugSendCount) type=\(message.type.rawValue, privacy: .public) secondsSincePrevious=\(interval, format: .fixed(precision: 3)) reachable=\(WCSession.default.isReachable)"
+        )
+#endif
         try? WCSession.default.updateApplicationContext(dictionary)
         if WCSession.default.isReachable {
             WCSession.default.sendMessage(dictionary, replyHandler: nil) { _ in
                 WCSession.default.transferUserInfo(dictionary)
             }
-        } else if message.type == .startFocusRun || message.type == .pingPhone || message.type == .pingWatch || message.type == .endFocusRunEarly {
+        } else if shouldQueueWhenUnreachable(message.type) {
             WCSession.default.transferUserInfo(dictionary)
+        }
+    }
+
+    private func shouldQueueWhenUnreachable(_ type: WatchMessageType) -> Bool {
+        switch type {
+        case .startFocusRun, .pingPhone, .pingWatch, .endFocusRunEarly:
+            return true
+        default:
+            return false
         }
     }
 }

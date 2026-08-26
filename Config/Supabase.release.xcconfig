@@ -1,0 +1,3 @@
+#include "Supabase.release.example.xcconfig"
+#include? "Supabase.release.local.xcconfig"
+SUPABASE_NIGHT_FLOCK_ENABLED = YES
