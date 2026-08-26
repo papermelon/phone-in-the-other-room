@@ -19,6 +19,8 @@ docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
   -v ON_ERROR_STOP=1 < supabase/tests/app_feedback_test.sql
 docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
   -v ON_ERROR_STOP=1 < supabase/tests/night_flock_test.sql
+docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
+  -v ON_ERROR_STOP=1 < supabase/tests/night_flock_v4_test.sql
 npx deno check \
   supabase/functions/live-activity-registration/index.ts \
   supabase/functions/live-activity-cancellation/index.ts \
@@ -34,19 +36,25 @@ npx deno test --allow-env \
   supabase/functions/_shared/night-flock_test.ts
 ```
 
-The Slumber Party source contract is additive: the original migration and schema-one commands
-remain compatible, while `20260816100000_night_flock_shared_commitment_v2.sql` adds the bounded
-shared-goal lobby and `20260816220000_night_flock_social_rewards_v3.sql` adds independently
-controlled sharing, nightly shared metrics, and server-authoritative Farm grants. Schema-two
-and schema-three requests are validated in the Edge Functions and never carry Family Controls
-tokens, selected-app lists, exact schedules, or raw Health data. Run the Night Flock SQL test
-after `db reset`. Do not deploy these migrations or the functions without the ADR-0016 release
-gates.
+The Slumber Party source contract is additive: v1–v3 migration/command shapes remain explicitly
+fenced legacy compatibility, invite recovery is installed by
+`20260824150000_night_flock_invite_recovery.sql`, and
+`20260825110000_night_flock_parties_v4.sql` implements the current long-lived named party,
+repeatable seven-night rounds, five-party membership, curated profiles, factual records/statuses,
+fixed cheers, moderation, and account-safe deletion. Edge requests never carry Family Controls
+tokens, selected-app lists, exact schedules, raw Health data, or full Farm inventory. Run both
+Night Flock SQL tests after `db reset`. Production received all five Slumber Party migrations,
+both JWT-protected functions, and versioned invitation secrets with explicit founder approval on
+2026-08-25; updated app distribution and physical/operational release gates remain separate.
 
 ## Hosted development project
 
 Authenticate and link interactively. Never place the access token or database password in
 this repository, terminal transcripts shared publicly, or chat.
+
+This repository is linked to the development project. Release/TestFlight uses the separate
+production project. Never assume that an unqualified linked-project deployment updates the
+production backend; an approved production command must specify its verified project reference.
 
 ```bash
 npx supabase login
@@ -88,14 +96,18 @@ verified sender in secrets, not source. Configure Supabase Cron to POST
 run, stops after five attempts, and removes feedback rows/private attachments after 180
 days. The support mailbox owner must follow the matching 180-day deletion process.
 
-Slumber Party additionally requires Supabase Auth's Apple provider, manual-linking support,
-deployment of `20260812120000_night_flock_mvp.sql` followed by
-`20260816100000_night_flock_shared_commitment_v2.sql` and
-`20260816220000_night_flock_social_rewards_v3.sql`, both authenticated functions, and a daily
-service-role schedule for `purge_night_flock_retention(now())`. Establish a moderation queue and
-document who can create service-only moderation actions before enabling the client. Do not reuse
-the impact or ActivityKit tables as Slumber Party sources. The deployment sequence and rollback
-criteria are recorded in `docs/SLUMBER_PARTY_DEPLOYMENT_RUNBOOK.md`.
+Slumber Party additionally requires Supabase Auth's Apple provider and verified manual-linking
+support; all five ordered Slumber Party migrations through
+`20260825110000_night_flock_parties_v4.sql`; both authenticated functions; and
+`NIGHT_FLOCK_INVITE_KEY_V1`, containing 32 random bytes encoded as base64.
+`NIGHT_FLOCK_INVITE_KEY_VERSION` selects the active version. Rotate by provisioning the next
+version before changing the selector and retain older keys until their invitations are retired.
+Production schema/functions/secrets and the enabled Apple provider were verified on 2026-08-25;
+actual device linking, approved v4 retention scheduling, moderation ownership, privacy updates,
+and physical QA are still outstanding. Establish a moderation queue and document who can create
+service-only moderation actions before broader rollout. Do not reuse impact or ActivityKit tables
+as Slumber Party sources. The deployment sequence and rollback criteria are recorded in
+`docs/SLUMBER_PARTY_DEPLOYMENT_RUNBOOK.md`.
 
 For development, `APNS_HOST` is `https://api.sandbox.push.apple.com` and
 `APNS_ENVIRONMENT` is `sandbox`.

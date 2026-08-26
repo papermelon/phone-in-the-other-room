@@ -44,6 +44,8 @@ struct FocusRunLiveActivityAttributes: ActivityAttributes {
         var morningActivityTitle: String? = nil
         /// Independent, bounded morning state. It never carries results.
         var screenFreeMorning: ScreenFreeMorningPresentation? = nil
+        /// Brief, silent social encouragement. Missing on older activity states.
+        var slumberPartyCheer: SlumberPartyCheerFeedback? = nil
     }
 
     var runID: UUID

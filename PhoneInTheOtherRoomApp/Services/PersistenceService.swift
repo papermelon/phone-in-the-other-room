@@ -30,6 +30,7 @@ final class PersistenceService {
     private let sheepSearchStateKey = "ollie.sheepSearch.state"
     private let farmStateKey = "ollie.farm.state"
     private let farmPastureSceneKey = "ollie.farm.pastureScene"
+    private let userProfileKey = "ollie.userProfile"
     private let welcomeRewardLedgerKey = WelcomeRewardLedger.storageKey
     private let nightFlockRewardLedgerKey = NightFlockRewardLedger.storageKey
     private let windDownProfileKey = WindDownProfileRecord.storageKey
@@ -387,7 +388,26 @@ final class PersistenceService {
             }
             return reconciled.farm
         }
-        set { save(newValue, key: farmStateKey) }
+        set {
+            save(newValue, key: farmStateKey)
+            synchronizeUserProfilePresentation(from: newValue)
+        }
+    }
+
+    /// The curated profile remains separate from Farm progression, but its local
+    /// appearance follows the current Farm look before any future transport uses it.
+    var userProfile: CountingSheepUserProfile {
+        get {
+            let farm = farmState
+            let stored = load(CountingSheepUserProfile.self, key: userProfileKey)
+                ?? CountingSheepUserProfile(displayName: "")
+            let synchronized = profile(stored, synchronizedWith: farm)
+            if stored != synchronized || load(CountingSheepUserProfile.self, key: userProfileKey) == nil {
+                save(synchronized, key: userProfileKey)
+            }
+            return synchronized
+        }
+        set { save(newValue, key: userProfileKey) }
     }
 
     /// Character placement is visual preference, kept separate from Farm
@@ -395,6 +415,71 @@ final class PersistenceService {
     var farmPastureSceneSnapshot: PastureSceneSnapshot? {
         get { load(PastureSceneSnapshot.self, key: farmPastureSceneKey) }
         set { save(newValue, key: farmPastureSceneKey) }
+    }
+
+    private func synchronizeUserProfilePresentation(from farm: FarmState) {
+        let stored = load(CountingSheepUserProfile.self, key: userProfileKey)
+            ?? CountingSheepUserProfile(displayName: "")
+        let synchronized = profile(stored, synchronizedWith: farm)
+        guard synchronized != stored || load(CountingSheepUserProfile.self, key: userProfileKey) == nil else {
+            return
+        }
+        save(synchronized, key: userProfileKey)
+    }
+
+    private func profile(
+        _ profile: CountingSheepUserProfile,
+        synchronizedWith farm: FarmState
+    ) -> CountingSheepUserProfile {
+        var synchronized = profile
+        var presentation = CountingSheepPublicPresentation.defaultValue
+        presentation.skinToneID = allowedProfileID(
+            farm.shepherd.skinTone.rawValue,
+            in: CountingSheepPublicPresentationAllowlist.skinToneIDs,
+            fallback: CountingSheepPublicPresentation.defaultValue.skinToneID
+        )
+        presentation.hairStyleID = allowedProfileID(
+            farm.shepherd.hairStyle.rawValue,
+            in: CountingSheepPublicPresentationAllowlist.hairStyleIDs,
+            fallback: CountingSheepPublicPresentation.defaultValue.hairStyleID
+        )
+        presentation.shepherdOutfitID = allowedProfileID(
+            farm.shepherd.outfitItemID,
+            in: CountingSheepPublicPresentationAllowlist.shepherdOutfitIDs,
+            fallback: "none"
+        )
+        presentation.shepherdAccessoryID = allowedProfileID(
+            farm.shepherd.accessoryItemID,
+            in: CountingSheepPublicPresentationAllowlist.shepherdAccessoryIDs,
+            fallback: "none"
+        )
+        presentation.ollieOrnamentID = allowedProfileID(
+            farm.equipment.ollieAccessoryItemID,
+            in: CountingSheepPublicPresentationAllowlist.ollieOrnamentIDs,
+            fallback: "none"
+        )
+        let featured = farm.activeSheep.first(where: \.isFavorite) ?? farm.activeSheep.first
+        presentation.featuredSheepDefinitionID = allowedProfileID(
+            featured?.definitionID,
+            in: CountingSheepPublicPresentationAllowlist.featuredSheepDefinitionIDs,
+            fallback: "none"
+        )
+        presentation.pastureThemeID = allowedProfileID(
+            profile.presentation.pastureThemeID,
+            in: CountingSheepPublicPresentationAllowlist.pastureThemeIDs,
+            fallback: CountingSheepPublicPresentation.defaultValue.pastureThemeID
+        )
+        synchronized.presentation = presentation
+        return synchronized
+    }
+
+    private func allowedProfileID(
+        _ value: String?,
+        in allowlist: Set<String>,
+        fallback: String
+    ) -> String {
+        guard let value, allowlist.contains(value) else { return fallback }
+        return value
     }
 
     var welcomeRewardLedger: WelcomeRewardLedger {

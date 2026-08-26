@@ -252,6 +252,10 @@ enum AssetSlot {
         static let phoneAway = "home/home_phone_away"
     }
 
+    enum Onboarding {
+        static let phoneRestStory = "onboarding/onboarding_phone_rest_story"
+    }
+
     enum Missions {
         static let awayIcon = "missions/mission_away_icon"
         static let dailyIcon = "missions/mission_daily_icon"

@@ -65,6 +65,12 @@ struct FocusRunLiveActivityWidget: Widget {
         for state: FocusRunLiveActivityAttributes.ContentState,
         runID: UUID
     ) -> NightWatchLiveActivityGuidance {
+        if let feedback = state.slumberPartyCheer {
+            return NightWatchLiveActivityGuidance(
+                primary: "A quiet cheer from your party",
+                secondary: feedback.presentation.message
+            )
+        }
         if let morning = state.screenFreeMorning {
             return NightWatchLiveActivityGuidance(
                 primary: morning.status.title,
@@ -287,6 +293,7 @@ private struct FocusRunLiveActivityView: View {
     }
 
     private var headerText: String {
+        if state.slumberPartyCheer != nil { return "SLUMBER PARTY" }
         if let morning = state.screenFreeMorning { return morning.status.title.uppercased() }
         if let terminalPresentation = state.terminalPresentation {
             return terminalPresentation.headline
@@ -307,6 +314,12 @@ private struct FocusRunLiveActivityView: View {
     }
 
     private var guidance: NightWatchLiveActivityGuidance {
+        if let feedback = state.slumberPartyCheer {
+            return NightWatchLiveActivityGuidance(
+                primary: "A quiet cheer from your party",
+                secondary: feedback.presentation.message
+            )
+        }
         if let morning = state.screenFreeMorning {
             return NightWatchLiveActivityGuidance(
                 primary: morning.status.title,

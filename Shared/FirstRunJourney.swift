@@ -362,10 +362,5 @@ enum FirstRunGuideCopy {
     }
     static let practiceGiftSeeFarm = "See them on the Farm"
 
-    static let recommendationEyebrow = "YOUR WIND DOWN STARTING POINT"
-    static let recommendationTitle = "Your Wind Down starting point"
-    static let recommendationDetail = "Based on what you told us, these ideas may be useful places to begin."
     static let aboutIdeasAndSources = "About these ideas and sources"
-    static let recommendedRoutine = "Recommended routine"
-    static let freeWearable = "A free welcome gift for the shepherd"
 }

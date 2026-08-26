@@ -6,6 +6,14 @@ import UserNotifications
 import FamilyControls
 #endif
 
+struct PendingNFCTagReset: Equatable {
+    let oldCredentialDigest: String
+    let role: PhoneBedTagRole
+    let name: String
+    let purposes: Set<PhoneBedTagPurpose>
+    let existingSlotID: UUID?
+}
+
 @MainActor
 final class FocusRunViewModel: ObservableObject {
     @Published var nightWatchPreferences: NightWatchPreferences = .defaults
@@ -62,6 +70,7 @@ final class FocusRunViewModel: ObservableObject {
     @Published var nightWatchStartStatus = ""
     @Published var isScanningNFCForStart = false
     @Published var isProvisioningNFCTag = false
+    @Published var pendingNFCTagReset: PendingNFCTagReset?
     @Published var phoneBedTagLibrary = PhoneBedTagLibrary()
     @Published var orientationState: CountingSheepOrientationState
     @Published var appearancePreference: AppAppearancePreference = .automatic
@@ -174,6 +183,7 @@ final class FocusRunViewModel: ObservableObject {
             self?.optionalSheepSearchBonusPoints() ?? 0
         }
         self.coordinator.onPhoneAwayValidated = { [weak self] run in
+            self?.nightFlockViewModel.publishV4PhoneAwayActive(for: run)
             self?.nightFlockViewModel.publishPhoneTucked(for: run)
         }
         self.coordinator.onAuthorizedEarlyExit = { [weak self] preservingLinkedMorningShield in
@@ -191,6 +201,12 @@ final class FocusRunViewModel: ObservableObject {
         }
         self.nightFlockViewModel.onApplyRewardGrants = { [weak self] grants in
             self?.applySlumberPartyGrants(grants)
+        }
+        self.nightFlockViewModel.onApplyV4RewardGrants = { [weak self] grants in
+            self?.applyV4SlumberPartyGrants(grants) ?? []
+        }
+        self.nightFlockViewModel.onV4CheerFeedback = { [weak self] feedback in
+            self?.coordinator.showSlumberPartyCheer(feedback)
         }
         screenTimeAuthorization = startsExternalServices ? screenTimeService.currentState() : .notDetermined
         if startsExternalServices {
@@ -1010,6 +1026,7 @@ final class FocusRunViewModel: ObservableObject {
                 at: startedAt,
                 share: nightFlockViewModel.shareNextPrimaryRun
             )
+            nightFlockViewModel.publishV4WindDownStarting(runID: runID, at: startedAt)
         }
         coordinator.start(
             configuration: FocusRunConfiguration(
@@ -1466,6 +1483,7 @@ final class FocusRunViewModel: ObservableObject {
         var updatedNotificationPreferences = preserveAdvancedNotifications
             ? notificationPreferences
             : draft.makeNotificationPreferences()
+        updatedNotificationPreferences.remindersEnabled = draft.remindersEnabled
         if !preserveAdvancedNotifications {
             updatedNotificationPreferences.usageAwareRemindersEnabled =
                 draft.usageAwareRemindersEnabled && canUseUsageAwareReminders
@@ -1707,11 +1725,6 @@ final class FocusRunViewModel: ObservableObject {
         let normalized = PhoneFreeCue.normalized(text)
         if evening {
             nightWatchPreferences.eveningCueText = normalized
-            updateOfflinePurpose(
-                category: normalized == nil ? offlinePurpose.category : .custom,
-                customText: normalized,
-                allowsCustomTextInNotifications: offlinePurpose.allowsCustomTextInNotifications
-            )
         } else {
             nightWatchPreferences.morningCueText = normalized
         }
@@ -1938,7 +1951,8 @@ final class FocusRunViewModel: ObservableObject {
         role: PhoneBedTagRole = .primary,
         name: String = NamedPhoneBedTagRegistration.defaultName,
         purposes: Set<PhoneBedTagPurpose> = NamedPhoneBedTagRegistration.allPurposes,
-        intent: PhoneBedTagProvisionIntent = .normalPairing
+        intent: PhoneBedTagProvisionIntent = .normalPairing,
+        expectedCredentialDigest: String? = nil
     ) {
         guard intent == .normalPairing || !forActiveRun && !isRunning else {
             nfcStatus = "Resync is available only from Settings while no run is active. Nothing changed."
@@ -1957,13 +1971,17 @@ final class FocusRunViewModel: ObservableObject {
             isAdditionalQuiet: forActiveRun && activeRunIsAdditionalQuiet,
             intent: intent,
             knownCredentialDigests: Set(phoneBedTagLibrary.tags.map(\.tokenDigest)),
-            previouslyPairedCredentialDigests: phoneBedTagLibrary.previouslyPairedTokenDigests
+            previouslyPairedCredentialDigests: phoneBedTagLibrary.previouslyPairedTokenDigests,
+            expectedCredentialDigest: expectedCredentialDigest
         ) { [weak self] result in
             guard let self else { return }
             self.isProvisioningNFCTag = false
             switch result {
             case .registered(let registration):
                 guard PhoneBedTagSlotCommitPolicy.shouldCommit(.physicalWriteSucceeded) else { return }
+                if let expectedCredentialDigest {
+                    self.phoneBedTagLibrary.retireCredential(expectedCredentialDigest)
+                }
                 let namedRegistration = NamedPhoneBedTagRegistration(
                     id: existingSlot?.id ?? UUID(),
                     name: name,
@@ -1997,6 +2015,19 @@ final class FocusRunViewModel: ObservableObject {
                 } else {
                     self.nfcStatus = "Tag saved. Suggested label: \(namedRegistration.suggestedLabel)."
                 }
+            case .resetRequired(let digest):
+                guard expectedCredentialDigest == nil else {
+                    self.nfcStatus = "That tag changed before it could be reset. Nothing changed."
+                    return
+                }
+                self.pendingNFCTagReset = PendingNFCTagReset(
+                    oldCredentialDigest: digest,
+                    role: role,
+                    name: NamedPhoneBedTagRegistration.normalizedName(name),
+                    purposes: compatiblePurposes,
+                    existingSlotID: existingSlot?.id
+                )
+                self.nfcStatus = "This is a previously used Counting Sheep tag. Choose “Reset and pair this tag” to replace its old credential."
             case .alreadyPaired(let digest):
                 if let existing = self.phoneBedTagLibrary.tag(matching: digest) {
                     self.nfcStatus = "\(existing.name) is already paired. Rename it or change its uses instead."
@@ -2020,19 +2051,56 @@ final class FocusRunViewModel: ObservableObject {
         }
     }
 
+    /// Starts the Settings-only recovery scan. Blank tags are paired through
+    /// the ordinary path; occupied Counting Sheep credentials pause here for
+    /// explicit confirmation before a second session can write.
+    func beginResetAndPairNFCTag(
+        role: PhoneBedTagRole,
+        name: String,
+        purposes: Set<PhoneBedTagPurpose>
+    ) {
+        guard !isRunning else {
+            nfcStatus = "Reset and pairing is unavailable while Wind Down is active. Nothing changed."
+            return
+        }
+        pendingNFCTagReset = nil
+        provisionNFCTag(
+            role: role,
+            name: name,
+            purposes: purposes,
+            intent: .settingsResetAndPair
+        )
+    }
+
+    func confirmResetAndPairNFCTag() {
+        guard let pendingNFCTagReset else { return }
+        self.pendingNFCTagReset = nil
+        provisionNFCTag(
+            role: pendingNFCTagReset.role,
+            name: pendingNFCTagReset.name,
+            purposes: pendingNFCTagReset.purposes,
+            intent: .settingsResetAndPair,
+            expectedCredentialDigest: pendingNFCTagReset.oldCredentialDigest
+        )
+    }
+
+    func cancelResetAndPairNFCTag() {
+        pendingNFCTagReset = nil
+        nfcStatus = "No changes made. The tag’s existing credential is unchanged."
+    }
+
     /// A retired physical tag can only be rewritten from Settings. The old
     /// digest stays retired; the stable slot receives a fresh credential after
     /// Core NFC confirms the physical write.
     func resyncRetiredNFCTag(role: PhoneBedTagRole) {
-        guard !isRunning, let tag = phoneBedTagLibrary.tag(for: role) else {
+        guard let tag = phoneBedTagLibrary.tag(for: role) else {
             nfcStatus = "Resync is available only from Settings while no run is active. Nothing changed."
             return
         }
-        provisionNFCTag(
+        beginResetAndPairNFCTag(
             role: role,
             name: tag.name,
-            purposes: tag.purposes,
-            intent: .settingsRetiredTagResync
+            purposes: tag.purposes
         )
     }
 
@@ -2230,6 +2298,15 @@ final class FocusRunViewModel: ObservableObject {
             notifications.cancelNightWatchReminder()
             quietTimeShielding.cancelAutomaticSchedule()
             usageMonitoring.cancel()
+            // A manual plan can still have its explicitly requested prompt.
+            // This never creates an automatic run or a background shield schedule.
+            if nightWatchPreferences.isConfigured, notificationPreferences.remindersEnabled {
+                notifications.scheduleNextWindDownReminder(
+                    at: nightWatchPreferences.nextStart(),
+                    purpose: offlinePurpose,
+                    preferences: notificationPreferences
+                )
+            }
             return
         case .cancelMissingWindDownTag:
             persistence.automaticWindDownSchedule = nil
@@ -2389,6 +2466,7 @@ final class FocusRunViewModel: ObservableObject {
         nightWatchStartStatus = ""
         isScanningNFCForStart = false
         isProvisioningNFCTag = false
+        pendingNFCTagReset = nil
         pendingNightWatchPlan = nil
         pendingNightWatchSourceOccurrenceID = nil
         pendingWindDownStartContext = nil

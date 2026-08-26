@@ -5,6 +5,14 @@
 **Scope:** first-run guide, onboarding gift presentation, and responsive layout on first-run-reachable iPhone screens  
 **Out of scope:** tabs, targets, entitlements, `project.yml`, backend behavior, reward balance, or a new persistence framework
 
+> **2026-08-26 founder amendment:** The subsequent first-run decision supersedes the former
+> two-question, combined-result, profile-matched-gift amendment. Six categorical local questions
+> form one skippable chapter; a separate explanation uses only explicit behavioral evidence.
+> Every person may independently choose one immediately claimed Shepherd welcome gift, including
+> after skipping the questions. Schedule/reminder choices remain explicit and automatic start
+> remains off. The chaptered post-setup guide decisions below remain current; older
+> profile-dependent gift wording in the historical plan is superseded.
+
 ## Outcome
 
 Replace the current 17-step uninterrupted tour with short, opt-in chapters that teach no more
@@ -113,26 +121,26 @@ At every chapter boundary:
 An exploration pause is a persisted state, not a timed delay. Do not use elapsed time, app opens,
 or engagement metrics to unlock the next chapter. Relevant user navigation is the only trigger.
 
-### 3. Make Moonlit Coat a player choice
+### 3. Make the welcome wearable a player choice
 
-The questionnaire completion already owns the recommended wearable under ADR-0018. Align the UI
-with that fact; remove the artificial “claim” ceremony.
+The 2026-08-26 ADR-0018 amendment makes the Shepherd wearable independent of questionnaire
+completion. Claim the selected production item immediately and keep the result screen separate.
 
 Required flow:
 
 1. Do not mention the coat on the recommendation page. That page should explain the Wind Down
    starting point only.
-2. Reveal the coat once on the gift page using the real `FarmShopItemImage` asset and a shepherd
-   preview wearing it.
-3. Copy: **“Moonlit Coat was added to your wardrobe.”**
+2. Reveal all three finished choices once on the gift page using the real `FarmShopItemImage`
+   assets and an effect-aware preview of the person's actual Shepherd.
+3. Copy: **“A little something for starting.”**
 4. Present two explicit choices:
-   - **Keep my current outfit** — leaves equipment unchanged.
-   - **Wear Moonlit Coat** — equips only after this direct tap.
-5. Continuing onboarding without choosing either must behave like **Keep my current outfit**.
+   - **Keep for later** — claims the item and leaves equipment unchanged.
+   - **Wear now** — claims and equips the selected outfit or accessory after this direct tap.
+5. Skipping the behavioral questionnaire must retain the same one-gift eligibility.
 6. In Farm Shop → Shepherd, the item must be visible as **Welcome gift · Owned** even when its
    normal progression tier is locked. Do not show a wool price as though the player still needs
    to buy it.
-7. Your Shepherd must show **Wear** / **Take off** and the equipped preview using the same item.
+7. Your Shepherd must show **Wear** / **Take off** and the equipped preview using the selected item.
 8. A contextual wardrobe card may point to it once, but must not repeat the entire gift reveal.
 
 Delete the `.farmClaimWearable` lesson from the new visible journey. Legacy persisted states at
@@ -345,7 +353,7 @@ Tasks:
 
 Audit every screen reachable before the first exploration pause, not only the overlay:
 
-- onboarding welcome/profile/recommendation/schedule/quiet/protection/gift/ready;
+- onboarding welcome/profile/recommendation/gift/schedule/quiet/protection/ready;
 - Home cards and start actions;
 - practice offer and completion card;
 - Farm offer, wardrobe, Shop item detail, Settings tip, Nights tip;
@@ -363,8 +371,8 @@ The founder direction here supersedes the uninterrupted expanded journey. Update
 - `docs/PRODUCT_PRINCIPLES.md` only where progressive autonomy needs recording;
 - `docs/ARCHITECTURE.md` orientation schema and resume behavior;
 - `docs/DECISIONS/ADR-0017-progressive-guide-phone-break-and-sleep-guidance.md`;
-- `docs/DECISIONS/ADR-0018-first-run-welcome-rewards.md` to clarify that questionnaire
-  completion owns the gift and equipment is always an explicit choice;
+- `docs/DECISIONS/ADR-0018-first-run-welcome-rewards.md` to clarify that the welcome gift
+  remains independent of questionnaire completion and equipment is always an explicit choice;
 - `docs/FIRST_RUN_COPY_INVENTORY.md`;
 - `docs/FUTURE_AGENT_TASKS.md` when the implementation is complete or if follow-ups remain.
 
@@ -404,9 +412,10 @@ At minimum, add or update tests for:
    tip destinations.
 8. No in-progress embedded lesson causes the generic continue card to cover itself.
 9. Tour Continue/Back/Skip do not mutate owned items, equipment, wool, sheep, or reward ledgers.
-10. Completing the questionnaire owns the gift idempotently but does not equip it.
-11. **Wear Moonlit Coat** equips it idempotently; **Keep my current outfit** preserves the current
-    outfit.
+10. Choosing a welcome item owns and claims it idempotently whether the questionnaire was
+    completed or skipped.
+11. **Wear now** equips the selected accessory or outfit in its correct slot; **Keep for later**
+    preserves the current Shepherd appearance.
 12. An owned gift stays visible in Shepherd Shop presentation despite its normal tier lock and is
     labelled owned rather than purchasable.
 13. Existing practice reward, Wind Down guarantees, Phone Away guarantees, and Codable legacy

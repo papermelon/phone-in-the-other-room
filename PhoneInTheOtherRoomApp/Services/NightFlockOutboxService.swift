@@ -4,6 +4,8 @@ actor NightFlockOutboxService {
     static let outboxKey = "ollie.nightFlock.outbox"
     static let v2OutboxKey = "ollie.nightFlock.commitmentOutbox"
     static let v3OutboxKey = "ollie.nightFlock.metricsOutbox"
+    static let v4OutboxKey = "ollie.nightFlock.v4SourceOutbox"
+    static let v4StatusOutboxKey = "ollie.nightFlock.v4StatusOutbox"
     static let runContextsKey = "ollie.nightFlock.runContexts"
     static let stagedDestructiveEffectKey = "ollie.nightFlock.stagedDestructiveEffect"
     static let acceptedAccountDeletionKey = "ollie.nightFlock.acceptedAccountDeletion"
@@ -103,6 +105,57 @@ actor NightFlockOutboxService {
         save(v3Records().filter { $0.id != id }, key: Self.v3OutboxKey)
     }
 
+    /// Schema four deliberately stores one factual source activity per account.  The
+    /// server derives the eligible party/round publications, so this queue must never
+    /// grow one record per party.
+    func v4Records() -> [NightFlockV4OutboxSourceRecord] {
+        load([NightFlockV4OutboxSourceRecord].self, key: Self.v4OutboxKey) ?? []
+    }
+
+    func enqueueV4(_ record: NightFlockV4OutboxSourceRecord, epoch: UInt64) {
+        guard admits(epoch) else { return }
+        save(NightFlockV4OutboxRules.merge(record, into: v4Records()), key: Self.v4OutboxKey)
+    }
+
+    func markV4Attempt(_ sourceEventID: UUID, kind: NightFlockV4ActivityKind, epoch: UInt64) {
+        guard admits(epoch) else { return }
+        var queued = v4Records()
+        guard let index = queued.firstIndex(where: {
+            $0.source.sourceEventID == sourceEventID && $0.source.kind == kind
+        }) else { return }
+        queued[index].attemptCount += 1
+        save(queued, key: Self.v4OutboxKey)
+    }
+
+    func removeV4(_ sourceEventID: UUID, kind: NightFlockV4ActivityKind, epoch: UInt64) {
+        guard admits(epoch) else { return }
+        save(v4Records().filter {
+            !($0.source.sourceEventID == sourceEventID && $0.source.kind == kind)
+        }, key: Self.v4OutboxKey)
+    }
+
+    func v4StatusRecords() -> [NightFlockV4StatusOutboxRecord] {
+        load([NightFlockV4StatusOutboxRecord].self, key: Self.v4StatusOutboxKey) ?? []
+    }
+
+    func enqueueV4Status(_ record: NightFlockV4StatusOutboxRecord, epoch: UInt64) {
+        guard admits(epoch) else { return }
+        save(NightFlockV4StatusOutboxRules.merge(record, into: v4StatusRecords()), key: Self.v4StatusOutboxKey)
+    }
+
+    func markV4StatusAttempt(_ sourceEventID: UUID, epoch: UInt64) {
+        guard admits(epoch) else { return }
+        var queued = v4StatusRecords()
+        guard let index = queued.firstIndex(where: { $0.sourceEventID == sourceEventID }) else { return }
+        queued[index].attemptCount += 1
+        save(queued, key: Self.v4StatusOutboxKey)
+    }
+
+    func removeV4Status(_ sourceEventID: UUID, epoch: UInt64) {
+        guard admits(epoch) else { return }
+        save(v4StatusRecords().filter { $0.sourceEventID != sourceEventID }, key: Self.v4StatusOutboxKey)
+    }
+
     func remove(_ id: UUID, epoch: UInt64) {
         guard admits(epoch) else { return }
         let queued = records().filter { $0.id != id }
@@ -147,6 +200,8 @@ actor NightFlockOutboxService {
         defaults.removeObject(forKey: Self.outboxKey)
         defaults.removeObject(forKey: Self.v2OutboxKey)
         defaults.removeObject(forKey: Self.v3OutboxKey)
+        defaults.removeObject(forKey: Self.v4OutboxKey)
+        defaults.removeObject(forKey: Self.v4StatusOutboxKey)
         defaults.removeObject(forKey: Self.runContextsKey)
         // Keep the marker until every queued record is gone. If termination
         // interrupts earlier removal, launch still reconciles before flushing.
@@ -261,6 +316,8 @@ actor NightFlockOutboxService {
         defaults.removeObject(forKey: Self.outboxKey)
         defaults.removeObject(forKey: Self.v2OutboxKey)
         defaults.removeObject(forKey: Self.v3OutboxKey)
+        defaults.removeObject(forKey: Self.v4OutboxKey)
+        defaults.removeObject(forKey: Self.v4StatusOutboxKey)
         defaults.removeObject(forKey: Self.runContextsKey)
         defaults.removeObject(forKey: Self.stagedDestructiveEffectKey)
         defaults.removeObject(forKey: Self.pendingAccountDeletionIntentKey)

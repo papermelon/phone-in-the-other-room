@@ -49,7 +49,7 @@ final class PhoneBedTagInspectionTests: XCTestCase {
         )
     }
 
-    func testOnlyBlankTagMayProceedForNormalPairing() {
+    func testNormalPairingRejectsOccupiedCountingSheepCredentials() {
         XCTAssertEqual(
             PhoneBedTagProvisionPolicy.resolve(
                 intent: .normalPairing,
@@ -67,6 +67,84 @@ final class PhoneBedTagInspectionTests: XCTestCase {
                 retiredCredentialDigests: []
             ),
             .mayProceed
+        )
+    }
+
+    func testReinstallOrUpdateRecoveryWorksWithAnEmptyLocalLibrary() {
+        XCTAssertEqual(
+            PhoneBedTagProvisionPolicy.resolve(
+                intent: .settingsResetAndPair,
+                inspection: .credential(digest: "credential-from-another-install"),
+                activeCredentialDigests: [],
+                retiredCredentialDigests: []
+            ),
+            .resetRequired(digest: "credential-from-another-install")
+        )
+    }
+
+    func testForgottenCredentialUsesTheSameExplicitRecoveryDecision() {
+        XCTAssertEqual(
+            PhoneBedTagProvisionPolicy.resolve(
+                intent: .settingsResetAndPair,
+                inspection: .credential(digest: "forgotten"),
+                activeCredentialDigests: [],
+                retiredCredentialDigests: ["forgotten"]
+            ),
+            .resetRequired(digest: "forgotten")
+        )
+    }
+
+    func testRecoveryRequiresTheSameCredentialToBePresentForTheWriteSession() {
+        XCTAssertEqual(
+            PhoneBedTagProvisionPolicy.resolve(
+                intent: .settingsResetAndPair,
+                inspection: .credential(digest: "candidate"),
+                activeCredentialDigests: [],
+                retiredCredentialDigests: [],
+                expectedCredentialDigest: "candidate"
+            ),
+            .mayProceed
+        )
+        XCTAssertEqual(
+            PhoneBedTagProvisionPolicy.resolve(
+                intent: .settingsResetAndPair,
+                inspection: .credential(digest: "different-tag"),
+                activeCredentialDigests: [],
+                retiredCredentialDigests: [],
+                expectedCredentialDigest: "candidate"
+            ),
+            .abort
+        )
+        XCTAssertEqual(
+            PhoneBedTagProvisionPolicy.resolve(
+                intent: .settingsResetAndPair,
+                inspection: .empty,
+                activeCredentialDigests: [],
+                retiredCredentialDigests: [],
+                expectedCredentialDigest: "candidate"
+            ),
+            .abort
+        )
+    }
+
+    func testResetFlowPairsBlankTagsNormallyAndRejectsForeignContents() {
+        XCTAssertEqual(
+            PhoneBedTagProvisionPolicy.resolve(
+                intent: .settingsResetAndPair,
+                inspection: .empty,
+                activeCredentialDigests: [],
+                retiredCredentialDigests: []
+            ),
+            .mayProceed
+        )
+        XCTAssertEqual(
+            PhoneBedTagProvisionPolicy.resolve(
+                intent: .settingsResetAndPair,
+                inspection: .foreign,
+                activeCredentialDigests: [],
+                retiredCredentialDigests: []
+            ),
+            .abort
         )
     }
 
@@ -109,9 +187,10 @@ final class PhoneBedTagInspectionTests: XCTestCase {
         XCTAssertEqual(
             PhoneBedTagReadResolutionPolicy.resolve(
                 credentialDigest: "occupied",
-                error: .none
+                error: .none,
+                isCountingSheepCredential: false
             ),
-            .credential(digest: "occupied")
+            .foreign
         )
     }
 

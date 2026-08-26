@@ -2,6 +2,8 @@ import SwiftUI
 
 struct ShepherdCustomizationView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    @State private var nameDraft = ""
+    @State private var nameFeedback: String?
 
     private var state: FarmState { viewModel.farmState }
     private var ownedWearables: [FarmShopItem] {
@@ -12,8 +14,17 @@ struct ShepherdCustomizationView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 avatarCard
-                skinSection
-                hairSection
+                ShepherdNameCard(
+                    profile: viewModel.userProfile,
+                    draftName: $nameDraft,
+                    feedback: $nameFeedback,
+                    onSave: { viewModel.saveShepherdDisplayName($0) }
+                )
+                ShepherdAppearanceControls(
+                    profile: state.shepherd,
+                    onSkinTone: viewModel.setShepherdSkinTone,
+                    onHairStyle: viewModel.setShepherdHairStyle
+                )
                 wardrobeSection
             }
             .padding(.horizontal, AppSpacing.md)
@@ -39,86 +50,6 @@ struct ShepherdCustomizationView: View {
                     .multilineTextAlignment(.center)
             }
             .frame(maxWidth: .infinity)
-        }
-    }
-
-    private var skinSection: some View {
-        choiceSection(title: "SKIN TONE") {
-            ForEach(ShepherdSkinTone.allCases) { tone in
-                Button {
-                    viewModel.setShepherdSkinTone(tone)
-                } label: {
-                    VStack(spacing: AppSpacing.xxs) {
-                        Circle()
-                            .fill(shepherdSkinColor(tone))
-                            .frame(width: 42, height: 42)
-                            .overlay {
-                                Circle().stroke(
-                                    state.shepherd.skinTone == tone ? AppColors.grass : AppColors.stroke.opacity(0.22),
-                                    lineWidth: state.shepherd.skinTone == tone ? 3 : 1
-                                )
-                            }
-                        Text(tone.title)
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(AppColors.ink)
-                    }
-                }
-                .buttonStyle(.plain)
-                .frame(minWidth: 64, minHeight: 64)
-            }
-        }
-    }
-
-    private var hairSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("HAIR")
-                .font(pixelFont(.caption))
-                .foregroundStyle(AppColors.grass)
-            LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 88), spacing: AppSpacing.sm)],
-                spacing: AppSpacing.sm
-            ) {
-                ForEach(ShepherdHairStyle.allCases) { style in
-                    Button {
-                        viewModel.setShepherdHairStyle(style)
-                    } label: {
-                        VStack(spacing: AppSpacing.xxs) {
-                            ShepherdAvatarView(
-                                profile: ShepherdProfile(
-                                    skinTone: state.shepherd.skinTone,
-                                    hairStyle: style,
-                                    outfitItemID: state.shepherd.outfitItemID,
-                                    accessoryItemID: nil
-                                ),
-                                size: 68
-                            )
-                            Text(style.title)
-                                .font(.caption2.weight(.semibold))
-                                .foregroundStyle(AppColors.ink)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.xs)
-                        .background(
-                            state.shepherd.hairStyle == style
-                                ? AppColors.grass.opacity(0.14)
-                                : AppColors.surface.opacity(0.45),
-                            in: RoundedRectangle(cornerRadius: AppRadius.md)
-                        )
-                        .overlay {
-                            RoundedRectangle(cornerRadius: AppRadius.md)
-                                .stroke(
-                                    state.shepherd.hairStyle == style
-                                        ? AppColors.grass
-                                        : AppColors.stroke.opacity(0.16),
-                                    lineWidth: state.shepherd.hairStyle == style ? 2 : 1
-                                )
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(style.title) hair")
-                    .accessibilityAddTraits(state.shepherd.hairStyle == style ? .isSelected : [])
-                }
-            }
         }
     }
 
@@ -168,20 +99,6 @@ struct ShepherdCustomizationView: View {
         }
     }
 
-    private func choiceSection<Content: View>(
-        title: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text(title)
-                .font(pixelFont(.caption))
-                .foregroundStyle(AppColors.grass)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: AppSpacing.sm, content: content)
-            }
-        }
-    }
-
     private func isEquipped(_ item: FarmShopItem) -> Bool {
         switch item.effect {
         case .shepherdOutfit: return state.shepherd.outfitItemID == item.id
@@ -203,6 +120,101 @@ struct ShepherdCustomizationView: View {
         }
     }
 
+}
+
+struct ShepherdAppearanceControls: View {
+    let profile: ShepherdProfile
+    let onSkinTone: (ShepherdSkinTone) -> Void
+    let onHairStyle: (ShepherdHairStyle) -> Void
+    var compact = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("SKIN TONE")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: AppSpacing.sm) {
+                        ForEach(ShepherdSkinTone.allCases) { tone in skinChoice(tone) }
+                    }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("HAIR")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: compact ? 78 : 88), spacing: AppSpacing.sm)],
+                    spacing: AppSpacing.sm
+                ) {
+                    ForEach(ShepherdHairStyle.allCases) { style in hairChoice(style) }
+                }
+            }
+        }
+    }
+
+    private func skinChoice(_ tone: ShepherdSkinTone) -> some View {
+        Button { onSkinTone(tone) } label: {
+            VStack(spacing: AppSpacing.xxs) {
+                Circle()
+                    .fill(shepherdSkinColor(tone))
+                    .frame(width: 42, height: 42)
+                    .overlay {
+                        Circle().stroke(
+                            profile.skinTone == tone ? AppColors.grass : AppColors.stroke.opacity(0.22),
+                            lineWidth: profile.skinTone == tone ? 3 : 1
+                        )
+                    }
+                Text(tone.title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(AppColors.ink)
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(minWidth: 64, minHeight: 64)
+        .accessibilityLabel("\(tone.title) skin tone")
+        .accessibilityAddTraits(profile.skinTone == tone ? .isSelected : [])
+    }
+
+    private func hairChoice(_ style: ShepherdHairStyle) -> some View {
+        Button { onHairStyle(style) } label: {
+            VStack(spacing: AppSpacing.xxs) {
+                ShepherdAvatarView(
+                    profile: ShepherdProfile(
+                        skinTone: profile.skinTone,
+                        hairStyle: style,
+                        outfitItemID: profile.outfitItemID,
+                        accessoryItemID: nil
+                    ),
+                    size: compact ? 58 : 68
+                )
+                Text(style.title)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(AppColors.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, minHeight: 64)
+            .padding(.vertical, AppSpacing.xs)
+            .background(
+                profile.hairStyle == style
+                    ? AppColors.grass.opacity(0.14)
+                    : AppColors.surface.opacity(0.45),
+                in: RoundedRectangle(cornerRadius: AppRadius.md)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: AppRadius.md)
+                    .stroke(
+                        profile.hairStyle == style ? AppColors.grass : AppColors.stroke.opacity(0.16),
+                        lineWidth: profile.hairStyle == style ? 2 : 1
+                    )
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(style.title) hair")
+        .accessibilityAddTraits(profile.hairStyle == style ? .isSelected : [])
+    }
 }
 
 #Preview("Your Shepherd") {

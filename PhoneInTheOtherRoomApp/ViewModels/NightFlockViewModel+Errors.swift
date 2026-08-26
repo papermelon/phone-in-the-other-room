@@ -53,6 +53,9 @@ extension NightFlockViewModel {
         // its own current request stale.
         if previous != presentation.action {
             transportRecoveryEpoch = NightFlockTransportEpochPolicy.advancing(transportRecoveryEpoch)
+            if presentation.action != .none {
+                stopV4RealtimePresentation()
+            }
         }
         if pendingAuthenticationRecovery == .failClosed {
             pendingNightFlockRecovery = nil

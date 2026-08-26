@@ -4,6 +4,7 @@ enum PhoneBedTagInspection: Equatable {
     case unreadable
     case empty
     case credential(digest: String)
+    case foreign
 }
 
 /// A Core NFC read can provide both a stale message object and an error. The
@@ -19,7 +20,8 @@ enum PhoneBedTagReadError: Equatable {
 enum PhoneBedTagReadResolutionPolicy {
     static func resolve(
         credentialDigest: String?,
-        error: PhoneBedTagReadError
+        error: PhoneBedTagReadError,
+        isCountingSheepCredential: Bool = true
     ) -> PhoneBedTagInspection {
         switch error {
         case .unreadable:
@@ -27,7 +29,10 @@ enum PhoneBedTagReadResolutionPolicy {
         case .zeroLengthWritableTag:
             return .empty
         case .none:
-            return credentialDigest.map { .credential(digest: $0) } ?? .empty
+            guard let credentialDigest else { return .empty }
+            return isCountingSheepCredential
+                ? .credential(digest: credentialDigest)
+                : .foreign
         }
     }
 }
@@ -50,6 +55,10 @@ enum PhoneBedTagProvisionInspectionDecision: Equatable {
     case abort
     case alreadyPaired(digest: String)
     case previouslyPaired(digest: String)
+    /// A valid Counting Sheep credential that is not active in this install.
+    /// The caller must obtain explicit confirmation before starting a second
+    /// NFC session that may overwrite it.
+    case resetRequired(digest: String)
     case mayProceed
 
 }
@@ -57,6 +66,7 @@ enum PhoneBedTagProvisionInspectionDecision: Equatable {
 enum PhoneBedTagProvisionIntent: Equatable {
     case normalPairing
     case settingsRetiredTagResync
+    case settingsResetAndPair
 }
 
 enum PhoneBedTagProvisionPolicy {
@@ -64,7 +74,8 @@ enum PhoneBedTagProvisionPolicy {
         intent: PhoneBedTagProvisionIntent,
         inspection: PhoneBedTagInspection,
         activeCredentialDigests: Set<String>,
-        retiredCredentialDigests: Set<String>
+        retiredCredentialDigests: Set<String>,
+        expectedCredentialDigest: String? = nil
     ) -> PhoneBedTagProvisionInspectionDecision {
         switch intent {
         case .normalPairing:
@@ -76,8 +87,12 @@ enum PhoneBedTagProvisionPolicy {
             case let .credential(digest) where retiredCredentialDigests.contains(digest):
                 return .previouslyPaired(digest: digest)
             case .credential:
-                // Pair only blank tags. Existing non-Counting Sheep data is
-                // never an invitation to overwrite somebody else's tag.
+                // Normal pairing is intentionally blank-only. Recovery is a
+                // separate Settings-only intent with explicit reset copy.
+                return .abort
+            case .foreign:
+                // Existing non-Counting Sheep data is never an invitation to
+                // overwrite somebody else's tag.
                 return .abort
             case .empty:
                 return .mayProceed
@@ -91,6 +106,22 @@ enum PhoneBedTagProvisionPolicy {
             return activeCredentialDigests.contains(digest)
                 ? .alreadyPaired(digest: digest)
                 : .mayProceed
+        case .settingsResetAndPair:
+            switch inspection {
+            case .empty:
+                // A blank tag follows the ordinary pairing path.
+                return expectedCredentialDigest == nil ? .mayProceed : .abort
+            case let .credential(digest):
+                guard !activeCredentialDigests.contains(digest) else {
+                    return .alreadyPaired(digest: digest)
+                }
+                if let expectedCredentialDigest {
+                    return expectedCredentialDigest == digest ? .mayProceed : .abort
+                }
+                return .resetRequired(digest: digest)
+            case .foreign, .unreadable:
+                return .abort
+            }
         }
     }
 }

@@ -189,6 +189,15 @@ struct PhoneBedTagLibrary: Codable, Equatable {
         previouslyPairedTokenDigests.subtract(tags.map(\.tokenDigest))
     }
 
+    /// Retains a credential discovered during recovery so a later scan cannot
+    /// silently turn an old physical credential back into an active tag.
+    mutating func retireCredential(_ digest: String) {
+        let normalized = digest.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !normalized.isEmpty,
+              !tags.contains(where: { $0.tokenDigest == normalized }) else { return }
+        previouslyPairedTokenDigests.insert(normalized)
+    }
+
     mutating func rename(id: UUID, to name: String) {
         guard let index = tags.firstIndex(where: { $0.id == id }) else { return }
         tags[index].name = NamedPhoneBedTagRegistration.normalizedName(name)

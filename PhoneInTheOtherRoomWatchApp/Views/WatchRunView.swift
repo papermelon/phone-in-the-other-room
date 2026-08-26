@@ -41,6 +41,18 @@ struct WatchRunView: View {
                     .foregroundStyle(WatchTheme.mist)
                     .multilineTextAlignment(.center)
 
+                if let feedback = viewModel.slumberPartyCheer {
+                    Label(
+                        feedback.presentation.message,
+                        systemImage: feedback.presentation.symbol
+                    )
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(WatchTheme.cream)
+                    .multilineTextAlignment(.center)
+                    .accessibilityLabel(feedback.presentation.message)
+                    .transition(.opacity)
+                }
+
                 if needsWatchPlacement {
                     Button { viewModel.requestDistanceCheck() } label: {
                         Label("Check placement", systemImage: "location.fill")

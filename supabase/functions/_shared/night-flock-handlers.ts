@@ -7,12 +7,13 @@ import {
 } from "./night-flock-errors.ts";
 import {
   NightFlockCommandPayload,
+  NightFlockStateContract,
   validateNightFlockCommand,
   validateNightFlockState,
 } from "./night-flock.ts";
 
 export type NightFlockCaller = { id: string; isAnonymous: boolean };
-export type NightFlockCommandResult = {
+export type NightFlockCommandResult = Record<string, unknown> & {
   accepted: boolean;
   inviteCode?: string | null;
   inviteID?: string | null;
@@ -24,18 +25,24 @@ export type NightFlockCommandDependencies = {
   authenticate(request: Request): Promise<NightFlockCaller>;
   execute(callerID: string, payload: NightFlockCommandPayload): Promise<NightFlockCommandResult>;
   deleteAccount(callerID: string): Promise<void>;
+  prepare?(payload: NightFlockCommandPayload): Promise<{
+    payload: NightFlockCommandPayload;
+    transform(result: NightFlockCommandResult): Promise<NightFlockCommandResult>;
+  }>;
 };
 
 export type NightFlockStateDependencies = {
   authenticate(request: Request): Promise<NightFlockCaller>;
-  read(callerID: string, schemaVersion: 1 | 2 | 3): Promise<unknown>;
+  read(callerID: string, contract: NightFlockStateContract): Promise<unknown>;
 };
 
 const knownCommands = new Set([
   "createFlock", "createInvite", "revokeInvite", "join", "leave", "setSharing", "block", "report",
   "publishCheckIn", "react", "deleteNightFlockData", "deleteAccount", "createParty", "previewInvite",
   "redeemInvite", "acceptGoal", "setLocalSetup", "setSharingPreferences", "setRoutineIdeas", "startChallenge",
-  "publishProgress", "publishNightMetrics", "acknowledgeGrant", "replaceInvite",
+  "publishProgress", "publishNightMetrics", "acknowledgeGrant", "replaceInvite", "renameParty", "startRound",
+  "retrieveInvite", "leaveParty", "deleteParty", "updatePublicProfile", "publishActivity", "completeBackfill", "publishStatus",
+  "blockMember", "reportMember", "cheerMember",
 ]);
 
 function response(body: Record<string, unknown>, status: number, requestID: string): Response {
@@ -70,7 +77,7 @@ export function nightFlockCompletionLogRecord(
   status: number,
   descriptor: NightFlockErrorDescriptor | null,
 ): Record<string, unknown> {
-  const schemaVersion = body?.schemaVersion === 1 || body?.schemaVersion === 2 || body?.schemaVersion === 3
+  const schemaVersion = body?.schemaVersion === 1 || body?.schemaVersion === 2 || body?.schemaVersion === 3 || body?.schemaVersion === 4
     ? body.schemaVersion
     : null;
   const command = typeof body?.command === "string" && knownCommands.has(body.command) ? body.command : "unknown";
@@ -136,9 +143,11 @@ export async function handleNightFlockCommand(
       body,
       request.headers.get("idempotency-key"),
     );
-    const result = await dependencies.execute(caller.id, payload);
+    const prepared = dependencies.prepare ? await dependencies.prepare(payload) : null;
+    const result = await dependencies.execute(caller.id, prepared?.payload ?? payload);
+    const publicResult = prepared ? await prepared.transform(result) : result;
     if (result.deleteAccount) await dependencies.deleteAccount(caller.id);
-    const output = response({ schemaVersion: payload.schemaVersion, ...result }, 200, requestID);
+    const output = response({ schemaVersion: payload.schemaVersion, ...publicResult }, 200, requestID);
     completionLog("night-flock-command", requestID, startedAt, body, 200, null);
     return output;
   } catch (error) {
@@ -169,7 +178,7 @@ export async function handleNightFlockState(
     }
     body = await parseBody(request);
     const stateContract = validateNightFlockState(body);
-    const snapshot = await dependencies.read(caller.id, stateContract.schemaVersion);
+    const snapshot = await dependencies.read(caller.id, stateContract);
     const output = response({ schemaVersion: stateContract.schemaVersion, snapshot }, 200, requestID);
     completionLog("night-flock-state", requestID, startedAt, body, 200, null);
     return output;

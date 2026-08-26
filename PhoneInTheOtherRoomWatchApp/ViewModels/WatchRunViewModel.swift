@@ -9,6 +9,7 @@ final class WatchRunViewModel: ObservableObject {
     @Published var proximity: ProximityState = .initial
     @Published var reward: RewardItem?
     @Published var screenFreeMorning: ScreenFreeMorningPresentation?
+    @Published var slumberPartyCheer: SlumberPartyCheerFeedback?
     @Published var connectionText = "Waiting for iPhone"
 
     private let watch = WatchConnectivityManagerWatch.shared
@@ -18,6 +19,7 @@ final class WatchRunViewModel: ObservableObject {
     private var sentNearbyTokenData: Data?
     private var sentNearbyTokenAcknowledged = false
     private var nearbyTokenRetryTask: Task<Void, Never>?
+    private var cheerDismissalTask: Task<Void, Never>?
     private let nearbyTokenRetrySeconds: TimeInterval = 2
     private let nearbyTokenRetryLimit = 6
 #if DEBUG
@@ -54,6 +56,7 @@ final class WatchRunViewModel: ObservableObject {
 
     deinit {
         nearbyTokenRetryTask?.cancel()
+        cheerDismissalTask?.cancel()
         nearby.stop()
     }
 
@@ -124,6 +127,7 @@ final class WatchRunViewModel: ObservableObject {
     func clearRunSummary() {
         run = nil
         reward = nil
+        slumberPartyCheer = nil
         proximity = .initial
         connectionText = "Open the iPhone app for tonight's plan"
     }
@@ -149,6 +153,7 @@ final class WatchRunViewModel: ObservableObject {
         if message.type == .focusRunStateUpdate, message.run == nil {
             run = nil
             reward = nil
+            slumberPartyCheer = nil
             proximity = .initial
             stopNearbyInteraction()
         }
@@ -204,6 +209,16 @@ final class WatchRunViewModel: ObservableObject {
         case .rewardEarned:
             stopNearbyInteraction()
             WKInterfaceDevice.current().play(.success)
+        case .slumberPartyCheer:
+            // Slumber Party encouragement stays silent so it never invites the
+            // user to retrieve their phone during Wind Down.
+            slumberPartyCheer = message.slumberPartyCheer
+            cheerDismissalTask?.cancel()
+            cheerDismissalTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(12))
+                guard !Task.isCancelled else { return }
+                self?.slumberPartyCheer = nil
+            }
         case .endFocusRunEarly:
             stopNearbyInteraction()
             WKInterfaceDevice.current().play(.stop)

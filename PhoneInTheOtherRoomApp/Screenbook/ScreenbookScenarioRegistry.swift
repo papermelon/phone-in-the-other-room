@@ -48,8 +48,7 @@ enum ScreenbookScenarioRegistry {
                     .stable(AppCopy.OnboardingWelcome.eyebrow, file: "PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingWelcomeStepView.swift", symbol: "OnboardingWelcomeStep"),
                     .stable(AppCopy.OnboardingWelcome.title, file: "PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingWelcomeStepView.swift", symbol: "OnboardingWelcomeStep"),
                     .stable(AppCopy.OnboardingWelcome.detail, file: "PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingWelcomeStepView.swift", symbol: "OnboardingWelcomeStep"),
-                    .provisional(id: "iphone.onboarding.welcome.primary-button.provisional", rendered: "Set up my Wind Down", file: "PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingFlowView.swift", symbol: "OnboardingFlowView.primaryButtonTitle"),
-                    .provisional(id: "iphone.onboarding.welcome.ollie-detail.provisional", rendered: "Ollie keeps watch while the phone rests somewhere else.", file: "PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingWelcomeStepView.swift", symbol: "OnboardingWelcomeStep")
+                    .provisional(id: "iphone.onboarding.welcome.primary-button.provisional", rendered: "Meet Ollie", file: "PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingFlowView.swift", symbol: "OnboardingFlowView.primaryButtonTitle")
                 ],
                 warnings: coverageWarning
             )

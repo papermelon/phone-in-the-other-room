@@ -91,6 +91,34 @@ struct NightFlockHomeSummary: Equatable, Sendable {
         )
         return Self(title: presentation.title, detail: presentation.detail, challengeDay: day)
     }
+
+    /// Schema four is a list of independent parties, not a single shared goal
+    /// or lobby. Keep the home card explicit about that distinction.
+    static func make(from parties: [NightFlockV4PartySummary], at date: Date = Date()) -> Self {
+        guard !parties.isEmpty else {
+            return Self(
+                title: "Your Slumber Parties",
+                detail: "Create a party or join one with an invitation.",
+                challengeDay: nil
+            )
+        }
+        guard parties.count == 1, let party = parties.first else {
+            return Self(
+                title: "\(parties.count) Slumber Parties",
+                detail: "Choose a party to see its members and seven-night round.",
+                challengeDay: nil
+            )
+        }
+        let day = party.currentRound.flatMap { NightFlockV4RoundRules.day(at: date, round: $0) }
+        let role = party.myRole == .host ? "Host" : "Member"
+        let memberWord = party.memberCount == 1 ? "member" : "members"
+        let round = day.map { "Night \($0) of 7" } ?? "Between seven-night rounds"
+        return Self(
+            title: party.name,
+            detail: "\(role) • \(party.memberCount) \(memberWord) • \(round)",
+            challengeDay: day
+        )
+    }
 }
 
 struct NightFlockMemberBoardRow: Identifiable, Equatable, Sendable {

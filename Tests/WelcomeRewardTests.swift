@@ -113,6 +113,112 @@ final class WelcomeRewardTests: XCTestCase {
         }
     }
 
+    func testAllThreeWelcomeChoicesClaimImmediatelyAndUseTheCorrectEquipmentSlot() throws {
+        for itemID in WelcomeRewardCatalog.finishedShepherdWearableIDs {
+            let welcome = WelcomeRewardEngine.reconcile(farm: .empty, search: .empty, ledger: .empty)
+            let result = try WelcomeRewardEngine.claimWelcomeGift(
+                itemID: itemID,
+                wearNow: true,
+                farm: welcome.farm,
+                search: welcome.search,
+                ledger: welcome.ledger
+            )
+
+            XCTAssertEqual(result.ledger.claimedWearableGrant?.itemID, itemID)
+            XCTAssertNil(result.ledger.pendingWearableGrant)
+            XCTAssertTrue(result.farm.ownedShopItemIDs.contains(itemID))
+            if itemID == "shepherd_wool_hat" {
+                XCTAssertEqual(result.farm.shepherd.accessoryItemID, itemID)
+                XCTAssertNil(result.farm.shepherd.outfitItemID)
+            } else {
+                XCTAssertEqual(result.farm.shepherd.outfitItemID, itemID)
+                XCTAssertNil(result.farm.shepherd.accessoryItemID)
+            }
+        }
+    }
+
+    func testKeepForLaterClaimsTheGiftWithoutChangingTheCurrentAppearance() throws {
+        var welcome = WelcomeRewardEngine.reconcile(farm: .empty, search: .empty, ledger: .empty)
+        welcome.farm.shepherd.skinTone = .deep
+        welcome.farm.shepherd.hairStyle = .coils
+        welcome.farm.shepherd.outfitItemID = "existing-outfit"
+        welcome.farm.shepherd.accessoryItemID = "existing-accessory"
+
+        let result = try WelcomeRewardEngine.claimWelcomeGift(
+            itemID: "shepherd_moss_coat",
+            wearNow: false,
+            farm: welcome.farm,
+            search: welcome.search,
+            ledger: welcome.ledger
+        )
+
+        XCTAssertEqual(result.farm.shepherd, welcome.farm.shepherd)
+        XCTAssertNotNil(result.ledger.claimedWearableGrant)
+        XCTAssertNil(result.ledger.pendingWearableGrant)
+    }
+
+    func testPreviewPreservesHairSkinAndTheOtherEquipmentSlot() {
+        let shepherd = ShepherdProfile(
+            skinTone: .brown,
+            hairStyle: .curls,
+            outfitItemID: "shepherd_moon_coat",
+            accessoryItemID: "shepherd_wool_hat"
+        )
+
+        let accessory = WelcomeRewardEngine.previewShepherd(shepherd, wearing: "shepherd_wool_hat")
+        XCTAssertEqual(accessory.outfitItemID, shepherd.outfitItemID)
+        XCTAssertEqual(accessory.accessoryItemID, "shepherd_wool_hat")
+
+        let outfit = WelcomeRewardEngine.previewShepherd(shepherd, wearing: "shepherd_moss_coat")
+        XCTAssertEqual(outfit.outfitItemID, "shepherd_moss_coat")
+        XCTAssertEqual(outfit.accessoryItemID, shepherd.accessoryItemID)
+        XCTAssertEqual(outfit.skinTone, .brown)
+        XCTAssertEqual(outfit.hairStyle, .curls)
+    }
+
+    func testInterruptedLegacyPendingGiftIsClaimedWithoutMintingAnotherGift() throws {
+        let welcome = WelcomeRewardEngine.reconcile(farm: .empty, search: .empty, ledger: .empty)
+        let pending = try WelcomeRewardEngine.recordWelcomeGift(
+            itemID: "shepherd_moon_coat",
+            farm: welcome.farm,
+            search: welcome.search,
+            ledger: welcome.ledger
+        )
+
+        let resumed = try WelcomeRewardEngine.claimWelcomeGift(
+            itemID: "shepherd_moon_coat",
+            wearNow: false,
+            farm: pending.farm,
+            search: pending.search,
+            ledger: pending.ledger
+        )
+
+        XCTAssertEqual(resumed.ledger.grants.filter { $0.kind == .profileWearable }.count, 1)
+        XCTAssertEqual(resumed.farm.transactions.filter { $0.kind == .welcomeGift }.count, 1)
+        XCTAssertNotNil(resumed.ledger.claimedWearableGrant)
+    }
+
+    func testExistingWelcomeOwnershipRejectsASecondCosmetic() throws {
+        let welcome = WelcomeRewardEngine.reconcile(farm: .empty, search: .empty, ledger: .empty)
+        let first = try WelcomeRewardEngine.claimWelcomeGift(
+            itemID: "shepherd_wool_hat",
+            wearNow: false,
+            farm: welcome.farm,
+            search: welcome.search,
+            ledger: welcome.ledger
+        )
+
+        XCTAssertThrowsError(try WelcomeRewardEngine.claimWelcomeGift(
+            itemID: "shepherd_moss_coat",
+            wearNow: true,
+            farm: first.farm,
+            search: first.search,
+            ledger: first.ledger
+        )) { error in
+            XCTAssertEqual(error as? FarmActionError, .welcomeGiftAlreadyClaimed)
+        }
+    }
+
     func testSuccessfulPracticeGrantsExactlyOneSheepWithoutMetersOrGuarantees() {
         let welcome = WelcomeRewardEngine.reconcile(farm: .empty, search: .empty, ledger: .empty)
         let run = practiceRun(id: uuid(21), completed: true)

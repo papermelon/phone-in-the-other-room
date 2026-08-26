@@ -27,24 +27,48 @@ enum PhoneFreeActivity: String, Codable, CaseIterable, Identifiable {
     case breakfast
     case morningWalk
     case getReady
+    case brushTeeth
+    case quietConversation
+    case makeBed
+    case brainDump
+    case sleepwear
+    case relaxation
+    case quietMusic
+    case calmHobby
 
     var id: String { rawValue }
 
-    static let eveningChoices: [Self] = [.read, .shower, .prepareTomorrow, .stretch, .journal, .makeTea]
-    static let morningChoices: [Self] = [.openCurtains, .breakfast, .morningWalk, .getReady, .stretch, .journal]
+    static let eveningChoices: [Self] = [
+        .journal, .prepareTomorrow, .brainDump,
+        .brushTeeth, .shower, .sleepwear,
+        .read, .stretch, .relaxation, .quietMusic,
+        .makeTea, .quietConversation, .calmHobby
+    ]
+    static let morningChoices: [Self] = [
+        .openCurtains, .morningWalk, .getReady, .breakfast,
+        .makeBed, .stretch, .journal
+    ]
 
     var title: String {
         switch self {
         case .read: return "Read a paper book"
-        case .shower: return "Take a warm shower"
-        case .prepareTomorrow: return "Prepare for tomorrow"
-        case .stretch: return "Stretch gently"
-        case .journal: return "Write on paper"
-        case .makeTea: return "Make a warm drink"
+        case .shower: return "Warm shower or bath"
+        case .prepareTomorrow: return "Prepare tomorrow’s clothes or bag"
+        case .stretch: return "Stretch or move gently"
+        case .journal: return "Write tomorrow’s top 3"
+        case .makeTea: return "Make a caffeine-free warm drink"
         case .openCurtains: return "Open the curtains"
         case .breakfast: return "Make breakfast"
-        case .morningWalk: return "Step outside for a walk"
+        case .morningWalk: return "Step outside for a short walk"
         case .getReady: return "Shower and get dressed"
+        case .brushTeeth: return "Brush teeth or do skincare"
+        case .quietConversation: return "Chat with someone"
+        case .makeBed: return "Make the bed"
+        case .brainDump: return "Jot down what’s still on your mind"
+        case .sleepwear: return "Change into sleepwear"
+        case .relaxation: return "Breathing or relaxation"
+        case .quietMusic: return "Listen to quiet music"
+        case .calmHobby: return "Spend time on a calm hobby"
         }
     }
 
@@ -60,6 +84,14 @@ enum PhoneFreeActivity: String, Codable, CaseIterable, Identifiable {
         case .breakfast: return "Make breakfast"
         case .morningWalk: return "Take a walk"
         case .getReady: return "Get ready"
+        case .brushTeeth: return "Brush teeth"
+        case .quietConversation: return "Quiet conversation"
+        case .makeBed: return "Make the bed"
+        case .brainDump: return "Jot it down"
+        case .sleepwear: return "Change clothes"
+        case .relaxation: return "Breathe"
+        case .quietMusic: return "Quiet music"
+        case .calmHobby: return "Calm hobby"
         }
     }
 
@@ -75,6 +107,55 @@ enum PhoneFreeActivity: String, Codable, CaseIterable, Identifiable {
         case .breakfast: return "fork.knife"
         case .morningWalk: return "figure.walk"
         case .getReady: return "tshirt.fill"
+        case .brushTeeth: return "sparkles"
+        case .quietConversation: return "bubble.left.and.bubble.right.fill"
+        case .makeBed: return "bed.double.fill"
+        case .brainDump: return "note.text"
+        case .sleepwear: return "moon.fill"
+        case .relaxation: return "wind"
+        case .quietMusic: return "music.note"
+        case .calmHobby: return "paintbrush.fill"
+        }
+    }
+
+    var onboardingRationale: String {
+        switch self {
+        case .journal:
+            return "Putting tomorrow’s priorities on paper can help the evening feel more closed."
+        case .prepareTomorrow:
+            return "A little preparation now can make the next morning feel less hurried."
+        case .brainDump:
+            return "Giving unfinished thoughts a place on paper can help you leave them there for tonight."
+        case .brushTeeth:
+            return "A familiar getting-ready routine can become a simple cue that the day is closing."
+        case .shower:
+            return "A warm routine can help mark the transition into a quieter part of the evening."
+        case .sleepwear:
+            return "Changing clothes is a small, familiar signal that the active part of the day is done."
+        case .read:
+            return "A paper book offers a quieter way to let the last part of the evening slow down."
+        case .stretch:
+            return "Gentle movement can create a clear pause between a busy day and rest."
+        case .relaxation:
+            return "A few unhurried breaths can give the evening a softer pace."
+        case .quietMusic:
+            return "Quiet music can give your attention somewhere calm to settle."
+        case .makeTea:
+            return "A warm caffeine-free drink can make the phone-away moment feel more inviting."
+        case .quietConversation:
+            return "A quiet conversation keeps connection in the evening without returning to the feed."
+        case .calmHobby:
+            return "A familiar hands-on activity can make offline time feel like something to look forward to."
+        case .openCurtains:
+            return "Morning light gives your attention somewhere gentle to go before the phone."
+        case .morningWalk:
+            return "A short step outside can help the morning begin in the world around you."
+        case .getReady:
+            return "Getting ready first creates a natural boundary before the phone returns."
+        case .breakfast:
+            return "Breakfast gives the first part of morning a simple purpose of its own."
+        case .makeBed:
+            return "One small finished action can help the morning feel underway."
         }
     }
 }
@@ -286,7 +367,7 @@ struct NightWatchPreferences: Codable, Equatable {
         morningRoutine: [],
         guardKind: .nfcTag,
         isConfigured: false,
-        automaticStartEnabled: true
+        automaticStartEnabled: false
     )
 
     init(
@@ -304,7 +385,7 @@ struct NightWatchPreferences: Codable, Equatable {
         morningRoutine: [WindDownRoutineStep]? = nil,
         guardKind: SessionGuardKind,
         isConfigured: Bool,
-        automaticStartEnabled: Bool = true
+        automaticStartEnabled: Bool = false
     ) {
         self.bedtimeHour = min(23, max(0, bedtimeHour))
         self.bedtimeMinute = min(59, max(0, bedtimeMinute))
@@ -446,22 +527,14 @@ struct NightWatchPreferences: Codable, Equatable {
     /// Keeps old readers useful when a person edits the new sequence. The new
     /// arrays remain authoritative; these fields stay as a rollback bridge.
     mutating func syncLegacyFieldsFromRoutine() {
-        if let custom = eveningRoutine.first(where: { $0.kind == .custom }) {
-            eveningCueText = custom.customText
-        } else {
-            eveningCueText = nil
-        }
-        if let activity = eveningRoutine.first(where: { $0.kind == .suggestion })?.activity {
-            eveningActivity = activity
-        }
-        if let custom = morningRoutine.first(where: { $0.kind == .custom }) {
-            morningCueText = custom.customText
-        } else {
-            morningCueText = nil
-        }
-        if let activity = morningRoutine.first(where: { $0.kind == .suggestion })?.activity {
-            morningActivity = activity
-        }
+        eveningCueText = eveningRoutine.first?.kind == .custom
+            ? eveningRoutine.first?.customText
+            : nil
+        if let activity = eveningRoutine.first?.activity { eveningActivity = activity }
+        morningCueText = morningRoutine.first?.kind == .custom
+            ? morningRoutine.first?.customText
+            : nil
+        if let activity = morningRoutine.first?.activity { morningActivity = activity }
     }
 
     private static func normalizedRoutine(

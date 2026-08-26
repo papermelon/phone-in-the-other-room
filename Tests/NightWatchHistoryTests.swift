@@ -103,6 +103,46 @@ final class NightWatchHistoryTests: XCTestCase {
         XCTAssertFalse(library.wasPreviouslyPaired(digest: "fresh"))
     }
 
+    func testBackupRecoveryKeepsItsSlotIdentityPurposesAndRetiresOldCredential() {
+        let primaryID = UUID()
+        let backupID = UUID()
+        var library = PhoneBedTagLibrary(tags: [
+            makeNamedTag(
+                id: primaryID,
+                name: "Bedroom",
+                digest: "primary",
+                role: .primary,
+                purposes: [.windDown]
+            ),
+            makeNamedTag(
+                id: backupID,
+                name: "Travel pouch",
+                digest: "old-backup",
+                role: .backup,
+                purposes: [.phoneAway]
+            )
+        ])
+
+        library.retireCredential("unknown-old-credential")
+        library.replace(
+            role: .backup,
+            with: makeNamedTag(
+                id: backupID,
+                name: "Travel pouch",
+                digest: "new-backup",
+                role: .backup,
+                purposes: [.phoneAway]
+            )
+        )
+
+        XCTAssertEqual(library.backup?.id, backupID)
+        XCTAssertEqual(library.backup?.name, "Travel pouch")
+        XCTAssertEqual(library.backup?.purposes, [.phoneAway])
+        XCTAssertEqual(library.backup?.tokenDigest, "new-backup")
+        XCTAssertTrue(library.wasPreviouslyPaired(digest: "old-backup"))
+        XCTAssertTrue(library.wasPreviouslyPaired(digest: "unknown-old-credential"))
+    }
+
     func testPhoneBedTagLibraryPersistsPreviousCredentialsWithoutRawTokens() throws {
         var library = PhoneBedTagLibrary(tags: [
             makeNamedTag(name: "Fridge", digest: "old", role: .primary, purposes: [.windDown])

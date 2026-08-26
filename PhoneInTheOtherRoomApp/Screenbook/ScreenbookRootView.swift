@@ -47,7 +47,7 @@ struct ScreenbookRootView: View {
     private func scenarioView(_ kind: ScreenbookScenarioKind) -> some View {
         switch kind {
         case .onboardingWelcome:
-            OnboardingFlowView(initialDraft: welcomeDraft, onComplete: {})
+            OnboardingFlowView(initialDraft: onboardingDraft, presentationMode: .fixture, onComplete: {})
         case .configuredHome:
             HomeView(
                 initialTab: .home,
@@ -83,9 +83,37 @@ struct ScreenbookRootView: View {
         }
     }
 
-    private var welcomeDraft: OnboardingDraft {
+    /// Keeps visual refinement states inside the existing fixture route. These
+    /// launch-only variants never affect first-run persistence or page routing.
+    private var onboardingDraft: OnboardingDraft {
         var draft = OnboardingDraft.defaults()
-        draft.step = .welcome
+        switch ProcessInfo.processInfo.screenbookOnboardingState {
+        case "welcome-ollie":
+            draft.step = .welcome
+            draft.welcomePage = .ollie
+        case "question-five":
+            draft.step = .profile
+            draft.profileQuestionIndex = 4
+        case "recommendation":
+            draft.step = .recommendation
+            draft.profileAnswers.mainFriction = .irregularDays
+            draft.profileAnswers.overnightLocation = .inBed
+        case "gift":
+            draft.step = .gift
+            draft.selectedWelcomeGiftItemID = "shepherd_moon_coat"
+        case "schedule":
+            draft.step = .schedule
+            draft.remindersEnabled = false
+        case "routine":
+            draft.step = .quiet
+            draft.eveningRoutine = [
+                .suggested(.journal, phase: .evening),
+                .suggested(.read, phase: .evening)
+            ]
+            draft.morningRoutine = [.suggested(.openCurtains, phase: .morning)]
+        default:
+            draft.step = .welcome
+        }
         return draft
     }
 
@@ -118,6 +146,14 @@ struct ScreenbookRootView: View {
             }
             .padding(AppSpacing.lg)
         }
+    }
+}
+
+private extension ProcessInfo {
+    var screenbookOnboardingState: String? {
+        guard let index = arguments.firstIndex(of: "-screenbook-onboarding-state"),
+              arguments.indices.contains(index + 1) else { return nil }
+        return arguments[index + 1]
     }
 }
 

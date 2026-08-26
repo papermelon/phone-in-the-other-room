@@ -123,25 +123,33 @@ flowchart LR
    `UserDefaults` under `ollie.*`, including a 90-day session-and-event history. Detailed
    ritual, reflection, and HealthKit history remains local. Separately consented impact
    records omit exact dates/times, source names, selected apps, and raw Health samples.
-7. When ADR-0016's TestFlight/Release-enabled Slumber Party is on, an eligible shared primary run
-   queues the member's independently controlled nightly metrics after validation and success.
-   Phone Away minutes can be queued separately. The local run never waits for the network, and
-   active Wind Down receives no social UI. Named member progress, rounded quiet minutes, optional
-   sleep/restfulness, and fixed reactions stay inside the invite-only party. Server-authoritative
-   Farm grants apply later from a local ledger. App tokens, exact schedules, and impact data remain
-   outside the social contract. Recovery never creates an anonymous account: 401 reconnects only
-   the locally bound Apple-linked Supabase UUID, while `linked_account_required` links only the
-   current anonymous account in place.
+7. ADR-0016's v4 Slumber Party source implementation is complete locally. It presents a list of up to
+   five concurrent, long-lived invite-only groups, each with fixed seven-night rounds rather than
+   goals or readiness ceremonies. A completed local Wind Down or Phone Away may fan out to every
+   eligible current party, with an independently idempotent reward ledger per party. The iPhone
+   remains authoritative: local activity never waits for social transport, and active Wind Down
+   has no in-app social UI. Current members may see factual round records, revisioned expiring
+   statuses, curated profile snapshots, and fixed cheers. Best-effort silent Live Activity/Watch
+   feedback reconciles from a durable cheer ledger. Exact schedules, app tokens, full Farm state,
+   inventory, wool, impact data, and raw Health data remain outside the contract. Recovery never
+   creates an anonymous account: 401 reconnects only the locally bound Apple-linked Supabase UUID,
+   while `linked_account_required` links only the current anonymous account in place.
 
 The iPhone is the **authoritative** side of a run. The Watch displays state and reports a brief optional placement distance only.
 Persistence is UserDefaults + Codable JSON only — no CoreData or SwiftData. Core app
 state remains in standard defaults; scoped Screen Time selections and the explicit Quiet
-Note widget value use the `group.com.ngawangchime.countingsheep` App Group. After first-run
-setup, Home presents a versioned resumable guide (`ollie.orientation.state`, schema 6) as short
+Note widget value use the `group.com.ngawangchime.countingsheep` App Group. First-run setup uses
+two varied story pages, one skippable six-question local behavioral chapter, its separately
+presented starting pattern, a universal Shepherd/welcome-gift stage, explicit schedule and
+optional reminder choices, private routine ideas, required app protection, and a truthful
+saved-plan summary. Chapter and question progress stay separate. Skipping the check-in removes
+only its result: everyone remains eligible for one welcome cosmetic. A schedule and optional
+reminder never begin Wind Down automatically. After first-run setup, Home presents a versioned resumable guide
+(`ollie.orientation.state`, schema 6) as short
 Home Basics and Around the Farm chapters. Practice, Slumber Party, Settings, and Nights guidance
-is contextual. Completing the Wind Down starting-point questionnaire owns the pending shepherd
-wearable; onboarding offers an explicit keep-or-wear choice and generic guide navigation never
-equips it.
+is contextual. Choosing a welcome wearable claims it immediately: **Wear now** equips it in the
+correct accessory/outfit slot, while **Keep for later** preserves the current appearance. Generic
+guide navigation never grants or equips it.
 
 Full detail: `docs/ARCHITECTURE.md`.
 
@@ -161,12 +169,12 @@ Shared/                        ← Pure domain logic compiled into all targets
   FocusAnalytics.swift           (day records, correlations, CSV/JSON export)
   ImpactMeasurement.swift        (local sleep-outcome comparison + minimised upload contract)
   NightFlockModels.swift          (seven-day social domain and persisted compatibility models)
-  NightFlockCommitment.swift      (bounded shared goals, setup, progress, and shielding limits)
-  NightFlockV2API.swift           (schema-version-2 shared-goal lobby contract)
-  NightFlockV3API.swift           (schema-version-3 nightly metrics and grant acknowledgements)
-  NightFlockSharing.swift         (independent sharing defaults, rounding, and projections)
+  NightFlockCommitment.swift      (legacy v2 shared-goal/setup compatibility)
+  NightFlockV2API.swift           (legacy schema-version-2 lobby compatibility)
+  NightFlockV3API.swift           (legacy schema-version-3 metrics/grant compatibility)
+  NightFlockSharing.swift         (legacy sharing defaults and projections)
   NightFlockRewards.swift         (bounded Slumber Party Farm grant rules and local ledger)
-  NightFlockOrientation.swift     (separate Slumber Party orientation/tip persistence)
+  NightFlockOrientation.swift     (legacy Slumber Party orientation/tip persistence)
   NightFlockPresentation.swift    (aggregate and privacy-safe presentation derivations)
   NightFlockAPI.swift             (versioned command/state and local outbox contracts)
   NightWatchHistory.swift        (90-day session records + idempotent ritual events)
@@ -179,7 +187,7 @@ Shared/                        ← Pure domain logic compiled into all targets
   Onboarding.swift               (first-run setup draft, questionnaire skip/grant rules)
   FirstRunJourney.swift          (resumable Home/practice/Farm/Settings/Nights guide)
   Orientation.swift              (schema-5 first-run guide persistence + contextual tips)
-  WelcomeReward.swift            (starter sheep, pending wearable, practice grant ledger)
+  WelcomeReward.swift            (starter sheep, claimed welcome wearable, legacy pending migration, practice ledger)
 PhoneInTheOtherRoomApp/        ← iOS app
   App/                           (@main, App Intents / Shortcuts)
   Design/                        (Theme.swift, PixelComponents.swift — the design system)
@@ -253,8 +261,12 @@ skills/                        ← portable agent skills (see skills/README.md)
   evaluated for clarity and fit with the bedtime ritual, not accepted or rejected through a
   generic checklist. See `skills/product-copy-review/SKILL.md`.
 - No medical claims ("improves sleep", "fixes insomnia"). Say "helps you wind down", "phone-away habit".
-- Habit formation is intentional: a new Farm starts with one starter sheep. Completing the
-  local Wind Down starting-point questionnaire grants a pending shepherd wearable. The first
+- Habit formation is intentional: a new Farm starts with one starter sheep. An optional six-question
+  local behavioral check-in derives one deterministic, non-clinical starting pattern and, only
+  when independently supported, one secondary pattern; missing/default answers never become
+  behavioral claims, and the result never silently changes the schedule or routine. Every person
+  may independently choose and immediately claim one of three finished Shepherd welcome wearables,
+  then explicitly wear it now or keep their existing appearance. The first
   successful five-minute onboarding practice grants one additional sheep without consuming a
   protected-night or Phone Away guarantee. The first three qualifying protected Wind Down
   searches, and independently the first three completed 100-minute Phone Away meter searches,
@@ -299,7 +311,7 @@ skills/                        ← portable agent skills (see skills/README.md)
   disclosure; there is one Wind Down configuration route, not a duplicate Review Wind Down route.
 - Farm's user-facing task labels are **Ollie's Search** (the missing-sheep board) and
   **Search Journal** (history). Do not call a completed Wind Down or Phone Away note a
-  “search” or a “protected night.” First-run sheep and the questionnaire wearable are
+  “search” or a “protected night.” First-run sheep and the independently chosen Shepherd wearable are
   **welcome gifts**. After a completed Wind Down or Phone Away, a found sheep is “Ollie
   found a missing sheep.” Existing internal search/history type names may remain stable
   while copy migrates.
@@ -383,7 +395,7 @@ There is no CI. A green local build + test run is the merge gate. If you changed
 | Farm Shop + Ollie/farm cosmetics | Implemented, nested in Farm | Fixed local catalogue; follow ADR-0015 |
 | Human avatar + cosmetics | Implemented local foundation | Keep inclusive and data-compatible; expand with finished assets |
 | Friends screens | Debug internal-preview launch flag only | ADR-0003; Slumber Party does not ungate them |
-| Invite-only Slumber Party | Implemented; TestFlight/Release enabled | ADR-0016; ordinary Debug stays off; hosted deployment, moderation operations, and physical two-account QA remain operational evidence |
+| Invite-only Slumber Party | v4 source implemented; production schema/functions deployed 2026-08-25 | ADR-0016; ordinary Debug stays off; moderation/retention operations, privacy publication, updated app distribution, and physical two-account QA remain human-owned |
 | Screen Time reports & pickers | Foundation enabled; physical-device QA pending | Family Controls distribution assigned to app + report extension |
 | HealthKit sleep duration/stages | Included for 1.0, optional and read-only | Physical-device reads + privacy disclosure |
 | NFC + app shielding for Night Watch | Included for 1.0, optional | New extension App IDs, Family Controls distribution, and physical overnight QA |
@@ -413,11 +425,11 @@ The invite-only seven-night Slumber Party exception was reconciled on 2026-08-12
 project brief, principles, architecture, privacy/release docs, backlog, ADR-0003/0005, and
 ADR-0016. The Phone Away rename, 100-minute balance, private suggestion sequence, guidance
 placement/source link, Settings grouping, and concrete Farm labels were reconciled on
-2026-08-13. On 2026-08-16 the founder-directed Slumber Party revision added one bounded shared
-Wind Down goal, a 2–8 person lobby, named member progress, reusable invite codes, optional
+2026-08-13. The now-legacy 2026-08-16 Slumber Party v2 revision added one bounded shared Wind
+Down goal, a 2–8 person lobby, named member progress, reusable invite codes, optional
 source-linked routine ideas, separate sharing controls, and coarse Screen Time shielding
-evidence. A later schema-three slice added independently controlled Wind Down and Phone Away
-minutes, optional sleep duration and restfulness, and bounded server-authoritative Farm
+evidence. The now-legacy schema-three slice added independently controlled Wind Down and Phone
+Away minutes, optional sleep duration and restfulness, and bounded server-authoritative Farm
 rewards. On 2026-08-16 the founder authorized TestFlight/Release archives to compile with
 `SUPABASE_NIGHT_FLOCK_ENABLED=YES`; ordinary Debug remains disabled. The same day’s first-run
 revision added a universal Wind Down starting point, one starter sheep, a pending shepherd
@@ -427,5 +439,23 @@ Existing settled outcomes remain intact. General Friends and social-network rest
 apply. Internal `additionalQuiet`, `PhoneBreak`, `QuietTime`, `NightWatch*`, persisted enum
 values, and `ollie.*` keys remain backward-compatible; none of those identifiers are user-facing
 copy.
+
+On 2026-08-25 the founder replaced the v1–v3 Slumber Party goal/readiness, one-membership,
+per-party-alias, per-field-sharing, and globally-once reward contract with v4: a person may hold
+up to five concurrent long-lived parties; each has fixed seven-night rounds, active invites that
+every current member can retrieve/share, late self-reported factual backfill, member-visible
+records/statuses/curated snapshots, host-only invite management, and per-party reward fan-out. The
+canonical profile has a rolling name-change limit and curated Farm look only; it is not a social
+directory. V4 is additive behind a strict schema fence. On 2026-08-25 the founder explicitly
+approved production deployment: all five Slumber Party migrations, both authenticated Edge
+Functions, and versioned invitation-encryption secrets were installed in the production project.
+Updated app distribution, moderation, retention, privacy publication, and physical two-account QA
+remain human-owned. General Friends and social-network restrictions still apply.
+
+On 2026-08-26 the founder superseded the previous two-question, combined-reveal, profile-matched
+gift contract. Six categorical questions now form one skippable chapter; only explicit answers
+support the behavioral result, and everyone independently selects one immediately claimed welcome
+gift. Reminder permission is explained and optional, while automatic Wind Down defaults to off.
+Phase-2 notification/Live-Activity anchor projection and remote privacy cleanup remain unfinished.
 
 Continue to verify documentation claims against code and `project.yml` as the implementation moves.
