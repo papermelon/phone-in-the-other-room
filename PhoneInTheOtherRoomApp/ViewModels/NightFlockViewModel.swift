@@ -36,7 +36,39 @@ final class NightFlockViewModel: ObservableObject {
     @Published var selectedIdentity: NightFlockIdentity = .moonlitMeadow
     @Published var joinCode = ""
     @Published var prefersJoinEntry = false
+    /// Additive schema-four presentation. Legacy `snapshot` remains intact for
+    /// clients and deployments that have not yet upgraded.
+    @Published var v4ListState: NightFlockV4ListStateResponse?
+    @Published var selectedV4Party: NightFlockV4PartyDetail?
+    @Published var v4InvitePreview: NightFlockV4InvitePreview?
+    struct V4InviteCode: Equatable {
+        var inviteID: UUID
+        var code: String
+    }
+    @Published var v4InviteCodes: [UUID: V4InviteCode] = [:]
+    @Published var v4RequestID: String?
+    @Published var v4Profile: CountingSheepUserProfile?
+    @Published var v4GrantInbox: [NightFlockV4GrantInboxItem] = []
+    var pendingV4ProfileMutation: CountingSheepUserProfile?
+    var v4ObservedPartyDetails: [UUID: NightFlockV4PartyDetail] = [:]
+    var v4RealtimeRefreshTasks: [UUID: Task<Void, Never>] = [:]
+    var v4RealtimeSetupTasks: [UUID: Task<Void, Never>] = [:]
+    var v4RealtimePartyIDs: Set<UUID> = []
     var onApplyRewardGrants: (([NightFlockRewardGrant]) -> Void)?
+    /// The v4 grant inbox uses party/round identifiers rather than legacy
+    /// challenge milestones. The Farm layer owns the durable application and
+    /// returns only grants it has actually recorded.
+    var onApplyV4RewardGrants: (([NightFlockV4GrantInboxItem]) -> [UUID])?
+    var onV4CheerFeedback: ((SlumberPartyCheerFeedback) -> Void)?
+
+    var v4InviteCode: String? {
+        guard let party = selectedV4Party,
+              let invitation = party.invitation,
+              invitation.status == .active,
+              v4InviteCodes[party.summary.partyID]?.inviteID == invitation.inviteID
+        else { return nil }
+        return v4InviteCodes[party.summary.partyID]?.code
+    }
 
     let featureEnabled: Bool
     let accountService: NightFlockAccountService?
@@ -102,6 +134,9 @@ final class NightFlockViewModel: ObservableObject {
 
     var homeSummary: NightFlockHomeSummary? {
         guard featureEnabled else { return nil }
+        if let v4ListState {
+            return NightFlockHomeSummary.make(from: v4ListState.parties)
+        }
         return snapshot.map { NightFlockHomeSummary.make(from: $0) } ?? .invitation
     }
 
@@ -195,6 +230,14 @@ final class NightFlockViewModel: ObservableObject {
         ) else { return false }
         localSocialGeneration = result.epoch
         runContexts = [:]
+        v4RealtimeRefreshTasks.values.forEach { $0.cancel() }
+        v4RealtimeRefreshTasks = [:]
+        v4RealtimeSetupTasks.values.forEach { $0.cancel() }
+        v4RealtimeSetupTasks = [:]
+        v4RealtimePartyIDs = []
+        v4ObservedPartyDetails = [:]
+        await service?.stopV4Realtime()
+        selectedV4Party = nil
         return true
     }
 
@@ -343,6 +386,12 @@ final class NightFlockViewModel: ObservableObject {
         warmNotice = nil
         requestReference = nil
         snapshot = previewSnapshot
+        v4ListState = nil
+        selectedV4Party = nil
+        v4InvitePreview = nil
+        v4InviteCodes = [:]
+        v4RequestID = nil
+        v4Profile = nil
         self.diagnostics = diagnostics ?? NightFlockDiagnostics.initial(
             featureFlag: featureEnabled ? .enabled : .disabled,
             configuration: featureEnabled ? .valid : .notEvaluated,
@@ -819,11 +868,19 @@ final class NightFlockViewModel: ObservableObject {
                 else {
                     return
                 }
-                let response = try await service.send(.deleteAccount(
-                    idempotencyKey: NightFlockIdempotency.command("delete-account")
-                ))
+                let deletionKey = NightFlockV4Idempotency.command("delete-account")
+                let accepted: Bool
+                if usesSlumberPartyV4 {
+                    let response = try await service.sendV4(.deleteAccount(idempotencyKey: deletionKey))
+                    accepted = response.accepted && response.deleteAccount != false
+                } else {
+                    let response = try await service.send(.deleteAccount(
+                        idempotencyKey: NightFlockIdempotency.command("delete-account")
+                    ))
+                    accepted = response.accepted
+                }
                 guard isDeletingOnlineAccount else { return }
-                if !response.accepted {
+                if !accepted {
                     guard await outbox.rejectPendingAccountDeletionIntent(epoch: generation) else { return }
                     pendingAccountDeletionIntent = false
                     isDeletingOnlineAccount = false
@@ -914,6 +971,20 @@ final class NightFlockViewModel: ObservableObject {
         pendingAccountDeletionIntent = false
         isDeletingOnlineAccount = false
         snapshot = nil
+        v4ListState = nil
+        selectedV4Party = nil
+        v4ObservedPartyDetails = [:]
+        v4InviteCodes = [:]
+        v4InvitePreview = nil
+        v4Profile = nil
+        v4GrantInbox = []
+        pendingV4ProfileMutation = nil
+        v4RealtimeRefreshTasks.values.forEach { $0.cancel() }
+        v4RealtimeRefreshTasks = [:]
+        v4RealtimeSetupTasks.values.forEach { $0.cancel() }
+        v4RealtimeSetupTasks = [:]
+        v4RealtimePartyIDs = []
+        await service?.stopV4Realtime()
         accountState = .anonymous
         stagedDestructiveLocalEffect = .none
         pendingAuthenticationRecovery = .none
@@ -1070,6 +1141,30 @@ final class NightFlockViewModel: ObservableObject {
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         if showLoading { phase = .loading }
+        do {
+            let v4 = try await service.stateV4List()
+            guard permitsNightFlockNetwork,
+                  isCurrentTransportTask(generation: generation, epoch: transportEpoch)
+            else { return false }
+            v4ListState = v4
+            synchronizeV4RealtimeSubscriptions(with: v4.parties)
+            adoptServerV4ProfileIfSafe(v4.profile)
+            v4GrantInbox = v4.grantInbox
+            phase = .ready
+            applyPendingV4GrantsIfPossible()
+            synchronizeV4ProfileIfNeeded(serverProfile: v4.profile)
+            return true
+        } catch is NightFlockTransportPaused {
+            return false
+        } catch let error where Self.allowsSchemaFallback(error) {
+            // v4 is additive. A deployment that has not received its schema
+            // four RPCs continues down the established v3 → v1 path.
+            v4ListState = nil
+        } catch {
+            guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return false }
+            presentNightFlockError(error, lane: .snapshot(schema: NightFlockV4Rules.schemaVersion))
+            return false
+        }
         do {
             let loadedSnapshot = try await loadSnapshotWithSchemaFallback(
                 service: service,
@@ -1386,6 +1481,8 @@ final class NightFlockViewModel: ObservableObject {
               let outbox, let service else { return }
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
+        await flushV4Outbox()
+        guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
         let v3Records = await outbox.v3Records()
         guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
         for record in v3Records {
@@ -1481,12 +1578,12 @@ final class NightFlockViewModel: ObservableObject {
         }
     }
 
-    private func handleOutboxFailure(_ error: Error, lane: NightFlockRecoveryLane) {
+    func handleOutboxFailure(_ error: Error, lane: NightFlockRecoveryLane) {
         if let remote = Self.remoteError(from: error) {
             presentNightFlockError(remote, lane: lane)
             guard pendingAuthenticationRecovery == .none else { return }
             guard snapshot != nil else { return }
-        } else if snapshot == nil {
+        } else if snapshot == nil && v4ListState == nil {
             guard pendingAuthenticationRecovery == .none else { return }
             phase = .offline
             return

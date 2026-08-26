@@ -12,11 +12,13 @@ struct OnboardingFlowView: View {
     #endif
     let onComplete: () -> Void
     let onCancel: (() -> Void)?
-    private let isReplay: Bool
+    private let presentationMode: OnboardingPresentationMode
+    private var isReplay: Bool { presentationMode.preservesExistingSettings }
 
     init(
         initialDraft: OnboardingDraft? = nil,
         startsFresh: Bool = false,
+        presentationMode: OnboardingPresentationMode = .firstRun,
         onComplete: @escaping () -> Void,
         onCancel: (() -> Void)? = nil
     ) {
@@ -29,55 +31,35 @@ struct OnboardingFlowView: View {
         if normalizedDraft.step == .automaticStart {
             normalizedDraft.step = .ready
         }
+        normalizedDraft.welcomePage = normalizedDraft.welcomePage.normalizedForCurrentFlow
         _draft = State(
             initialValue: normalizedDraft
         )
         self.onComplete = onComplete
         self.onCancel = onCancel
-        self.isReplay = initialDraft != nil && !startsFresh
+        self.presentationMode = presentationMode
     }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                OnboardingProgressHeader(
-                    step: draft.step,
-                    showsBack: canGoBack,
-                    onBack: previousStep
-                )
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.top, AppSpacing.xs)
-                .padding(.bottom, AppSpacing.sm)
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    OnboardingProgressHeader(
+                        draft: draft,
+                        showsBack: canGoBack,
+                        onBack: previousStep
+                    )
+                    .padding(.bottom, AppSpacing.lg)
 
-                ScrollView {
                     stepContent
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, AppSpacing.md)
-                        .padding(.vertical, AppSpacing.sm)
                 }
-                .id("\(draft.step.rawValue)-\(draft.welcomePage.rawValue)")
-
-                OnboardingPrimaryButton(
-                    title: primaryButtonTitle,
-                    action: advance,
-                    isEnabled: canContinue
-                )
                 .padding(.horizontal, AppSpacing.md)
-                .padding(.top, AppSpacing.sm)
-
-                if let skipTitle = skipButtonTitle {
-                    Button(skipTitle) {
-                        skipCurrent()
-                    }
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                    .frame(maxWidth: .infinity, minHeight: 44)
-                    .padding(.horizontal, AppSpacing.md)
-                }
-
-                Color.clear
-                    .frame(height: AppSpacing.md)
+                .padding(.top, AppSpacing.xs)
+                .padding(.bottom, AppSpacing.xl)
             }
+            .id("\(draft.step.rawValue)-\(draft.welcomePage.rawValue)-\(draft.profileQuestionIndex)-\(draft.profileSkipped)")
+            .safeAreaInset(edge: .bottom, spacing: 0) { actionBar }
             .background(AppColors.paper.ignoresSafeArea())
             .toolbar {
                 if let onCancel {
@@ -91,6 +73,7 @@ struct OnboardingFlowView: View {
         .onChange(of: draft) { _, updatedDraft in
             viewModel.saveOnboardingDraft(updatedDraft)
         }
+        .onAppear { viewModel.refreshNotificationAuthorization() }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
             headerText: "Choose 1–3 apps or categories to pause for Wind Down and the linked Screen-Free Morning.",
@@ -109,13 +92,22 @@ struct OnboardingFlowView: View {
     private var stepContent: some View {
         switch draft.step {
         case .welcome:
-            OnboardingWelcomeStep(page: draft.welcomePage)
+            OnboardingWelcomeStep(
+                page: draft.welcomePage,
+                starterSheep: viewModel.farmState.activeSheep.first {
+                    $0.definitionID == WelcomeRewardCatalog.starterSheepID
+                },
+                protectedNightCount: viewModel.coordinator.progress.totalCompletedRuns
+            )
         case .profile:
             OnboardingProfileStep(draft: $draft)
         case .recommendation:
-            OnboardingRecommendationStep(recommendation: draft.profileRecommendation)
+            OnboardingRecommendationStep(
+                answers: draft.profileAnswers,
+                recommendation: draft.profileRecommendation
+            )
         case .schedule:
-            OnboardingScheduleStep(draft: $draft)
+            OnboardingScheduleStep(draft: $draft, viewModel: viewModel)
         case .quiet:
             OnboardingQuietStep(draft: $draft)
         case .protection:
@@ -126,17 +118,14 @@ struct OnboardingFlowView: View {
                 showsNFCChoice: isReplay
             )
         case .gift:
-            OnboardingGiftStep(
-                recommendation: draft.profileSkipped ? nil : draft.profileRecommendation,
-                profileSkipped: draft.profileSkipped,
-                onKeepCurrentOutfit: {},
-                onWearMoonlitCoat: { itemID in viewModel.wearShepherdOutfit(itemID) }
-            )
+            OnboardingShepherdGiftStep(draft: $draft)
         case .automaticStart, .ready:
             OnboardingReadyStep(
                 draft: draft,
                 showsTourHandoff: !isReplay,
-                showsSlumberParty: viewModel.nightFlockViewModel.featureEnabled
+                showsSlumberParty: viewModel.nightFlockViewModel.featureEnabled,
+                appProtectionReady: viewModel.shieldingReadiness == .ready,
+                notificationAuthorization: viewModel.notificationAuthorization
             )
         }
     }
@@ -144,7 +133,15 @@ struct OnboardingFlowView: View {
     private var primaryButtonTitle: String {
         switch draft.step {
         case .welcome:
-            return draft.welcomePage == .ollie ? "Set up my Wind Down" : "Continue"
+            return draft.welcomePage.normalizedForCurrentFlow == .ollie ? "Find my starting point" : "Meet Ollie"
+        case .profile:
+            return draft.profileQuestionIndex + 1 == CountingSheepOnboarding.profileQuestions.count
+                ? "See my starting point"
+                : "Next question"
+        case .recommendation:
+            return "Continue"
+        case .gift:
+            return viewModel.claimedWelcomeGiftItemID == nil ? "Wear now" : "Continue"
         case .ready:
             return isReplay ? "Save changes" : "Save and show me Home"
         default:
@@ -156,50 +153,69 @@ struct OnboardingFlowView: View {
         if draft.step == .ready, !isReplay {
             return "Save and skip the tour"
         }
-        if draft.step == .welcome || draft.step == .profile || draft.step == .recommendation {
-            return FirstRunGuideCopy.skipForNow
+        if draft.step == .welcome {
+            return "Skip intro"
+        }
+        if draft.step == .profile {
+            return "Skip questions"
+        }
+        if draft.step == .gift, viewModel.claimedWelcomeGiftItemID == nil {
+            return "Keep for later"
         }
         if draft.step == .protection {
             return nil
-        }
-        if draft.step == .gift {
-            return FirstRunGuideCopy.skipForNow
         }
         return nil
     }
 
     private var canGoBack: Bool {
         if draft.step == .welcome {
-            return draft.welcomePage != .countingSheep
+            return draft.welcomePage.normalizedForCurrentFlow != .countingSheep
         }
         return CountingSheepOnboardingStep.visibleSteps.firstIndex(of: draft.step) ?? 0 > 0
     }
 
     private var canContinue: Bool {
+        if draft.step == .profile {
+            return draft.hasAnsweredCurrentProfileQuestion
+        }
+        if draft.step == .gift {
+            return viewModel.claimedWelcomeGiftItemID != nil
+                || draft.selectedWelcomeGiftItemID != nil
+        }
         guard draft.step == .protection else { return true }
         guard draft.protectionChoice != .nfcAndAppShielding || viewModel.hasRegisteredNFCTag else { return false }
         return viewModel.shieldingReadiness == .ready && draft.protectionSelectionSelfConfirmed
     }
 
     private func previousStep() {
-        if draft.step == .welcome, let previous = OnboardingWelcomePage(rawValue: draft.welcomePage.rawValue - 1) {
-            draft.welcomePage = previous
+        if draft.step == .profile, draft.profileQuestionIndex > 0 {
+            draft.profileQuestionIndex -= 1
+            return
+        }
+        if draft.step == .welcome,
+           draft.welcomePage.normalizedForCurrentFlow == .ollie {
+            draft.welcomePage = .countingSheep
             return
         }
         guard let index = CountingSheepOnboardingStep.visibleSteps.firstIndex(of: draft.step), index > 0 else {
             return
         }
         var previous = CountingSheepOnboardingStep.visibleSteps[index - 1]
-        if draft.profileSkipped, previous == .gift || previous == .recommendation {
+        if draft.profileSkipped, previous == .recommendation {
             previous = .profile
         }
         draft.step = previous
         if draft.step == .welcome {
-            draft.welcomePage = .ollie
+            draft.welcomePage = OnboardingWelcomePage.visiblePages.last ?? .ollie
         }
     }
 
     private func advance() {
+        if draft.step == .gift {
+            claimGiftAndContinue(wearNow: true)
+            return
+        }
         if draft.step == .protection {
             draft.shieldingEnabled = draft.shieldingEnabled && viewModel.hasSelectedShieldingApps
         }
@@ -215,6 +231,10 @@ struct OnboardingFlowView: View {
             finish(showTour: false)
             return
         }
+        if draft.step == .gift {
+            claimGiftAndContinue(wearNow: false)
+            return
+        }
         let effect = draft.skipVisibleStep()
         if effect == .keepCompletedProfile {
             viewModel.applyWindDownStartingPoint(draft.profileAnswers)
@@ -228,18 +248,26 @@ struct OnboardingFlowView: View {
         }
     }
 
+    private func claimGiftAndContinue(wearNow: Bool) {
+        if viewModel.claimedWelcomeGiftItemID != nil {
+            draft.moveToNextVisibleStep()
+            return
+        }
+        guard let itemID = draft.selectedWelcomeGiftItemID,
+              viewModel.claimWelcomeGift(itemID, wearNow: wearNow) else { return }
+        draft.moveToNextVisibleStep()
+    }
+
     private func finish(showTour: Bool) {
         var completedDraft = draft
         if !isReplay {
-            // Reminders, automatic start, cadence, and sounds are chosen later in Settings.
+            // A schedule describes eligibility. Beginning Wind Down remains manual.
             completedDraft.automaticStartEnabled = false
-            completedDraft.remindersEnabled = false
         }
         if isReplay {
             // Settings replay edits the ritual plan without silently resetting
             // notification choices or the person's private reason for quiet.
             let existingNotifications = viewModel.notificationPreferences
-            completedDraft.remindersEnabled = existingNotifications.remindersEnabled
             completedDraft.notificationCadence = existingNotifications.cadence
             completedDraft.notificationSoundsEnabled = existingNotifications.soundsEnabled
             completedDraft.educationalTipsEnabled = existingNotifications.educationalTipsEnabled
@@ -262,6 +290,32 @@ struct OnboardingFlowView: View {
         showScreenTimePicker = true
 #endif
     }
+
+    private var actionBar: some View {
+        VStack(spacing: AppSpacing.xxs) {
+            OnboardingPrimaryButton(
+                title: primaryButtonTitle,
+                action: advance,
+                isEnabled: canContinue
+            )
+
+            if let skipTitle = skipButtonTitle {
+                Button(skipTitle) {
+                    skipCurrent()
+                }
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.muted)
+                .frame(maxWidth: .infinity, minHeight: 44)
+            }
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.top, AppSpacing.sm)
+        .padding(.bottom, AppSpacing.xs)
+        .background(.ultraThinMaterial)
+        .overlay(alignment: .top) {
+            Divider().opacity(0.35)
+        }
+    }
 }
 
 #Preview {
@@ -270,17 +324,17 @@ struct OnboardingFlowView: View {
 }
 
 #Preview("Onboarding · questionnaire") {
-    OnboardingFlowView(initialDraft: OnboardingDraft(step: .profile), onComplete: {})
+    OnboardingFlowView(initialDraft: OnboardingDraft(step: .profile), presentationMode: .fixture, onComplete: {})
         .environmentObject(FocusRunViewModel())
 }
 
 #Preview("Onboarding · recommendation") {
-    OnboardingFlowView(initialDraft: OnboardingDraft(step: .recommendation), onComplete: {})
+    OnboardingFlowView(initialDraft: OnboardingDraft(step: .recommendation), presentationMode: .fixture, onComplete: {})
         .environmentObject(FocusRunViewModel())
 }
 
 #Preview("Onboarding · profile gift") {
-    OnboardingFlowView(initialDraft: OnboardingDraft(step: .gift), onComplete: {})
+    OnboardingFlowView(initialDraft: OnboardingDraft(step: .gift), presentationMode: .fixture, onComplete: {})
         .environmentObject(FocusRunViewModel())
 }
 
@@ -289,7 +343,7 @@ struct OnboardingFlowView: View {
     viewModel.screenTimeAuthorization = .denied("Preview")
     var draft = OnboardingDraft(step: .protection)
     draft.shieldingEnabled = false
-    return OnboardingFlowView(initialDraft: draft, onComplete: {})
+    return OnboardingFlowView(initialDraft: draft, presentationMode: .fixture, onComplete: {})
         .environmentObject(viewModel)
 }
 

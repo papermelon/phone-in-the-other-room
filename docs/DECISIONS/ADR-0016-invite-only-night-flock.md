@@ -1,17 +1,18 @@
 # ADR-0016: Invite-Only Slumber Party
 
-- Status: Accepted; TestFlight/Release archives enable Slumber Party as of 2026-08-16
-- Date: 2026-08-16
+- Status: Accepted; v4 production backend deployed 2026-08-25; app/device/operations gates pending
+- Date: 2026-08-25
 - Decider: Founder
-- Supersedes: the positive-only presentation portion of the 2026-08-12 decision
+- Supersedes: v1–v3 Slumber Party product contract; those schemas remain legacy compatibility only
 - Related: ADR-0003, ADR-0005, ADR-0006, ADR-0010, ADR-0015
 
 ## Context
 
-Counting Sheep is not a social network. A bounded, invite-only group can nevertheless help
-people keep a phone-away habit visible and encouraging for one week. The founder therefore
-revised the earlier anonymous aggregate experiment into a shared commitment that is clear to a
-tired reader and usable in a workshop without developer explanation.
+Counting Sheep is not a social network. A bounded, invite-only group can nevertheless help people
+encourage one another around a phone-away habit. Earlier Slumber Party versions modeled a single
+seven-night goal/challenge with readiness, sharing choices, aliases, and one global reward path.
+The founder has replaced that model with one user-facing party: a long-lived group that can run
+repeated fixed seven-night rounds. This ADR records the contract implemented by the local v4 source.
 
 ## Decision
 
@@ -22,124 +23,116 @@ same UUID. Missing, changed, or unexpected identities fail closed without exposi
 account's snapshot; local snapshot, ritual contexts, and outboxes remain intact while state is
 reconciled after validation.
 
-Slumber Party lets **2–8 people choose one Wind Down goal, try routines that work for them, and
-encourage one another for seven nights.** The group chooses one bounded goal from the catalogue:
+### Party, rounds, and membership
 
-- Put phones away during Wind Down;
-- Reach an agreed number of quiet minutes; or
-- Shield a named distracting app, such as Instagram, during Wind Down.
+A Slumber Party is one long-lived invite-only group of 2–8 people, with a customizable name and
+fixed seven-night rounds. There is no goal picker, pasture identity, readiness ceremony,
+orientation wall, or per-field sharing matrix. The host starts a round when there are at least two
+members. Joining never starts a round. Starting another round preserves the party's name and
+members. A person can belong to at most five concurrent parties; the cap is enforced
+transactionally.
 
-Members keep individual bedtimes and routines. They may optionally share up to three stable
-guidance ideas from the bundled Counting Sheep source library. There is no unrestricted chat,
-public discovery, feed, follower graph, global leaderboard, rank, or competitive score. Fixed
-positive reactions remain available inside the invited group, and blocking, reporting,
-moderation, deletion, retention, and Apple-linked account requirements remain in force.
+The active invite remains redeemable while a round is active. Every current member may retrieve
+and share it, but only the host can create, explicitly replace, or revoke it. An ordinary member
+may leave. The host cannot leave and must delete the party for everyone; ownership transfer is
+future work.
+Deletion tombstones the party, revokes invites, deactivates membership, and preserves already
+earned account-inbox grants. It also creates only the minimum moderation audit needed for the
+configured retention period.
 
-### Lobby and identity
+A member may join an active round. On joining, the member can backfill all factual Wind Down and
+Phone Away records from that round. Backfill is an idempotent self-report of local history, not a
+claim of independent verification. All current members see the round's records and statuses.
 
-The host creates a lobby with one shared goal and a decorative flock identity. A lobby starts its
-seven nights only when at least two members have joined, every current member has accepted the
-goal, every member's required local setup is ready, and the host explicitly starts it. Joining
-does not auto-start the challenge. A reusable, legible invite code works until it is revoked,
-expires, the party starts, or capacity reaches eight. Preview and redemption require an
-authenticated Apple-linked account; the server stores a secure digest and redemption metadata
-where feasible, never the reusable plaintext after its intended response.
+### Canonical profile and party presentation
 
-The host device journals that plaintext before transport in a non-synchronizing,
-this-device-only Keychain item bound to the Apple-linked account and lobby. Only its digest is
-sent or stored remotely. Host-only pending-lobby state exposes the active invite UUID and expiry
-for lost-response and relaunch reconciliation. If the local credential is unavailable,
-replacement requires explicit confirmation and an atomic compare-and-swap; relaunch never
-replaces it automatically.
+Each account has one canonical display name used in Farm and every Slumber Party. It is requested
+before the first party is created or joined and remains editable from the Shepherd customization
+screen. Initial setup and v4 migration selection are free. Afterwards the server permits at most
+two successful display name changes in a rolling 14-day window. The curated public profile is
+deliberately small: the
+canonical name, Shepherd look, Ollie ornament, featured sheep definition, and pasture theme. It
+updates routinely for all current parties. The server accepts only allowlisted catalogue
+identifiers and revisions. This profile is visible only through parties and Farm; it creates no
+directory, discovery, feed, chat, follower graph, leaderboard, rank, or competitive score.
 
-Members have server-generated or user-approved display names within the invite-only group. This
-does not authorize a general identity directory or public profile system.
+Party detail is people-first: it shows current members, factual round records, curated snapshots,
+and statuses with `revision`, `observed_at`, and `expires_at`. Fixed cheers are the only social
+reaction and can encourage a member during an active Wind Down or Phone Away before its completed
+record exists. Realtime may make membership, curated profiles, statuses, and cheers feel prompt
+using a sanitized party revision signal, but clients reconcile every silent delivery from durable
+state and ledger records; stale or absent realtime is never interpreted as activity or completion.
 
-### Shared state and local authority
+### Local authority, fan-out, and active-ritual boundary
 
-The v2 member projection can show: goal accepted, setup ready, phone tucked away, meaningful
-partial progress, shared goal completed, morning quiet completed, and private/no update. Schema
-three adds rounded Wind Down and Phone Away minutes plus optional sleep duration and
-restfulness when those independent controls are on. The last status is not successful
-completion. Member-level progress is visible only to current members; it is not a ranking. The
-local iPhone remains authoritative for Wind Down. During an active ritual there is no Slumber
-Party UI, reaction, notification, realtime subscription, or novelty. Social updates queue
-through the local outbox and publish asynchronously after the appropriate local event. Network
-failure never blocks local start, completion, shielding, or the fail-open emergency exit.
+The local iPhone remains authoritative for Wind Down and Phone Away. Local start, protection,
+completion, reward settlement, and the fail-open emergency exit never wait for a party request or
+response. An account-level local activity ledger first records factual activity; a transactional
+per-party fan-out then evaluates every eligible current party, up to the five-party cap, and
+creates independent party records and rewards. Thus the same local activity can earn separately
+in each eligible party without duplicate delivery inside a party. Grants are server-authoritative,
+idempotent, and applied from an account inbox once per grant ID.
 
-The v1 `phoneTucked` and `morningQuietCompleted` outbox records remain decodable and continue to
-route through the v1 function. Schema-two commitment commands remain compatible. Schema-three
-metrics and grant commands use an explicit version rather than silently changing older
-contracts. Ordinary Debug stays `NO`. TestFlight/Release archives enable the feature.
+During an active Wind Down there is no Slumber Party UI, feed, panel, badge, in-app reaction, or
+social navigation. Best-effort silent Live Activity and Watch feedback may appear on a system
+surface immediately, with accumulated completion cheers reconciled later from the durable ledger.
+It is never an in-app ritual interruption or a dependency of local completion. Network or social
+failure fails quietly and cannot block the ritual.
 
-### Screen Time and Instagram
+### Privacy, invites, and version fence
 
-Apple Family Controls selections are opaque tokens. Each member opens Apple's picker locally and
-confirms that Instagram is included. The token and selected-app list remain local/App Group
-scoped and never reach the backend. Counting Sheep may publish only coarse setup/shielding
-evidence: not requested, unavailable, partial, or observed. The app must distinguish “You
-confirmed Instagram is included” from “Counting Sheep observed app shielding”; the server never
-claims it independently verified Instagram.
+Slumber Party never uploads or exposes a full Farm, inventory, wool balance, exact schedules,
+private routine/reflection text, Family Controls tokens, app lists, raw reports, NFC, purpose,
+notification state, impact data, or raw Health data. It never joins or reuses `impact_nights`.
+Apple-linked authentication, blocking, reporting, moderation, member-only RLS, and minimum
+retention remain in force. A member can submit an existing fixed-reason safety report or block
+another current member; blocking separates those accounts across their shared groups. The existing
+in-app account deletion path remains available to a person with v4 memberships or history.
 
-### Sharing boundaries
+Invite ciphertext is encrypted, recoverable by service code only, and never appears in RLS
+projections, Realtime payloads, logs, or support evidence. Digest and idempotency material are
+equally excluded from logs. Host replacement is an explicit compare-and-swap operation; relaunch
+reconciles and never replaces automatically.
 
-Slumber Party sharing and optional minimized impact/research sharing are separate controls and
-records. Slumber Party never joins or silently reuses `impact_nights`. Exact schedules, exact
-shield timestamps, raw reports, purpose text, private routines, private reflection text, Family
-Controls tokens, app lists, NFC, and notification state remain outside the social projection.
-Inside the invited group, independently controlled fields may include named aliases, shared-goal
-progress, Wind Down completed or partly completed, rounded Wind Down and Phone Away minutes,
-phone tucked away, coarse shielding evidence, optionally selected guidance IDs, optional sleep
-duration, optional restfulness, and fixed reactions. Default-on fields follow clear join
-consent; sleep duration and restfulness stay explicit opt-ins.
+Before deploying the v4 command function, provision the hosted Edge secret
+`NIGHT_FLOCK_INVITE_KEY_V1` with exactly 32 cryptographically random bytes encoded as base64.
+`NIGHT_FLOCK_INVITE_KEY_VERSION` defaults to `1`. Versioned rotation first provisions the new
+`NIGHT_FLOCK_INVITE_KEY_Vn`, then changes the active version while retaining every earlier key
+needed by an existing active invitation; retire an older key only after its invitations have
+expired, been revoked, or been replaced. Key material never belongs in tracked files, logs,
+diagnostics, screenshots, or support evidence. Missing or prematurely retired keys break
+invitation creation or recovery and are a hard hosted-release blocker.
 
-### Farm rewards
-
-A qualifying shared night can grant 1 wool, once per member per challenge day. Three qualifying
-nights grant an unowned cheap Farm item or 3 wool. Completing the seven-night party with at
-least four qualifying nights grants one guaranteed Slumber Party sheep search that does not
-consume Wind Down, Phone Away, or onboarding-practice guarantees. A group-wide completion bonus
-of 2 wool requires two members to meet that four-night threshold. Opening the app, inviting,
-joining, sending reactions, or changing settings never generates rewards. Grants are
-server-authoritative and idempotent; the client applies each backend grant ID once.
-
-### Data and security
-
-Normalized Postgres storage covers the commitment, bounded goal, lobby/start state, members,
-acceptance/readiness, sharing preferences, optional guidance summaries, nightly progress,
-rounded shared minutes, optional sleep/restfulness, social reward grants, coarse shielding
-evidence, reusable invite redemption, retention, blocks, reports, and service-only moderation
-actions. RLS is member-only; service RPCs are called only by validated Edge Functions. Functions
-derive the caller from the JWT, reject anonymous and non-Apple-linked accounts, validate exact
-versioned payloads, and enforce idempotency and capacity. Tokens, raw Screen Time reports, app
-lists, exact bedtime/wake timestamps, raw HealthKit samples, and exact shield apply/clear
-timestamps are not stored in member-facing projections.
-
-Retention remains bounded: invite validity is seven days with invite-row purge after 30 days,
-raw nightly progress/reactions after 90 days, and completed commitment summaries after no more
-than 12 months unless deleted sooner. Users can leave, block, report, delete Slumber Party data,
-or delete the full online account while local Wind Down, Nights, Farm, and rewards remain.
+V4 is additive behind an unambiguous version fence. Old v1–v3 clients retain only explicitly
+labeled legacy decode/state paths and must never receive an arbitrary v4 party. A client that
+cannot prove a safe schema receives `unsupported_schema` or its own compatible legacy projection,
+not a fallback to another party. Existing legacy fields such as `phoneTucked`,
+`morningQuietCompleted`, goals, aliases, readiness, orientation, and sharing preferences are
+compatibility data only, not v4 presentation or behavior.
 
 ### Workshop reward gate
 
 This decision does not award sheep for a five-minute Wind Down test. Slumber Party Farm grants
-follow the schema-three shared-night schedule only. Workshop copy must not promise those grants
-for a practice run.
+are determined per eligible party round from the server-authoritative fan-out path. Workshop copy
+must not promise grants for a practice run.
 
 ## Consequences
 
 - The feature is a narrow ADR-0016 exception; ADR-0003 still gates Friends and broader social
   features.
-- Apple Sign in, Family Controls distribution, hosted migration/functions, moderation ownership,
-  retention scheduling, privacy disclosures, and two-account physical QA are release gates.
-- The older v1 schema and anonymous positive-state clients remain compatible during migration.
-- Mixed-version rollout is migration-first: historical migrations, the invite-recovery migration,
-  matching state/command functions, hosted non-production legacy/new-client validation, physical
-  two-account QA, then a new app/TestFlight build. Production remains human-gated after that order.
-- On 2026-08-16 the founder authorized TestFlight/Release archives to compile with
-  `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. Ordinary Debug remains disabled. The dedicated
-  `SlumberPartyQA` configuration stays the local forced-`YES` lane with QA diagnostics.
-  Hosted deployment, moderation ownership, privacy publication, and two-account physical QA
-  remain operational evidence, not a reason to keep the Release flag off.
+- Apple Sign in, Family Controls distribution, the versioned hosted invitation-encryption secret,
+  v4 migrations/functions, moderation ownership, retention scheduling, privacy disclosures, and
+  two-account physical QA are release gates.
+- Mixed-version rollout is v4-migration-first: historical migrations, existing invite recovery,
+  the v4 fence and service-only recoverable-invite migration, provisioned versioned invitation
+  encryption, and matching state/command functions. The founder explicitly approved production
+  backend deployment on 2026-08-25; all five Slumber Party migrations, both JWT-protected
+  functions, and invitation-key version 1 are now present. Updated app distribution, physical
+  two-account validation, moderation/retention operations, and privacy publication remain open.
+- The 2026-08-16 compile-flag decision remains: TestFlight/Release archives compile with
+  `SUPABASE_NIGHT_FLOCK_ENABLED=YES`, ordinary Debug remains disabled, and
+  `SlumberPartyQA` remains a local forced-`YES` diagnostics lane. The production backend
+  deployment does not establish moderation readiness, privacy publication, updated app
+  distribution, or physical QA completion.
 - Existing `NightFlock*`, `night_flock_*`, `ollie.*`, and persisted enum identifiers remain
   implementation names for compatibility; only user-facing copy uses Counting Sheep language.

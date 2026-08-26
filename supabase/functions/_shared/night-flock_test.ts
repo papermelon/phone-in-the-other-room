@@ -7,6 +7,7 @@ import {
 } from "./night-flock-handlers.ts";
 import { validateNightFlockCommand, validateNightFlockState } from "./night-flock.ts";
 import { classifyNightFlockError, requestIDFor } from "./night-flock-errors.ts";
+import { createInvitation, decryptInvitation, redactInvitationResult } from "./night-flock-invites.ts";
 
 const userID = "10000000-0000-4000-8000-000000000001";
 const challengeID = "20000000-0000-4000-8000-000000000001";
@@ -191,6 +192,22 @@ Deno.test("known database details map to typed errors and unknown details are re
   assertEquals(unknown, "Slumber Party could not complete that request.");
 });
 
+Deno.test("Slumber Party errors never mention lobbies or unavailable ownership transfer", () => {
+  const legacyFailures = [
+    { code: "23505", message: "night_flock_members_active_alias" },
+    new Error("active_invite_exists"),
+    new Error("This lobby has already started"),
+    { message: "snapshot projection construction failed" },
+  ];
+  for (const failure of legacyFailures) {
+    assert(!classifyNightFlockError(failure).error.toLowerCase().includes("lobby"));
+  }
+  assertEquals(
+    classifyNightFlockError(new Error("host_cannot_leave")).error,
+    "Delete this Slumber Party before leaving.",
+  );
+});
+
 Deno.test("completion logs have an exact allowlist and redact a comprehensive secret fixture", () => {
   const secretFixture = [
     "alias=Moonlit Meadow", "userID=10000000-0000-4000-8000-000000000001",
@@ -372,6 +389,60 @@ Deno.test("schema three rejects tokens, out-of-bounds minutes, and extra fields"
     idempotencyKey: v3Key,
   }, v3Key), Error, "Unexpected field");
   assertEquals(validateNightFlockState({ schemaVersion: 3 }).schemaVersion, 3);
+});
+
+Deno.test("schema four accepts only exact party contracts and scoped state", () => {
+  const partyID = "30000000-0000-4000-8000-000000000001";
+  const sourceEventID = "40000000-0000-4000-8000-000000000001";
+  const v4Key = "e".repeat(64);
+  assertEquals(validateNightFlockCommand({
+    schemaVersion: 4, command: "createParty", name: "Night Owls", timeZoneIdentifier: "Asia/Singapore", idempotencyKey: v4Key,
+  }, v4Key).schemaVersion, 4);
+  assertEquals(validateNightFlockCommand({
+    schemaVersion: 4, command: "publishActivity", sourceEventID, kind: "windDown", outcome: "completed", startedAt: "2026-08-25T12:00:00Z", endedAt: "2026-08-25T12:20:00Z", windDownMinutes: 20, phoneAwayMinutes: 0, statusRevision: 1, idempotencyKey: v4Key,
+  }, v4Key).command, "publishActivity");
+  assertEquals(validateNightFlockCommand({
+    schemaVersion: 4, command: "cheerMember", partyID, memberID: userID, cheer: "pawPrint", idempotencyKey: v4Key,
+  }, v4Key).command, "cheerMember");
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 1, command: "cheerMember", partyID, memberID: userID, cheer: "pawPrint", idempotencyKey: v4Key,
+  }, v4Key), Error, "Unsupported Slumber Party command");
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 4, command: "createInvite", partyID, inviteCiphertext: "must-not-arrive-from-client", idempotencyKey: v4Key,
+  }, v4Key), Error, "Unexpected field");
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 4, command: "publishActivity", sourceEventID, kind: "windDown", outcome: "completed", startedAt: "2026-08-25T12:00:00Z", endedAt: "2026-08-25T12:20:00Z", windDownMinutes: 241, phoneAwayMinutes: 0, statusRevision: 1, idempotencyKey: v4Key,
+  }, v4Key), Error, "Values outside bounds");
+  assertEquals(validateNightFlockState({ schemaVersion: 4, scope: "list" }).schemaVersion, 4);
+  assertEquals(validateNightFlockState({ schemaVersion: 4, scope: "party", partyID, cursor: "page-2" }).schemaVersion, 4);
+  assertThrows(() => validateNightFlockState({ schemaVersion: 4, scope: "list", partyID }), Error, "Invalid partyID");
+});
+
+Deno.test("schema four invitation envelope round-trips and never survives response redaction", async () => {
+  const keyMaterial = Uint8Array.from({ length: 32 }, (_, index) => index + 1);
+  const invitation = await createInvitation(keyMaterial, 1);
+  assert(/^[A-HJ-NP-Z2-9]{12}$/.test(invitation.shortCode));
+  assertEquals(await decryptInvitation(invitation.envelope, keyMaterial), invitation.shortCode);
+  const safe = redactInvitationResult({ accepted: true, inviteEnvelope: invitation.envelope, inviteDigest: invitation.digest });
+  assertEquals(safe, { accepted: true });
+  const serialized = JSON.stringify(safe);
+  assert(!serialized.includes(invitation.shortCode));
+  assert(!serialized.includes(invitation.digest));
+  assert(!serialized.includes(invitation.envelope.inviteCiphertext));
+});
+
+Deno.test("schema four typed failures and completion logging stay secret-free", () => {
+  assertEquals(classifyNightFlockError(new Error("max_parties")).code, "max_parties");
+  assertEquals(classifyNightFlockError(new Error("host_cannot_leave")).code, "host_cannot_leave");
+  assertEquals(classifyNightFlockError(new Error("stale_revision")).code, "stale_revision");
+  assertEquals(classifyNightFlockError(new Error("name_change_limit")).code, "name_change_limit");
+  assertEquals(classifyNightFlockError(new Error("client_upgrade_required")).status, 426);
+  const record = nightFlockCompletionLogRecord("night-flock-command", "cccccccc-cccc-4ccc-8ccc-cccccccccccc", "0-49ms", {
+    schemaVersion: 4, command: "retrieveInvite", inviteCiphertext: "secret", inviteNonce: "secret", shortCode: "ABCDEFGHJKLM",
+  }, 200, null);
+  assertEquals(record.schemaVersion, 4);
+  assert(!JSON.stringify(record).includes("ABCDEFGHJKLM"));
+  assert(!JSON.stringify(record).includes("secret"));
 });
 
 function commandRequest(body: Record<string, unknown> = {

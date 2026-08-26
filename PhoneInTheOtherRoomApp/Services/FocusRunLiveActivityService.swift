@@ -30,6 +30,7 @@ final class FocusRunLiveActivityService {
     private let remoteSink: FocusRunLiveActivityRemoteSink
     private var enabled: Bool
     private var tokenObservationTasks: [String: Task<Void, Never>] = [:]
+    private var cheerDismissalTasks: [UUID: Task<Void, Never>] = [:]
     private var latestTokens: [String: Data] = [:]
     private var tokenGenerations: [String: Int] = [:]
     private let installationID: UUID
@@ -73,6 +74,9 @@ final class FocusRunLiveActivityService {
 
     deinit {
         for task in tokenObservationTasks.values {
+            task.cancel()
+        }
+        for task in cheerDismissalTasks.values {
             task.cancel()
         }
     }
@@ -203,6 +207,33 @@ final class FocusRunLiveActivityService {
         }
     }
 
+    func showSlumberPartyCheer(
+        _ feedback: SlumberPartyCheerFeedback,
+        for run: FocusRun
+    ) {
+#if DEBUG
+        guard !liveActivitiesDisabledForEnergyProfiling else { return }
+#endif
+        guard enabled, run.liveActivityRequested,
+              let activity = activeActivity(for: run.id) else { return }
+        cheerDismissalTasks.removeValue(forKey: run.id)?.cancel()
+        var state = contentState(for: run, terminalStatus: nil)
+        state.slumberPartyCheer = feedback
+        Task {
+            await activity.update(ActivityContent(state: state, staleDate: run.plannedEndAt))
+        }
+        cheerDismissalTasks[run.id] = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(12))
+            guard !Task.isCancelled, let self,
+                  let currentActivity = self.activeActivity(for: run.id) else { return }
+            let restoredState = self.contentState(for: run, terminalStatus: nil)
+            await currentActivity.update(
+                ActivityContent(state: restoredState, staleDate: run.plannedEndAt)
+            )
+            self.cheerDismissalTasks.removeValue(forKey: run.id)
+        }
+    }
+
     func startScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {
         guard enabled, occurrence.outcome == .active else { return }
         guard occurrence.liveActivityRequested else { return }
@@ -251,6 +282,8 @@ final class FocusRunLiveActivityService {
     }
 
     func endAll(reason: FocusRunLiveActivityCancellationReason = .reset) {
+        for task in cheerDismissalTasks.values { task.cancel() }
+        cheerDismissalTasks.removeAll()
         let activities = Activity<FocusRunLiveActivityAttributes>.activities
         Task {
             for activity in activities {
@@ -460,6 +493,7 @@ final class FocusRunLiveActivityService {
     func setEnabled(_ enabled: Bool) {}
     func start(for run: FocusRun) {}
     func update(for run: FocusRun) {}
+    func showSlumberPartyCheer(_ feedback: SlumberPartyCheerFeedback, for run: FocusRun) {}
     func finish(for run: FocusRun) {}
     func startScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {}
     func finishScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {}

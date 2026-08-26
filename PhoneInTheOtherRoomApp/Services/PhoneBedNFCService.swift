@@ -7,6 +7,7 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
     struct ReadResult: Equatable, Sendable {
         var digest: String
         var registrationID: UUID?
+        var isCountingSheepCredential: Bool
     }
 
     enum ScanResult {
@@ -19,13 +20,14 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
         case registered(PhoneBedTagRegistration)
         case alreadyPaired(String)
         case previouslyPaired(String)
+        case resetRequired(String)
         case cancelled
         case unavailable(String)
     }
 
     private enum Operation {
         case scan(isAdditionalQuiet: Bool, (ScanResult) -> Void)
-        case provision(isAdditionalQuiet: Bool, PhoneBedTagProvisionIntent, UUID, Set<String>, Set<String>, (ProvisionResult) -> Void)
+        case provision(isAdditionalQuiet: Bool, PhoneBedTagProvisionIntent, UUID, Set<String>, Set<String>, String?, (ProvisionResult) -> Void)
     }
 
     nonisolated private static let externalType = Data(
@@ -55,6 +57,7 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
         intent: PhoneBedTagProvisionIntent = .normalPairing,
         knownCredentialDigests: Set<String> = [],
         previouslyPairedCredentialDigests: Set<String> = [],
+        expectedCredentialDigest: String? = nil,
         completion: @escaping (ProvisionResult) -> Void
     ) {
         let registrationID = UUID()
@@ -65,6 +68,7 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
                 registrationID,
                 knownCredentialDigests,
                 previouslyPairedCredentialDigests,
+                expectedCredentialDigest,
                 completion
             ),
             message: "Hold the top of your iPhone near the NFC tag you want to pair.",
@@ -112,9 +116,11 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
         } else {
             readError = error == nil ? .none : .unreadable
         }
+        let result = existingMessage.map { readResult(from: $0) }
         return PhoneBedTagReadResolutionPolicy.resolve(
-            credentialDigest: existingMessage.map { readResult(from: $0).digest },
-            error: readError
+            credentialDigest: result?.digest,
+            error: readError,
+            isCountingSheepCredential: result?.isCountingSheepCredential ?? false
         )
     }
 
@@ -160,10 +166,26 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
            let registrationID = UUID(uuidString: token) {
             return ReadResult(
                 digest: digest(Data(registrationID.uuidString.lowercased().utf8)),
-                registrationID: registrationID
+                registrationID: registrationID,
+                isCountingSheepCredential: true
             )
         }
-        return ReadResult(digest: fingerprint(message), registrationID: nil)
+        return ReadResult(
+            digest: fingerprint(message),
+            registrationID: nil,
+            isCountingSheepCredential: false
+        )
+    }
+
+    private nonisolated static func readResult(from messages: [NFCNDEFMessage]) -> ReadResult {
+        guard messages.count == 1, let message = messages.first else {
+            return ReadResult(
+                digest: fingerprint(messages),
+                registrationID: nil,
+                isCountingSheepCredential: false
+            )
+        }
+        return readResult(from: message)
     }
 
     private nonisolated static func fingerprint(_ message: NFCNDEFMessage) -> String {
@@ -173,6 +195,19 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
             data.append(record.type)
             data.append(record.identifier)
             data.append(record.payload)
+        }
+        return digest(data)
+    }
+
+    private nonisolated static func fingerprint(_ messages: [NFCNDEFMessage]) -> String {
+        var data = Data()
+        for message in messages {
+            for record in message.records {
+                data.append(record.typeNameFormat.rawValue)
+                data.append(record.type)
+                data.append(record.identifier)
+                data.append(record.payload)
+            }
         }
         return digest(data)
     }
@@ -200,7 +235,7 @@ final class PhoneBedNFCService: NSObject, ObservableObject {
         for readerSession: NFCNDEFReaderSession
     ) -> Bool {
         guard session === readerSession,
-              case .provision(_, _, _, _, _, let completion) = operation else { return false }
+              case .provision(_, _, _, _, _, _, let completion) = operation else { return false }
         operation = nil
         session = nil
         completion(result)
@@ -242,8 +277,8 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
         _ session: NFCNDEFReaderSession,
         didDetectNDEFs messages: [NFCNDEFMessage]
     ) {
-        guard let message = messages.first else { return }
-        let result = Self.readResult(from: message)
+        guard !messages.isEmpty else { return }
+        let result = Self.readResult(from: messages)
         Task { @MainActor in
             switch self.operation {
             case .scan:
@@ -256,6 +291,7 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                 _,
                 let knownCredentialDigests,
                 let previouslyPairedCredentialDigests,
+                let expectedCredentialDigest,
                 _
             ):
                 // Some NDEF tags arrive through didDetectNDEFs instead of the
@@ -264,9 +300,12 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                 // gets overwritten during replacement.
                 switch PhoneBedTagProvisionPolicy.resolve(
                     intent: intent,
-                    inspection: .credential(digest: result.digest),
+                    inspection: result.isCountingSheepCredential
+                        ? .credential(digest: result.digest)
+                        : .foreign,
                     activeCredentialDigests: knownCredentialDigests,
-                    retiredCredentialDigests: previouslyPairedCredentialDigests
+                    retiredCredentialDigests: previouslyPairedCredentialDigests,
+                    expectedCredentialDigest: expectedCredentialDigest
                 ) {
                 case .alreadyPaired:
                     let message = "That tag is already paired. Edit its name or uses instead."
@@ -276,13 +315,18 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                     let message = Self.previouslyPairedMessage(isAdditionalQuiet: isAdditionalQuiet)
                     guard self.finishProvision(.previouslyPaired(result.digest), for: session) else { return }
                     session.invalidate(errorMessage: message)
+                case .resetRequired:
+                    let message = "This is a previously used Counting Sheep tag. Confirm reset and pairing in Settings to replace its old credential."
+                    guard self.finishProvision(.resetRequired(result.digest), for: session) else { return }
+                    session.alertMessage = "Counting Sheep tag found."
+                    session.invalidate()
                 case .abort:
-                    let message = "This tag already contains data. Hold a blank writable tag to pair it."
+                    let message = "This tag could not be used safely. Try another writable Counting Sheep tag."
                     guard self.finishProvision(.unavailable(message), for: session) else { return }
                     session.invalidate(errorMessage: message)
-                case .mayProceed where intent == .settingsRetiredTagResync:
-                    // A retired credential is intentionally occupied. Wait for
-                    // the tag callback, which supplies the writable NFCNDEFTag.
+                case .mayProceed where intent == .settingsRetiredTagResync || intent == .settingsResetAndPair:
+                    // An occupied credential is intentionally handled by the
+                    // tag callback, which supplies the writable NFCNDEFTag.
                     return
                 case .mayProceed:
                     let message = "This tag already contains data. Hold a blank writable tag to pair it."
@@ -317,6 +361,7 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                 let registrationID,
                 let knownCredentialDigests,
                 let previouslyPairedCredentialDigests,
+                let expectedCredentialDigest,
                 _
             ):
                 self.write(
@@ -325,6 +370,7 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                     intent: intent,
                     knownCredentialDigests: knownCredentialDigests,
                     previouslyPairedCredentialDigests: previouslyPairedCredentialDigests,
+                    expectedCredentialDigest: expectedCredentialDigest,
                     isAdditionalQuiet: isAdditionalQuiet
                 )
             case nil:
@@ -364,6 +410,7 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
         intent: PhoneBedTagProvisionIntent,
         knownCredentialDigests: Set<String>,
         previouslyPairedCredentialDigests: Set<String>,
+        expectedCredentialDigest: String?,
         isAdditionalQuiet: Bool
     ) {
         context.session.connect(to: context.tag) { error in
@@ -387,7 +434,8 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                         intent: intent,
                         inspection: inspection,
                         activeCredentialDigests: knownCredentialDigests,
-                        retiredCredentialDigests: previouslyPairedCredentialDigests
+                        retiredCredentialDigests: previouslyPairedCredentialDigests,
+                        expectedCredentialDigest: expectedCredentialDigest
                     ) {
                     case .abort:
                         Task { @MainActor in
@@ -417,6 +465,16 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                                 for: context.session
                             ) else { return }
                             context.session.invalidate(errorMessage: message)
+                        }
+                        return
+                    case .resetRequired(let digest):
+                        Task { @MainActor in
+                            guard self.finishProvision(
+                                .resetRequired(digest),
+                                for: context.session
+                            ) else { return }
+                            context.session.alertMessage = "Counting Sheep tag found."
+                            context.session.invalidate()
                         }
                         return
                     case .mayProceed:

@@ -282,18 +282,29 @@ xcodebuild archive \
 
 ## 9A. Slumber Party release gate
 
-- [ ] Hosted migration `20260812120000_night_flock_mvp.sql`, both authenticated Edge Functions,
-      Apple Auth provider/manual linking, and daily retention RPC schedule are reviewed and deployed.
-- [ ] Direct protected-table writes remain unavailable; outsider, former, blocked-peer, and
-      cross-flock SQL/RLS tests pass against the release schema.
+- [x] Historical migrations, the invite-recovery migration, and
+      `20260825110000_night_flock_parties_v4.sql` are reviewed and applied before deploying the
+      matching authenticated Edge Functions. On 2026-08-25 the production database was confirmed
+      current and both functions were ACTIVE with JWT verification enabled.
+- [x] Before deploying the matching command function, the hosted Edge secret
+      `NIGHT_FLOCK_INVITE_KEY_V1` contains 32 cryptographically random base64-encoded bytes.
+      `NIGHT_FLOCK_INVITE_KEY_VERSION` selects a provisioned version, and older versioned keys
+      remain available until every invitation using them has expired, been revoked, or been
+      replaced. Both production secret names were confirmed without exposing values.
+- [ ] Verify hosted invitation creation/recovery, Apple-link/manual-link recovery, the approved
+      retention schedule, and legacy v1–v3/v4 compatibility without exposing secret material.
+- [ ] Direct protected-table writes remain unavailable; outsider, former-member, invite,
+      cross-party, five-party-cap, and account-grant SQL/RLS tests pass against the release schema.
 - [ ] A moderation owner can inspect fixed-enum reports and apply service-only actions; deletion
       and incident procedures are documented before inviting testers.
-- [ ] Two physical Apple-linked accounts prove anonymous ownership is preserved through linking,
-      one-use invite create/join, the locked timezone, positive state/reaction sync, offline retry,
-      private-night suppression, sharing-off purge, leave, block, report, Slumber Party deletion, and
-      full account deletion.
-- [ ] During active Wind Down there is no Slumber Party UI, reaction surface, realtime subscription,
-      or notification, and backend failure never delays or changes the local run/reward/Farm result.
+- [ ] Physical Apple-linked accounts prove ownership-preserving linking; named groups and repeatable
+      seven-night rounds; member-shareable/host-managed active invites; late joining/backfill;
+      five-party membership; curated profile/name-limit synchronization; rounded Wind Down/Phone
+      Away records, expiring statuses, silent fixed cheers, offline retry, per-party rewards,
+      member leave, host deletion, and full account deletion.
+- [ ] During active Wind Down there is no Slumber Party UI, reaction surface, social navigation, or
+      audible alert. A bounded subscription may update only the existing Live Activity/Watch system
+      surfaces; backend failure never delays or changes the local run/reward/Farm result.
 - [ ] The public policy and App Store review notes match the enabled behavior. Release compiles
       with `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. Hosted backend, Apple provider, moderation, and
       two-account physical evidence still need to be current before inviting testers.

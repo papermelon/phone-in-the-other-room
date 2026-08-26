@@ -7,8 +7,8 @@ struct OnboardingQuietStep: View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             onboardingTitle(
                 eyebrow: "PRIVATE ROUTINE",
-                title: "Give the quiet a gentle shape.",
-                detail: "Put the phone away first, then choose a few ideas for the evening and morning. They stay private and remain optional."
+                title: "What comes after the phone goes away?",
+                detail: "Pick a few things you already like doing — or add your own. Counting Sheep can gently bring them back when Wind Down begins."
             )
 
             WindDownRoutineEditor(
@@ -21,22 +21,14 @@ struct OnboardingQuietStep: View {
 
     private func syncLegacyFields() {
         var updated = draft
-        if let custom = updated.eveningRoutine.first(where: { $0.kind == .custom }) {
-            updated.eveningCueText = custom.customText
-        } else {
-            updated.eveningCueText = nil
-        }
-        if let activity = updated.eveningRoutine.first(where: { $0.kind == .suggestion })?.activity {
-            updated.eveningActivity = activity
-        }
-        if let custom = updated.morningRoutine.first(where: { $0.kind == .custom }) {
-            updated.morningCueText = custom.customText
-        } else {
-            updated.morningCueText = nil
-        }
-        if let activity = updated.morningRoutine.first(where: { $0.kind == .suggestion })?.activity {
-            updated.morningActivity = activity
-        }
+        updated.eveningCueText = updated.eveningRoutine.first?.kind == .custom
+            ? updated.eveningRoutine.first?.customText
+            : nil
+        if let activity = updated.eveningRoutine.first?.activity { updated.eveningActivity = activity }
+        updated.morningCueText = updated.morningRoutine.first?.kind == .custom
+            ? updated.morningRoutine.first?.customText
+            : nil
+        if let activity = updated.morningRoutine.first?.activity { updated.morningActivity = activity }
         draft = updated
     }
 }

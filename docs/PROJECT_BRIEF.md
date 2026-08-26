@@ -13,9 +13,15 @@ guards the ritual and offers a private sequence of up to three evening and two m
 suggestions. This is a Wind Down ritual, not a productivity tool or sleep-quality tracker. The established
 `NightWatch*` names remain internal for persisted-data compatibility.
 
-First-run onboarding makes the promise legible: a short local questionnaire produces a
-non-clinical Wind Down starting point, the Farm begins with one starter sheep, and a pending
-shepherd wearable waits to be claimed later. App shielding is the simplest no-hardware
+First-run onboarding makes the promise legible through two varied story pages and an optional
+chapter of six categorical, local behavioral questions. Explicit answers yield one non-clinical
+Wind Down starting pattern and, when separately supported, one secondary pattern; missing answers
+never become claims. The explanation and sourced suggestion are separate from a universal
+welcome gift: every person, including someone who skips the questions, may choose one finished
+Shepherd wearable, claim it exactly once, and wear it now or preserve their existing appearance.
+Schedule, quiet durations, private routines, and optional explained reminders remain explicit
+choices; saving a schedule or reminder never starts Wind Down automatically. The Farm begins
+with one starter sheep. App shielding is the simplest no-hardware
 starting point, NFC is an optional second layer, and Wind Down also offers locally bundled,
 cautious screen-time and general sleep-health ideas beside private routine choices. These ideas
 are invitations, not insomnia treatment, scores, or a feed. Its final save action hands off to a
@@ -75,7 +81,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
 
 **Shipped surface: four tabs — Home, Nights, Farm, and Settings.**
 
-- **Home**: one-time Wind Down plan → saved wind-down reminder → one-tap Wind Down →
+- **Home**: one-time Wind Down plan → optional authorized reminder → one-tap Wind Down →
   wind-down / overnight / morning-quiet phases → morning completion or kind early end.
   Active runs label those phases as phone-free wind-down, sleep time, and phone-free morning.
   Silent phase-change notices support bedtime and waking, followed by the requested audible
@@ -89,7 +95,9 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   and a non-empty opaque app/category selection; runtime failure fails open and offers repair.
   NFC is the default Wind Down tag for new plans; App Shielding remains the simplest
   no-hardware path. A writable generic NDEF tag can be
-  registered, replaced, or forgotten in place; NFC mode requires that same tag to end
+  registered, replaced, forgotten, or recovered in place; Settings can recognize a valid
+  Counting Sheep credential from another installation and explicitly reset and pair it even
+  when local tag history is empty. Blank tags pair normally, and NFC mode requires that same tag to end
   normally while retaining a multi-step emergency exit. An automatic Wind Down can send
   a chosen Quiet, Balanced, or Supportive cadence and schedule selected-app shielding at the
   saved start time while the app is closed. Optional usage-aware reminders can send one
@@ -124,15 +132,24 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   shearing, trading, favourites, and pending arrivals; **Ollie's Search** for missing sheep and
   one favoured lead; **Search Journal** for persisted results; and the nested Farm Shop plus
   Your Shepherd customization. Discovery history remains after an owned sheep is traded.
-  The feature-flagged **Slumber Party** experience appears as a full-width contextual card on
-  Farm and Home when enabled. The product promise is: “Slumber Party lets 2–8 people choose one
-  Wind Down goal, try routines that work for them, and encourage one another for seven nights.”
-  A lobby waits for at least two members, goal acceptance, local setup readiness, and an explicit
-  host start. Members keep their own bedtimes and routines; selected source-linked routine ideas
-  are optional. Named member progress, fixed reactions, safety controls, deletion, and reusable
-  invite codes stay inside the invite-only group. Shared nights can grant a little wool, a small
-  Farm keepsake, or one guaranteed Slumber Party sheep search, separate from Wind Down and Phone
-  Away guarantees. There is no feed, chat, discovery, or leaderboard. Active Wind Down has no social UI.
+  The feature-flagged **Slumber Party** v4 source and production backend were deployed on
+  2026-08-25; updated app distribution and physical proof remain pending. Farm and Home lead to
+  **Your Slumber Parties**, a list with create
+  and join always visible. A party is
+  one long-lived, invite-only group of 2–8 people with a customizable name and fixed seven-night
+  rounds. The host starts a round once there are at least two members; the same group, name, and
+  members can start another round afterward. Members may join during an active round and backfill
+  their factual Wind Down and Phone Away records for that round. Everyone in the party sees its
+  current records, revisioned expiring statuses, curated profile snapshots, and fixed cheers.
+  The active invite stays redeemable through an active round; every current member can retrieve and
+  share it, while only the host can create, replace, or revoke it. An ordinary member may leave;
+  the host cannot leave and must delete the party for everyone. Ownership transfer is future work.
+  One account may hold up to five concurrent parties, and the same qualifying local
+  activity can earn separately in each eligible party. The shared profile is a canonical display
+  name plus a curated Shepherd look, Ollie ornament, featured sheep definition, and pasture theme;
+  no Farm inventory, wool, or full profile is uploaded. There is no feed, chat, discovery, or
+  leaderboard. Active Wind Down has no in-app social UI; only best-effort silent system-surface
+  feedback may appear and it never delays the local ritual.
 - **Settings**: **Your Wind Down**, **Connections**, **Privacy & data**, and **Help & app guide**.
   The compact root uses focused detail screens, progressive disclosure, and contextual help. Your
   Wind Down contains Appearance, Plan & routine, Protection & tags, Reminders & Lock Screen, and automatic
@@ -160,7 +177,10 @@ shelf, and mock-data screens. Debug access requires `-ollie.debug.enableMockScre
 these screens are never reachable in Release. The shipping Farm and Farm Shop read only real
 persisted production data. ADR-0016's production Slumber Party is a separate narrow exception.
 TestFlight/Release archives compile it on (`SUPABASE_NIGHT_FLOCK_ENABLED=YES`); ordinary Debug
-keeps it hidden and network-silent.
+keeps it hidden and network-silent. The production schema, versioned invitation secret, and
+authenticated state/command functions are deployed; that backend evidence does not establish
+updated-app distribution, Apple-link recovery, physical-device behavior, moderation readiness,
+retention operations, or privacy publication.
 
 **Still deferred:** UWB Watch placement checking, QR placement, adaptive coaching, routine checklists, composite behavioural scores,
 general Friends/social features beyond ADR-0016, and later sheep lifecycle systems such as

@@ -13,11 +13,11 @@ enum AppCopy {
         )
         static let title = AppCopyToken(
             id: "iphone.onboarding.welcome.title",
-            value: "Give the phone a resting place."
+            value: "Put the phone to bed before you."
         )
         static let detail = AppCopyToken(
             id: "iphone.onboarding.welcome.detail",
-            value: "Counting Sheep helps make room around sleep by giving the phone a resting place in another room."
+            value: "Counting Sheep helps you make a little space between your screen and your sleep — before bed, overnight, and after you wake."
         )
     }
 

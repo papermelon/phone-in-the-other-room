@@ -107,6 +107,28 @@ final class FocusSessionCoordinator: ObservableObject {
         return run.nightWatchPlan?.nextTransition(after: Date())
     }
 
+    /// Mirrors a fixed, silent cheer onto an already-running ritual. Social
+    /// delivery is deliberately best-effort and can never start or alter a run.
+    func showSlumberPartyCheer(_ feedback: SlumberPartyCheerFeedback) {
+        guard let run else { return }
+        switch run.state {
+        case .placementGrace, .waitingForPhoneAway, .running,
+             .warningPhoneTooClose, .signalLost, .unsupported, .demo:
+            break
+        case .setup, .completed, .endedEarly:
+            return
+        }
+        liveActivity.showSlumberPartyCheer(feedback, for: run)
+        watch.send(
+            WatchMessage(
+                type: .slumberPartyCheer,
+                run: run,
+                proximity: proximityState,
+                slumberPartyCheer: feedback
+            )
+        )
+    }
+
     func start(
         configuration: FocusRunConfiguration,
         focusAccepted: Bool,

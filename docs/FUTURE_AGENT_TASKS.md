@@ -9,7 +9,40 @@ Field legend — **Mode**: Codex / Cursor Plan→Build / Cursor Build / Cursor M
 execute without human sign-off mid-task (final merge review still applies per
 `docs/PLAYBOOKS/pre-merge-review.md`).
 
+## Current implementation
+
+- **2026-08-25 · Slumber Party v4:** The founder-approved canonical contract is documented in
+  ADR-0016. Its additive v4 source now includes the schema fence, long-lived named party/round
+  model, transactional five-party cap, service-only recoverable invites, canonical curated
+  profile, factual activity ledger with per-party fan-out, revisioned status/cheer ledger, and
+  tombstone deletion. Following explicit founder approval, all five Slumber Party migrations,
+  both JWT-protected Edge Functions, and versioned invitation secrets were deployed to the
+  production project on 2026-08-25; the remote migration head, authenticated endpoint behavior,
+  and secret names were verified without exposing values. Do not reintroduce v1–v3 goals,
+  readiness, aliases, orientation, sharing matrix, or global once-only rewards. Updated app
+  distribution, moderation operations, retention policy, privacy publication, Apple-link
+  recovery, and physical QA remain human gates.
+
 ## Recently completed
+
+- **2026-08-26 · Codex:** Rebuilt first-run Phase 1 around one optional six-question behavioral
+  chapter, deterministic explicit-evidence starting patterns, a separate universally eligible
+  claimed-on-choice Shepherd welcome gift, real Mabel/Ollie artwork and finite reduced-motion-safe
+  reaction, ordered compact routine editing, explicit reminder authorization, and a truthful
+  manually started Wind Down summary. Existing onboarding raw steps, reward/storage keys, legacy
+  profiles/pending gifts, configured-user routing, and required Screen Time protection stay
+  compatible. Notification/Live-Activity routine projection, remote privacy cleanup, physical
+  Family Controls/notification verification, and final small-device/assistive visual review are
+  Phase-2 or human follow-ups; do not represent them as shipped.
+
+- **2026-08-25 · Codex:** Streamlined first-run setup to an eight-page full path with two varied
+  narrative compositions, two explicit profile questions that both affect the result, a combined
+  starting-point/three-gift reveal, and route-aware page counts (seven when questions are skipped).
+  Onboarding chrome, timelines, schedule rows, summary rows, and actions now use scalable or
+  adaptive layouts; AX3 simulator captures confirmed scrollable, reachable content. A physical
+  iPhone 12 pass at the affected user's exact text size is still required. The wider app remains
+  only partially Dynamic Type-adaptive; audit non-onboarding fixed display fonts, fixed canvases,
+  and horizontal control rows before claiming app-wide large-text support.
 
 - **2026-08-24 · Codex:** Replaced the uninterrupted first-run journey with schema-6 Home Basics
   and opt-in Around the Farm chapters. Added deterministic schema-five migration, paused-only
@@ -28,6 +61,17 @@ execute without human sign-off mid-task (final merge review still applies per
   device validation (authorization/revocation, terminated monitoring, NFC, Watch/Live Activity,
   notifications, accessibility) and final full-suite/release-candidate evidence; no upload or
   final Screen-Free Morning candidate is claimed here.
+
+- **2026-08-26 · Codex:** Added the Settings-only NFC “Reset and pair this tag” recovery path.
+  It recognizes the established one-record Counting Sheep external type with a valid UUID across
+  reinstalls, updates, devices, accounts, and empty local libraries; blank tags still pair normally.
+  Occupied credentials require explicit confirmation and a second scan before a newly generated
+  credential is written. Primary/backup slot identity, names, purposes, and old-credential
+  retirement are preserved only after a confirmed physical write; foreign/malformed/multi-record,
+  unreadable, read-only, undersized, cancelled, and failed-write cases leave registrations alone.
+  No tag-locking or password-protection APIs are used. Shared policy and library tests cover
+  reinstall/update recovery, forgotten tags, empty-library recovery, primary/backup replacement,
+  foreign rejection, and failed writes. Physical NFC QA remains required.
 
 - **2026-08-23 · Codex:** Added a local-only production pasture scene: each sheep, Ollie, and
   Your Shepherd keeps an independently draggable, footprint-clamped settled position outside
@@ -62,13 +106,13 @@ execute without human sign-off mid-task (final merge review still applies per
   Deterministic collector, decorator, and duplicate-trader simulations cover the stated early,
   14-Wind-Down, and 60-Wind-Down balance targets.
 
-- **2026-08-17 · Cursor:** Addressed schema-three review P1s: overnight terminal publish keeps
+- **2026-08-17 · Cursor:** Addressed legacy schema-three review P1s: overnight terminal publish keeps
   v3 metrics, sleep/restfulness can update after the morning note and HealthKit, join/create
   disclose default-on fields, sharing flags project independently, out-of-bounds minutes are
   rejected rather than clamped, and SQL tests cover leave/delete, retention, seven-night and
   group grants, and grant acknowledgement. Ordinary Debug stays off. No hosted deploy.
 
-- **2026-08-16 · Cursor:** Implemented Slumber Party schema-three social metrics and bounded
+- **2026-08-16 · Cursor:** Implemented legacy Slumber Party schema-three social metrics and bounded
   Farm rewards: independently controlled sharing, named seven-night member progress, rounded
   Wind Down and Phone Away minutes, optional sleep/restfulness, server-authoritative grants, and
   an additive migration after v2. Ordinary Debug stays off. No hosted deploy or Release-flag
@@ -139,7 +183,7 @@ execute without human sign-off mid-task (final merge review still applies per
   independent first-three guarantees for qualifying protected-night and Phone Away meter
   searches, and a 420-minute protected-span rule. Existing settled outcomes remain intact.
 
-- **2026-08-16 · Codex:** Reworked Slumber Party into the founder-directed schema-two shared
+- **2026-08-16 · Codex:** Reworked Slumber Party into the now-legacy schema-two shared
   commitment: one bounded goal for 2–8 people, an explicit lobby/start gate, reusable hashed
   invites, named coarse member progress, optional stable guidance IDs, local Family Controls
   confirmation with coarse shielding evidence, separate social/impact controls, persisted
@@ -352,33 +396,36 @@ execute without human sign-off mid-task (final merge review still applies per
   first, no diagnosis or sleep-quality promise, no notifications/feed/novelty loop, and no
   nighttime interaction requirement. Any future expansion still needs product review.
 
-### D4. Slumber Party hosted release and two-account proof
-- Include recoverable-invite evidence: lost response, relaunch without mutation, same-account
-  credential reveal, explicit CAS replacement, stale-CAS preservation, and no plaintext,
+### D4. Slumber Party v4 production follow-through and two-account proof — backend deployed, human gates pending
+- Include v4 recoverable-invite evidence: lost response, relaunch without mutation, host-only
+  explicit compare-and-swap replacement, stale-CAS preservation, and no ciphertext, plaintext,
   digest, or idempotency material in logs or support captures.
-- **Gate:** ADR-0016 source implementation reviewed and local database validation green.
+- **Gate:** ADR-0016 v4 source implementation reviewed, production migration/function/secret
+  deployment explicitly approved and verified on 2026-08-25; updated app distribution and
+  physical/operational release evidence are still pending.
 - **Mode:** Human + Codex support · **Size:** M · **Autonomous:** no
 - **Accept:** enable Sign in with Apple for the main App ID and regenerate provisioning; configure
   Supabase Apple Auth/manual linking. Roll out in this fixed order: apply every historical
-  migration through `20260816220000_night_flock_social_rewards_v3.sql`; then apply
-  `20260824150000_night_flock_invite_recovery.sql`; then deploy the matching updated Slumber
-  Party state and command functions from the same reviewed revision. Validate hosted non-production
-  with legacy and new clients concurrently before physical two-account QA. Only after those gates
-  pass may a new app/TestFlight build ship; production follows afterward with explicit human
-  approval. Schedule
-  daily retention; establish a staffed moderation and deletion runbook; publish the updated privacy
-  policy and App Privacy answers; then pass a physical two-Apple-account matrix for goal selection,
-  reusable invite preview/redemption, lobby gating, all seven day boundaries, offline outbox,
-  private/no-update state, coarse Instagram shielding evidence, fixed reactions, leave, block,
-  report, Slumber Party deletion, and full account deletion. TestFlight/Release now compiles with
-  `YES`; keep ordinary Debug `NO`. Do not infer multi-device or Apple identity success from
-  simulator tests.
+  migration, the existing invite-recovery migration, then the reviewed v4 fence/service-only
+  ciphertext/five-party-cap/activity-ledger/fan-out/profile/status-cheer/tombstone migration;
+  provision hosted Edge secret `NIGHT_FLOCK_INVITE_KEY_V1` with 32 cryptographically random
+  base64-encoded bytes before deploying matching v4 state and command functions; validate legacy
+  v1–v3 and v4 clients together where an appropriate hosted test lane exists; then complete
+  physical two-account QA against the deployed production backend.
+  `NIGHT_FLOCK_INVITE_KEY_VERSION` defaults to `1`; retain older `NIGHT_FLOCK_INVITE_KEY_Vn`
+  secrets through any rotation until every invitation using their version is retired. The founder
+  owns updated app/TestFlight distribution and the remaining physical release decision.
+  Establish retention and a staffed moderation/deletion runbook, publish privacy materials, and
+  pass physical proof for the five-party cap, active-round invite and late backfill, per-party
+  reward fan-out, status expiry, durable silent cheers, host deletion, and the no-social-UI active
+  Wind Down boundary. TestFlight/Release compiles with `YES`; keep ordinary Debug `NO`. Do not
+  infer multi-device or Apple identity success from simulator tests.
 
 ### D5. Workshop reward decision gate — superseded 2026-08-16
 - **Gate:** Founder choice required before any workshop copy promises a reward.
 - **Mode:** Human · **Size:** S · **Autonomous:** no
-- **Accept:** superseded by ADR-0018. The approved first-run contract is one starter sheep, a
-  pending shepherd wearable from the Wind Down starting point, and one onboarding-practice
+- **Accept:** superseded by ADR-0018. The approved first-run contract is one starter sheep, an
+  independently chosen and immediately claimed Shepherd welcome wearable, and one onboarding-practice
   sheep that does not consume protected-night or Phone Away guarantees. Do not grant extra
   sheep for a five-minute Wind Down test as part of Slumber Party work.
 
@@ -386,12 +433,13 @@ execute without human sign-off mid-task (final merge review still applies per
 - **Gate:** ADR-0018 domain, persistence, Search Journal/Barn/completion origin copy, and tests accepted.
 - **Mode:** Cursor Build · **Size:** M · **Autonomous:** no — user-facing copy and tour flow
   require founder review
-- **Accept:** Phase 2 implemented the universal first-run journey: narrative welcome, Wind Down
-  starting-point questionnaire, sourced recommendations, schedule/routine/shielding, pending
-  shepherd wearable announcement, then a resumable in-app guide across Home, practice, Farm,
-  Slumber Party, Settings, and Nights. Questionnaire completion owns the wearable; skip on the
-  result screen still grants it. Resume restores the current surface. Claim and equip stay
-  separate. Founder review of copy and tour flow remains the merge gate. No `project.yml`,
+- **Accept:** The current first-run journey contains narrative welcome, one optional six-question
+  starting-point chapter, a separate sourced explanation, an independently chosen immediately
+  claimed Shepherd welcome gift, explicit schedule/reminder choices, private ordered routines,
+  required app protection, then a resumable in-app guide across Home, practice, Farm, Slumber
+  Party, Settings, and Nights. Skipping the questions never removes gift eligibility. Wear now
+  equips through the correct effect-aware slot; keep for later preserves appearance. Resume
+  restores the current surface. Founder review of copy and tour flow remains the merge gate. No `project.yml`,
   entitlement, or backend changes. Screenbook remains the five-scenario spike; additional
   first-run states are covered by `#Preview`s.
 
@@ -626,5 +674,9 @@ execute without human sign-off mid-task (final merge review still applies per
 ## Pending human gates — 2026-08-23
 
 - Obtain explicit approval before adding the proposed NFC usage description: “Counting Sheep reads the NFC tags you pair to start and end Wind Down and Phone Away.”
-- Execute hosted and physical-device Slumber Party authentication recovery evidence for controlled 401 and `linked_account_required` across v1/v2/v3 state, direct-command, and outbox lanes. Do not record account IDs, tokens, or unredacted snapshots.
+- Execute hosted and physical-device Slumber Party authentication recovery evidence for controlled 401 and `linked_account_required` across legacy v1/v2/v3 and v4 state, direct-command, and outbox lanes. Do not record account IDs, tokens, or unredacted snapshots.
+- The v4 production schema, invitation secrets, and authenticated functions were explicitly
+  approved/deployed on 2026-08-25. Approve and collect the remaining retention/minimum-moderation
+  policy, updated privacy materials, Apple-link recovery, and physical two-account/three-account
+  QA evidence before broader tester rollout.
 - Brief Access has no `BriefAccessReflectionSheet` and no app-side reflection persistence key. It uses the existing extension/system purpose confirmation and run-scoped tracker; preserve emergency-exit reason storage separately.

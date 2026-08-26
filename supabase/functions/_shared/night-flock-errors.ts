@@ -17,7 +17,12 @@ export type NightFlockErrorCode =
   | "account_unavailable"
   | "snapshot_construction_failed"
   | "service_unavailable"
-  | "internal_error";
+  | "internal_error"
+  | "max_parties"
+  | "host_cannot_leave"
+  | "stale_revision"
+  | "name_change_limit"
+  | "client_upgrade_required";
 
 export type NightFlockRecovery = "reconcileMembership" | "reconcile" | "retry" | "fallbackSchema" | "linkAccount" | "authenticate" | null;
 
@@ -37,20 +42,25 @@ const safeMessages: Record<NightFlockErrorCode, string> = {
   method_not_allowed: "Method not allowed",
   invalid_request: "Invalid request",
   unsupported_schema: "Unsupported schema",
-  active_membership_exists: "You already have an active Slumber Party.",
-  alias_conflict: "Ollie couldn’t choose a unique alias for this lobby.",
+  active_membership_exists: "You already belong to this Slumber Party.",
+  alias_conflict: "Ollie couldn’t choose a unique name for this Slumber Party.",
   invite_member_constraint: "That invitation could not be added. Please try again.",
-  active_invite_exists: "This lobby already has an active invitation.",
+  active_invite_exists: "This Slumber Party already has an active invitation.",
   current_membership_required: "Your Slumber Party membership could not be found.",
   invite_unavailable: "That invitation is no longer available.",
-  lobby_started: "That lobby has already started.",
+  lobby_started: "That Slumber Party is no longer accepting invitations.",
   flock_full: "That Slumber Party is full.",
   blocked_membership: "This Slumber Party is unavailable for this account.",
   host_permission_required: "Only the host can do that.",
   account_unavailable: "Slumber Party is unavailable for this account.",
-  snapshot_construction_failed: "Slumber Party could not load your lobby. Please try again.",
+  snapshot_construction_failed: "This Slumber Party could not open. Please try again.",
   service_unavailable: "Slumber Party is resting offline. Please try again.",
   internal_error: "Slumber Party could not complete that request.",
+  max_parties: "You can be in up to five Slumber Parties.",
+  host_cannot_leave: "Delete this Slumber Party before leaving.",
+  stale_revision: "That change is out of date. Please refresh your Slumber Party.",
+  name_change_limit: "You can change your display name twice every 14 days.",
+  client_upgrade_required: "Update Counting Sheep to use multiple Slumber Parties.",
 };
 
 export function requestIDFor(value: string | null | undefined): string {
@@ -68,6 +78,11 @@ export function nightFlockError(code: NightFlockErrorCode): NightFlockErrorDescr
     case "method_not_allowed": return { status: 405, code, error: safeMessages[code], retryable: false, recovery: null };
     case "unsupported_schema": return { status: 400, code, error: safeMessages[code], retryable: false, recovery: "fallbackSchema" };
     case "active_membership_exists": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcileMembership" };
+    case "max_parties": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcileMembership" };
+    case "host_cannot_leave": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+    case "stale_revision": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+    case "name_change_limit": return { status: 429, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+    case "client_upgrade_required": return { status: 426, code, error: safeMessages[code], retryable: false, recovery: "fallbackSchema" };
     case "alias_conflict": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: null };
     case "invite_member_constraint": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
     case "active_invite_exists": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
@@ -88,13 +103,18 @@ export function classifyNightFlockError(error: unknown): NightFlockErrorDescript
   if (detail.includes("unauthorized") || detail.includes("invalid jwt")) return nightFlockError("unauthorized");
   if (detail.includes("apple-linked account") || detail.includes("linked account required")) return nightFlockError("linked_account_required");
   if (detail.includes("one active slumber party")) return nightFlockError("active_membership_exists");
+  if (detail.includes("max_parties")) return nightFlockError("max_parties");
+  if (detail.includes("host_cannot_leave")) return nightFlockError("host_cannot_leave");
+  if (detail.includes("stale_revision")) return nightFlockError("stale_revision");
+  if (detail.includes("name_change_limit")) return nightFlockError("name_change_limit");
+  if (detail.includes("client_upgrade_required")) return nightFlockError("client_upgrade_required");
   if (detail.includes("night_flock_members_one_active_flock_per_user") || detail.includes("night_flock_members_one_active_record_per_flock")) return nightFlockError("active_membership_exists");
   if (detail.includes("23505") && (detail.includes("night_flock_members_active_alias") || detail.includes("alias"))) return nightFlockError("alias_conflict");
   if (detail.includes("night_flock_members_active_alias")) return nightFlockError("alias_conflict");
   if (detail.includes("23505") && (detail.includes("invite") || detail.includes("member"))) return nightFlockError("invite_member_constraint");
   if (detail.includes("a reusable invitation already exists") || detail.includes("active_invite_exists")) return nightFlockError("active_invite_exists");
   if (detail.includes("snapshot") || detail.includes("projection") || detail.includes("construct") && detail.includes("state")) return nightFlockError("snapshot_construction_failed");
-  if (detail.includes("current membership required")) return nightFlockError("current_membership_required");
+  if (detail.includes("current membership required") || detail.includes("current_membership_required")) return nightFlockError("current_membership_required");
   if (detail.includes("unsupported schem")) return nightFlockError("unsupported_schema");
   if (detail.includes("account already joined this lobby")) return nightFlockError("active_membership_exists");
   if (detail.includes("invite") && (detail.includes("expired") || detail.includes("revoked") || detail.includes("used") || detail.includes("unavailable") || detail.includes("replay") || detail.includes("invalid"))) return nightFlockError("invite_unavailable");

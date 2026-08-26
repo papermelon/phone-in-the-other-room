@@ -20,6 +20,7 @@ struct FarmView: View {
             searchState: viewModel.sheepSearchState,
             protectedNightCount: viewModel.coordinator.progress.totalCompletedRuns,
             isWindDownActive: viewModel.isRunning,
+            shepherdDisplayName: viewModel.shepherdDisplayName,
             pastureVisitSeed: pastureVisitSeed,
             persistedScene: viewModel.pastureSceneSnapshot,
             showsGuideOffer: viewModel.orientationState.activeChapter == .farmTour
@@ -75,6 +76,7 @@ struct FarmDashboardContent: View {
     let searchState: SheepSearchState
     let protectedNightCount: Int
     let isWindDownActive: Bool
+    var shepherdDisplayName: String = ""
     var pastureVisitSeed: UInt64 = 0
     var persistedScene: PastureSceneSnapshot? = nil
     var showsGuideOffer = false
@@ -115,6 +117,7 @@ struct FarmDashboardContent: View {
                     protectedNightCount: protectedNightCount,
                     layoutSeed: pastureVisitSeed,
                     onSelectSheep: onSelectSheep,
+                    shepherdDisplayName: shepherdDisplayName,
                     isWindDownActive: isWindDownActive,
                     persistedScene: persistedScene,
                     onPersistScene: onPersistScene,

@@ -1,26 +1,45 @@
-# Slumber Party non-production QA
+# Slumber Party v4 hosted and physical-device QA
 
-The tracked ordinary Debug default remains disabled. The ignored
-`Config/Supabase.local.xcconfig` Debug override should also stay `NO`; the dedicated
-SlumberPartyQA configuration is the repeatable local forced-`YES` lane with QA diagnostics.
-TestFlight/Release archives compile with `SUPABASE_NIGHT_FLOCK_ENABLED=YES`. This playbook
-exercises the local QA lane; it does not deploy hosted backends or upload TestFlight.
+Slumber Party v4 is an accepted contract with source implemented and locally validated. On
+2026-08-25 the founder approved deployment of all five Slumber Party migrations, both authenticated
+Edge Functions, and versioned invitation secrets to the Release/TestFlight production project.
+The remote schema was verified current and unauthenticated function requests correctly returned
+HTTP 401. This does not establish app distribution, Apple-link recovery, physical-device behavior,
+moderation readiness, retention scheduling, or privacy publication. The tracked ordinary
+Debug default remains disabled. The ignored `Config/Supabase.local.xcconfig` Debug override stays
+`NO`; `SlumberPartyQA` is the repeatable local forced-`YES` lane with diagnostics. TestFlight and
+Release compiling with `SUPABASE_NIGHT_FLOCK_ENABLED=YES` is not evidence of physical QA,
+moderation readiness, or privacy publication. This playbook must not be marked passed until the
+physical matrix below is complete.
 
 ## Mixed-version rollout order
 
-Never release the new client ahead of its recoverable-invite backend. Apply all historical
-migrations first, then `20260824150000_night_flock_invite_recovery.sql`, then deploy the updated
-state and command functions from that same revision. In hosted non-production, run a legacy v2
-client and the new digest-based client against the same lobby and exercise create, conflict, and
-replacement serialization. Next complete the physical two-account matrix below. A new
-app/TestFlight build comes only after those checks; production remains a separate human-approved
-gate.
+Never release a v4 client ahead of its explicit v4-fence backend. Apply all historical migrations,
+then the existing invite-recovery migration, then the v4 migration that adds the strict version
+fence, service-only recoverable invite ciphertext, transactional five-party cap, activity ledger,
+per-party fan-out, canonical profile rules, status revisions/expiry, cheer ledger, tombstones, and
+retention. Before deploying matching state and command functions, provision the hosted Edge
+secret `NIGHT_FLOCK_INVITE_KEY_V1` with exactly 32 cryptographically random bytes encoded as
+base64; `NIGHT_FLOCK_INVITE_KEY_VERSION` defaults to `1`. Missing or invalid key material is a
+hard rollout blocker because even the first invitation cannot be created.
+
+To rotate later, first provision the next `NIGHT_FLOCK_INVITE_KEY_Vn`, then select that version
+through `NIGHT_FLOCK_INVITE_KEY_VERSION`. Keep every earlier version until all invitations
+encrypted with it have expired, been revoked, or been replaced; otherwise existing members lose
+the ability to retrieve their active code. Never commit, print, screenshot, or include either key
+material or decrypted invitation data in support evidence.
+
+Where a dedicated hosted test lane is available, run legacy v1–v3 clients and the v4 client
+concurrently. Prove that a legacy client receives only its own safe legacy projection or
+`unsupported_schema`, never an arbitrary v4 party. The founder approved production backend
+deployment first so an updated TestFlight build can now be distributed for the two-account
+physical matrix below. Broader tester rollout remains a separate human-approved gate.
 
 ## Local preparation and repeatable checks
 
-Use `PhoneInTheOtherRoomSlumberPartyQA` with the `SlumberPartyQA` configuration. It loads the
-tracked development defaults, then an ignored `Config/Supabase.local.xcconfig`, and finally forces
-the Slumber Party flag to `YES`. Do not add credentials to tracked files.
+Use `PhoneInTheOtherRoomSlumberPartyQA` with the `SlumberPartyQA` configuration. It loads tracked
+development defaults, then an ignored `Config/Supabase.local.xcconfig`, and finally forces the
+Slumber Party flag to `YES`. Do not add credentials to tracked files. Run the v4 tests plus:
 
 ```sh
 xcodegen generate
@@ -28,8 +47,7 @@ sh scripts/validate-slumber-party-qa.sh
 xcodebuild test \
   -project PhoneInTheOtherRoom.xcodeproj \
   -scheme PhoneInTheOtherRoomSlumberPartyQA \
-  -destination 'platform=iOS Simulator,name=Counting Sheep App Store iPhone 14 Plus' \
-  -only-testing:PhoneInTheOtherRoomTests/NightFlockDiagnosticsTests
+  -destination 'platform=iOS Simulator,name=Counting Sheep App Store iPhone 14 Plus'
 xcodebuild build \
   -project PhoneInTheOtherRoom.xcodeproj \
   -scheme PhoneInTheOtherRoomSlumberPartyQA \
@@ -39,87 +57,35 @@ npx --yes deno check supabase/functions/night-flock-command/index.ts supabase/fu
 npx --yes deno test --allow-env supabase/functions/_shared/night-flock_test.ts
 ```
 
-For local backend data, start and reset the local stack before the two-account pass:
+Capture validation output, diagnostics on each phone, build/test summaries, function-check output,
+and redacted request/error evidence. Never include URLs, keys, Apple identity tokens, account IDs,
+invite plaintext/ciphertext, invite digests, idempotency keys, app selections, Health data, or
+exact schedules in evidence or logs.
 
-```sh
-npx supabase start
-npx supabase db reset
-npx --yes supabase db lint --local
-docker exec -i supabase_db_counting-sheep psql -U postgres -d postgres \
-  -v ON_ERROR_STOP=1 < supabase/tests/night_flock_test.sql
-```
+## Required v4 two-account matrix
 
-Capture the validation-script output, the diagnostics screen on each phone, Xcode build/test
-summaries, function-check output, and redacted request/error evidence. Never include a URL, key,
-invite plaintext after its intended one-time recipient, or Apple identity token in the evidence.
-
-## Typed error and incident evidence
-
-### Authentication recovery matrix (not yet passed)
-
-Use controlled hosted 401 and `linked_account_required` injection for each v1/v2/v3 state,
-direct-command, and outbox lane. For every case, retain a dated redacted row proving the correct
-Apple account recovers only its bound UUID, a wrong/new account fails closed without exposing a
-snapshot, cancellation/offline does not create an anonymous account, and snapshot/run-context/all
-outbox preservation holds. Evidence fields may contain only build, device label, lane, HTTP status,
-typed code, result, and a redacted screenshot/log reference.
-
-| Date | Lane and injected result | Account case | Preservation / result | Redacted evidence |
-| --- | --- | --- | --- | --- |
-|  | v1/v2/v3 state/direct/outbox · 401 | correct / wrong-new / cancel-offline | pending human execution |  |
-|  | v1/v2/v3 state/direct/outbox · linked_account_required | anonymous / linked / missing | pending human execution |  |
-
-Authentication recovery is transport-quiescent: while reconnect, anonymous-account link, or
-fail-closed presentation is pending, no foreground refresh, reconciliation, direct command, state
-read, or v1/v2/v3 outbox lane may send another request. Capture this in the same redacted evidence
-rows; a successful same-UUID Apple recovery is the only event that resumes the intentional
-refresh/outbox pass. A fail-closed state remains network-silent.
-
-Night-Flock function responses always include a canonical `X-Request-ID` header and the same
-`requestID` in the JSON envelope. Error envelopes keep the stable `error` string for older
-clients and add a typed `code`, `retryable`, and `recovery`. Capture only the request ID,
-operation, HTTP status, and typed code in QA evidence; never copy raw function error data,
-account identifiers, invite codes, idempotency keys, tokens, app selections, Health data, or
-exact schedules. Unknown database details must appear to the client as a generic internal or
-service-unavailable message.
-
-When create-lobby or redeem-invite returns `active_membership_exists`, the app performs one
-state reconciliation and does not replay the mutation or delete the existing lobby. A recovered
-lobby shows: “You already have a Slumber Party. Ollie brought your lobby back.” If state cannot
-be recovered, the Retry action refreshes/reconciles first; it never blindly repeats the mutation.
-Verify the same behavior for a transient service/network failure. Only an explicit
-`unsupported_schema` response permits v3 → v2 → v1 state fallback; authentication,
-membership, network, and 5xx errors do not authorize schema fallback.
-
-## Two physical iPhone / two Apple-account matrix
-
-Install the `PhoneInTheOtherRoomSlumberPartyQA` scheme on two physical iPhones signed in to two
-different Apple accounts. Keep a dated evidence row for each check, with the device, app build,
-account label A/B, expected result, actual result, and screenshot/log reference.
+Install the QA scheme on two physical iPhones signed in to different Apple accounts. Keep a dated
+row for each check with device, build, redacted account label A/B, expected result, actual result,
+and screenshot/log reference. Add a third device/account where it is needed to prove capacity,
+late joining, or host deletion.
 
 | Check | Required observation |
 | --- | --- |
-| QA configuration | Settings → Slumber Party QA diagnostics says flag enabled. Ordinary Debug says disabled. Release/TestFlight has Slumber Party and contains no QA diagnostics destination. |
-| Pre-link identity | Record each anonymous Supabase Auth UUID through approved redacted local/server tooling; after Sign in with Apple, each UUID is unchanged. |
-| Create and reusable invite | A chooses one bounded goal, creates a pending lobby, creates a reusable legible code, previews it on B, and verifies it works until revoked, expired, started, or capacity reaches eight. |
-| Lost response and relaunch | Interrupt A after server acceptance but before the response appears. Relaunch and refresh reveal the same code only after the same account and invite UUID are confirmed; no mutation is sent automatically. |
-| Explicit replacement | Remove A's local credential while the invite remains active. Refresh shows no code. Confirm replacement once; the old code stops and the new code works. Repeating the same request leaves one active invite, while a stale expected UUID revokes nothing. |
-| Lobby gate | Verify joining does not start the party. The host can start only after at least two members have accepted the same goal and completed required local setup. |
-| Locked timezone and seven boundaries | Create with a known IANA timezone, change each phone timezone afterward, and prove days 1–7 follow the locked challenge timezone; day 8 cannot publish. |
-| Shared-goal progress | Verify goal accepted, setup ready, phone tucked away, meaningful partial progress, shared goal completed, qualifying Wind Down completed, and no update shared. The legacy raw value remains decode-compatible; Screen-Free Morning is never shared. No update shared is never completion. |
-| Instagram boundary | Each member uses FamilyActivityPicker locally and confirms Instagram is included. Verify no token, selected-app list, or server claim that Instagram was independently verified. Coarse shielding evidence may be not requested, unavailable, partial, or observed. |
-| Offline outbox and retry | Disconnect B before each allowed check-in, complete local Wind Down, reconnect in foreground, and capture one idempotent eventual delivery. |
-| Per-night private reset | Choose Keep tonight private, prove no check-in, then begin the next eligible preflight and prove sharing is offered again. |
-| Global sharing off | Disable sharing, verify queued records are purged and no new state is sent; re-enable only through the approved user flow. |
-| Completion and reactions | Complete seven days and verify named member progress plus only fixed reactions; no rank, absence explanation, exact time, duration, private routine, HealthKit, or impact data leaks. |
-| Active Wind Down suppression | During an active Wind Down, verify no Slumber Party UI, card, badge, or panel; no reactions, notifications, realtime subscription, or novelty. The only permitted shared work is queueing monotonic `phoneTucked` after barrier validation and, after successful completion, `morningQuietCompleted` via the outbox. Local timer, rewards, and Farm remain authoritative; backend failure never blocks them. |
-| Backend failure independence | Break backend connectivity or return a controlled function failure. Local start, completion, rewards, and Farm result still finish; social work is retryable or fails quietly. |
-| Leave and block | Verify leave removes the local active membership; on a fresh flock verify block creates mutual invisibility and removes the blocker from the flock. |
-| Fixed-enum report | Submit each supported report enum, reject an unsupported value through the function/API, and capture no free-text report path. |
-| Slumber Party deletion | Delete Slumber Party data and verify challenge/social records are removed while local Wind Down, Nights, Farm, and rewards remain. |
-| Full account deletion | Delete the linked online account; verify local ritual data remains, the remote account/session is gone, and a new anonymous session does not inherit deleted party data. |
-| Final Release gate | Build/archive the ordinary `PhoneInTheOtherRoom` Release configuration, run the validation script, and capture `Release: SUPABASE_NIGHT_FLOCK_ENABLED=YES` with no `SLUMBER_PARTY_QA` compiler condition. |
+| Feature and identity | Ordinary Debug remains disabled; QA diagnostics are visible only in the QA configuration. Apple linking preserves the same Supabase UUID. A controlled 401 reconnects only the bound account; wrong/new/cancelled identity fails closed without revealing a snapshot. |
+| Create, name, and profile | Create a named 2–8 person party. Initial/migration canonical display-name selection is free; the third successful change in 14 rolling days is rejected. Farm and every party show the same canonical name. The curated snapshot accepts only allowlisted/revisioned Shepherd look, Ollie ornament, featured sheep definition, and pasture theme; no inventory, wool, or full Farm is sent. |
+| Five-party cap | Create/join five concurrent parties, then race create and redeem for a sixth. Exactly five memberships persist; no oversubscription, partial membership, or duplicate grant is visible. |
+| Invitation encryption deployment | The active version selects a configured, base64-encoded 32-byte hosted secret. Creating, retrieving, and redeeming an invitation succeed; after a controlled non-production rotation, older active invitations remain recoverable while their prior version is retained. No key material appears in tracked files, application responses, logs, screenshots, or evidence. |
+| Invite control | Every current member can retrieve and share the active invite. Only the host can create, replace, or revoke it. It stays redeemable during an active round. Lost response/relaunch reconciles without mutation; explicit host replacement is compare-and-swap and stale replacement revokes nothing. Ciphertext, digest, and idempotency material are absent from RLS, Realtime, logs, and evidence. |
+| Round lifecycle | Host starts only at two or more members. Starting another seven-night round preserves the name and current members. No goal picker, goal acceptance, readiness ceremony, pasture identity, orientation wall, per-party alias, or sharing matrix appears in v4 UI. |
+| Late join and backfill | Join during an active round and submit all factual current-round Wind Down and Phone Away history. Repeating upload/relaunch is idempotent, produces no duplicate record/reward, and makes the record visible to all current members. |
+| Fan-out and rewards | Complete one eligible local Wind Down and Phone Away while belonging to multiple eligible parties. The local ritual settles with network disabled, then reconciliation creates at most one record/reward per eligible party and no global once-only suppression. Inviting, joining, cheering, or changing settings produces no reward. |
+| Statuses and cheers | Realtime status carries `revision`, `observed_at`, and `expires_at`; later runs can restart revision numbering and stale status never replaces a newer run. Sanitized party revision signals refresh membership, invitations, rounded records, and curated profiles. Send a fixed silent cheer while the first Wind Down is active, before any completed record exists. Simulate unavailable Realtime and silent system delivery: durable state and the cheer ledger reconcile accumulated completion cheers without loss or duplication. |
+| Active Wind Down boundary | During active Wind Down, show no Slumber Party UI, card, badge, panel, in-app reaction, or social navigation. Best-effort silent Live Activity/Watch feedback is system-surface only. Local timer, rewards, Farm, shielding, and emergency exit remain authoritative when backend delivery fails. |
+| Leave, host deletion, and retention | An ordinary member can leave. A v4 host cannot leave and must delete: deletion tombstones/revokes/deactivates for everyone while earned inbox grants survive; ownership transfer is future work. Verify minimum moderation audit and retention behavior once the approved policy is deployed. |
+| Safety and account deletion | Report another member using each fixed safety category; block a member and confirm separation across all shared parties and prevention of future shared joins. Delete an Apple-linked account with active v4 membership, hosted groups, profile, source history, grants, and pending outbox work; deletion completes without an Auth foreign-key failure or exposing another account's records. |
+| Legacy fence | Exercise v1, v2, and v3 clients against v4 state/functions. Legacy contracts remain explicitly labeled compatibility only; unknown/ambiguous schema fails safely and never resolves another party. |
 
-Do not mark the release gates complete until every row passes on two physical iPhones with two
-different Apple accounts and the ADR-0016 hosted, moderation, retention, privacy, and deployment
-requirements have separate human approval.
+The production migration/function/secret deployment is complete. Do not mark the remaining v4
+release gates complete until all applicable rows pass on physical devices, retention and
+moderation operations are approved, privacy materials are published, and the founder approves
+broader tester rollout.

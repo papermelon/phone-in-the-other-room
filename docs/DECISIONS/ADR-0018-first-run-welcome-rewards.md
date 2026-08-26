@@ -15,9 +15,9 @@ nights and a separate Phone Away meter, and the five-minute onboarding practice 
 recorded run that awards no sheep. Workshop and first-run copy therefore had no honest early
 Farm payoff without consuming a protected-night guarantee.
 
-The founder directed a universal first-run journey: every new Farm starts with one sheep, a
-short local questionnaire produces a non-clinical Wind Down starting point, a finished
-shepherd wearable is granted as a pending gift, and the first successful practice grants a
+The founder directed a universal first-run journey: every new Farm starts with one sheep, an
+optional local questionnaire produces a non-clinical Wind Down starting point, every person can
+independently choose and immediately claim one finished Shepherd welcome wearable, and the first successful practice grants a
 second sheep. Search guarantees stay independent of that practice gift. A qualifying
 protected-night search also requires a 420-minute protected span.
 
@@ -29,10 +29,29 @@ protected-night search also requires a 420-minute protected span.
   is “Wind Down starting point.” The app does not diagnose a sleep condition or assign a
   medical sleep type. Answers do not include diagnosis, medication history, insomnia scores,
   or sensitive free text.
-- The answers map deterministically to sourced `WindDownGuidanceLibrary` items, suggested
-  evening and morning routine steps, and one finished shepherd wearable from the production
-  Farm Shop catalogue. Completing the questionnaire owns that wearable without equipping it.
-  A later Farm tutorial claims and equips it once.
+- The optional questionnaire contains six categorical questions: bedtime delay, automatic
+  reaching, first morning phone check, overnight phone location, main friction, and desired
+  change. Each answer remains optional in persisted data; legacy defaults and missing values
+  never become behavioral evidence. Small deterministic rules derive one primary starting
+  pattern, and only independently supported evidence can produce a secondary pattern. The main
+  friction may resolve ties; a desired change may favor an already supported pattern but cannot
+  invent one. No score, diagnosis, medication history, or clinical claim is shown.
+- Timing, quiet duration, app selection, and ordered routine ideas belong to their explicit
+  setup stages. A recommendation may explain or prioritize useful local source-linked ideas but
+  must not silently change the person's selected schedule or routine.
+- Custom routine wording stays distinct from the person's broader offline purpose. Editing an
+  evening idea must not rewrite that purpose or turn the routine into notification/Lock Screen
+  copy; future curated-anchor projection belongs to the separate Phase-2 work.
+- The welcome wearable is a genuine gift, independent of the questionnaire and its result.
+  Every first-run person, including someone who skips the questions, may choose exactly one of
+  `shepherd_wool_hat`, `shepherd_moss_coat`, or `shepherd_moon_coat`. Both **Wear now** and
+  **Keep for later** immediately own and claim that chosen item through the existing idempotent
+  welcome ledger. Wearing uses the effect-aware Farm equipment path; keeping preserves the
+  existing outfit, accessory, hair, and skin tone. An older pending grant is claimed in place,
+  and existing claimed ownership never issues a second item.
+- Reminder setup is explained and optional. The final plan states both the person's reminder
+  choice and actual system authorization. Automatic Wind Down starts off: a schedule describes
+  the planned time, a reminder may prompt, and the person opens the app to begin.
 - The first successful five-minute onboarding practice grants `pippin` as a real Farm sheep
   and catalogue discovery, but only on a first-run Farm. Existing farms with search history,
   discoveries, or owned sheep do not receive a leftover-`lastRun` practice gift on upgrade.
@@ -56,7 +75,7 @@ protected-night search also requires a 420-minute protected span.
   origins decode as `.unspecified` and do not consume guarantee counters. Settled historical
   outcomes are not rewritten.
 - User-facing copy does not say “Wind Down search” or “protected night.” First-run sheep and
-  the questionnaire wearable are **welcome gifts**. After a completed Wind Down or Phone Away,
+  the independently chosen Shepherd wearable are **welcome gifts**. After a completed Wind Down or Phone Away,
   a found sheep is “Ollie found a missing sheep.” Clues stay clues. Search Journal remains the
   Farm history place; Ollie’s Search remains the missing-sheep board.
 
@@ -68,6 +87,7 @@ protected-night search also requires a 420-minute protected span.
 - Short completed nights can still retain their factual Wind Down bookend without opening a
   Wind Down find; Screen-Free Morning remains an independent Sunrise Trail occurrence under
   ADR-0019.
-- Phase 2 still owes the questionnaire UI and Farm tutorial claim/equip flow. Search Journal,
-  Barn, and completion origin copy for welcome gifts shipped with this domain slice.
+- The optional questionnaire/result and independent explicit wear-or-keep gift stage ship in
+  first-run onboarding. Phase-2 notification/Live-Activity routine projection and remote privacy
+  cleanup are not completed by this decision.
   This ADR does not change `project.yml`, entitlements, tabs, or hosted backends.

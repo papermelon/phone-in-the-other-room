@@ -52,9 +52,10 @@ final class NightWatchTests: XCTestCase {
         )
     }
 
-    func testNewDefaultsPreferNFCAndAutomaticWindDown() {
+    func testNewDefaultsPreferNFCAndKeepAutomaticWindDownOff() {
         XCTAssertEqual(NightWatchPreferences.defaults.guardKind, .nfcTag)
-        XCTAssertTrue(NightWatchPreferences.defaults.automaticStartEnabled)
+        XCTAssertFalse(NightWatchPreferences.defaults.automaticStartEnabled)
+        XCTAssertFalse(makePreferences().automaticStartEnabled)
     }
 
     func testOlderPreferencesDecodeWithAutomaticStartOff() throws {

@@ -201,10 +201,10 @@ struct FocusRunSetupView: View {
                     morningSteps: routineBinding(for: .morning),
                     onChange: saveRoutineChanges
                 )
-                Text("Custom words stay inside Counting Sheep unless you separately allow them in reminders.")
+                Text("Custom routine words stay inside Counting Sheep. A separate offline purpose appears in reminders only with your permission.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
-                Toggle("Let custom words appear in reminders", isOn: $includePurposeInNotifications)
+                Toggle("Allow offline-purpose words in reminders", isOn: $includePurposeInNotifications)
                     .font(AppTypography.caption)
                     .onChange(of: includePurposeInNotifications) { _, _ in savePurpose() }
             }
@@ -261,11 +261,6 @@ struct FocusRunSetupView: View {
         var preferences = viewModel.nightWatchPreferences
         preferences.syncLegacyFieldsFromRoutine()
         viewModel.nightWatchPreferences = preferences
-        viewModel.updateOfflinePurpose(
-            category: preferences.eveningCueText == nil ? viewModel.offlinePurpose.category : .custom,
-            customText: preferences.eveningCueText,
-            allowsCustomTextInNotifications: includePurposeInNotifications
-        )
         viewModel.saveNightWatchPreferences()
     }
 
@@ -323,16 +318,12 @@ struct FocusRunSetupView: View {
 
     private func loadPurpose() {
         purposeCategory = viewModel.offlinePurpose.category
-        customPurpose = viewModel.nightWatchPreferences.eveningCueText
-            ?? viewModel.offlinePurpose.customText
-            ?? ""
+        customPurpose = viewModel.offlinePurpose.customText ?? ""
         includePurposeInNotifications = viewModel.offlinePurpose.allowsCustomTextInNotifications
     }
 
     private func savePurpose() {
-        let normalized = PhoneFreeCue.normalized(
-            viewModel.nightWatchPreferences.eveningCueText ?? customPurpose
-        )
+        let normalized = PhoneFreeCue.normalized(customPurpose)
         viewModel.updateOfflinePurpose(
             category: normalized == nil ? purposeCategory : .custom,
             customText: normalized,

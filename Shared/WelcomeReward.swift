@@ -238,7 +238,22 @@ enum WelcomeRewardEngine {
         ledger: WelcomeRewardLedger,
         now: Date = Date()
     ) throws -> WelcomeRewardReconciliation {
-        let itemID = recommendation.wearableItemID
+        try recordWelcomeGift(
+            itemID: recommendation.wearableItemID,
+            farm: farm,
+            search: search,
+            ledger: ledger,
+            now: now
+        )
+    }
+
+    static func recordWelcomeGift(
+        itemID: String,
+        farm: FarmState,
+        search: SheepSearchState,
+        ledger: WelcomeRewardLedger,
+        now: Date = Date()
+    ) throws -> WelcomeRewardReconciliation {
         guard WelcomeRewardCatalog.isFinishedShepherdWearable(itemID) else {
             throw FarmActionError.itemNotFound
         }
@@ -256,6 +271,63 @@ enum WelcomeRewardEngine {
             createdAt: now
         ))
         return WelcomeRewardReconciliation(farm: farm, search: search, ledger: ledger, outcome: nil)
+    }
+
+    /// A welcome choice is immediately owned and claimed. Older pending ledgers
+    /// are settled in place; no second item can be minted for the same person.
+    static func claimWelcomeGift(
+        itemID: String,
+        wearNow: Bool,
+        farm: FarmState,
+        search: SheepSearchState,
+        ledger: WelcomeRewardLedger,
+        now: Date = Date()
+    ) throws -> WelcomeRewardReconciliation {
+        if let existing = ledger.grant(of: .profileWearable),
+           existing.itemID != itemID {
+            throw FarmActionError.welcomeGiftAlreadyClaimed
+        }
+
+        var result = try recordWelcomeGift(
+            itemID: itemID,
+            farm: farm,
+            search: search,
+            ledger: ledger,
+            now: now
+        )
+        if result.ledger.claimedWearableGrant == nil {
+            result = try claimWearable(
+                itemID: itemID,
+                farm: result.farm,
+                search: result.search,
+                ledger: result.ledger,
+                now: now
+            )
+        }
+        if wearNow {
+            result = try equipWearable(
+                itemID: itemID,
+                farm: result.farm,
+                search: result.search,
+                ledger: result.ledger
+            )
+        }
+        return result
+    }
+
+    static func previewShepherd(
+        _ shepherd: ShepherdProfile,
+        wearing itemID: String?
+    ) -> ShepherdProfile {
+        guard let itemID,
+              let item = FarmShopCatalog.item(for: itemID) else { return shepherd }
+        var preview = shepherd
+        switch item.effect {
+        case .shepherdAccessory: preview.accessoryItemID = itemID
+        case .shepherdOutfit: preview.outfitItemID = itemID
+        default: break
+        }
+        return preview
     }
 
     static func claimWearable(

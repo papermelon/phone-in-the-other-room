@@ -3,214 +3,133 @@ import SwiftUI
 struct OnboardingProfileStep: View {
     @Binding var draft: OnboardingDraft
 
+    private var question: WindDownProfileQuestion { draft.currentProfileQuestion }
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             onboardingTitle(
-                eyebrow: "WIND DOWN STARTING POINT",
-                title: "A few questions, kept on this iPhone.",
-                detail: "These answers help choose a starting point. They do not diagnose a sleep condition or name a disorder."
+                eyebrow: "YOUR STARTING POINT",
+                title: question.title,
+                detail: question.detail
             )
 
-            questionCard(.usualSchedule) {
-                DatePicker("Bedtime", selection: bedtimeBinding, displayedComponents: .hourAndMinute)
-                DatePicker("Wake time", selection: wakeBinding, displayedComponents: .hourAndMinute)
-            }
+            Text("QUESTION \(draft.profileQuestionIndex + 1) OF \(CountingSheepOnboarding.profileQuestions.count)")
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.grass)
+                .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
 
-            questionCard(.phoneUsePattern) {
-                ForEach(WindDownPhoneUsePattern.allCases) { pattern in
-                    OnboardingChoiceCard(
-                        title: pattern.title,
-                        detail: pattern.detail,
-                        icon: "iphone",
-                        isSelected: draft.profileAnswers.phoneUsePattern == pattern
-                    ) {
-                        updateAnswers { $0.phoneUsePattern = pattern }
-                    }
-                }
-            }
+            VStack(spacing: AppSpacing.xs) { questionChoices }
 
-            questionCard(.awayFriction) {
-                ForEach(WindDownAwayFriction.allCases) { friction in
-                    OnboardingChoiceCard(
-                        title: friction.title,
-                        detail: friction.detail,
-                        icon: "moon.stars.fill",
-                        isSelected: draft.profileAnswers.awayFriction == friction
-                    ) {
-                        updateAnswers { $0.awayFriction = friction }
-                    }
-                }
-            }
-
-            questionCard(.eveningActivities) {
-                activityPicker(
-                    choices: PhoneFreeActivity.eveningChoices,
-                    selected: draft.profileAnswers.eveningActivities,
-                    limit: WindDownRoutineStep.maximumEveningCount
-                ) { activities in
-                    updateAnswers { $0.eveningActivities = activities }
-                }
-            }
-
-            questionCard(.morningActivities) {
-                activityPicker(
-                    choices: PhoneFreeActivity.morningChoices,
-                    selected: draft.profileAnswers.morningActivities,
-                    limit: WindDownRoutineStep.maximumMorningCount
-                ) { activities in
-                    updateAnswers { $0.morningActivities = activities }
-                }
-            }
-
-            questionCard(.desiredWindDownLength) {
-                Picker("Quiet before bed", selection: windDownMinutesBinding) {
-                    ForEach(WindDownProfileAnswer.allowedWindDownMinutes, id: \.self) { minutes in
-                        Text(QuietTimeDurationOptions.label(for: minutes)).tag(minutes)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .frame(minHeight: 44)
-            }
-        }
-    }
-
-    private func questionCard<Content: View>(
-        _ question: WindDownProfileQuestion,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text(question.title)
-                    .font(AppTypography.headline)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(question.detail)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                    .fixedSize(horizontal: false, vertical: true)
-                content()
-            }
         }
         .accessibilityElement(children: .contain)
-        .accessibilityLabel(question.title)
     }
 
-    private func activityPicker(
-        choices: [PhoneFreeActivity],
-        selected: [PhoneFreeActivity],
-        limit: Int,
-        onChange: @escaping ([PhoneFreeActivity]) -> Void
-    ) -> some View {
-        VStack(spacing: AppSpacing.xs) {
-            ForEach(choices) { activity in
-                let isSelected = selected.contains(activity)
-                Button {
-                    var next = selected
-                    if isSelected {
-                        next.removeAll { $0 == activity }
-                    } else if next.count < limit {
-                        next.append(activity)
-                    }
-                    onChange(next)
-                } label: {
-                    HStack {
-                        Text(activity.title)
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.ink)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer()
-                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                            .foregroundStyle(isSelected ? AppColors.grass : AppColors.muted)
-                    }
-                    .frame(minHeight: 44)
+    @ViewBuilder
+    private var questionChoices: some View {
+        switch question {
+        case .bedtimeDelay:
+            ForEach(WindDownBedtimeDelay.allCases) { value in
+                choice(value.title, icon: "moon.stars", selected: draft.profileAnswers.bedtimeDelay == value) {
+                    draft.profileAnswers.bedtimeDelay = value
+                    markAnswered()
                 }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
+        case .automaticReaching:
+            ForEach(WindDownAutomaticReach.allCases) { value in
+                choice(value.title, icon: "hand.tap", selected: draft.profileAnswers.automaticReaching == value) {
+                    draft.profileAnswers.automaticReaching = value
+                    markAnswered()
+                }
+            }
+        case .morningChecking:
+            ForEach(WindDownMorningCheck.allCases) { value in
+                choice(value.title, icon: "sunrise", selected: draft.profileAnswers.morningChecking == value) {
+                    draft.profileAnswers.morningChecking = value
+                    markAnswered()
+                }
+            }
+        case .overnightLocation:
+            ForEach(WindDownOvernightLocation.allCases) { value in
+                choice(value.title, icon: "bed.double", selected: draft.profileAnswers.overnightLocation == value) {
+                    draft.profileAnswers.overnightLocation = value
+                    markAnswered()
+                }
+            }
+        case .awayFriction:
+            ForEach(WindDownAwayFriction.questionnaireChoices) { value in
+                choice(value.title, icon: icon(for: value), selected: frictionSelectionMatches(value)) {
+                    draft.profileAnswers.mainFriction = value
+                    draft.profileAnswers.awayFriction = value
+                    markAnswered()
+                }
+            }
+        case .desiredChange:
+            ForEach(WindDownDesiredChange.questionnaireChoices) { value in
+                choice(value.title, icon: "leaf", selected: draft.profileAnswers.desiredChange == value) {
+                    draft.profileAnswers.desiredChange = value
+                    markAnswered()
+                }
+            }
+        case .usualSchedule, .phoneUsePattern, .eveningActivities,
+             .morningActivities, .desiredWindDownLength:
+            EmptyView()
         }
     }
 
-    private var bedtimeBinding: Binding<Date> {
-        timeBinding(
-            hour: draft.profileAnswers.bedtimeHour,
-            minute: draft.profileAnswers.bedtimeMinute
-        ) { hour, minute in
-            updateAnswers {
-                $0.bedtimeHour = hour
-                $0.bedtimeMinute = minute
-            }
+    private func choice(
+        _ title: String,
+        icon: String,
+        selected: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        OnboardingChoiceCard(
+            title: title,
+            detail: "",
+            icon: icon,
+            isSelected: selected,
+            action: action
+        )
+    }
+
+    private func markAnswered() {
+        draft.completedProfileQuestions.insert(question)
+    }
+
+    private func icon(for friction: WindDownAwayFriction) -> String {
+        switch friction {
+        case .habitReach: return "hand.tap.fill"
+        case .unfinishedEvening: return "ellipsis.circle.fill"
+        case .morningCheck: return "sun.max.fill"
+        case .irregularDays: return "calendar.badge.clock"
+        case .hardToStopFeed: return "rectangle.stack.fill"
+        case .messages: return "message.fill"
+        case .noDifficulty: return "leaf.fill"
+        case .somethingElse: return "ellipsis"
         }
     }
 
-    private var wakeBinding: Binding<Date> {
-        timeBinding(
-            hour: draft.profileAnswers.wakeHour,
-            minute: draft.profileAnswers.wakeMinute
-        ) { hour, minute in
-            updateAnswers {
-                $0.wakeHour = hour
-                $0.wakeMinute = minute
-            }
-        }
-    }
-
-    private var windDownMinutesBinding: Binding<Int> {
-        Binding(
-            get: { draft.profileAnswers.desiredWindDownMinutes },
-            set: { minutes in updateAnswers { $0.desiredWindDownMinutes = minutes } }
-        )
-    }
-
-    private func timeBinding(
-        hour: Int,
-        minute: Int,
-        onChange: @escaping (Int, Int) -> Void
-    ) -> Binding<Date> {
-        Binding(
-            get: {
-                Calendar.current.date(
-                    bySettingHour: hour,
-                    minute: minute,
-                    second: 0,
-                    of: Date()
-                ) ?? Date()
-            },
-            set: { date in
-                let components = Calendar.current.dateComponents([.hour, .minute], from: date)
-                onChange(components.hour ?? hour, components.minute ?? minute)
-            }
-        )
-    }
-
-    private func updateAnswers(_ mutate: (inout WindDownProfileAnswer) -> Void) {
-        var answers = draft.profileAnswers
-        mutate(&answers)
-        draft.profileAnswers = WindDownProfileAnswer(
-            bedtimeHour: answers.bedtimeHour,
-            bedtimeMinute: answers.bedtimeMinute,
-            wakeHour: answers.wakeHour,
-            wakeMinute: answers.wakeMinute,
-            phoneUsePattern: answers.phoneUsePattern,
-            awayFriction: answers.awayFriction,
-            eveningActivities: answers.eveningActivities,
-            morningActivities: answers.morningActivities,
-            desiredWindDownMinutes: answers.desiredWindDownMinutes
-        )
+    private func frictionSelectionMatches(_ value: WindDownAwayFriction) -> Bool {
+        draft.profileAnswers.mainFriction == value
+            || (value == .somethingElse && draft.profileAnswers.mainFriction == .noDifficulty)
     }
 }
 
-#Preview("Questionnaire") {
+#Preview("Starting point · one question") {
     ScrollView {
-        OnboardingProfileStep(draft: .constant(OnboardingDraft()))
+        OnboardingProfileStep(draft: .constant(OnboardingDraft(step: .profile)))
             .padding()
     }
     .background(AppColors.paper)
 }
 
-#Preview("Questionnaire · dark · large type") {
-    ScrollView {
-        OnboardingProfileStep(draft: .constant(OnboardingDraft()))
+#Preview("Questionnaire · narrow · large type") {
+    var draft = OnboardingDraft(step: .profile)
+    draft.profileQuestionIndex = 4
+    return ScrollView {
+        OnboardingProfileStep(draft: .constant(draft))
             .padding()
     }
+    .frame(width: 320)
     .background(AppColors.paper)
     .environment(\.dynamicTypeSize, .accessibility3)
     .preferredColorScheme(.dark)

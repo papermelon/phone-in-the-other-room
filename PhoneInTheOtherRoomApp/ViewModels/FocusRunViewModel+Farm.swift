@@ -2,6 +2,47 @@ import Foundation
 
 @MainActor
 extension FocusRunViewModel {
+    var userProfile: CountingSheepUserProfile {
+        persistence.userProfile
+    }
+
+    var shepherdDisplayName: String {
+        userProfile.displayName
+    }
+
+    /// Returns inline feedback when the name was not changed, keeping the
+    /// editor gentle without presenting a punitive alert.
+    @discardableResult
+    func saveShepherdDisplayName(_ proposedName: String, at date: Date? = nil) -> String? {
+        let current = persistence.userProfile
+        let decision = CountingSheepDisplayNameChangeRules.decision(
+            current: current,
+            proposedName: proposedName,
+            now: date ?? nowProvider()
+        )
+
+        switch decision {
+        case .accepted:
+            persistence.userProfile = CountingSheepDisplayNameChangeRules.applying(
+                decision,
+                to: current
+            )
+            synchronizeSlumberPartyProfile()
+            objectWillChange.send()
+            return nil
+        case let .noChange(normalizedName):
+            return "Ollie already knows you as \(normalizedName)."
+        case .invalid(.tooShort):
+            return "Try a name with at least \(CountingSheepDisplayName.minimumLength) characters."
+        case .invalid(.tooLong):
+            return "Try a name with no more than \(CountingSheepDisplayName.maximumLength) characters."
+        case .invalid(.unsupportedCharacter):
+            return "Names can use letters, numbers, spaces, apostrophes, and dashes."
+        case .changeLimitReached:
+            return "You can choose a new name again after one of your recent changes has had time to rest."
+        }
+    }
+
     var pastureSceneSnapshot: PastureSceneSnapshot? {
         persistence.farmPastureSceneSnapshot
     }
@@ -178,9 +219,22 @@ extension FocusRunViewModel {
             updatedAt: date
         )
         persistence.windDownProfileRecord = record
+    }
+
+    var claimedWelcomeGiftItemID: String? {
+        persistence.welcomeRewardLedger.claimedWearableGrant?.itemID
+    }
+
+    var existingWelcomeGiftItemID: String? {
+        persistence.welcomeRewardLedger.grant(of: .profileWearable)?.itemID
+    }
+
+    @discardableResult
+    func claimWelcomeGift(_ itemID: String, wearNow: Bool, at date: Date = Date()) -> Bool {
         do {
-            let result = try WelcomeRewardEngine.recordProfileGift(
-                recommendation: recommendation,
+            let result = try WelcomeRewardEngine.claimWelcomeGift(
+                itemID: itemID,
+                wearNow: wearNow,
                 farm: coordinator.farmState,
                 search: coordinator.sheepSearchState,
                 ledger: persistence.welcomeRewardLedger,
@@ -189,11 +243,14 @@ extension FocusRunViewModel {
             coordinator.farmState = result.farm
             persistence.farmState = result.farm
             persistence.welcomeRewardLedger = result.ledger
+            synchronizeSlumberPartyProfile()
+            return true
         } catch let error as FarmActionError {
             farmActionMessage = farmMessage(for: error)
         } catch {
             farmActionMessage = "The Farm could not save that change. Please try once more."
         }
+        return false
     }
 
     func claimPendingWelcomeWearable() {
@@ -206,6 +263,7 @@ extension FocusRunViewModel {
             coordinator.farmState = result.farm
             persistence.farmState = result.farm
             persistence.welcomeRewardLedger = result.ledger
+            synchronizeSlumberPartyProfile()
             if let itemID = result.ledger.claimedWearableGrant?.itemID,
                let title = FarmShopCatalog.item(for: itemID)?.title {
                 farmActionMessage = "\(title) is waiting. Ollie can help you put it on."
@@ -229,6 +287,7 @@ extension FocusRunViewModel {
             )
             coordinator.farmState = result.farm
             persistence.farmState = result.farm
+            synchronizeSlumberPartyProfile()
             if let itemID = result.ledger.claimedWearableGrant?.itemID,
                let title = FarmShopCatalog.item(for: itemID)?.title {
                 farmActionMessage = "\(title) is on the shepherd."
@@ -264,6 +323,7 @@ extension FocusRunViewModel {
         persistence.farmState = result.farm
         persistence.sheepSearchState = result.search
         persistence.nightFlockRewardLedger = result.ledger
+        synchronizeSlumberPartyProfile()
         if !result.applied.isEmpty {
             nightFlockViewModel.acknowledgeAppliedGrants(result.applied.map(\.id))
             if result.applied.contains(where: { $0.rewardKind == .sheepSearch }) {
@@ -276,7 +336,39 @@ extension FocusRunViewModel {
         }
     }
 
+    /// Reuses the established local Farm reward ledger before returning IDs to
+    /// schema four for acknowledgement. Party deletion cannot erase an inbox
+    /// item before this local idempotency check has happened.
+    func applyV4SlumberPartyGrants(_ inbox: [NightFlockV4GrantInboxItem]) -> [UUID] {
+        let grants = inbox.compactMap(NightFlockV4GrantAdapter.legacyGrant)
+        guard !grants.isEmpty else { return [] }
+        let result = NightFlockRewardEngine.apply(
+            grants: grants,
+            farm: coordinator.farmState,
+            search: coordinator.sheepSearchState,
+            ledger: persistence.nightFlockRewardLedger,
+            protectedNightCount: max(1, coordinator.progress.totalCompletedRuns)
+        )
+        coordinator.farmState = result.farm
+        coordinator.sheepSearchState = result.search
+        if let outcome = result.outcome { coordinator.latestSheepSearchOutcome = outcome }
+        persistence.farmState = result.farm
+        persistence.sheepSearchState = result.search
+        persistence.nightFlockRewardLedger = result.ledger
+        synchronizeSlumberPartyProfile()
+        if !result.applied.isEmpty { farmActionMessage = "A little wool arrived from Slumber Party." }
+        // An acknowledgement may have failed after this durable ledger write.
+        // Return prior and newly applied inbox IDs so the v4 ack command can
+        // converge without duplicating a Farm reward.
+        return inbox.compactMap { item in
+            result.ledger.hasApplied(item.grantID) ? item.grantID : nil
+        }
+    }
+
     func publishSlumberPartyOutcome(for run: FocusRun) {
+        // v4 records the factual local ritual independently of legacy goal
+        // sharing and of Farm settlement. It never delays either path.
+        nightFlockViewModel.publishV4TerminalActivity(for: run)
         if run.nightWatchPlan?.role == .additionalQuiet, run.completedSuccessfully {
             let metrics = slumberPartyMetrics(for: run)
             nightFlockViewModel.sharePhoneAwayMetrics(metrics, for: run, at: nowProvider())
@@ -361,11 +453,21 @@ extension FocusRunViewModel {
             coordinator.farmState = state
             persistence.farmState = state
             farmActionMessage = message
+            synchronizeSlumberPartyProfile()
         } catch let error as FarmActionError {
             farmActionMessage = farmMessage(for: error)
         } catch {
             farmActionMessage = "The Farm could not save that change. Please try once more."
         }
+    }
+
+    /// Farm state is reduced locally into the small curated snapshot before it
+    /// crosses the Slumber Party boundary. The network gate inside the view
+    /// model makes this a no-op for offline or unlinked accounts.
+    private func synchronizeSlumberPartyProfile() {
+        nightFlockViewModel.synchronizeV4ProfileIfNeeded(
+            serverProfile: nightFlockViewModel.v4Profile
+        )
     }
 
     private func farmMessage(for error: FarmActionError) -> String {

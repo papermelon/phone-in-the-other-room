@@ -6,6 +6,7 @@ enum WatchMessageType: String, Codable {
     case distanceCheckRequest, distanceCheckEnded
     case watchDistanceReading
     case proximityStateUpdate, focusRunStateUpdate, rewardEarned, calibrationUpdate
+    case slumberPartyCheer
 }
 
 struct WatchMessage: Codable {
@@ -15,16 +16,19 @@ struct WatchMessage: Codable {
     var reward: RewardItem?
     /// A bounded, reward-free projection. Missing on older phone/watch pairs.
     var screenFreeMorning: ScreenFreeMorningPresentation?
+    /// Brief, silent social encouragement. Missing on older phone/watch pairs.
+    var slumberPartyCheer: SlumberPartyCheerFeedback?
     var tokenData: Data?
     var distanceMeters: Double?
     var sentAt: Date
 
-    init(type: WatchMessageType, run: FocusRun? = nil, proximity: ProximityState? = nil, reward: RewardItem? = nil, screenFreeMorning: ScreenFreeMorningPresentation? = nil, tokenData: Data? = nil, distanceMeters: Double? = nil, sentAt: Date = Date()) {
+    init(type: WatchMessageType, run: FocusRun? = nil, proximity: ProximityState? = nil, reward: RewardItem? = nil, screenFreeMorning: ScreenFreeMorningPresentation? = nil, slumberPartyCheer: SlumberPartyCheerFeedback? = nil, tokenData: Data? = nil, distanceMeters: Double? = nil, sentAt: Date = Date()) {
         self.type = type
         self.run = run
         self.proximity = proximity
         self.reward = reward
         self.screenFreeMorning = screenFreeMorning
+        self.slumberPartyCheer = slumberPartyCheer
         self.tokenData = tokenData
         self.distanceMeters = distanceMeters
         self.sentAt = sentAt

@@ -47,6 +47,19 @@ struct PhoneBedTagEditorSheet: View {
             }
             .background(AppColors.paper.ignoresSafeArea()).navigationTitle(request.role.displayName).navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+            .confirmationDialog(
+                "Reset and pair this tag?",
+                isPresented: Binding(
+                    get: { viewModel.pendingNFCTagReset != nil },
+                    set: { if !$0 { viewModel.cancelResetAndPairNFCTag() } }
+                ),
+                presenting: viewModel.pendingNFCTagReset
+            ) { _ in
+                Button("Reset and pair this tag") { viewModel.confirmResetAndPairNFCTag() }
+                Button("Cancel", role: .cancel) { viewModel.cancelResetAndPairNFCTag() }
+            } message: { _ in
+                Text("This is a previously used Counting Sheep tag. Its old credential will stay invalid. A fresh credential will be written only after you confirm and Core NFC confirms the write.")
+            }
         }
     }
 
@@ -72,6 +85,117 @@ struct PhoneBedTagEditorSheet: View {
         case .uses(let tag): viewModel.changeNFCTagPurposes(id: tag.id, purposes: purposes)
         case .replace: viewModel.provisionNFCTag(forActiveRun: viewModel.activeRun?.guardKind == .nfcTag, role: request.role, name: name, purposes: purposes)
         }
+    }
+}
+
+/// Settings-only recovery for tags that survived an app reinstall, device
+/// change, forgotten local library, or an older build. The first scan only
+/// identifies an occupied Counting Sheep credential; the confirmation starts
+/// a fresh scan before any physical write is attempted.
+struct ResetAndPairPhoneBedTagWizard: View {
+    @EnvironmentObject private var viewModel: FocusRunViewModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedRole: PhoneBedTagRole = .primary
+    @State private var name = NamedPhoneBedTagRegistration.defaultName
+    @State private var purposes = NamedPhoneBedTagRegistration.allPurposes
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                PixelCard {
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
+                        Text("Reset and pair this tag").font(AppTypography.display(28))
+                        Text("Use this when a writable tag was paired on another iPhone, before reinstalling, or in an older Counting Sheep build. Blank tags pair normally. Existing Counting Sheep credentials require your confirmation before they are replaced.")
+                            .font(AppTypography.body)
+                        roleChoices
+                        TextField("Tag name", text: $name).textFieldStyle(.roundedBorder)
+                        Text("Names are local-only and limited to \(NamedPhoneBedTagRegistration.maximumNameLength) characters.")
+                            .font(AppTypography.caption).foregroundStyle(AppColors.muted)
+                        purposeChoices
+                        Button("Scan tag") {
+                            viewModel.beginResetAndPairNFCTag(role: selectedRole, name: name, purposes: purposes)
+                        }
+                        .buttonStyle(PixelPrimaryButtonStyle())
+                        .disabled(viewModel.isProvisioningNFCTag || purposes.isEmpty)
+                        if !viewModel.nfcStatus.isEmpty {
+                            Text(viewModel.nfcStatus).font(AppTypography.caption).foregroundStyle(AppColors.muted)
+                        }
+                        if viewModel.isRunning {
+                            Text("Reset and pairing is unavailable while Wind Down is active. Your current registration is unchanged.")
+                                .font(AppTypography.caption).foregroundStyle(AppColors.muted)
+                        }
+                    }
+                }
+                .padding(AppSpacing.md)
+            }
+            .background(AppColors.paper.ignoresSafeArea())
+            .navigationTitle("Tag recovery")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+            .onAppear(perform: loadSelection)
+            .onChange(of: selectedRole) { _, _ in loadSelection() }
+            .confirmationDialog(
+                "Reset and pair this tag?",
+                isPresented: Binding(
+                    get: { viewModel.pendingNFCTagReset != nil },
+                    set: { if !$0 { viewModel.cancelResetAndPairNFCTag() } }
+                ),
+                presenting: viewModel.pendingNFCTagReset
+            ) { _ in
+                Button("Reset and pair this tag") { viewModel.confirmResetAndPairNFCTag() }
+                Button("Cancel", role: .cancel) { viewModel.cancelResetAndPairNFCTag() }
+            } message: { _ in
+                Text("This is a previously used Counting Sheep tag. Its old credential will stay invalid. A fresh credential will be written only after you confirm and Core NFC confirms the write.")
+            }
+        }
+    }
+
+    private var roleChoices: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("SAVE IN SLOT").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+            ForEach(PhoneBedTagRole.allCases, id: \.self) { role in
+                Button {
+                    selectedRole = role
+                } label: {
+                    HStack {
+                        Text(role.displayName).font(AppTypography.body)
+                        Spacer()
+                        if selectedRole == role { Image(systemName: "checkmark.circle.fill") }
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(AppColors.ink)
+                .padding(.horizontal, AppSpacing.sm)
+                .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.sm))
+            }
+        }
+    }
+
+    private var purposeChoices: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("USES").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+            ForEach(PhoneBedTagPurpose.allCases, id: \.self) { purpose in
+                Toggle(purpose.displayName, isOn: Binding(
+                    get: { purposes.contains(purpose) },
+                    set: { enabled in
+                        if enabled { purposes.insert(purpose) } else { purposes.remove(purpose) }
+                    }
+                ))
+                .font(AppTypography.body)
+                .frame(minHeight: 44)
+            }
+        }
+    }
+
+    private func loadSelection() {
+        guard let tag = viewModel.phoneBedTagLibrary.tag(for: selectedRole) else {
+            name = NamedPhoneBedTagRegistration.defaultName
+            purposes = NamedPhoneBedTagRegistration.allPurposes
+            return
+        }
+        name = tag.name
+        purposes = tag.purposes
     }
 }
 

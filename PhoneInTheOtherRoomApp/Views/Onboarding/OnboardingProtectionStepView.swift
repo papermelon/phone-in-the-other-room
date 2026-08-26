@@ -15,7 +15,7 @@ struct OnboardingProtectionStep: View {
             onboardingTitle(
                 eyebrow: "APP LIMITS",
                 title: "Protect the quiet you’re making.",
-                detail: "Choose apps or categories in Apple’s picker to help keep the phone away during Wind Down. Counting Sheep stays available."
+                detail: contextualProtectionDetail
             )
 
             OnboardingChoiceCard(
@@ -47,6 +47,22 @@ struct OnboardingProtectionStep: View {
             if draft.shieldingEnabled {
                 shieldingCard
             }
+        }
+    }
+
+    private var contextualProtectionDetail: String {
+        guard !draft.profileSkipped else {
+            return "Choose the apps or categories you would like to pause while your phone rests. Counting Sheep stays available."
+        }
+        switch draft.profileRecommendation.kind {
+        case .oneMoreThing:
+            return "You mentioned that one more scroll can pull you back. Choose the apps you would like to pause while your phone rests."
+        case .messagePull:
+            return "You mentioned that messages can pull you back. Choose the apps you would like to pause while your phone rests."
+        case .automaticReach:
+            return "You mentioned that reaching can happen automatically. Choose the apps you would like to pause while your phone rests."
+        default:
+            return "Choose apps or categories in Apple’s picker to pause while your phone rests. Counting Sheep stays available."
         }
     }
 

@@ -7,7 +7,7 @@ struct WindDownTagManagementCard: View {
     @State private var tagToForget: NamedPhoneBedTagRegistration?
     @State private var showLostTagWizard = false
     @State private var lostTagRole: PhoneBedTagRole?
-    @State private var resyncRole: PhoneBedTagRole?
+    @State private var showResetAndPairWizard = false
     @State private var expandedTagActions = Set<UUID>()
 
     var body: some View {
@@ -29,12 +29,15 @@ struct WindDownTagManagementCard: View {
                         managementButton("Add backup tag", icon: "plus.circle") { editorRequest = .add(role: .backup) }
                     }
                 }
+                managementButton("Reset and pair this tag", icon: "arrow.triangle.2.circlepath") {
+                    showResetAndPairWizard = true
+                }
                 if !viewModel.phoneBedTagLibrary.tags.isEmpty {
                     managementButton("Lost a tag? Pair a replacement", icon: "arrow.triangle.2.circlepath") {
                         lostTagRole = nil; showLostTagWizard = true
                     }
                     if !viewModel.phoneBedTagLibrary.previouslyPairedTokenDigests.isEmpty {
-                        Text("Resync writes a fresh credential to a retired tag. Its old credential stays retired, and no slot changes until the write succeeds.")
+                        Text("Reset and pair writes a fresh credential to a previously used tag. Its old credential stays retired, and no slot changes until the write succeeds.")
                             .font(AppTypography.caption).foregroundStyle(AppColors.muted)
                     }
                 }
@@ -45,17 +48,25 @@ struct WindDownTagManagementCard: View {
         }
         .sheet(item: $editorRequest) { PhoneBedTagEditorSheet(request: $0).environmentObject(viewModel) }
         .sheet(isPresented: $showLostTagWizard) { LostPhoneBedTagWizard(initialRole: lostTagRole).environmentObject(viewModel) }
+        .sheet(isPresented: $showResetAndPairWizard) { ResetAndPairPhoneBedTagWizard().environmentObject(viewModel) }
         .confirmationDialog("Forget this tag?", isPresented: Binding(get: { tagToForget != nil }, set: { if !$0 { tagToForget = nil } }), presenting: tagToForget) { tag in
             Button("Forget \(tag.name)", role: .destructive) { viewModel.forgetNFCTag(id: tag.id); tagToForget = nil }
             Button("Keep tag", role: .cancel) { tagToForget = nil }
         } message: { tag in
             Text("\(tag.name) will no longer start or end its assigned runs. Nothing is erased from the physical tag.")
         }
-        .confirmationDialog("Resync a retired tag?", isPresented: Binding(get: { resyncRole != nil }, set: { if !$0 { resyncRole = nil } }), presenting: resyncRole) { role in
-            Button("Write fresh credential") { viewModel.resyncRetiredNFCTag(role: role); resyncRole = nil }
-            Button("Not now", role: .cancel) { resyncRole = nil }
-        } message: { role in
-            Text("Hold the retired tag near your iPhone. Counting Sheep will write a fresh credential for the \(role.displayName.lowercased()) slot only after it confirms the physical write.")
+        .confirmationDialog(
+            "Reset and pair this tag?",
+            isPresented: Binding(
+                get: { viewModel.pendingNFCTagReset != nil },
+                set: { if !$0 { viewModel.cancelResetAndPairNFCTag() } }
+            ),
+            presenting: viewModel.pendingNFCTagReset
+        ) { _ in
+            Button("Reset and pair this tag") { viewModel.confirmResetAndPairNFCTag() }
+            Button("Cancel", role: .cancel) { viewModel.cancelResetAndPairNFCTag() }
+        } message: { _ in
+            Text("This is a previously used Counting Sheep tag. Its old credential will stay invalid. A fresh credential will be written only after you confirm and Core NFC confirms the write.")
         }
     }
 
@@ -89,7 +100,9 @@ struct WindDownTagManagementCard: View {
         managementButton("Change uses", icon: "checklist") { editorRequest = .uses(tag) }
         managementButton("Replace", icon: "arrow.triangle.2.circlepath") { editorRequest = .replace(tag) }
         if !viewModel.phoneBedTagLibrary.previouslyPairedTokenDigests.isEmpty {
-            managementButton("Resync retired tag for this slot", icon: "arrow.triangle.2.circlepath") { resyncRole = tag.role }
+            managementButton("Reset and pair this tag for this slot", icon: "arrow.triangle.2.circlepath") {
+                viewModel.beginResetAndPairNFCTag(role: tag.role, name: tag.name, purposes: tag.purposes)
+            }
         }
         managementButton("Forget", icon: "trash") { tagToForget = tag }
     }

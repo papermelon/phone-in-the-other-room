@@ -17,6 +17,13 @@ to fail.
 The emotional register is a children's-book farm at dusk: soft, patient, a bit whimsical.
 The user is tired. Meet them there.
 
+First-run behavioral guidance must be honest and optional. Six short categorical questions stay
+local, support only non-clinical patterns justified by explicitly supplied answers, and never
+silently choose a schedule or routine. A genuine welcome cosmetic belongs to every new person,
+including someone who skips that check-in; choosing one claims it exactly once, with an explicit
+wear-now or keep-for-later decision. A schedule describes when Wind Down is planned, an optional
+authorized reminder can prompt the person, and only the person's action begins it by default.
+
 ## Habit formation and Farm progression
 
 Counting Sheep deliberately competes with the pull of social apps. It should become a
@@ -97,12 +104,14 @@ explicit founder direction.
   roots remain reachable so a person can adjust preferences or inspect their own records;
   a persistent return control leads directly back to Wind Down. This access exception must
   not become a feed, game loop, sheep teaser, or reason to keep holding the phone.
-- **Keep Slumber Party outside the active ritual.** When enabled, Farm and Home may show one
-  full-width contextual card that supports commitment and shared joy. During Wind Down there is
-  no social panel, live update, reaction, notification, or novelty. Routines, schedules, absence,
-  Health data, exact schedules, and private details are never shared. The invited group may
-  see named, coarse progress for the one shared goal, including setup readiness and meaningful
-  nightly states. No update shared is not completion; the morning view stays finite and calm.
+- **Keep Slumber Party outside the active ritual.** The feature-gated v4 surface leads from
+  Farm and Home to Your Slumber Parties, a people-first list and detail for long-lived,
+  invite-only groups with fixed seven-night rounds. During Wind Down there is no in-app social
+  panel, live update, reaction, notification, or novelty. Silent Live Activity or Watch feedback
+  is best-effort system-surface feedback only and reconciles later; it never changes the ritual.
+  Current members can see factual round records, revisioned expiring statuses, curated profile
+  snapshots, and fixed cheers. Routines, schedules, absence explanations, Health data, and other
+  private details are never shared.
 - **Respect the morning.** Morning is when rewards land, stats are glanced at, and streak
   warmth is felt. Keep the chosen morning-quiet window calm; do not turn it into a routine
   checklist or an app-browsing session.
@@ -135,21 +144,20 @@ explicit founder direction.
   HealthKit samples, source names, app selections, and personal reflections stay local.
   Optional impact sharing must be purpose-limited, separately consented, date-free, minimal,
   inspectable in copy, stoppable, and deletable.
-- **Share a clear social truth.** Slumber Party shares named aliases and seven-night member
-  progress inside the invited group. Default-on join-consent fields are shared-goal progress,
-  Wind Down completed or partly completed, rounded Wind Down quiet minutes, rounded Phone Away
-  minutes, phone tucked away, and coarse shielding status. Explicit opt-ins are selected
-  sourced routine ideas, sleep duration, and morning restfulness. No update shared is never
-  completion. Exact schedules, private routine or reflection text, Family Controls tokens, app
-  lists, raw reports, raw HealthKit samples, NFC, purpose, notification, and impact data stay
-  outside the social contract. Apple’s opaque app token cannot prove an app name to the server:
-  a member confirms Instagram locally, while Counting Sheep may report only coarse shielding
-  observation. Bounded Farm grants may follow qualifying shared nights; opening the app,
-  inviting, joining, reacting, or changing settings never creates them.
-
-  Screen-Free Morning choices, minutes, Sunrise Trail results, wool, purpose cues, and Brief
-  Access are private local data. The legacy social raw value `morningQuietCompleted` is retained
-  only for decoding and means a qualifying terminal Wind Down in new presentation.
+- **Share a clear social truth.** Slumber Party v4 uses one party-level contract, not a sharing
+  matrix: all current members see the active round's factual Wind Down and Phone Away records,
+  revisioned statuses that expire, curated profile snapshots, and fixed cheers. A party is not a
+  public social profile or a discovery surface. The canonical display name appears in Farm and in
+  every party; the initial or migration selection is free, then only two successful changes are
+  allowed in each rolling 14-day window. Its curated snapshot may contain only the selected
+  Shepherd look, Ollie ornament, featured sheep definition, and pasture theme, using allowlisted
+  catalogue identifiers and revisions. No full Farm, inventory, wool, exact schedules, private
+  routine or reflection text, Family Controls token, app list, raw report, raw HealthKit sample,
+  NFC, purpose, notification, or impact data enters the social contract. A member may backfill
+  factual activity after joining an active round; the server treats it as idempotent self-report,
+  not verification. One qualifying local activity may earn separately in each eligible party,
+  up to the five-party cap. Opening the app, inviting, joining, cheering, or changing settings
+  never creates rewards.
 
 ## Durable product commitments
 

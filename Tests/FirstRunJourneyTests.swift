@@ -7,7 +7,7 @@ final class FirstRunJourneyTests: XCTestCase {
         XCTAssertEqual(CountingSheepOnboardingStep.profile.rawValue, 6)
         XCTAssertEqual(
             CountingSheepOnboardingStep.visibleSteps,
-            [.welcome, .profile, .recommendation, .schedule, .quiet, .protection, .gift, .ready]
+            [.welcome, .profile, .recommendation, .gift, .schedule, .quiet, .protection, .ready]
         )
 
         var legacy = OnboardingDraft()
@@ -202,52 +202,54 @@ final class FirstRunJourneyTests: XCTestCase {
             awayFriction: .habitReach,
             eveningActivities: [.read],
             morningActivities: [.openCurtains],
-            desiredWindDownMinutes: 45
+            desiredWindDownMinutes: 45,
+            automaticReaching: .often,
+            morningChecking: .immediately
         )
+        draft.bedtimeHour = 21
+        draft.windDownMinutes = 60
         let recommendation = draft.profileRecommendation
         draft.applyRecommendation(recommendation)
 
         XCTAssertEqual(recommendation.displayName, "Wind Down starting point")
-        XCTAssertEqual(FirstRunGuideCopy.recommendationTitle, "Your Wind Down starting point")
-        XCTAssertEqual(recommendation.kind, .bothEdges)
+        XCTAssertEqual(recommendation.kind, .morningMagnet)
+        XCTAssertEqual(recommendation.secondaryKind, .automaticReach)
+        XCTAssertFalse(recommendation.kind.compactMeaning.isEmpty)
         XCTAssertFalse(recommendation.summary.lowercased().contains("disorder"))
         XCTAssertFalse(recommendation.summary.lowercased().contains("insomnia"))
-        XCTAssertEqual(draft.windDownMinutes, 45)
-        XCTAssertEqual(draft.bedtimeHour, 22)
+        XCTAssertEqual(draft.windDownMinutes, 60)
+        XCTAssertEqual(draft.bedtimeHour, 21)
         XCTAssertFalse(recommendation.guidanceIDs.isEmpty)
         for id in recommendation.guidanceIDs {
             XCTAssertTrue(WindDownGuidanceLibrary.items.contains { $0.id == id })
         }
-        XCTAssertEqual(
-            FirstRunGuideCopy.recommendationDetail,
-            "Based on what you told us, these ideas may be useful places to begin."
-        )
     }
 
-    func testSkippingTheRecommendationAfterCompletingTheQuestionnaireKeepsTheGift() {
+    func testStartingPointIsPersistedOnlyAfterTheReviewedResultIsAccepted() {
         var draft = OnboardingDraft(step: .profile)
-        XCTAssertEqual(draft.continueVisibleStep(), .grantStartingPoint)
+        draft.profileQuestionIndex = CountingSheepOnboarding.profileQuestions.count - 1
+        XCTAssertEqual(draft.continueVisibleStep(), .none)
         XCTAssertFalse(draft.profileSkipped)
         XCTAssertEqual(draft.step, .recommendation)
 
-        XCTAssertEqual(draft.skipVisibleStep(), .keepCompletedProfile)
+        XCTAssertEqual(draft.continueVisibleStep(), .grantStartingPoint)
         XCTAssertFalse(draft.profileSkipped)
-        XCTAssertEqual(draft.step, .schedule)
+        XCTAssertEqual(draft.step, .gift)
     }
 
     func testSkippingTheQuestionnaireDoesNotGrantAStartingPoint() {
         var draft = OnboardingDraft(step: .profile)
         XCTAssertEqual(draft.skipVisibleStep(), .skipQuestionnaire)
         XCTAssertTrue(draft.profileSkipped)
-        XCTAssertEqual(draft.step, .schedule)
+        XCTAssertEqual(draft.step, .gift)
         XCTAssertEqual(draft.continueVisibleStep(), .none)
     }
 
-    func testContinueFromRecommendationSignalsGrantWithoutMarkingTheProfileSkipped() {
+    func testContinueFromRecommendationPersistsProfileWithoutGrantingACosmetic() {
         var draft = OnboardingDraft(step: .recommendation)
         XCTAssertEqual(draft.continueVisibleStep(), .grantStartingPoint)
         XCTAssertFalse(draft.profileSkipped)
-        XCTAssertEqual(draft.step, .schedule)
+        XCTAssertEqual(draft.step, .gift)
     }
 
     func testWelcomeNarrativeAvoidsMedicalPromises() {

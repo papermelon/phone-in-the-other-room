@@ -34,9 +34,37 @@ const commitmentCommandFields: Record<string, string[]> = {
 };
 
 export type NightFlockCommandPayload = Record<string, unknown> & {
-  schemaVersion: 1 | 2 | 3;
+  schemaVersion: 1 | 2 | 3 | 4;
   command: string;
   idempotencyKey: string;
+};
+
+const v4CommandFields: Record<string, string[]> = {
+  createParty: ["schemaVersion", "command", "name", "timeZoneIdentifier", "idempotencyKey"],
+  renameParty: ["schemaVersion", "command", "partyID", "name", "idempotencyKey"],
+  startRound: ["schemaVersion", "command", "partyID", "timeZoneIdentifier", "idempotencyKey"],
+  createInvite: ["schemaVersion", "command", "partyID", "idempotencyKey"],
+  replaceInvite: ["schemaVersion", "command", "partyID", "expectedInviteID", "idempotencyKey"],
+  revokeInvite: ["schemaVersion", "command", "partyID", "inviteID", "idempotencyKey"],
+  retrieveInvite: ["schemaVersion", "command", "partyID", "idempotencyKey"],
+  previewInvite: ["schemaVersion", "command", "inviteCode", "idempotencyKey"],
+  redeemInvite: ["schemaVersion", "command", "inviteCode", "idempotencyKey"],
+  leaveParty: ["schemaVersion", "command", "partyID", "idempotencyKey"],
+  deleteParty: ["schemaVersion", "command", "partyID", "idempotencyKey"],
+  blockMember: ["schemaVersion", "command", "partyID", "memberID", "idempotencyKey"],
+  reportMember: ["schemaVersion", "command", "partyID", "memberID", "reason", "idempotencyKey"],
+  deleteAccount: ["schemaVersion", "command", "idempotencyKey"],
+  updatePublicProfile: [
+    "schemaVersion", "command", "expectedRevision", "displayName", "nameSelectionKind", "skinToneID", "hairStyleID", "shepherdOutfitID", "shepherdAccessoryID", "ollieOrnamentID", "featuredSheepDefinitionID", "pastureThemeID", "idempotencyKey",
+  ],
+  publishActivity: [
+    "schemaVersion", "command", "sourceEventID", "kind", "outcome", "startedAt", "endedAt", "windDownMinutes", "phoneAwayMinutes", "statusRevision", "idempotencyKey",
+  ],
+  completeBackfill: ["schemaVersion", "command", "partyID", "roundID", "cursor", "idempotencyKey"],
+  publishStatus: ["schemaVersion", "command", "sourceEventID", "status", "revision", "observedAt", "idempotencyKey"],
+  react: ["schemaVersion", "command", "partyID", "activityID", "cheer", "idempotencyKey"],
+  cheerMember: ["schemaVersion", "command", "partyID", "memberID", "cheer", "idempotencyKey"],
+  acknowledgeGrant: ["schemaVersion", "command", "grantID", "idempotencyKey"],
 };
 
 const socialCommandFields: Record<string, string[]> = {
@@ -58,11 +86,13 @@ export function validateNightFlockCommand(
   body: Record<string, unknown>,
   headerIdempotencyKey: string | null,
 ): NightFlockCommandPayload {
-  if (body.schemaVersion !== 1 && body.schemaVersion !== 2 && body.schemaVersion !== 3) {
+  if (body.schemaVersion !== 1 && body.schemaVersion !== 2 && body.schemaVersion !== 3 && body.schemaVersion !== 4) {
     throw new Error("Unsupported schemaVersion");
   }
   const command = requireString(body, "command");
-  const allowedFields = body.schemaVersion === 3
+  const allowedFields = body.schemaVersion === 4
+    ? v4CommandFields[command]
+    : body.schemaVersion === 3
     ? socialCommandFields[command]
     : body.schemaVersion === 2
     ? commitmentCommandFields[command]
@@ -79,7 +109,9 @@ export function validateNightFlockCommand(
     throw new Error("Idempotency key mismatch");
   }
 
-  if (body.schemaVersion === 3) {
+  if (body.schemaVersion === 4) {
+    validateV4Command(body, command);
+  } else if (body.schemaVersion === 3) {
     validateSocialCommand(body, command);
   } else if (body.schemaVersion === 2) {
     validateCommitmentCommand(body, command);
@@ -129,12 +161,83 @@ export function validateNightFlockCommand(
   return { ...body, schemaVersion: body.schemaVersion, command, idempotencyKey } as NightFlockCommandPayload;
 }
 
-export function validateNightFlockState(body: Record<string, unknown>): { schemaVersion: 1 | 2 | 3 } {
+export type NightFlockStateContract = { schemaVersion: 1 | 2 | 3 } | {
+  schemaVersion: 4; scope: "list" | "party"; partyID?: string; cursor?: string;
+};
+
+export function validateNightFlockState(body: Record<string, unknown>): NightFlockStateContract {
+  if (body.schemaVersion === 4) {
+    requireExactFields(body, ["schemaVersion", "scope", "partyID", "cursor"]);
+    const scope = requireEnum(body, "scope", ["list", "party"]) as "list" | "party";
+    if (scope === "party") requireUUID(body, "partyID");
+    if (scope === "list" && body.partyID !== undefined) throw new Error("Invalid partyID");
+    if (body.cursor !== undefined && (typeof body.cursor !== "string" || body.cursor.length < 1 || body.cursor.length > 128)) {
+      throw new Error("Invalid cursor");
+    }
+    return { schemaVersion: 4, scope, partyID: body.partyID as string | undefined, cursor: body.cursor as string | undefined };
+  }
   requireExactFields(body, ["schemaVersion"]);
   if (body.schemaVersion !== 1 && body.schemaVersion !== 2 && body.schemaVersion !== 3) {
     throw new Error("Unsupported schemaVersion");
   }
   return { schemaVersion: body.schemaVersion };
+}
+
+function validateV4Command(body: Record<string, unknown>, command: string): void {
+  const partyCommands = new Set([
+    "renameParty", "startRound", "createInvite", "replaceInvite", "revokeInvite", "retrieveInvite",
+    "leaveParty", "deleteParty", "completeBackfill", "react", "blockMember", "reportMember", "cheerMember",
+  ]);
+  if (partyCommands.has(command)) requireUUID(body, "partyID");
+  switch (command) {
+    case "createParty":
+    case "renameParty":
+      requireBoundedText(body, "name", 1, 48);
+      if (command === "createParty" && !isTimeZoneIdentifier(requireString(body, "timeZoneIdentifier"))) throw new Error("Invalid timeZoneIdentifier");
+      break;
+    case "startRound": if (!isTimeZoneIdentifier(requireString(body, "timeZoneIdentifier"))) throw new Error("Invalid timeZoneIdentifier"); break;
+    case "replaceInvite": requireUUID(body, "expectedInviteID"); break;
+    case "revokeInvite": requireUUID(body, "inviteID"); break;
+    case "previewInvite":
+    case "redeemInvite":
+      if (!/^[A-HJ-NP-Z2-9]{12}$/.test(requireString(body, "inviteCode").toUpperCase())) throw new Error("Invalid inviteCode");
+      body.inviteCode = requireString(body, "inviteCode").toUpperCase();
+      break;
+    case "updatePublicProfile":
+      if (typeof body.expectedRevision !== "number" || !Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0) throw new Error("Invalid expectedRevision");
+      validateDisplayName(body);
+      requireEnum(body, "nameSelectionKind", ["initial", "migration", "change"]);
+      validateFlatPresentation(body);
+      break;
+    case "publishActivity":
+      requireUUID(body, "sourceEventID");
+      requireEnum(body, "kind", ["windDown", "phoneAway"]);
+      requireEnum(body,"outcome",["completed","partlyCompleted"]); for(const field of ["startedAt","endedAt"]){if(typeof body[field]!=="string"||Number.isNaN(Date.parse(body[field])))throw new Error(`Invalid ${field}`);} if(Date.parse(body.endedAt as string)<Date.parse(body.startedAt as string))throw new Error("Invalid activity interval"); for(const field of ["windDownMinutes","phoneAwayMinutes","statusRevision"]){if(typeof body[field]!=="number"||!Number.isSafeInteger(body[field])||(body[field] as number)<0)throw new Error(`Invalid ${field}`);} if((body.windDownMinutes as number)>180||(body.phoneAwayMinutes as number)>240)throw new Error("Values outside bounds");
+      break;
+    case "publishStatus": requireUUID(body,"sourceEventID"); requireEnum(body,"status",["windDownStarting","phoneAwayActive","windDownCompleted","phoneAwayCompleted"]); if(typeof body.revision!=="number"||!Number.isSafeInteger(body.revision)||body.revision<0)throw new Error("Invalid revision"); if(typeof body.observedAt!=="string"||Number.isNaN(Date.parse(body.observedAt)))throw new Error("Invalid observedAt"); break;
+    case "completeBackfill":
+      requireUUID(body, "roundID");
+      requireBoundedText(body, "cursor", 1, 128);
+      break;
+    case "react":
+      requireUUID(body, "activityID"); requireEnum(body, "cheer", ["warmWave", "moonGlow", "pawPrint"]);
+      break;
+    case "blockMember": requireUUID(body, "memberID"); break;
+    case "reportMember": requireUUID(body, "memberID"); requireEnum(body, "reason", ["unwantedContact", "harmfulConduct", "impersonation", "otherSafetyConcern"]); break;
+    case "cheerMember": requireUUID(body, "memberID"); requireEnum(body, "cheer", ["warmWave", "moonGlow", "pawPrint"]); break;
+    case "acknowledgeGrant": requireUUID(body, "grantID"); break;
+  }
+}
+
+function validateDisplayName(body: Record<string, unknown>): void { const value=requireString(body,"displayName").normalize("NFC").trim().replace(/\s+/gu," "); if(Array.from(value).length<2||Array.from(value).length>24||!/^[\p{L}\p{M}\p{N} '’\-‐‑]+$/u.test(value))throw new Error("Invalid displayName"); body.displayName=value; }
+function validateFlatPresentation(p: Record<string,unknown>): void { requireEnum(p,"skinToneID",["porcelain","warm","olive","brown","deep"]); requireEnum(p,"hairStyleID",["cropped","waves","curls","coils","long"]); requireEnum(p,"shepherdOutfitID",["none","shepherd_moss_coat","shepherd_moon_coat","shepherd_field_overalls","shepherd_star_keeper_cloak"]); requireEnum(p,"shepherdAccessoryID",["none","shepherd_wool_hat","shepherd_clover_headscarf","shepherd_moon_beanie"]); requireEnum(p,"ollieOrnamentID",["none","ollie_moss_bandana","ollie_moon_kerchief","ollie_brass_bell","ollie_clover_collar","ollie_sunrise_scarf","ollie_star_keeper_cape"]); requireEnum(p,"featuredSheepDefinitionID",["none","mabel","pippin","bramble","clementine","oat","midnight","juniper","hazel","ramsey","luna","marigold","wisp"]); requireEnum(p,"pastureThemeID",["pasture_meadow","pasture_moonlit","pasture_sunrise"]); }
+
+function isTimeZoneIdentifier(value: string): boolean { return /^[A-Za-z0-9_+\-/]{1,64}$/.test(value); }
+function requireBoundedText(body: Record<string, unknown>, key: string, minimum: number, maximum: number): string {
+  const value = requireString(body, key).trim();
+  if (value.length < minimum || value.length > maximum || /[\u0000-\u001f\u007f]/.test(value)) throw new Error(`Invalid ${key}`);
+  body[key] = value;
+  return value;
 }
 
 function validateCommitmentCommand(body: Record<string, unknown>, command: string): void {

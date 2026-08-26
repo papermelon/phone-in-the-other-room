@@ -5,6 +5,7 @@ struct FarmPastureView: View {
     let protectedNightCount: Int
     let layoutSeed: UInt64
     let onSelectSheep: (FlockSheep) -> Void
+    var shepherdDisplayName: String = ""
     var isWindDownActive: Bool = false
     var persistedScene: PastureSceneSnapshot? = nil
     var onPersistScene: (PastureSceneSnapshot) -> Void = { _ in }
@@ -107,17 +108,20 @@ struct FarmPastureView: View {
                     playAction: { selectedCharacter = .ollie(pastureIndex: pasture) }
                 ) { OllieFarmAvatar(accessoryItemID: state.equipment.ollieAccessoryItemID, size: 72) }
 
+                let shepherdEntity = PastureSceneEntityID.shepherd(pastureIndex: pasture)
+                let shepherdPoint = sceneController.position(for: shepherdEntity)
                 character(
-                    entity: .shepherd(pastureIndex: pasture),
+                    entity: shepherdEntity,
                     in: proxy.size,
                     coordinateSpace: coordinateSpace(for: pasture),
-                    label: "Your Shepherd in the pasture",
+                    label: shepherdAccessibilityLabel,
                     normalHint: "Double tap to customize Your Shepherd. Long press and drag to place Your Shepherd in the pasture.",
                     playHint: "Double tap to customize Your Shepherd.",
                     openActionTitle: "Open customization",
                     normalAction: onSelectShepherd,
                     playAction: onSelectShepherd
                 ) { ShepherdAvatarView(profile: state.shepherd, size: 72) }
+                shepherdNameplate(at: shepherdPoint, in: proxy.size)
 
                 PastureSceneEffectsLayer(
                     effects: sceneController.effects,
@@ -306,4 +310,34 @@ struct FarmPastureView: View {
         return "\(sheep.displayName), \(sheep.rarity.title), \(ready ? "wool ready" : "wool regrowing")"
     }
 
+    private var shepherdAccessibilityLabel: String {
+        let name = shepherdDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? "Your Shepherd in the pasture" : "\(name)’s Shepherd in the pasture"
+    }
+
+    @ViewBuilder
+    private func shepherdNameplate(at point: PastureScenePoint, in size: CGSize) -> some View {
+        let name = shepherdDisplayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !name.isEmpty {
+            Text(name)
+                .font(AppTypography.caption.weight(.bold))
+                .dynamicTypeSize(...DynamicTypeSize.large)
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .foregroundStyle(AppColors.ink)
+                .padding(.horizontal, AppSpacing.xs)
+                .padding(.vertical, AppSpacing.xxs)
+                .frame(maxWidth: 118)
+                .background(AppColors.paper.opacity(0.92), in: Capsule())
+                .overlay {
+                    Capsule().stroke(AppColors.stroke.opacity(0.34), lineWidth: 1)
+                }
+                .position(
+                    x: size.width * point.x,
+                    y: min(size.height - 14, max(16, size.height * point.y + 48))
+                )
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
 }

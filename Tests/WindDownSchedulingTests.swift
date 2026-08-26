@@ -18,7 +18,8 @@ final class WindDownSchedulingTests: XCTestCase {
             eveningActivity: .read,
             morningActivity: .openCurtains,
             guardKind: .honorTimer,
-            isConfigured: true
+            isConfigured: true,
+            automaticStartEnabled: true
         )
 
         let routine = WindDownRoutine.primary(from: preferences)
