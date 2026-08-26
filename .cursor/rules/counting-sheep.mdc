@@ -1,0 +1,28 @@
+---
+description: Counting Sheep repo adapter — canonical context lives in AGENTS.md and docs/
+alwaysApply: true
+---
+
+This repo has a repo-native operating system for agents. This rule is a thin adapter —
+do not rely on it for content; read the source files.
+
+Before making any change:
+
+1. Read `AGENTS.md` (canonical — overrides every other doc, including README).
+2. Read `docs/PROJECT_BRIEF.md` and `docs/PRODUCT_PRINCIPLES.md` for product boundaries.
+3. For the task type, follow the matching workflow:
+   - SwiftUI features → `skills/swiftui-feature/SKILL.md`
+   - User-facing copy → `skills/product-copy-review/SKILL.md`
+   - TestFlight/release checks → `skills/testflight-review/SKILL.md` + `docs/PLAYBOOKS/testflight-readiness.md`
+   - Reviewing changes → `docs/PLAYBOOKS/pre-merge-review.md`
+   - Git operations → `docs/PLAYBOOKS/git-workflow.md`
+4. Check `docs/FUTURE_AGENT_TASKS.md` — your task may already be scoped there.
+
+Hard constraints (details and rationale in AGENTS.md):
+
+- Never hand-edit `PhoneInTheOtherRoom.xcodeproj/project.pbxproj`; edit `project.yml` and run `xcodegen generate`.
+- Do not build on or "finish" `Views/MVP/`, `MockData/`, Farm/Friends/Shop, or Screen Time UI — gated by `docs/DECISIONS/ADR-0003` and `ADR-0004`.
+- No dark-pattern gamification, guilt copy, urgency, or medical claims — hard product boundary (`docs/PRODUCT_PRINCIPLES.md`).
+- Run `xcodebuild test -project PhoneInTheOtherRoom.xcodeproj -scheme PhoneInTheOtherRoom` before declaring work done; `Shared/` changes need tests.
+- Never push, force-push, or amend without explicit human instruction.
+- README and some older docs contain known drift — verify claims against code and `AGENTS.md` §16.

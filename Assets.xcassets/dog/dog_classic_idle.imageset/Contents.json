@@ -1,0 +1,13 @@
+{
+  "images" : [
+    {
+      "filename" : "dog_classic_idle.png",
+      "idiom" : "universal",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

@@ -1,0 +1,7 @@
+// Copy these assignments to Supabase.local.xcconfig and replace only the placeholders.
+// The local file is ignored by Git. Never add a secret/service-role key here.
+SUPABASE_URL = https:/$()/YOUR_PROJECT_REF.supabase.co
+SUPABASE_PUBLISHABLE_KEY = sb_publishable_REPLACE_WITH_SINGAPORE_DEVELOPMENT_KEY
+SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED = NO
+SUPABASE_FEEDBACK_ENABLED = NO
+SUPABASE_NIGHT_FLOCK_ENABLED = NO

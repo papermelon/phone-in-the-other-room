@@ -28,7 +28,7 @@ struct ProximityClassifier {
         }
 
         guard let latest = readings.last else {
-            let fallbackBucket: ProximityBucket = context.watchReachable ? .sameRoom : .signalLost
+            let fallbackBucket: ProximityBucket = context.watchReachable ? .waitingForDistance : .signalLost
             return ProximityState(bucket: fallbackBucket, distanceMeters: nil, confidence: .low, source: .watchConnectivity, lastUpdated: context.now, statusText: fallbackBucket.label, detailText: "Waiting for fresh distance readings.")
         }
 
@@ -52,7 +52,7 @@ struct ProximityClassifier {
     }
 
     private func bucket(for distance: Double?, readings: [ProximityReading], allowSustainedOtherRoom: Bool) -> ProximityBucket {
-        guard let distance else { return .sameRoom }
+        guard let distance else { return .waitingForDistance }
         if distance < thresholds.withYouMaxMeters { return .withYou }
         if distance < thresholds.sameRoomMaxMeters { return .sameRoom }
         if distance < thresholds.otherRoomMinMeters { return .doorway }
@@ -69,6 +69,7 @@ struct ProximityClassifier {
     private func smooth(rawBucket: ProximityBucket, previous: ProximityBucket?, readings: [ProximityReading]) -> ProximityBucket {
         guard let previous else { return rawBucket }
         if rawBucket == .probablyOtherRoom || rawBucket == .withYou { return rawBucket }
+        if rawBucket == .waitingForDistance { return .waitingForDistance }
         if previous == .probablyOtherRoom, rawBucket == .doorway { return .probablyOtherRoom }
         if previous == .withYou, rawBucket == .sameRoom, readings.count < thresholds.sustainedSamples { return .withYou }
         return rawBucket
@@ -93,10 +94,11 @@ struct ProximityClassifier {
 
     private func detail(for bucket: ProximityBucket, confidence: ProximityConfidence) -> String {
         switch bucket {
+        case .waitingForDistance: return "Ollie is waiting for a live distance check."
         case .withYou: return "Ollie can tell the phone is still close."
         case .sameRoom: return "The phone seems nearby. Keep moving toward the pasture."
         case .doorway: return "The phone is drifting away; Ollie is watching for a stable trail."
-        case .probablyOtherRoom: return "Sustained readings say the phone is away enough for a Focus Run."
+        case .probablyOtherRoom: return "Sustained readings say the phone has reached its resting place."
         case .signalLost: return "The trail went quiet. Ollie will wait before judging the run."
         case .unsupported: return "Phone distance is unavailable on this setup."
         case .demo: return "Local simulation is driving a reliable shepherding run."

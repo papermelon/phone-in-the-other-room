@@ -1,31 +1,12 @@
 import AppIntents
-import Foundation
 
-struct PrepareFocusRunIntent: AppIntent {
-    static var title: LocalizedStringResource = "Start Focus Run"
-    static var description = IntentDescription("Prepares Phone in the Other Room with a Focus Run duration. Add Apple's Focus action and Open App action in Shortcuts to complete the flow.")
-
-    @Parameter(title: "Minutes", default: 25)
-    var minutes: Int
-
-    @Parameter(title: "Seconds", default: 0)
-    var seconds: Int
+struct PrepareNightWatchIntent: AppIntent {
+    static var title: LocalizedStringResource = "Open Wind Down"
+    static var description = IntentDescription("Opens Counting Sheep so you can tuck your phone in for the night.")
+    static var openAppWhenRun = true
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        FocusRunShortcutStore.savePendingDuration(minutes: minutes, seconds: seconds)
-        let label = durationLabel(minutes: minutes, seconds: seconds)
-        return .result(dialog: "Prepared a \(label) Focus Run. Turn on Focus in this Shortcut, then open Phone in the Other Room.")
-    }
-
-    private func durationLabel(minutes: Int, seconds: Int) -> String {
-        let clampedMinutes = min(max(minutes, 0), 180)
-        let clampedSeconds = min(max(seconds, 0), 59)
-        let totalSeconds = max(1, (clampedMinutes * 60) + clampedSeconds)
-        let displayMinutes = totalSeconds / 60
-        let displaySeconds = totalSeconds % 60
-        if displaySeconds == 0 { return "\(displayMinutes)-minute" }
-        if displayMinutes == 0 { return "\(displaySeconds)-second" }
-        return "\(displayMinutes)-minute \(displaySeconds)-second"
+        .result(dialog: "Ollie is ready for Wind Down. Put your phone to bed when you are ready.")
     }
 }
 
@@ -34,14 +15,14 @@ struct PhoneInTheOtherRoomShortcuts: AppShortcutsProvider {
 
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
-            intent: PrepareFocusRunIntent(),
+            intent: PrepareNightWatchIntent(),
             phrases: [
-                "Start a Focus Run in \(.applicationName)",
-                "Prepare a Focus Run in \(.applicationName)",
-                "Send Ollie out in \(.applicationName)"
+                "Start Wind Down in \(.applicationName)",
+                "Put my phone to bed with \(.applicationName)",
+                "Start Wind Down with Ollie in \(.applicationName)"
             ],
-            shortTitle: "Start Focus Run",
-            systemImageName: "figure.run"
+            shortTitle: "Wind Down",
+            systemImageName: "moon.stars.fill"
         )
     }
 }

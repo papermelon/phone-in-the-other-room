@@ -1,7 +1,12 @@
 import Foundation
 
 enum WatchMessageType: String, Codable {
-    case startFocusRun, stopFocusRun, endFocusRunEarly, pingPhone, pingWatch, nearbyDiscoveryToken, proximityStateUpdate, focusRunStateUpdate, rewardEarned, calibrationUpdate, demoDistanceUpdate
+    case startFocusRun, stopFocusRun, endFocusRunEarly, pingPhone, pingWatch
+    case nearbyDiscoveryToken, nearbyDiscoveryTokenAcknowledged
+    case distanceCheckRequest, distanceCheckEnded
+    case watchDistanceReading
+    case proximityStateUpdate, focusRunStateUpdate, rewardEarned, calibrationUpdate
+    case slumberPartyCheer
 }
 
 struct WatchMessage: Codable {
@@ -9,18 +14,32 @@ struct WatchMessage: Codable {
     var run: FocusRun?
     var proximity: ProximityState?
     var reward: RewardItem?
+    /// A bounded, reward-free projection. Missing on older phone/watch pairs.
+    var screenFreeMorning: ScreenFreeMorningPresentation?
+    /// Brief, silent social encouragement. Missing on older phone/watch pairs.
+    var slumberPartyCheer: SlumberPartyCheerFeedback?
     var tokenData: Data?
-    var demoDistance: Double?
+    var distanceMeters: Double?
     var sentAt: Date
 
-    init(type: WatchMessageType, run: FocusRun? = nil, proximity: ProximityState? = nil, reward: RewardItem? = nil, tokenData: Data? = nil, demoDistance: Double? = nil, sentAt: Date = Date()) {
+    init(type: WatchMessageType, run: FocusRun? = nil, proximity: ProximityState? = nil, reward: RewardItem? = nil, screenFreeMorning: ScreenFreeMorningPresentation? = nil, slumberPartyCheer: SlumberPartyCheerFeedback? = nil, tokenData: Data? = nil, distanceMeters: Double? = nil, sentAt: Date = Date()) {
         self.type = type
         self.run = run
         self.proximity = proximity
         self.reward = reward
+        self.screenFreeMorning = screenFreeMorning
+        self.slumberPartyCheer = slumberPartyCheer
         self.tokenData = tokenData
-        self.demoDistance = demoDistance
+        self.distanceMeters = distanceMeters
         self.sentAt = sentAt
+    }
+}
+
+extension WatchMessage {
+    func isFreshRealtimeMessage(for currentRun: FocusRun?, now: Date = Date()) -> Bool {
+        guard let currentRun, run?.id == currentRun.id else { return false }
+        guard sentAt <= now.addingTimeInterval(5) else { return false }
+        return now.timeIntervalSince(sentAt) <= FocusRunRules.realtimeWatchMessageFreshnessSeconds
     }
 }
 
@@ -35,4 +54,3 @@ enum WatchMessageCodec {
         return try? JSONDecoder().decode(WatchMessage.self, from: data)
     }
 }
-

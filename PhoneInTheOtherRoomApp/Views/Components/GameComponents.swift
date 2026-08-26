@@ -242,6 +242,7 @@ struct IsometricFocusYardView: View {
     private var distanceProgress: CGFloat {
         guard let distanceMeters else {
             switch bucket {
+            case .waitingForDistance: return 0.18
             case .withYou: return 0.06
             case .sameRoom: return 0.28
             case .doorway: return 0.58
@@ -261,7 +262,7 @@ struct IsometricFocusYardView: View {
     }
 
     private var trailColor: Color {
-        if let distanceMeters, distanceMeters < 0.3 { return OlliePalette.amber }
+        if let distanceMeters, distanceMeters < 2.0 { return OlliePalette.amber }
         switch state {
         case .completed: return OlliePalette.success
         case .endedEarly: return OlliePalette.sadBlue
@@ -276,8 +277,7 @@ struct IsometricFocusYardView: View {
 
     private var distanceCaption: String {
         guard let distanceMeters else { return "Waiting for live distance" }
-        if distanceMeters < 0.3 { return "Ollie is back at home" }
-        if distanceMeters < 1.5 { return "Phone dog is close" }
+        if distanceMeters < 2.0 { return "Phone dog is too close" }
         if distanceMeters < 5 { return "Phone dog is leaving" }
         return "Phone dog is away"
     }

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Counting Sheep</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NFCReaderUsageDescription</key>
+	<string>Counting Sheep reads the NFC tags you pair to start and end Wind Down and Phone Away.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Counting Sheep uses your camera to scan your Wind Down code.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Counting Sheep reads sleep times, duration, and available stages so you can view them alongside your Wind Down history.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Counting Sheep does not add or change Apple Health data; it only reads sleep information you choose to share.</string>
+	<key>NSNearbyInteractionUsageDescription</key>
+	<string>Ollie uses nearby-device distance for one optional Wind Down check with your Apple Watch.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>SUPABASE_FEEDBACK_ENABLED</key>
+	<string>$(SUPABASE_FEEDBACK_ENABLED)</string>
+	<key>SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED</key>
+	<string>$(SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED)</string>
+	<key>SUPABASE_NIGHT_FLOCK_ENABLED</key>
+	<string>$(SUPABASE_NIGHT_FLOCK_ENABLED)</string>
+	<key>SUPABASE_PUBLISHABLE_KEY</key>
+	<string>$(SUPABASE_PUBLISHABLE_KEY)</string>
+	<key>SUPABASE_URL</key>
+	<string>$(SUPABASE_URL)</string>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+</dict>
+</plist>

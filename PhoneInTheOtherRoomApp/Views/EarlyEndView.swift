@@ -2,36 +2,99 @@ import SwiftUI
 
 struct EarlyEndView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
-        VStack(spacing: 14) {
-            GamePanelView(title: "Back early", prominence: .hero) {
-                HStack {
-                    OllieSpriteView(mood: .sad, size: 90)
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Ollie came back early.")
-                            .font(.title2.weight(.black))
-                            .foregroundStyle(.white)
-                        Text("You focused for \(actual) of \(planned) minutes.")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.72))
-                        Text("That still counts as practice. Try a shorter run next time.")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.62))
-                    }
+        ScrollView {
+            VStack(spacing: 16) {
+                PixelCard {
+                    receiptHeader
                 }
+                NightWatchReceiptCard(
+                    run: viewModel.activeRun,
+                    sleepSummary: viewModel.lastNightSleep,
+                    sleepAuthorization: viewModel.sleepAuthorization,
+                    screenTimeAuthorization: viewModel.screenTimeAuthorization
+                )
+                Button(AppCopy.EarlyEnd.doneButton.value) { viewModel.resetSetup() }
+                    .frame(maxWidth: .infinity)
+                    .buttonStyle(PixelPrimaryButtonStyle())
             }
-            RewardRevealView(reward: viewModel.coordinator.latestReward)
-            Button("Set up another run") { viewModel.resetSetup() }
-                .buttonStyle(PixelButtonStyle(tint: OlliePalette.sadBlue))
+            .padding(16)
+        }
+        .background(AppColors.paper.ignoresSafeArea())
+        .onAppear(perform: viewModel.refreshSleepSummary)
+    }
+
+    @ViewBuilder
+    private var receiptHeader: some View {
+        if dynamicTypeSize.isAccessibilitySize {
+            stackedReceiptHeader
+        } else {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 14) {
+                    OllieRitualView(state: .endedEarly, presentation: .cardCompanion)
+                    receiptMessage
+                        .frame(width: 176, alignment: .leading)
+                        .layoutPriority(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                stackedReceiptHeader
+            }
         }
     }
 
-    private var actual: Int {
-        Int((viewModel.activeRun?.actualDurationSeconds ?? 0) / 60)
+    private var stackedReceiptHeader: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            OllieRitualView(state: .endedEarly, presentation: .cardCompanion)
+                .frame(maxWidth: .infinity)
+            receiptMessage
+        }
     }
 
-    private var planned: Int {
-        Int((viewModel.activeRun?.plannedDurationSeconds ?? 0) / 60)
+    private var receiptMessage: some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text(phoneAwayReceipt?.eyebrow ?? (viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet ? "PHONE AWAY ENDED" : AppCopy.EarlyEnd.eyebrow.value))
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.secondaryText)
+            Text(phoneAwayReceipt?.title ?? (viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
+                ? "Phone Away ended early. The time you completed is saved in Nights."
+                : AppCopy.EarlyEnd.title.value))
+                .font(pixelFont(.title3))
+            Text(phoneAwayReceipt?.message ?? (minutesAwayText + " Tonight can simply be a fresh start."))
+                .font(pixelFont(.body))
+                .foregroundStyle(AppColors.secondaryText)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(phoneAwayReceipt?.accessibilityLabel ?? minutesAwayText + " Tonight can simply be a fresh start.")
+    }
+
+    private var phoneAwayReceipt: PhoneAwayReceiptPresentation? {
+        guard let run = viewModel.activeRun,
+              run.nightWatchPlan?.role == .additionalQuiet,
+              let record = viewModel.phoneAwaySearchSettlement(for: run.id) else {
+            return nil
+        }
+        return .make(record: record)
+    }
+
+    private var minutesAwayText: String {
+        let run = viewModel.activeRun
+        let minutes: Int
+        if let run, run.isProgressionEligibleNightWatch {
+            // Screen-Free Morning remains an independent factual occurrence;
+            // this terminal Wind Down receipt must not combine it again.
+            minutes = run.creditedWindDownMinutes
+        } else if run?.isNightWatch == true {
+            minutes = run?.creditedQuietMinutes ?? 0
+        } else {
+            minutes = Int((run?.actualDurationSeconds ?? 0) / 60)
+        }
+        switch minutes {
+        case 0: return "Your phone got a little time away."
+        case 1: return "Your phone was away for a minute."
+        default: return "Your phone was away for \(minutes) minutes."
+        }
     }
 }

@@ -1,0 +1,2 @@
+-- Intentionally empty. Production-like ActivityKit records should be created through
+-- authenticated functions so tests exercise the same ownership boundaries as the app.

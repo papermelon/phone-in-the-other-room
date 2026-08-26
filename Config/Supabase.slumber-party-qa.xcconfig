@@ -1,0 +1,4 @@
+// Dedicated non-production Slumber Party QA lane. Local credentials remain ignored.
+#include "Supabase.example.xcconfig"
+#include? "Supabase.local.xcconfig"
+SUPABASE_NIGHT_FLOCK_ENABLED = YES
