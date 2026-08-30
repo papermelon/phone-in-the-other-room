@@ -23,11 +23,13 @@ final class SlumberPartyFeedbackTests: XCTestCase {
     }
 
     func testWatchMessageRoundTripsSilentCheer() throws {
+        let sourceID = UUID()
         let feedback = SlumberPartyCheerFeedback(
             partyID: UUID(),
             cheer: .moonGlow,
             count: 2,
-            observedAt: Date(timeIntervalSince1970: 300)
+            observedAt: Date(timeIntervalSince1970: 300),
+            sourceEventID: sourceID
         )
         let message = WatchMessage(
             type: .slumberPartyCheer,
@@ -41,5 +43,15 @@ final class SlumberPartyFeedbackTests: XCTestCase {
 
         XCTAssertEqual(decoded?.type, .slumberPartyCheer)
         XCTAssertEqual(decoded?.slumberPartyCheer, feedback)
+    }
+
+    func testSourceScopedFeedbackOnlyAppliesToItsRunWhileLegacyStillApplies() {
+        let runID = UUID()
+        let scoped = SlumberPartyCheerFeedback(partyID: UUID(), cheer: .warmWave, count: 1, observedAt: .now, sourceEventID: runID)
+        XCTAssertTrue(SlumberPartyCheerFeedbackApplicability.accepts(scoped, currentRunID: runID))
+        XCTAssertFalse(SlumberPartyCheerFeedbackApplicability.accepts(scoped, currentRunID: UUID()))
+
+        let legacy = SlumberPartyCheerFeedback(partyID: UUID(), cheer: .moonGlow, count: 1, observedAt: .now)
+        XCTAssertTrue(SlumberPartyCheerFeedbackApplicability.accepts(legacy, currentRunID: UUID()))
     }
 }

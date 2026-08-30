@@ -1,15 +1,31 @@
 import SwiftUI
 
+enum PixelHomeDashboardDestination: Equatable {
+    case setup
+    case timing
+    case quietTimeSchedule
+    case protectionRepair
+    case quickStartError
+}
+
+enum HomeScrollViewportCoordinateSpace {
+    static let name = "CountingSheepHomeScrollViewport"
+}
+
 struct PixelHomeDashboard: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @ObservedObject private var watch: WatchConnectivityManager
-    @State private var showRunSetup = false
-    @State private var showTimingEditor = false
-    @State private var showQuietTimeSchedule = false
-    @State private var showQuickStartError = false
+    @Binding private var destination: PixelHomeDashboardDestination?
+    private let homeScrollViewportSize: CGSize
 
-    init(watch: WatchConnectivityManager = .shared) {
+    init(
+        watch: WatchConnectivityManager = .shared,
+        destination: Binding<PixelHomeDashboardDestination?>,
+        homeScrollViewportSize: CGSize = .zero
+    ) {
         self._watch = ObservedObject(initialValue: watch)
+        self._destination = destination
+        self.homeScrollViewportSize = homeScrollViewportSize
     }
 
     var body: some View {
@@ -23,72 +39,58 @@ struct PixelHomeDashboard: View {
             canBeginNow: viewModel.currentPrimaryWindDownStartContext != nil,
             isNFCTagReady: viewModel.hasRegisteredNFCTag,
             windDownStartContext: viewModel.currentPrimaryWindDownStartContext,
+            primaryWindDownPeriod: viewModel.homePrimaryWindDownPeriod,
             phoneAwayStartContext: viewModel.currentPhoneAwayStartContext,
             nextUpcoming: viewModel.nextUpcomingAdditionalQuietPeriod,
             upcomingAdditionalCount: viewModel.upcomingAdditionalQuietPeriods.count,
             immediateAdditionalQuietMinutes: viewModel.immediateAdditionalQuietMinutes,
             phoneBreakMeterMinutes: viewModel.sheepSearchState.trailMap.pendingMappedMinutes,
+            ollieAccessoryItemID: viewModel.farmState.equipment.ollieAccessoryItemID,
+            homeScrollViewportSize: homeScrollViewportSize,
             nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
+            nightFlockViewModel: viewModel.nightFlockViewModel,
+            homeGuidanceItem: viewModel.homeGuidanceItem,
             protectionPresentation: HomeProtectionStartPresentation.resolve(
                 readiness: viewModel.shieldingReadiness,
                 selectionSummary: viewModel.shieldingSelectionSummary
             ),
             onPrimaryAction: {
-                guard viewModel.shieldingReadiness == .ready else {
-                    showRunSetup = true
-                    return
-                }
                 let methodIsReady = viewModel.selectedGuardKind != .nfcTag
                     || viewModel.hasRegisteredNFCTag
                 if viewModel.hasConfiguredNightWatch
                     && viewModel.currentPrimaryWindDownStartContext != nil
                     && methodIsReady {
-                    viewModel.requestStartNightWatch(
+                    let presented = viewModel.requestStartNightWatch(
                         sourceID: viewModel.currentPrimaryWindDownStartContext?.sourceID
                     )
+                    if !presented { destination = .quickStartError }
                 } else {
-                    showRunSetup = true
+                    destination = .setup
                 }
             },
-            onEditTiming: { showTimingEditor = true },
-            onQuietTimeSchedule: { showQuietTimeSchedule = true },
+            onRepairProtection: { destination = .protectionRepair },
+            onSetup: { destination = .setup },
+            onEditTiming: { destination = .timing },
+            onQuietTimeSchedule: { destination = .quietTimeSchedule },
             onStartNow: {
-                guard viewModel.shieldingReadiness == .ready else {
-                    showRunSetup = true
-                    return
-                }
-                let started: Bool
-                if let context = viewModel.currentPhoneAwayStartContext {
-                    viewModel.requestStartNightWatch(sourceID: context.sourceID)
-                    started = viewModel.showNightWatchStartPrompt
-                } else {
-                    started = viewModel.startNewOneTimeAdditionalQuietNow()
-                }
+                let started = viewModel.startNewOneTimeAdditionalQuietNow()
                 if !started {
-                    showQuickStartError = true
+                    destination = .quickStartError
                 }
             },
-            onOpenNightFlock: {
-                NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: nil)
+            onStartScheduled: { sourceID in
+                let presented = viewModel.requestStartNightWatch(sourceID: sourceID)
+                if !presented { destination = .quickStartError }
+            },
+            onGuidanceShown: { item in viewModel.markHomeGuidanceShown(item) },
+            onDismissGuidance: { item in viewModel.dismissHomeGuidance(item) },
+            onOpenNightFlock: { partyID in
+                NotificationCenter.default.post(
+                    name: .countingSheepShowNightFlock,
+                    object: partyID ?? viewModel.nightFlockViewModel.homeSummary?.destinationPartyID
+                )
             }
         )
-        .navigationDestination(isPresented: $showRunSetup) {
-            FocusRunSetupView()
-                .environmentObject(viewModel)
-        }
-        .navigationDestination(isPresented: $showTimingEditor) {
-            WindDownTimingView()
-                .environmentObject(viewModel)
-        }
-        .navigationDestination(isPresented: $showQuietTimeSchedule) {
-            WindDownScheduleView()
-                .environmentObject(viewModel)
-        }
-        .alert("Phone Away could not start", isPresented: $showQuickStartError) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(viewModel.windDownScheduleError ?? "Try again after the current phone-away time ends.")
-        }
         }
     }
 
@@ -153,74 +155,84 @@ private struct PixelHomeDashboardContent: View {
     var canBeginNow: Bool
     var isNFCTagReady: Bool
     var windDownStartContext: WindDownStartContext?
+    var primaryWindDownPeriod: WindDownSchedulePeriod? = nil
     var phoneAwayStartContext: WindDownStartContext?
     var nextUpcoming: WindDownSchedulePeriod?
     var upcomingAdditionalCount: Int
     var immediateAdditionalQuietMinutes: Int?
     var phoneBreakMeterMinutes: Int
+    var ollieAccessoryItemID: String? = nil
+    var homeScrollViewportSize: CGSize = .zero
     var nightFlockSummary: NightFlockHomeSummary? = nil
+    var nightFlockViewModel: NightFlockViewModel? = nil
+    var homeGuidanceItem: WindDownGuidanceItem? = nil
     var protectionPresentation: HomeProtectionStartPresentation
     var onPrimaryAction: () -> Void
+    var onRepairProtection: () -> Void = {}
+    var onSetup: () -> Void = {}
     var onEditTiming: () -> Void
     var onQuietTimeSchedule: () -> Void
     var onStartNow: () -> Void
-    var onOpenNightFlock: () -> Void = {}
-
-    private var latestNight: DailyFocusRecord? { progress.recentFocusRecords.first }
-    private var homeGuidance: WindDownGuidanceItem? {
-        guard preferences.isConfigured else { return nil }
-        return WindDownGuidanceLibrary.homeGuidance(
-            eveningRoutine: preferences.eveningRoutine,
-            morningRoutine: preferences.morningRoutine
-        )
-    }
+    var onStartScheduled: (UUID) -> Void = { _ in }
+    var onGuidanceShown: (WindDownGuidanceItem) -> Void = { _ in }
+    var onDismissGuidance: (WindDownGuidanceItem) -> Void = { _ in }
+    var onOpenNightFlock: (UUID?) -> Void = { _ in }
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
-            NightWatchOverviewBlock(
+            HomeWindDownSummary(
                 preferences: preferences,
-                latestNight: latestNight,
-                onEdit: onEditTiming
+                canBeginNow: canBeginNow,
+                isNFCTagReady: isNFCTagReady,
+                primaryWindDownPeriod: primaryWindDownPeriod,
+                phoneAwayStartContext: phoneAwayStartContext,
+                immediatePhoneAwayMinutes: immediateAdditionalQuietMinutes,
+                protectionPresentation: protectionPresentation,
+                onPrimaryAction: onPrimaryAction,
+                onRepairProtection: onRepairProtection,
+                onSetup: onSetup,
+                onEdit: onEditTiming,
+                onPhoneAwayStartNow: onStartNow,
+                onPhoneAwayScheduled: onStartScheduled,
+                content: .timing
             )
 
-            HomeOllieIdleView()
-                .accessibilityLabel("Ollie is ready for tonight's Wind Down")
-
-            VStack(spacing: AppSpacing.sm) {
-                Text(purpose.inAppDisplayPhrase)
-                    .font(AppTypography.headline)
-                    .multilineTextAlignment(.center)
-                Text(AppCopy.ConfiguredHome.quietStatement.value)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-                    .multilineTextAlignment(.center)
-            }
-
-            protectionCard
-
-            PrimaryGreenCTA(
-                eyebrow: primaryEyebrow,
-                title: primaryTitle,
-                subtitle: primarySubtitle,
-                icon: "door.left.hand.open",
-                assetName: AssetSlot.Home.door,
-                action: onPrimaryAction
+            HomeWelcomeHero(
+                accessoryItemID: ollieAccessoryItemID,
+                scrollViewportSize: homeScrollViewportSize
             )
 
-            if let guidance = homeGuidance {
-                WindDownGuideCard(item: guidance, compact: true)
-            }
+            HomeWindDownSummary(
+                preferences: preferences,
+                canBeginNow: canBeginNow,
+                isNFCTagReady: isNFCTagReady,
+                primaryWindDownPeriod: primaryWindDownPeriod,
+                phoneAwayStartContext: phoneAwayStartContext,
+                immediatePhoneAwayMinutes: immediateAdditionalQuietMinutes,
+                protectionPresentation: protectionPresentation,
+                onPrimaryAction: onPrimaryAction,
+                onRepairProtection: onRepairProtection,
+                onSetup: onSetup,
+                onEdit: onEditTiming,
+                onPhoneAwayStartNow: onStartNow,
+                onPhoneAwayScheduled: onStartScheduled,
+                content: .actions
+            )
 
-            if let nightFlockSummary {
-                NightFlockHomeCard(summary: nightFlockSummary, action: onOpenNightFlock)
+            if shouldLeadWithSlumberParty, let nightFlockViewModel {
+                SlumberPartyHomeSection(viewModel: nightFlockViewModel, openParty: onOpenNightFlock)
+            } else if let nightFlockSummary {
+                NightFlockHomeCard(
+                    summary: nightFlockSummary,
+                    context: .home,
+                    action: { onOpenNightFlock(nil) }
+                )
             }
 
             UpcomingQuietTimesCard(
                 nextPeriod: nextUpcoming,
                 additionalCount: upcomingAdditionalCount,
-                immediateStartMinutes: preferences.isConfigured && !canBeginNow && phoneAwayStartContext == nil
-                    ? immediateAdditionalQuietMinutes
-                    : nil,
+                immediateStartMinutes: immediateAdditionalQuietMinutes,
                 scheduledStart: phoneAwayStartContext,
                 windDownIsReady: canBeginNow,
                 trailMapPresentation: SheepTrailMapPresentation.home(
@@ -229,84 +241,34 @@ private struct PixelHomeDashboardContent: View {
                 ),
                 protectionPresentation: protectionPresentation,
                 action: onQuietTimeSchedule,
-                startNow: onStartNow
+                startNow: onStartNow,
+                startScheduled: onStartScheduled,
+                showsQuickStartActions: false
             )
 
             if preferences.guardKind == .watchPlacement {
                 watchStatus
             }
-        }
-    }
 
-    private var primaryTitle: String {
-        if !preferences.isConfigured { return "Set up Wind Down" }
-        if preferences.guardKind == .nfcTag, !isNFCTagReady {
-            return "Set up Wind Down tag"
-        }
-        if case let .repair(title, _) = protectionPresentation { return title }
-        return canBeginNow ? AppCopy.ConfiguredHome.startButton.value : "Plan Wind Down"
-    }
-
-    private var primaryEyebrow: String? {
-        guard canBeginNow, windDownStartContext != nil else { return nil }
-        return nil
-    }
-
-    private var primarySubtitle: String {
-        guard preferences.isConfigured else { return "Choose when Wind Down runs" }
-        if case let .repair(_, detail) = protectionPresentation { return detail }
-        return scheduleLabel
-    }
-
-    @ViewBuilder
-    private var protectionCard: some View {
-        switch protectionPresentation {
-        case let .ready(selectionSummary):
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                Image(systemName: "checkmark.shield.fill")
-                    .foregroundStyle(AppColors.grass)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("App protection ready")
-                        .font(AppTypography.body.weight(.semibold))
-                    Text(selectionSummary)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
+            if let guidance = homeGuidanceItem {
+                WindDownGuideCard(item: guidance, compact: true) {
+                    onDismissGuidance(guidance)
                 }
-                Spacer(minLength: 0)
+                .onAppear { onGuidanceShown(guidance) }
             }
-            .padding(AppSpacing.md)
-            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
-            .accessibilityElement(children: .combine)
-        case let .repair(title, detail):
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                Image(systemName: "shield.lefthalf.filled")
-                    .foregroundStyle(AppColors.lavender)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(title)
-                        .font(AppTypography.body.weight(.semibold))
-                    Text(detail)
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-                Spacer(minLength: 0)
+
+            NavigationLink("About these ideas and sources") {
+                WindDownGuideView()
             }
-            .padding(AppSpacing.md)
-            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
-            .accessibilityElement(children: .combine)
+            .font(AppTypography.caption.weight(.semibold))
+            .foregroundStyle(AppColors.muted)
+            .frame(maxWidth: .infinity, minHeight: 44)
         }
     }
 
-    private var scheduleLabel: String {
-        let bedtime = preferences.bedtimeDate().formatted(date: .omitted, time: .shortened)
-        let phoneWakeDate = Calendar.current.date(
-            byAdding: .minute,
-            value: preferences.morningQuietMinutes,
-            to: preferences.wakeDate()
-        ) ?? preferences.wakeDate()
-        let phoneWake = phoneWakeDate.formatted(date: .omitted, time: .shortened)
-        return "Bed \(bedtime) · phone wakes \(phoneWake)"
+    private var shouldLeadWithSlumberParty: Bool {
+        guard let nightFlockViewModel else { return false }
+        return nightFlockViewModel.featureEnabled && nightFlockViewModel.usesSlumberPartyV4
     }
 
     private var watchStatus: some View {
@@ -323,82 +285,6 @@ private struct PixelHomeDashboardContent: View {
             Spacer()
         }
         .padding(AppSpacing.md)
-        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
-    }
-}
-
-private struct NightWatchOverviewBlock: View {
-    var preferences: NightWatchPreferences
-    var latestNight: DailyFocusRecord?
-    var onEdit: () -> Void
-
-    var body: some View {
-        Button(action: onEdit) {
-            PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                HStack {
-                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("TONIGHT")
-                            .font(pixelFont(.caption))
-                            .foregroundStyle(AppColors.grass)
-                        Text(preferences.isConfigured ? scheduleLabel : "Make a little room for quiet")
-                            .font(pixelFont(.title3))
-                    }
-                    Spacer()
-                    Image(systemName: "moon.stars.fill")
-                        .font(.title2.weight(.black))
-                        .foregroundStyle(AppColors.lavender)
-                }
-
-                HStack(spacing: AppSpacing.sm) {
-                    quietPeriod(
-                        icon: "moon.zzz.fill",
-                        label: "Before bed",
-                        minutes: preferences.windDownMinutes
-                    )
-                    quietPeriod(
-                        icon: "sun.max.fill",
-                        label: "After waking",
-                        minutes: preferences.morningQuietMinutes
-                    )
-                }
-
-                if let latestNight {
-                    Text("Latest Wind Down · \(latestNight.completedFocusMinutes) quiet minutes")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                } else {
-                    Text("Your first completed Wind Down will appear in Nights.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.muted)
-                }
-                }
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint("Opens your Wind Down and sleep window")
-        .orientationTourTarget(.homePlan)
-    }
-
-    private var scheduleLabel: String {
-        let bedtime = preferences.bedtimeDate().formatted(date: .omitted, time: .shortened)
-        let wake = preferences.wakeDate().formatted(date: .omitted, time: .shortened)
-        return "\(bedtime) – \(wake)"
-    }
-
-    private func quietPeriod(icon: String, label: String, minutes: Int) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Image(systemName: icon)
-                .foregroundStyle(AppColors.grass)
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(label)
-                    .font(AppTypography.caption)
-                Text("\(minutes) min")
-                    .font(AppTypography.headline)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(AppSpacing.sm)
         .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
     }
 }

@@ -86,7 +86,10 @@ actor NightFlockAccountService {
         }
     }
 
-    func linkAppleIdentity(identityToken: String, nonce: String) async throws {
+    func linkAppleIdentity(
+        identityToken: String,
+        nonce: String
+    ) async throws {
         let client = try provider.client()
         let originalUser = try await client.auth.session.user
         let binding = expectedLinkedUserID
@@ -112,25 +115,32 @@ actor NightFlockAccountService {
             idToken: identityToken,
             nonce: nonce
         )
-        let session: Session
         do {
-            session = try await client.auth.linkIdentityWithIdToken(credentials: credentials)
+            let session = try await client.auth.linkIdentityWithIdToken(credentials: credentials)
+            guard NightFlockAppleIdentityEvidence.preservesOriginalAccount(
+                originalUserID: originalUser.id,
+                recoveredUserID: session.user.id,
+                hasAppleIdentity: Self.hasAppleIdentity(session.user)
+            ) else {
+                try? await client.auth.signOut(scope: .local)
+                throw NightFlockAccountError.identityChanged
+            }
+            persistExpectedLinkedUserID(session.user.id)
         } catch let error as AuthError where error.errorCode == .identityAlreadyExists {
-            // A previous link request may have committed on the server before
-            // the client persisted its UUID. Signing in is safe only when it
-            // proves that Apple returns to the exact anonymous account that
-            // initiated this request.
-            session = try await client.auth.signInWithIdToken(credentials: credentials)
+            // This Apple identity already owns a Counting Sheep account. That
+            // is expected on a second phone and after the earlier link flow
+            // committed before persisting its local binding. Apple proves the
+            // account; the view model quarantines anonymous-session outboxes
+            // before it admits this different server UUID.
+            let session = try await client.auth.signInWithIdToken(credentials: credentials)
+            guard NightFlockAppleIdentityEvidence.permitsExistingAccountSignIn(
+                hasAppleIdentity: Self.hasAppleIdentity(session.user)
+            ) else {
+                try? await client.auth.signOut(scope: .local)
+                throw NightFlockAccountError.identityChanged
+            }
+            persistExpectedLinkedUserID(session.user.id)
         }
-        guard NightFlockAppleIdentityEvidence.preservesOriginalAccount(
-            originalUserID: originalUser.id,
-            recoveredUserID: session.user.id,
-            hasAppleIdentity: Self.hasAppleIdentity(session.user)
-        ) else {
-            try? await client.auth.signOut(scope: .local)
-            throw NightFlockAccountError.identityChanged
-        }
-        persistExpectedLinkedUserID(session.user.id)
     }
 
     /// Reauthentication is intentionally a sign-in exchange, not an identity

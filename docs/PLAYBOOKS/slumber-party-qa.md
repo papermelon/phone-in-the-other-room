@@ -1,5 +1,26 @@
 # Slumber Party v4 hosted and physical-device QA
 
+## Shared nightly plans and receipts (v2 capability)
+
+- Verify a v1 server keeps Tonight together, routine borrowing, and receipt UI unavailable while existing shared-habits summaries still load.
+- After agreement v2, confirm each account sees only seven local-night instances with five-minute timing precision and bundled IDs, never recurrence/custom text/app data.
+- Edit a future plan, then confirm a started/historical plan and linked receipt never change; include timezone, DST, offline replay, leave/rejoin, and deletion-tombstone checks.
+- Complete and end early on separate accounts. A receipt must state facts/unknown evidence, never call a suggestion completed, make an app-use claim, rank a member, or mark an unknown night missed.
+- Borrow a bundled idea into an empty, duplicate, and full local routine. The source plan must stay unchanged and the local result must explain duplicate/full handling.
+
+## Membership-sharing extension — required before rollout
+
+The founder approved immediate sharing from joining on 2026-08-27. The local implementation/validation record is `docs/plans/slumber-party-membership-sharing.md`; do not treat the older round-only checklist as the complete current acceptance contract. No hosted deployment or physical two-account result is implied by this checklist.
+
+- Join a group without a round. Start/finish a normal Phone Away; the other member sees its status and durable moment. Round grants stay zero.
+- Repeat between rounds and across two parties with different round states. Only the eligible round earns its existing independent grant, once.
+- Confirm pre-join general history is absent, while explicitly supported current-round backfill remains visible as round history. Leave/rejoin must not revive the old membership epoch.
+- Show a terminal/partial record with received live cheers; expire its status and run cleanup after 31 minutes. Cheers remain. Verify 90-day cleanup without removing earned grants.
+- Mix old/new app clients: old round history and cheers remain reachable; the same factual record appears once; old and new reactions by the same member count once. Current legacy status fallback and its expiry remain coherent.
+- Delay a cheer until the recipient starts a different session. Preserve the historical cheer but do not show it as feedback for the new run.
+- Inspect no-round and between-round Home/detail, received cheers, history beyond eight rows, smallest supported phone, and accessibility text. Test actual taps/scrolls as well as screenshots.
+- Verify the join disclosure, block/deletion, reconnect and stale response ordering. Deploy matching Edge request support before the database advertises the new capability. Old servers must retain truthful round-only UI/requests.
+
 Slumber Party v4 is an accepted contract with source implemented and locally validated. On
 2026-08-25 the founder approved deployment of all five Slumber Party migrations, both authenticated
 Edge Functions, and versioned invitation secrets to the Release/TestFlight production project.
@@ -61,6 +82,69 @@ Capture validation output, diagnostics on each phone, build/test summaries, func
 and redacted request/error evidence. Never include URLs, keys, Apple identity tokens, account IDs,
 invite plaintext/ciphertext, invite digests, idempotency keys, app selections, Health data, or
 exact schedules in evidence or logs.
+
+## Roadshow polish P0 checks
+
+The following checks validate the presentation and publication rules added for the roadshow slice.
+They do not change the V4 wire contract or replace the physical matrix below.
+
+1. With no parties, confirm the landing shows the relationship-first proposition, truthful empty
+   explanation, and **Start a party** / **Join with a code**; only the selected form is visible.
+2. With existing parties, confirm party cards precede acquisition and account controls, and that
+   **Start or join another** reveals only one form at a time.
+3. Confirm one-member, pending host/member, active Night 1/Night 7, elapsed, and multiple-party
+   states use lifecycle copy rather than round numbers or completion totals.
+4. Confirm missing, expired, wrong-party, and wrong-round status data never becomes inactivity;
+   `.phoneAwayActive` reads **Phone is away**.
+5. Confirm each member shows the latest current-round durable activity when available, otherwise
+   **No shared update yet**, and that shared moments count activity records including partial ones.
+6. Confirm Home and Farm bridges use list data only, suppress during active Wind Down, route a
+   single party directly, and fall back to the hub for zero, multiple, or stale parties.
+7. Start a five-minute practice and verify no V4 starting/active/terminal status, activity,
+   backfill, or Farm grant is published. A normal Phone Away may publish **Phone is away**.
+8. Apply a settled V4 wool grant and confirm the transient banner and Recent Events show the exact
+   newly applied wool amount; no upcoming reward is shown.
+
+For the physical proof, use this ordered two-account checklist and record actual device results:
+
+1. Account A creates the party and shares the invitation; account B previews and joins. Joining
+   alone must not start the seven-night window.
+2. A starts seven nights; both devices show the same Night 1 of 7 context.
+3. Either account starts the five-minute practice; prove the other device sees no V4 status or
+   record and no Farm grant arrives.
+4. B starts and validates a normal daytime Phone Away; A sees **Phone is away**, sends one fixed
+   live cheer, and B receives or later reconciles the silent feedback without an in-app interruption.
+5. Complete a real Phone Away; both devices show one durable activity with rounded minutes and
+   the completed-record cheer path.
+6. Reconcile an offline completion and relaunch; verify one durable record and one wool per
+   eligible active party, with no duplicate on relaunch.
+7. Advance a controlled fixture past the seventh local date; verify elapsed copy and no claim that
+   everyone completed.
+8. While Wind Down is active, verify neither device exposes a Slumber Party card, route, badge,
+   panel, reaction, or in-app social UI.
+
+## 60–90 second roadshow rehearsal
+
+Prepare two Apple-linked TestFlight accounts in one active party, distinct curated Farm looks, one
+pre-existing real Phone Away activity with its settled one-wool local receipt, and a currently
+validated normal Phone Away on B. Rehearse this exact path:
+
+1. **0–12s — Home A:** explain that each person’s Wind Down is still local; tap the single-party
+   bridge into the party.
+2. **12–30s — Party:** point to Night N of 7, both names, and their curated Farm looks; say there
+   are no parent controls or scores.
+3. **30–48s — Live B:** point to **Phone is away**, explain B’s phone is separate, send **Paw print**.
+4. **48–65s — Shared moment:** show the pre-existing Phone Away card, rounded minutes, night number,
+   completed-record cheer, and no feed/chat/leaderboard/sleep claim.
+5. **65–82s — Farm A:** return to Farm, show the private curated-look explanation and exact one-wool
+   recent event.
+6. **82–90s — Close:** “Our phones get some time away together, while everyone keeps control of
+   their own phone, Wind Down, and Farm.”
+
+If realtime is delayed, say: “Live status is best effort; the durable completed record is what the
+party keeps,” and continue with the pre-existing activity. If silent cheer delivery is delayed,
+show the sender’s selected cheer and explain that the receiver reconciles it later. Do not narrate
+absence as inactivity or make the demo depend on realtime to prove completion.
 
 ## Required v4 two-account matrix
 

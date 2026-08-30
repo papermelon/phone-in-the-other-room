@@ -1,0 +1,1092 @@
+{
+  "schemaVersion": 1,
+  "allRGBA": true,
+  "canvas": [
+    512,
+    512
+  ],
+  "items": [
+    {
+      "category": "base",
+      "pose": 1,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        116,
+        34,
+        396,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 12,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        116,
+        34,
+        396,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 2,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        101,
+        74,
+        411,
+        469
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 3,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        91,
+        86,
+        420,
+        469
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 5,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        41,
+        193,
+        472,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 6,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        27,
+        217,
+        484,
+        469
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 7,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        20,
+        223,
+        490,
+        469
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 8,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        13,
+        271,
+        498,
+        469
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 9,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        24,
+        283,
+        488,
+        469
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 10,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        25,
+        229,
+        487,
+        469
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 11,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        41,
+        114,
+        472,
+        469
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 4,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        116,
+        34,
+        396,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 1,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        215,
+        251,
+        375,
+        394
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 2,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        215,
+        251,
+        375,
+        394
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 3,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        215,
+        251,
+        375,
+        394
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 4,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        215,
+        251,
+        375,
+        394
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 5,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        216,
+        347,
+        325,
+        442
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 6,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        377,
+        319,
+        454
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 7,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        174,
+        347,
+        200,
+        410
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 8,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        204,
+        385,
+        251,
+        458
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 9,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        202,
+        397,
+        273,
+        465
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 10,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        201,
+        377,
+        258,
+        454
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 11,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        227,
+        306,
+        363,
+        415
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 12,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        215,
+        251,
+        375,
+        394
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 1,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        222,
+        255,
+        367,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 2,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        222,
+        256,
+        367,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 3,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        222,
+        256,
+        367,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 4,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        222,
+        255,
+        367,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 5,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        220,
+        347,
+        319,
+        443
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 6,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        235,
+        377,
+        315,
+        455
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 7,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        179,
+        347,
+        198,
+        387
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 8,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        207,
+        385,
+        257,
+        459
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 9,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        205,
+        397,
+        273,
+        465
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 10,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        205,
+        392,
+        260,
+        455
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 11,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        233,
+        311,
+        356,
+        416
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 12,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        222,
+        255,
+        367,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 1,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        250,
+        348,
+        345
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 2,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        256,
+        348,
+        345
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 3,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        256,
+        348,
+        345
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 4,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        250,
+        348,
+        345
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 5,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        226,
+        347,
+        306,
+        409
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 6,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        240,
+        377,
+        304,
+        427
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 7,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        185,
+        347,
+        197,
+        374
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 8,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        212,
+        385,
+        226,
+        409
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 9,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        209,
+        395,
+        265,
+        418
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 10,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        210,
+        379,
+        215,
+        397
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 11,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        243,
+        301,
+        340,
+        373
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 12,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        250,
+        348,
+        345
+      ],
+      "edgeAlphaNonzero": 0
+    }
+  ],
+  "homeIdleOverlays": [
+    {
+      "category": "base",
+      "pose": 1,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        116,
+        34,
+        396,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 2,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        115,
+        34,
+        397,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 3,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        114,
+        34,
+        397,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 4,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        116,
+        28,
+        396,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 5,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        117,
+        26,
+        395,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "base",
+      "pose": 6,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        116,
+        34,
+        396,
+        470
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 1,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        215,
+        251,
+        375,
+        394
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 2,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        216,
+        251,
+        376,
+        394
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 3,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        216,
+        251,
+        376,
+        394
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 4,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        215,
+        252,
+        375,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 5,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        215,
+        252,
+        375,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moss_bandana",
+      "pose": 6,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        215,
+        251,
+        375,
+        394
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 1,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        222,
+        255,
+        367,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 2,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        223,
+        255,
+        368,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 3,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        223,
+        255,
+        368,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 4,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        222,
+        255,
+        367,
+        396
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 5,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        222,
+        255,
+        367,
+        396
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "moon_kerchief",
+      "pose": 6,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        222,
+        255,
+        367,
+        395
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 1,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        250,
+        348,
+        345
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 2,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        232,
+        251,
+        349,
+        345
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 3,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        232,
+        252,
+        349,
+        345
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 4,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        251,
+        348,
+        346
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 5,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        255,
+        348,
+        346
+      ],
+      "edgeAlphaNonzero": 0
+    },
+    {
+      "category": "brass_trail_bell",
+      "pose": 6,
+      "size": [
+        512,
+        512
+      ],
+      "alphaBounds": [
+        231,
+        250,
+        348,
+        345
+      ],
+      "edgeAlphaNonzero": 0
+    }
+  ]
+}

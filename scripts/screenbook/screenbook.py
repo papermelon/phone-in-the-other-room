@@ -39,6 +39,21 @@ DEVICE_TYPE_NAME = "iPhone 17"
 CAPTURE_PROFILE = "iphone17-ios26.5-enSG-standard"
 SERVER_PORT = 4173
 
+# This is the Debug registry contract exported by `ScreenbookScenarioKind`.
+# Keep its explicit IDs here so capture cannot silently widen when a fixture is
+# added without an intentional Screenbook acceptance update.
+EXPECTED_SCENARIO_IDS = frozenset({
+    "iphone.onboarding.welcome.default",
+    "iphone.home.configured.default",
+    "iphone.home.interactive.default",
+    "iphone.home.active-wind-down.default",
+    "iphone.home.active-phone-away.default",
+    "iphone.slumber-party.membership-no-round.default",
+    "iphone.slumber-party.membership-between-rounds.default",
+    "iphone.home.early-end.default",
+    "iphone.farm.populated.default",
+})
+
 
 class ScreenbookError(RuntimeError):
     pass
@@ -225,8 +240,20 @@ def validate_registry(registry: dict) -> None:
         raise ScreenbookError("Unsupported registry schema or capture profile.")
     scenarios = registry.get("scenarios", [])
     identifiers = [item.get("id") for item in scenarios]
-    if len(scenarios) != 5 or len(set(identifiers)) != len(identifiers) or any(not value for value in identifiers):
-        raise ScreenbookError("Phase 1 registry must contain exactly five unique scenario identifiers.")
+    if len(identifiers) != len(set(identifiers)) or any(not value for value in identifiers):
+        raise ScreenbookError("Screenbook registry must contain unique, non-empty scenario identifiers.")
+    if set(identifiers) != EXPECTED_SCENARIO_IDS:
+        missing = sorted(EXPECTED_SCENARIO_IDS.difference(identifiers))
+        unexpected = sorted(set(identifiers).difference(EXPECTED_SCENARIO_IDS))
+        detail = []
+        if missing:
+            detail.append(f"missing: {', '.join(missing)}")
+        if unexpected:
+            detail.append(f"unexpected: {', '.join(unexpected)}")
+        raise ScreenbookError(
+            "Screenbook registry does not match the nine stable scenario identifiers"
+            + (f" ({'; '.join(detail)})" if detail else ".")
+        )
     for scenario in scenarios:
         copy_ids = [item.get("id") for item in scenario.get("copy", [])]
         if len(copy_ids) != len(set(copy_ids)):

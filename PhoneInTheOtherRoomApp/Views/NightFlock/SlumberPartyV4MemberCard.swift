@@ -1,61 +1,214 @@
 import SwiftUI
 
+/// A compact factual member card. One chosen identity gives the group a face;
+/// activity, live status, and cheers remain the meaningful changing content.
 struct SlumberPartyV4MemberCard: View {
     let member: NightFlockV4Membership
     let isYou: Bool
-    let liveStatus: NightFlockV4LiveStatus?
+    let presentation: NightFlockV4MemberPresentation
     var onBlock: (() -> Void)? = nil
     var onReport: ((NightFlockReportReason) -> Void)? = nil
     var liveCheerCount: Int = 0
     var onLiveCheer: ((NightFlockV4Cheer) -> Void)? = nil
+    var liveCheerState: ((NightFlockV4Cheer) -> NightFlockV4CheerSendState?)? = nil
+    /// Optional shared-habits values are supplied from the party archive;
+    /// absence remains an observed-data gap, not a member score.
+    var sharedSleepSummary: NightFlockSharedHabitPeriodSummary? = nil
+    var sharedWindDownSummary: NightFlockSharedHabitPeriodSummary? = nil
+    var sharedSleepWeekSummary: NightFlockSharedHabitPeriodSummary? = nil
+    var sharedSleepMonthSummary: NightFlockSharedHabitPeriodSummary? = nil
+    var sharedSleepUpdatesAfterNoon = false
+    var showsSharedHabitMetrics = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                HStack(alignment: .top, spacing: AppSpacing.xs) {
-                    memberHeader
-                    Spacer(minLength: 0)
-                    if !isYou, onBlock != nil || onReport != nil {
-                        memberSafetyMenu
-                    }
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    identity
+                    factualContent
                 }
-                Text(liveStatus.map(liveStatusTitle) ?? "No live update right now")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-                if liveCheerCount > 0 {
-                    Text(liveCheerCount == 1 ? "1 quiet cheer" : "\(liveCheerCount) quiet cheers")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.grass)
+            } else {
+                HStack(alignment: .top, spacing: AppSpacing.sm) {
+                    identity
+                    factualContent
                 }
-                if !isYou, canSendLiveCheer, let onLiveCheer {
-                    liveCheerMenu(onLiveCheer)
-                }
-                curatedProfileSnapshot(member.profile.presentation)
             }
         }
         .accessibilityElement(children: .contain)
     }
 
-    @ViewBuilder
-    private var memberHeader: some View {
-        if dynamicTypeSize > .large {
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                memberName
-                memberBadges
-            }
-        } else {
-            HStack(alignment: .firstTextBaseline, spacing: AppSpacing.xs) {
-                memberName
-                memberBadges
-            }
-        }
+    private var identity: some View {
+        SlumberPartySocialAvatarView(
+            presentation: member.profile.presentation,
+            avatarID: member.profile.presentation.avatarID,
+            size: dynamicTypeSize.isAccessibilitySize ? 72 : 68
+        )
     }
 
-    private var memberName: some View {
-        Text(member.profile.displayName.isEmpty ? "A group member" : member.profile.displayName)
-            .font(AppTypography.headline)
-            .fixedSize(horizontal: false, vertical: true)
+    private var factualContent: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            HStack(alignment: .top, spacing: AppSpacing.xs) {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(member.profile.displayName.isEmpty ? "A group member" : member.profile.displayName)
+                        .font(AppTypography.headline)
+                        .fixedSize(horizontal: false, vertical: true)
+                    memberBadges
+                }
+                Spacer(minLength: AppSpacing.xs)
+                if !isYou, onBlock != nil || onReport != nil {
+                    memberSafetyMenu
+                }
+            }
+
+            if let liveStatusTitle = presentation.liveStatusTitle {
+                Text(liveStatusTitle)
+                    .font(AppTypography.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.ink)
+            }
+            if let latestActivityLine = presentation.latestActivityLine {
+                Text(latestActivityLine)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if !presentation.hasSharedUpdate,
+                      sharedSleepSummary == nil,
+                      sharedWindDownSummary == nil {
+                Text("No recent session update")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+            }
+            if showsSharedHabitMetrics || sharedSleepSummary != nil || sharedWindDownSummary != nil {
+                sharedHabitMetrics
+            }
+            if sharedSleepWeekSummary != nil || sharedSleepMonthSummary != nil {
+                sharedSleepHistory
+            }
+            if presentation.liveCheerCount > 0 {
+                Text(presentation.liveCheerCount == 1
+                     ? "1 quiet cheer recorded across shared statuses"
+                     : "\(presentation.liveCheerCount) quiet cheers recorded across shared statuses")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.grass)
+            }
+            if !isYou, presentation.canSendLiveCheer, let onLiveCheer {
+                liveCheerMenu(onLiveCheer)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var sharedHabitMetrics: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    sleepMetric
+                    windDownMetric
+                }
+            } else {
+                HStack(alignment: .top, spacing: AppSpacing.sm) {
+                    sleepMetric
+                    windDownMetric
+                }
+            }
+            if sharedSleepUpdatesAfterNoon, sharedSleepSummary?.period == .lastNight {
+                Text("The next sleep summary updates after noon in this member’s saved time zone.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private var sleepMetric: some View {
+        sharedMetric(
+            title: "Sleep",
+            summary: sharedSleepSummary,
+            emptyTitle: "No sleep data",
+            showsNightEnding: true
+        )
+    }
+
+    private var windDownMetric: some View {
+        sharedMetric(
+            title: "Wind Down",
+            summary: sharedWindDownSummary,
+            emptyTitle: "No Wind Down data"
+        )
+    }
+
+    private var sharedSleepHistory: some View {
+        DisclosureGroup("7- and 30-night sleep means") {
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                sharedHistoryRow("7 nights", sharedSleepWeekSummary)
+                sharedHistoryRow("30 nights", sharedSleepMonthSummary)
+            }
+            .padding(.top, AppSpacing.xs)
+        }
+        .font(AppTypography.caption.weight(.semibold))
+    }
+
+    private func sharedHistoryRow(
+        _ title: String,
+        _ summary: NightFlockSharedHabitPeriodSummary?
+    ) -> some View {
+        Group {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text(title)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                    Text(summary?.averageMinutes.map(NightFlockSharedHabitPresentation.meanDurationText) ?? "No data")
+                        .font(AppTypography.body.weight(.semibold))
+                    Text(summary.map { "\($0.coveredNights) of \($0.availableNights) nights" } ?? "No coverage")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                }
+            } else {
+                HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                    Text(title)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                    Spacer(minLength: AppSpacing.sm)
+                    Text(summary?.averageMinutes.map(NightFlockSharedHabitPresentation.meanDurationText) ?? "No data")
+                        .font(AppTypography.caption.weight(.semibold))
+                    Text(summary.map { "\($0.coveredNights) of \($0.availableNights) nights" } ?? "No coverage")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                }
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private func sharedMetric(
+        title: String,
+        summary: NightFlockSharedHabitPeriodSummary?,
+        emptyTitle: String,
+        showsNightEnding: Bool = false
+    ) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+            Text(title.uppercased())
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+            Text(summary?.averageMinutes.map(NightFlockSharedHabitPresentation.meanDurationText) ?? emptyTitle)
+                .font(AppTypography.body.weight(.semibold))
+                .fixedSize(horizontal: false, vertical: true)
+            if let summary {
+                Text("\(summary.coveredNights) of \(summary.availableNights) nights")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                if showsNightEnding, summary.period == .lastNight {
+                    Text("Last completed night · \(NightFlockSharedHabitPresentation.localDateText(summary.endingOn))")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var memberBadges: some View {
@@ -89,24 +242,41 @@ struct SlumberPartyV4MemberCard: View {
         .accessibilityLabel("Safety options for \(member.profile.displayName)")
     }
 
-    private var canSendLiveCheer: Bool {
-        guard let liveStatus else { return false }
-        return liveStatus.status == .windDownStarting || liveStatus.status == .phoneAwayActive
-    }
-
     private func liveCheerMenu(_ onLiveCheer: @escaping (NightFlockV4Cheer) -> Void) -> some View {
-        Menu {
-            ForEach(NightFlockV4Cheer.allCases, id: \.self) { cheer in
+        let pendingCheers = NightFlockV4Cheer.allCases.filter { liveCheerState?($0) == .pending }
+        let sentCheers = NightFlockV4Cheer.allCases.filter { liveCheerState?($0) == .sent }
+        let choices = NightFlockV4Cheer.allCases.filter { cheer in
+            let state = liveCheerState?(cheer)
+            return state != .pending && state != .sent
+        }
+        return Menu {
+            if !pendingCheers.isEmpty {
+                Text("Sending \(pendingCheers.map { liveCheerTitle($0) }.joined(separator: ", "))…")
+            }
+            if !sentCheers.isEmpty {
+                Text("Sent \(sentCheers.map { liveCheerTitle($0) }.joined(separator: ", "))")
+            }
+            ForEach(choices, id: \.self) { cheer in
                 Button(liveCheerTitle(cheer)) {
                     onLiveCheer(cheer)
                 }
             }
         } label: {
-            Label("Send a quiet cheer", systemImage: "hand.wave")
+            Label(liveCheerMenuTitle(pending: pendingCheers, sent: sentCheers), systemImage: "hand.wave")
                 .font(AppTypography.caption.weight(.semibold))
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
         }
-        .accessibilityHint("Sends a silent note to this person’s Live Activity or Watch.")
+        .disabled(choices.isEmpty)
+        .accessibilityHint("Records a quiet cheer for this currently shared status.")
+    }
+
+    private func liveCheerMenuTitle(
+        pending: [NightFlockV4Cheer],
+        sent: [NightFlockV4Cheer]
+    ) -> String {
+        if !pending.isEmpty { return "Sending quiet cheer…" }
+        if !sent.isEmpty { return "Quiet cheer sent" }
+        return "Send a quiet cheer"
     }
 
     private func liveCheerTitle(_ cheer: NightFlockV4Cheer) -> String {
@@ -117,124 +287,9 @@ struct SlumberPartyV4MemberCard: View {
         }
     }
 
-    @ViewBuilder
-    private func curatedProfileSnapshot(_ presentation: CountingSheepPublicPresentation) -> some View {
-        if let snapshot = safeSnapshot(for: presentation) {
-            Group {
-                if dynamicTypeSize > .large {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        snapshotArtwork(snapshot)
-                        snapshotDescription(snapshot)
-                    }
-                } else {
-                    HStack(alignment: .center, spacing: AppSpacing.sm) {
-                        snapshotArtwork(snapshot)
-                        snapshotDescription(snapshot)
-                    }
-                }
-            }
-            .padding(AppSpacing.xs)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(snapshot.themeColor, in: RoundedRectangle(cornerRadius: AppRadius.md))
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(snapshot.accessibilityLabel)
-        } else {
-            Text("A simple Farm look is waiting to travel safely.")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.secondaryText)
-        }
-    }
-
-    private func snapshotArtwork(_ snapshot: CuratedProfileSnapshot) -> some View {
-        HStack(spacing: AppSpacing.xs) {
-            ShepherdAvatarView(profile: snapshot.shepherd, size: 54)
-                .accessibilityHidden(true)
-            OllieFarmAvatar(accessoryItemID: snapshot.ollieAccessoryID, size: 52)
-                .accessibilityHidden(true)
-            if let sheep = snapshot.featuredSheep {
-                PixelAssetImage(name: sheep.assetName)
-                    .frame(width: 48, height: 48)
-                    .accessibilityHidden(true)
-            }
-        }
-    }
-
-    private func snapshotDescription(_ snapshot: CuratedProfileSnapshot) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            Text(snapshot.featuredSheep.map { "Featured \($0.name)" } ?? "No featured sheep")
-            Text(snapshot.themeTitle)
-        }
-        .font(AppTypography.caption)
-        .foregroundStyle(AppColors.secondaryText)
-        .fixedSize(horizontal: false, vertical: true)
-    }
-
     private func memberBadge(_ title: String) -> some View {
         Text(title)
             .font(AppTypography.caption.weight(.semibold))
             .foregroundStyle(AppColors.grass)
-    }
-
-    private func liveStatusTitle(_ status: NightFlockV4LiveStatus) -> String {
-        switch status.status {
-        case .windDownStarting: return "Starting Wind Down"
-        case .phoneAwayActive: return "Phone Away is underway"
-        case .windDownCompleted: return "Wind Down completed"
-        case .phoneAwayCompleted: return "Phone Away completed"
-        }
-    }
-
-    private func safeSnapshot(
-        for presentation: CountingSheepPublicPresentation
-    ) -> CuratedProfileSnapshot? {
-        guard presentation.isAllowlisted(),
-              let skinTone = ShepherdSkinTone(rawValue: presentation.skinToneID),
-              let hairStyle = ShepherdHairStyle(rawValue: presentation.hairStyleID)
-        else { return nil }
-        let outfitID = presentation.shepherdOutfitID == "none" ? nil : presentation.shepherdOutfitID
-        let accessoryID = presentation.shepherdAccessoryID == "none" ? nil : presentation.shepherdAccessoryID
-        let ollieAccessoryID = presentation.ollieOrnamentID == "none" ? nil : presentation.ollieOrnamentID
-        let featuredSheep = presentation.featuredSheepDefinitionID == "none"
-            ? nil
-            : SheepCatalog.definition(for: presentation.featuredSheepDefinitionID)
-        return CuratedProfileSnapshot(
-            shepherd: ShepherdProfile(
-                skinTone: skinTone,
-                hairStyle: hairStyle,
-                outfitItemID: outfitID,
-                accessoryItemID: accessoryID
-            ),
-            ollieAccessoryID: ollieAccessoryID,
-            featuredSheep: featuredSheep,
-            pastureThemeID: presentation.pastureThemeID
-        )
-    }
-}
-
-private struct CuratedProfileSnapshot {
-    let shepherd: ShepherdProfile
-    let ollieAccessoryID: String?
-    let featuredSheep: SheepDefinition?
-    let pastureThemeID: String
-
-    var themeColor: Color {
-        switch pastureThemeID {
-        case "pasture_moonlit": return AppColors.lavender.opacity(0.16)
-        case "pasture_sunrise": return AppColors.amber.opacity(0.16)
-        default: return AppColors.grass.opacity(0.13)
-        }
-    }
-
-    var themeTitle: String {
-        switch pastureThemeID {
-        case "pasture_moonlit": return "Moonlit pasture"
-        case "pasture_sunrise": return "Sunrise pasture"
-        default: return "Meadow pasture"
-        }
-    }
-
-    var accessibilityLabel: String {
-        let sheep = featuredSheep.map { "Featured sheep \($0.name)." } ?? "No featured sheep."
-        return "Curated Farm look. \(themeTitle). \(sheep)"
     }
 }

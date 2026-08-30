@@ -195,9 +195,12 @@ struct FarmEquippedOverlayImage: View {
 struct OllieFarmAvatar: View {
     let accessoryItemID: String?
     var size: CGFloat = 72
+    var motionEnabled = false
+    @State private var actionCapabilities: [OllieCompanionAction: Bool] = [:]
+    @State private var capabilityRevision = 0
 
     private var equippedOverlayAssetName: String? {
-        guard let item = accessoryItemID.flatMap(FarmShopCatalog.item),
+        guard let item = renderedAccessoryItemID.flatMap(FarmShopCatalog.item),
               case .ollieAccessory(let assetName) = item.equippedRenderAsset else {
             return nil
         }
@@ -205,19 +208,31 @@ struct OllieFarmAvatar: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ollieBase
-            if equippedOverlayAssetName != nil {
-                FarmEquippedOverlayImage(assetName: equippedOverlayAssetName, size: size)
-                    .shadow(color: AppShadows.cardColor, radius: 1, y: 1)
-
-                // Repaint Ollie's head and upper chest above the accessory. The
-                // feathered depth matte makes the collar opening disappear behind
-                // his chin and neck fur instead of reading as a flat sticker.
-                ollieBase
-                    .mask(accessoryDepthMask)
+        OllieCompanionAnimationView(
+            schedule: animationSchedule,
+            isMotionEnabled: motionEnabled,
+            detailRevision: capabilityRevision,
+            nextDetailFrameTransition: nextFrameChange(after:)
+        ) { animationFrame, _ in
+            OllieCompanionSpriteRenderer(
+                animationFrame: animationFrame,
+                accessoryItemID: renderedAccessoryItemID,
+                size: size,
+                actionCapabilities: $actionCapabilities,
+                capabilityRevision: $capabilityRevision
+            ) { motionOverlayName in
+                if let motionOverlayName {
+                    ZStack(alignment: .bottom) {
+                        ollieBase
+                        PixelAssetImage(name: motionOverlayName)
+                            .frame(width: size, height: size)
+                    }
+                } else {
+                    neutralOllie
+                }
             }
         }
+        .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
     }
@@ -229,6 +244,48 @@ struct OllieFarmAvatar: View {
             fallbackColor: AppColors.grass,
             size: size
         )
+    }
+
+    @ViewBuilder
+    private var neutralOllie: some View {
+        ZStack(alignment: .bottom) {
+            ollieBase
+            if equippedOverlayAssetName != nil {
+                FarmEquippedOverlayImage(assetName: equippedOverlayAssetName, size: size)
+                    .shadow(color: AppShadows.cardColor, radius: 1, y: 1)
+
+                // The existing neutral composition retains its authored depth
+                // treatment. Animated poses use pose-specific overlay alpha.
+                ollieBase
+                    .mask(accessoryDepthMask)
+            }
+        }
+    }
+
+    private func nextFrameChange(after animationFrame: OllieCompanionAnimationFrame) -> TimeInterval? {
+        guard actionCapabilities[animationFrame.action] == true else { return nil }
+        return OllieCompanionSpriteManifest.production
+            .sequence(for: animationFrame.action)?
+            .nextFrameTransition(after: animationFrame.actionElapsed)
+    }
+
+    private var animationSchedule: OllieCompanionAnimationSchedule {
+        #if DEBUG
+        return ScreenbookOllieMotionReview.configuration?.schedule ?? .gentle
+        #else
+        return .gentle
+        #endif
+    }
+
+    private var renderedAccessoryItemID: String? {
+        #if DEBUG
+        if let configuration = ScreenbookOllieMotionReview.configuration {
+            return configuration.accessoryItemID(default: accessoryItemID)
+        }
+        return accessoryItemID
+        #else
+        return accessoryItemID
+        #endif
     }
 
     private var accessoryDepthMask: some View {

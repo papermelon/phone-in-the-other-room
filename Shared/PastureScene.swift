@@ -98,12 +98,6 @@ enum PastureSceneBehavior: Equatable {
     case dragging
     case chasing
     case reacting
-    case greeting
-    case petting
-    case squishing
-    case landing
-    case fetching
-    case observing
     case ambient(PastureSceneAmbientAction)
 }
 

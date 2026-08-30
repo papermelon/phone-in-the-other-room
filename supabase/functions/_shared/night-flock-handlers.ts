@@ -11,6 +11,7 @@ import {
   validateNightFlockCommand,
   validateNightFlockState,
 } from "./night-flock.ts";
+import { adaptSharedHabitsStateWire } from "./night-flock-shared-habits-wire.ts";
 
 export type NightFlockCaller = { id: string; isAnonymous: boolean };
 export type NightFlockCommandResult = Record<string, unknown> & {
@@ -43,6 +44,8 @@ const knownCommands = new Set([
   "publishProgress", "publishNightMetrics", "acknowledgeGrant", "replaceInvite", "renameParty", "startRound",
   "retrieveInvite", "leaveParty", "deleteParty", "updatePublicProfile", "publishActivity", "completeBackfill", "publishStatus",
   "blockMember", "reportMember", "cheerMember",
+  "acceptSharedHabitsAgreement", "publishSharedHabit", "deleteSharedHabitHistory", "migrateSharedHabits",
+  "publishSharedNightPlan", "cancelSharedNightPlan", "publishSharedNightReceipt",
 ]);
 
 function response(body: Record<string, unknown>, status: number, requestID: string): Response {
@@ -179,7 +182,10 @@ export async function handleNightFlockState(
     body = await parseBody(request);
     const stateContract = validateNightFlockState(body);
     const snapshot = await dependencies.read(caller.id, stateContract);
-    const output = response({ schemaVersion: stateContract.schemaVersion, snapshot }, 200, requestID);
+    const wireSnapshot = stateContract.schemaVersion === 4 && (stateContract.scope === "habits" || stateContract.scope === "sharedNights")
+      ? adaptSharedHabitsStateWire(snapshot)
+      : snapshot;
+    const output = response({ schemaVersion: stateContract.schemaVersion, snapshot: wireSnapshot }, 200, requestID);
     completionLog("night-flock-state", requestID, startedAt, body, 200, null);
     return output;
   } catch (error) {

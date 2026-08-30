@@ -324,9 +324,7 @@ struct WindDownRoutineStep: Codable, Equatable, Identifiable, Hashable {
 private extension PhoneFreeActivity {
     func defaultGuidanceID(for phase: WindDownRoutinePhase) -> String? {
         switch (phase, self) {
-        case (.evening, .read), (.evening, .makeTea): return "quiet-hour"
-        case (.evening, .journal): return "rest-not-performance"
-        case (.evening, .shower): return "calm-room"
+        case (.evening, .read): return "quiet-hour"
         case (.morning, .openCurtains), (.morning, .morningWalk): return "morning-light"
         default: return nil
         }
@@ -512,7 +510,8 @@ struct NightWatchPreferences: Codable, Equatable {
             eveningCueText: eveningCueText,
             morningCueText: morningCueText,
             eveningRoutine: eveningRoutine,
-            morningRoutine: morningRoutine
+            morningRoutine: morningRoutine,
+            calendar: calendar
         )
     }
 
@@ -644,6 +643,38 @@ struct AutomaticWindDownSchedule: Codable, Equatable {
     }
 }
 
+/// A night identity is captured when a plan is made, rather than reconstructed
+/// from a later device time zone. It is intentionally optional for legacy plans.
+struct NightWatchLocalDateAnchor: Codable, Equatable, Sendable {
+    let intendedBedtimeDate: NightFlockLocalDate
+    let nightEndingDate: NightFlockLocalDate
+    let timeZoneIdentifier: String
+
+    init?(
+        intendedBedtime: Date,
+        wakeTime: Date,
+        calendar: Calendar = .current
+    ) {
+        let timeZoneIdentifier = calendar.timeZone.identifier
+        var gregorianCalendar = Calendar(identifier: .gregorian)
+        gregorianCalendar.timeZone = calendar.timeZone
+        guard let intendedBedtimeDate = NightFlockLocalDate(
+            date: intendedBedtime,
+            timeZoneIdentifier: timeZoneIdentifier,
+            calendar: gregorianCalendar
+        ), let nightEndingDate = NightFlockLocalDate(
+            date: wakeTime,
+            timeZoneIdentifier: timeZoneIdentifier,
+            calendar: gregorianCalendar
+        ) else {
+            return nil
+        }
+        self.intendedBedtimeDate = intendedBedtimeDate
+        self.nightEndingDate = nightEndingDate
+        self.timeZoneIdentifier = timeZoneIdentifier
+    }
+}
+
 struct NightWatchPlan: Codable, Equatable {
     var intendedBedtime: Date
     var wakeTime: Date
@@ -659,11 +690,14 @@ struct NightWatchPlan: Codable, Equatable {
     /// Primary plans span the sleep bookends. Additional plans are standalone
     /// quiet intervals and must not advance protected-night progression.
     var role: WindDownOccurrenceRole
+    /// Missing only for plans saved before immutable night attribution existed.
+    /// Legacy plans deliberately remain unknown rather than using `Calendar.current`.
+    var localDateAnchor: NightWatchLocalDateAnchor?
 
     private enum CodingKeys: String, CodingKey {
         case intendedBedtime, wakeTime, protectedUntil, windDownMinutes, morningQuietMinutes
         case eveningActivity, morningActivity, eveningCueText, morningCueText
-        case eveningRoutine, morningRoutine, role
+        case eveningRoutine, morningRoutine, role, localDateAnchor
     }
 
     init(
@@ -678,7 +712,9 @@ struct NightWatchPlan: Codable, Equatable {
         morningCueText: String? = nil,
         eveningRoutine: [WindDownRoutineStep]? = nil,
         morningRoutine: [WindDownRoutineStep]? = nil,
-        role: WindDownOccurrenceRole = .primarySleepBookend
+        role: WindDownOccurrenceRole = .primarySleepBookend,
+        localDateAnchor: NightWatchLocalDateAnchor? = nil,
+        calendar: Calendar = .current
     ) {
         self.intendedBedtime = intendedBedtime
         self.wakeTime = wakeTime
@@ -706,6 +742,11 @@ struct NightWatchPlan: Codable, Equatable {
             for: .morning
         )
         self.role = role
+        self.localDateAnchor = localDateAnchor ?? NightWatchLocalDateAnchor(
+            intendedBedtime: intendedBedtime,
+            wakeTime: wakeTime,
+            calendar: calendar
+        )
     }
 
     init(from decoder: Decoder) throws {
@@ -738,13 +779,20 @@ struct NightWatchPlan: Codable, Equatable {
             for: .morning
         )
         role = try container.decodeIfPresent(WindDownOccurrenceRole.self, forKey: .role) ?? .primarySleepBookend
+        // A missing legacy anchor cannot safely be inferred after travel or a
+        // system time-zone change, so it stays unavailable for nightly metrics.
+        localDateAnchor = try container.decodeIfPresent(
+            NightWatchLocalDateAnchor.self,
+            forKey: .localDateAnchor
+        )
     }
 
     static func additionalQuiet(
         start: Date,
         end: Date,
         activity: PhoneFreeActivity = .read,
-        cueText: String? = nil
+        cueText: String? = nil,
+        calendar: Calendar = .current
     ) -> Self {
         let minutes = max(0, Int(end.timeIntervalSince(start) / 60))
         return Self(
@@ -756,7 +804,8 @@ struct NightWatchPlan: Codable, Equatable {
             eveningActivity: activity,
             morningActivity: .openCurtains,
             eveningCueText: cueText,
-            role: .additionalQuiet
+            role: .additionalQuiet,
+            calendar: calendar
         )
     }
 

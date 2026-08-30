@@ -11,6 +11,50 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## Current implementation
 
+- **2026-08-29 · Shared-habits agreement repair:** Release Edge date-wire compatibility
+  is deployed; founder confirms receipt/summary loading on the installed phone. Compact
+  See more disclosure and scoped retry state are local only. Final build, 763 app tests
+  and 27 backend tests pass, including an actual Swift/SQL/Edge replay. Next-night sleep
+  ingestion, two-member publication, full accessibility and new-build distribution remain
+  open. Evidence and capture-tooling gap: `docs/plans/shared-habits-agreement-repair-2026-08-29.md`.
+
+- **2026-08-28 · Minimalist Home hero, partial implementation:** Native personal Ollie welcome,
+  compact expandable timing, one factual social highlight, intact round label, and a local-clock
+  day/night window are implemented. Shepherd remains out of the native hero; design comparison
+  is off by default. Following explicit local-processing authorization, the ear/tongue/flop
+  sprites and three cosmetic sets are implemented (64 new imagesets); visible Home's failed
+  geometry observation was also repaired. Physical-device performance, full interaction and
+  accessibility QA remain before accepting the whole implementation. See
+  `docs/plans/ollie-motion-implementation.md` and the earlier Home checkpoint.
+  The final scoped source/asset review found no blockers; final build and 721 tests passed.
+  Follow up with manual viewport exit/re-entry, drag pause and lowest-control checks (P2),
+  and missing-equipped-overlay coverage for each supported accessory's rest group (P3).
+
+- **2026-08-28 · Membership sharing, local source accepted:** Immediate post-join/between-round
+  sharing is implemented with capability fallback, membership epochs, durable cheers, mixed-client
+  history and independent round grants. Parent reruns: main/QA 698 tests each, recovery 15,
+  PostgreSQL migration plus three SQL suites, Deno 20, Python 7. Fresh source review: no blockers.
+  Unlocked-Mac retest passes final manual/saved Phone Away → Active, group/history/menu controls,
+  accessibility-size layout and bounded iPhone SE interaction. Ordinary swipe/wheel scrolling
+  was subsequently confirmed by the founder for that candidate; automation could only prove
+  accessibility-driven reachability. The newer hero layout needs its own scrolling check.
+  Distribution remains held for that gap, broader accessibility, physical/two-account QA,
+  separately authorized hosted rollout, privacy publication and retention operations. See
+  `docs/plans/slumber-party-membership-sharing.md`. No deployment or phone build update occurred.
+
+- **2026-08-27 · Home/social recovery in the parent task:** The earlier Home handoff entry
+  below is implementation history, not acceptance. The founder rejected its visual hierarchy
+  and clarified Slumber Party's core role. `docs/plans/home-social-recovery.md` owns this
+  correction; `docs/plans/recent-changes-sol-review.md` records candidate review and remaining
+  gates. Parent interaction testing reproduced a nested Phone Away destination surviving a
+  successful start despite green tests, and the actual coordinator recovery probe exposed
+  expired deferred-Morning shielding replay. Both are corrected: final r3 passed 690 tests in
+  each main/QA configuration, 15 runtime probes, and the saved-start interaction retest.
+  Physical protection, real two-account sharing/recovery and distribution remain release gates.
+  The founder subsequently approved outside-round sharing; implementation and rollout status
+  are in `docs/plans/slumber-party-membership-sharing.md`. No new private-data fields or
+  unreviewed backend deployment are authorized.
+
 - **2026-08-25 · Slumber Party v4:** The founder-approved canonical contract is documented in
   ADR-0016. Its additive v4 source now includes the schema fence, long-lived named party/round
   model, transactional five-party cap, service-only recoverable invites, canonical curated
@@ -24,6 +68,16 @@ execute without human sign-off mid-task (final merge review still applies per
   recovery, and physical QA remain human gates.
 
 ## Recently completed
+
+- **2026-08-27 · Codex:** Completed the Home/Phone Away implementation handoff. Home now
+  consolidates the Wind Down plan and keeps manual/scheduled Phone Away actions visible with
+  typed protection preflight, a focused Family Controls repair route, five-to-thirty-minute manual
+  duration choices, actual-start anchoring, and saved-occurrence preservation. Active Purpose is
+  published immediately and scoped to the App Group registry identity. The contextual guidance
+  library now has stable Evening/Morning/Phone Away groups, source metadata and links, optional
+  routine insertion with replacement confirmation, and deterministic dismissible Home placement.
+  The simulator build and full unit suite pass; physical Family Controls, NFC, background/restore,
+  accessibility, and small-device visual checks remain open.
 
 - **2026-08-26 · Codex:** Rebuilt first-run Phase 1 around one optional six-question behavioral
   chapter, deterministic explicit-evidence starting patterns, a separate universally eligible
@@ -330,6 +384,48 @@ execute without human sign-off mid-task (final merge review still applies per
   access was denied. Nights explains that Apple's Sleep Score is not exposed through
   HealthKit.
 
+### B3 follow-up. Contextual connections and observed Health status — local implementation, QA open 2026-08-28
+
+- **Why:** Connections still says “Access requested” while Nights displays readable sleep;
+  disconnected Nights routes require a Settings detour and Health lacks foreground refresh.
+- **Implementation:** two configured Terra High lanes, parent validation, and fresh configured
+  Sol-advisor review completed the independent local source slice. See
+  `docs/plans/shared-habits-independent-implementation.md`. Builds and 734 Swift tests pass;
+  native request/declined-data flow was checked. Final corrected-help/accessibility interaction
+  checks stopped when the Mac locked. Physical permissions and return/cancellation QA remain.
+- **Accept:** one truthful observed-data status across screens, native Connect/Refresh/picker
+  actions in place, no inferred Health read denial, no silent protection disable, physical
+  permission/return/cancellation checks, and joining without Health data.
+
+### B3b. Shared-habits rollout and sensitive-data feasibility — open 2026-08-28
+
+- Single-character Slumber Party cards, Group details, and the topic/source library are implemented
+  locally. The additive avatar migration/Edge validator passed local SQL and Deno tests but are
+  not deployed. Prove old/new-client and two-account avatar propagation before rollout.
+- Complete final native feedback/help checks after unlocking the Mac, plus physical Health and
+  Family Controls consent, revocation, foreground return and error states.
+- Verified exact-app export for Singapore still needs a sanctioned customer route. Do not replace
+  automatic verification with self-labelled categories or export report-extension content.
+- Shared sleep averages, new sensitive-history transport and party-lifetime archives remain gated
+  on attribution, consent migration, deletion/withdrawal and dissolution/operations review.
+- No TestFlight or phone update is implied by the local implementation.
+
+### B3c. Slumber Party social habit loop — local source complete 2026-08-30
+
+- **Result:** additive v2 capability/agreement local source now publishes immutable rounded
+  next-seven-night plans, frozen factual receipts, cooperative coverage, fixed cheers, and bounded
+  idea borrowing. It excludes recurrence rules, custom text, exact app identity/per-app use, raw
+  Health, and credentials; unknown evidence is not failure.
+- **Plan:** `docs/plans/slumber-party-social-habit-loop-implementation.md`.
+- **Remaining gate:** apply/verify the hosted migration and Edge source, publish the matching privacy
+  disclosure, and complete physical two-account validation before calling the capability available.
+  Exact app identity/use stays independently blocked pending written Apple permission and a
+  supported Singapore customer route; do not substitute self-labelled apps or report extraction.
+- **Accept:** two physical adult accounts can share versioned nightly plans and factual receipts,
+  see coverage-aware group progress, borrow bundled routine ideas, leave/delete safely, and retain
+  independent local ritual/Farm authority. No hosted rollout, entitlement, or app-data upload is
+  authorized by the draft alone.
+
 ### B4. Decide and prove the production feedback route
 - **Why:** the in-app backend is intentionally launch-gated; email fallback is already the
   safe default.
@@ -342,18 +438,16 @@ execute without human sign-off mid-task (final merge review still applies per
   by explicit launch approval; finish the remaining external gates before enabling
   production notification delivery or calling this item complete.
 
-### B5. Apply the Phone Away contract in release copy and balance code
-- **Why:** the 2026-08-13 documentation contract intentionally leaves Swift/UI strings and
-  their tests untouched. Release code still exposes the former secondary-mode label, legacy Farm
-  search labels, and the old meter wording.
-- **Mode:** Codex · **Size:** M · **Autonomous:** no — user-facing copy and balance migration
-  require founder review
-- **Accept:** replace user-facing mode and Farm labels with Phone Away, Ollie's Search, and
-  Search Journal; use “Put phone away,” “Start now,” and “Plan” where applicable; centralize the
-  100-minute Phone Away meter as a game-balance value; retain `additionalQuiet`, `PhoneBreak`,
-  `QuietTime`, `NightWatch*`, persisted enum values, and `ollie.*` keys; update affected tests;
-  keep routine suggestions unverified and update the Settings/source-link surfaces. Do not
-  present the 100-minute value as sleep guidance.
+### B5. Apply the Phone Away contract in release copy and balance code — completed 2026-08-27
+- **Result:** user-facing Home, schedule, active, receipt, Farm, and Search Journal surfaces use
+  Phone Away terminology and the “Put phone away,” “Start now,” and “Plan” action vocabulary.
+  The existing `additionalQuiet`, `PhoneBreak`, `QuietTime`, `NightWatch*`, persisted enum values,
+  and `ollie.*` keys remain compatible. The Home/schedule repair path, bounded manual duration,
+  source-preserving start context, active purpose publication, and source-linked guidance library
+  are covered by focused Shared tests plus the full suite.
+- **Remaining gate:** physical Screen Time/NFC start and end, failure/retry, background/restore,
+  accessibility, and small-device UI evidence remain human/device checks; do not treat simulator
+  coverage as physical protection evidence.
 
 ## C. Architecture cleanup (post-first-upload, opportunistic)
 
@@ -397,6 +491,15 @@ execute without human sign-off mid-task (final merge review still applies per
   nighttime interaction requirement. Any future expansion still needs product review.
 
 ### D4. Slumber Party v4 production follow-through and two-account proof — backend deployed, human gates pending
+- **2026-08-28 activation update:** reviewed membership/avatar/shared-habits migrations and
+  both matching Edge handlers are deployed to Release; the expanded public policy is live;
+  build 37 shows Testing in internal and external QA. See
+  `docs/plans/home-restoration-build37.md`. Physical two-account proof is still open.
+  A read-only Cron metadata query found no job directly invoking
+  `purge_night_flock_retention`; establish the actual retention operator/schedule and secure
+  approval for any new cleanup job before claiming automated cleanup. Do not purge lifetime
+  shared-habit archives as transient data. The public App Store draft still selects build 2
+  and has obsolete reviewer instructions; reconcile before public submission.
 - Include v4 recoverable-invite evidence: lost response, relaunch without mutation, host-only
   explicit compare-and-swap replacement, stale-CAS preservation, and no ciphertext, plaintext,
   digest, or idempotency material in logs or support captures.

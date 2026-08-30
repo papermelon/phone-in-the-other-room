@@ -2,13 +2,14 @@ import SwiftUI
 
 struct WindDownScheduleView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var editor: Editor?
     @State private var message: String?
     @State private var contextualTip: CountingSheepContextualTip?
 
     private var upcomingOneTimePeriods: [WindDownOneTimePeriod] {
         viewModel.windDownSchedule.oneTimePeriods
-            .filter { $0.cancelledAt == nil && $0.interval.end > Date() }
+            .filter { $0.cancelledAt == nil && $0.interval.end > viewModel.currentDate }
             .sorted { $0.interval.start < $1.interval.start }
     }
 
@@ -27,10 +28,6 @@ struct WindDownScheduleView: View {
                     .foregroundStyle(AppColors.muted)
 
                 Button {
-                    guard viewModel.shieldingReadiness == .ready else {
-                        message = viewModel.shieldingReadiness.detail
-                        return
-                    }
                     let started = viewModel.startNewOneTimeAdditionalQuietNow()
                     if !started {
                         message = viewModel.windDownScheduleError ?? "Phone Away could not be started just now."
@@ -41,6 +38,12 @@ struct WindDownScheduleView: View {
                 }
                 .buttonStyle(PixelPrimaryButtonStyle())
                 .contextualGuideTarget(.phoneBreak)
+                if let message {
+                    Text(message)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.warning)
+                        .accessibilityAddTraits(.updatesFrequently)
+                }
             }
 
             Section("One-time Phone Away") {
@@ -50,22 +53,22 @@ struct WindDownScheduleView: View {
                         .foregroundStyle(AppColors.muted)
                 } else {
                     ForEach(upcomingOneTimePeriods) { period in
-                        let isReady = viewModel.readyOneTimeQuietPeriodID == period.id
+                        let isReady = viewModel.isPhoneAwayPeriodReady(period.id)
                         HStack(spacing: AppSpacing.sm) {
                             if isReady {
                                 Button {
-                                    guard viewModel.shieldingReadiness == .ready else {
-                                        message = viewModel.shieldingReadiness.detail
-                                        return
+                                    if !viewModel.requestStartNightWatch(sourceID: period.id) {
+                                        message = viewModel.nightWatchStartStatus.isEmpty
+                                            ? "That quiet window has passed or is too short to start now."
+                                            : viewModel.nightWatchStartStatus
                                     }
-                                    viewModel.requestStartNightWatch(sourceID: period.id)
                                 } label: {
                                     scheduleRow(
                                         title: period.userFacingTitle,
                                         detail: formatted(period.interval),
-                                        status: "Ready now",
+                                        status: scheduledStartStatus,
                                         enabled: period.enabled,
-                                        trailingIcon: "play.fill"
+                                        trailingIcon: scheduledStartIcon
                                     )
                                 }
                                 .buttonStyle(.plain)
@@ -157,7 +160,12 @@ struct WindDownScheduleView: View {
         .navigationTitle("Phone Away schedule")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            viewModel.refreshScreenTimeState()
             contextualTip = viewModel.contextualTip(from: [.phoneBreak])
+        }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            viewModel.refreshScreenTimeState()
         }
         .contextualGuideOverlay(
             tip: $contextualTip,
@@ -203,6 +211,18 @@ struct WindDownScheduleView: View {
     private func scheduledStartAccessibilityLabel(for period: WindDownOneTimePeriod) -> String {
         if case let .repair(title, _) = protectionStartPresentation { return title }
         return "Start scheduled \(period.userFacingTitle)"
+    }
+
+    private var scheduledStartStatus: String {
+        if case .repair = protectionStartPresentation {
+            return "Available now · protection needed"
+        }
+        return "Ready now"
+    }
+
+    private var scheduledStartIcon: String {
+        if case .repair = protectionStartPresentation { return "shield.lefthalf.filled" }
+        return "play.fill"
     }
 
     private var scheduledStartAccessibilityHint: String {

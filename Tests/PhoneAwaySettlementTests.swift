@@ -298,10 +298,10 @@ final class PhoneAwaySettlementTests: XCTestCase {
 
         XCTAssertEqual(presentation.state, .practice)
         XCTAssertTrue(presentation.message.contains("practice"))
-        XCTAssertTrue(presentation.message.contains("Phone Away gift progress was not added"))
+        XCTAssertTrue(presentation.message.contains("Phone Away search progress was not added"))
         XCTAssertFalse(presentation.message.contains("protected"))
         XCTAssertFalse(presentation.message.contains("reward"))
-        XCTAssertEqual(presentation.accessibilityLabel, "Phone Away practice complete. This was practice. 5 completed minutes were saved in Nights. Phone Away gift progress was not added.")
+        XCTAssertEqual(presentation.accessibilityLabel, "Phone Away practice complete. This was practice. 5 completed minutes were saved in Nights. Phone Away search progress was not added.")
     }
 
     func testBelowMinimumReceiptExplainsTheFifteenMinuteStartWithoutFailureLanguage() {
@@ -309,7 +309,7 @@ final class PhoneAwaySettlementTests: XCTestCase {
         let presentation = PhoneAwayReceiptPresentation.make(record: result.record)
 
         XCTAssertEqual(presentation.state, .belowMinimum)
-        XCTAssertTrue(presentation.message.contains("No Phone Away gift progress was added"))
+        XCTAssertTrue(presentation.message.contains("No Phone Away search progress was added"))
         XCTAssertTrue(presentation.message.contains("15 completed minutes"))
         XCTAssertFalse(presentation.message.localizedCaseInsensitiveContains("failed"))
         XCTAssertNil(presentation.searchLinkTitle)
@@ -369,7 +369,7 @@ final class PhoneAwaySettlementTests: XCTestCase {
         let presentation = PhoneAwayReceiptPresentation.make(record: nil)
 
         XCTAssertEqual(presentation.state, .legacy)
-        XCTAssertTrue(presentation.message.contains("no saved Phone Away gift progress"))
+        XCTAssertTrue(presentation.message.contains("no saved Phone Away search progress"))
         XCTAssertNil(presentation.searchLinkTitle)
     }
 

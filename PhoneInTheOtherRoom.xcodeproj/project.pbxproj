@@ -10,22 +10,27 @@
 		001665B6F64A2675457C0C4A /* QuietTimeShieldScheduleRegistryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09EF3D06CCC068DCECED0330 /* QuietTimeShieldScheduleRegistryTests.swift */; };
 		0021C01A31390AFC04D25A0B /* AppFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984770912E1D1E0E0B021EAD /* AppFeedback.swift */; };
 		002D3EEB534841C29E3DE665 /* NightWatchGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE29836613BFD365670A422D /* NightWatchGuidance.swift */; };
+		00D9DC2A432051F8F345FAAC /* FocusSessionStartResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7D108D6023C76401482057 /* FocusSessionStartResult.swift */; };
 		01184749F6F8275632CFEA4C /* WatchConnectivityManagerWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CC8CF1566C6708731DA3245 /* WatchConnectivityManagerWatch.swift */; };
 		01419E611DA89B07876B86F0 /* FocusStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B155C3B3FD62B8432563C4A8 /* FocusStatsView.swift */; };
 		014FC356E015D47300F6B6BA /* ActiveRunPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD93D4896D42F81A142F85F5 /* ActiveRunPresentation.swift */; };
 		015AC9F3765DEF15E7AFCA39 /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		01D12FE136E18BBC87E0E5C7 /* NightWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0017C31179B4E0FF551A79D4 /* NightWatch.swift */; };
 		01DB05D9AF1EF108BC981FDB /* NotificationCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93972DA8F2073D37A04DFC6 /* NotificationCopy.swift */; };
+		0240584078DD206F12CAC3FA /* HomeStartRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75221D637B58B586CF85CD0 /* HomeStartRouting.swift */; };
 		029C75FF80662004F4590C5C /* AppFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984770912E1D1E0E0B021EAD /* AppFeedback.swift */; };
 		031B6228C1BC8B1C24A87EA1 /* SheepSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47AE0567955634A07E71846 /* SheepSearchState.swift */; };
 		0368E6CDF477802E1CB27BFE /* ProximityClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E380CE5C4EF450772817B63 /* ProximityClassifier.swift */; };
 		03963E5F62E207B4A6248667 /* AssetPlaceholderComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 53317BDED55DB805619E0AD9 /* AssetPlaceholderComponents.swift */; };
 		039B02BC6570BF39DDCEA412 /* QuietNoteText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075F8FE54AF036CB8A62A9C7 /* QuietNoteText.swift */; };
+		03CA8343D240F98BC452B71F /* PhoneAwayStartPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */; };
 		04A512B60A81D43F8FACC009 /* SettingsHelpGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECC86FE71B9E1FB5AFFC7741 /* SettingsHelpGuideView.swift */; };
 		04CE3C0B798352CCC63FF874 /* NightFlockV4Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D67E08955167174DDFFEA42D /* NightFlockV4Tests.swift */; };
+		052977BDDDA2108895B23848 /* ConnectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */; };
 		05C42B517ADD3067BA14A89D /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		06222F258AB04598CF778599 /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		067C01FF50E7AA5FD381F07A /* FocusAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CB9D7F6CBF2FB36B03D2B /* FocusAnalytics.swift */; };
+		067C2294FA723A966DAE533F /* PhoneAwayStartPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */; };
 		06EE63CE0CE9A2EB4D3514E7 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
 		0700D4D79EF90295C5D76C2C /* SlumberPartyFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E55F6B3BBBE4FF6C3C6897B /* SlumberPartyFeedback.swift */; };
 		0741B7AD0D820B58B2AFDB06 /* NightFlockViewModel+Commitment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B351566B166AF3B071F1A23 /* NightFlockViewModel+Commitment.swift */; };
@@ -33,6 +38,7 @@
 		088272F910A24724932F21D4 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
 		08C8173E50911325713FB510 /* WatchMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B830DE525CC379D8E1929C /* WatchMessage.swift */; };
 		092EFEC1B9BBB76919B70B0F /* OnboardingComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4171FE58D4BF8709F924531 /* OnboardingComponents.swift */; };
+		094BA54C60F0A6F64D74F9AC /* HomeWelcomeHero.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0526BEF9524D722F103FFEC /* HomeWelcomeHero.swift */; };
 		09B37744056AAC8ABD096A63 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556930E68BC87E851A8295A3 /* Formatting.swift */; };
 		09E4CF8BA8838B7604C3D31B /* WatchPhysicalQAFixture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9507195D32B62BFEBBE8B959 /* WatchPhysicalQAFixture.swift */; };
 		0A589516EFBC50BCBA801ED5 /* NightWatchReceiptCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E204C37852098CA2DC19896 /* NightWatchReceiptCard.swift */; };
@@ -55,9 +61,11 @@
 		0FCD3A1F023BB918C037777E /* FirstRunJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05BA9EBC2619C32D861A3623 /* FirstRunJourney.swift */; };
 		0FDD34E13FADC9B6BEFECDAA /* NightFlockInviteRecoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BC24BC9476F914AC5236AB /* NightFlockInviteRecoveryTests.swift */; };
 		102EEDF4C97841C7389559A8 /* NearbyInteractionDistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA883DF2B718ECF95251587 /* NearbyInteractionDistanceProvider.swift */; };
+		1072EC25F771777FC0A5E72C /* HomeWindowPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FA5C6A26495A14B146EE41 /* HomeWindowPhaseTests.swift */; };
 		10BD067878870884774F6DE9 /* WindDownGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B90812500022857C5B05D0 /* WindDownGuidance.swift */; };
 		111C88B554F0F338B1F28BE1 /* NightWatchGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE29836613BFD365670A422D /* NightWatchGuidance.swift */; };
 		116756BDEE56A3F99BBE4DE7 /* AppearancePreferenceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFE0398B242518D3AF3B6070 /* AppearancePreferenceCard.swift */; };
+		1174700CEB2F4E5CE86C4B26 /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
 		11C7E3EC931CAB2C524A326E /* NightJourneyProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = C72601B936190333C971123E /* NightJourneyProgress.swift */; };
 		11D1B3C40653A5A706F0D4AB /* NightFlockV3API.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CE0725085BDB4C2C4448E8 /* NightFlockV3API.swift */; };
 		1245157F80C34A3680EDCBF0 /* WindDownProfilePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BFFBE289B6229DA8FB8B21 /* WindDownProfilePresentation.swift */; };
@@ -104,19 +112,25 @@
 		1A756A5B4A98418C47675D93 /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
 		1A845CA7800901854ABCAE9B /* NightFlockRemoteError.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34BF2BC536636521908B263 /* NightFlockRemoteError.swift */; };
 		1AC01546472596D97D4A6AEC /* CompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F6F711960B149665B4E5B3 /* CompletionView.swift */; };
+		1B94AE3F5BF74E0CBFFBCB76 /* WindDownGuidanceSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F112584D281DE13D26D4A84 /* WindDownGuidanceSources.swift */; };
 		1BE7CE6D6AC31ABE4901BF85 /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E109FBC4F835E47324D0F295 /* FarmModels.swift */; };
 		1CC56DF89D039F63717DB9D9 /* NightFlockPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB187B79332895B17084F74 /* NightFlockPresentation.swift */; };
 		1CFEB140D8C55FCF595C8F74 /* NightFlockCommitment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD7734FF73CD436CE4D9CD60 /* NightFlockCommitment.swift */; };
 		1D88BC92839CD6DCDF5D9B4C /* RewardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F2F141C24516D082490195 /* RewardEngine.swift */; };
 		1D91A89EFBF61205F763B197 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC03E8137A0193E690B45BB3 /* Theme.swift */; };
 		1DA09929AB6DA17CFBEF9B1E /* ImpactSharingConsentSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC0813C86FDB60332218CA22 /* ImpactSharingConsentSheet.swift */; };
+		1E24B7111D25A6DDB925DC2C /* NightFlockSharedHabitsOutbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */; };
 		1E3702DE2DDB8DEFDC92E872 /* WindDownGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B90812500022857C5B05D0 /* WindDownGuidance.swift */; };
+		1E4FC05E95AC5719835F8CF7 /* OllieCompanionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EDCFECB0BBAFD73749828B4 /* OllieCompanionAnimation.swift */; };
 		1E6DA49A0B8D6BD6F6FD7D74 /* WindDownProfilePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BFFBE289B6229DA8FB8B21 /* WindDownProfilePresentation.swift */; };
 		1E84FA59AC03BAFBC7412E04 /* QuietTimeShieldPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4062FAC31C304970D4684E0D /* QuietTimeShieldPresentationTests.swift */; };
 		1E8DF9BED8584E553EC28AD6 /* HomeReceiptRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EE08407F9EF95452730826 /* HomeReceiptRoutingTests.swift */; };
 		1E960B847E5158719E67FC4C /* WatchSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 049E4EF9D90B759E69EDBD13 /* WatchSetupView.swift */; };
+		1EC66E5460B942B3E2A9C99C /* WindDownGuidanceSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F112584D281DE13D26D4A84 /* WindDownGuidanceSources.swift */; };
 		1EE1BB64D26FB68C8DA0971B /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
+		1EE1FD01AFB3199707548C53 /* ConnectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */; };
 		1F0415F3251F5D443135E5B0 /* NightFlockRemoteError.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34BF2BC536636521908B263 /* NightFlockRemoteError.swift */; };
+		1F1A48C306580DACA3FE7E38 /* OllieCompanionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EDCFECB0BBAFD73749828B4 /* OllieCompanionAnimation.swift */; };
 		1F2F435A82ECBA53A49757B4 /* FocusRunLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29FA54459D95BF429B1EFE21 /* FocusRunLiveActivityWidget.swift */; };
 		1F89AA34282B4DB9785261CA /* WindDownStartTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */; };
 		1FB454DE0F819A98583ED49B /* PhoneInTheOtherRoomLiveActivity.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = F155290D562D7CB38E2AB55F /* PhoneInTheOtherRoomLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -126,6 +140,8 @@
 		21C678E4C55C2DE401B6525F /* QuietPeriodScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3505E7C64139CE4F4E17143 /* QuietPeriodScheduling.swift */; };
 		21CCCC265CC36EF350970244 /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E109FBC4F835E47324D0F295 /* FarmModels.swift */; };
 		21F75D39BF45D4C34946CB5F /* FarmMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0FC8B341E9575F1CD5187A7 /* FarmMigration.swift */; };
+		2228883B906183C4F0D51181 /* SlumberPartyHomePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */; };
+		2230FAA55D7C78556218DDC9 /* ConnectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */; };
 		2239FE1C234CC6AA199408F7 /* QuietPeriodSchedulingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6004C3D9FE6CC76BC09ACB0 /* QuietPeriodSchedulingTests.swift */; };
 		22AABEBA0AFED5985C3FA20A /* QuietTimeShieldPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */; };
 		22D51D6A12E0864EEBEB1064 /* SheepSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47AE0567955634A07E71846 /* SheepSearchState.swift */; };
@@ -145,10 +161,12 @@
 		2764F6DD6453F531088B4C3E /* WindDownProfileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07453853B4BE6F13D45D3837 /* WindDownProfileTests.swift */; };
 		2782B8FC4922A44B7869F5BB /* NightFlockV4Outbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9929526BDCE7E479341DF0 /* NightFlockV4Outbox.swift */; };
 		278C90FCB66FBB5124915CA6 /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB21F4F561F0CDDE5838E2E /* AppAppearance.swift */; };
+		27B4FF38DEC1C4948E6F15D5 /* NightFlockSharedHabitsFence.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2AD704C0BE588AF5B3DBDE1 /* NightFlockSharedHabitsFence.swift */; };
 		280B45BDBB56718B6BBC1B47 /* AutomaticWindDownSchedulingDecisionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DBC779CA1E0414914E287E4 /* AutomaticWindDownSchedulingDecisionTests.swift */; };
 		2818A7095EEECBDAD3B8E311 /* WindDownProfilePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BFFBE289B6229DA8FB8B21 /* WindDownProfilePresentation.swift */; };
 		283AAE27E04BE9CFDBEE692A /* PastureScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B4094E1123762C21960270 /* PastureScene.swift */; };
 		28B609C8E1BDF0A6799317E1 /* WindDownSchedulePreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55F3D28135241E092DA0C86 /* WindDownSchedulePreviews.swift */; };
+		2908814B2BB6A63B322AE28F /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
 		29701D43ACC9A81E08F4F0AB /* NightJourneyTerrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */; };
 		29981B01A698D1ACE471160B /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
 		2A1FAB0E270E7BD7F795C6AB /* NightFlockV4Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9468554FC475650E6948B /* NightFlockV4Models.swift */; };
@@ -162,13 +180,16 @@
 		2BFF051EE9C9E6A28EE9ADD8 /* OfflinePurpose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180FD34F0C45EF5E28E01556 /* OfflinePurpose.swift */; };
 		2CA7DA7AAB76C165AB54BAD2 /* EarlyEndView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86474E30A0FD22942AB201DD /* EarlyEndView.swift */; };
 		2D496EDF67A78096DC5653B6 /* NightFlockOrientationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E189BEFB5814021029DA343F /* NightFlockOrientationView.swift */; };
+		2D58EC85415349FE132CC8C3 /* NightFlockSharedHabitsOutbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */; };
 		2D7008D7AFF6C1F03049EEFB /* BarnView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C97297774BF85D09B33C057 /* BarnView.swift */; };
 		2D955B7793B950A479D1358D /* FarmShopCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B627FD9CFCEA07258CD90E1 /* FarmShopCatalog.swift */; };
+		2DE70F9897FC61E676A3CA65 /* ScreenbookRecoveryProbe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F53480D8F466112B0283D71 /* ScreenbookRecoveryProbe.swift */; };
 		2E9058B5A00BF211C158EAC0 /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
 		2E93C8883309FAF3A2E009EE /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
 		2ED16D7EC13526B27631B8D6 /* NightFlockPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB187B79332895B17084F74 /* NightFlockPresentation.swift */; };
 		2F22D06A0264FFA4320BEE2F /* NightJourneyProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = C72601B936190333C971123E /* NightJourneyProgress.swift */; };
 		2F592190E9FF1E9EE0ED1FB0 /* QuietTimeShieldScheduleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A6A44FF65DC1B46C80557C /* QuietTimeShieldScheduleTests.swift */; };
+		2F79A3E67299221491CEF006 /* NightFlockV4PublicationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7923398001F7111F5D8FB89 /* NightFlockV4PublicationPolicy.swift */; };
 		2FC62A9B3F0748C95A34E41B /* WelcomeRewardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1EF831C34B695262897E31 /* WelcomeRewardTests.swift */; };
 		2FD893F01CFFD64E98BE2AA2 /* SheepSearchWelcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0C1564F4FD15228C55FF8B /* SheepSearchWelcome.swift */; };
 		3061666632EC0766C3E3407A /* ScreenFreeMorningPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFC3CC3B89C99D7C395BA2C /* ScreenFreeMorningPresentation.swift */; };
@@ -176,24 +197,31 @@
 		30A4F43CD08D444AF06F89BA /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		3118DE5A2A8CFCC32E62E5F4 /* HomeReceiptRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3001351373E2912EB653842 /* HomeReceiptRouting.swift */; };
 		311B5BC61AB9DE6952A0E571 /* FarmShopCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B627FD9CFCEA07258CD90E1 /* FarmShopCatalog.swift */; };
+		3139268D752352BBE34972FD /* ConnectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */; };
 		32333EEF834C0AB04E12CAC2 /* NightJourneyGait.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */; };
 		32A9E3FA5CA7CAACA46651B6 /* FirstRunJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05BA9EBC2619C32D861A3623 /* FirstRunJourney.swift */; };
 		32D48AF51A5F99FC8A3E53CC /* OfflinePurpose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180FD34F0C45EF5E28E01556 /* OfflinePurpose.swift */; };
 		32E90C6D24C983E1E35D6167 /* OnboardingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24BDC9E1716AA10A37DB1C3 /* OnboardingJourney.swift */; };
 		33AD269A89606AEE4BB46119 /* IndependentMorningSettlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A1636CD678FB4C1B1BF913 /* IndependentMorningSettlement.swift */; };
+		34780C117AB32899DA7DF43B /* NightFlockV4PublicationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7923398001F7111F5D8FB89 /* NightFlockV4PublicationPolicy.swift */; };
 		34B3592154393AC82C33F4CA /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1703E9A69A2A56DE2F850967 /* AppRootView.swift */; };
 		353243A0EA0BABE5E5F471CF /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		35722C26C309DF27C961422D /* WindDownProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417A5E80D30B2379E6F9C166 /* WindDownProfile.swift */; };
+		358A9C1F804D564E9C767DD2 /* PastureCharacterHitTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4285A43B1B1DCA41115E52D /* PastureCharacterHitTarget.swift */; };
+		36160D6DEFEECE81231D609A /* FocusSessionStartResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7D108D6023C76401482057 /* FocusSessionStartResult.swift */; };
 		368AE4B89A55C32403BB6D5E /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		36AA2B1114372488FABDCBBF /* FocusRunViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10F6B198F7484F2D1475ED0 /* FocusRunViewModel.swift */; };
+		36D0F665B7F4E83273F49CDB /* FocusRunViewModel+SharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E01DCDE3B22D74F2B27C753 /* FocusRunViewModel+SharedHabits.swift */; };
 		36DFFE64F22A9D5E69C9D2AB /* MorningCheckInCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EBF5AEECC8C11A24F9AC80C /* MorningCheckInCard.swift */; };
 		36E3949801C2218FA39A9634 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
 		36F1E476A80E41A89D6C6534 /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		370F432B5912E89A1860F798 /* HomeReceiptRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3001351373E2912EB653842 /* HomeReceiptRouting.swift */; };
+		37414073D69B55AF5115733E /* HomeStartRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75221D637B58B586CF85CD0 /* HomeStartRouting.swift */; };
 		37D7AA64A058418A0D3A2A88 /* CountingSheepUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9833AE367470A8440023AF38 /* CountingSheepUserProfile.swift */; };
 		37D9B3E272AF5281BC76997B /* FocusModeSuggestionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 535CA8E77DE96419BD2E3921 /* FocusModeSuggestionService.swift */; };
 		383667C2823CE6BA70F377D3 /* NightFlockSharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BEE7AA1F7ADED8F0910140 /* NightFlockSharing.swift */; };
 		38603B4C747E6BABA61087E7 /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
+		387CAEB0D109F7428B262C22 /* NightFlockSharedHabitsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */; };
 		38A955CAD149160BECAB25CA /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
 		38FE00F468445E28B4FC505D /* NightFlockRewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E743BEE0142538219616C76 /* NightFlockRewards.swift */; };
 		3912643133F5E2BDC9DBEFA0 /* QuietTimeShieldPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */; };
@@ -206,21 +234,24 @@
 		3B4CCB7C57215201407D4358 /* NightFlockViewModel+Errors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7606643546B66C81C5292038 /* NightFlockViewModel+Errors.swift */; };
 		3BEF9D95A28CCB96AA4BF3A8 /* WindDownRoutineTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F527AC2393CEA25AAB957412 /* WindDownRoutineTextTests.swift */; };
 		3BFDED03E4D4E6A2F61C3CF9 /* EmergencyExitChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD96BC14249CA900698352DB /* EmergencyExitChallenge.swift */; };
+		3BFF1F9807990B970D62CEA3 /* NightFlockSharedHabitsFence.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2AD704C0BE588AF5B3DBDE1 /* NightFlockSharedHabitsFence.swift */; };
 		3E044B1F6F9F00F2A72F8EC4 /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
 		3EC4469038B6C6A3A66DD087 /* HomeReceiptRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3001351373E2912EB653842 /* HomeReceiptRouting.swift */; };
 		3F0F836243FE9EB3DA529310 /* NightFlockInviteRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = D94013E9C7BDDAE4E4463EAD /* NightFlockInviteRecovery.swift */; };
 		3F21C4061C8A516BD06ACF97 /* SlumberPartyV4PartyDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 137FEFD7C61187DE3EBEDB5D /* SlumberPartyV4PartyDetailView.swift */; };
+		3F2C7A5131C7FB02A3E5FE4E /* FocusSessionStartResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7D108D6023C76401482057 /* FocusSessionStartResult.swift */; };
 		3F44608B9FE05C282CC29FBF /* NightFlockTipCallout.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B2563134136BD2136655BD /* NightFlockTipCallout.swift */; };
 		3F4A1E86A6D960EDDFE64213 /* FocusRunLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */; };
 		3F6D60E9DE14AAEDF122D442 /* PhoneBedTagInspection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00991484321D62D0BF8B6E01 /* PhoneBedTagInspection.swift */; };
-		3F805401FA4B4BFF93A81A9E /* PastureInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3962DC8AB5D6673BDC1D1AE8 /* PastureInteraction.swift */; };
 		3F91E4CDB2C938AAE517C5B7 /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		406CF5E814BF782BBCFA45FE /* NightWatchUsageMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4203FF55399C57FCA0A042D /* NightWatchUsageMonitoring.swift */; };
 		407F7BADFF2026BC915C17BD /* NightFlockCommitment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD7734FF73CD436CE4D9CD60 /* NightFlockCommitment.swift */; };
 		409F5958B12BF0E9AB0DD9EF /* NightFlockOutboxService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5CFEB51D35E8C302B15B6E /* NightFlockOutboxService.swift */; };
 		40BEEAE760EE95B0EB984D65 /* CountingSheepStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F944D82DFD76323D0FF627B0 /* CountingSheepStorage.swift */; };
 		423131065D96B4C816455928 /* FocusRunRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7479F9FF862CDA06790D8869 /* FocusRunRules.swift */; };
-		42AF66E41FAAEA280B88B651 /* PastureInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3962DC8AB5D6673BDC1D1AE8 /* PastureInteraction.swift */; };
+		423F4ADEA9A0324A4551B440 /* SlumberPartyHomePresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F818388296382E12C5E9F9B /* SlumberPartyHomePresentationTests.swift */; };
+		4264402D979A03660E0BE924 /* HomeWindowPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */; };
+		432C75E9ADC469AA64B575BE /* ScreenbookOllieMotionReview.swift in Sources */ = {isa = PBXBuildFile; fileRef = B883F348283D57EFA736EEB8 /* ScreenbookOllieMotionReview.swift */; };
 		432E09AEF3D2668C134D9F85 /* NightFlockRewardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85CDED1972FEFD89E5E25F9F /* NightFlockRewardTests.swift */; };
 		4397B16934F5825BEF1DCE95 /* SheepSearchPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B477F5C61D1A9EABC230193 /* SheepSearchPresentationTests.swift */; };
 		43B73ED5ECBC178B68DD237B /* EmergencyExitChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD96BC14249CA900698352DB /* EmergencyExitChallenge.swift */; };
@@ -229,15 +260,19 @@
 		4412DF3FFA818274C331CC15 /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
 		444AEF4E2CAE4C7643677BBE /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
 		444B5516AF37D7EA01AF8497 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
+		449B04F3B1702E29E5C21E6A /* ConnectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */; };
 		44D1C824D48EACBB2ABE4783 /* NightFlockMemberBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 156E67A2C41E12C90EDAC0FD /* NightFlockMemberBoardView.swift */; };
+		44E4DF1AC4C86D655428C35F /* NightFlockSharedHabitsFenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AACBF0DDC07BE817316D593 /* NightFlockSharedHabitsFenceTests.swift */; };
 		450A3D8BC3C463AB7BC23DE0 /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
 		453D1BE0DF2809B26CB0FFB1 /* PhoneAwaySearchSettlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB4F3A6783D5E1106B72F2E /* PhoneAwaySearchSettlement.swift */; };
 		45DC93F9C59DE8DD62A4C21A /* SheepSearchSlumberParty.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C99DEB69F16CC14EB68810 /* SheepSearchSlumberParty.swift */; };
+		45E4A0E0F40051662F920E13 /* WindDownGuidanceSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F112584D281DE13D26D4A84 /* WindDownGuidanceSources.swift */; };
 		461294B67EEA35296113809E /* SunriseTrail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249B4AF9B120045F2B5EAA36 /* SunriseTrail.swift */; };
 		4641AC61F17E0DEBAC15BE80 /* NightsHistorySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */; };
 		46B9BD5A3E79836B73EB5C7F /* NightWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0017C31179B4E0FF551A79D4 /* NightWatch.swift */; };
 		46C05592AA1B3674000C0959 /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
 		4727F118760731E606D47EFE /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB21F4F561F0CDDE5838E2E /* AppAppearance.swift */; };
+		4759AD655C19FEDB91B55C12 /* NightFlockV4PublicationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7923398001F7111F5D8FB89 /* NightFlockV4PublicationPolicy.swift */; };
 		475EE551CE173F2C8E8952AB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3DF58B2DAC7FE37451EAB87E /* Assets.xcassets */; };
 		4772F82325B0863EF5201008 /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		48475A973B3CB8DB7247C5C2 /* FirstRunJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05BA9EBC2619C32D861A3623 /* FirstRunJourney.swift */; };
@@ -245,20 +280,24 @@
 		490B2F011A6E0B20BA18B621 /* FocusStatsContextSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39A4564C2F69B77548E8793 /* FocusStatsContextSections.swift */; };
 		491368D2800DD32CF6A74F6E /* NightWatchUsageMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4203FF55399C57FCA0A042D /* NightWatchUsageMonitoring.swift */; };
 		49180AF09142C37FE94D490A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3DF58B2DAC7FE37451EAB87E /* Assets.xcassets */; };
-		4934D3D6C8CB587519576A0D /* PastureInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3962DC8AB5D6673BDC1D1AE8 /* PastureInteraction.swift */; };
 		496496740A5096B62F5DE343 /* NightFlockV4Rewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D02D6B734CCEAA5550A323 /* NightFlockV4Rewards.swift */; };
 		49A44BC0B84BBC21984D02C4 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		4A63B59A11827C4B6CCE2797 /* WindDownProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417A5E80D30B2379E6F9C166 /* WindDownProfile.swift */; };
 		4AC763846240FC2A93F45C06 /* ScreenFreeMorningPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C3D1D2FB516B84C51EC9E6 /* ScreenFreeMorningPresentationTests.swift */; };
+		4B06DF825920E04A5F7DF90B /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
 		4B4060139BAF10FAE53EB40C /* WatchOllieIconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7005D618AE83F9E9EFC62CAD /* WatchOllieIconView.swift */; };
 		4BBA92446A2BD51E8963F286 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556930E68BC87E851A8295A3 /* Formatting.swift */; };
 		4BC43A6B346AB552765B690A /* FarmEconomySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DEFB5698FE4EE517A1DD47 /* FarmEconomySnapshot.swift */; };
 		4BF9A33D59F9294484ECFFBA /* PixelHomeDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B97166551A0616FC19980F1 /* PixelHomeDashboard.swift */; };
 		4C2D5CE9F22A294928FDFE74 /* WatchCaptureFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B04603C403E06255FE4159 /* WatchCaptureFixtures.swift */; };
+		4C9B28B9BD62330AC9286225 /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
 		4D7AC933AEBC00DBD24D9F49 /* PhoneBedTagInspectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09CC89F616D84C91797729E /* PhoneBedTagInspectionTests.swift */; };
 		4DA547FFEE0E91821CA6876B /* WindDownGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B90812500022857C5B05D0 /* WindDownGuidance.swift */; };
+		4DD15C8988747430C653EAA3 /* SlumberPartyV4GroupDetailsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C2B0F320BAD56245267D266 /* SlumberPartyV4GroupDetailsView.swift */; };
 		4E0FCFB6B5489E43F6095CBA /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
+		4E2112051005FA6B639EE7F2 /* SlumberPartySharedHabitsConsentDisclosure.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E8C2669732D7E8E5E31546D /* SlumberPartySharedHabitsConsentDisclosure.swift */; };
 		4E26D5AFF2C4758038825CA4 /* SheepSearchPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98F3869CB594F1B70F8A49D /* SheepSearchPresentation.swift */; };
+		4E45244E11599983AC8EAE46 /* NightFlockSharedHabitPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945BF06967132A220DD6D185 /* NightFlockSharedHabitPresentation.swift */; };
 		4E4CAF3AD0250AE7D0EF174C /* NightWatchUsageMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4203FF55399C57FCA0A042D /* NightWatchUsageMonitoring.swift */; };
 		4E5B9FACCC26203371C3D22D /* PhoneNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59D0E1118D698AB3289BF2A1 /* PhoneNotificationService.swift */; };
 		4E8AC309319968462E39984C /* ScreenFreeMorningPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFC3CC3B89C99D7C395BA2C /* ScreenFreeMorningPresentation.swift */; };
@@ -268,6 +307,7 @@
 		4F6628CC4FA6EA3AC387C7DE /* NightWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0017C31179B4E0FF551A79D4 /* NightWatch.swift */; };
 		4F6D56516B6F29050F70373C /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
 		4F9C1C72F9228B44D0A5781D /* OfflinePurposeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B131CABED0445916D4A206D2 /* OfflinePurposeTests.swift */; };
+		4FBD658E6BEFC8772596F4C0 /* OllieCompanionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EDCFECB0BBAFD73749828B4 /* OllieCompanionAnimation.swift */; };
 		4FCC2858372173E7295D7639 /* ContextualGuideOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFAE876CD840AE34DBD0CD09 /* ContextualGuideOverlay.swift */; };
 		5015618AF28CB314D2AE3DD5 /* SheepSearchPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98F3869CB594F1B70F8A49D /* SheepSearchPresentation.swift */; };
 		508CFC3E8BFBAA5CF1E80052 /* FarmMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0FC8B341E9575F1CD5187A7 /* FarmMigration.swift */; };
@@ -278,12 +318,14 @@
 		51B101654834380861A003B4 /* NightFlockRewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E743BEE0142538219616C76 /* NightFlockRewards.swift */; };
 		52AB14A0F25C36FD2EE53DB2 /* NightJourneyTerrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */; };
 		53371F00BCC296875EE0C30C /* NightWatchHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 766D336119CCB55800F75535 /* NightWatchHistory.swift */; };
+		535138E2E0AD27B86A78EF1C /* WindDownGuidanceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69B8EC3C928FE031D88AF0C6 /* WindDownGuidanceDetailView.swift */; };
 		538CEAF6A7A8C06A48EDD382 /* QuietPeriodScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3505E7C64139CE4F4E17143 /* QuietPeriodScheduling.swift */; };
 		53958E403A8BD660164A5BBA /* SlumberPartyFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E55F6B3BBBE4FF6C3C6897B /* SlumberPartyFeedback.swift */; };
 		540C92A614BF8934F40A4DCB /* WindDownStartTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */; };
 		544EECB2DCA829BC8A1CCACD /* SheepSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47AE0567955634A07E71846 /* SheepSearchState.swift */; };
 		54F38CD09C4A91198E2D1202 /* NightFlockV4Rewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D02D6B734CCEAA5550A323 /* NightFlockV4Rewards.swift */; };
 		550AE981AE28C464A52BA69A /* AutomaticWindDownSchedulingDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89A173EE13348C1966863095 /* AutomaticWindDownSchedulingDecision.swift */; };
+		553056DE84F5B906199FC192 /* SlumberPartyHomePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */; };
 		55ABC61716645893EDD05AF5 /* MorningCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */; };
 		56415F447F1A48D59FF16484 /* AppAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB21F4F561F0CDDE5838E2E /* AppAppearance.swift */; };
 		56CA4BCEF05651B40F254B98 /* QuietTimeDeviceActivityMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42DD21E1482C7FE32CDAFCF6 /* QuietTimeDeviceActivityMonitor.swift */; };
@@ -297,6 +339,7 @@
 		58231CBD258F08AB8B7D6E00 /* NightFlockV4API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D3BD9546C811086F4D9250 /* NightFlockV4API.swift */; };
 		5837540C25A0205328AA286D /* RewardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F2F141C24516D082490195 /* RewardEngine.swift */; };
 		5881FDA564AE851EC92B745E /* NightFlockInviteRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = D94013E9C7BDDAE4E4463EAD /* NightFlockInviteRecovery.swift */; };
+		58B64BC2A94E0B0B214ED075 /* NightFlockSharedHabitSleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94319DBF777597AB9C1C7B94 /* NightFlockSharedHabitSleep.swift */; };
 		5909BE012632AECF0C058897 /* AppFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984770912E1D1E0E0B021EAD /* AppFeedback.swift */; };
 		5916EBD569584FB4D882E950 /* QuietTimeEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5B47E28E827254BA18C7EE3 /* QuietTimeEditorView.swift */; };
 		594312F3A0749E95169BD6B7 /* NightFlockV2API.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1885CE3DC9E3BA2E43991F2 /* NightFlockV2API.swift */; };
@@ -306,6 +349,7 @@
 		5A4661FB8EE2603CCEB1AC23 /* FocusAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CB9D7F6CBF2FB36B03D2B /* FocusAnalytics.swift */; };
 		5A8AE171DD4A7CEF2304E74B /* WelcomeReward.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD3B38996742C55147041DA /* WelcomeReward.swift */; };
 		5AD8A4275717D643111722E7 /* ScreenTimeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */; };
+		5AEB0FE9A847163895F54906 /* NightFlockSharedHabitSleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94319DBF777597AB9C1C7B94 /* NightFlockSharedHabitSleep.swift */; };
 		5BD74829D529FD86182A5E97 /* CountingSheepUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9833AE367470A8440023AF38 /* CountingSheepUserProfile.swift */; };
 		5BEF9EDDF75764AA3A4FE5E3 /* SheepSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47AE0567955634A07E71846 /* SheepSearchState.swift */; };
 		5C7D1EFB1CB37DBC9514BF2B /* SheepSearchWelcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0C1564F4FD15228C55FF8B /* SheepSearchWelcome.swift */; };
@@ -317,6 +361,7 @@
 		5E3A2AD6711E62EDD6658B97 /* SheepSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47AE0567955634A07E71846 /* SheepSearchState.swift */; };
 		5F37BFC1F0E65AD41FFA2D80 /* NightFlockInviteRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = D94013E9C7BDDAE4E4463EAD /* NightFlockInviteRecovery.swift */; };
 		5F3BF3BAB1BB152BFD67EF56 /* MorningCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */; };
+		5F9841E3D8DE9ECFF9B73DDA /* HomeWindowPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */; };
 		5FBD224FB334BEC3E126B865 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
 		6137227141F505BD3B474F93 /* PhoneInTheOtherRoomDeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2DC676E8259E7A18655B6986 /* PhoneInTheOtherRoomDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		61C0578BB16C792CAE20C7EA /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
@@ -324,17 +369,22 @@
 		627A6C0414F7C5838157609F /* SheepSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47AE0567955634A07E71846 /* SheepSearchState.swift */; };
 		62B0C1530C368188E001379A /* QuietTimeShieldPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */; };
 		62BB51DAA6EE8A5E22D0BB86 /* SheepSearchSlumberParty.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C99DEB69F16CC14EB68810 /* SheepSearchSlumberParty.swift */; };
+		633E7494B60613E82182BA21 /* NightFlockViewModel+SharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B6729250CED0FBD6DF1824E /* NightFlockViewModel+SharedHabits.swift */; };
 		6344CD8B169F84F6FD109BE0 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
+		63ABDBCADA4A0F3CB2903C02 /* WindDownGuidanceSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F112584D281DE13D26D4A84 /* WindDownGuidanceSources.swift */; };
 		63E255D815F2B72C5935AD14 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
+		63FE9E324BB0A2F01C292010 /* HomeWindowPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */; };
 		643F100286C48D88E66D82F5 /* ScreenbookFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = A825C770C4A91D66A1E00438 /* ScreenbookFixtures.swift */; };
 		6470B6B4AA9B8329F0203BA5 /* NightFlockAccountService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBC05A84D67C2987C58A1A9E /* NightFlockAccountService.swift */; };
 		6486239732EE02A3DD0A0277 /* NightFlockV3API.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CE0725085BDB4C2C4448E8 /* NightFlockV3API.swift */; };
+		649FD2FD1004274602E1FD74 /* NightFlockSharedHabitSleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94319DBF777597AB9C1C7B94 /* NightFlockSharedHabitSleep.swift */; };
 		64BC59F8DEA2A5BFC74642DC /* FocusRunLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */; };
 		6579C35A2C31A596AA93626F /* NightsHistorySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */; };
 		658D6BCD0D5266E5E87AA675 /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
 		65AE09A354BE88B1A243989E /* OnboardingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E395A728ED7F48F5A013B9 /* OnboardingFlowView.swift */; };
 		66085F93130816DF94740FCE /* NightJourneyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3647A02CD9963371D4436FD1 /* NightJourneyView.swift */; };
 		6624F7CCB77D6FAF9460AC47 /* PhoneBedTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */; };
+		66B2E3CD82B638978259D130 /* SlumberPartyHomeSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E3D4FCE5E4D7D7B08B8EED2 /* SlumberPartyHomeSection.swift */; };
 		66FCB8B74BA9BDFE6D2D2AFC /* SunriseTrail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249B4AF9B120045F2B5EAA36 /* SunriseTrail.swift */; };
 		673B9A8B2577181184BD526B /* NightFlockV4Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9468554FC475650E6948B /* NightFlockV4Models.swift */; };
 		673BBB66534256603AEF9E9E /* FarmMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0FC8B341E9575F1CD5187A7 /* FarmMigration.swift */; };
@@ -360,14 +410,17 @@
 		6CD81241FF535D67A8C2E6CE /* NightFlockHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EBABFF4413C439F3C62EC52 /* NightFlockHubView.swift */; };
 		6D2F03B0D04C489375FF0BFE /* NightWatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA6981F038801F2E19A264F5 /* NightWatchTests.swift */; };
 		6D31699A57C52B8B1D4F073A /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
+		6D33B7CF249A338BDD6D67B0 /* OllieCompanionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EDCFECB0BBAFD73749828B4 /* OllieCompanionAnimation.swift */; };
 		6DA27428F4128B18FCDFD14F /* WindDownMethodPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7AE226B0340F8F53DD877A8 /* WindDownMethodPicker.swift */; };
 		6DC46E6D052CD5A5BAC17C29 /* NightsHistorySummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5091A90B501C64D66D6C3608 /* NightsHistorySummaryTests.swift */; };
 		6DC8B8FCFBF4B8BC23590469 /* PastureSceneController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AD9DDE7EED419BC93BDA42E /* PastureSceneController.swift */; };
 		6DDE07C592B543B47D8E7879 /* QuietNoteText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075F8FE54AF036CB8A62A9C7 /* QuietNoteText.swift */; };
+		6E628BD0BF9498C4A5114764 /* HomeWindowPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */; };
 		6E753BBF9CA2F9DC8585725C /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
 		6E840F0D7535EB5489220F22 /* NightFlockOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 860F2DF3DB811DE0436B331F /* NightFlockOrientation.swift */; };
 		6EE06DA114DF3B2B6AD999D2 /* IndependentMorningSettlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A1636CD678FB4C1B1BF913 /* IndependentMorningSettlement.swift */; };
 		6F5AFF892C3883FE5D32AE0E /* FirstRunGuideCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A30132FA06A42148938276B /* FirstRunGuideCards.swift */; };
+		6F5C91F897CFFEEF3C1CCAFA /* WindDownGuidanceSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F112584D281DE13D26D4A84 /* WindDownGuidanceSources.swift */; };
 		6FCE50582510301BAD65D556 /* ProximityClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E380CE5C4EF450772817B63 /* ProximityClassifier.swift */; };
 		6FD47415FAB3FF594D2DA05F /* NightFlockV4Rewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D02D6B734CCEAA5550A323 /* NightFlockV4Rewards.swift */; };
 		701086E0E1D406B9ABCA5DFD /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
@@ -376,6 +429,7 @@
 		708AE772CBDC6BF629B914A5 /* PhoneBedTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */; };
 		70B53C2569ABE1ED7D49138A /* QuietTimeBriefAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8ED50B756C1284D8161069 /* QuietTimeBriefAccess.swift */; };
 		71C98931376655BA717AB416 /* FarmMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0FC8B341E9575F1CD5187A7 /* FarmMigration.swift */; };
+		71E0F4113D9611BEE346B497 /* NightFlockV4PublicationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7923398001F7111F5D8FB89 /* NightFlockV4PublicationPolicy.swift */; };
 		71E34BEC9770D6435AF8699E /* ScreenbookCaptureReadiness.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7206F968949A850F425C443C /* ScreenbookCaptureReadiness.swift */; };
 		71F29D50EA71B638E8585BA9 /* SheepSearchPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98F3869CB594F1B70F8A49D /* SheepSearchPresentation.swift */; };
 		71FC6B727DC94DB64DCA929A /* CountingSheepUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9833AE367470A8440023AF38 /* CountingSheepUserProfile.swift */; };
@@ -384,14 +438,16 @@
 		72CE96B88D8AB2E4ED218D2D /* ActiveRunPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD93D4896D42F81A142F85F5 /* ActiveRunPresentation.swift */; };
 		7302344419B4198EC87AF649 /* SheepSearchWelcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0C1564F4FD15228C55FF8B /* SheepSearchWelcome.swift */; };
 		735690529F6B729F57054CAE /* NightFlockInviteRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = D94013E9C7BDDAE4E4463EAD /* NightFlockInviteRecovery.swift */; };
-		73946C7C6D8C8E2BC6B9DACC /* PastureInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3962DC8AB5D6673BDC1D1AE8 /* PastureInteraction.swift */; };
 		73FCA4077CC3CE3B18682F6A /* FeedbackFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F71861D5D292EA8E4A987B6 /* FeedbackFormView.swift */; };
+		74335B05DE6AEFEFC326EFE8 /* SlumberPartyHomePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */; };
 		74DB4D6B776038C7BAD8A232 /* ScreenFreeMorningPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFC3CC3B89C99D7C395BA2C /* ScreenFreeMorningPresentation.swift */; };
 		756E006DCE141D6022C1067C /* NightJourneyGait.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */; };
 		757550C547D8F0555C3504E9 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = B09F796332A1F1F5B1799C72 /* PrivacyInfo.xcprivacy */; };
 		75C297339960E4CA511884AB /* FirstRunJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05BA9EBC2619C32D861A3623 /* FirstRunJourney.swift */; };
+		75DD63D13BBC23C0CA2CA971 /* OllieCompanionSpriteRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 834B23AB1F8F0CC33D56A518 /* OllieCompanionSpriteRenderer.swift */; };
 		761FF0CA82E75CE34527F992 /* AppShieldExplainerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5668EDCFB49C85CAB7F9C6E0 /* AppShieldExplainerSheet.swift */; };
 		762FB0035A1C5F25AE3746EF /* ScreenTimeBookendCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D573FF141CA5AFC3BA0C0F /* ScreenTimeBookendCard.swift */; };
+		768307E4FD77C431013D4394 /* NightFlockSharedHabitsOutbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */; };
 		76834AE38449514821657D04 /* NightWatchUsageMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4553AA68080C4280F7560845 /* NightWatchUsageMonitoringService.swift */; };
 		76C2E53494AB0CEE2EA1387B /* NightWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0017C31179B4E0FF551A79D4 /* NightWatch.swift */; };
 		77756881078921DDB8A93E2D /* FocusAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CB9D7F6CBF2FB36B03D2B /* FocusAnalytics.swift */; };
@@ -412,6 +468,7 @@
 		7BFD5984D09F858DCE39F79B /* PhoneInTheOtherRoomApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 323C9D00D1DC5BC5B0D0B3D8 /* PhoneInTheOtherRoomApp.swift */; };
 		7C2E64FC31A7672F8FA93D08 /* HomeReceiptRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3001351373E2912EB653842 /* HomeReceiptRouting.swift */; };
 		7C3A43C8855000BB2ADA459F /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
+		7C5D05F54A37D515B29B602A /* NightFlockSharedHabitsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */; };
 		7C76C85F9E586C51B6D6D92F /* SheepSearchExplainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ACDE9990E79FB60A58352C2 /* SheepSearchExplainer.swift */; };
 		7C8F693BAECF50AEFA90F1E2 /* FeedbackService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9259C854A63E43C57AEAA32C /* FeedbackService.swift */; };
 		7CABE39A231F71368D768A54 /* AutomaticWindDownSchedulingDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89A173EE13348C1966863095 /* AutomaticWindDownSchedulingDecision.swift */; };
@@ -422,6 +479,7 @@
 		7F66FEEADED6A9FADED39DBD /* QRCodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C142284812C6FFC1A66DC6 /* QRCodeScannerView.swift */; };
 		7FFF6C4C6B065CC85A278859 /* NightFlockRewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E743BEE0142538219616C76 /* NightFlockRewards.swift */; };
 		8058149305089D2AFB601FB4 /* PhoneBedTagInspection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00991484321D62D0BF8B6E01 /* PhoneBedTagInspection.swift */; };
+		8070373EFBBEF861CE1A5357 /* HomeStartRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75221D637B58B586CF85CD0 /* HomeStartRouting.swift */; };
 		8073E42EEF7C2FB9CF50B294 /* NightFlockCommitment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD7734FF73CD436CE4D9CD60 /* NightFlockCommitment.swift */; };
 		807863A3A355C18EA1F8A910 /* FarmEconomyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */; };
 		80A166E17CB90F0C2EE5C2BE /* WindDownProfilePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BFFBE289B6229DA8FB8B21 /* WindDownProfilePresentation.swift */; };
@@ -435,7 +493,10 @@
 		82D5F421FA7FEC90A5FCCE75 /* WindDownProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417A5E80D30B2379E6F9C166 /* WindDownProfile.swift */; };
 		833CE55C6FB94E2515491962 /* FocusRunSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79A0FB5E7DC57798BBE4096D /* FocusRunSetupView.swift */; };
 		839395FE7C072E42447950FB /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
+		83D3AC9D700400AE3CFDB0C1 /* SlumberPartyV4MembershipActivitiesSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88C774C8F5CE974F442F0DBB /* SlumberPartyV4MembershipActivitiesSection.swift */; };
 		843265298449241875467837 /* QuietTimeShieldPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */; };
+		849850F7B990A37BDA7DA55B /* NightFlockViewModel+SharedHabitsAgreement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C7EE51C69C7261C331353D8 /* NightFlockViewModel+SharedHabitsAgreement.swift */; };
+		8523FE0276F7C6785C888A02 /* NightFlockSharedHabitsFence.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2AD704C0BE588AF5B3DBDE1 /* NightFlockSharedHabitsFence.swift */; };
 		855CDCED3EFB285291EA03AF /* WindDownStartSourcePolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC64F2695F387F8FADF2C22F /* WindDownStartSourcePolicyTests.swift */; };
 		859D8F115278B4A6339D8DF8 /* NightsWeekSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECC9B78384C74CC3192CFD2C /* NightsWeekSection.swift */; };
 		85AE6ACA0349B0B1016B5910 /* FocusSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2D7800DC20784D79515266 /* FocusSessionCoordinator.swift */; };
@@ -448,6 +509,7 @@
 		878CB2CE985ADCB9DCAAB730 /* WindDownProfilePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1BFFBE289B6229DA8FB8B21 /* WindDownProfilePresentation.swift */; };
 		884CF15B0C65BAC011618F96 /* RewardEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F2F141C24516D082490195 /* RewardEngine.swift */; };
 		888E319EF2E7CA27ACC10AB7 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
+		89023A69B339D38B756C8F2A /* SlumberPartyHomePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */; };
 		8902D5316441953AF61321BD /* WindDownTagManagementCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D938D5CAF1FC944B38694BB /* WindDownTagManagementCard.swift */; };
 		8949C9178A1DE5CA452C6005 /* NightFlockTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9224AB0895BD0E0DB0E09F82 /* NightFlockTests.swift */; };
 		8960494EFE5BDE8B5A92E2D1 /* OnboardingStepSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A493AFCF8698D6793A0D03B /* OnboardingStepSupport.swift */; };
@@ -476,15 +538,20 @@
 		8FED583A77023553D7B8A254 /* NightFlockV4Rewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D02D6B734CCEAA5550A323 /* NightFlockV4Rewards.swift */; };
 		902C948F005239A6AF7141C2 /* NightFlockV3API.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CE0725085BDB4C2C4448E8 /* NightFlockV3API.swift */; };
 		90449FB36FFEA4E6CF85A0F3 /* NightWatchHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 766D336119CCB55800F75535 /* NightWatchHistory.swift */; };
+		905FD38901268A2AFB6856B4 /* OllieCompanionAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A0BA55E2FBC5876A06B5077 /* OllieCompanionAnimationView.swift */; };
 		909840C01A97C99D06E1715D /* QuietTimeShieldScheduleRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4070304DB4DA8173FB8808C7 /* QuietTimeShieldScheduleRegistry.swift */; };
 		90E3458FDE43FDDFA513FB10 /* EmergencyExitChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD96BC14249CA900698352DB /* EmergencyExitChallenge.swift */; };
 		913A671053F898B842F541DE /* AppAppearanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF3BAD2EE31A2BDADB840203 /* AppAppearanceTests.swift */; };
 		91597D7F7DB74222C2868292 /* QuietTimeShieldSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */; };
 		915ED1BADFAE626CA8F386C1 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
 		91AE58EF9AA6747D3DABD4B9 /* CountingSheepStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F944D82DFD76323D0FF627B0 /* CountingSheepStorage.swift */; };
+		91B2E4EDD0E53B849F6EBD89 /* NightFlockSharedHabitsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */; };
 		91BF6B540A8053605B8B916B /* FarmEconomySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DEFB5698FE4EE517A1DD47 /* FarmEconomySnapshot.swift */; };
 		9231532DB21D8BA62B882180 /* FocusRunLiveActivityService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5651C224C107445FDB3F11A9 /* FocusRunLiveActivityService.swift */; };
 		92C959F57FD16619F3552606 /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
+		933E6F0F6778121745CBEA29 /* NightFlockViewModel+SharedHabitsFence.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9F4EFAF4F812F350131E588 /* NightFlockViewModel+SharedHabitsFence.swift */; };
+		9389957059EB03DC681E6236 /* NightFlockSharedHabitsFence.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2AD704C0BE588AF5B3DBDE1 /* NightFlockSharedHabitsFence.swift */; };
+		93C23B06D593B5FB77981DF3 /* HomeWindDownSummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9D2D5D51F963474CE3D1E03 /* HomeWindDownSummary.swift */; };
 		93E87528CA5E4C426C1EC9EE /* QuietNoteTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF8083824E0DA7A3EB14F351 /* QuietNoteTextTests.swift */; };
 		93EF975DB44538C09E74A8C4 /* AppFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984770912E1D1E0E0B021EAD /* AppFeedback.swift */; };
 		93FB98997082AAC89E5E7878 /* NightFlockV4API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D3BD9546C811086F4D9250 /* NightFlockV4API.swift */; };
@@ -492,28 +559,34 @@
 		945B6D2B599CAFE2A7DC7E32 /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
 		947B76D4DEB5EFC131A0B7C0 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3DF58B2DAC7FE37451EAB87E /* Assets.xcassets */; };
 		948EF692C02CC533D62E50BA /* NightFlockRewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E743BEE0142538219616C76 /* NightFlockRewards.swift */; };
+		949A44096DBE3DA46A130675 /* NightFlockSharedHabitsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D83ABC5630D83D56C5813644 /* NightFlockSharedHabitsTests.swift */; };
 		949BB4249161FC001D5EE821 /* FarmPastureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2548EA4C722C48C6FFC70B78 /* FarmPastureView.swift */; };
 		94B52E74CBC9028BAA594252 /* WindDownTimingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCC2F309C1511BAC0E1BAB3E /* WindDownTimingView.swift */; };
 		94C73CA8C5C360D4FE3E12E7 /* SheepSearchPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98F3869CB594F1B70F8A49D /* SheepSearchPresentation.swift */; };
 		95342FE09AD5D11365336F4E /* FarmShopView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38953C0D1F7DB7FDBDE4E8E6 /* FarmShopView.swift */; };
+		956737458D2BF7639B14DC86 /* NightFlockSharedHabitsOutbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */; };
 		958A79FD6C9A8366807A17F6 /* NightFlockCommitment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD7734FF73CD436CE4D9CD60 /* NightFlockCommitment.swift */; };
 		959369B16F5FE7DAC42714B7 /* AppFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 984770912E1D1E0E0B021EAD /* AppFeedback.swift */; };
 		965610B95C3C084187C76393 /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		968B98649AB2A2FC12FA7821 /* NightFlockInviteRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = D94013E9C7BDDAE4E4463EAD /* NightFlockInviteRecovery.swift */; };
+		968BBD20A948CFEED03AE4BE /* PhoneAwayStartPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */; };
 		971F7DD50AAACE214B72185C /* ProximityClassifierTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2586E1A7522D7966AA2BC040 /* ProximityClassifierTests.swift */; };
 		977C1941163C6D94514646F7 /* RewardEngineTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008E2862DEB041FA57F918F7 /* RewardEngineTests.swift */; };
 		9857678D0368A4FD13FB0A2A /* SunriseTrail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249B4AF9B120045F2B5EAA36 /* SunriseTrail.swift */; };
 		993E731FB647A1A7C6E5763B /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
+		9990D337933C98507E6D632E /* NightFlockSharedHabitSleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94319DBF777597AB9C1C7B94 /* NightFlockSharedHabitSleep.swift */; };
 		99972F11310BB2401C99B64E /* PhoneBedTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */; };
 		9A11D4F350366236FCC6BF58 /* NightJourneyGait.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */; };
 		9ABDF42071BD5F7A58B737D7 /* PastureScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B4094E1123762C21960270 /* PastureScene.swift */; };
 		9B97A3D2DFF4D988075B321B /* FarmEconomyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */; };
 		9BD369D1F533E63512DAF19F /* EmergencyExitReasonPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CA00822B21B34F0CD136BBC /* EmergencyExitReasonPersistenceTests.swift */; };
+		9BDB930FC85A73059FA7390F /* WindDownGuidanceTopicView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9C25F57509EFBCE55C53DB4 /* WindDownGuidanceTopicView.swift */; };
 		9BE5E1097083D5A00B4F7FD2 /* PingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F8AF769F6B132CFF9B5866 /* PingService.swift */; };
 		9C81BFF51B9C4FB3989B9B6B /* NightFlockDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5456845B6FE5574658098B3 /* NightFlockDiagnostics.swift */; };
 		9CE3ADA6AF680AFD766DD0A5 /* WindDownStartTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */; };
 		9CE6086580AD591987C2E6AD /* PhoneAwaySettlementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 997850C3F446A904A8E32B6E /* PhoneAwaySettlementTests.swift */; };
 		9DEA0E06462A64099CB311B8 /* ScreenFreeMorningPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFC3CC3B89C99D7C395BA2C /* ScreenFreeMorningPresentation.swift */; };
+		9E9D96485AEE8ECCCC07DE57 /* WindDownGuidanceSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F112584D281DE13D26D4A84 /* WindDownGuidanceSources.swift */; };
 		9ED5C8FB43BA41FEA9D75056 /* LocalResetContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4759057D27C87BA76C7B6D1F /* LocalResetContractTests.swift */; };
 		9F9B799A3607880757A262A3 /* OrientationTourOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85E234AB3A00377C8BB23E3 /* OrientationTourOverlay.swift */; };
 		9FCD933486F08FF50AC5EACC /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
@@ -530,23 +603,30 @@
 		A2057E1AD8645157F5CBCB70 /* NightFlockRemoteError.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34BF2BC536636521908B263 /* NightFlockRemoteError.swift */; };
 		A210290D75FED301406B3FC0 /* PhoneFreeCueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99FE5F2A3932E1E4814EEE25 /* PhoneFreeCueTests.swift */; };
 		A2289F7C034A2D740CF61C5B /* NightFlockV4Outbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9929526BDCE7E479341DF0 /* NightFlockV4Outbox.swift */; };
+		A2517E3BFA96CBF944461D42 /* WindDownRoutineSequenceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6F730F42C95AF2332B926E1 /* WindDownRoutineSequenceCard.swift */; };
 		A26CB4DBDD86279880386ACE /* SlumberPartyV4Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319017A4000640ABA6847FDE /* SlumberPartyV4Previews.swift */; };
 		A2A3E46C8D28D833FF290C08 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49A4F39CC3F60FE9D6C047B /* OnboardingTests.swift */; };
 		A2C2D0707009FF8D5EA6B0E9 /* SupabaseConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 171FC69B9B26C8CE06176069 /* SupabaseConfiguration.swift */; };
+		A2FE56D5DB28D01ABA7D3BDB /* OllieCompanionAnimationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7684613E8B36332EA981FC90 /* OllieCompanionAnimationTests.swift */; };
 		A3FF3B5AAC1AA34356641D74 /* HomeReceiptRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3001351373E2912EB653842 /* HomeReceiptRouting.swift */; };
+		A44B70C8A9F280DBB15689C6 /* FocusSessionStartResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7D108D6023C76401482057 /* FocusSessionStartResult.swift */; };
 		A4EAB6DEB0CCFAAAA2D5F809 /* OfflinePurpose.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180FD34F0C45EF5E28E01556 /* OfflinePurpose.swift */; };
 		A5FA215F2F72A44943C19A2C /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
 		A5FDFCE88D893B4A2F4C2893 /* OnboardingScheduleStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4155C21B6D9A24C9C420C53A /* OnboardingScheduleStepView.swift */; };
 		A644A3676622C7D918BB756F /* FarmEconomySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DEFB5698FE4EE517A1DD47 /* FarmEconomySnapshot.swift */; };
 		A6B845972966CB96C83FCFD5 /* SunriseTrail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249B4AF9B120045F2B5EAA36 /* SunriseTrail.swift */; };
 		A6C05F4B1A407E53467C10BF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A443D86BFE32DF94DAC7D8B8 /* PrivacyInfo.xcprivacy */; };
+		A6C5237B13D2211A4C9C18CE /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
+		A8163CFD873B30CACE83217B /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
 		A8ABAF9E7A49557C78F4439A /* SheepSearchPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98F3869CB594F1B70F8A49D /* SheepSearchPresentation.swift */; };
 		A8B002EE788123AAB4DD98DA /* FocusRunRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7479F9FF862CDA06790D8869 /* FocusRunRules.swift */; };
 		A925AA8D9569018A32242A75 /* WindDownStartContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8DE1577776C5D581D0ACCD /* WindDownStartContextTests.swift */; };
 		A92C6A1278B52FAF09D4F474 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
 		A934070E0091B72968599DA2 /* ActiveRunPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD93D4896D42F81A142F85F5 /* ActiveRunPresentation.swift */; };
 		A9B043A60219D62602E4189F /* ActiveRunPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC3F61F4E30B8DA8EEB2818 /* ActiveRunPresentationTests.swift */; };
+		AA94ADC88349D6750A9285F1 /* PhoneAwayStartPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */; };
 		AAA8656CBA9A707C7D17DDC1 /* PastureScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B4094E1123762C21960270 /* PastureScene.swift */; };
+		AAC7428DE24053DECAF30000 /* HomeStartRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75221D637B58B586CF85CD0 /* HomeStartRouting.swift */; };
 		AB36BE09CAA40FBE05F747B4 /* PhoneBedTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */; };
 		AB5AA8EB22EFF15F84ACE581 /* QuietTimeShieldConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC796881096EBDE0ADEE0E5E /* QuietTimeShieldConfiguration.swift */; };
 		AC297CDCD37AF69EF4F9BF66 /* CountingSheepUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9833AE367470A8440023AF38 /* CountingSheepUserProfile.swift */; };
@@ -556,19 +636,24 @@
 		ACD993590C597FFB11C07986 /* LockScreenQuietNoteGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9952865E5CA53DA058CAC23C /* LockScreenQuietNoteGuideView.swift */; };
 		ACF995241177A94AB2356CBD /* QuietTimeShielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F0FF354B369E470C16D40BB /* QuietTimeShielding.swift */; };
 		AD037B7B454864C9077A6504 /* PhoneBedTagInspection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00991484321D62D0BF8B6E01 /* PhoneBedTagInspection.swift */; };
+		AD0E2FBE4FE794FF90AA8D4D /* HomeWindowPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */; };
 		AD4E02C525AC7431157B4230 /* ScreenTimeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */; };
 		AE2DC61C26B64DD39810A228 /* FocusRunRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7479F9FF862CDA06790D8869 /* FocusRunRules.swift */; };
 		AE3E31E5CE2A6A615736FBA3 /* SheepSearchSlumberParty.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C99DEB69F16CC14EB68810 /* SheepSearchSlumberParty.swift */; };
+		AE4B4A7C7F20F9AD28AA0500 /* HomeStartRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0987EDF70B93D2228997B5D6 /* HomeStartRoutingTests.swift */; };
 		AE663D22394EC73E02C633C0 /* NightJourneyProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = C72601B936190333C971123E /* NightJourneyProgress.swift */; };
 		AE699DDC256C0DEAB5690DF2 /* WatchRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74F981EB8E07B457CED0B09A /* WatchRunView.swift */; };
+		AE88EA26167064150F692927 /* NightFlockSharedHabitsFence.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2AD704C0BE588AF5B3DBDE1 /* NightFlockSharedHabitsFence.swift */; };
 		AE953A97720E3ADE9F9F2572 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
 		AEE6B9F11954E8C5AD10ADC2 /* NightFlockV4API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D3BD9546C811086F4D9250 /* NightFlockV4API.swift */; };
 		AEEE85314AC5967482D566AD /* SessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7A93AA462082036AB119D5 /* SessionGuard.swift */; };
 		AF3B0099AF63FF33EE60A4A3 /* FocusRunLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */; };
 		AF63D0A47F98D32ACD1BC5D8 /* QuietTimeShieldPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */; };
+		AF9844DAFCD7A4E2E720E8E4 /* NightFlockSharedHabitsFence.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2AD704C0BE588AF5B3DBDE1 /* NightFlockSharedHabitsFence.swift */; };
 		AF995F7FD6D1674C9783134C /* FarmEconomySnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6DEFB5698FE4EE517A1DD47 /* FarmEconomySnapshot.swift */; };
 		AFF9CBBEA488F2BBDD1C7C7A /* NotificationSchedulePreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2810DD86D63D106D810D0C36 /* NotificationSchedulePreviewView.swift */; };
 		B0376077510B42D6E6F87558 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = D8CEDD69B8BA8086BA8D14AF /* Supabase */; };
+		B072A3EB95431E2FEF285C4D /* PhoneAwayStartPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */; };
 		B0B7903882659D29B1B0B02F /* MonthlyNightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D900184B3424BC293A70642 /* MonthlyNightsView.swift */; };
 		B11A7CD28739C56F42D402FB /* NightFlockSharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BEE7AA1F7ADED8F0910140 /* NightFlockSharing.swift */; };
 		B1411048A57F370B2684544E /* QuietTimeBriefAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8ED50B756C1284D8161069 /* QuietTimeBriefAccess.swift */; };
@@ -590,20 +675,26 @@
 		B51A234BE6159E575DECDAE8 /* ScreenTimeReportExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E438AF90E0E9ED338A5F5B9 /* ScreenTimeReportExtension.swift */; };
 		B5DBD5A830A96C9D74C32C4A /* EmergencyExitChallengeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92BDC12BAFB7B11F9A17B3B8 /* EmergencyExitChallengeTests.swift */; };
 		B68E45A8D7FC32F6C112273A /* FocusStatsRecordSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6FF7A2845BE78235E38A277 /* FocusStatsRecordSections.swift */; };
-		B69FCAF3B8EC4E0F8FABFE1A /* PastureInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3962DC8AB5D6673BDC1D1AE8 /* PastureInteraction.swift */; };
 		B6CA5C58BCE35C1F18A8E9E7 /* FarmShopExpansionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36BBF40B716995523653E4E /* FarmShopExpansionTests.swift */; };
 		B6D1A5990BF95C0BAA382F45 /* NightFlockViewModel+V4.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6526F57542BF01F59A51CCE /* NightFlockViewModel+V4.swift */; };
 		B6EC0930EF5F9EDF1DB31C0B /* WatchNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D492CABD33A3BC68F45C56 /* WatchNotificationService.swift */; };
 		B6F356C2D7A0139C08E2DB8C /* CountingSheepUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9833AE367470A8440023AF38 /* CountingSheepUserProfile.swift */; };
+		B72295CFA36A9526458A91BF /* NightFlockSharedHabitsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */; };
 		B77BE780A0F57F5EF0B62A4D /* NightFlockV4API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D3BD9546C811086F4D9250 /* NightFlockV4API.swift */; };
 		B7A56020598C9EABA543348D /* ShepherdNameCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB130154DC4EC531454055AC /* ShepherdNameCard.swift */; };
 		B7B18A5D7ED0F533E938D8E8 /* HomeReceiptRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3001351373E2912EB653842 /* HomeReceiptRouting.swift */; };
 		B84D2F22229F0712E948150F /* PhoneBedTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */; };
+		B8C336C782405F969D2A5687 /* ConnectionStatusCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE0240AA2FD5EDF90A1AD42 /* ConnectionStatusCard.swift */; };
 		B8F3B35D15F95DCAEAD4E0D3 /* NightWatchGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE29836613BFD365670A422D /* NightWatchGuidance.swift */; };
 		B9BB964EE9726E4E9BA079E1 /* QuietTimeBriefAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8ED50B756C1284D8161069 /* QuietTimeBriefAccess.swift */; };
+		BA0FF24E5E28577DF77F0704 /* SlumberPartySharedHabitsSummaryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E64DD16B4C145FFC970D4A21 /* SlumberPartySharedHabitsSummaryViews.swift */; };
 		BA9543D34B25572B73E4F1B5 /* ActiveRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCE67F996AC2C3BDD00A1717 /* ActiveRunView.swift */; };
 		BADC449C710BDD6F6AD5F3D4 /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
+		BB89B8F1CE5FAA40BE9F2FBF /* HomeStartRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75221D637B58B586CF85CD0 /* HomeStartRouting.swift */; };
 		BC0D3D9B82A5083045EA3A30 /* NightFlockV3API.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CE0725085BDB4C2C4448E8 /* NightFlockV3API.swift */; };
+		BC2C20558FB745705267349C /* ConnectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */; };
+		BC414116329CE5BED92E4001 /* NightFlockSharedHabitPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945BF06967132A220DD6D185 /* NightFlockSharedHabitPresentation.swift */; };
+		BCAF57CD1E299C6799FB1DEC /* FocusSessionStartResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7D108D6023C76401482057 /* FocusSessionStartResult.swift */; };
 		BCFA0FBB081F31FC01CE6408 /* NightFlockV2API.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1885CE3DC9E3BA2E43991F2 /* NightFlockV2API.swift */; };
 		BD4AA898B9F444FD002FE79D /* FirstRunJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05BA9EBC2619C32D861A3623 /* FirstRunJourney.swift */; };
 		BD5A985CAFDB04385F02E862 /* FarmMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0FC8B341E9575F1CD5187A7 /* FarmMigration.swift */; };
@@ -616,8 +707,10 @@
 		BEA7391F437682C412F91A77 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556930E68BC87E851A8295A3 /* Formatting.swift */; };
 		BEA9F72D0633B02CA5EA56A5 /* IndependentMorningSettlementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BD250A597F00860153BE645 /* IndependentMorningSettlementTests.swift */; };
 		BFBF2B3CB91A59991D204395 /* TrailNotesArchiveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7C7125C370816F069E2B9EA /* TrailNotesArchiveView.swift */; };
+		BFE657B6B4E4E2D152FDFF1A /* NightFlockSharedHabitsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */; };
 		C00A04B5B5DCB728B9A6A049 /* NightFlockV2API.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1885CE3DC9E3BA2E43991F2 /* NightFlockV2API.swift */; };
 		C107E412664051996D3972B6 /* ImpactMeasurementTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A0774B703AAB7AA39ED6E9 /* ImpactMeasurementTests.swift */; };
+		C127C5F84D905E5ECF8D2727 /* FocusSessionStartResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7D108D6023C76401482057 /* FocusSessionStartResult.swift */; };
 		C1A85EF813C789BD7F99EE24 /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 627A5DA42D08C5C40DA30548 /* PersistenceService.swift */; };
 		C246B9AEC1819D0F8238C65C /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		C29D295CAEAC83392CD3A9F4 /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
@@ -629,6 +722,7 @@
 		C3590A7D465FF1446164FC44 /* OnboardingQuietStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79FD21CE8287D13A7A2F93B7 /* OnboardingQuietStepView.swift */; };
 		C3B39C287883C672C7AE0E50 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		C3EAF3DA62C4160A977F0F6E /* NightFlockV4Outbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E9929526BDCE7E479341DF0 /* NightFlockV4Outbox.swift */; };
+		C41DFB2B744284F29EE80FB6 /* NightFlockV4PublicationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7923398001F7111F5D8FB89 /* NightFlockV4PublicationPolicy.swift */; };
 		C442D7B21A8281A4C0434BC8 /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
 		C466BB4649F04B9D2E0872D3 /* WatchMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B830DE525CC379D8E1929C /* WatchMessage.swift */; };
 		C46EAD6FD2203204C528E2DB /* QuietTimeShieldScheduleRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4070304DB4DA8173FB8808C7 /* QuietTimeShieldScheduleRegistry.swift */; };
@@ -649,6 +743,7 @@
 		C901F58073E6EC15824D4D96 /* NightFlockSharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BEE7AA1F7ADED8F0910140 /* NightFlockSharing.swift */; };
 		C913E185B0625F7CDEC29C67 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
 		C9561D3882C7FFEAFD6A3AC2 /* PhoneBedTag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */; };
+		CA54F4A79047174F258682DA /* NightFlockSharedHabitSleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94319DBF777597AB9C1C7B94 /* NightFlockSharedHabitSleep.swift */; };
 		CBC10251028DBCB3EDBD8073 /* NightFlockOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 860F2DF3DB811DE0436B331F /* NightFlockOrientation.swift */; };
 		CBE2CAFE4E587EB30315B923 /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		CC10F6B26D7D056B00819D34 /* PhoneInTheOtherRoomScreenTimeReport.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 9B2EA2B025D77BE05F1451EC /* PhoneInTheOtherRoomScreenTimeReport.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -656,6 +751,7 @@
 		CCA4D8459A76AA56CE1D6364 /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		CD50E34B387FCECE5271255C /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		CD6A523A3741BCA874E592BD /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
+		CDA0BC083A860BBD1C375412 /* HomeWindowPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */; };
 		CE48762879212A44ADA41E45 /* WindDownStartTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */; };
 		CE54168AB66AAD4DE81A11DA /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
 		CE63A4962D304A0A3D69F1F1 /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
@@ -678,6 +774,7 @@
 		D3DAEDE9EE95157DD61FDCF0 /* SlumberPartyV4ListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 033FFDB53140B4A0C6EBE8AC /* SlumberPartyV4ListView.swift */; };
 		D4553C6D1D0901F3F17BF0C5 /* ActiveRunPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD93D4896D42F81A142F85F5 /* ActiveRunPresentation.swift */; };
 		D45826F8B26B6EACBBE7585A /* QuietNoteWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 275A6BF06B6A265EBBA920C7 /* QuietNoteWidget.swift */; };
+		D47C90EC6DFD1BD6A21EF183 /* NightFlockSharedHabitsOutbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */; };
 		D494C0C4965E51E4AD2FBE7B /* NightFlockOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 860F2DF3DB811DE0436B331F /* NightFlockOrientation.swift */; };
 		D67523B0978023A86BA4C71B /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986993A5FA41631E86B7C253 /* MoreView.swift */; };
 		D6CF10C0442B8D15662A8752 /* WatchMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B830DE525CC379D8E1929C /* WatchMessage.swift */; };
@@ -687,11 +784,13 @@
 		D73A912FF83E94075243079E /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
 		D7408280A98EB7A1069D30A3 /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
 		D7CFD0D7F302E502FECA598D /* IndependentMorningSettlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A1636CD678FB4C1B1BF913 /* IndependentMorningSettlement.swift */; };
+		D81B3BA9E938AE9CA9D7A3F1 /* HomeStartRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75221D637B58B586CF85CD0 /* HomeStartRouting.swift */; };
 		D855468FCD75145DD23D2559 /* NightsHistorySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */; };
 		D85D3C52E479D3D984584D8E /* RewardShelfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844AB1C45E211CDC829A1DCB /* RewardShelfView.swift */; };
 		D881A559CD9655BC26BDE94A /* NightFlockOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 860F2DF3DB811DE0436B331F /* NightFlockOrientation.swift */; };
 		D973DA009E0AFD5648DA4764 /* WatchConnectivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46C1AA88D44D7B3D5BEAEF1C /* WatchConnectivityManager.swift */; };
 		D991D919B9B3FDB81A629BDD /* NightFlockService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02EFC6890BD5476F555E775D /* NightFlockService.swift */; };
+		D9F1C36DA450B01FFFD7F64B /* SlumberPartyHomePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */; };
 		DB46C2AD5374D10673C4353C /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		DB7FCAD6CD5F33F5ABCC6AF0 /* SheepSearchExplainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0ACDE9990E79FB60A58352C2 /* SheepSearchExplainer.swift */; };
 		DBB4C32007F6102603D7D254 /* NightJourneyProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = C72601B936190333C971123E /* NightJourneyProgress.swift */; };
@@ -701,6 +800,7 @@
 		DC4A33053BCC98E71EE9FDDD /* NightJourneyTerrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */; };
 		DC5C5603B522C4B636E433F7 /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
 		DC813616AD49A2906F915E47 /* SessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7A93AA462082036AB119D5 /* SessionGuard.swift */; };
+		DD3BB3A4C2962CA784E5C162 /* OllieCompanionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EDCFECB0BBAFD73749828B4 /* OllieCompanionAnimation.swift */; };
 		DD4680DACED2802DA8CCBB68 /* SheepSearchExplainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EC6C4B48CF683529DF2614B /* SheepSearchExplainerView.swift */; };
 		DD7A1E1EAA081E6D89614700 /* QuietPeriodScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3505E7C64139CE4F4E17143 /* QuietPeriodScheduling.swift */; };
 		DDE8543B69D28FBD22049567 /* OnboardingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24BDC9E1716AA10A37DB1C3 /* OnboardingJourney.swift */; };
@@ -708,6 +808,7 @@
 		DE63244BD47D272310524ABB /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 556930E68BC87E851A8295A3 /* Formatting.swift */; };
 		DE9743631F10743A2E66ACCA /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
 		DF269AD669E20C3F58D86665 /* NightFlockDashboard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12FDDBADC3E8BB0308C1A6CA /* NightFlockDashboard.swift */; };
+		DF4FB95B348544B13E6B172E /* NightFlockSharedHabitsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */; };
 		DF56B83A5065696EBDF9D953 /* EmergencyExitChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD96BC14249CA900698352DB /* EmergencyExitChallenge.swift */; };
 		DF9E0F392DB4691A3DDCDE1F /* AnalyticsExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84574AF008061FDF9EEDBE7A /* AnalyticsExportService.swift */; };
 		DFD9B5F5FDA4E8BD832660E1 /* OnboardingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24BDC9E1716AA10A37DB1C3 /* OnboardingJourney.swift */; };
@@ -716,11 +817,9 @@
 		E063F6FCF4A6F81647DB5F6B /* PastureScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B4094E1123762C21960270 /* PastureScene.swift */; };
 		E06B67B22C0C86E579DA5246 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
 		E0DA98346E0715D3938CD21C /* SettingsDetailViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DBB746EF0BA136736B45249 /* SettingsDetailViews.swift */; };
-		E0EDD2893E1AE0FF4EE6D65C /* PastureInteraction.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3962DC8AB5D6673BDC1D1AE8 /* PastureInteraction.swift */; };
 		E1163580735C9015E025515E /* WindDownGuideCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCFF516621464F444B1C666 /* WindDownGuideCard.swift */; };
 		E27A1C149CA26C1662E5755F /* PhoneAwaySearchSettlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB4F3A6783D5E1106B72F2E /* PhoneAwaySearchSettlement.swift */; };
 		E2CF02EA731E8A491B4C9E29 /* WindDownProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417A5E80D30B2379E6F9C166 /* WindDownProfile.swift */; };
-		E3169FC91563D73824D1E689 /* PasturePlayComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AD2E48456BC66532ECB5FD4 /* PasturePlayComponents.swift */; };
 		E36C978E0DB56470B3296D3E /* SheepSearchWelcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0C1564F4FD15228C55FF8B /* SheepSearchWelcome.swift */; };
 		E3D02D6E35EF1ECA426396A8 /* FocusRunViewModel+Farm.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C8EBA2BFE8E2FDEADE480C5 /* FocusRunViewModel+Farm.swift */; };
 		E3E8E32AB80D4DA3F282C033 /* AppFeedbackTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AA20704A47E2C515F386B99 /* AppFeedbackTests.swift */; };
@@ -733,6 +832,7 @@
 		E53258386C361D453723227E /* WindDownGuidanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F762568D06F843D2FB6D7EF /* WindDownGuidanceTests.swift */; };
 		E6265D9472BA67D36301D2CA /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		E6C36E2CE87BDF426B684773 /* PastureSceneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7E77DA887D56EC4AC4AFA5 /* PastureSceneTests.swift */; };
+		E7447453A0C32800B0BD105E /* NightFlockSharedHabitPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945BF06967132A220DD6D185 /* NightFlockSharedHabitPresentation.swift */; };
 		E74844C79FF19297720361C6 /* QuietNoteText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075F8FE54AF036CB8A62A9C7 /* QuietNoteText.swift */; };
 		E75F662A389C8DE087C3AD24 /* FocusRunLiveActivityPushContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */; };
 		E7C81829A27A3F201EF5D839 /* ImpactMeasurement.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */; };
@@ -750,14 +850,19 @@
 		EB90578CFA6F3996454942B0 /* FarmShopCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B627FD9CFCEA07258CD90E1 /* FarmShopCatalog.swift */; };
 		EB971264164D13BB707F1DD5 /* NightWatchGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE29836613BFD365670A422D /* NightWatchGuidance.swift */; };
 		EBC2F3E9EEB6054AF4888967 /* SessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7A93AA462082036AB119D5 /* SessionGuard.swift */; };
+		EBCDFC632A126E0C08C3037D /* OllieCompanionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EDCFECB0BBAFD73749828B4 /* OllieCompanionAnimation.swift */; };
 		EC201A3FF4D9822BE21B0936 /* WindDownGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B90812500022857C5B05D0 /* WindDownGuidance.swift */; };
 		ECA8AD2BA315D4C86960BA13 /* FocusRunShortcutStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE81DCC9A79D8B3507F6D539 /* FocusRunShortcutStore.swift */; };
 		ED0F091F5E4ED274D7C316F4 /* WindDownScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */; };
 		EDA43F89F04C4FC57311D002 /* QuietNoteText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075F8FE54AF036CB8A62A9C7 /* QuietNoteText.swift */; };
 		EDD9208B30CE5A38892A73E4 /* NightFlockInviteCredentialService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D87193805FC7B41A073D32 /* NightFlockInviteCredentialService.swift */; };
+		EDE3785C865EF4E792B52724 /* ConnectionPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFE779B168A1164CCB633FB3 /* ConnectionPresentationTests.swift */; };
 		EE21BAFC81C20DF5BCE7ECC4 /* SheepSearchWelcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0C1564F4FD15228C55FF8B /* SheepSearchWelcome.swift */; };
+		EED24C5BCBC98B3D5AE1ED5C /* NightFlockV4PublicationPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7923398001F7111F5D8FB89 /* NightFlockV4PublicationPolicy.swift */; };
 		EEE9B2C56EB67341BED9818A /* Orientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF7E46FDD6564DB0A78FC1E3 /* Orientation.swift */; };
 		EF4B4DFCF678485A7BDBEA1C /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
+		EF5F2735EC58581AFB282B2E /* SlumberPartySharedHabitsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C18F2A9F6A867D8C17822A8 /* SlumberPartySharedHabitsViews.swift */; };
+		EF70DB21B6F7577A0C4F71B4 /* PhoneAwayStartPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */; };
 		EF94EF60BE2D2D7E1C3E24FA /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
 		F11FBFDCC52A11AE378AE6D9 /* NightWatchUsageMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4203FF55399C57FCA0A042D /* NightWatchUsageMonitoring.swift */; };
 		F197308F41A6F56C115836E0 /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
@@ -765,14 +870,20 @@
 		F1F8497265629275DE7880E0 /* NightFlockIdeasView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55CB9DD380688D85614D52BC /* NightFlockIdeasView.swift */; };
 		F24BCF5C2459654624480BD5 /* NightJourneyGait.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */; };
 		F26FF1108E977596B8B41EBE /* NightsHistorySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */; };
+		F2A3C736F99BD5DC632E1197 /* SlumberPartyHomePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */; };
 		F301A16F9D4774C0DF28AE81 /* SunriseTrail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249B4AF9B120045F2B5EAA36 /* SunriseTrail.swift */; };
+		F46F86290DECDB5A018BB551 /* WindDownGuidanceSourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31AC3431486F9B88FFF79AE8 /* WindDownGuidanceSourcesView.swift */; };
 		F48377902D560C8420220FC8 /* QuietTimeShieldingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3235011194BE427E8F19AD0 /* QuietTimeShieldingService.swift */; };
 		F4DD186DF14BC616CD52E2F5 /* FocusRunLiveActivityPushContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */; };
 		F5324006645391CD17730782 /* OllieRitualView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E877BF470938AC4688CBC448 /* OllieRitualView.swift */; };
+		F5512EA45B7E887D2ADBE00D /* NightFlockSharedHabitsOutbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */; };
+		F58B9BB9ECBA49DB2971ECB7 /* NightFlockSharedHabitSleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94319DBF777597AB9C1C7B94 /* NightFlockSharedHabitSleep.swift */; };
 		F5906DB23C3BDAA9FB124834 /* QuietNoteText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075F8FE54AF036CB8A62A9C7 /* QuietNoteText.swift */; };
 		F597EA7D1A13E1A49BE322B4 /* NightFlockRemoteError.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34BF2BC536636521908B263 /* NightFlockRemoteError.swift */; };
 		F59876CD18AB898755C13731 /* HealthSleepService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 008A4EBE50F30A695D24EFBB /* HealthSleepService.swift */; };
 		F5D97E00728816AEC0802521 /* PhoneBedTagInspection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00991484321D62D0BF8B6E01 /* PhoneBedTagInspection.swift */; };
+		F66DD15843FDD78BE3D8072B /* NightFlockSharedHabitPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945BF06967132A220DD6D185 /* NightFlockSharedHabitPresentation.swift */; };
+		F68002319C21704912DA2BC5 /* NightFlockSharedHabitPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945BF06967132A220DD6D185 /* NightFlockSharedHabitPresentation.swift */; };
 		F6C15D4E12E3475080BF0D90 /* NightWatchUsageMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4203FF55399C57FCA0A042D /* NightWatchUsageMonitoring.swift */; };
 		F719DE4F31521670DCD32C67 /* WatchMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B830DE525CC379D8E1929C /* WatchMessage.swift */; };
 		F77086A7E70F0F472A676014 /* SupabaseLiveActivityRemoteSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE5317879F7E0CCCFFA07C10 /* SupabaseLiveActivityRemoteSink.swift */; };
@@ -785,6 +896,7 @@
 		F93B0789A394FF61828EFCD9 /* FarmEconomyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */; };
 		F9A4E396FE883D1B283F868E /* PhoneAwaySearchSettlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB4F3A6783D5E1106B72F2E /* PhoneAwaySearchSettlement.swift */; };
 		F9E8C987498EA62985893D75 /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
+		FA20219AE2FFDD1310C2E77E /* WindDownGuidanceLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5789F61341A0DBD54BE95514 /* WindDownGuidanceLibraryView.swift */; };
 		FA7194D4C7C1775C6A9A9E47 /* NotificationCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93972DA8F2073D37A04DFC6 /* NotificationCopy.swift */; };
 		FACDD2A197A078050EA7B4C8 /* ScreenFreeMorningPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFC3CC3B89C99D7C395BA2C /* ScreenFreeMorningPresentation.swift */; };
 		FB7A2B844E351CE79CDD07B8 /* WelcomeReward.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD3B38996742C55147041DA /* WelcomeReward.swift */; };
@@ -798,8 +910,11 @@
 		FDE5727F9E2864355B66461A /* NightJourneyTerrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */; };
 		FE0BB95542C3BF531A3827D8 /* QuietTimeShieldAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5544D086B0D783DF7D3E26C /* QuietTimeShieldAction.swift */; };
 		FE1318B55C0ACADA6083DA4B /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
+		FE65F4AA46D352AD183AB03A /* SlumberPartySocialAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA70CBB78D62B0788758502 /* SlumberPartySocialAvatar.swift */; };
 		FE91EBE925697164F9896013 /* WindDownProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417A5E80D30B2379E6F9C166 /* WindDownProfile.swift */; };
+		FEC14768E63EBD27C0165582 /* NightFlockSharedHabitPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945BF06967132A220DD6D185 /* NightFlockSharedHabitPresentation.swift */; };
 		FF2A9B40F720200134A0DF30 /* SlumberPartyV4MemberCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E46C11C6E319BCE0D35E132 /* SlumberPartyV4MemberCard.swift */; };
+		FF6EEBBD35E4C442A4BC6614 /* SlumberPartySocialHabitLoopTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC5279548CF98E53EAEB6DD /* SlumberPartySocialHabitLoopTests.swift */; };
 		FFCB715E20CFA6F9FC7E7E02 /* AutomaticWindDownSchedulingDecision.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89A173EE13348C1966863095 /* AutomaticWindDownSchedulingDecision.swift */; };
 		FFE7E7EA01CE9E96B8670F5A /* SunriseTrail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249B4AF9B120045F2B5EAA36 /* SunriseTrail.swift */; };
 /* End PBXBuildFile section */
@@ -904,10 +1019,14 @@
 		07453853B4BE6F13D45D3837 /* WindDownProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownProfileTests.swift; sourceTree = "<group>"; };
 		075F8FE54AF036CB8A62A9C7 /* QuietNoteText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietNoteText.swift; sourceTree = "<group>"; };
 		07F629923FA0EFE9EFADB0AA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		0987EDF70B93D2228997B5D6 /* HomeStartRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStartRoutingTests.swift; sourceTree = "<group>"; };
 		09EF3D06CCC068DCECED0330 /* QuietTimeShieldScheduleRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldScheduleRegistryTests.swift; sourceTree = "<group>"; };
+		0A0BA55E2FBC5876A06B5077 /* OllieCompanionAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllieCompanionAnimationView.swift; sourceTree = "<group>"; };
 		0ACDE9990E79FB60A58352C2 /* SheepSearchExplainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearchExplainer.swift; sourceTree = "<group>"; };
 		0B97166551A0616FC19980F1 /* PixelHomeDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelHomeDashboard.swift; sourceTree = "<group>"; };
 		0BD250A597F00860153BE645 /* IndependentMorningSettlementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndependentMorningSettlementTests.swift; sourceTree = "<group>"; };
+		0C18F2A9F6A867D8C17822A8 /* SlumberPartySharedHabitsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedHabitsViews.swift; sourceTree = "<group>"; };
+		0C2B0F320BAD56245267D266 /* SlumberPartyV4GroupDetailsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyV4GroupDetailsView.swift; sourceTree = "<group>"; };
 		0D2D7800DC20784D79515266 /* FocusSessionCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionCoordinator.swift; sourceTree = "<group>"; };
 		0D7A93AA462082036AB119D5 /* SessionGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionGuard.swift; sourceTree = "<group>"; };
 		0D900184B3424BC293A70642 /* MonthlyNightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthlyNightsView.swift; sourceTree = "<group>"; };
@@ -915,6 +1034,7 @@
 		0F0FF354B369E470C16D40BB /* QuietTimeShielding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShielding.swift; sourceTree = "<group>"; };
 		0F205094CAC93767D6BE21A4 /* PhoneInTheOtherRoom.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneInTheOtherRoom.entitlements; sourceTree = "<group>"; };
 		0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldPresentation.swift; sourceTree = "<group>"; };
+		0F53480D8F466112B0283D71 /* ScreenbookRecoveryProbe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenbookRecoveryProbe.swift; sourceTree = "<group>"; };
 		0FB6BE1FB12978F1724FB4AC /* NightFlockHomeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockHomeCard.swift; sourceTree = "<group>"; };
 		0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightJourneyGait.swift; sourceTree = "<group>"; };
 		12FDDBADC3E8BB0308C1A6CA /* NightFlockDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockDashboard.swift; sourceTree = "<group>"; };
@@ -927,9 +1047,10 @@
 		171FC69B9B26C8CE06176069 /* SupabaseConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfiguration.swift; sourceTree = "<group>"; };
 		178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmEconomyRules.swift; sourceTree = "<group>"; };
 		180FD34F0C45EF5E28E01556 /* OfflinePurpose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflinePurpose.swift; sourceTree = "<group>"; };
-		1AD2E48456BC66532ECB5FD4 /* PasturePlayComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasturePlayComponents.swift; sourceTree = "<group>"; };
 		1B477F5C61D1A9EABC230193 /* SheepSearchPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearchPresentationTests.swift; sourceTree = "<group>"; };
 		1BDC3C8DA311A6319747CCBE /* MorningCheckInTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInTests.swift; sourceTree = "<group>"; };
+		1C7D108D6023C76401482057 /* FocusSessionStartResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusSessionStartResult.swift; sourceTree = "<group>"; };
+		1DC5279548CF98E53EAEB6DD /* SlumberPartySocialHabitLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySocialHabitLoopTests.swift; sourceTree = "<group>"; };
 		1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockModels.swift; sourceTree = "<group>"; };
 		1F71861D5D292EA8E4A987B6 /* FeedbackFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackFormView.swift; sourceTree = "<group>"; };
 		1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldSchedule.swift; sourceTree = "<group>"; };
@@ -952,6 +1073,7 @@
 		2E6D7736AF6FF5F49C26FC84 /* NightJourneyProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightJourneyProgressTests.swift; sourceTree = "<group>"; };
 		2EBF5AEECC8C11A24F9AC80C /* MorningCheckInCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInCard.swift; sourceTree = "<group>"; };
 		319017A4000640ABA6847FDE /* SlumberPartyV4Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyV4Previews.swift; sourceTree = "<group>"; };
+		31AC3431486F9B88FFF79AE8 /* WindDownGuidanceSourcesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidanceSourcesView.swift; sourceTree = "<group>"; };
 		323C9D00D1DC5BC5B0D0B3D8 /* PhoneInTheOtherRoomApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneInTheOtherRoomApp.swift; sourceTree = "<group>"; };
 		34C142284812C6FFC1A66DC6 /* QRCodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRCodeScannerView.swift; sourceTree = "<group>"; };
 		363A8D02BA8637085233FB93 /* NotificationMessageLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationMessageLibraryView.swift; sourceTree = "<group>"; };
@@ -959,7 +1081,6 @@
 		36B1C7F90F0227A8698B5810 /* PixelComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelComponents.swift; sourceTree = "<group>"; };
 		383D687A001DE06D8980D011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		38953C0D1F7DB7FDBDE4E8E6 /* FarmShopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmShopView.swift; sourceTree = "<group>"; };
-		3962DC8AB5D6673BDC1D1AE8 /* PastureInteraction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastureInteraction.swift; sourceTree = "<group>"; };
 		39A59E63A5A08D69CE438ADC /* FocusSessionCoordinator+Placement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FocusSessionCoordinator+Placement.swift"; sourceTree = "<group>"; };
 		39BC24BC9476F914AC5236AB /* NightFlockInviteRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockInviteRecoveryTests.swift; sourceTree = "<group>"; };
 		3CA00822B21B34F0CD136BBC /* EmergencyExitReasonPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyExitReasonPersistenceTests.swift; sourceTree = "<group>"; };
@@ -980,11 +1101,14 @@
 		46C1AA88D44D7B3D5BEAEF1C /* WatchConnectivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchConnectivityManager.swift; sourceTree = "<group>"; };
 		4759057D27C87BA76C7B6D1F /* LocalResetContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalResetContractTests.swift; sourceTree = "<group>"; };
 		4A8DE1577776C5D581D0ACCD /* WindDownStartContextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownStartContextTests.swift; sourceTree = "<group>"; };
+		4B6729250CED0FBD6DF1824E /* NightFlockViewModel+SharedHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NightFlockViewModel+SharedHabits.swift"; sourceTree = "<group>"; };
 		4B6D3FBBE656EE8A700243E7 /* WatchRunViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRunViewModel.swift; sourceTree = "<group>"; };
 		4B7E6573B6F20FD23BACECFE /* WindDownStartSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownStartSheet.swift; sourceTree = "<group>"; };
 		4D938D5CAF1FC944B38694BB /* WindDownTagManagementCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownTagManagementCard.swift; sourceTree = "<group>"; };
+		4DE0240AA2FD5EDF90A1AD42 /* ConnectionStatusCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatusCard.swift; sourceTree = "<group>"; };
 		4E380CE5C4EF450772817B63 /* ProximityClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityClassifier.swift; sourceTree = "<group>"; };
 		4E438AF90E0E9ED338A5F5B9 /* ScreenTimeReportExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeReportExtension.swift; sourceTree = "<group>"; };
+		4EDCFECB0BBAFD73749828B4 /* OllieCompanionAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllieCompanionAnimation.swift; sourceTree = "<group>"; };
 		4FD5AC342523B66ED804749A /* WindDownPhaseProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownPhaseProgressView.swift; sourceTree = "<group>"; };
 		4FF9468554FC475650E6948B /* NightFlockV4Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockV4Models.swift; sourceTree = "<group>"; };
 		501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownScheduling.swift; sourceTree = "<group>"; };
@@ -1003,19 +1127,25 @@
 		55CB9DD380688D85614D52BC /* NightFlockIdeasView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockIdeasView.swift; sourceTree = "<group>"; };
 		5651C224C107445FDB3F11A9 /* FocusRunLiveActivityService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunLiveActivityService.swift; sourceTree = "<group>"; };
 		5668EDCFB49C85CAB7F9C6E0 /* AppShieldExplainerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppShieldExplainerSheet.swift; sourceTree = "<group>"; };
+		5789F61341A0DBD54BE95514 /* WindDownGuidanceLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidanceLibraryView.swift; sourceTree = "<group>"; };
 		59B5BDFBA4D9B9AFB6D3A8FA /* PhoneInTheOtherRoomDeviceActivityMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneInTheOtherRoomDeviceActivityMonitor.entitlements; sourceTree = "<group>"; };
 		59D0E1118D698AB3289BF2A1 /* PhoneNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneNotificationService.swift; sourceTree = "<group>"; };
 		5C084A2B2CA36C44F76811FA /* ScreenFreeMorningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenFreeMorningView.swift; sourceTree = "<group>"; };
 		5DC007D5F710402FCC8D8422 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5DFC3CC3B89C99D7C395BA2C /* ScreenFreeMorningPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenFreeMorningPresentation.swift; sourceTree = "<group>"; };
+		5E01DCDE3B22D74F2B27C753 /* FocusRunViewModel+SharedHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FocusRunViewModel+SharedHabits.swift"; sourceTree = "<group>"; };
 		5F762568D06F843D2FB6D7EF /* WindDownGuidanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidanceTests.swift; sourceTree = "<group>"; };
+		6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWindowPhase.swift; sourceTree = "<group>"; };
+		616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionPresentation.swift; sourceTree = "<group>"; };
 		61F483F3BDC430CEE460E95D /* PhoneInTheOtherRoomScreenTimeReport.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneInTheOtherRoomScreenTimeReport.entitlements; sourceTree = "<group>"; };
 		627A5DA42D08C5C40DA30548 /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
 		62BB0BF6298C97D81EECFDD2 /* PhoneInTheOtherRoomWatchApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhoneInTheOtherRoomWatchApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		657822B85060A72926C6069A /* OrientationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationTests.swift; sourceTree = "<group>"; };
 		66A1636CD678FB4C1B1BF913 /* IndependentMorningSettlement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndependentMorningSettlement.swift; sourceTree = "<group>"; };
 		66DF0DEF514C026CD82AAFF7 /* Supabase.release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Supabase.release.xcconfig; sourceTree = "<group>"; };
+		6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabits.swift; sourceTree = "<group>"; };
 		699FD1A342B33E49AEA2D7ED /* UpcomingQuietTimesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingQuietTimesCard.swift; sourceTree = "<group>"; };
+		69B8EC3C928FE031D88AF0C6 /* WindDownGuidanceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidanceDetailView.swift; sourceTree = "<group>"; };
 		6A493AFCF8698D6793A0D03B /* OnboardingStepSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingStepSupport.swift; sourceTree = "<group>"; };
 		6A5704A7274ACC4DDB90E2AE /* PhoneInTheOtherRoomShieldConfiguration.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneInTheOtherRoomShieldConfiguration.entitlements; sourceTree = "<group>"; };
 		6A7E863AA70FE51BBA4E5D1B /* FarmPreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmPreviewData.swift; sourceTree = "<group>"; };
@@ -1023,8 +1153,11 @@
 		6B351566B166AF3B071F1A23 /* NightFlockViewModel+Commitment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NightFlockViewModel+Commitment.swift"; sourceTree = "<group>"; };
 		6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmShop.swift; sourceTree = "<group>"; };
 		6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeIntegration.swift; sourceTree = "<group>"; };
+		6C7EE51C69C7261C331353D8 /* NightFlockViewModel+SharedHabitsAgreement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NightFlockViewModel+SharedHabitsAgreement.swift"; sourceTree = "<group>"; };
 		6CFAE2418AA82478569AF2EC /* NightFlockSharedPastureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedPastureView.swift; sourceTree = "<group>"; };
 		6DBB746EF0BA136736B45249 /* SettingsDetailViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDetailViews.swift; sourceTree = "<group>"; };
+		6E8C2669732D7E8E5E31546D /* SlumberPartySharedHabitsConsentDisclosure.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedHabitsConsentDisclosure.swift; sourceTree = "<group>"; };
+		6F818388296382E12C5E9F9B /* SlumberPartyHomePresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyHomePresentationTests.swift; sourceTree = "<group>"; };
 		7005D618AE83F9E9EFC62CAD /* WatchOllieIconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchOllieIconView.swift; sourceTree = "<group>"; };
 		7069088917330301D9C04EFA /* PhoneInTheOtherRoomShieldConfiguration.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneInTheOtherRoomShieldConfiguration.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		7122E74B25BB4F4D1EB3D94C /* MVPMockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MVPMockData.swift; sourceTree = "<group>"; };
@@ -1035,10 +1168,12 @@
 		74F981EB8E07B457CED0B09A /* WatchRunView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchRunView.swift; sourceTree = "<group>"; };
 		7606643546B66C81C5292038 /* NightFlockViewModel+Errors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NightFlockViewModel+Errors.swift"; sourceTree = "<group>"; };
 		766D336119CCB55800F75535 /* NightWatchHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightWatchHistory.swift; sourceTree = "<group>"; };
+		7684613E8B36332EA981FC90 /* OllieCompanionAnimationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllieCompanionAnimationTests.swift; sourceTree = "<group>"; };
 		79A0FB5E7DC57798BBE4096D /* FocusRunSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunSetupView.swift; sourceTree = "<group>"; };
 		79FD21CE8287D13A7A2F93B7 /* OnboardingQuietStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingQuietStepView.swift; sourceTree = "<group>"; };
 		7A8A6295962D940E55C5992D /* SheepSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearchTests.swift; sourceTree = "<group>"; };
 		7AA20704A47E2C515F386B99 /* AppFeedbackTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFeedbackTests.swift; sourceTree = "<group>"; };
+		7AACBF0DDC07BE817316D593 /* NightFlockSharedHabitsFenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitsFenceTests.swift; sourceTree = "<group>"; };
 		7B627FD9CFCEA07258CD90E1 /* FarmShopCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmShopCatalog.swift; sourceTree = "<group>"; };
 		7C539AE8F2B7B3590101EBB1 /* FarmEconomyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmEconomyTests.swift; sourceTree = "<group>"; };
 		7C8EBA2BFE8E2FDEADE480C5 /* FocusRunViewModel+Farm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FocusRunViewModel+Farm.swift"; sourceTree = "<group>"; };
@@ -1048,18 +1183,23 @@
 		7DB187B79332895B17084F74 /* NightFlockPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockPresentation.swift; sourceTree = "<group>"; };
 		7E204C37852098CA2DC19896 /* NightWatchReceiptCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightWatchReceiptCard.swift; sourceTree = "<group>"; };
 		7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunLiveActivityPushContract.swift; sourceTree = "<group>"; };
+		7E3D4FCE5E4D7D7B08B8EED2 /* SlumberPartyHomeSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyHomeSection.swift; sourceTree = "<group>"; };
 		7E46C11C6E319BCE0D35E132 /* SlumberPartyV4MemberCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyV4MemberCard.swift; sourceTree = "<group>"; };
 		7E9929526BDCE7E479341DF0 /* NightFlockV4Outbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockV4Outbox.swift; sourceTree = "<group>"; };
 		7EBABFF4413C439F3C62EC52 /* NightFlockHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockHubView.swift; sourceTree = "<group>"; };
 		7EC6C4B48CF683529DF2614B /* SheepSearchExplainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearchExplainerView.swift; sourceTree = "<group>"; };
+		7F112584D281DE13D26D4A84 /* WindDownGuidanceSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidanceSources.swift; sourceTree = "<group>"; };
 		80E395A728ED7F48F5A013B9 /* OnboardingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFlowView.swift; sourceTree = "<group>"; };
 		8246591179BB52B83964B703 /* PhoneBedTagEditorViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneBedTagEditorViews.swift; sourceTree = "<group>"; };
 		82EB78C4D690A72BBCD83377 /* NightFlockPreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockPreviews.swift; sourceTree = "<group>"; };
+		834B23AB1F8F0CC33D56A518 /* OllieCompanionSpriteRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllieCompanionSpriteRenderer.swift; sourceTree = "<group>"; };
 		844AB1C45E211CDC829A1DCB /* RewardShelfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardShelfView.swift; sourceTree = "<group>"; };
 		84574AF008061FDF9EEDBE7A /* AnalyticsExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsExportService.swift; sourceTree = "<group>"; };
 		85CDED1972FEFD89E5E25F9F /* NightFlockRewardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockRewardTests.swift; sourceTree = "<group>"; };
 		860F2DF3DB811DE0436B331F /* NightFlockOrientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockOrientation.swift; sourceTree = "<group>"; };
 		86474E30A0FD22942AB201DD /* EarlyEndView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarlyEndView.swift; sourceTree = "<group>"; };
+		88C774C8F5CE974F442F0DBB /* SlumberPartyV4MembershipActivitiesSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyV4MembershipActivitiesSection.swift; sourceTree = "<group>"; };
+		88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyHomePresentation.swift; sourceTree = "<group>"; };
 		89A173EE13348C1966863095 /* AutomaticWindDownSchedulingDecision.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomaticWindDownSchedulingDecision.swift; sourceTree = "<group>"; };
 		8AD9DDE7EED419BC93BDA42E /* PastureSceneController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastureSceneController.swift; sourceTree = "<group>"; };
 		8C0C1564F4FD15228C55FF8B /* SheepSearchWelcome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearchWelcome.swift; sourceTree = "<group>"; };
@@ -1068,6 +1208,8 @@
 		923402E1B84511D945E213C4 /* WatchTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchTheme.swift; sourceTree = "<group>"; };
 		9259C854A63E43C57AEAA32C /* FeedbackService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackService.swift; sourceTree = "<group>"; };
 		92BDC12BAFB7B11F9A17B3B8 /* EmergencyExitChallengeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyExitChallengeTests.swift; sourceTree = "<group>"; };
+		94319DBF777597AB9C1C7B94 /* NightFlockSharedHabitSleep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitSleep.swift; sourceTree = "<group>"; };
+		945BF06967132A220DD6D185 /* NightFlockSharedHabitPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitPresentation.swift; sourceTree = "<group>"; };
 		9507195D32B62BFEBBE8B959 /* WatchPhysicalQAFixture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchPhysicalQAFixture.swift; sourceTree = "<group>"; };
 		96D492CABD33A3BC68F45C56 /* WatchNotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchNotificationService.swift; sourceTree = "<group>"; };
 		9833AE367470A8440023AF38 /* CountingSheepUserProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountingSheepUserProfile.swift; sourceTree = "<group>"; };
@@ -1084,6 +1226,7 @@
 		9D8ED50B756C1284D8161069 /* QuietTimeBriefAccess.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeBriefAccess.swift; sourceTree = "<group>"; };
 		9DB4F3A6783D5E1106B72F2E /* PhoneAwaySearchSettlement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneAwaySearchSettlement.swift; sourceTree = "<group>"; };
 		9E55F6B3BBBE4FF6C3C6897B /* SlumberPartyFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyFeedback.swift; sourceTree = "<group>"; };
+		9EA70CBB78D62B0788758502 /* SlumberPartySocialAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySocialAvatar.swift; sourceTree = "<group>"; };
 		9F8B4D4B3A9B171B7A22B91B /* ScreenbookRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenbookRootView.swift; sourceTree = "<group>"; };
 		A101622737E06BAC7145FF71 /* FarmEconomySimulationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmEconomySimulationTests.swift; sourceTree = "<group>"; };
 		A1BFFBE289B6229DA8FB8B21 /* WindDownProfilePresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownProfilePresentation.swift; sourceTree = "<group>"; };
@@ -1119,8 +1262,10 @@
 		B3D573FF141CA5AFC3BA0C0F /* ScreenTimeBookendCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeBookendCard.swift; sourceTree = "<group>"; };
 		B4F8AF769F6B132CFF9B5866 /* PingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PingService.swift; sourceTree = "<group>"; };
 		B5B47E28E827254BA18C7EE3 /* QuietTimeEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeEditorView.swift; sourceTree = "<group>"; };
+		B6FA5C6A26495A14B146EE41 /* HomeWindowPhaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWindowPhaseTests.swift; sourceTree = "<group>"; };
 		B7511446B06F170927883265 /* SheepSearch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearch.swift; sourceTree = "<group>"; };
 		B7B04603C403E06255FE4159 /* WatchCaptureFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCaptureFixtures.swift; sourceTree = "<group>"; };
+		B883F348283D57EFA736EEB8 /* ScreenbookOllieMotionReview.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenbookOllieMotionReview.swift; sourceTree = "<group>"; };
 		B9EF128A45FEA565E5DAC499 /* NightsDayDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightsDayDetailView.swift; sourceTree = "<group>"; };
 		BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunLiveActivity.swift; sourceTree = "<group>"; };
 		BCA883DF2B718ECF95251587 /* NearbyInteractionDistanceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyInteractionDistanceProvider.swift; sourceTree = "<group>"; };
@@ -1130,6 +1275,7 @@
 		BF3F88823E3E8F6624E9B308 /* ScreenTimeSelectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeSelectionService.swift; sourceTree = "<group>"; };
 		BF7E46FDD6564DB0A78FC1E3 /* Orientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Orientation.swift; sourceTree = "<group>"; };
 		BFF41AEB694504EBE4F7633E /* PhoneInTheOtherRoomWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneInTheOtherRoomWatchApp.swift; sourceTree = "<group>"; };
+		C0526BEF9524D722F103FFEC /* HomeWelcomeHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWelcomeHero.swift; sourceTree = "<group>"; };
 		C09CC89F616D84C91797729E /* PhoneBedTagInspectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneBedTagInspectionTests.swift; sourceTree = "<group>"; };
 		C12B99272B084140706D6F37 /* RewardModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardModels.swift; sourceTree = "<group>"; };
 		C1EE08407F9EF95452730826 /* HomeReceiptRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeReceiptRoutingTests.swift; sourceTree = "<group>"; };
@@ -1143,12 +1289,14 @@
 		C6DEFB5698FE4EE517A1DD47 /* FarmEconomySnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmEconomySnapshot.swift; sourceTree = "<group>"; };
 		C72601B936190333C971123E /* NightJourneyProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightJourneyProgress.swift; sourceTree = "<group>"; };
 		C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownStartContext.swift; sourceTree = "<group>"; };
+		C75221D637B58B586CF85CD0 /* HomeStartRouting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStartRouting.swift; sourceTree = "<group>"; };
 		C7AE226B0340F8F53DD877A8 /* WindDownMethodPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownMethodPicker.swift; sourceTree = "<group>"; };
 		C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownStartTransaction.swift; sourceTree = "<group>"; };
 		C860CC9156D96757F65A7097 /* NotificationPlanning.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPlanning.swift; sourceTree = "<group>"; };
 		C8F6D96755B7E55F65270D23 /* PhoneInTheOtherRoom.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PhoneInTheOtherRoom.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C94150EEEF9D0FB0010D157C /* NotificationPlanningTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationPlanningTests.swift; sourceTree = "<group>"; };
 		C9BF9E90F3A7FC03662C6A69 /* EarlyWakeSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EarlyWakeSheet.swift; sourceTree = "<group>"; };
+		C9F4EFAF4F812F350131E588 /* NightFlockViewModel+SharedHabitsFence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NightFlockViewModel+SharedHabitsFence.swift"; sourceTree = "<group>"; };
 		C9FCF4932536C5578B591144 /* CountingSheepUserProfileTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountingSheepUserProfileTests.swift; sourceTree = "<group>"; };
 		CA2700AF27F1B49CE70A7034 /* PhoneInTheOtherRoomTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = PhoneInTheOtherRoomTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CA5CFEB51D35E8C302B15B6E /* NightFlockOutboxService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockOutboxService.swift; sourceTree = "<group>"; };
@@ -1158,6 +1306,7 @@
 		CEFA770209522C30518C311E /* ScreenbookScenario.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenbookScenario.swift; sourceTree = "<group>"; };
 		CF3BAD2EE31A2BDADB840203 /* AppAppearanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAppearanceTests.swift; sourceTree = "<group>"; };
 		CF6FC38E493F7600E7AD1FE1 /* ScreenbookScenarioRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenbookScenarioRegistry.swift; sourceTree = "<group>"; };
+		CFE779B168A1164CCB633FB3 /* ConnectionPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionPresentationTests.swift; sourceTree = "<group>"; };
 		D1885CE3DC9E3BA2E43991F2 /* NightFlockV2API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockV2API.swift; sourceTree = "<group>"; };
 		D298D556D163C71582736B0F /* FarmSharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmSharedComponents.swift; sourceTree = "<group>"; };
 		D32453F8F4F954861D4558A0 /* OnboardingProfileStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProfileStepView.swift; sourceTree = "<group>"; };
@@ -1172,6 +1321,7 @@
 		D7A5B2FCF076AA7FED2F8CAF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D7B90812500022857C5B05D0 /* WindDownGuidance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidance.swift; sourceTree = "<group>"; };
 		D7D31F414C46870F1BB891A6 /* NightFlockV3Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockV3Tests.swift; sourceTree = "<group>"; };
+		D83ABC5630D83D56C5813644 /* NightFlockSharedHabitsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitsTests.swift; sourceTree = "<group>"; };
 		D85E234AB3A00377C8BB23E3 /* OrientationTourOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationTourOverlay.swift; sourceTree = "<group>"; };
 		D8A6A44FF65DC1B46C80557C /* QuietTimeShieldScheduleTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldScheduleTests.swift; sourceTree = "<group>"; };
 		D94013E9C7BDDAE4E4463EAD /* NightFlockInviteRecovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockInviteRecovery.swift; sourceTree = "<group>"; };
@@ -1191,12 +1341,15 @@
 		E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpactMeasurement.swift; sourceTree = "<group>"; };
 		E3235011194BE427E8F19AD0 /* QuietTimeShieldingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldingService.swift; sourceTree = "<group>"; };
 		E3B2563134136BD2136655BD /* NightFlockTipCallout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockTipCallout.swift; sourceTree = "<group>"; };
+		E4285A43B1B1DCA41115E52D /* PastureCharacterHitTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastureCharacterHitTarget.swift; sourceTree = "<group>"; };
 		E4D2CC91D7C7FE4CAD506DCD /* WatchCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompletionView.swift; sourceTree = "<group>"; };
 		E5456845B6FE5574658098B3 /* NightFlockDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockDiagnostics.swift; sourceTree = "<group>"; };
 		E55F3D28135241E092DA0C86 /* WindDownSchedulePreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownSchedulePreviews.swift; sourceTree = "<group>"; };
+		E64DD16B4C145FFC970D4A21 /* SlumberPartySharedHabitsSummaryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedHabitsSummaryViews.swift; sourceTree = "<group>"; };
 		E877BF470938AC4688CBC448 /* OllieRitualView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllieRitualView.swift; sourceTree = "<group>"; };
 		E965042A8DE4CCAE76137376 /* FarmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmView.swift; sourceTree = "<group>"; };
 		E9CE0725085BDB4C2C4448E8 /* NightFlockV3API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockV3API.swift; sourceTree = "<group>"; };
+		E9D2D5D51F963474CE3D1E03 /* HomeWindDownSummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWindDownSummary.swift; sourceTree = "<group>"; };
 		EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightJourneyTerrain.swift; sourceTree = "<group>"; };
 		EAC3F61F4E30B8DA8EEB2818 /* ActiveRunPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveRunPresentationTests.swift; sourceTree = "<group>"; };
 		EB130154DC4EC531454055AC /* ShepherdNameCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdNameCard.swift; sourceTree = "<group>"; };
@@ -1205,7 +1358,10 @@
 		ECC86FE71B9E1FB5AFFC7741 /* SettingsHelpGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHelpGuideView.swift; sourceTree = "<group>"; };
 		ECC9B78384C74CC3192CFD2C /* NightsWeekSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightsWeekSection.swift; sourceTree = "<group>"; };
 		EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockAPI.swift; sourceTree = "<group>"; };
+		F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitsOutbox.swift; sourceTree = "<group>"; };
 		F155290D562D7CB38E2AB55F /* PhoneInTheOtherRoomLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneInTheOtherRoomLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneAwayStartPolicy.swift; sourceTree = "<group>"; };
+		F2AD704C0BE588AF5B3DBDE1 /* NightFlockSharedHabitsFence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitsFence.swift; sourceTree = "<group>"; };
 		F2B4094E1123762C21960270 /* PastureScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastureScene.swift; sourceTree = "<group>"; };
 		F2C85EA9D76BDF72E306FC1F /* NightFlockSharingAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharingAccountView.swift; sourceTree = "<group>"; };
 		F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightsHistorySummary.swift; sourceTree = "<group>"; };
@@ -1214,11 +1370,15 @@
 		F527AC2393CEA25AAB957412 /* WindDownRoutineTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownRoutineTextTests.swift; sourceTree = "<group>"; };
 		F5544D086B0D783DF7D3E26C /* QuietTimeShieldAction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldAction.swift; sourceTree = "<group>"; };
 		F600DE2E47379444ABD60760 /* RewardShelfViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RewardShelfViewModel.swift; sourceTree = "<group>"; };
+		F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitsAPI.swift; sourceTree = "<group>"; };
+		F6F730F42C95AF2332B926E1 /* WindDownRoutineSequenceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownRoutineSequenceCard.swift; sourceTree = "<group>"; };
 		F6FF7A2845BE78235E38A277 /* FocusStatsRecordSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusStatsRecordSections.swift; sourceTree = "<group>"; };
+		F7923398001F7111F5D8FB89 /* NightFlockV4PublicationPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockV4PublicationPolicy.swift; sourceTree = "<group>"; };
 		F84A62CA21C3BA39AD9587BE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		F93972DA8F2073D37A04DFC6 /* NotificationCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCopy.swift; sourceTree = "<group>"; };
 		F944D82DFD76323D0FF627B0 /* CountingSheepStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CountingSheepStorage.swift; sourceTree = "<group>"; };
 		F98F3869CB594F1B70F8A49D /* SheepSearchPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearchPresentation.swift; sourceTree = "<group>"; };
+		F9C25F57509EFBCE55C53DB4 /* WindDownGuidanceTopicView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidanceTopicView.swift; sourceTree = "<group>"; };
 		FA6981F038801F2E19A264F5 /* NightWatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightWatchTests.swift; sourceTree = "<group>"; };
 		FBC05A84D67C2987C58A1A9E /* NightFlockAccountService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockAccountService.swift; sourceTree = "<group>"; };
 		FCC2F309C1511BAC0E1BAB3E /* WindDownTimingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownTimingView.swift; sourceTree = "<group>"; };
@@ -1323,6 +1483,7 @@
 				CF3BAD2EE31A2BDADB840203 /* AppAppearanceTests.swift */,
 				7AA20704A47E2C515F386B99 /* AppFeedbackTests.swift */,
 				3DBC779CA1E0414914E287E4 /* AutomaticWindDownSchedulingDecisionTests.swift */,
+				CFE779B168A1164CCB633FB3 /* ConnectionPresentationTests.swift */,
 				C9FCF4932536C5578B591144 /* CountingSheepUserProfileTests.swift */,
 				92BDC12BAFB7B11F9A17B3B8 /* EmergencyExitChallengeTests.swift */,
 				3CA00822B21B34F0CD136BBC /* EmergencyExitReasonPersistenceTests.swift */,
@@ -1332,6 +1493,8 @@
 				7392A370F056374B993AB183 /* FirstRunJourneyTests.swift */,
 				52A86013814AE431A28EF7DF /* FocusRunLiveActivityPushContractTests.swift */,
 				C1EE08407F9EF95452730826 /* HomeReceiptRoutingTests.swift */,
+				0987EDF70B93D2228997B5D6 /* HomeStartRoutingTests.swift */,
+				B6FA5C6A26495A14B146EE41 /* HomeWindowPhaseTests.swift */,
 				51A0774B703AAB7AA39ED6E9 /* ImpactMeasurementTests.swift */,
 				0BD250A597F00860153BE645 /* IndependentMorningSettlementTests.swift */,
 				4759057D27C87BA76C7B6D1F /* LocalResetContractTests.swift */,
@@ -1340,6 +1503,8 @@
 				39BC24BC9476F914AC5236AB /* NightFlockInviteRecoveryTests.swift */,
 				01067700578ED7D9D1A72AAA /* NightFlockRemoteErrorTests.swift */,
 				85CDED1972FEFD89E5E25F9F /* NightFlockRewardTests.swift */,
+				7AACBF0DDC07BE817316D593 /* NightFlockSharedHabitsFenceTests.swift */,
+				D83ABC5630D83D56C5813644 /* NightFlockSharedHabitsTests.swift */,
 				9224AB0895BD0E0DB0E09F82 /* NightFlockTests.swift */,
 				D7D31F414C46870F1BB891A6 /* NightFlockV3Tests.swift */,
 				D67E08955167174DDFFEA42D /* NightFlockV4Tests.swift */,
@@ -1350,6 +1515,7 @@
 				BECA9F4D7F04D1AA055D0540 /* NotificationCopyTests.swift */,
 				C94150EEEF9D0FB0010D157C /* NotificationPlanningTests.swift */,
 				B131CABED0445916D4A206D2 /* OfflinePurposeTests.swift */,
+				7684613E8B36332EA981FC90 /* OllieCompanionAnimationTests.swift */,
 				A49A4F39CC3F60FE9D6C047B /* OnboardingTests.swift */,
 				657822B85060A72926C6069A /* OrientationTests.swift */,
 				FD7E77DA887D56EC4AC4AFA5 /* PastureSceneTests.swift */,
@@ -1370,6 +1536,8 @@
 				7A8A6295962D940E55C5992D /* SheepSearchTests.swift */,
 				D680879F94FF3E85B2EFD703 /* ShieldingReadinessTests.swift */,
 				AD4D476A956E716B20E375A9 /* SlumberPartyFeedbackTests.swift */,
+				6F818388296382E12C5E9F9B /* SlumberPartyHomePresentationTests.swift */,
+				1DC5279548CF98E53EAEB6DD /* SlumberPartySocialHabitLoopTests.swift */,
 				AF1EF831C34B695262897E31 /* WelcomeRewardTests.swift */,
 				5F762568D06F843D2FB6D7EF /* WindDownGuidanceTests.swift */,
 				07453853B4BE6F13D45D3837 /* WindDownProfileTests.swift */,
@@ -1438,26 +1606,37 @@
 				DFE0398B242518D3AF3B6070 /* AppearancePreferenceCard.swift */,
 				5668EDCFB49C85CAB7F9C6E0 /* AppShieldExplainerSheet.swift */,
 				53317BDED55DB805619E0AD9 /* AssetPlaceholderComponents.swift */,
+				4DE0240AA2FD5EDF90A1AD42 /* ConnectionStatusCard.swift */,
 				AFAE876CD840AE34DBD0CD09 /* ContextualGuideOverlay.swift */,
 				C9BF9E90F3A7FC03662C6A69 /* EarlyWakeSheet.swift */,
 				D298D556D163C71582736B0F /* FarmSharedComponents.swift */,
 				9A30132FA06A42148938276B /* FirstRunGuideCards.swift */,
 				F4AFA2769B1B9866001DB88D /* GameComponents.swift */,
+				C0526BEF9524D722F103FFEC /* HomeWelcomeHero.swift */,
+				E9D2D5D51F963474CE3D1E03 /* HomeWindDownSummary.swift */,
 				DC0813C86FDB60332218CA22 /* ImpactSharingConsentSheet.swift */,
 				2EBF5AEECC8C11A24F9AC80C /* MorningCheckInCard.swift */,
 				3647A02CD9963371D4436FD1 /* NightJourneyView.swift */,
 				7E204C37852098CA2DC19896 /* NightWatchReceiptCard.swift */,
+				0A0BA55E2FBC5876A06B5077 /* OllieCompanionAnimationView.swift */,
+				834B23AB1F8F0CC33D56A518 /* OllieCompanionSpriteRenderer.swift */,
 				E877BF470938AC4688CBC448 /* OllieRitualView.swift */,
 				D85E234AB3A00377C8BB23E3 /* OrientationTourOverlay.swift */,
-				1AD2E48456BC66532ECB5FD4 /* PasturePlayComponents.swift */,
+				E4285A43B1B1DCA41115E52D /* PastureCharacterHitTarget.swift */,
 				8246591179BB52B83964B703 /* PhoneBedTagEditorViews.swift */,
 				34C142284812C6FFC1A66DC6 /* QRCodeScannerView.swift */,
 				FDF622225F600D7D4FE48BB2 /* QuietWindowDurationEditor.swift */,
 				B3D573FF141CA5AFC3BA0C0F /* ScreenTimeBookendCard.swift */,
+				7E3D4FCE5E4D7D7B08B8EED2 /* SlumberPartyHomeSection.swift */,
 				699FD1A342B33E49AEA2D7ED /* UpcomingQuietTimesCard.swift */,
+				69B8EC3C928FE031D88AF0C6 /* WindDownGuidanceDetailView.swift */,
+				5789F61341A0DBD54BE95514 /* WindDownGuidanceLibraryView.swift */,
+				31AC3431486F9B88FFF79AE8 /* WindDownGuidanceSourcesView.swift */,
+				F9C25F57509EFBCE55C53DB4 /* WindDownGuidanceTopicView.swift */,
 				DCCFF516621464F444B1C666 /* WindDownGuideCard.swift */,
 				C7AE226B0340F8F53DD877A8 /* WindDownMethodPicker.swift */,
 				4FD5AC342523B66ED804749A /* WindDownPhaseProgressView.swift */,
+				F6F730F42C95AF2332B926E1 /* WindDownRoutineSequenceCard.swift */,
 				4B7E6573B6F20FD23BACECFE /* WindDownStartSheet.swift */,
 				4D938D5CAF1FC944B38694BB /* WindDownTagManagementCard.swift */,
 			);
@@ -1498,6 +1677,8 @@
 			children = (
 				7206F968949A850F425C443C /* ScreenbookCaptureReadiness.swift */,
 				A825C770C4A91D66A1E00438 /* ScreenbookFixtures.swift */,
+				B883F348283D57EFA736EEB8 /* ScreenbookOllieMotionReview.swift */,
+				0F53480D8F466112B0283D71 /* ScreenbookRecoveryProbe.swift */,
 				9F8B4D4B3A9B171B7A22B91B /* ScreenbookRootView.swift */,
 				CEFA770209522C30518C311E /* ScreenbookScenario.swift */,
 				CF6FC38E493F7600E7AD1FE1 /* ScreenbookScenarioRegistry.swift */,
@@ -1597,8 +1778,14 @@
 				6CFAE2418AA82478569AF2EC /* NightFlockSharedPastureView.swift */,
 				F2C85EA9D76BDF72E306FC1F /* NightFlockSharingAccountView.swift */,
 				E3B2563134136BD2136655BD /* NightFlockTipCallout.swift */,
+				6E8C2669732D7E8E5E31546D /* SlumberPartySharedHabitsConsentDisclosure.swift */,
+				E64DD16B4C145FFC970D4A21 /* SlumberPartySharedHabitsSummaryViews.swift */,
+				0C18F2A9F6A867D8C17822A8 /* SlumberPartySharedHabitsViews.swift */,
+				9EA70CBB78D62B0788758502 /* SlumberPartySocialAvatar.swift */,
+				0C2B0F320BAD56245267D266 /* SlumberPartyV4GroupDetailsView.swift */,
 				033FFDB53140B4A0C6EBE8AC /* SlumberPartyV4ListView.swift */,
 				7E46C11C6E319BCE0D35E132 /* SlumberPartyV4MemberCard.swift */,
+				88C774C8F5CE974F442F0DBB /* SlumberPartyV4MembershipActivitiesSection.swift */,
 				137FEFD7C61187DE3EBEDB5D /* SlumberPartyV4PartyDetailView.swift */,
 				319017A4000640ABA6847FDE /* SlumberPartyV4Previews.swift */,
 			);
@@ -1656,9 +1843,13 @@
 			children = (
 				E10F6B198F7484F2D1475ED0 /* FocusRunViewModel.swift */,
 				7C8EBA2BFE8E2FDEADE480C5 /* FocusRunViewModel+Farm.swift */,
+				5E01DCDE3B22D74F2B27C753 /* FocusRunViewModel+SharedHabits.swift */,
 				745FB7D374C727192ED7EB22 /* NightFlockViewModel.swift */,
 				6B351566B166AF3B071F1A23 /* NightFlockViewModel+Commitment.swift */,
 				7606643546B66C81C5292038 /* NightFlockViewModel+Errors.swift */,
+				4B6729250CED0FBD6DF1824E /* NightFlockViewModel+SharedHabits.swift */,
+				6C7EE51C69C7261C331353D8 /* NightFlockViewModel+SharedHabitsAgreement.swift */,
+				C9F4EFAF4F812F350131E588 /* NightFlockViewModel+SharedHabitsFence.swift */,
 				A4AC5D839F47EF9BA9C0C529 /* NightFlockViewModel+Social.swift */,
 				D6526F57542BF01F59A51CCE /* NightFlockViewModel+V4.swift */,
 				8AD9DDE7EED419BC93BDA42E /* PastureSceneController.swift */,
@@ -1696,6 +1887,7 @@
 				7CB21F4F561F0CDDE5838E2E /* AppAppearance.swift */,
 				984770912E1D1E0E0B021EAD /* AppFeedback.swift */,
 				89A173EE13348C1966863095 /* AutomaticWindDownSchedulingDecision.swift */,
+				616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */,
 				F944D82DFD76323D0FF627B0 /* CountingSheepStorage.swift */,
 				9833AE367470A8440023AF38 /* CountingSheepUserProfile.swift */,
 				BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */,
@@ -1711,8 +1903,11 @@
 				BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */,
 				7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */,
 				7479F9FF862CDA06790D8869 /* FocusRunRules.swift */,
+				1C7D108D6023C76401482057 /* FocusSessionStartResult.swift */,
 				556930E68BC87E851A8295A3 /* Formatting.swift */,
 				B3001351373E2912EB653842 /* HomeReceiptRouting.swift */,
+				C75221D637B58B586CF85CD0 /* HomeStartRouting.swift */,
+				6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */,
 				E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */,
 				66A1636CD678FB4C1B1BF913 /* IndependentMorningSettlement.swift */,
 				EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */,
@@ -1725,12 +1920,19 @@
 				7DB187B79332895B17084F74 /* NightFlockPresentation.swift */,
 				F34BF2BC536636521908B263 /* NightFlockRemoteError.swift */,
 				3E743BEE0142538219616C76 /* NightFlockRewards.swift */,
+				945BF06967132A220DD6D185 /* NightFlockSharedHabitPresentation.swift */,
+				6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */,
+				F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */,
+				F2AD704C0BE588AF5B3DBDE1 /* NightFlockSharedHabitsFence.swift */,
+				94319DBF777597AB9C1C7B94 /* NightFlockSharedHabitSleep.swift */,
+				F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */,
 				27BEE7AA1F7ADED8F0910140 /* NightFlockSharing.swift */,
 				D1885CE3DC9E3BA2E43991F2 /* NightFlockV2API.swift */,
 				E9CE0725085BDB4C2C4448E8 /* NightFlockV3API.swift */,
 				45D3BD9546C811086F4D9250 /* NightFlockV4API.swift */,
 				4FF9468554FC475650E6948B /* NightFlockV4Models.swift */,
 				7E9929526BDCE7E479341DF0 /* NightFlockV4Outbox.swift */,
+				F7923398001F7111F5D8FB89 /* NightFlockV4PublicationPolicy.swift */,
 				25D02D6B734CCEAA5550A323 /* NightFlockV4Rewards.swift */,
 				D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */,
 				0FF2E39DD5785BCD72B14FDF /* NightJourneyGait.swift */,
@@ -1745,12 +1947,13 @@
 				C860CC9156D96757F65A7097 /* NotificationPlanning.swift */,
 				06D5412EB0A88211750BD467 /* NotificationPreferences.swift */,
 				180FD34F0C45EF5E28E01556 /* OfflinePurpose.swift */,
+				4EDCFECB0BBAFD73749828B4 /* OllieCompanionAnimation.swift */,
 				DDBC7095F0DEBB1934429025 /* Onboarding.swift */,
 				A24BDC9E1716AA10A37DB1C3 /* OnboardingJourney.swift */,
 				BF7E46FDD6564DB0A78FC1E3 /* Orientation.swift */,
-				3962DC8AB5D6673BDC1D1AE8 /* PastureInteraction.swift */,
 				F2B4094E1123762C21960270 /* PastureScene.swift */,
 				9DB4F3A6783D5E1106B72F2E /* PhoneAwaySearchSettlement.swift */,
+				F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */,
 				0F03F1AD721706B4B8EB67BF /* PhoneBedTag.swift */,
 				00991484321D62D0BF8B6E01 /* PhoneBedTagInspection.swift */,
 				4E380CE5C4EF450772817B63 /* ProximityClassifier.swift */,
@@ -1776,10 +1979,12 @@
 				8C0C1564F4FD15228C55FF8B /* SheepSearchWelcome.swift */,
 				9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */,
 				9E55F6B3BBBE4FF6C3C6897B /* SlumberPartyFeedback.swift */,
+				88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */,
 				249B4AF9B120045F2B5EAA36 /* SunriseTrail.swift */,
 				D5B830DE525CC379D8E1929C /* WatchMessage.swift */,
 				ADD3B38996742C55147041DA /* WelcomeReward.swift */,
 				D7B90812500022857C5B05D0 /* WindDownGuidance.swift */,
+				7F112584D281DE13D26D4A84 /* WindDownGuidanceSources.swift */,
 				417A5E80D30B2379E6F9C166 /* WindDownProfile.swift */,
 				A1BFFBE289B6229DA8FB8B21 /* WindDownProfilePresentation.swift */,
 				501A6445AE5C3BCB4ED23DCD /* WindDownScheduling.swift */,
@@ -2119,6 +2324,8 @@
 				7CABE39A231F71368D768A54 /* AutomaticWindDownSchedulingDecision.swift in Sources */,
 				2D7008D7AFF6C1F03049EEFB /* BarnView.swift in Sources */,
 				1AC01546472596D97D4A6AEC /* CompletionView.swift in Sources */,
+				BC2C20558FB745705267349C /* ConnectionPresentation.swift in Sources */,
+				B8C336C782405F969D2A5687 /* ConnectionStatusCard.swift in Sources */,
 				4FCC2858372173E7295D7639 /* ContextualGuideOverlay.swift in Sources */,
 				8C624C08680FACEB9B2DB0B1 /* CountingSheepStorage.swift in Sources */,
 				AC297CDCD37AF69EF4F9BF66 /* CountingSheepUserProfile.swift in Sources */,
@@ -2154,9 +2361,11 @@
 				ECA8AD2BA315D4C86960BA13 /* FocusRunShortcutStore.swift in Sources */,
 				143596D96B2A40CD5953B1A9 /* FocusRunShortcuts.swift in Sources */,
 				E3D02D6E35EF1ECA426396A8 /* FocusRunViewModel+Farm.swift in Sources */,
+				36D0F665B7F4E83273F49CDB /* FocusRunViewModel+SharedHabits.swift in Sources */,
 				36AA2B1114372488FABDCBBF /* FocusRunViewModel.swift in Sources */,
 				8C02F5FCB6CDD0EEED58B202 /* FocusSessionCoordinator+Placement.swift in Sources */,
 				85AE6ACA0349B0B1016B5910 /* FocusSessionCoordinator.swift in Sources */,
+				C127C5F84D905E5ECF8D2727 /* FocusSessionStartResult.swift in Sources */,
 				490B2F011A6E0B20BA18B621 /* FocusStatsContextSections.swift in Sources */,
 				B68E45A8D7FC32F6C112273A /* FocusStatsRecordSections.swift in Sources */,
 				01419E611DA89B07876B86F0 /* FocusStatsView.swift in Sources */,
@@ -2164,7 +2373,11 @@
 				B438091A3DFCCCAF64F23ED5 /* GameComponents.swift in Sources */,
 				F59876CD18AB898755C13731 /* HealthSleepService.swift in Sources */,
 				B7B18A5D7ED0F533E938D8E8 /* HomeReceiptRouting.swift in Sources */,
+				37414073D69B55AF5115733E /* HomeStartRouting.swift in Sources */,
 				E505E9D3607BE67239E01F39 /* HomeView.swift in Sources */,
+				094BA54C60F0A6F64D74F9AC /* HomeWelcomeHero.swift in Sources */,
+				93C23B06D593B5FB77981DF3 /* HomeWindDownSummary.swift in Sources */,
+				4264402D979A03660E0BE924 /* HomeWindowPhase.swift in Sources */,
 				8B4DEC6550469552CDB1B1C1 /* ImpactDataSyncService.swift in Sources */,
 				46C05592AA1B3674000C0959 /* ImpactMeasurement.swift in Sources */,
 				1DA09929AB6DA17CFBEF9B1E /* ImpactSharingConsentSheet.swift in Sources */,
@@ -2197,6 +2410,12 @@
 				1A845CA7800901854ABCAE9B /* NightFlockRemoteError.swift in Sources */,
 				948EF692C02CC533D62E50BA /* NightFlockRewards.swift in Sources */,
 				D991D919B9B3FDB81A629BDD /* NightFlockService.swift in Sources */,
+				F68002319C21704912DA2BC5 /* NightFlockSharedHabitPresentation.swift in Sources */,
+				F58B9BB9ECBA49DB2971ECB7 /* NightFlockSharedHabitSleep.swift in Sources */,
+				4B06DF825920E04A5F7DF90B /* NightFlockSharedHabits.swift in Sources */,
+				BFE657B6B4E4E2D152FDFF1A /* NightFlockSharedHabitsAPI.swift in Sources */,
+				AF9844DAFCD7A4E2E720E8E4 /* NightFlockSharedHabitsFence.swift in Sources */,
+				D47C90EC6DFD1BD6A21EF183 /* NightFlockSharedHabitsOutbox.swift in Sources */,
 				518174109E530619D44F5FDE /* NightFlockSharedPastureView.swift in Sources */,
 				FC1BDD6125714D0E43E903E5 /* NightFlockSharing.swift in Sources */,
 				871227566879A84F0572E101 /* NightFlockSharingAccountView.swift in Sources */,
@@ -2206,9 +2425,13 @@
 				93FB98997082AAC89E5E7878 /* NightFlockV4API.swift in Sources */,
 				B3D67BAEBA29B919FA92EE2B /* NightFlockV4Models.swift in Sources */,
 				19D4EC969CB547B6BC61B9EA /* NightFlockV4Outbox.swift in Sources */,
+				71E0F4113D9611BEE346B497 /* NightFlockV4PublicationPolicy.swift in Sources */,
 				6FD47415FAB3FF594D2DA05F /* NightFlockV4Rewards.swift in Sources */,
 				0741B7AD0D820B58B2AFDB06 /* NightFlockViewModel+Commitment.swift in Sources */,
 				3B4CCB7C57215201407D4358 /* NightFlockViewModel+Errors.swift in Sources */,
+				633E7494B60613E82182BA21 /* NightFlockViewModel+SharedHabits.swift in Sources */,
+				849850F7B990A37BDA7DA55B /* NightFlockViewModel+SharedHabitsAgreement.swift in Sources */,
+				933E6F0F6778121745CBEA29 /* NightFlockViewModel+SharedHabitsFence.swift in Sources */,
 				13283C395FF1394E6A9B0424 /* NightFlockViewModel+Social.swift in Sources */,
 				B6D1A5990BF95C0BAA382F45 /* NightFlockViewModel+V4.swift in Sources */,
 				C505E401C00A207B66804C6C /* NightFlockViewModel.swift in Sources */,
@@ -2234,6 +2457,9 @@
 				AFF9CBBEA488F2BBDD1C7C7A /* NotificationSchedulePreviewView.swift in Sources */,
 				0D66DBB70BFDBB5ECF821291 /* NotificationSettingsView.swift in Sources */,
 				CF6FE77D83A079976058D0BB /* OfflinePurpose.swift in Sources */,
+				4FBD658E6BEFC8772596F4C0 /* OllieCompanionAnimation.swift in Sources */,
+				905FD38901268A2AFB6856B4 /* OllieCompanionAnimationView.swift in Sources */,
+				75DD63D13BBC23C0CA2CA971 /* OllieCompanionSpriteRenderer.swift in Sources */,
 				6E753BBF9CA2F9DC8585725C /* OllieModels.swift in Sources */,
 				F5324006645391CD17730782 /* OllieRitualView.swift in Sources */,
 				088272F910A24724932F21D4 /* Onboarding.swift in Sources */,
@@ -2250,12 +2476,12 @@
 				67A7B08813B6981D0C91F419 /* OnboardingWelcomeStepView.swift in Sources */,
 				1469DD6B9612EC7AA92BAA9B /* Orientation.swift in Sources */,
 				9F9B799A3607880757A262A3 /* OrientationTourOverlay.swift in Sources */,
-				73946C7C6D8C8E2BC6B9DACC /* PastureInteraction.swift in Sources */,
-				E3169FC91563D73824D1E689 /* PasturePlayComponents.swift in Sources */,
+				358A9C1F804D564E9C767DD2 /* PastureCharacterHitTarget.swift in Sources */,
 				283AAE27E04BE9CFDBEE692A /* PastureScene.swift in Sources */,
 				6DC8B8FCFBF4B8BC23590469 /* PastureSceneController.swift in Sources */,
 				C1A85EF813C789BD7F99EE24 /* PersistenceService.swift in Sources */,
 				4E9450BD7A197426E86AF4F1 /* PhoneAwaySearchSettlement.swift in Sources */,
+				B072A3EB95431E2FEF285C4D /* PhoneAwayStartPolicy.swift in Sources */,
 				128169DDC1EF031A31A9A78B /* PhoneBedNFCService.swift in Sources */,
 				AB36BE09CAA40FBE05F747B4 /* PhoneBedTag.swift in Sources */,
 				0F5B02086D202C52505A16F3 /* PhoneBedTagEditorViews.swift in Sources */,
@@ -2290,6 +2516,8 @@
 				143BA010348297131085BBC9 /* ScreenTimeSelectionService.swift in Sources */,
 				71E34BEC9770D6435AF8699E /* ScreenbookCaptureReadiness.swift in Sources */,
 				643F100286C48D88E66D82F5 /* ScreenbookFixtures.swift in Sources */,
+				432C75E9ADC469AA64B575BE /* ScreenbookOllieMotionReview.swift in Sources */,
+				2DE70F9897FC61E676A3CA65 /* ScreenbookRecoveryProbe.swift in Sources */,
 				FD060439F44D25867B7CC067 /* ScreenbookRootView.swift in Sources */,
 				1986707CDA671784481E7040 /* ScreenbookScenario.swift in Sources */,
 				DC3A664794C5DF530C324350 /* ScreenbookScenarioRegistry.swift in Sources */,
@@ -2308,8 +2536,16 @@
 				B7A56020598C9EABA543348D /* ShepherdNameCard.swift in Sources */,
 				CE54168AB66AAD4DE81A11DA /* SleepIntervalMath.swift in Sources */,
 				3A1C643123B783E101B224C5 /* SlumberPartyFeedback.swift in Sources */,
+				553056DE84F5B906199FC192 /* SlumberPartyHomePresentation.swift in Sources */,
+				66B2E3CD82B638978259D130 /* SlumberPartyHomeSection.swift in Sources */,
+				4E2112051005FA6B639EE7F2 /* SlumberPartySharedHabitsConsentDisclosure.swift in Sources */,
+				BA0FF24E5E28577DF77F0704 /* SlumberPartySharedHabitsSummaryViews.swift in Sources */,
+				EF5F2735EC58581AFB282B2E /* SlumberPartySharedHabitsViews.swift in Sources */,
+				FE65F4AA46D352AD183AB03A /* SlumberPartySocialAvatar.swift in Sources */,
+				4DD15C8988747430C653EAA3 /* SlumberPartyV4GroupDetailsView.swift in Sources */,
 				D3DAEDE9EE95157DD61FDCF0 /* SlumberPartyV4ListView.swift in Sources */,
 				FF2A9B40F720200134A0DF30 /* SlumberPartyV4MemberCard.swift in Sources */,
+				83D3AC9D700400AE3CFDB0C1 /* SlumberPartyV4MembershipActivitiesSection.swift in Sources */,
 				3F21C4061C8A516BD06ACF97 /* SlumberPartyV4PartyDetailView.swift in Sources */,
 				A26CB4DBDD86279880386ACE /* SlumberPartyV4Previews.swift in Sources */,
 				A6B845972966CB96C83FCFD5 /* SunriseTrail.swift in Sources */,
@@ -2326,11 +2562,17 @@
 				09E4CF8BA8838B7604C3D31B /* WatchPhysicalQAFixture.swift in Sources */,
 				690271B183F90BF1B83CB7DC /* WelcomeReward.swift in Sources */,
 				EC201A3FF4D9822BE21B0936 /* WindDownGuidance.swift in Sources */,
+				535138E2E0AD27B86A78EF1C /* WindDownGuidanceDetailView.swift in Sources */,
+				FA20219AE2FFDD1310C2E77E /* WindDownGuidanceLibraryView.swift in Sources */,
+				1EC66E5460B942B3E2A9C99C /* WindDownGuidanceSources.swift in Sources */,
+				F46F86290DECDB5A018BB551 /* WindDownGuidanceSourcesView.swift in Sources */,
+				9BDB930FC85A73059FA7390F /* WindDownGuidanceTopicView.swift in Sources */,
 				E1163580735C9015E025515E /* WindDownGuideCard.swift in Sources */,
 				6DA27428F4128B18FCDFD14F /* WindDownMethodPicker.swift in Sources */,
 				BE6C24537600EBF99A5AC5ED /* WindDownPhaseProgressView.swift in Sources */,
 				4A63B59A11827C4B6CCE2797 /* WindDownProfile.swift in Sources */,
 				878CB2CE985ADCB9DCAAB730 /* WindDownProfilePresentation.swift in Sources */,
+				A2517E3BFA96CBF944461D42 /* WindDownRoutineSequenceCard.swift in Sources */,
 				28B609C8E1BDF0A6799317E1 /* WindDownSchedulePreviews.swift in Sources */,
 				26CD1CC386B3C3B0CA484E33 /* WindDownScheduleView.swift in Sources */,
 				B1C913224ABD7368AB62D6EA /* WindDownScheduling.swift in Sources */,
@@ -2350,6 +2592,7 @@
 				8ED585FC1C7F5505DD9FB316 /* AppAppearance.swift in Sources */,
 				E4DF25206AF1484CE8A2B6A9 /* AppFeedback.swift in Sources */,
 				1A283B08352E3E9E9AEB147B /* AutomaticWindDownSchedulingDecision.swift in Sources */,
+				052977BDDDA2108895B23848 /* ConnectionPresentation.swift in Sources */,
 				FDC751F6941011EB0F5611EF /* CountingSheepStorage.swift in Sources */,
 				71FC6B727DC94DB64DCA929A /* CountingSheepUserProfile.swift in Sources */,
 				839395FE7C072E42447950FB /* DistanceProvider.swift in Sources */,
@@ -2365,8 +2608,11 @@
 				AF3B0099AF63FF33EE60A4A3 /* FocusRunLiveActivity.swift in Sources */,
 				E75F662A389C8DE087C3AD24 /* FocusRunLiveActivityPushContract.swift in Sources */,
 				A8B002EE788123AAB4DD98DA /* FocusRunRules.swift in Sources */,
+				3F2C7A5131C7FB02A3E5FE4E /* FocusSessionStartResult.swift in Sources */,
 				BEA7391F437682C412F91A77 /* Formatting.swift in Sources */,
 				3EC4469038B6C6A3A66DD087 /* HomeReceiptRouting.swift in Sources */,
+				BB89B8F1CE5FAA40BE9F2FBF /* HomeStartRouting.swift in Sources */,
+				63FE9E324BB0A2F01C292010 /* HomeWindowPhase.swift in Sources */,
 				3E044B1F6F9F00F2A72F8EC4 /* ImpactMeasurement.swift in Sources */,
 				8250CC1F13E3DD3B393D3A00 /* IndependentMorningSettlement.swift in Sources */,
 				55ABC61716645893EDD05AF5 /* MorningCheckIn.swift in Sources */,
@@ -2379,12 +2625,19 @@
 				E9F4DA532D5C767C643E9137 /* NightFlockPresentation.swift in Sources */,
 				F597EA7D1A13E1A49BE322B4 /* NightFlockRemoteError.swift in Sources */,
 				7FFF6C4C6B065CC85A278859 /* NightFlockRewards.swift in Sources */,
+				BC414116329CE5BED92E4001 /* NightFlockSharedHabitPresentation.swift in Sources */,
+				5AEB0FE9A847163895F54906 /* NightFlockSharedHabitSleep.swift in Sources */,
+				1174700CEB2F4E5CE86C4B26 /* NightFlockSharedHabits.swift in Sources */,
+				387CAEB0D109F7428B262C22 /* NightFlockSharedHabitsAPI.swift in Sources */,
+				3BFF1F9807990B970D62CEA3 /* NightFlockSharedHabitsFence.swift in Sources */,
+				1E24B7111D25A6DDB925DC2C /* NightFlockSharedHabitsOutbox.swift in Sources */,
 				C901F58073E6EC15824D4D96 /* NightFlockSharing.swift in Sources */,
 				57428933D7EE102FF7DF0199 /* NightFlockV2API.swift in Sources */,
 				1444D4EDDA053885DC83837D /* NightFlockV3API.swift in Sources */,
 				AEE6B9F11954E8C5AD10ADC2 /* NightFlockV4API.swift in Sources */,
 				6944DD9ACAF9B4232D77B5FB /* NightFlockV4Models.swift in Sources */,
 				14227F1727705A25129566CE /* NightFlockV4Outbox.swift in Sources */,
+				C41DFB2B744284F29EE80FB6 /* NightFlockV4PublicationPolicy.swift in Sources */,
 				D28EC543B101A637FDD1B8CB /* NightFlockV4Rewards.swift in Sources */,
 				888E319EF2E7CA27ACC10AB7 /* NightJourneyAssets.swift in Sources */,
 				756E006DCE141D6022C1067C /* NightJourneyGait.swift in Sources */,
@@ -2399,13 +2652,14 @@
 				30A4F43CD08D444AF06F89BA /* NotificationPlanning.swift in Sources */,
 				444B5516AF37D7EA01AF8497 /* NotificationPreferences.swift in Sources */,
 				0C1487C3752627DB212B7971 /* OfflinePurpose.swift in Sources */,
+				1E4FC05E95AC5719835F8CF7 /* OllieCompanionAnimation.swift in Sources */,
 				A5FA215F2F72A44943C19A2C /* OllieModels.swift in Sources */,
 				4E0FCFB6B5489E43F6095CBA /* Onboarding.swift in Sources */,
 				C331285778ABCF0CF98DF86E /* OnboardingJourney.swift in Sources */,
 				5D5A74C804B3C725B47DFEF0 /* Orientation.swift in Sources */,
-				3F805401FA4B4BFF93A81A9E /* PastureInteraction.swift in Sources */,
 				9ABDF42071BD5F7A58B737D7 /* PastureScene.swift in Sources */,
 				D0F17F7C1F45B2A4DEFEDF32 /* PhoneAwaySearchSettlement.swift in Sources */,
+				AA94ADC88349D6750A9285F1 /* PhoneAwayStartPolicy.swift in Sources */,
 				B84D2F22229F0712E948150F /* PhoneBedTag.swift in Sources */,
 				F5D97E00728816AEC0802521 /* PhoneBedTagInspection.swift in Sources */,
 				2B8151D66272641999266A1F /* ProximityClassifier.swift in Sources */,
@@ -2432,10 +2686,12 @@
 				7302344419B4198EC87AF649 /* SheepSearchWelcome.swift in Sources */,
 				CE63A4962D304A0A3D69F1F1 /* SleepIntervalMath.swift in Sources */,
 				F86801FC9806385A50A9CD3E /* SlumberPartyFeedback.swift in Sources */,
+				F2A3C736F99BD5DC632E1197 /* SlumberPartyHomePresentation.swift in Sources */,
 				FFE7E7EA01CE9E96B8670F5A /* SunriseTrail.swift in Sources */,
 				D6CF10C0442B8D15662A8752 /* WatchMessage.swift in Sources */,
 				5A8AE171DD4A7CEF2304E74B /* WelcomeReward.swift in Sources */,
 				4DA547FFEE0E91821CA6876B /* WindDownGuidance.swift in Sources */,
+				1B94AE3F5BF74E0CBFFBCB76 /* WindDownGuidanceSources.swift in Sources */,
 				35722C26C309DF27C961422D /* WindDownProfile.swift in Sources */,
 				2818A7095EEECBDAD3B8E311 /* WindDownProfilePresentation.swift in Sources */,
 				877E987C02578F87EBCA0208 /* WindDownScheduling.swift in Sources */,
@@ -2452,6 +2708,7 @@
 				E840CF0B9D97BEB561ADD643 /* AppAppearance.swift in Sources */,
 				93EF975DB44538C09E74A8C4 /* AppFeedback.swift in Sources */,
 				D72AE17981E8B769B41120C3 /* AutomaticWindDownSchedulingDecision.swift in Sources */,
+				1EE1FD01AFB3199707548C53 /* ConnectionPresentation.swift in Sources */,
 				91AE58EF9AA6747D3DABD4B9 /* CountingSheepStorage.swift in Sources */,
 				8BA8080D347D0392A61B9A23 /* CountingSheepUserProfile.swift in Sources */,
 				444AEF4E2CAE4C7643677BBE /* DistanceProvider.swift in Sources */,
@@ -2468,8 +2725,11 @@
 				CEA3AF4576060C758AEBC4CF /* FocusRunLiveActivityPushContract.swift in Sources */,
 				1F2F435A82ECBA53A49757B4 /* FocusRunLiveActivityWidget.swift in Sources */,
 				78307EC1CC40710ED513E709 /* FocusRunRules.swift in Sources */,
+				A44B70C8A9F280DBB15689C6 /* FocusSessionStartResult.swift in Sources */,
 				09B37744056AAC8ABD096A63 /* Formatting.swift in Sources */,
 				3118DE5A2A8CFCC32E62E5F4 /* HomeReceiptRouting.swift in Sources */,
+				0240584078DD206F12CAC3FA /* HomeStartRouting.swift in Sources */,
+				AD0E2FBE4FE794FF90AA8D4D /* HomeWindowPhase.swift in Sources */,
 				C442D7B21A8281A4C0434BC8 /* ImpactMeasurement.swift in Sources */,
 				5A32D0F3928B9DD1BB16AE46 /* IndependentMorningSettlement.swift in Sources */,
 				9FF058C4BC2075946BC785CA /* MorningCheckIn.swift in Sources */,
@@ -2482,12 +2742,19 @@
 				2ED16D7EC13526B27631B8D6 /* NightFlockPresentation.swift in Sources */,
 				B3905BBA6B6C611A9656DD70 /* NightFlockRemoteError.swift in Sources */,
 				625DD18A21906EE55B2C3C46 /* NightFlockRewards.swift in Sources */,
+				4E45244E11599983AC8EAE46 /* NightFlockSharedHabitPresentation.swift in Sources */,
+				CA54F4A79047174F258682DA /* NightFlockSharedHabitSleep.swift in Sources */,
+				A8163CFD873B30CACE83217B /* NightFlockSharedHabits.swift in Sources */,
+				7C5D05F54A37D515B29B602A /* NightFlockSharedHabitsAPI.swift in Sources */,
+				AE88EA26167064150F692927 /* NightFlockSharedHabitsFence.swift in Sources */,
+				2D58EC85415349FE132CC8C3 /* NightFlockSharedHabitsOutbox.swift in Sources */,
 				C2DB86D68CEF2C40217C18BE /* NightFlockSharing.swift in Sources */,
 				E41CC3256E1859E4EAE470F8 /* NightFlockV2API.swift in Sources */,
 				8F950C45C7AFB718DFCD8A29 /* NightFlockV3API.swift in Sources */,
 				58231CBD258F08AB8B7D6E00 /* NightFlockV4API.swift in Sources */,
 				2BFD4390EBA41F90BA9D3909 /* NightFlockV4Models.swift in Sources */,
 				2782B8FC4922A44B7869F5BB /* NightFlockV4Outbox.swift in Sources */,
+				EED24C5BCBC98B3D5AE1ED5C /* NightFlockV4PublicationPolicy.swift in Sources */,
 				496496740A5096B62F5DE343 /* NightFlockV4Rewards.swift in Sources */,
 				C3B39C287883C672C7AE0E50 /* NightJourneyAssets.swift in Sources */,
 				0E1D50337F0F1298A1352269 /* NightJourneyGait.swift in Sources */,
@@ -2502,13 +2769,14 @@
 				CBE2CAFE4E587EB30315B923 /* NotificationPlanning.swift in Sources */,
 				E007FB3287ABB44BD2909CF8 /* NotificationPreferences.swift in Sources */,
 				0E07C51A30CD5DAC2C05A9C0 /* OfflinePurpose.swift in Sources */,
+				DD3BB3A4C2962CA784E5C162 /* OllieCompanionAnimation.swift in Sources */,
 				FD05C854C652B0DE6B684FCC /* OllieModels.swift in Sources */,
 				A92C6A1278B52FAF09D4F474 /* Onboarding.swift in Sources */,
 				DFD9B5F5FDA4E8BD832660E1 /* OnboardingJourney.swift in Sources */,
 				7D1DC28007CFFFD6F872447E /* Orientation.swift in Sources */,
-				E0EDD2893E1AE0FF4EE6D65C /* PastureInteraction.swift in Sources */,
 				AAA8656CBA9A707C7D17DDC1 /* PastureScene.swift in Sources */,
 				E27A1C149CA26C1662E5755F /* PhoneAwaySearchSettlement.swift in Sources */,
+				EF70DB21B6F7577A0C4F71B4 /* PhoneAwayStartPolicy.swift in Sources */,
 				99972F11310BB2401C99B64E /* PhoneBedTag.swift in Sources */,
 				3F6D60E9DE14AAEDF122D442 /* PhoneBedTagInspection.swift in Sources */,
 				16299FC22A2347AED3EBB829 /* ProximityClassifier.swift in Sources */,
@@ -2535,10 +2803,12 @@
 				2FD893F01CFFD64E98BE2AA2 /* SheepSearchWelcome.swift in Sources */,
 				C7B8F63A0362C4103ADE8895 /* SleepIntervalMath.swift in Sources */,
 				85C267080AEB6D3BE028560B /* SlumberPartyFeedback.swift in Sources */,
+				89023A69B339D38B756C8F2A /* SlumberPartyHomePresentation.swift in Sources */,
 				F301A16F9D4774C0DF28AE81 /* SunriseTrail.swift in Sources */,
 				1491D088655BF8F895522217 /* WatchMessage.swift in Sources */,
 				133B77F6158F2161CB7537DA /* WelcomeReward.swift in Sources */,
 				B3F593924D0C732409BA2DE3 /* WindDownGuidance.swift in Sources */,
+				6F5C91F897CFFEEF3C1CCAFA /* WindDownGuidanceSources.swift in Sources */,
 				FE91EBE925697164F9896013 /* WindDownProfile.swift in Sources */,
 				4EB7818D163757CA37F6C14F /* WindDownProfilePresentation.swift in Sources */,
 				D73A912FF83E94075243079E /* WindDownScheduling.swift in Sources */,
@@ -2555,6 +2825,7 @@
 				278C90FCB66FBB5124915CA6 /* AppAppearance.swift in Sources */,
 				959369B16F5FE7DAC42714B7 /* AppFeedback.swift in Sources */,
 				550AE981AE28C464A52BA69A /* AutomaticWindDownSchedulingDecision.swift in Sources */,
+				449B04F3B1702E29E5C21E6A /* ConnectionPresentation.swift in Sources */,
 				40BEEAE760EE95B0EB984D65 /* CountingSheepStorage.swift in Sources */,
 				B6F356C2D7A0139C08E2DB8C /* CountingSheepUserProfile.swift in Sources */,
 				897057BBDD47C09A3485DF9B /* DistanceProvider.swift in Sources */,
@@ -2570,8 +2841,11 @@
 				3F4A1E86A6D960EDDFE64213 /* FocusRunLiveActivity.swift in Sources */,
 				F1AA073BD60F9F20E2B794DD /* FocusRunLiveActivityPushContract.swift in Sources */,
 				423131065D96B4C816455928 /* FocusRunRules.swift in Sources */,
+				00D9DC2A432051F8F345FAAC /* FocusSessionStartResult.swift in Sources */,
 				A2051E6767C60E2DE6C5A4E1 /* Formatting.swift in Sources */,
 				370F432B5912E89A1860F798 /* HomeReceiptRouting.swift in Sources */,
+				D81B3BA9E938AE9CA9D7A3F1 /* HomeStartRouting.swift in Sources */,
+				6E628BD0BF9498C4A5114764 /* HomeWindowPhase.swift in Sources */,
 				E7C81829A27A3F201EF5D839 /* ImpactMeasurement.swift in Sources */,
 				EA5FD2C99FF24358194B7E19 /* IndependentMorningSettlement.swift in Sources */,
 				69FA98FCA63048D31A258816 /* MorningCheckIn.swift in Sources */,
@@ -2584,12 +2858,19 @@
 				1CC56DF89D039F63717DB9D9 /* NightFlockPresentation.swift in Sources */,
 				57AB719A9CC8149BB6E70AB4 /* NightFlockRemoteError.swift in Sources */,
 				38FE00F468445E28B4FC505D /* NightFlockRewards.swift in Sources */,
+				E7447453A0C32800B0BD105E /* NightFlockSharedHabitPresentation.swift in Sources */,
+				9990D337933C98507E6D632E /* NightFlockSharedHabitSleep.swift in Sources */,
+				2908814B2BB6A63B322AE28F /* NightFlockSharedHabits.swift in Sources */,
+				B72295CFA36A9526458A91BF /* NightFlockSharedHabitsAPI.swift in Sources */,
+				8523FE0276F7C6785C888A02 /* NightFlockSharedHabitsFence.swift in Sources */,
+				768307E4FD77C431013D4394 /* NightFlockSharedHabitsOutbox.swift in Sources */,
 				383667C2823CE6BA70F377D3 /* NightFlockSharing.swift in Sources */,
 				594312F3A0749E95169BD6B7 /* NightFlockV2API.swift in Sources */,
 				902C948F005239A6AF7141C2 /* NightFlockV3API.swift in Sources */,
 				B77BE780A0F57F5EF0B62A4D /* NightFlockV4API.swift in Sources */,
 				673B9A8B2577181184BD526B /* NightFlockV4Models.swift in Sources */,
 				C3EAF3DA62C4160A977F0F6E /* NightFlockV4Outbox.swift in Sources */,
+				4759AD655C19FEDB91B55C12 /* NightFlockV4PublicationPolicy.swift in Sources */,
 				1A5F7C5B2BBF25396BBB1CE0 /* NightFlockV4Rewards.swift in Sources */,
 				C913E185B0625F7CDEC29C67 /* NightJourneyAssets.swift in Sources */,
 				F24BCF5C2459654624480BD5 /* NightJourneyGait.swift in Sources */,
@@ -2604,13 +2885,14 @@
 				3F91E4CDB2C938AAE517C5B7 /* NotificationPlanning.swift in Sources */,
 				701086E0E1D406B9ABCA5DFD /* NotificationPreferences.swift in Sources */,
 				2BFF051EE9C9E6A28EE9ADD8 /* OfflinePurpose.swift in Sources */,
+				1F1A48C306580DACA3FE7E38 /* OllieCompanionAnimation.swift in Sources */,
 				EB168616C20B8D390DA75A37 /* OllieModels.swift in Sources */,
 				36E3949801C2218FA39A9634 /* Onboarding.swift in Sources */,
 				7B1FB36DEA23C8B45562C7C7 /* OnboardingJourney.swift in Sources */,
 				78119B96E99ED4FA177EEC9C /* Orientation.swift in Sources */,
-				4934D3D6C8CB587519576A0D /* PastureInteraction.swift in Sources */,
 				B1948AC7C76B3900492F7A2C /* PastureScene.swift in Sources */,
 				1A39ED1725562264A18272C0 /* PhoneAwaySearchSettlement.swift in Sources */,
+				03CA8343D240F98BC452B71F /* PhoneAwayStartPolicy.swift in Sources */,
 				708AE772CBDC6BF629B914A5 /* PhoneBedTag.swift in Sources */,
 				0AC174266D83C086F28119A4 /* PhoneBedTagInspection.swift in Sources */,
 				0B56FCBC05E721D9FFEA3A8F /* ProximityClassifier.swift in Sources */,
@@ -2637,10 +2919,12 @@
 				C48377C707B2B17EC5C2EE2D /* SheepSearchWelcome.swift in Sources */,
 				56DBD04F39227005E79616B6 /* SleepIntervalMath.swift in Sources */,
 				43E32682176B76CFD81FB8CB /* SlumberPartyFeedback.swift in Sources */,
+				2228883B906183C4F0D51181 /* SlumberPartyHomePresentation.swift in Sources */,
 				461294B67EEA35296113809E /* SunriseTrail.swift in Sources */,
 				08C8173E50911325713FB510 /* WatchMessage.swift in Sources */,
 				C55FAE9B12ED1E9C201A4DF8 /* WelcomeReward.swift in Sources */,
 				1E3702DE2DDB8DEFDC92E872 /* WindDownGuidance.swift in Sources */,
+				9E9D96485AEE8ECCCC07DE57 /* WindDownGuidanceSources.swift in Sources */,
 				E2CF02EA731E8A491B4C9E29 /* WindDownProfile.swift in Sources */,
 				1245157F80C34A3680EDCBF0 /* WindDownProfilePresentation.swift in Sources */,
 				450A3D8BC3C463AB7BC23DE0 /* WindDownScheduling.swift in Sources */,
@@ -2675,6 +2959,7 @@
 				E4C3E1BD526161D3256CC295 /* AppAppearance.swift in Sources */,
 				029C75FF80662004F4590C5C /* AppFeedback.swift in Sources */,
 				FFCB715E20CFA6F9FC7E7E02 /* AutomaticWindDownSchedulingDecision.swift in Sources */,
+				2230FAA55D7C78556218DDC9 /* ConnectionPresentation.swift in Sources */,
 				8DEF6C9C499940D146BB1605 /* CountingSheepStorage.swift in Sources */,
 				5BD74829D529FD86182A5E97 /* CountingSheepUserProfile.swift in Sources */,
 				BE974EB1F959E29D891D8D5A /* DistanceProvider.swift in Sources */,
@@ -2690,8 +2975,11 @@
 				64BC59F8DEA2A5BFC74642DC /* FocusRunLiveActivity.swift in Sources */,
 				7839834017F3644864646F03 /* FocusRunLiveActivityPushContract.swift in Sources */,
 				2671D93D149CF5FE1EBB1F93 /* FocusRunRules.swift in Sources */,
+				36160D6DEFEECE81231D609A /* FocusSessionStartResult.swift in Sources */,
 				0D16961804F0A1782D7E104E /* Formatting.swift in Sources */,
 				A3FF3B5AAC1AA34356641D74 /* HomeReceiptRouting.swift in Sources */,
+				AAC7428DE24053DECAF30000 /* HomeStartRouting.swift in Sources */,
+				5F9841E3D8DE9ECFF9B73DDA /* HomeWindowPhase.swift in Sources */,
 				56FF302373E22AC6002EBD28 /* ImpactMeasurement.swift in Sources */,
 				D7CFD0D7F302E502FECA598D /* IndependentMorningSettlement.swift in Sources */,
 				3B0EB94A253EB131FD5005A7 /* MorningCheckIn.swift in Sources */,
@@ -2704,12 +2992,19 @@
 				BE2694C56DC7244ABEF5CC4B /* NightFlockPresentation.swift in Sources */,
 				1F0415F3251F5D443135E5B0 /* NightFlockRemoteError.swift in Sources */,
 				A0085BF9E58FFE1BAEA6A7AB /* NightFlockRewards.swift in Sources */,
+				F66DD15843FDD78BE3D8072B /* NightFlockSharedHabitPresentation.swift in Sources */,
+				649FD2FD1004274602E1FD74 /* NightFlockSharedHabitSleep.swift in Sources */,
+				A6C5237B13D2211A4C9C18CE /* NightFlockSharedHabits.swift in Sources */,
+				DF4FB95B348544B13E6B172E /* NightFlockSharedHabitsAPI.swift in Sources */,
+				9389957059EB03DC681E6236 /* NightFlockSharedHabitsFence.swift in Sources */,
+				F5512EA45B7E887D2ADBE00D /* NightFlockSharedHabitsOutbox.swift in Sources */,
 				7A96FEC2454DD4A4F09E886C /* NightFlockSharing.swift in Sources */,
 				BCFA0FBB081F31FC01CE6408 /* NightFlockV2API.swift in Sources */,
 				BC0D3D9B82A5083045EA3A30 /* NightFlockV3API.swift in Sources */,
 				89B03FBFED2CD4B3151A3FB0 /* NightFlockV4API.swift in Sources */,
 				691378D987D627B1DD48833B /* NightFlockV4Models.swift in Sources */,
 				A2289F7C034A2D740CF61C5B /* NightFlockV4Outbox.swift in Sources */,
+				2F79A3E67299221491CEF006 /* NightFlockV4PublicationPolicy.swift in Sources */,
 				8FED583A77023553D7B8A254 /* NightFlockV4Rewards.swift in Sources */,
 				8E1A4A4BEEEC870003DC9E68 /* NightJourneyAssets.swift in Sources */,
 				7EA1D481F43C3C63841523A0 /* NightJourneyGait.swift in Sources */,
@@ -2724,13 +3019,14 @@
 				C500303F220D95AB5D643911 /* NotificationPlanning.swift in Sources */,
 				4F6D56516B6F29050F70373C /* NotificationPreferences.swift in Sources */,
 				A4EAB6DEB0CCFAAAA2D5F809 /* OfflinePurpose.swift in Sources */,
+				EBCDFC632A126E0C08C3037D /* OllieCompanionAnimation.swift in Sources */,
 				DE9743631F10743A2E66ACCA /* OllieModels.swift in Sources */,
 				EF94EF60BE2D2D7E1C3E24FA /* Onboarding.swift in Sources */,
 				32E90C6D24C983E1E35D6167 /* OnboardingJourney.swift in Sources */,
 				1506A9D231C16A6DC1B023DD /* Orientation.swift in Sources */,
-				B69FCAF3B8EC4E0F8FABFE1A /* PastureInteraction.swift in Sources */,
 				E063F6FCF4A6F81647DB5F6B /* PastureScene.swift in Sources */,
 				453D1BE0DF2809B26CB0FFB1 /* PhoneAwaySearchSettlement.swift in Sources */,
+				968BBD20A948CFEED03AE4BE /* PhoneAwayStartPolicy.swift in Sources */,
 				C9561D3882C7FFEAFD6A3AC2 /* PhoneBedTag.swift in Sources */,
 				8058149305089D2AFB601FB4 /* PhoneBedTagInspection.swift in Sources */,
 				0CAF98225012586FC16AA6CF /* PhoneInTheOtherRoomWatchApp.swift in Sources */,
@@ -2757,6 +3053,7 @@
 				5C7D1EFB1CB37DBC9514BF2B /* SheepSearchWelcome.swift in Sources */,
 				993E731FB647A1A7C6E5763B /* SleepIntervalMath.swift in Sources */,
 				0700D4D79EF90295C5D76C2C /* SlumberPartyFeedback.swift in Sources */,
+				74335B05DE6AEFEFC326EFE8 /* SlumberPartyHomePresentation.swift in Sources */,
 				66FCB8B74BA9BDFE6D2D2AFC /* SunriseTrail.swift in Sources */,
 				4C2D5CE9F22A294928FDFE74 /* WatchCaptureFixtures.swift in Sources */,
 				D2785EB5D97DA573EDFF309D /* WatchCompletionView.swift in Sources */,
@@ -2772,6 +3069,7 @@
 				0F1EED260B92216CA86BD062 /* WatchWarningView.swift in Sources */,
 				FB7A2B844E351CE79CDD07B8 /* WelcomeReward.swift in Sources */,
 				4EF9E39C00F135FD5CC71EA2 /* WindDownGuidance.swift in Sources */,
+				63ABDBCADA4A0F3CB2903C02 /* WindDownGuidanceSources.swift in Sources */,
 				2A90613DF00E7C15B42D9C62 /* WindDownProfile.swift in Sources */,
 				80A166E17CB90F0C2EE5C2BE /* WindDownProfilePresentation.swift in Sources */,
 				2E9058B5A00BF211C158EAC0 /* WindDownScheduling.swift in Sources */,
@@ -2792,6 +3090,8 @@
 				E3E8E32AB80D4DA3F282C033 /* AppFeedbackTests.swift in Sources */,
 				DC0175610BC13FDB04FDC546 /* AutomaticWindDownSchedulingDecision.swift in Sources */,
 				280B45BDBB56718B6BBC1B47 /* AutomaticWindDownSchedulingDecisionTests.swift in Sources */,
+				3139268D752352BBE34972FD /* ConnectionPresentation.swift in Sources */,
+				EDE3785C865EF4E792B52724 /* ConnectionPresentationTests.swift in Sources */,
 				6A9F1B65062E54C67263E42B /* CountingSheepStorage.swift in Sources */,
 				37D7AA64A058418A0D3A2A88 /* CountingSheepUserProfile.swift in Sources */,
 				18C4F271BFC37653F6531BAF /* CountingSheepUserProfileTests.swift in Sources */,
@@ -2815,9 +3115,14 @@
 				2612FC6B4ED2705C18B22A90 /* FocusRunLiveActivityPushContract.swift in Sources */,
 				26B1768A6C837E76A98ADE2C /* FocusRunLiveActivityPushContractTests.swift in Sources */,
 				6CB70567B8D91F6F58FC2B32 /* FocusRunRules.swift in Sources */,
+				BCAF57CD1E299C6799FB1DEC /* FocusSessionStartResult.swift in Sources */,
 				4BBA92446A2BD51E8963F286 /* Formatting.swift in Sources */,
 				7C2E64FC31A7672F8FA93D08 /* HomeReceiptRouting.swift in Sources */,
 				1E8DF9BED8584E553EC28AD6 /* HomeReceiptRoutingTests.swift in Sources */,
+				8070373EFBBEF861CE1A5357 /* HomeStartRouting.swift in Sources */,
+				AE4B4A7C7F20F9AD28AA0500 /* HomeStartRoutingTests.swift in Sources */,
+				CDA0BC083A860BBD1C375412 /* HomeWindowPhase.swift in Sources */,
+				1072EC25F771777FC0A5E72C /* HomeWindowPhaseTests.swift in Sources */,
 				38A955CAD149160BECAB25CA /* ImpactMeasurement.swift in Sources */,
 				C107E412664051996D3972B6 /* ImpactMeasurementTests.swift in Sources */,
 				33AD269A89606AEE4BB46119 /* IndependentMorningSettlement.swift in Sources */,
@@ -2838,6 +3143,14 @@
 				8A8BA15E93F46191F42FEB11 /* NightFlockRemoteErrorTests.swift in Sources */,
 				432E09AEF3D2668C134D9F85 /* NightFlockRewardTests.swift in Sources */,
 				51B101654834380861A003B4 /* NightFlockRewards.swift in Sources */,
+				FEC14768E63EBD27C0165582 /* NightFlockSharedHabitPresentation.swift in Sources */,
+				58B64BC2A94E0B0B214ED075 /* NightFlockSharedHabitSleep.swift in Sources */,
+				4C9B28B9BD62330AC9286225 /* NightFlockSharedHabits.swift in Sources */,
+				91B2E4EDD0E53B849F6EBD89 /* NightFlockSharedHabitsAPI.swift in Sources */,
+				27B4FF38DEC1C4948E6F15D5 /* NightFlockSharedHabitsFence.swift in Sources */,
+				44E4DF1AC4C86D655428C35F /* NightFlockSharedHabitsFenceTests.swift in Sources */,
+				956737458D2BF7639B14DC86 /* NightFlockSharedHabitsOutbox.swift in Sources */,
+				949A44096DBE3DA46A130675 /* NightFlockSharedHabitsTests.swift in Sources */,
 				B11A7CD28739C56F42D402FB /* NightFlockSharing.swift in Sources */,
 				8949C9178A1DE5CA452C6005 /* NightFlockTests.swift in Sources */,
 				C00A04B5B5DCB728B9A6A049 /* NightFlockV2API.swift in Sources */,
@@ -2846,6 +3159,7 @@
 				CEF2DDC9AC6351EE60BE5D68 /* NightFlockV4API.swift in Sources */,
 				2A1FAB0E270E7BD7F795C6AB /* NightFlockV4Models.swift in Sources */,
 				8F58C0784FE972F697F9E707 /* NightFlockV4Outbox.swift in Sources */,
+				34780C117AB32899DA7DF43B /* NightFlockV4PublicationPolicy.swift in Sources */,
 				54F38CD09C4A91198E2D1202 /* NightFlockV4Rewards.swift in Sources */,
 				04CE3C0B798352CCC63FF874 /* NightFlockV4Tests.swift in Sources */,
 				49A44BC0B84BBC21984D02C4 /* NightJourneyAssets.swift in Sources */,
@@ -2868,17 +3182,19 @@
 				6344CD8B169F84F6FD109BE0 /* NotificationPreferences.swift in Sources */,
 				32D48AF51A5F99FC8A3E53CC /* OfflinePurpose.swift in Sources */,
 				4F9C1C72F9228B44D0A5781D /* OfflinePurposeTests.swift in Sources */,
+				6D33B7CF249A338BDD6D67B0 /* OllieCompanionAnimation.swift in Sources */,
+				A2FE56D5DB28D01ABA7D3BDB /* OllieCompanionAnimationTests.swift in Sources */,
 				EF4B4DFCF678485A7BDBEA1C /* OllieModels.swift in Sources */,
 				AE953A97720E3ADE9F9F2572 /* Onboarding.swift in Sources */,
 				DDE8543B69D28FBD22049567 /* OnboardingJourney.swift in Sources */,
 				A2A3E46C8D28D833FF290C08 /* OnboardingTests.swift in Sources */,
 				EEE9B2C56EB67341BED9818A /* Orientation.swift in Sources */,
 				D0780C1A74AC163D550F7DE5 /* OrientationTests.swift in Sources */,
-				42AF66E41FAAEA280B88B651 /* PastureInteraction.swift in Sources */,
 				D01106712BF66B8E820B8C40 /* PastureScene.swift in Sources */,
 				E6C36E2CE87BDF426B684773 /* PastureSceneTests.swift in Sources */,
 				F9A4E396FE883D1B283F868E /* PhoneAwaySearchSettlement.swift in Sources */,
 				9CE6086580AD591987C2E6AD /* PhoneAwaySettlementTests.swift in Sources */,
+				067C2294FA723A966DAE533F /* PhoneAwayStartPolicy.swift in Sources */,
 				6624F7CCB77D6FAF9460AC47 /* PhoneBedTag.swift in Sources */,
 				AD037B7B454864C9077A6504 /* PhoneBedTagInspection.swift in Sources */,
 				4D7AC933AEBC00DBD24D9F49 /* PhoneBedTagInspectionTests.swift in Sources */,
@@ -2920,11 +3236,15 @@
 				D7408280A98EB7A1069D30A3 /* SleepIntervalMath.swift in Sources */,
 				53958E403A8BD660164A5BBA /* SlumberPartyFeedback.swift in Sources */,
 				14980815836F0D2021F6F1F5 /* SlumberPartyFeedbackTests.swift in Sources */,
+				D9F1C36DA450B01FFFD7F64B /* SlumberPartyHomePresentation.swift in Sources */,
+				423F4ADEA9A0324A4551B440 /* SlumberPartyHomePresentationTests.swift in Sources */,
+				FF6EEBBD35E4C442A4BC6614 /* SlumberPartySocialHabitLoopTests.swift in Sources */,
 				9857678D0368A4FD13FB0A2A /* SunriseTrail.swift in Sources */,
 				F719DE4F31521670DCD32C67 /* WatchMessage.swift in Sources */,
 				C5A86963B74224D6C2BB1274 /* WelcomeReward.swift in Sources */,
 				2FC62A9B3F0748C95A34E41B /* WelcomeRewardTests.swift in Sources */,
 				10BD067878870884774F6DE9 /* WindDownGuidance.swift in Sources */,
+				45E4A0E0F40051662F920E13 /* WindDownGuidanceSources.swift in Sources */,
 				E53258386C361D453723227E /* WindDownGuidanceTests.swift in Sources */,
 				82D5F421FA7FEC90A5FCCE75 /* WindDownProfile.swift in Sources */,
 				1E6DA49A0B8D6BD6F6FD7D74 /* WindDownProfilePresentation.swift in Sources */,
@@ -3010,7 +3330,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 37;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = 4KZQPZR47B;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -3087,7 +3407,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 37;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 4KZQPZR47B;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -3242,7 +3562,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 11;
+				CURRENT_PROJECT_VERSION = 37;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = 4KZQPZR47B;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;

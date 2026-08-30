@@ -7,6 +7,25 @@ privacy, and platform constraints should be named separately. Canonical guide:
 
 ## Philosophy
 
+### Current Slumber Party direction — 2026-08-28
+
+The founder's next-slice decisions supersede older blanket exclusions of social comparison and
+new habit information in this document. Slumber Party should support adult mutual accountability
+and potentially friendly competition, with a coordinating leader and a chosen Shepherd/Ollie/sheep
+identity. Verified exact-app breakdowns for Singapore/SEA are essential, not replaceable by
+self-described categories. Sleep duration and week/month means should be legible and explorable.
+One explicit agreement accompanies joining; the agreed sharing is then on, with leaving as the
+new-sharing stop rather than granular field switches. Adults may join without Health data.
+Contextual connection controls must reflect actual evidence, not conflate a permission request
+with readable data. Later members should see prior group history, and ordinary leaving should
+preserve earlier contributions. This requires a reviewed archive/audience contract and meaningful
+privacy withdrawal/deletion; past disclosure is not irrevocable. Respect system permissions,
+missing-data uncertainty and offline withdrawal. No new upload is
+implied by this product direction: platform feasibility, exact leader/competition rules,
+archive duration, audience migration and privacy review precede implementation/release. The existing narrower
+V4 implementation and local-first protections remain factual until deliberately changed.
+See `plans/slumber-party-shared-habits-and-guide.md` and ADR-0016.
+
 Counting Sheep succeeds when people use distracting apps *less around sleep*. That inverts the usual
 app incentive, and every design decision must respect the inversion: we cannot measure
 success by engagement, session length, or opens. The product is a **ritual** — carrying the
@@ -144,6 +163,11 @@ explicit founder direction.
   HealthKit samples, source names, app selections, and personal reflections stay local.
   Optional impact sharing must be purpose-limited, separately consented, date-free, minimal,
   inspectable in copy, stoppable, and deletable.
+- **Make shared activity worth returning to.** Slumber Party is a core social feature, not a
+  subordinate Home link (founder clarification, 2026-08-27). Idle Home can show the same
+  member-visible people, factual moments and current statuses as party detail. Clear feedback
+  and reliable updates are part of that value. The previous list-only Home restriction no longer
+  applies; newly shared fields and sharing outside rounds require an explicit contract decision.
 - **Share a clear social truth.** Slumber Party v4 uses one party-level contract, not a sharing
   matrix: all current members see the active round's factual Wind Down and Phone Away records,
   revisioned statuses that expire, curated profile snapshots, and fixed cheers. A party is not a

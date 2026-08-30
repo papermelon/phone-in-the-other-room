@@ -29,7 +29,12 @@ struct ScreenbookRootView: View {
             await Task.yield()
             try? await Task.sleep(for: .milliseconds(350))
             do {
-                if request.exportsManifest || request.kind != nil {
+                if let probePassed = try ScreenbookRecoveryProbe.runIfRequested(), !probePassed {
+                    try ScreenbookCaptureReadiness.reportFailure(
+                        request,
+                        message: "Recovery probe failed; inspect Documents/screenbook/recovery-probe.json"
+                    )
+                } else if request.exportsManifest || request.kind != nil || request.runsRecoveryProbe {
                     try ScreenbookCaptureReadiness.reportReady(request)
                 } else {
                     try ScreenbookCaptureReadiness.reportFailure(
@@ -38,7 +43,14 @@ struct ScreenbookRootView: View {
                     )
                 }
             } catch {
-                assertionFailure("Screenbook readiness write failed: \(error)")
+                do {
+                    try ScreenbookCaptureReadiness.reportFailure(
+                        request,
+                        message: "Recovery probe/readiness error: \(error.localizedDescription)"
+                    )
+                } catch {
+                    assertionFailure("Screenbook readiness write failed: \(error)")
+                }
             }
         }
     }
@@ -56,6 +68,14 @@ struct ScreenbookRootView: View {
                 dashboardWatch: viewModel.coordinator.watch,
                 allowsLaunchRouting: false
             )
+        case .interactiveHome:
+            HomeView(
+                initialTab: .home,
+                farmVisitSeed: 46,
+                activeRunNow: ScreenbookFixtures.now(for: kind),
+                dashboardWatch: viewModel.coordinator.watch,
+                allowsLaunchRouting: false
+            )
         case .activeWindDown:
             HomeView(
                 initialTab: .home,
@@ -64,6 +84,33 @@ struct ScreenbookRootView: View {
                 dashboardWatch: viewModel.coordinator.watch,
                 allowsLaunchRouting: false
             )
+        case .activePhoneAway:
+            HomeView(
+                initialTab: .home,
+                farmVisitSeed: 45,
+                activeRunNow: ScreenbookFixtures.now(for: kind),
+                dashboardWatch: viewModel.coordinator.watch,
+                allowsLaunchRouting: false
+            )
+        case .slumberPartyNoRound, .slumberPartyBetweenRounds:
+            HomeView(
+                initialTab: .home,
+                farmVisitSeed: 47,
+                activeRunNow: ScreenbookFixtures.now(for: kind),
+                dashboardWatch: viewModel.coordinator.watch,
+                allowsLaunchRouting: false
+            )
+        case .slumberPartySharedHabitsSummary, .slumberPartySharedHabitsConsent:
+            if let summary = viewModel.nightFlockViewModel.v4ListState?.parties.first {
+                NavigationStack {
+                    SlumberPartyV4PartyDetailView(
+                        viewModel: viewModel.nightFlockViewModel,
+                        summary: summary
+                    )
+                }
+            } else {
+                Text("Shared habit fixture unavailable")
+            }
         case .earlyEnd:
             HomeView(
                 initialTab: .home,
@@ -162,7 +209,8 @@ private extension ProcessInfo {
     ScreenbookRootView(request: ScreenbookLaunchRequest(
         scenarioID: kind.rawValue,
         runID: "preview-welcome",
-        exportsManifest: false
+        exportsManifest: false,
+        runsRecoveryProbe: false
     ))
     .environmentObject(ScreenbookFixtures.makeViewModel(for: kind))
 }
@@ -171,7 +219,8 @@ private extension ProcessInfo {
     ScreenbookRootView(request: ScreenbookLaunchRequest(
         scenarioID: "iphone.unknown.default",
         runID: "preview-unknown",
-        exportsManifest: false
+        exportsManifest: false,
+        runsRecoveryProbe: false
     ))
     .environmentObject(ScreenbookFixtures.makeViewModel(for: nil))
 }

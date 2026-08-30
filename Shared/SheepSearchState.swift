@@ -198,15 +198,15 @@ struct SheepTrailMapPresentation: Equatable {
         let detail: String
         if isUnlocked {
             detail = minutes == SheepTrailMapState.maximumMappedMinutes
-                ? "Gift progress is full. Complete another Phone Away and Ollie will look for a missing sheep."
+                ? "Search progress is full. Complete another Phone Away and Ollie will look for a missing sheep."
                 : "Every \(SheepTrailMapState.maximumMappedMinutes) completed Phone Away minutes, Ollie looks for a missing sheep."
         } else {
             detail = minutes == SheepTrailMapState.maximumMappedMinutes
-                ? "Gift progress is full. It will wait until three Wind Downs are complete."
+                ? "Search progress is full. It will wait until three Wind Downs are complete."
                 : "These minutes are saved. Ollie looks for a missing sheep after three Wind Downs."
         }
         return Self(
-            title: "Phone Away gift progress · \(minutes) / \(SheepTrailMapState.maximumMappedMinutes) minutes",
+            title: "Phone Away search progress · \(minutes) / \(SheepTrailMapState.maximumMappedMinutes) minutes",
             detail: detail
         )
     }

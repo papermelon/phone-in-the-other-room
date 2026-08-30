@@ -13,6 +13,26 @@ guards the ritual and offers a private sequence of up to three evening and two m
 suggestions. This is a Wind Down ritual, not a productivity tool or sleep-quality tracker. The established
 `NightWatch*` names remain internal for persisted-data compatibility.
 
+Slumber Party is a core feature and reason to return together, not a peripheral companion link
+(founder clarification, 2026-08-27). Friends, couples and families should recognize one another,
+see factual shared activity respond promptly, and encourage each other. Idle Home must express
+that value alongside a compact, reliable personal start flow. New sharing fields and any change
+to seven-night round eligibility remain explicit contract decisions.
+
+Founder decisions on 2026-08-28 set the next Slumber Party slice: adults first with a coordinating
+leader; a chosen Shepherd/Ollie/sheep social avatar; last-night sleep and week/month means with
+detail; automatic exact-app accountability for Singapore/SEA; and one disclosed sharing contract
+accepted at joining, without per-field switches while remaining in the party. Leaving withdraws
+new party sharing. Adults may join without Health data. Contextual Health/Screen Time connection
+controls should avoid mandatory detours through the app's Settings hub. Later joiners should see
+prior group history, and ordinary leave should preserve earlier contributions. Archive duration,
+expanded-audience consent and meaningful privacy withdrawal/deletion require review; the joining
+agreement does not make history irrevocable. Friendly competition remains a direction to define.
+These are planned requirements, not current capabilities. A supported Singapore app-data export
+route, truthful connection-state behavior and privacy review must be resolved before delivery.
+See `plans/slumber-party-shared-habits-and-guide.md`; older implementation descriptions below
+must not be used to veto this new direction or claim it has shipped.
+
 First-run onboarding makes the promise legible through two varied story pages and an optional
 chapter of six categorical, local behavioral questions. Explicit answers yield one non-clinical
 Wind Down starting pattern and, when separately supported, one secondary pattern; missing answers
@@ -134,13 +154,21 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   Your Shepherd customization. Discovery history remains after an owned sheep is traded.
   The feature-flagged **Slumber Party** v4 source and production backend were deployed on
   2026-08-25; updated app distribution and physical proof remain pending. Farm and Home lead to
-  **Your Slumber Parties**, a list with create
-  and join always visible. A party is
+  a relationship-first **Your Slumber Parties** landing: existing parties come first, while
+  create/join fields appear only after the chosen action is opened. A party is
   one long-lived, invite-only group of 2–8 people with a customizable name and fixed seven-night
   rounds. The host starts a round once there are at least two members; the same group, name, and
   members can start another round afterward. Members may join during an active round and backfill
   their factual Wind Down and Phone Away records for that round. Everyone in the party sees its
   current records, revisioned expiring statuses, curated profile snapshots, and fixed cheers.
+  Founder clarification on 2026-08-27 makes Slumber Party a core social feature and reason to
+  return. Idle Home may show existing member-visible profiles, current statuses and factual
+  shared moments from the same party detail cache; it is no longer restricted to a list-only
+  bridge. Personal Wind Down and Phone Away remain easy to start. Neither Home nor detail
+  infers inactivity from missing updates. Farm explains that the curated Farm look travels and
+  settled wool returns to the local Farm. Sharing before/between rounds is approved; an additive
+  membership stream keeps rounds as a progress/reward boundary. Newly shared private fields
+  remain a separate contract decision; current privacy and reward rules stay in force.
   The active invite stays redeemable through an active round; every current member can retrieve and
   share it, while only the host can create, replace, or revoke it. An ordinary member may leave;
   the host cannot leave and must delete the party for everyone. Ownership transfer is future work.

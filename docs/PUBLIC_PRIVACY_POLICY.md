@@ -1,6 +1,8 @@
 # Counting Sheep App Privacy Policy
 
-**Effective date:** 12 August 2026
+> **Publication record — 2026-08-28:** The live policy was published with founder approval at https://countingsheepproject.com/app-privacy-policy.html. The version-2 Slumber Party plan/receipt language below describes a repository-local candidate behind additive capability and agreement gates; it is not evidence that the hosted migration or any v2 participant-data upload is deployed. Physical two-account QA and retention operations remain separate gates.
+
+**Effective date:** 28 August 2026
 
 Counting Sheep Project (“we”, “us”, or “Counting Sheep”) provides the Counting Sheep
 iPhone and Apple Watch app. This policy explains how the app handles information. Counting
@@ -32,9 +34,12 @@ awake periods, and core, deep, REM, or unspecified sleep stages. Counting Sheep 
 write to Apple Health.
 
 Health information is used to show your own sleep context alongside your quiet-time
-history. It is not used for advertising, sold, provided to data brokers, or used to make
-eligibility decisions. Missing or denied Health access does not affect the core ritual or
-the flock.
+history. If you also agree to Slumber Party sharing, derived sleep-duration summaries can be
+shared with your parties as described below. The separate impact-sharing option has its own
+agreement. We do not use Health information for advertising, sell it, provide it to data brokers,
+or use it to make eligibility decisions. Missing Health data does not prevent joining a party or
+change local rewards. Completing an Apple permission prompt does not let us determine whether
+read access was granted; an empty result can mean no available records or unavailable access.
 
 Counting Sheep does not diagnose or treat insomnia, prescribe a sleep schedule, or claim that
 its guidance improves sleep. The full locally bundled source library is available in the app
@@ -83,26 +88,55 @@ sleep outcome.
 
 ## Optional invite-only Slumber Party
 
-If Slumber Party is enabled, two to eight invited people can take part in one seven-night
-phone-away challenge. Creating or joining requires Sign in with Apple. Counting Sheep does not
-request your Apple name or email scope for this feature; Apple and Supabase process the provider
-identity and account identifier needed to authenticate and protect your membership.
+Slumber Party is an optional, adult, invite-only shared habit feature. You can belong to up to
+five parties. Activity sharing starts with membership; seven-night rounds organize group progress
+and rewards rather than requiring you to wait before sharing. Creating or joining requires
+Sign in with Apple. We do not request your Apple name or email scope for this feature; Apple and
+Supabase process the provider identity and account identifier used to authenticate membership.
 
-Slumber Party uses a preset flock identity and system-generated aliases. It can store membership,
-the challenge timezone and date range, positive phone-tucked or quiet-morning states by challenge
-day, fixed reactions, hashed and expiring invite codes, sharing choices, blocks, fixed-choice
-reports, and restricted moderation records.
+Before creating or joining each party, you see and accept its sharing agreement. Existing members
+must accept the expanded agreement before the new sleep summaries or lifetime archive are used
+for their contributions. There are no separate switches for each shared field. Joining does not
+grant Apple Health or Screen Time permission, and you can join without available Health data.
 
-Slumber Party does not receive your exact bedtime or wake time, run duration, early-ending reason,
-private or missed nights, routine steps, schedules, absence, Health information, Screen Time
-selections, selected apps, NFC data, personal purpose or cue, notification choices, Farm inventory, sheep, wool, transactions, or
-optional impact-sharing records. Shared morning entries are unnamed, and the app does not list
-who did not share a check-in. Slumber Party does not change local rewards or Farm outcomes.
+Under the agreement, the party can receive:
 
-You can keep an individual night private, turn positive sharing off, leave, block another member,
-report using fixed safety reasons, delete your Slumber Party data, or delete the full online account.
-Invite records are removed after 30 days, raw positive check-ins and reactions after 90 days, and
-completed aggregate summaries after no more than 12 months unless deletion happens sooner.
+- your chosen display name and one chosen character with its selected appearance;
+- membership, role, round participation, brief session statuses, and fixed cheers;
+- factual Wind Down or Phone Away duration and completion information, with a local day where
+  known; Wind Down summaries use the quiet period before bed, not hours asleep or overnight time;
+- app-recorded protection duration where evidence is available, which is not proof of physical
+  phone placement or a continuously verified device state; and
+- derived sleep duration for eligible completed nights, with weekly and monthly averages and
+  the number of nights with available data, when Apple Health provides records.
+- in the repository-local, separately gated version-2 candidate only: a rounded plan for the next seven local nights: Wind
+  Down timing, bedtime and wake bookends used for factual comparison, ordered bundled routine
+  idea identifiers, and factual nightly results. Routine ideas describe a plan, not verified
+  completion; unavailable evidence remains unknown.
+
+Sleep summaries do not include exact sleep intervals, stages, raw samples, or Health source
+names. The version-2 plan does not include your recurrence rule or custom routine text. NFC identity,
+Screen Time tokens, selected app identities, per-app use, full Farm inventory, wool, and impact-sharing
+data are not shared with the party. Automatic sharing of exact app usage or app identities is not available through
+the current Singapore integration. We do not present unavailable data as zero usage or a failed habit.
+
+The service also stores agreement version and acceptance time, contributor timezone, private
+source references for updating or deleting records, hashed expiring invitations, and restricted
+blocking, reporting, and moderation records. These operational fields are not all shown to peers.
+
+Current and future members can see contributions previously shared under this agreement.
+Ordinary leaving stops new publication to that party and removes your access, but those approved
+past contributions remain for the lifetime of the party, attributed as former-member history.
+Existing private pre-join records are not automatically uploaded. Previously group-shared coarse
+activity can be retained under the expanded agreement without adding private detail.
+
+You can leave, block, report, or request deletion of your shared contributions. A separate
+deletion or withdrawal request removes your contributions even after you leave; accepting the
+agreement does not make them irrevocable. Deleting the online account removes its contributions.
+Dissolving a party removes its shared archive. Limited non-content deletion markers can remain to
+prevent delayed retries from restoring deleted contributions. Local ritual and Farm records do
+not require the social service to work, and deleting shared history does not undo independently
+earned local rewards.
 
 ## Optional feedback
 
@@ -157,7 +191,8 @@ Watch connectivity, and Live Activities.
 
 ## Children and international use
 
-Counting Sheep is not directed to children under 13 and is not listed in Apple’s Kids
+Slumber Party is currently designed for adults. A group leader can organize the party but cannot
+remotely control another adult's device protection. Counting Sheep is not listed in Apple’s Kids
 category. If you believe a child has provided information to us, contact us.
 
 Information may be processed in countries where our providers operate. Applicable

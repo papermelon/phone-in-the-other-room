@@ -1,0 +1,29 @@
+{
+  "htmlReferencedFiles": 15,
+  "missingFiles": [],
+  "applicationSourceChanged": false,
+  "previousDocumentationChanges": [
+    "AGENTS.md",
+    "docs/FUTURE_AGENT_TASKS.md",
+    "docs/plans/recent-changes-sol-review.md",
+    "docs/plans/slumber-party-membership-sharing.md"
+  ],
+  "scope": "standalone design prototype, no native app implementation",
+  "earDesignApproved": true,
+  "tongueDesignApproved": true,
+  "animationSetsImplemented": false,
+  "roundLabelChecks": [
+    "390 px, larger text, no shared update: one line, inside card",
+    "320 px, larger text, no shared update: one line, inside card, no document overflow",
+    "320 px, larger text, between rounds: one line, inside card"
+  ],
+  "browserChecks": [
+    "personal 390x844 screenshot",
+    "supplied logo 390x844 screenshot",
+    "single personal Shepherd 390x844 screenshot",
+    "approved ear and tongue controls open expected assets",
+    "header selector shows logo and hides moon",
+    "viewport override reset; comparison left open"
+  ],
+  "syntaxCheck": "node --check preview.js passed"
+}

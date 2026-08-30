@@ -29,11 +29,11 @@ Screen-Free Morning minutes separate. Morning minutes do not affect new Wind Dow
 Screen Time, and self-reported habits can add search evidence. Rarity affects encounter weighting,
 wool yield, regrowth, trade value, art, and story.
 
-## Three independent Farm paths
+## Three independent Farm sources
 
 - **Wind Down:** reaching 420 eligible phone-away minutes creates one private result. Screen-Free
   Morning never changes its result, odds, or drought state.
-- **Sunrise Trail:** at least 15 actual Screen-Free Morning minutes bank actual time capped by the
+- **Screen-Free Morning** (internal `SunriseTrail` ledger): at least 15 actual minutes bank time capped by the
   configured window. Each 100-minute fill grants 1 wool and one separate look. Its first three
   looks guarantee a homecoming; later looks use its own 20/30/40/50 ladder, with the next look
   guaranteed after four clues.
@@ -145,7 +145,7 @@ Judge this loop by protected behavior, not collection engagement:
 
 - completed Night Watches in a tester's first 14 nights;
 - factual wind-down and Screen-Free Morning minutes, kept separate; only the former feeds
-  Wind Down reward/progress, while the latter settles through Sunrise Trail;
+  Wind Down reward/progress, while the latter settles through its independent internal ledger;
 - whether users understand that the first three qualifying protected-night searches and the
   first three Phone Away meter searches guarantee homecomings, that a 420-minute protected
   span is required for a Wind Down search, and that later searches can produce clues, odds,

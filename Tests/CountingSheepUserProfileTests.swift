@@ -56,6 +56,59 @@ final class CountingSheepUserProfileTests: XCTestCase {
         XCTAssertFalse(unknown.isAllowlisted())
     }
 
+    func testLegacyPresentationDefaultsAvatarToShepherdWithoutErasingUnknownWireValue() throws {
+        let legacy = try JSONDecoder().decode(
+            CountingSheepPublicPresentation.self,
+            from: Data(#"{"skinToneID":"warm","hairStyleID":"waves","shepherdOutfitID":"none","shepherdAccessoryID":"none","ollieOrnamentID":"none","featuredSheepDefinitionID":"none","pastureThemeID":"pasture_meadow"}"#.utf8)
+        )
+        XCTAssertEqual(legacy.avatarID, SocialAvatarRules.shepherdID)
+
+        let future = try JSONDecoder().decode(
+            CountingSheepPublicPresentation.self,
+            from: Data(#"{"skinToneID":"warm","hairStyleID":"waves","shepherdOutfitID":"none","shepherdAccessoryID":"none","ollieOrnamentID":"none","featuredSheepDefinitionID":"none","pastureThemeID":"pasture_meadow","avatarID":"future:character"}"#.utf8)
+        )
+        XCTAssertEqual(future.avatarID, "future:character")
+        XCTAssertFalse(SocialAvatarRules.isKnownWireAvatar(future.avatarID))
+    }
+
+    func testOnlyDiscoveredSheepCanBeChosenAndTheirIdentitySurvivesActiveFlockChanges() {
+        let discovery = SheepDiscoveryRecord(
+            definitionID: "juniper",
+            firstDiscoveredAt: Date(timeIntervalSince1970: 1),
+            encounterCount: 1,
+            outcomeIDs: [],
+            highestRarity: .rare
+        )
+        let available = SocialAvatarRules.availableAvatarIDs(discoveries: [discovery])
+        XCTAssertEqual(available, ["shepherd", "ollie", "sheep:juniper"])
+        XCTAssertTrue(SocialAvatarRules.canSelect("sheep:juniper", discoveries: [discovery]))
+        XCTAssertFalse(SocialAvatarRules.canSelect("sheep:mabel", discoveries: [discovery]))
+        // Availability uses discovery records, so removing Juniper from the
+        // active flock does not alter this explicit social identity.
+        XCTAssertTrue(SocialAvatarRules.canSelect("sheep:juniper", discoveries: [discovery]))
+    }
+
+    func testFreshRecoveryAdoptsSupportedServerAvatarButLegacyRefreshPreservesExplicitChoice() {
+        XCTAssertEqual(
+            SocialAvatarAdoptionRules.resolvedAvatarID(
+                localAvatarID: SocialAvatarRules.shepherdID,
+                hasExplicitLocalSelection: false,
+                serverAvatarID: SocialAvatarRules.ollieID,
+                serverSupportsAvatars: true
+            ),
+            SocialAvatarRules.ollieID
+        )
+        XCTAssertEqual(
+            SocialAvatarAdoptionRules.resolvedAvatarID(
+                localAvatarID: "sheep:juniper",
+                hasExplicitLocalSelection: true,
+                serverAvatarID: SocialAvatarRules.shepherdID,
+                serverSupportsAvatars: false
+            ),
+            "sheep:juniper"
+        )
+    }
+
     func testPresentationUsesSplitCatalogIdentifiersAndNoneSentinel() {
         XCTAssertTrue(CountingSheepPublicPresentation.defaultValue.isAllowlisted())
         XCTAssertTrue(CountingSheepPublicPresentationAllowlist.shepherdOutfitIDs.contains("none"))

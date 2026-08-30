@@ -5,10 +5,12 @@ struct ScreenbookLaunchRequest {
     static let scenarioArgument = "-screenbook-scenario"
     static let runIDArgument = "-screenbook-run-id"
     static let manifestArgument = "-screenbook-export-manifest"
+    static let recoveryProbeArgument = "-screenbook-recovery-probe"
 
     let scenarioID: String?
     let runID: String
     let exportsManifest: Bool
+    let runsRecoveryProbe: Bool
 
     var kind: ScreenbookScenarioKind? {
         scenarioID.flatMap(ScreenbookScenarioKind.init(rawValue:))
@@ -18,11 +20,13 @@ struct ScreenbookLaunchRequest {
         let arguments = ProcessInfo.processInfo.arguments
         let scenarioID = value(after: scenarioArgument, in: arguments)
         let exportsManifest = value(after: manifestArgument, in: arguments) == "YES"
-        guard scenarioID != nil || exportsManifest else { return nil }
+        let runsRecoveryProbe = value(after: recoveryProbeArgument, in: arguments) == "YES"
+        guard scenarioID != nil || exportsManifest || runsRecoveryProbe else { return nil }
         return ScreenbookLaunchRequest(
             scenarioID: scenarioID,
             runID: value(after: runIDArgument, in: arguments) ?? "missing-run-id",
-            exportsManifest: exportsManifest
+            exportsManifest: exportsManifest,
+            runsRecoveryProbe: runsRecoveryProbe
         )
     }
 

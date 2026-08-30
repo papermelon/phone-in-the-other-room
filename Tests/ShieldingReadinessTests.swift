@@ -110,6 +110,40 @@ final class ShieldingReadinessTests: XCTestCase {
         XCTAssertNil(QuietPurposeCueState.load(from: defaults))
     }
 
+    func testPurposeCueLoadRequiresTheCurrentRegistryIdentity() {
+        let suiteName = "ShieldingReadinessTests.identity.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else { return XCTFail("Expected defaults suite") }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let occurrence = UUID()
+        let cue = QuietPurposeCueState(occurrenceID: occurrence, revision: 4, epoch: 9, cue: .read)
+        QuietPurposeCueState.save(cue, to: defaults)
+
+        XCTAssertEqual(
+            QuietPurposeCueState.load(
+                matching: occurrence,
+                revision: 4,
+                epoch: 9,
+                from: defaults
+            ),
+            cue
+        )
+        XCTAssertNil(
+            QuietPurposeCueState.load(
+                matching: occurrence,
+                revision: 5,
+                epoch: 9,
+                from: defaults
+            )
+        )
+    }
+
+    func testPurposeCueHasShortActiveSessionLabels() {
+        XCTAssertEqual(QuietPurposeCue.prepareForSleep.appFacingTitle, "Rest")
+        XCTAssertEqual(QuietPurposeCue.read.appFacingTitle, "Reading")
+        XCTAssertEqual(QuietPurposeCue.focusOnWork.appFacingTitle, "Work")
+        XCTAssertEqual(QuietPurposeCue.somethingOffline.appFacingTitle, "Time offline")
+    }
+
     func testRunRequestIsTheShieldingPolicyNotMutableFutureIntent() {
         let start = Date(timeIntervalSince1970: 1_000)
         let run = FocusRun(

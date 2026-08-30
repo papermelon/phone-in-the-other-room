@@ -1,3 +1,5 @@
+import Foundation
+
 extension SlumberPartyCheerFeedback {
     var presentation: SlumberPartyCheerPresentation {
         let noun = switch cheer {
@@ -17,6 +19,12 @@ extension SlumberPartyCheerFeedback {
             symbol: symbol,
             message: message
         )
+    }
+}
+
+enum SlumberPartyCheerFeedbackApplicability {
+    static func accepts(_ feedback: SlumberPartyCheerFeedback, currentRunID: UUID) -> Bool {
+        feedback.sourceEventID == nil || feedback.sourceEventID == currentRunID
     }
 }
 

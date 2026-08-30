@@ -23,9 +23,17 @@ final class HealthSleepService {
         }
     }
 
+    struct SleepQueryResult: Equatable {
+        var summaries: [SleepSummary]
+        /// A query error is deliberately separate from an empty result: HealthKit
+        /// cannot expose read authorization, and no matching samples are valid.
+        var errorDescription: String?
+    }
+
 #if canImport(HealthKit)
     private let healthStore = HKHealthStore()
 #endif
+    private var localStateGeneration: UInt = 0
 
     var isAvailable: Bool {
 #if canImport(HealthKit)
@@ -40,14 +48,17 @@ final class HealthSleepService {
     }
 
     func resetLocalState() {
+        localStateGeneration &+= 1
         UserDefaults.standard.removeObject(forKey: requestedAccessKey)
     }
 
     func requestSleepAccess() async -> AuthorizationState {
 #if canImport(HealthKit)
         guard isAvailable, let sleepType else { return .unavailable }
+        let generation = localStateGeneration
         do {
             try await healthStore.requestAuthorization(toShare: [], read: [sleepType])
+            guard generation == localStateGeneration else { return .notRequested }
             UserDefaults.standard.set(true, forKey: requestedAccessKey)
             return .requested
         } catch {
@@ -59,13 +70,19 @@ final class HealthSleepService {
     }
 
     func lastNightSleep() async -> SleepSummary? {
-        let summaries = await recentNightSleeps(days: 1)
-        return summaries.first
+        let result = await recentNightSleepQuery(days: 1)
+        return result.summaries.first
     }
 
     func recentNightSleeps(days: Int = 7) async -> [SleepSummary] {
+        await recentNightSleepQuery(days: days).summaries
+    }
+
+    func recentNightSleepQuery(days: Int = 7) async -> SleepQueryResult {
 #if canImport(HealthKit)
-        guard isAvailable, let sleepType else { return [] }
+        guard isAvailable, let sleepType else {
+            return SleepQueryResult(summaries: [], errorDescription: nil)
+        }
         let calendar = Calendar.current
         let windows = (0..<max(1, days)).compactMap { offset -> DatedSleepWindow? in
             guard let referenceDate = Calendar.current.date(
@@ -80,7 +97,7 @@ final class HealthSleepService {
         }
         guard let earliestStart = windows.map(\.interval.start).min(),
               let latestEnd = windows.map(\.interval.end).max() else {
-            return []
+            return SleepQueryResult(summaries: [], errorDescription: nil)
         }
         let interval = DateInterval(start: earliestStart, end: latestEnd)
         let predicate = HKQuery.predicateForSamples(withStart: interval.start, end: interval.end, options: .strictStartDate)
@@ -88,8 +105,13 @@ final class HealthSleepService {
 
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [descriptor]) { _, samples, error in
-                guard error == nil else {
-                    continuation.resume(returning: [])
+                if let error {
+                    continuation.resume(
+                        returning: SleepQueryResult(
+                            summaries: [],
+                            errorDescription: error.localizedDescription
+                        )
+                    )
                     return
                 }
                 let sleepSamples = (samples as? [HKCategorySample]) ?? []
@@ -100,12 +122,161 @@ final class HealthSleepService {
                         nightEndingDate: window.nightEndingDate
                     )
                 }
-                continuation.resume(returning: summaries)
+                continuation.resume(
+                    returning: SleepQueryResult(
+                        summaries: summaries,
+                        errorDescription: nil
+                    )
+                )
             }
             healthStore.execute(query)
         }
 #else
-        return []
+        return SleepQueryResult(summaries: [], errorDescription: nil)
+#endif
+    }
+
+    /// This is deliberately separate from Nights. A shared-habit read uses a
+    /// completed, fixed-zone noon-to-noon window and returns only a derived
+    /// duration plus private cutoff metadata, never stages or source identity.
+    /// Reads one bounded range for a contributor’s fixed-zone completed
+    /// windows. It excludes pre-agreement windows before constructing the
+    /// HealthKit predicate, so old samples are never fetched for social use.
+    func sharedHabitSleepQueries(
+        in windows: [NightFlockSharedSleepWindow],
+        acceptedAt: Date,
+        now: Date = Date()
+    ) async -> [NightFlockSharedSleepQueryResult] {
+        let eligible = NightFlockSharedSleepWindowRules.eligibleBatchWindows(
+            windows,
+            acceptedAt: acceptedAt,
+            now: now
+        )
+        guard !eligible.isEmpty else { return [] }
+#if canImport(HealthKit)
+        guard isAvailable, let sleepType else {
+            return eligible.map {
+                NightFlockSharedSleepQueryResult(
+                    window: $0,
+                    state: .failed(message: "Apple Health sleep data is unavailable.")
+                )
+            }
+        }
+        guard let start = eligible.map(\.interval.start).min(),
+              let end = eligible.map(\.interval.end).max()
+        else { return [] }
+        // Omitting strict-start includes intervals crossing each completed
+        // window’s boundary. Each result is clipped locally before minutes are
+        // derived, and the enclosing predicate is already post-agreement.
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: [])
+        let descriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: sleepType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [descriptor]
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(returning: eligible.map {
+                        NightFlockSharedSleepQueryResult(
+                            window: $0,
+                            state: .failed(message: error.localizedDescription)
+                        )
+                    })
+                    return
+                }
+                let sleepSamples = (samples as? [HKCategorySample]) ?? []
+                let results = eligible.map { window -> NightFlockSharedSleepQueryResult in
+                    guard let summary = self.sharedHabitSummary(
+                        from: sleepSamples,
+                        in: window.interval
+                    ) else {
+                        return NightFlockSharedSleepQueryResult(window: window, state: .noData)
+                    }
+                    return NightFlockSharedSleepQueryResult(
+                        window: window,
+                        state: .data(minutes: max(0, Int(summary.duration / 60))),
+                        earliestContributingIntervalStart: summary.earliestContributingIntervalStart
+                    )
+                }
+                continuation.resume(returning: results)
+            }
+            healthStore.execute(query)
+        }
+#else
+        return eligible.map {
+            NightFlockSharedSleepQueryResult(
+                window: $0,
+                state: .failed(message: "Apple Health sleep data is unavailable.")
+            )
+        }
+#endif
+    }
+
+    func sharedHabitSleepQuery(
+        in window: NightFlockSharedSleepWindow,
+        now: Date = Date()
+    ) async -> NightFlockSharedSleepQueryResult {
+        guard window.isComplete(at: now) else {
+            return NightFlockSharedSleepQueryResult(
+                window: window,
+                state: .incompleteWindow
+            )
+        }
+#if canImport(HealthKit)
+        guard isAvailable, let sleepType else {
+            return NightFlockSharedSleepQueryResult(
+                window: window,
+                state: .failed(message: "Apple Health sleep data is unavailable.")
+            )
+        }
+        // Omitting strict-start includes samples crossing the window boundary;
+        // `sharedHabitSummary` clips their duration before deriving minutes.
+        let predicate = HKQuery.predicateForSamples(
+            withStart: window.interval.start,
+            end: window.interval.end,
+            options: []
+        )
+        let descriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: sleepType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [descriptor]
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(returning: NightFlockSharedSleepQueryResult(
+                        window: window,
+                        state: .failed(message: error.localizedDescription)
+                    ))
+                    return
+                }
+                let sleepSamples = (samples as? [HKCategorySample]) ?? []
+                guard let summary = self.sharedHabitSummary(
+                    from: sleepSamples,
+                    in: window.interval
+                ) else {
+                    continuation.resume(returning: NightFlockSharedSleepQueryResult(
+                        window: window,
+                        state: .noData
+                    ))
+                    return
+                }
+                continuation.resume(returning: NightFlockSharedSleepQueryResult(
+                    window: window,
+                    state: .data(minutes: max(0, Int(summary.duration / 60))),
+                    earliestContributingIntervalStart: summary.earliestContributingIntervalStart
+                ))
+            }
+            healthStore.execute(query)
+        }
+#else
+        return NightFlockSharedSleepQueryResult(
+            window: window,
+            state: .failed(message: "Apple Health sleep data is unavailable.")
+        )
 #endif
     }
 
@@ -119,40 +290,9 @@ final class HealthSleepService {
         in window: DateInterval,
         nightEndingDate: Date
     ) -> SleepSummary? {
-        let grouped = Dictionary(grouping: samples) {
-            $0.sourceRevision.source.bundleIdentifier
+        guard let chosen = chosenSourceSleepCandidate(from: samples, in: window) else {
+            return nil
         }
-        let candidates = grouped.compactMap { _, sourceSamples -> SourceSleepCandidate? in
-            let clipped = sourceSamples.compactMap { sample -> StagedInterval? in
-                guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value),
-                      let stage = SleepStage(value: value) else { return nil }
-                let start = max(sample.startDate, window.start)
-                let end = min(sample.endDate, window.end)
-                guard start < end else { return nil }
-                return StagedInterval(
-                    interval: DateInterval(start: start, end: end),
-                    stage: stage
-                )
-            }
-            let asleep = clipped.filter(\.stage.isAsleep).map(\.interval)
-            let duration = SleepIntervalMath.duration(of: asleep)
-            guard duration > 0 else { return nil }
-            let stageCoverage = SleepIntervalMath.duration(
-                of: clipped.filter(\.stage.isSpecificSleepStage).map(\.interval)
-            )
-            return SourceSleepCandidate(
-                sourceName: sourceSamples.first?.sourceRevision.source.name,
-                intervals: clipped,
-                asleepDuration: duration,
-                stageCoverage: stageCoverage
-            )
-        }
-        guard let chosen = candidates.max(by: {
-            if $0.asleepDuration == $1.asleepDuration {
-                return $0.stageCoverage < $1.stageCoverage
-            }
-            return $0.asleepDuration < $1.asleepDuration
-        }) else { return nil }
 
         return SleepIntervalMath.summary(
             for: chosen.intervals.filter(\.stage.isAsleep).map(\.interval),
@@ -166,6 +306,64 @@ final class HealthSleepService {
             ),
             sourceName: chosen.sourceName
         )
+    }
+
+    private nonisolated func sharedHabitSummary(
+        from samples: [HKCategorySample],
+        in window: DateInterval
+    ) -> (duration: TimeInterval, earliestContributingIntervalStart: Date?)? {
+        guard let chosen = chosenSourceSleepCandidate(from: samples, in: window) else {
+            return nil
+        }
+        return (
+            duration: chosen.asleepDuration,
+            earliestContributingIntervalStart: chosen.earliestContributingIntervalStart
+        )
+    }
+
+    private nonisolated func chosenSourceSleepCandidate(
+        from samples: [HKCategorySample],
+        in window: DateInterval
+    ) -> SourceSleepCandidate? {
+        let grouped = Dictionary(grouping: samples) {
+            $0.sourceRevision.source.bundleIdentifier
+        }
+        let candidates = grouped.compactMap { _, sourceSamples -> SourceSleepCandidate? in
+            let clipped = sourceSamples.compactMap { sample -> StagedInterval? in
+                guard let value = HKCategoryValueSleepAnalysis(rawValue: sample.value),
+                      let stage = SleepStage(value: value) else { return nil }
+                let start = max(sample.startDate, window.start)
+                let end = min(sample.endDate, window.end)
+                guard start < end else { return nil }
+                return StagedInterval(
+                    interval: DateInterval(start: start, end: end),
+                    stage: stage,
+                    originalStart: sample.startDate
+                )
+            }
+            let asleep = clipped.filter(\.stage.isAsleep).map(\.interval)
+            let duration = SleepIntervalMath.duration(of: asleep)
+            guard duration > 0 else { return nil }
+            let stageCoverage = SleepIntervalMath.duration(
+                of: clipped.filter(\.stage.isSpecificSleepStage).map(\.interval)
+            )
+            return SourceSleepCandidate(
+                sourceName: sourceSamples.first?.sourceRevision.source.name,
+                intervals: clipped,
+                asleepDuration: duration,
+                stageCoverage: stageCoverage,
+                earliestContributingIntervalStart: clipped
+                    .filter(\.stage.isAsleep)
+                    .map(\.originalStart)
+                    .min()
+            )
+        }
+        return candidates.max(by: {
+            if $0.asleepDuration == $1.asleepDuration {
+                return $0.stageCoverage < $1.stageCoverage
+            }
+            return $0.asleepDuration < $1.asleepDuration
+        })
     }
 
     private nonisolated func duration(
@@ -207,6 +405,7 @@ final class HealthSleepService {
     private struct StagedInterval {
         var interval: DateInterval
         var stage: SleepStage
+        var originalStart: Date
     }
 
     private struct SourceSleepCandidate {
@@ -214,6 +413,7 @@ final class HealthSleepService {
         var intervals: [StagedInterval]
         var asleepDuration: TimeInterval
         var stageCoverage: TimeInterval
+        var earliestContributingIntervalStart: Date?
     }
 #endif
 

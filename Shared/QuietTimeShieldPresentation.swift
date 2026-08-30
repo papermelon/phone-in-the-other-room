@@ -31,6 +31,18 @@ enum QuietPurposeCue: String, Codable, CaseIterable, Equatable {
     case somethingOffline
     case somethingElse
 
+    /// Short copy for the in-app active session. Shield copy remains a little
+    /// more descriptive because it is shown at the intervention point.
+    var appFacingTitle: String {
+        switch self {
+        case .prepareForSleep: return "Rest"
+        case .read: return "Reading"
+        case .focusOnWork: return "Work"
+        case .somethingOffline: return "Time offline"
+        case .somethingElse: return "Something else"
+        }
+    }
+
     var shieldText: String {
         switch self {
         case .prepareForSleep: return "Prepare for sleep"
@@ -53,9 +65,28 @@ struct QuietPurposeCueState: Codable, Equatable {
         return try? JSONDecoder().decode(Self.self, from: data)
     }
 
+    static func load(
+        matching occurrenceID: UUID,
+        revision: Int,
+        epoch: Int,
+        from defaults: UserDefaults
+    ) -> Self? {
+        guard let state = load(from: defaults),
+              state.occurrenceID == occurrenceID,
+              state.revision == revision,
+              state.epoch == epoch else {
+            return nil
+        }
+        return state
+    }
+
     static func save(_ value: Self, to defaults: UserDefaults) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         defaults.set(data, forKey: QuietTimeShieldPresentationStorage.purposeCueKey)
+    }
+
+    static func clear(from defaults: UserDefaults) {
+        defaults.removeObject(forKey: QuietTimeShieldPresentationStorage.purposeCueKey)
     }
 
     static func clear(

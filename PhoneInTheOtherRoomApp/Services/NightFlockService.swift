@@ -108,6 +108,44 @@ actor NightFlockService {
         } catch { throw mapError(error, operation: "command-v4") }
     }
 
+    func stateSharedHabits(
+        partyID: UUID,
+        cursor: String? = nil
+    ) async throws -> NightFlockSharedHabitsStateResponse {
+        try await stateV4(
+            request: NightFlockSharedHabitsStateRequest(partyID: partyID, cursor: cursor),
+            operation: "state-shared-habits"
+        )
+    }
+
+    /// V2 plans and receipts have their own cursor so a party-lifetime archive
+    /// cannot be truncated by the legacy shared-habits page.
+    func stateSharedNights(
+        partyID: UUID,
+        cursor: String? = nil
+    ) async throws -> NightFlockSharedHabitsStateResponse {
+        try await stateV4(
+            request: NightFlockSharedHabitsStateRequest(partyID: partyID, cursor: cursor, scope: "sharedNights"),
+            operation: "state-shared-nights"
+        )
+    }
+
+    func sendSharedHabits(
+        _ command: NightFlockSharedHabitsCommand
+    ) async throws -> NightFlockSharedHabitsCommandResponse {
+        let request = NightFlockSharedHabitsCommandRequest(command: command)
+        do {
+            let response: NightFlockSharedHabitsCommandResponse = try await invoke(
+                "night-flock-command",
+                headers: commandHeaders(idempotencyKey: sharedHabitsIdempotencyKey(for: command)),
+                body: request,
+                operation: "command-shared-habits"
+            )
+            guard response.accepted else { throw NightFlockServiceError.unsupportedResponse }
+            return response
+        } catch { throw mapError(error, operation: "command-shared-habits") }
+    }
+
     /// Realtime is merely a prompt to reload the server-authoritative party
     /// projection. No raw Realtime payload is decoded into product state.
     func startV4Realtime(
@@ -184,6 +222,22 @@ actor NightFlockService {
             logSuccess(operation: operation, requestID: envelope.requestID)
             return envelope.snapshot
         } catch { throw mapError(error, operation: operation) }
+    }
+
+    private func sharedHabitsIdempotencyKey(
+        for command: NightFlockSharedHabitsCommand
+    ) -> String {
+        switch command {
+        case let .acceptAgreement(_, _, _, key),
+             let .publish(_, _, _, key),
+             let .deleteSource(_, _, key),
+             let .deleteAll(_, key),
+             let .migrate(_, _, key),
+             let .publishNightPlan(_, key),
+             let .cancelNightPlan(_, key),
+             let .publishNightReceipt(_, key):
+            return key
+        }
     }
 
     private func invokeState<Request: Encodable>(schemaVersion: Int, request: Request, operation: String) async throws -> NightFlockSnapshot? {
@@ -338,9 +392,9 @@ private extension NightFlockV4Command {
              let .retrieveInvite(_, key), let .previewInvite(_, key), let .redeemInvite(_, key),
              let .leaveParty(_, key), let .deleteParty(_, key),
              let .blockMember(_, _, key), let .reportMember(_, _, _, key), let .deleteAccount(key),
-             let .cheerMember(_, _, _, key),
-             let .updatePublicProfile(_, _, _, _, key), let .publishStatus(_, _, _, _, key),
-             let .completeBackfill(_, _, _, key), let .react(_, _, _, key), let .acknowledgeGrant(_, key):
+             let .cheerMember(_, _, _, key), let .cheerMembershipMember(_, _, _, _, key),
+             let .updatePublicProfile(_, _, _, _, _, key), let .publishStatus(_, _, _, _, key), let .publishMembershipStatus(_, _, _, _, key),
+             let .completeBackfill(_, _, _, key), let .react(_, _, _, key), let .reactMembership(_, _, _, key), let .acknowledgeGrant(_, key):
             return key
         case let .publishActivity(record):
             return record.idempotencyKey

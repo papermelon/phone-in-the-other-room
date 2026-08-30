@@ -134,6 +134,69 @@ enum QuietTimeShieldSchedulePolicy {
     }
 }
 
+/// DeviceActivity requires a monitoring interval of at least fifteen minutes.
+/// The app's ManagedSettings barrier still follows `desired`; only the monitor
+/// registration is padded, with a warning at the real desired end for short
+/// sessions. This keeps 5/10/15-minute experiences supported without changing
+/// their consented protection boundary.
+struct QuietTimeShieldMonitoringWindow: Equatable {
+    static let minimumInterval: TimeInterval = 15 * 60
+
+    let desired: DateInterval
+    let monitoring: DateInterval
+
+    var warningLead: TimeInterval {
+        max(0, monitoring.end.timeIntervalSince(desired.end))
+    }
+
+    /// DeviceActivity receives whole-second DateComponents. Rounding this
+    /// value up could move its warning before `desired.end`, so use only fully
+    /// elapsed serialized seconds. A subsecond late clear is unavoidable at
+    /// the platform's resolution, but an early clear is not acceptable.
+    var warningSeconds: Int {
+        max(0, Int(warningLead.rounded(.down)))
+    }
+
+    var warningTime: DateComponents? {
+        guard warningSeconds > 0 else { return nil }
+        return DateComponents(
+            hour: warningSeconds / 3_600,
+            minute: (warningSeconds % 3_600) / 60,
+            second: warningSeconds % 60
+        )
+    }
+}
+
+enum QuietTimeShieldMonitoringPolicy {
+    static let minimumInterval = QuietTimeShieldMonitoringWindow.minimumInterval
+
+    static func window(
+        for desired: DateInterval,
+        requestedAt: Date
+    ) -> QuietTimeShieldMonitoringWindow? {
+        // `dateComponents(for:)` serializes only whole seconds. Keep that
+        // behavior explicit here so policy math and DeviceActivity agree on
+        // both endpoints. Starting or ending early would respectively allow a
+        // callback before registration or a warning before the desired end.
+        let monitorStart = wholeSecondCeiling(max(desired.start, requestedAt))
+        guard monitorStart < desired.end else { return nil }
+        let monitorEnd = wholeSecondCeiling(max(
+            desired.end,
+            monitorStart.addingTimeInterval(minimumInterval)
+        ))
+        return QuietTimeShieldMonitoringWindow(
+            // This remains the actual consented boundary. Only monitoring is
+            // serialized/padded; callers must not infer protection from it.
+            desired: desired,
+            monitoring: DateInterval(start: monitorStart, end: monitorEnd)
+        )
+    }
+
+    private static func wholeSecondCeiling(_ date: Date) -> Date {
+        Date(timeIntervalSince1970: date.timeIntervalSince1970.rounded(.up))
+    }
+}
+
 enum QuietTimeShieldStatus: String, Codable, Equatable {
     case scheduled
     case applied

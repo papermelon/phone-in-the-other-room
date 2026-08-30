@@ -1,6 +1,6 @@
 # ADR-0009: Lost Sheep Search, Wanted Posters, and Rarity
 
-- Status: Accepted; Farm lifecycle and economy amended by ADR-0015
+- Status: Accepted; Farm lifecycle and economy amended by ADR-0015; presentation amended 2026-08-30
 - Date: 2026-08-01
 - Decider: Founder
 - Related: ADR-0006, ADR-0007, `docs/PRODUCT_PRINCIPLES.md`
@@ -13,6 +13,20 @@ pasture and bring them home. Anticipation, rarity, and visible search progress a
 habit-forming mechanics, not incidental decoration.
 
 ## Decision
+
+### Presentation amendment (2026-08-30)
+
+The deterministic mechanics and persisted compatibility fields below remain intact, but the
+release UI no longer presents sheep-found distance, qualitative trail strength, mapped percentage
+bonuses, or per-result exact odds as meaningful progress. Counting Sheep has no single fixed,
+persistent trail: Wind Down, Screen-Free Morning, and Phone Away resolve independently. Public
+copy names those sources directly, uses Screen-Free Morning instead of Sunrise Trail, and treats a
+no-find outcome as a source-specific clue. Internal `trailDistance`, `trailStrength`, `trailMap`,
+`pendingMappedMinutes`, `encounterOdds`, `showExactOdds`, and `SunriseTrail*` names remain stable for
+Codable and migration compatibility.
+
+The paragraphs below record the original mechanic rationale. Their trail/distance language is not
+the current release-facing presentation contract.
 
 The first three completed protected Wind Downs guarantee a sheep from the starter wanted-poster
 board. After that, every completed Wind Down resolves exactly once into either a sheep encounter

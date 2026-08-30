@@ -75,7 +75,7 @@ enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identi
         case .nights:
             return "Wind Down is your nightly ritual.\nPhone Away stays here as a smaller, separate record."
         case .farm:
-            return "Wind Down is when Ollie may bring a missing sheep home.\nPhone Away minutes wait as gift progress."
+            return "Wind Down is when Ollie may bring a missing sheep home.\nPhone Away minutes build separate search progress."
         case .settings:
             return "Change Wind Down, connections, and guidance here.\nYou can replay this guide whenever you like."
         case .phoneBreak:

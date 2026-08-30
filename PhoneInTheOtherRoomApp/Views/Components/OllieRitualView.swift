@@ -42,6 +42,7 @@ enum OllieRitualState: String, CaseIterable, Identifiable {
 enum OllieRitualPresentation {
     case inline
     case cardCompanion
+    case homeCompact
     case onboardingHero
     case journeyAnimation
 
@@ -49,6 +50,7 @@ enum OllieRitualPresentation {
         switch self {
         case .inline: return 96
         case .cardCompanion: return 164
+        case .homeCompact: return 54
         case .onboardingHero: return 188
         case .journeyAnimation: return 112
         }
@@ -108,29 +110,63 @@ struct OllieRitualView: View {
 /// dashboard into a constantly moving bedtime surface.
 struct HomeOllieIdleView: View {
     var presentation: OllieRitualPresentation = .cardCompanion
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    var accessoryItemID: String? = nil
+    var isMotionEnabled = true
+    @State private var actionCapabilities: [OllieCompanionAction: Bool] = [:]
+    @State private var capabilityRevision = 0
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: reduceMotion ? 1 : 1.0 / 12.0)) { context in
-            let frame = reduceMotion ? 0 : frameIndex(at: context.date)
-            PixelAssetImage(name: NightJourneyAssets.ollieHomeIdleFrames[frame])
-                .frame(width: presentation.canvasSize, height: presentation.canvasSize)
+        OllieCompanionAnimationView(
+            schedule: animationSchedule,
+            isMotionEnabled: isMotionEnabled,
+            detailRevision: capabilityRevision,
+            nextDetailFrameTransition: nextFrameChange(after:)
+        ) { animationFrame, _ in
+            OllieCompanionSpriteRenderer(
+                animationFrame: animationFrame,
+                accessoryItemID: renderedAccessoryItemID,
+                size: presentation.canvasSize,
+                actionCapabilities: $actionCapabilities,
+                capabilityRevision: $capabilityRevision
+            ) { motionOverlayName in
+                ZStack {
+                    PixelAssetImage(name: NightJourneyAssets.ollieHomeIdleFrames[0])
+                    if let motionOverlayName {
+                        PixelAssetImage(name: motionOverlayName)
+                    } else if let legacyOverlayName = ollieNeutralAccessoryOverlayAssetName(for: renderedAccessoryItemID) {
+                        PixelAssetImage(name: legacyOverlayName)
+                    }
+                }
+            }
         }
         .frame(width: presentation.canvasSize, height: presentation.canvasSize)
         .accessibilityHidden(true)
     }
 
-    private func frameIndex(at date: Date) -> Int {
-        let phase = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 5.2)
-        switch phase {
-        case ..<2.8: return 0
-        case ..<2.95: return 1
-        case ..<3.12: return 2
-        case ..<3.38: return 3
-        case ..<4.18: return 4
-        default: return 5
+    private func nextFrameChange(after animationFrame: OllieCompanionAnimationFrame) -> TimeInterval? {
+        guard actionCapabilities[animationFrame.action] == true else { return nil }
+        return OllieCompanionSpriteManifest.production
+            .sequence(for: animationFrame.action)?
+            .nextFrameTransition(after: animationFrame.actionElapsed)
+    }
+
+    private var animationSchedule: OllieCompanionAnimationSchedule {
+        #if DEBUG
+        return ScreenbookOllieMotionReview.configuration?.schedule ?? .gentle
+        #else
+        return .gentle
+        #endif
+    }
+
+    private var renderedAccessoryItemID: String? {
+        #if DEBUG
+        if let configuration = ScreenbookOllieMotionReview.configuration {
+            return configuration.accessoryItemID(default: accessoryItemID)
         }
+        return accessoryItemID
+        #else
+        return accessoryItemID
+        #endif
     }
 }
 

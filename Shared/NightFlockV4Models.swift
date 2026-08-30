@@ -11,6 +11,7 @@ enum NightFlockV4Rules {
 }
 
 enum NightFlockV4Role: String, Codable, Sendable { case host, member }
+enum NightFlockV4SharingScope: String, Codable, Sendable { case membership }
 
 struct NightFlockV4Capabilities: Codable, Equatable, Sendable {
     var canRenameParty: Bool
@@ -119,6 +120,46 @@ struct NightFlockV4PartySummary: Identifiable, Codable, Equatable, Sendable {
     var myRole: NightFlockV4Role
     var currentRound: NightFlockV4Round?
     var revision: Int
+    /// Missing means the server is still using the original round-only wire.
+    var sharingScope: NightFlockV4SharingScope?
+
+    var supportsMembershipSharing: Bool { sharingScope == .membership }
+
+    init(
+        partyID: UUID,
+        name: String,
+        memberCount: Int,
+        myRole: NightFlockV4Role,
+        currentRound: NightFlockV4Round?,
+        revision: Int,
+        sharingScope: NightFlockV4SharingScope? = nil
+    ) {
+        self.partyID = partyID
+        self.name = name
+        self.memberCount = memberCount
+        self.myRole = myRole
+        self.currentRound = currentRound
+        self.revision = revision
+        self.sharingScope = sharingScope
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case partyID, name, memberCount, myRole, currentRound, revision, sharingScope
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        partyID = try container.decode(UUID.self, forKey: .partyID)
+        name = try container.decode(String.self, forKey: .name)
+        memberCount = try container.decode(Int.self, forKey: .memberCount)
+        myRole = try container.decode(NightFlockV4Role.self, forKey: .myRole)
+        currentRound = try container.decodeIfPresent(NightFlockV4Round.self, forKey: .currentRound)
+        revision = try container.decode(Int.self, forKey: .revision)
+        // Capability values can be introduced by a newer backend. Treat an
+        // unrecognized value exactly like absence until this app understands it.
+        sharingScope = try container.decodeIfPresent(String.self, forKey: .sharingScope)
+            .flatMap(NightFlockV4SharingScope.init(rawValue:))
+    }
 }
 
 struct NightFlockV4InvitationMetadata: Identifiable, Codable, Equatable, Sendable {
@@ -145,6 +186,9 @@ struct SlumberPartyCheerFeedback: Codable, Hashable, Sendable {
     var cheer: NightFlockV4Cheer
     var count: Int
     var observedAt: Date
+    /// Membership-stream feedback can identify only this device's already
+    /// uploaded source event. Legacy feedback intentionally remains unscoped.
+    var sourceEventID: UUID? = nil
 }
 
 struct NightFlockV4Activity: Identifiable, Codable, Equatable, Sendable {
@@ -203,6 +247,50 @@ struct NightFlockV4LiveCheerSummary: Codable, Equatable, Sendable {
     var sentByMe: Bool
 }
 
+/// Membership-scoped history stays separate from the original round ledger so
+/// old round payloads never acquire invented associations.
+struct NightFlockV4SharedActivity: Identifiable, Codable, Equatable, Sendable {
+    var id: UUID { activityID }
+    var activityID: UUID
+    var partyID: UUID
+    var memberID: UUID
+    var roundID: UUID?
+    var day: Int?
+    var kind: NightFlockV4ActivityKind
+    var status: NightFlockV4ActivityStatus
+    var roundedMinutes: Int
+    var occurredAt: Date
+    /// The matching legacy round projection when this same source also earned
+    /// round credit. It is absent for membership-only moments.
+    var roundActivityID: UUID?
+    /// Returned only to the member who owns this source activity.
+    var mySourceEventID: UUID?
+}
+
+struct NightFlockV4SharedLiveStatus: Identifiable, Codable, Equatable, Sendable {
+    var id: UUID { statusID }
+    var statusID: UUID
+    var partyID: UUID
+    var memberID: UUID
+    var roundID: UUID?
+    var status: NightFlockV4LiveStatusKind
+    var revision: Int
+    var observedAt: Date
+    var expiresAt: Date
+
+    func isCurrent(at date: Date) -> Bool { expiresAt > date }
+}
+
+struct NightFlockV4SharedLiveCheerSummary: Codable, Equatable, Sendable {
+    var statusID: UUID
+    var memberID: UUID
+    var cheer: NightFlockV4Cheer
+    var count: Int
+    var sentByMe: Bool
+    /// Returned only to the member whose live source received this cheer.
+    var mySourceEventID: UUID?
+}
+
 struct NightFlockV4GrantInboxItem: Identifiable, Codable, Equatable, Sendable {
     var id: UUID { grantID }
     var grantID: UUID
@@ -228,20 +316,25 @@ struct NightFlockV4PartyDetail: Codable, Equatable, Sendable {
     var liveStatuses: [NightFlockV4LiveStatus]
     var cheers: [NightFlockV4CheerSummary]
     var liveCheers: [NightFlockV4LiveCheerSummary]
+    var sharedActivities: [NightFlockV4SharedActivity]
+    var sharedLiveStatuses: [NightFlockV4SharedLiveStatus]
+    var sharedCheers: [NightFlockV4CheerSummary]
+    var sharedLiveCheers: [NightFlockV4SharedLiveCheerSummary]
     var grantInbox: [NightFlockV4GrantInboxItem]
 
     private enum CodingKeys: String, CodingKey {
-        case summary, myMemberID, memberships, invitation, activities, cursor, liveStatuses, cheers, liveCheers, grantInbox
+        case summary, myMemberID, memberships, invitation, activities, cursor, liveStatuses, cheers, liveCheers, sharedActivities, sharedLiveStatuses, sharedCheers, sharedLiveCheers, grantInbox
     }
 
-    init(summary: NightFlockV4PartySummary, myMemberID: UUID? = nil, memberships: [NightFlockV4Membership] = [], invitation: NightFlockV4InvitationMetadata? = nil, activities: [NightFlockV4Activity] = [], cursor: NightFlockV4PaginationCursor? = nil, liveStatuses: [NightFlockV4LiveStatus] = [], cheers: [NightFlockV4CheerSummary] = [], liveCheers: [NightFlockV4LiveCheerSummary] = [], grantInbox: [NightFlockV4GrantInboxItem] = []) {
+    init(summary: NightFlockV4PartySummary, myMemberID: UUID? = nil, memberships: [NightFlockV4Membership] = [], invitation: NightFlockV4InvitationMetadata? = nil, activities: [NightFlockV4Activity] = [], cursor: NightFlockV4PaginationCursor? = nil, liveStatuses: [NightFlockV4LiveStatus] = [], cheers: [NightFlockV4CheerSummary] = [], liveCheers: [NightFlockV4LiveCheerSummary] = [], sharedActivities: [NightFlockV4SharedActivity] = [], sharedLiveStatuses: [NightFlockV4SharedLiveStatus] = [], sharedCheers: [NightFlockV4CheerSummary] = [], sharedLiveCheers: [NightFlockV4SharedLiveCheerSummary] = [], grantInbox: [NightFlockV4GrantInboxItem] = []) {
         self.summary = summary; self.memberships = memberships; self.invitation = invitation; self.activities = activities
         self.myMemberID = myMemberID
-        self.cursor = cursor; self.liveStatuses = liveStatuses; self.cheers = cheers; self.liveCheers = liveCheers; self.grantInbox = grantInbox
+        self.cursor = cursor; self.liveStatuses = liveStatuses; self.cheers = cheers; self.liveCheers = liveCheers
+        self.sharedActivities = sharedActivities; self.sharedLiveStatuses = sharedLiveStatuses; self.sharedCheers = sharedCheers; self.sharedLiveCheers = sharedLiveCheers; self.grantInbox = grantInbox
     }
 
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
-        self.init(summary: try c.decode(NightFlockV4PartySummary.self, forKey: .summary), myMemberID: try c.decodeIfPresent(UUID.self, forKey: .myMemberID), memberships: try c.decodeIfPresent([NightFlockV4Membership].self, forKey: .memberships) ?? [], invitation: try c.decodeIfPresent(NightFlockV4InvitationMetadata.self, forKey: .invitation), activities: try c.decodeIfPresent([NightFlockV4Activity].self, forKey: .activities) ?? [], cursor: try c.decodeIfPresent(NightFlockV4PaginationCursor.self, forKey: .cursor), liveStatuses: try c.decodeIfPresent([NightFlockV4LiveStatus].self, forKey: .liveStatuses) ?? [], cheers: try c.decodeIfPresent([NightFlockV4CheerSummary].self, forKey: .cheers) ?? [], liveCheers: try c.decodeIfPresent([NightFlockV4LiveCheerSummary].self, forKey: .liveCheers) ?? [], grantInbox: try c.decodeIfPresent([NightFlockV4GrantInboxItem].self, forKey: .grantInbox) ?? [])
+        self.init(summary: try c.decode(NightFlockV4PartySummary.self, forKey: .summary), myMemberID: try c.decodeIfPresent(UUID.self, forKey: .myMemberID), memberships: try c.decodeIfPresent([NightFlockV4Membership].self, forKey: .memberships) ?? [], invitation: try c.decodeIfPresent(NightFlockV4InvitationMetadata.self, forKey: .invitation), activities: try c.decodeIfPresent([NightFlockV4Activity].self, forKey: .activities) ?? [], cursor: try c.decodeIfPresent(NightFlockV4PaginationCursor.self, forKey: .cursor), liveStatuses: try c.decodeIfPresent([NightFlockV4LiveStatus].self, forKey: .liveStatuses) ?? [], cheers: try c.decodeIfPresent([NightFlockV4CheerSummary].self, forKey: .cheers) ?? [], liveCheers: try c.decodeIfPresent([NightFlockV4LiveCheerSummary].self, forKey: .liveCheers) ?? [], sharedActivities: try c.decodeIfPresent([NightFlockV4SharedActivity].self, forKey: .sharedActivities) ?? [], sharedLiveStatuses: try c.decodeIfPresent([NightFlockV4SharedLiveStatus].self, forKey: .sharedLiveStatuses) ?? [], sharedCheers: try c.decodeIfPresent([NightFlockV4CheerSummary].self, forKey: .sharedCheers) ?? [], sharedLiveCheers: try c.decodeIfPresent([NightFlockV4SharedLiveCheerSummary].self, forKey: .sharedLiveCheers) ?? [], grantInbox: try c.decodeIfPresent([NightFlockV4GrantInboxItem].self, forKey: .grantInbox) ?? [])
     }
 }

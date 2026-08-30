@@ -150,8 +150,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .legacy,
                 eyebrow: "PHONE AWAY RECEIPT",
                 title: "Phone Away time saved.",
-                message: "This older receipt has no saved Phone Away gift progress, so none is shown here.",
-                accessibilityLabel: "Phone Away receipt. This older receipt has no saved Phone Away gift progress, so none is shown here.",
+                message: "This older receipt has no saved Phone Away search progress, so none is shown here.",
+                accessibilityLabel: "Phone Away receipt. This older receipt has no saved Phone Away search progress, so none is shown here.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -162,8 +162,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .practice,
                 eyebrow: "PHONE AWAY PRACTICE",
                 title: "Practice complete.",
-                message: "This was practice. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away gift progress was not added.",
-                accessibilityLabel: "Phone Away practice complete. This was practice. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away gift progress was not added.",
+                message: "This was practice. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away search progress was not added.",
+                accessibilityLabel: "Phone Away practice complete. This was practice. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away search progress was not added.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -174,8 +174,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .endedEarly,
                 eyebrow: "PHONE AWAY ENDED",
                 title: "Phone Away ended early.",
-                message: "\(record.creditedMinutes) completed minutes were saved in Nights. Phone Away gift progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
-                accessibilityLabel: "Phone Away ended early. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away gift progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
+                message: "\(record.creditedMinutes) completed minutes were saved in Nights. Phone Away search progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
+                accessibilityLabel: "Phone Away ended early. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away search progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -186,8 +186,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .belowMinimum,
                 eyebrow: "PHONE AWAY RECEIPT",
                 title: "Phone Away time saved.",
-                message: "No Phone Away gift progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
-                accessibilityLabel: "Phone Away time saved. No Phone Away gift progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
+                message: "No Phone Away search progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
+                accessibilityLabel: "Phone Away time saved. No Phone Away search progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )

@@ -23,7 +23,7 @@ settings:
     DEVELOPMENT_TEAM: 4KZQPZR47B
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: 1.0
-    CURRENT_PROJECT_VERSION: 11
+    CURRENT_PROJECT_VERSION: 37
 packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift.git
@@ -48,7 +48,7 @@ targets:
         NSNearbyInteractionUsageDescription: Ollie uses nearby-device distance for one optional Wind Down check with your Apple Watch.
         NSCameraUsageDescription: Counting Sheep uses your camera to scan your Wind Down code.
         NFCReaderUsageDescription: Counting Sheep reads the NFC tags you pair to start and end Wind Down and Phone Away.
-        NSHealthShareUsageDescription: Counting Sheep reads sleep times, duration, and available stages so you can view them alongside your Wind Down history.
+        NSHealthShareUsageDescription: Counting Sheep reads sleep times, duration, and available stages for private local context alongside your Wind Down history and, only with your Slumber Party agreement, derived sleep-duration summaries.
         NSHealthUpdateUsageDescription: Counting Sheep does not add or change Apple Health data; it only reads sleep information you choose to share.
         NSSupportsLiveActivities: true
         SUPABASE_URL: "$(SUPABASE_URL)"

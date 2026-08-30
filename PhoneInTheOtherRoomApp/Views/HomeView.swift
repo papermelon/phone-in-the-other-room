@@ -9,7 +9,13 @@ struct HomeView: View {
     @State private var selectedTab: MainAppTab
     @State private var farmVisitSeed: UInt64
     @State private var opensNightFlock = false
+    @State private var nightFlockPartyID: UUID?
+    @State private var homeScrollViewportSize = CGSize.zero
     @State private var homeNavigationPath = NavigationPath()
+    /// Dashboard destinations belong to the persistent Home shell, so a
+    /// successful admission can dismiss the exact pushed route before the
+    /// dashboard is replaced by the active session surface.
+    @State private var homeDashboardDestination: PixelHomeDashboardDestination?
     @State private var nightsNavigationPath = NavigationPath()
     @State private var farmNavigationPath = NavigationPath()
     @State private var settingsNavigationPath = NavigationPath()
@@ -75,6 +81,7 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNightFlock)) { notification in
             guard !viewModel.isRunning else { return }
             viewModel.nightFlockViewModel.prefersJoinEntry = (notification.object as? String) == "join"
+            nightFlockPartyID = notification.object as? UUID
             select(.farm)
             opensNightFlock = true
         }
@@ -90,12 +97,25 @@ struct HomeView: View {
         .onChange(of: viewModel.isRunning) { _, isRunning in
             if isRunning {
                 opensNightFlock = false
+                nightFlockPartyID = nil
                 resetNavigation(for: .farm)
                 routeToHome()
             }
         }
+        .onChange(of: viewModel.homeStartAdmission) { _, admission in
+            guard let admission,
+                  HomeStartRoutingPolicy.shouldRoute(
+                    admission: admission,
+                    activeRunID: viewModel.activeRun?.id
+                  ) else { return }
+            routeToHome()
+            viewModel.consumeHomeStartAdmission(admission)
+        }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active, viewModel.isRunning { routeToHome() }
+            guard phase == .active else { return }
+            viewModel.refreshConnectionsAfterForeground()
+            viewModel.reloadCurrentPurposeCue()
+            if viewModel.isRunning { routeToHome() }
         }
         .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
             guard count > 0 else { return }
@@ -172,8 +192,47 @@ struct HomeView: View {
     private func tabNavigationStack(path: Binding<NavigationPath>) -> some View {
         NavigationStack(path: path) {
             tabContent
+                .navigationDestination(isPresented: dashboardDestinationBinding(for: .setup)) {
+                    FocusRunSetupView()
+                        .environmentObject(viewModel)
+                }
+                .navigationDestination(isPresented: dashboardDestinationBinding(for: .timing)) {
+                    WindDownTimingView()
+                        .environmentObject(viewModel)
+                }
+                .navigationDestination(isPresented: dashboardDestinationBinding(for: .quietTimeSchedule)) {
+                    WindDownScheduleView()
+                        .environmentObject(viewModel)
+                }
+                .navigationDestination(isPresented: dashboardDestinationBinding(for: .protectionRepair)) {
+                    ScreenTimeProtectionRepairView()
+                        .environmentObject(viewModel)
+                }
+                .alert("The session could not start", isPresented: dashboardDestinationBinding(for: .quickStartError)) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(viewModel.windDownScheduleError
+                        ?? (viewModel.nightWatchStartStatus.isEmpty
+                            ? "Please try again."
+                            : viewModel.nightWatchStartStatus))
+                }
         }
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private func dashboardDestinationBinding(
+        for route: PixelHomeDashboardDestination
+    ) -> Binding<Bool> {
+        Binding(
+            get: { homeDashboardDestination == route },
+            set: { isPresented in
+                if isPresented {
+                    homeDashboardDestination = route
+                } else if homeDashboardDestination == route {
+                    homeDashboardDestination = nil
+                }
+            }
+        )
     }
 
     private var tabContent: some View {
@@ -202,6 +261,22 @@ struct HomeView: View {
 
                 if contentUsesOwnScroll {
                     content
+                } else if selectedTab == .home {
+                    GeometryReader { viewportProxy in
+                        ScrollView {
+                            VStack(spacing: 18) {
+                                content
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.top, showChrome ? 20 : 12)
+                            .padding(.bottom, 18)
+                        }
+                        .coordinateSpace(name: HomeScrollViewportCoordinateSpace.name)
+                        .onAppear { homeScrollViewportSize = viewportProxy.size }
+                        .onChange(of: viewportProxy.size) { _, size in
+                            homeScrollViewportSize = size
+                        }
+                    }
                 } else {
                     ScrollView {
                         VStack(spacing: 18) {
@@ -360,7 +435,8 @@ struct HomeView: View {
             case .farm:
                 FarmView(
                     pastureVisitSeed: farmVisitSeed,
-                    opensNightFlock: $opensNightFlock
+                    opensNightFlock: $opensNightFlock,
+                    nightFlockPartyID: $nightFlockPartyID
                 )
                     .environmentObject(viewModel)
             case .settings:
@@ -377,7 +453,12 @@ struct HomeView: View {
             if let occurrence = viewModel.screenFreeMorningOccurrences.first(where: { $0.id == occurrenceID }) {
                 ScreenFreeMorningView(occurrence: occurrence)
             } else {
-                PixelHomeDashboard(watch: dashboardWatch).environmentObject(viewModel)
+                PixelHomeDashboard(
+                    watch: dashboardWatch,
+                    destination: $homeDashboardDestination,
+                    homeScrollViewportSize: homeScrollViewportSize
+                )
+                .environmentObject(viewModel)
             }
         case .deferredScreenFreeMorning(let occurrenceID, let unreadRunID):
             VStack(spacing: AppSpacing.md) {
@@ -385,7 +466,12 @@ struct HomeView: View {
                     HomeDeferredScreenFreeMorningCard(occurrence: occurrence)
                 }
                 if let unreadRunID { HomeWindDownReceiptRecoveryCard(runID: unreadRunID) }
-                PixelHomeDashboard(watch: dashboardWatch).environmentObject(viewModel)
+                PixelHomeDashboard(
+                    watch: dashboardWatch,
+                    destination: $homeDashboardDestination,
+                    homeScrollViewportSize: homeScrollViewportSize
+                )
+                .environmentObject(viewModel)
             }
         case .terminalWindDownReceipt:
             if viewModel.activeRun?.state == .completed {
@@ -407,7 +493,12 @@ struct HomeView: View {
                         onPractice: { showOrientationPracticeOffer = true }
                     )
                 }
-                PixelHomeDashboard(watch: dashboardWatch).environmentObject(viewModel)
+                PixelHomeDashboard(
+                    watch: dashboardWatch,
+                    destination: $homeDashboardDestination,
+                    homeScrollViewportSize: homeScrollViewportSize
+                )
+                .environmentObject(viewModel)
             }
         }
     }
@@ -450,6 +541,10 @@ struct HomeView: View {
 
     private func routeToHome() {
         guard viewModel.isRunning else { return }
+        // Clear the Home-owned presentation first. The active surface removes
+        // PixelHomeDashboard immediately, so a dashboard-local binding cannot
+        // reliably dismiss an already-pushed schedule route.
+        homeDashboardDestination = nil
         selectedTab = .home
         resetNavigation(for: .home)
     }

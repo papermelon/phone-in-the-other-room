@@ -98,6 +98,31 @@ final class IndependentMorningSettlementTests: XCTestCase {
         XCTAssertEqual(journal.benefit(for: run.id)?.deliveredProgress, first)
     }
 
+    func testNonqualifyingTerminalProjectionIsPersistedOnceEvenWithoutReward() {
+        var terminal = primaryRun(minutes: 400)
+        terminal.state = .endedEarly
+        terminal.endedAt = start.addingTimeInterval(400 * 60)
+        var journal = WindDownMorningSettlementJournal()
+        XCTAssertNotNil(journal.recordAuthorizedTerminalMorningDecision(
+            for: terminal,
+            disposition: .finalizeOrdinary,
+            at: terminal.endedAt!
+        ))
+        let first = UserProgress(
+            totalCompletedRuns: 0, totalFocusMinutes: 0, currentStreak: 0,
+            longestStreak: 0, rewardsCollected: 0, ollieLevel: 1
+        )
+        let changed = UserProgress(
+            totalCompletedRuns: 0, totalFocusMinutes: 0, currentStreak: 0,
+            longestStreak: 0, rewardsCollected: 99, ollieLevel: 5
+        )
+        XCTAssertNotNil(journal.persistTerminalProjection(for: terminal.id, reward: nil, progress: first))
+        XCTAssertNotNil(journal.persistTerminalProjection(for: terminal.id, reward: nil, progress: changed))
+        XCTAssertEqual(journal.terminalProjection(for: terminal.id)?.progress, first)
+        XCTAssertNotNil(journal.terminalProjection(for: terminal.id))
+        XCTAssertNil(journal.terminalProjection(for: terminal.id)?.reward)
+    }
+
     func testEarlyWakeStartsFullConfiguredDurationWithoutMutatingPlan() {
         let run = primaryRun(minutes: 600)
         let at = start.addingTimeInterval(7 * 60 * 60)
@@ -213,6 +238,160 @@ final class IndependentMorningSettlementTests: XCTestCase {
         XCTAssertTrue(journal.windDownBenefits.isEmpty)
         XCTAssertTrue(journal.morningOccurrences.isEmpty)
         XCTAssertEqual(journal.sunriseTrail, .empty)
+        XCTAssertTrue(journal.authorizedTerminalMorningDecisions.isEmpty)
+    }
+
+    func testAuthorizedOrdinaryTerminalDecisionIsImmutableAndRepairsIntentOnlyGap() {
+        let activeStoredRun = primaryRun(minutes: 600)
+        var terminal = activeStoredRun
+        terminal.state = .endedEarly
+        terminal.endedAt = start.addingTimeInterval(7 * 60 * 60 + 10 * 60)
+        var journal = WindDownMorningSettlementJournal()
+
+        let first = journal.recordAuthorizedTerminalMorningDecision(
+            for: terminal,
+            disposition: .finalizeOrdinary,
+            at: terminal.endedAt!
+        )
+        let replay = journal.recordAuthorizedTerminalMorningDecision(
+            for: terminal,
+            disposition: .preserveExplicitIntent,
+            at: terminal.endedAt!.addingTimeInterval(60)
+        )
+
+        XCTAssertEqual(journal.authorizedTerminalMorningDecisions.count, 1)
+        XCTAssertEqual(replay?.disposition, .finalizeOrdinary)
+        XCTAssertEqual(
+            AuthorizedTerminalMorningRecoveryPolicy.terminalRunForRecovery(
+                storedRun: activeStoredRun,
+                decision: first!
+            ),
+            terminal
+        )
+        _ = journal.markAuthorizedTerminalMorningDecisionCompleted(for: terminal.id, at: terminal.endedAt!)
+        XCTAssertTrue(journal.pendingAuthorizedTerminalMorningDecisions.isEmpty)
+        XCTAssertNil(journal.authorizedTerminalMorningDecisions.first?.terminalRun)
+        XCTAssertNil(
+            AuthorizedTerminalMorningRecoveryPolicy.terminalRunForRecovery(
+                storedRun: nil,
+                decision: journal.authorizedTerminalMorningDecisions[0]
+            )
+        )
+    }
+
+    func testExplicitEarlyWakeDecisionRemainsDistinctFromOrdinaryOccurrenceIdentity() {
+        let sourceRun = primaryRun(minutes: 600)
+        var terminal = sourceRun
+        terminal.state = .completed
+        terminal.endedAt = start.addingTimeInterval(7 * 60 * 60)
+        let proposed = MorningQuietIntentEngine.occurrence(
+            for: .deferToUsualTime,
+            run: sourceRun,
+            at: terminal.endedAt!
+        )
+        var journal = WindDownMorningSettlementJournal()
+        let ordinaryID = MorningQuietOccurrenceIdentity.ordinary(for: terminal.id)
+        let ordinary = MorningQuietOccurrence(
+            id: ordinaryID,
+            linkedWindDownRunID: terminal.id,
+            scheduleOccurrenceID: ordinaryID,
+            scheduledStart: sourceRun.nightWatchPlan!.wakeTime,
+            scheduledEnd: sourceRun.nightWatchPlan!.protectedUntil,
+            outcome: .scheduled
+        )
+        journal.appendOccurrence(ordinary)
+        guard let proposed else { return XCTFail("Expected a deferred Morning intent") }
+        let chosen = MorningQuietOccurrence(
+            id: ordinary.id,
+            linkedWindDownRunID: terminal.id,
+            scheduleOccurrenceID: ordinary.scheduleOccurrenceID,
+            scheduledStart: proposed.scheduledStart,
+            scheduledEnd: proposed.scheduledEnd,
+            actualStart: proposed.actualStart,
+            endedAt: proposed.endedAt,
+            outcome: proposed.outcome,
+            liveActivityRequested: proposed.liveActivityRequested
+        )
+        XCTAssertTrue(journal.replaceOccurrence(chosen))
+        let decision = journal.recordAuthorizedTerminalMorningDecision(
+            for: terminal,
+            disposition: .preserveExplicitIntent,
+            at: terminal.endedAt!
+        )
+
+        XCTAssertEqual(journal.morningOccurrences.first?.id, ordinaryID)
+        XCTAssertEqual(journal.morningOccurrences.first?.linkedWindDownRunID, terminal.id)
+        XCTAssertEqual(decision?.disposition, .preserveExplicitIntent)
+        XCTAssertEqual(
+            AuthorizedTerminalMorningRecoveryPolicy.terminalRunForRecovery(
+                storedRun: terminal,
+                decision: decision!
+            ),
+            terminal
+        )
+    }
+
+    func testPendingDecisionCannotReplaceAnUnrelatedStoredRun() {
+        var terminal = primaryRun(minutes: 600)
+        terminal.state = .endedEarly
+        terminal.endedAt = start.addingTimeInterval(7 * 60 * 60)
+        let unrelated = primaryRun(minutes: 600)
+        XCTAssertNotEqual(unrelated.id, terminal.id)
+        var journal = WindDownMorningSettlementJournal()
+        let decision = journal.recordAuthorizedTerminalMorningDecision(
+            for: terminal,
+            disposition: .finalizeOrdinary,
+            at: terminal.endedAt!
+        )
+
+        XCTAssertNil(
+            AuthorizedTerminalMorningRecoveryPolicy.terminalRunForRecovery(
+                storedRun: unrelated,
+                decision: decision!
+            )
+        )
+    }
+
+    func testPhoneAwayTerminalNeverRecordsMorningDecision() {
+        var phoneAway = primaryRun(minutes: 30)
+        phoneAway.nightWatchPlan?.role = .additionalQuiet
+        phoneAway.state = .endedEarly
+        phoneAway.endedAt = start.addingTimeInterval(30 * 60)
+        var journal = WindDownMorningSettlementJournal()
+
+        XCTAssertNil(journal.recordAuthorizedTerminalMorningDecision(
+            for: phoneAway,
+            disposition: .finalizeOrdinary,
+            at: phoneAway.endedAt!
+        ))
+        XCTAssertTrue(journal.authorizedTerminalMorningDecisions.isEmpty)
+    }
+
+    func testOrdinaryTerminalFinalizationSkipsBeforeWakeAndCapsActualMorningAtExit() {
+        let scheduledStart = start.addingTimeInterval(7 * 60 * 60)
+        let occurrence = MorningQuietOccurrence(
+            scheduledStart: scheduledStart,
+            scheduledEnd: scheduledStart.addingTimeInterval(30 * 60),
+            outcome: .scheduled
+        )
+
+        let beforeWake = OrdinaryMorningTerminalFinalizationPolicy.finalized(
+            occurrence: occurrence,
+            at: scheduledStart.addingTimeInterval(-60)
+        )
+        let duringMorning = OrdinaryMorningTerminalFinalizationPolicy.finalized(
+            occurrence: occurrence,
+            at: scheduledStart.addingTimeInterval(10 * 60)
+        )
+        let afterMorning = OrdinaryMorningTerminalFinalizationPolicy.finalized(
+            occurrence: occurrence,
+            at: scheduledStart.addingTimeInterval(60 * 60)
+        )
+
+        XCTAssertEqual(beforeWake?.outcome, .skipped)
+        XCTAssertEqual(duringMorning?.outcome, .finished)
+        XCTAssertEqual(duringMorning?.eligibleElapsedMinutes(at: scheduledStart.addingTimeInterval(10 * 60)), 10)
+        XCTAssertEqual(afterMorning?.endedAt, occurrence.scheduledEnd)
     }
 
     func testLegacyMorningOccurrenceDefaultsLiveActivityChoiceToEnabled() throws {

@@ -19,7 +19,7 @@ but they do not make physical phone separation feel like a small bedtime ritual.
 Counting Sheep gives those two periods one memorable shape: tuck the phone into another
 room at wind-down, leave it there overnight, and let it wake after the user does. The saved
 bookends remain part of the ritual/reporting shape; Wind Down reward credit is factual
-wind-down time, while Screen-Free Morning settles separately through Sunrise Trail.
+wind-down time, while Screen-Free Morning settles separately through its own counter.
 
 ## Core promise
 
@@ -111,24 +111,25 @@ completed habit before restoring access or granting the Night Watch receipt.
 
 ## Progress and the flock
 
-- Each completed primary sleep-bookend Wind Down resolves one persisted search; **Ollie's Search**
+- Each qualifying completed primary sleep-bookend Wind Down resolves one persisted outcome; **Ollie's Search**
   provides clues and catalogue context for named sheep.
-- Later completed nights resolve into a persisted search outcome: sheep found or trail advanced.
+- Later qualifying Wind Downs resolve into a persisted outcome: Ollie finds a sheep or keeps a clue.
 - Factual receipts keep the ritual honest; rarity and the wool economy begin only after a
   sheep arrives and never change essential access or quiet-time credit.
-- Optional HealthKit, Screen Time, and self-reported signals only add bonuses; missing data never
-  lowers the chance.
-- Only elapsed wind-down and morning-quiet minutes appear in the factual receipt. A separate
-  story-trail distance can drive search progress but is not a Health or GPS measurement.
+- Missing Health, Screen Time evidence, or reflection data never lowers the chance.
+- Only elapsed wind-down and Screen-Free Morning minutes appear in the factual receipt. The UI
+  does not turn stored story distance or trail-strength compatibility fields into progress.
 - Overnight hours never become quiet minutes or improve flock value.
 - Completed Night Watches update the record for the intended-bedtime date.
 - An early end advances no search and does not remove prior progress.
-- Exact odds are hidden by default and available through a More toggle. Rare sheep are cosmetic
-  and story rewards only.
+- Wind Down, Screen-Free Morning, and Phone Away keep independent search rules. Rare sheep are
+  cosmetic and story rewards only.
 
 Legacy storage fields such as `totalFocusMinutes`, reward/economy fields, and the persisted
 `FocusRun` type retain their names for backwards compatibility. Protected-night count remains
-`totalCompletedRuns`; found sheep and search outcomes live in `SheepSearchState`.
+`totalCompletedRuns`; found sheep and search outcomes live in `SheepSearchState`. Compatibility
+fields such as `trailDistance`, `trailStrength`, `trailMap`, `pendingMappedMinutes`,
+`encounterOdds`, and `showExactOdds` must not be renamed casually.
 
 ## Screen Time reports and optional shielding
 

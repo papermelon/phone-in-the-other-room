@@ -159,8 +159,19 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
 
     override func intervalWillEndWarning(for activity: DeviceActivityName) {
         super.intervalWillEndWarning(for: activity)
-        guard activity == .ollieBriefAccessRestore else { return }
-        reconcileBriefAccessRestore()
+        if activity == .ollieBriefAccessRestore {
+            reconcileBriefAccessRestore()
+            return
+        }
+        guard QuietTimeShieldWindow(activityName: activity) != nil
+                || QuietTimeShieldRegistryActivity(deviceActivityName: activity) != nil else { return }
+        // Short sessions use a padded DeviceActivity interval. Reconcile at
+        // the warning boundary so the actual desired end, not the platform
+        // minimum, clears ManagedSettings.
+        reconcileCurrentProtection(
+            at: Date(),
+            callback: QuietTimeShieldRegistryActivity(deviceActivityName: activity)
+        )
     }
 
     override func eventDidReachThreshold(

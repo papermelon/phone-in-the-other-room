@@ -1,0 +1,226 @@
+{
+  "schemaVersion": 1,
+  "canvas": {
+    "width": 512,
+    "height": 512,
+    "origin": "topLeft",
+    "pawBaselineY": 470
+  },
+  "alpha": "straight RGBA; transparent pixels have alpha 0",
+  "poses": {
+    "01": "dog/dog_classic_home_idle_frame_01",
+    "02": "dog/dog_ollie_motion_pose_02",
+    "03": "dog/dog_ollie_motion_pose_03",
+    "04": "dog/dog_ollie_motion_pose_04",
+    "05": "dog/dog_ollie_motion_pose_05",
+    "06": "dog/dog_ollie_motion_pose_06",
+    "07": "dog/dog_ollie_motion_pose_07",
+    "08": "dog/dog_ollie_motion_pose_08",
+    "09": "dog/dog_ollie_motion_pose_09",
+    "10": "dog/dog_ollie_motion_pose_10",
+    "11": "dog/dog_ollie_motion_pose_11",
+    "12": "dog/dog_classic_home_idle_frame_01"
+  },
+  "actions": {
+    "earTuck": {
+      "poses": [
+        1,
+        2,
+        3
+      ],
+      "durationsSeconds": [
+        0.16,
+        0.16,
+        0.28
+      ]
+    },
+    "tongueGreeting": {
+      "poses": [
+        1,
+        4,
+        1
+      ],
+      "durationsSeconds": [
+        0.18,
+        0.36,
+        0.21
+      ]
+    },
+    "settleToRest": {
+      "poses": [
+        3,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "durationsSeconds": [
+        0.16,
+        0.16,
+        0.18,
+        0.2,
+        0.22,
+        0.3
+      ]
+    },
+    "resting": {
+      "poses": [
+        9
+      ],
+      "durationsSeconds": [
+        5.0
+      ]
+    },
+    "rise": {
+      "poses": [
+        10,
+        11,
+        12
+      ],
+      "durationsSeconds": [
+        0.2,
+        0.18,
+        0.24
+      ]
+    }
+  },
+  "renderedPreview": {
+    "includesFullRestHoldSeconds": 5.0,
+    "usesRuntimeActionCadence": true,
+    "isShortenedReviewLoop": true,
+    "note": "The GIF is a compact review loop; its neutral transition frames use the authored action durations, and pose 09 retains the full five-second resting hold."
+  },
+  "cosmetics": {
+    "moss_bandana": {
+      "01": "dog/dog_ollie_motion_moss_bandana_pose_01",
+      "02": "dog/dog_ollie_motion_moss_bandana_pose_02",
+      "03": "dog/dog_ollie_motion_moss_bandana_pose_03",
+      "04": "dog/dog_ollie_motion_moss_bandana_pose_04",
+      "05": "dog/dog_ollie_motion_moss_bandana_pose_05",
+      "06": "dog/dog_ollie_motion_moss_bandana_pose_06",
+      "07": "dog/dog_ollie_motion_moss_bandana_pose_07",
+      "08": "dog/dog_ollie_motion_moss_bandana_pose_08",
+      "09": "dog/dog_ollie_motion_moss_bandana_pose_09",
+      "10": "dog/dog_ollie_motion_moss_bandana_pose_10",
+      "11": "dog/dog_ollie_motion_moss_bandana_pose_11",
+      "12": "dog/dog_ollie_motion_moss_bandana_pose_12"
+    },
+    "moon_kerchief": {
+      "01": "dog/dog_ollie_motion_moon_kerchief_pose_01",
+      "02": "dog/dog_ollie_motion_moon_kerchief_pose_02",
+      "03": "dog/dog_ollie_motion_moon_kerchief_pose_03",
+      "04": "dog/dog_ollie_motion_moon_kerchief_pose_04",
+      "05": "dog/dog_ollie_motion_moon_kerchief_pose_05",
+      "06": "dog/dog_ollie_motion_moon_kerchief_pose_06",
+      "07": "dog/dog_ollie_motion_moon_kerchief_pose_07",
+      "08": "dog/dog_ollie_motion_moon_kerchief_pose_08",
+      "09": "dog/dog_ollie_motion_moon_kerchief_pose_09",
+      "10": "dog/dog_ollie_motion_moon_kerchief_pose_10",
+      "11": "dog/dog_ollie_motion_moon_kerchief_pose_11",
+      "12": "dog/dog_ollie_motion_moon_kerchief_pose_12"
+    },
+    "brass_trail_bell": {
+      "01": "dog/dog_ollie_motion_brass_trail_bell_pose_01",
+      "02": "dog/dog_ollie_motion_brass_trail_bell_pose_02",
+      "03": "dog/dog_ollie_motion_brass_trail_bell_pose_03",
+      "04": "dog/dog_ollie_motion_brass_trail_bell_pose_04",
+      "05": "dog/dog_ollie_motion_brass_trail_bell_pose_05",
+      "06": "dog/dog_ollie_motion_brass_trail_bell_pose_06",
+      "07": "dog/dog_ollie_motion_brass_trail_bell_pose_07",
+      "08": "dog/dog_ollie_motion_brass_trail_bell_pose_08",
+      "09": "dog/dog_ollie_motion_brass_trail_bell_pose_09",
+      "10": "dog/dog_ollie_motion_brass_trail_bell_pose_10",
+      "11": "dog/dog_ollie_motion_brass_trail_bell_pose_11",
+      "12": "dog/dog_ollie_motion_brass_trail_bell_pose_12"
+    }
+  },
+  "homeIdleCosmetics": {
+    "moss_bandana": {
+      "01": "dog/dog_ollie_home_idle_moss_bandana_frame_01",
+      "02": "dog/dog_ollie_home_idle_moss_bandana_frame_02",
+      "03": "dog/dog_ollie_home_idle_moss_bandana_frame_03",
+      "04": "dog/dog_ollie_home_idle_moss_bandana_frame_04",
+      "05": "dog/dog_ollie_home_idle_moss_bandana_frame_05",
+      "06": "dog/dog_ollie_home_idle_moss_bandana_frame_06"
+    },
+    "moon_kerchief": {
+      "01": "dog/dog_ollie_home_idle_moon_kerchief_frame_01",
+      "02": "dog/dog_ollie_home_idle_moon_kerchief_frame_02",
+      "03": "dog/dog_ollie_home_idle_moon_kerchief_frame_03",
+      "04": "dog/dog_ollie_home_idle_moon_kerchief_frame_04",
+      "05": "dog/dog_ollie_home_idle_moon_kerchief_frame_05",
+      "06": "dog/dog_ollie_home_idle_moon_kerchief_frame_06"
+    },
+    "brass_trail_bell": {
+      "01": "dog/dog_ollie_home_idle_brass_trail_bell_frame_01",
+      "02": "dog/dog_ollie_home_idle_brass_trail_bell_frame_02",
+      "03": "dog/dog_ollie_home_idle_brass_trail_bell_frame_03",
+      "04": "dog/dog_ollie_home_idle_brass_trail_bell_frame_04",
+      "05": "dog/dog_ollie_home_idle_brass_trail_bell_frame_05",
+      "06": "dog/dog_ollie_home_idle_brass_trail_bell_frame_06"
+    }
+  },
+  "atlasSourceCrops": {
+    "02": [
+      384,
+      0,
+      768,
+      341
+    ],
+    "03": [
+      768,
+      0,
+      1152,
+      341
+    ],
+    "05": [
+      0,
+      341,
+      384,
+      683
+    ],
+    "06": [
+      384,
+      341,
+      768,
+      683
+    ],
+    "07": [
+      763,
+      341,
+      1152,
+      683
+    ],
+    "08": [
+      1137,
+      341,
+      1536,
+      683
+    ],
+    "09": [
+      0,
+      683,
+      384,
+      1024
+    ],
+    "10": [
+      384,
+      683,
+      768,
+      1024
+    ],
+    "11": [
+      768,
+      670,
+      1152,
+      1024
+    ]
+  },
+  "source": {
+    "atlas": "output/design/ollie-motion-20260828/sources/ollie-motion-atlas-20260828.png",
+    "earStudy": "output/design/ollie-motion-20260828/sources/ollie-ear-reference-study.png",
+    "tongueStudy": "output/design/ollie-motion-20260828/sources/ollie-tongue-welcome-study.png",
+    "neutral": "Assets.xcassets/dog/dog_classic_home_idle_frame_01.imageset/dog_classic_home_idle_frame_01.png"
+  }
+}

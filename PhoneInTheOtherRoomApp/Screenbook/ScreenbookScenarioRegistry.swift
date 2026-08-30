@@ -79,6 +79,28 @@ enum ScreenbookScenarioRegistry {
                 ],
                 warnings: coverageWarning
             )
+        case .interactiveHome:
+            return ScreenbookScenario(
+                id: kind.rawValue,
+                title: "Interactive Phone Away Home",
+                description: "Home with an eligible saved Phone Away period for the production Plan-to-start route.",
+                surface: "iphone",
+                journey: "phone-away",
+                route: "home-to-schedule",
+                state: "interactive-scheduled-start",
+                tags: ["home", "phone-away", "interactive", "scheduled"],
+                fixtureVersion: 1,
+                captureProfile: captureProfile,
+                captureProvenance: "debug-fixture",
+                dependencies: commonDependencies + [
+                    "PhoneInTheOtherRoomApp/Views/HomeView.swift",
+                    "PhoneInTheOtherRoomApp/Views/PixelHomeDashboard.swift",
+                    "PhoneInTheOtherRoomApp/Views/WindDownScheduleView.swift",
+                    "PhoneInTheOtherRoomApp/Views/Components/WindDownStartSheet.swift"
+                ],
+                copy: [],
+                warnings: coverageWarning
+            )
         case .activeWindDown:
             return ScreenbookScenario(
                 id: kind.rawValue,
@@ -106,6 +128,64 @@ enum ScreenbookScenarioRegistry {
                     .provisional(id: "iphone.active.wind-down.exit.provisional", rendered: "End Wind Down early", file: "Shared/ActiveRunPresentation.swift", symbol: "ActiveRunPresentation.exit")
                 ],
                 warnings: coverageWarning
+            )
+        case .activePhoneAway:
+            return ScreenbookScenario(
+                id: kind.rawValue,
+                title: "Active Phone Away",
+                description: "Home's production active Phone Away view after coordinator admission.",
+                surface: "iphone",
+                journey: "phone-away",
+                route: "home",
+                state: "active-phone-away",
+                tags: ["active", "phone-away"],
+                fixtureVersion: 1,
+                captureProfile: captureProfile,
+                captureProvenance: "debug-fixture",
+                dependencies: commonDependencies + [
+                    "PhoneInTheOtherRoomApp/Views/ActiveRunView.swift",
+                    "PhoneInTheOtherRoomApp/Views/Components/NightJourneyView.swift"
+                ],
+                copy: [],
+                warnings: coverageWarning
+            )
+        case .slumberPartyNoRound:
+            return ScreenbookScenario(
+                id: kind.rawValue, title: "Slumber Party sharing before seven nights",
+                description: "Production Home with a synthetic transport fixture showing membership-sharing people and recent activity before any round.",
+                surface: "iphone", journey: "slumber-party", route: "home", state: "membership-no-round",
+                tags: ["slumber-party", "membership-sharing", "no-round"], fixtureVersion: 1,
+                captureProfile: captureProfile, captureProvenance: "synthetic-transport-fixture",
+                dependencies: commonDependencies + ["PhoneInTheOtherRoomApp/Views/Components/SlumberPartyHomeSection.swift", "PhoneInTheOtherRoomApp/Views/HomeView.swift"], copy: [], warnings: coverageWarning
+            )
+        case .slumberPartyBetweenRounds:
+            return ScreenbookScenario(
+                id: kind.rawValue, title: "Slumber Party sharing between seven-night rounds",
+                description: "Production Home with a synthetic transport fixture showing membership sharing after a completed round.",
+                surface: "iphone", journey: "slumber-party", route: "home", state: "membership-between-rounds",
+                tags: ["slumber-party", "membership-sharing", "between-rounds"], fixtureVersion: 1,
+                captureProfile: captureProfile, captureProvenance: "synthetic-transport-fixture",
+                dependencies: commonDependencies + ["PhoneInTheOtherRoomApp/Views/Components/SlumberPartyHomeSection.swift", "PhoneInTheOtherRoomApp/Views/HomeView.swift"], copy: [], warnings: coverageWarning
+            )
+        case .slumberPartySharedHabitsSummary:
+            return ScreenbookScenario(
+                id: kind.rawValue, title: "Shared habit summaries",
+                description: "Production Slumber Party detail with synthetic consented summaries, a former-member archive row, and no network transport.",
+                surface: "iphone", journey: "slumber-party", route: "party-detail", state: "shared-habits-summary",
+                tags: ["slumber-party", "shared-habits", "summary", "archive"], fixtureVersion: 1,
+                captureProfile: captureProfile, captureProvenance: "synthetic-transport-fixture",
+                dependencies: commonDependencies + ["PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4PartyDetailView.swift", "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedHabitsViews.swift"],
+                copy: [], warnings: coverageWarning
+            )
+        case .slumberPartySharedHabitsConsent:
+            return ScreenbookScenario(
+                id: kind.rawValue, title: "Shared habit agreement",
+                description: "Production Slumber Party detail with the post-join agreement pending and no local shared records.",
+                surface: "iphone", journey: "slumber-party", route: "party-detail", state: "shared-habits-consent",
+                tags: ["slumber-party", "shared-habits", "consent", "empty"], fixtureVersion: 1,
+                captureProfile: captureProfile, captureProvenance: "synthetic-transport-fixture",
+                dependencies: commonDependencies + ["PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4PartyDetailView.swift", "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedHabitsViews.swift"],
+                copy: [], warnings: coverageWarning
             )
         case .earlyEnd:
             return ScreenbookScenario(

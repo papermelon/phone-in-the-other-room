@@ -102,7 +102,7 @@ struct WindDownDayDetailView: View {
     private func morningDetail(_ occurrence: MorningQuietOccurrence) -> String {
         let minutes = occurrence.eligibleElapsedMinutes(at: occurrence.endedAt ?? Date())
         if occurrence.outcome == .finished, minutes < SunriseTrailRules.minimumOccurrenceMinutes {
-            return "\(minutes) actual minutes · below the 15-minute Sunrise Trail minimum"
+            return "\(minutes) actual minutes · below the 15-minute Screen-Free Morning minimum"
         }
         return "\(minutes) actual minutes · tracked independently from Wind Down"
     }
@@ -313,11 +313,6 @@ struct WindDownRecordDetailView: View {
                             Text(SheepSearchPresentation.openedByLine(for: outcome.origin))
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.muted)
-                            if outcome.trailMapBonusPercentagePoints > 0 {
-                                Text("+\(outcome.trailMapBonusPercentagePoints) mapped percentage points applied")
-                                    .font(AppTypography.caption)
-                                    .foregroundStyle(AppColors.muted)
-                            }
                         }
                     }
                 }

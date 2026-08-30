@@ -3,7 +3,7 @@
 Practical architecture reference for humans and agents. Canonical rules live in
 [`AGENTS.md`](../AGENTS.md); this file goes deeper on structure, data flow, and risk.
 
-Last verified against code: 25 August 2026.
+Last verified against code: 27 August 2026.
 
 ## 1. Stack and build system
 
@@ -69,7 +69,6 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ NightWatchHistory.swift       90-day aggregate records + idempotent ritual events
 ├─ PhoneBedTag.swift             named primary/backup NDEF tag library and purpose rules
 ├─ PastureScene.swift             versioned local pasture layout, settling, and deterministic ambient plans
-├─ PastureInteraction.swift       catalogue personalities plus bounded, presentation-only play landing rules
 ├─ QuietTimeShieldSchedule.swift schedule/status/evidence App Group contract
 ├─ WatchMessage.swift            typed phone↔watch message envelope + codec
 ├─ SlumberPartyFeedback.swift    bounded silent Live Activity/Watch cheer presentation
@@ -85,6 +84,8 @@ Shared/                        Pure domain logic (no UI, unit-testable)
 ├─ SheepSearchWelcome.swift       starter and onboarding-practice search calculations
 ├─ SheepSearchPresentation.swift  user-facing welcome-gift and homecoming copy
 ├─ WindDownGuidance.swift         finite, source-linked screen-time and sleep-habit ideas
+├─ WindDownGuidanceSources.swift  stable source registry, context groups, dismissal, and routine-add rules
+├─ PhoneAwayStartPolicy.swift     typed manual/scheduled preflight and bounded manual duration choices
 ├─ SheepSearch.swift               deterministic search outcomes, posters, rarity, habitats
 ├─ SheepSearchState.swift          versioned outcomes, trail-map credit, and persisted state
 ├─ FarmModels.swift                versioned owned flock, discovery, balances, equipment, history
@@ -134,6 +135,7 @@ PhoneInTheOtherRoomApp/        iOS app
 │  ├─ ActiveRunView.swift                      in-run UI + non-scrolling journey state
 │  ├─ CompletionView.swift / EarlyEndView.swift
 │  ├─ FocusStatsView.swift                     latest-primary Nights overview + grouped context
+│  ├─ Components/WindDownGuidanceDetailView.swift idea rationale, source links, and optional routine add
 │  ├─ NightsWeekSection.swift                  seven-day board + all-nights navigation
 │  ├─ MonthlyNightsView.swift                  shared-summary month calendar
 │  ├─ NightsDayDetailView.swift                grouped day occurrences + factual record detail
@@ -214,16 +216,23 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    routine choices, on Home, and in phase-appropriate moments. Home selects at most one compact
    routine-linked idea below the primary Wind Down action; active primary Wind Down selects at
    most one item for the current evening or morning phase after essential controls, and suppresses
-   guidance overnight. Phone Away has no guidance placement. The full source library is local
-   and reached from the secondary **About these ideas and sources** link; “finite guide” is not
-   user-facing copy.
+   guidance overnight. Phone Away has no active-session guidance placement. The full source library
+   is local, grouped by Evening, Morning, and Phone Away, and reached from the secondary
+   **About these ideas and sources** link; “finite guide” is not user-facing copy. Home guidance is
+   deterministic and dismissible with a seven-day local cooldown; dismissing it does not alter the
+   private routine.
 2. `FocusRunViewModel.requestStartNightWatch()` anchors a `NightWatchPlan` to tonight and
    starts `FocusSessionCoordinator`. One phone-authoritative coordinator owns Wind Down and a
    linked, independently settled Screen-Free Morning occurrence; there is no competing app-root
-   state machine.
+   state machine. Admission is a final synchronous coordinator decision: a run or active Morning
+   that appeared while confirmation/NFC was pending rejects the start before source consumption,
+   sharing publication, notifications, or monitoring work.
 3. The iPhone coordinator creates the run and schedules one foreground timer for the next
    semantic boundary (bedtime, wake time, or `plan.protectedUntil`), never a repeating
-   countdown timer. SwiftUI renders visible countdowns from absolute dates. The view model
+   countdown timer. SwiftUI renders visible countdowns from absolute dates. DeviceActivity
+   registrations pad short 5/10/15-minute requests to Apple's fifteen-minute monitoring minimum
+   and use the actual desired end as the warning/clear boundary; the consented ManagedSettings
+   barrier is never lengthened. The view model
    schedules silent sleep-time and phone-free-morning transitions plus the audible completion
    the user requested. The coordinator persists and mirrors the run only at meaningful state
    and lifecycle events; when the optional ActivityKit delivery path is deployed, the backend
@@ -281,11 +290,16 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    first-party cue for Phone Away, Wind Down, overnight, or morning
    quiet and uses the protected-session interval—not a bookend—as the displayed end time.
    Its Ollie/sheep icon is decorative; the companion sheep is not a search result, reward,
-   or owned flock item.
+   or owned flock item. The active purpose cue is a bounded App Group value keyed by the
+   occurrence ID, registry revision, and registry epoch. The main-actor view model publishes a
+   newly selected cue immediately, then reloads or clears it at start, restore, phase/occurrence
+   transitions, terminal/reset, and foreground boundaries; active timer rendering never polls
+   UserDefaults.
 7. At 420 eligible minutes, the coordinator privately resolves one immutable Wind Down outcome in
    the standard-defaults settlement journal. On authorized terminal delivery, `RewardEngine`
    retains compatibility updates while crediting only the factual Wind Down bookend; Screen-Free
-   Morning settles independently into Sunrise Trail from actual eligible minutes. The journal
+   Morning settles independently into the compatibility-named `SunriseTrail` ledger from actual
+   eligible minutes. Release UI calls this source Screen-Free Morning. The journal
    then projects the resolved result and one individual `FlockSheep` arrival into `FarmState`.
    Available arrivals enter the active flock; capacity overflow remains pending. The completed
    protected-night count also advances wool regrowth. Progress is attributed to the intended-
@@ -301,8 +315,10 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    and report configuration. Chosen report windows do not
    alter Wind Down or Phone Away. Missing data is never estimated.
    When ADR-0016's flag is enabled, the v4 surface leads from Home and Farm to
-   Your Slumber Parties, with create and join always visible; v1–v3's shared-goal card is legacy
-   only. Routines, schedules, absence explanations, Health data, and private details remain
+   Your Slumber Parties. When the feature and configuration are valid, a local create/join bridge
+   is visible before account linking or the first v4 list response; passive rendering starts no
+   account or network work. Disabled or invalid configurations remain hidden. v1–v3's shared-goal
+   card is legacy only. Routines, schedules, absence explanations, Health data, and private details remain
    unshared. Eligible activity can earn separately per party through server-authoritative fan-out.
 9. During an active Night Watch, Home is replaced by the live journey while Nights, Farm,
    and Settings remain mounted in the same four-tab shell. A persistent return strip resets
@@ -313,7 +329,12 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    receipts temporarily replace the shell. Completed Phone Away receipts read the persisted
    per-run settlement record, distinguishing practice, below-minimum time, credited banking,
    a full locked meter, and a resolved Phone Away bonus search in Search Journal; they never
-   infer progress from the current meter.
+   infer progress from the current meter. Home consolidates the configured Wind Down facts into
+   one card and keeps Phone Away as a visible secondary action with distinct manual and scheduled
+   intents. Manual Phone Away uses a transient 5–30 minute window (30 minutes by default), starts
+   its duration at actual timer/NFC confirmation, and leaves saved occurrences untouched. Both
+   intents use `PhoneAwayStartPolicy`; a missing, revoked, empty, unavailable, or failed protection
+   state routes to repair and never silently falls back to an unprotected run.
 10. `NightJourneyProgress` resolves overall, phase, and segment progress from the active
     `FocusRun`; `NightJourneyTerrainProfile` supplies a periodic height and derivative used by
     both the Canvas foreground and Ollie's foot alignment. Backdrops pan/zoom only within safe
@@ -366,6 +387,34 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
 
 ### Slumber Party run boundary
 
+#### Home and recovery refinements (2026-08-27)
+
+Idle Home now leads with a personal Ollie welcome and compact expandable Wind Down timing,
+then the invite-only Slumber Party's membership-filtered observed detail: recognizable members,
+current expiring statuses and one recent factual highlight. The highlight stays stable per visit
+until ineligible; time-driven expiry commits its replacement selection. The same local clock
+drives a day/night window ornament, with work paused outside the Home scroll viewport or while
+backgrounded. Home directly observes its named-scroll geometry; the previous preference bridge
+failed to deliver the art frame and incorrectly paused visible motion. Home and Farm now share
+registered expressive sprites and three pose-aware cosmetic layers; see
+`plans/ollie-motion-implementation.md` for validation and remaining gates.
+Home does not infer activity from
+list metadata or combine rewards across groups. The same cache serves party detail; refresh
+attempts are account/generation fenced, coalesced, and healed after foreground/publication.
+Display expiry is a local clock invalidation, not network polling. The founder approved sharing
+from joining, including before/between rounds. The additive membership stream and explicit server
+capability are scoped in `plans/slumber-party-membership-sharing.md`; legacy round projections
+and grants remain independent. New source is not proof that the hosted backend supports it.
+See the plan for implementation, validation and deployment status.
+
+The existing `WindDownMorningSettlementJournal` now also persists schema-2 authorized terminal
+Morning decisions before terminal projections. An immutable run payload and ordinary-finalize
+versus explicit-preserve disposition allow recovery to replay before generic Morning advancement.
+Completion clears the payload and retains bounded idempotency markers. Historical terminal time
+governs factual settlement; current time governs protection/notification/Live Activity eligibility.
+An already elapsed deferred Morning settles without being transiently re-applied to shielding.
+This journal remains local and does not change Slumber Party or Farm reward contracts.
+
 `FocusRunViewModel` owns and forwards one `NightFlockViewModel`; there is no second app-root or
 session coordinator. The locally implemented v4 contract adds one people-first
 **Your Slumber Parties** list, long-lived named parties, fixed seven-night rounds, an active
@@ -392,14 +441,22 @@ encrypted service-only data and never appears in RLS projections, Realtime paylo
 support evidence. An ordinary member may leave; a host cannot leave and must delete for everyone
 until a future transfer flow is approved.
 
-Party projections include only canonical display name, allowlisted/revisioned curated Farm look,
-factual round records rounded to five-minute buckets, statuses (`revision`, `observed_at`,
-`expires_at`), and fixed historical/live cheers. They
-exclude complete Farm state, inventory, wool, exact schedules, private text, app tokens, Screen
-Time/Health data, NFC, notifications, and impact data. The canonical name serves Farm and all
+Base v4 party projections include only canonical display name, allowlisted/revisioned curated Farm
+look, factual round records rounded to five-minute buckets, statuses (`revision`, `observed_at`,
+`expires_at`), and fixed historical/live cheers. They exclude complete Farm state, inventory, wool,
+private recurrence schedules, private text, app tokens, Screen Time/Health data, NFC,
+notifications, and impact data. The additive v2 shared-night capability can additionally return
+bounded, rounded next-seven-night plan instances and frozen factual receipts after a version-2
+agreement; it does not expose a recurrence rule or exact app/use data. The canonical name serves Farm and all
 parties, with initial/migration selection free and two successful changes per rolling 14 days.
 The curated profile contains only Shepherd look, Ollie ornament, featured sheep definition, and
-pasture theme, all server-validated catalogue identifiers.
+pasture theme, all server-validated catalogue identifiers. The 2026-08-28 local candidate adds
+one selected social `avatarID` (Shepherd, Ollie or a discovered sheep); this is presentation,
+not a server-verified inventory claim. List capability `profileAvatarVersion: 1` gates the optional
+command field. Missing/unknown support preserves legacy wire behavior and shows local-save
+feedback. Explicit local choice is marked by `ollie.userProfile.socialAvatar.isExplicit`; ordinary
+Farm changes never replace it. A pristine supported account recovery can adopt the server choice.
+The additive migration and matching Edge validator require a separate deployment/QA gate.
 
 Realtime status and silent cheers are best-effort. A sanitized member-only party revision signal
 prompts a canonical state refresh after membership, invitation, round, profile, or activity
@@ -429,30 +486,25 @@ in stable order. The user-initiated analytics export includes only aggregate woo
 transaction kind, current balance, owned count, and flock/capacity counts—no Farm names or
 transaction timestamps.
 
-### Pasture play
+### Pasture interaction
 
-`FarmPastureView` may enter an explicit, local Play mode that keeps the ordinary accessible
-double-tap routes to The Barn and Ollie's Shop available. `PastureSceneController` composes its
-touch and VoiceOver actions with the existing long-press placement gesture, so a cancelled or
-page-interrupted gesture always restores a settled character. Sheep temperaments are deterministic
-derivations of their existing catalogue identities, while Ollie can observe, greet, and briefly
-fetch a ball. Petting, presses, toss landings, reciprocal reactions, effects, haptics, and ball
-choreography are finite cancellable presentation state; none persist or mutate Farm inventory,
-wool, Search odds, Wind Down progress, or care obligations. Only final settled character
-placement is written to `ollie.farm.pastureScene`.
+`FarmPastureView` is a calm browsing and arrangement surface. Double tap opens the sheep, Ollie,
+or Shepherd destination, while long press and drag stores a bounded completed placement snapshot.
+Gentle ambient movement remains presentation-only and pauses during Wind Down or Reduce Motion.
+The explicit Play mode, Fetch, petting, squishing, toss controls, effects, and haptics are not part
+of the release surface. Pasture interaction never changes Farm inventory, wool, progression,
+Slumber Party data, or rewards.
 
-Active Wind Down gates Play mode and cancels its effects, ball, and autonomous pasture scheduler;
-Reduce Motion keeps feedback discreet and removes spatial fetch/toss choreography. The pasture
-remains browsable during a run, including its destination routes and placement recovery. The
-presentation layer supplies quiet visual feedback and accessible action labels without making
-the Farm a source of active-run progression.
-
-The member projection never contains Family Controls tokens, selected-app lists, raw Screen Time
-reports, exact schedules, exact shield timestamps, raw HealthKit samples, full Farm state,
+The base v4 member projection never contains Family Controls tokens, selected-app lists, raw Screen
+Time reports, private recurrence schedules, exact shield timestamps, raw HealthKit samples, full Farm state,
 inventory, or wool. Impact/research sharing remains a separate local/cloud contract. The
 `ollie.nightFlock.orientation`, commitment outbox, metrics outbox, and sharing-preference data are
 v1–v3 compatibility state only; v4 replaces those flows with its single party contract and durable
-activity/fan-out/cheer ledgers. Active Wind Down removes Slumber Party navigation while permitted
+activity/fan-out/cheer ledgers. The local-source additive shared-habits v2 capability adds immutable,
+rounded next-seven-local-night plan versions and frozen factual receipts only after a version-2
+agreement. It carries Wind Down timing, comparison bookends, and bundled idea IDs—not the recurrence
+rule, custom routine text, app identity/per-app use, raw Health, or device credentials. Hosted migration
+and physical multi-account validation remain separate gates. Active Wind Down removes Slumber Party navigation while permitted
 background reconciliation stays asynchronous.
 
 Home and Farm remove Slumber Party navigation when a run becomes active. `ActiveRunView` has no
@@ -522,8 +574,13 @@ by the iPhone.
   distributed via `.environmentObject`. Views are thin; intents go to the view model.
 - `OllieRitualView` maps the existing setup, placement, Night Watch phase, completion, and
   early-end presentation states to still-image poses. It does not own or duplicate run state.
-- `HomeOllieIdleView` uses a registered six-frame Ollie loop for a brief blink, ear twitch,
-  head tilt, and settle on the configured Home dashboard; Reduce Motion holds frame one.
+- `HomeOllieIdleView` and the visible Farm companion share `OllieCompanionSpriteRenderer` and
+  the pure `OllieCompanionAnimation` schedule/manifest. The original blink/head tilt joins an
+  ear tuck, brief tongue greeting and flop/rest/rise sequence. The 90.39-second production
+  cycle contains long neutral holds and a five-second rest. A monotonic, view-local driver
+  wakes at authored boundaries, pauses when hidden/backgrounded, and resumes from neutral;
+  Reduce Motion holds the original still. Asset capabilities are cached per equipped choice;
+  an incomplete rest triplet falls back as a unit. Shop/social thumbnails remain static.
 - `NightJourneyView` animates the approved six-frame Ollie cycle with a smaller current-batch
   Bramble sheep running ahead as decorative scenery. The companion is not a search result,
   reward, or owned flock item.
@@ -549,7 +606,9 @@ by the iPhone.
 | `ollie.nightWatch.routines` | `[WindDownRoutine]` | migrated primary routine plus optional additional bounded periods |
 | `ollie.nightWatch.nextOverride` | `NextWindDownOverride?` | legacy compatibility mirror; migrated into the versioned schedule and consumed once |
 | `ollie.offlinePurpose` | `OfflinePurposeProfile` | optional in-app intention and explicit custom-notification opt-in |
+| `ollie.guidance.home.dismissals` | `[String: Date]` | local Home guidance dismissal dates with a bounded seven-day reappearance cooldown |
 | `ollie.screenTime.reportPreferences` | `ScreenTimeReportPreferences` | independent evening and morning Screen Time report windows |
+| `ollie.screenTime.purposeCue` (App Group) | `QuietPurposeCueState` | occurrence/revision/epoch-scoped active purpose cue; bounded and local |
 | `ollie.screenTime.briefAccessState` (App Group) | `QuietTimeBriefAccessState` | active temporary grant plus bounded per-run completed-use ledger |
 | `ollie.morningCheckIns` | `MorningCheckInHistory` | up to 45 days of private optional morning reflections |
 | `ollie.onboarding.version` | `Int` | completed first-run onboarding version |
@@ -559,7 +618,7 @@ by the iPhone.
 | `ollie.orientation.state` | `CountingSheepOrientationState` | schema-6 chapter-scoped guide status, presentation state, contextual tips, Farm tutorial actions, practice identity, and resume routing |
 | `ollie.notifications.preferences` | `NotificationPreferences` | cadence, authorization choices, sounds, optional channels, and versioned local message overrides |
 | `ollie.notifications.remindersEnabled` | `Bool` | backwards-compatible mirror of the notification master switch |
-| `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes including starter/practice/Wind Down/Phone Away origins, trail-map minutes/run IDs, separate guarantee counters, trail distance, no-find protection, odds preference |
+| `ollie.sheepSearch.state` | `SheepSearchState` | found sheep, outcomes including starter/practice/Wind Down/Phone Away origins, compatibility-named trail-map minutes/run IDs, separate guarantee counters, trail distance, no-find protection, odds preference; legacy trail/distance/odds fields are not release-facing progress |
 | `ollie.farm.state` | `FarmState` | versioned individual flock, pending arrivals, discovery history, capacity, wool, Shop ownership/equipment, avatar, and transaction history including starter and welcome-gift records; schema v3 retains the v2 cash-to-wool migration and adds permanent Shop unlock tiers plus named decoration zones and four bounded keepsake slots |
 | `ollie.farm.pastureScene` | `PastureSceneSnapshot` | versioned local-only normalized placement for active sheep and each pasture's Ollie and Shepherd; autonomous behavior stays ephemeral and stale entities are pruned |
 | `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
@@ -630,13 +689,15 @@ cloud boundaries.
 
 Slumber Party is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` (ordinary Debug `NO`;
 TestFlight/Release `YES`). With the flag off, its app surfaces are absent and it does not create a
-Supabase session or make a request. Entry creates or restores an anonymous session only when needed, then Sign in with Apple
-links that identity in place and verifies the Auth UUID did not change. A successful link and a
-validated linked session bind the Supabase UUID locally. Recovery never creates an anonymous
-session: a 401 requires Apple ID-token reauthentication to that same UUID, while
-`linked_account_required` may only link the current valid anonymous session in place. Missing,
-changed, or unprovable identities fail closed, preserve the snapshot, run contexts, and all three
-outboxes, then reconcile rather than replay a direct mutation. Slumber Party server RPCs
+Supabase session or make a request. Entry creates or restores an anonymous session only when needed,
+then Sign in with Apple first tries to link that identity in place. A successful link and a
+validated linked session bind the Supabase UUID locally. If Apple already owns a Counting Sheep
+account, verified Apple sign-in can reopen it on an unbound phone; before adopting that different
+UUID, the app clears account-scoped Slumber Party snapshots, run contexts, and outboxes, while
+local Wind Down and Farm data remain untouched. Recovery never creates an anonymous session. A
+401 on an already bound installation requires Apple ID-token reauthentication to that same UUID.
+Invalid bindings, non-Apple sessions, and mismatches against an existing binding fail closed and
+reconcile rather than replay a direct mutation. Slumber Party server RPCs
 also require Apple in Auth app metadata, so another non-anonymous provider is insufficient.
 
 `night-flock-command` and `night-flock-state` derive the caller from the JWT and alone call
@@ -673,7 +734,7 @@ publication, updated app distribution, and physical QA remain separate unverifie
    changes, timezone changes, termination, and background restoration need physical-device
    QA in addition to the pure scheduling tests. The continuous app barrier is not progression;
    Wind Down progression uses its factual wind-down bookend, while Screen-Free Morning settles
-   independently through Sunrise Trail (ADR-0019).
+   independently through its compatibility-named `SunriseTrail` ledger (ADR-0019).
 3. **Screen Time needs physical-device QA.** The report/monitor/configuration/action
    extensions are embedded locally, but the three new shield bundle IDs still need Family
    Controls distribution assignment and continuous barrier transitions need physical proof.
@@ -732,7 +793,10 @@ publication, updated app distribution, and physical QA remain separate unverifie
    explicit feature flag and external gates are approved.
 2. Register/approve/sign the three new shield extension IDs.
 3. Increment the build number and produce a distribution archive.
-4. `HealthSleepService` uses requested/no-data/error states because HealthKit does not
+4. `HealthSleepService` distinguishes local request history from observed sleep data. Settings
+   and Nights use the same dated data/no-data/query-error presentation, contextual native Connect,
+   Refresh/Retry and shared access help. Launch/foreground queries follow an explicit prior request
+   and are coalesced; reset invalidates late query and authorization completions. HealthKit does not
    disclose whether read access was denied. Do not regress to an “authorized” read state.
 5. Manually validate NFC tag lifecycle, background/terminated shielding, HealthKit stages,
    optional impact deletion, run restore, and Watch timer mirroring on physical hardware; QR and

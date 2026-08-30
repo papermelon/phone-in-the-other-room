@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct OnboardingRecommendationStep: View {
+    @Binding var draft: OnboardingDraft
     let answers: WindDownProfileAnswer
     let recommendation: WindDownProfileRecommendation
     var showsSourcesLink = true
@@ -54,7 +55,7 @@ struct OnboardingRecommendationStep: View {
                 .fixedSize(horizontal: false, vertical: true)
             if showsSourcesLink {
                 NavigationLink {
-                    WindDownGuideView()
+                    WindDownGuideView(onboardingDraft: $draft)
                 } label: {
                     Text(FirstRunGuideCopy.aboutIdeasAndSources)
                         .font(AppTypography.caption)
@@ -242,6 +243,7 @@ struct OnboardingShepherdGiftStep: View {
 
 #Preview("Starting point") {
     OnboardingRecommendationStep(
+        draft: .constant(OnboardingDraft()),
         answers: .defaults,
         recommendation: WindDownProfileMapper.recommendation(for: .defaults)
     )
@@ -271,11 +273,22 @@ struct OnboardingShepherdGiftStep: View {
 }
 
 #Preview("Starting point · large type") {
-    var answers = WindDownProfileAnswer.defaults
-    answers.automaticReaching = .often
-    answers.morningChecking = .immediately
-    return ScrollView {
+    let answers = WindDownProfileAnswer(
+        bedtimeHour: 23,
+        bedtimeMinute: 0,
+        wakeHour: 7,
+        wakeMinute: 0,
+        phoneUsePattern: .beforeBed,
+        awayFriction: .habitReach,
+        eveningActivities: [.read],
+        morningActivities: [.openCurtains],
+        desiredWindDownMinutes: 30,
+        automaticReaching: .often,
+        morningChecking: .immediately
+    )
+    ScrollView {
         OnboardingRecommendationStep(
+            draft: .constant(OnboardingDraft()),
             answers: answers,
             recommendation: WindDownProfileMapper.recommendation(for: answers)
         )

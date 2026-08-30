@@ -103,6 +103,7 @@ struct OnboardingFlowView: View {
             OnboardingProfileStep(draft: $draft)
         case .recommendation:
             OnboardingRecommendationStep(
+                draft: $draft,
                 answers: draft.profileAnswers,
                 recommendation: draft.profileRecommendation
             )

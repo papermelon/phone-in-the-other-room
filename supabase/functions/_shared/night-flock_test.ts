@@ -161,6 +161,11 @@ Deno.test("known database details map to typed errors and unknown details are re
   assertEquals(classifyNightFlockError(new Error("Invite expired")).status, 410);
   assertEquals(classifyNightFlockError(new Error("Current membership required")).recovery, "reconcileMembership");
   assertEquals(classifyNightFlockError(new Error("Host permission required")).code, "host_permission_required");
+  assertEquals(classifyNightFlockError(new Error("agreement_timezone_mismatch")).code, "agreement_timezone_mismatch");
+  assertEquals(classifyNightFlockError(new Error("invalid_receipt_chronology")).code, "invalid_receipt_chronology");
+  assertEquals(classifyNightFlockError(new Error("publication_outside_plan_window")).retryable, false);
+  assertEquals(classifyNightFlockError(new Error("shared_night_plan_frozen")).code, "shared_night_plan_frozen");
+  assertEquals(classifyNightFlockError(new Error("receipt_actual_start_required")).retryable, false);
   assertEquals(classifyNightFlockError(new Error("This lobby has already started")).code, "lobby_started");
   assertEquals(classifyNightFlockError(new Error("Slumber Party is full")).code, "flock_full");
   assertEquals(classifyNightFlockError(new Error("Blocked membership cannot be joined")).code, "blocked_membership");
@@ -233,6 +238,29 @@ Deno.test("completion logs have an exact allowlist and redact a comprehensive se
     assert(!serialized.includes(secret));
   }
   assertEquals(record.requestID, "dddddddd-dddd-4ddd-8ddd-dddddddddddd");
+});
+
+Deno.test("completion logs identify shared-night publications without retaining their payload", () => {
+  for (const command of ["publishSharedNightPlan", "publishSharedNightReceipt"]) {
+    const record = nightFlockCompletionLogRecord(
+      "night-flock-command",
+      "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+      "0-49ms",
+      {
+        schemaVersion: 4,
+        command,
+        plannedWindDownStart: "2026-08-30T14:30:00Z",
+        exactAppIdentity: "must-not-log",
+        routineText: "must-not-log",
+      },
+      200,
+      null,
+    );
+    assertEquals(record.command, command);
+    const serialized = JSON.stringify(record);
+    assert(!serialized.includes("2026-08-30T14:30:00Z"));
+    assert(!serialized.includes("must-not-log"));
+  }
 });
 
 Deno.test("comprehensive PostgREST details never enter response or request-correlated envelope", async () => {
@@ -418,6 +446,267 @@ Deno.test("schema four accepts only exact party contracts and scoped state", () 
   assertThrows(() => validateNightFlockState({ schemaVersion: 4, scope: "list", partyID }), Error, "Invalid partyID");
 });
 
+Deno.test("shared-habits validates real calendar days and IANA contributor zones", () => {
+  const base = { schemaVersion: 4, command: "publishSharedHabit", partyID: challengeID, agreementID: challengeID, memberEpochID: challengeID, sourceID: challengeID, revision: 1780000000000, kind: "sleep", localDate: "2026-08-29", timeZoneIdentifier: "UTC", minutes: 420, evidence: "none", idempotencyKey: key };
+  assertEquals(validateNightFlockCommand(base, key).command, "publishSharedHabit");
+  assertEquals(validateNightFlockCommand({ ...base, localDate: "2028-02-29", timeZoneIdentifier: "Asia/Singapore" }, key).command, "publishSharedHabit");
+  assertThrows(() => validateNightFlockCommand({ ...base, localDate: "2026-99-99" }, key), Error, "Invalid localDate");
+  assertThrows(() => validateNightFlockCommand({ ...base, localDate: "2026-02-29" }, key), Error, "Invalid localDate");
+  assertThrows(() => validateNightFlockCommand({ ...base, localDate: "2026-02-30" }, key), Error, "Invalid localDate");
+  assertThrows(() => validateNightFlockCommand({ ...base, localDate: "2026/08/29" }, key), Error, "Invalid localDate");
+  assertThrows(() => validateNightFlockCommand({ ...base, timeZoneIdentifier: "Mars/Olympus" }, key), Error, "Invalid timeZoneIdentifier");
+});
+
+Deno.test("shared-night plan and receipt require the v2-safe allowlist", () => {
+  const plan = {
+    schemaVersion: 4, command: "publishSharedNightPlan", partyID: challengeID, planID: userID,
+    memberEpochID: challengeID, agreementID: challengeID, revision: 1, nightEndingDate: "2026-08-30",
+    timeZoneIdentifier: "Asia/Singapore", plannedWindDownStart: "2026-08-30T14:30:00Z",
+    intendedBedtime: "2026-08-30T15:00:00Z", intendedWakeTime: "2026-08-30T23:00:00Z",
+    morningQuietEnd: "2026-08-30T23:30:00Z", beforeBedMinutes: 30, afterWakingMinutes: 30,
+    eveningSuggestionIDs: ["read", "stretch"], morningSuggestionIDs: ["openCurtains"], idempotencyKey: key,
+  };
+  assertEquals(validateNightFlockCommand(plan, key).command, "publishSharedNightPlan");
+  const revisedKey = "b".repeat(64);
+  assertEquals(validateNightFlockCommand({ ...plan, revision: 2, idempotencyKey: revisedKey }, revisedKey).revision, 2);
+  assertThrows(() => validateNightFlockCommand({ ...plan, selectedApps: ["forbidden"] }, key), Error, "Unexpected field");
+  assertThrows(() => validateNightFlockCommand({ ...plan, supersededAt: "2026-08-30T16:00:00Z" }, key), Error, "Unexpected field");
+  assertThrows(() => validateNightFlockCommand({ ...plan, eveningSuggestionIDs: ["custom text"] }, key), Error, "Invalid eveningSuggestionIDs");
+  assertThrows(() => validateNightFlockCommand({ ...plan, intendedBedtime: "2026-08-30T14:00:00Z" }, key), Error, "Invalid plan chronology");
+  assertThrows(() => validateNightFlockCommand({ ...plan, plannedWindDownStart: "2026-08-30T14:30:00.100Z" }, key), Error, "Invalid plannedWindDownStart");
+  assertThrows(() => validateNightFlockCommand({ ...plan, beforeBedMinutes: 20 }, key), Error, "Plan bookends do not match minutes");
+  assertEquals(validateNightFlockCommand({
+    ...plan,
+    nightEndingDate: "2026-09-01",
+    plannedWindDownStart: "2026-08-31T22:30:00Z", intendedBedtime: "2026-08-31T23:00:00Z",
+    intendedWakeTime: "2026-09-01T23:30:00Z", morningQuietEnd: "2026-09-02T02:30:00Z",
+    afterWakingMinutes: 180,
+  }, key).command, "publishSharedNightPlan");
+  const cancellation = {
+    schemaVersion: 4, command: "cancelSharedNightPlan", partyID: challengeID,
+    memberEpochID: challengeID, agreementID: challengeID, revision: 2,
+    nightEndingDate: "2026-08-30", timeZoneIdentifier: "Asia/Singapore", cancellationAuthority: "privacy", idempotencyKey: key,
+  };
+  assertEquals(validateNightFlockCommand(cancellation, key).command, "cancelSharedNightPlan");
+  assertEquals(validateNightFlockCommand({ ...cancellation, cancellationAuthority: "schedule" }, key).cancellationAuthority, "schedule");
+  assertThrows(() => validateNightFlockCommand({ ...cancellation, customRoutineText: "never" }, key), Error, "Unexpected field");
+  const receipt = {
+    schemaVersion: 4, command: "publishSharedNightReceipt", partyID: challengeID, receiptID: userID,
+    memberEpochID: challengeID, agreementID: challengeID, sourceID: challengeID, revision: 1, nightEndingDate: "2026-08-30",
+    timeZoneIdentifier: "Asia/Singapore", outcome: "unknown", protectionEvidence: "unknown", idempotencyKey: key,
+  };
+  assertEquals(validateNightFlockCommand(receipt, key).command, "publishSharedNightReceipt");
+  const { sourceID: _sourceID, ...missingSource } = receipt;
+  assertThrows(() => validateNightFlockCommand(missingSource, key), Error, "Invalid sourceID");
+  assertThrows(() => validateNightFlockCommand({ ...receipt, protectionMinutes: 12 }, key), Error, "Invalid protection evidence");
+  assertThrows(() => validateNightFlockCommand({ ...receipt, outcome: "partlyCompleted" }, key), Error, "Actual start required");
+  assertThrows(() => validateNightFlockCommand({ ...receipt, planID: challengeID }, key), Error, "Invalid plan binding");
+  assertThrows(() => validateNightFlockCommand({ ...receipt, actualStart: "2026-08-30T15:00:00Z", terminalAt: "2026-08-30T14:55:00Z" }, key), Error, "Invalid receipt chronology");
+  assertThrows(() => validateNightFlockCommand({ ...receipt, actualStart: "2026-08-30T15:00:00.100Z" }, key), Error, "Invalid actualStart");
+});
+
+Deno.test("shared-habits agreement accepts the separately consented v2 contract", () => {
+  const v2 = validateNightFlockCommand({
+    schemaVersion: 4, command: "acceptSharedHabitsAgreement", partyID: challengeID,
+    agreementVersion: 2, timeZoneIdentifier: "Asia/Singapore", idempotencyKey: key,
+  }, key);
+  assertEquals(v2.agreementVersion, 2);
+  assertThrows(() => validateNightFlockCommand({ ...v2, agreementVersion: 3 }, key), Error, "Invalid shared habits agreement");
+});
+
+Deno.test("shared-habits accepts the installed local-date object and sends one canonical RPC payload", async () => {
+  const base = {
+    schemaVersion: 4,
+    command: "publishSharedHabit",
+    partyID: challengeID,
+    agreementID: challengeID,
+    memberEpochID: challengeID,
+    sourceID: challengeID,
+    revision: 1780000000000,
+    kind: "sleep",
+    timeZoneIdentifier: "UTC",
+    minutes: 420,
+    evidence: "none",
+    idempotencyKey: key,
+  };
+  const sent: Record<string, unknown>[] = [];
+  const dependencies: NightFlockCommandDependencies = {
+    authenticate: async () => ({ id: userID, isAnonymous: false }),
+    execute: async (_callerID, payload) => {
+      sent.push(payload);
+      return { accepted: true };
+    },
+    deleteAccount: async () => {},
+  };
+  for (const localDate of ["2026-08-29", { year: 2026, month: 8, day: 29 }]) {
+    const response = await handleNightFlockCommand(commandRequest({ ...base, localDate }), dependencies);
+    assertEquals(response.status, 200);
+  }
+  assertEquals(sent.map((payload) => payload.localDate), ["2026-08-29", "2026-08-29"]);
+  assertEquals(sent[0], sent[1]);
+});
+
+Deno.test("shared-habits rejects malformed local-date objects and requires a party for every shared-habits command", () => {
+  const base = {
+    schemaVersion: 4,
+    command: "publishSharedHabit",
+    partyID: challengeID,
+    agreementID: challengeID,
+    memberEpochID: challengeID,
+    sourceID: challengeID,
+    revision: 1780000000000,
+    kind: "sleep",
+    localDate: { year: 2026, month: 8, day: 29 },
+    timeZoneIdentifier: "UTC",
+    minutes: 420,
+    evidence: "none",
+    idempotencyKey: key,
+  };
+  for (const localDate of [
+    { year: 2026, month: 2, day: 29 },
+    { year: 2026, month: 8, day: 29.5 },
+    { year: 2026, month: 8, day: 29, extra: true },
+    { year: "2026", month: 8, day: 29 },
+    { year: 0, month: 1, day: 1 },
+  ]) {
+    assertThrows(() => validateNightFlockCommand({ ...base, localDate }, key), Error, "Invalid localDate");
+  }
+  const partyCommands = [
+    { command: "acceptSharedHabitsAgreement", agreementVersion: 1, timeZoneIdentifier: "UTC" },
+    { command: "publishSharedHabit", agreementID: challengeID, memberEpochID: challengeID, sourceID: challengeID, revision: 1, kind: "sleep", localDate: "2026-08-29", timeZoneIdentifier: "UTC", minutes: 420, evidence: "none" },
+    { command: "deleteSharedHabitHistory", sourceID: challengeID },
+    { command: "migrateSharedHabits", agreementID: challengeID },
+  ];
+  for (const command of partyCommands) {
+    assertThrows(() => validateNightFlockCommand({ schemaVersion: 4, ...command, idempotencyKey: key }, key), Error, "Invalid partyID");
+  }
+});
+
+Deno.test("shared-habits state translates only SQL calendar-day fields for the installed Codable contract", async () => {
+  const partyID = "30000000-0000-4000-8000-000000000001";
+  const sqlSnapshot = {
+    agreement: {
+      agreementID: challengeID,
+      memberEpochID: challengeID,
+      acceptedAt: "2026-08-29T12:00:00Z",
+      timeZoneIdentifier: "Asia/Singapore",
+      firstEligibleSleepNight: "2026-08-31",
+    },
+    records: [
+      { recordID: challengeID, localDate: "2026-08-30", activityDate: "2026-08-29", migratedAt: "2026-08-30T01:02:03Z" },
+      { recordID: userID, localDate: null, activityDate: "2026-08-28", migratedAt: "2026-08-30T04:05:06Z" },
+    ],
+    nextCursor: "42|2026-08-28|member|record",
+    snapshotRevision: 42,
+    periods: [{ memberID: userID, kind: "sleep", period: "last7Nights", endingOn: "2026-08-30", availableNights: 7, coveredNights: 2, averageMinutes: 430, method: "eligibleMean" }],
+  };
+  const response = await handleNightFlockState(stateRequest({ schemaVersion: 4, scope: "habits", partyID }), {
+    authenticate: async () => ({ id: userID, isAnonymous: false }),
+    read: async () => sqlSnapshot,
+  });
+  assertEquals(response.status, 200);
+  const body = await response.json();
+  assertEquals(body.snapshot.agreement.firstEligibleSleepNight, { year: 2026, month: 8, day: 31 });
+  assertEquals(body.snapshot.records[0].localDate, { year: 2026, month: 8, day: 30 });
+  assertEquals(body.snapshot.records[0].activityDate, { year: 2026, month: 8, day: 29 });
+  assertEquals(body.snapshot.records[1].localDate, null);
+  assertEquals(body.snapshot.records[1].activityDate, { year: 2026, month: 8, day: 28 });
+  assertEquals(body.snapshot.periods[0].endingOn, { year: 2026, month: 8, day: 30 });
+  assertEquals(body.snapshot.agreement.acceptedAt, sqlSnapshot.agreement.acceptedAt);
+  assertEquals(body.snapshot.records[0].migratedAt, sqlSnapshot.records[0].migratedAt);
+  assertEquals(body.snapshot.nextCursor, sqlSnapshot.nextCursor);
+  assertEquals(body.snapshot.snapshotRevision, sqlSnapshot.snapshotRevision);
+});
+
+Deno.test("legacy schemas and non-habits state snapshots pass through unchanged", async () => {
+  const partyID = "30000000-0000-4000-8000-000000000001";
+  const partySnapshot = { records: [{ localDate: "2026-08-30" }], timestamp: "2026-08-30T01:02:03Z" };
+  const response = await handleNightFlockState(stateRequest({ schemaVersion: 4, scope: "party", partyID }), {
+    authenticate: async () => ({ id: userID, isAnonymous: false }),
+    read: async () => partySnapshot,
+  });
+  assertEquals(response.status, 200);
+  assertEquals((await response.json()).snapshot, partySnapshot);
+  assertEquals(validateNightFlockState({ schemaVersion: 3 }), { schemaVersion: 3 });
+});
+
+Deno.test("shared-night state scope is additive and keeps its date adaptation", async () => {
+  const partyID = "30000000-0000-4000-8000-000000000001";
+  const contract = validateNightFlockState({ schemaVersion: 4, scope: "sharedNights", partyID, cursor: "4|3" });
+  assertEquals(contract.schemaVersion, 4);
+  if (contract.schemaVersion === 4) assertEquals(contract.scope, "sharedNights");
+  const snapshot = { agreement: null, records: [], nextCursor: null, snapshotRevision: 4, periods: [], sharedNightPlans: [{ nightEndingDate: "2026-08-30" }], sharedNightReceipts: [], sharedNightsNextCursor: "4|3", sharedNightsSnapshotRevision: 4 };
+  const response = await handleNightFlockState(stateRequest({ schemaVersion: 4, scope: "sharedNights", partyID }), {
+    authenticate: async () => ({ id: userID, isAnonymous: false }), read: async () => snapshot,
+  });
+  assertEquals(response.status, 200);
+  const body = await response.json();
+  assertEquals(body.snapshot.sharedNightPlans[0].nightEndingDate, { year: 2026, month: 8, day: 30 });
+  assertEquals(body.snapshot.sharedNightsNextCursor, "4|3");
+});
+
+Deno.test("shared-habits keeps valid 25-hour sleep windows and bounds each kind", () => {
+  const base = { schemaVersion: 4, command: "publishSharedHabit", partyID: challengeID, agreementID: challengeID, memberEpochID: challengeID, sourceID: challengeID, revision: 1780000000000, kind: "sleep", localDate: "2026-08-29", timeZoneIdentifier: "UTC", minutes: 780, evidence: "none", idempotencyKey: key };
+  assertEquals(validateNightFlockCommand(base, key).command, "publishSharedHabit");
+  assertThrows(() => validateNightFlockCommand({ ...base, minutes: 1501 }, key), Error, "Values outside bounds");
+  assertThrows(() => validateNightFlockCommand({ ...base, outcome: "completed" }, key), Error, "Invalid sleep payload");
+  assertThrows(() => validateNightFlockCommand({ ...base, kind: "windDown", minutes: 181 }, key), Error, "Values outside bounds");
+  assertThrows(() => validateNightFlockCommand({ ...base, kind: "phoneAway", minutes: 30, evidence: "appRecorded", protectionMinutes: 31 }, key), Error, "Values outside bounds");
+});
+
+Deno.test("schema four membership sharing fields remain opt-in and exact", () => {
+  const partyID = "30000000-0000-4000-8000-000000000001";
+  const sourceEventID = "40000000-0000-4000-8000-000000000001";
+  const statusID = "50000000-0000-4000-8000-000000000001";
+  const v4Key = "1".repeat(64);
+  assertEquals(validateNightFlockCommand({
+    schemaVersion: 4, command: "publishActivity", sourceEventID, kind: "windDown", outcome: "completed",
+    startedAt: "2026-08-25T12:00:00Z", endedAt: "2026-08-25T12:20:00Z", windDownMinutes: 20,
+    phoneAwayMinutes: 0, statusRevision: 1, sharingScope: "membership", idempotencyKey: v4Key,
+  }, v4Key).sharingScope, "membership");
+  assertEquals(validateNightFlockCommand({
+    schemaVersion: 4, command: "react", partyID, activityID: sourceEventID, cheer: "pawPrint",
+    sharingScope: "membership", idempotencyKey: v4Key,
+  }, v4Key).sharingScope, "membership");
+  assertEquals(validateNightFlockCommand({
+    schemaVersion: 4, command: "cheerMember", partyID, memberID: userID, statusID, cheer: "pawPrint",
+    idempotencyKey: v4Key,
+  }, v4Key).statusID, statusID);
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 4, command: "react", partyID, activityID: sourceEventID, cheer: "pawPrint",
+    sharingScope: "round", idempotencyKey: v4Key,
+  }, v4Key), Error, "Invalid sharingScope");
+  assertThrows(() => validateNightFlockCommand({
+    schemaVersion: 4, command: "cheerMember", partyID, memberID: userID, statusID: "not-a-uuid", cheer: "pawPrint",
+    idempotencyKey: v4Key,
+  }, v4Key), Error, "Invalid statusID");
+});
+
+Deno.test("schema four profile avatar is additive and catalogue-bound", () => {
+  const v4Key = "2".repeat(64);
+  const profile = {
+    schemaVersion: 4, command: "updatePublicProfile", expectedRevision: 1,
+    displayName: "Moss", nameSelectionKind: "migration",
+    skinToneID: "warm", hairStyleID: "waves", shepherdOutfitID: "none",
+    shepherdAccessoryID: "none", ollieOrnamentID: "none",
+    featuredSheepDefinitionID: "none", pastureThemeID: "pasture_meadow",
+    idempotencyKey: v4Key,
+  };
+  assertEquals(
+    validateNightFlockCommand(profile, v4Key).avatarID,
+    undefined,
+  );
+  assertEquals(
+    validateNightFlockCommand({ ...profile, avatarID: "sheep:juniper" }, v4Key).avatarID,
+    "sheep:juniper",
+  );
+  assertThrows(
+    () => validateNightFlockCommand({ ...profile, avatarID: "sheep:not-a-sheep" }, v4Key),
+    Error,
+    "Invalid avatarID",
+  );
+});
+
 Deno.test("schema four invitation envelope round-trips and never survives response redaction", async () => {
   const keyMaterial = Uint8Array.from({ length: 32 }, (_, index) => index + 1);
   const invitation = await createInvitation(keyMaterial, 1);
@@ -460,6 +749,14 @@ function commandRequest(body: Record<string, unknown> = {
       "idempotency-key": String(body.idempotencyKey),
       "X-Request-ID": requestID,
     },
+    body: JSON.stringify(body),
+  });
+}
+
+function stateRequest(body: Record<string, unknown>): Request {
+  return new Request("http://local", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
     body: JSON.stringify(body),
   });
 }

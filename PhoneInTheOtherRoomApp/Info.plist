@@ -27,7 +27,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Counting Sheep uses your camera to scan your Wind Down code.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Counting Sheep reads sleep times, duration, and available stages so you can view them alongside your Wind Down history.</string>
+	<string>Counting Sheep reads sleep times, duration, and available stages for private local context alongside your Wind Down history and, only with your Slumber Party agreement, derived sleep-duration summaries.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Counting Sheep does not add or change Apple Health data; it only reads sleep information you choose to share.</string>
 	<key>NSNearbyInteractionUsageDescription</key>

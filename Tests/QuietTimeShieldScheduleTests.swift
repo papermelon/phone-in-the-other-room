@@ -1,6 +1,127 @@
 import XCTest
 
 final class QuietTimeShieldScheduleTests: XCTestCase {
+    func testMonitoringPolicyKeepsShortSessionEndExactWithPlatformPadding() {
+        let start = Date(timeIntervalSince1970: 10_000)
+        for minutes in [5, 10, 15, 30] {
+            let desired = DateInterval(
+                start: start,
+                end: start.addingTimeInterval(TimeInterval(minutes * 60))
+            )
+            let window = QuietTimeShieldMonitoringPolicy.window(
+                for: desired,
+                requestedAt: start
+            )
+
+            XCTAssertNotNil(window)
+            XCTAssertEqual(window?.desired.end, desired.end)
+            XCTAssertGreaterThanOrEqual(
+                window?.monitoring.duration ?? 0,
+                QuietTimeShieldMonitoringPolicy.minimumInterval
+            )
+            XCTAssertEqual(window?.warningLead, TimeInterval(max(0, 15 - minutes) * 60))
+        }
+    }
+
+    func testMonitoringPolicyRebasesDelayedConfirmationWithoutExtendingTheBarrier() {
+        let originalStart = Date(timeIntervalSince1970: 20_000)
+        let requestedAt = originalStart.addingTimeInterval(11 * 60)
+        let desiredEnd = originalStart.addingTimeInterval(16 * 60)
+        let desired = DateInterval(start: originalStart, end: desiredEnd)
+
+        let window = QuietTimeShieldMonitoringPolicy.window(
+            for: desired,
+            requestedAt: requestedAt
+        )
+
+        XCTAssertEqual(window?.monitoring.start, requestedAt)
+        XCTAssertEqual(window?.desired.end, desiredEnd)
+        XCTAssertEqual(window?.monitoring.end, requestedAt.addingTimeInterval(15 * 60))
+        XCTAssertEqual(window?.warningLead, 10 * 60)
+        XCTAssertEqual(window?.warningTime?.minute, 10)
+    }
+
+    func testMonitoringPolicyRejectsWindowWithNoTimeRemaining() {
+        let now = Date(timeIntervalSince1970: 30_000)
+        let desired = DateInterval(start: now.addingTimeInterval(-30), end: now)
+        XCTAssertNil(QuietTimeShieldMonitoringPolicy.window(for: desired, requestedAt: now))
+    }
+
+    func testMonitoringPolicyUsesWholeSecondEndpointsAndNeverWarnsBeforeFractionalDesiredEnd() {
+        let desiredStart = Date(timeIntervalSince1970: 10_000.25)
+        let requestedAt = Date(timeIntervalSince1970: 10_000.35)
+
+        for minutes in [5, 10, 15, 30] {
+            let desired = DateInterval(
+                start: desiredStart,
+                end: desiredStart.addingTimeInterval(TimeInterval(minutes * 60))
+            )
+            let window = try! XCTUnwrap(
+                QuietTimeShieldMonitoringPolicy.window(for: desired, requestedAt: requestedAt)
+            )
+
+            XCTAssertEqual(window.desired, desired)
+            XCTAssertEqual(window.monitoring.start.timeIntervalSince1970, 10_001)
+            XCTAssertEqual(window.monitoring.end.timeIntervalSince1970.rounded(.towardZero), window.monitoring.end.timeIntervalSince1970)
+            XCTAssertGreaterThanOrEqual(
+                window.monitoring.duration,
+                QuietTimeShieldMonitoringPolicy.minimumInterval
+            )
+            if let warningTime = window.warningTime {
+                let warningDate = window.monitoring.end.addingTimeInterval(-warningSeconds(warningTime))
+                XCTAssertGreaterThanOrEqual(
+                    warningDate,
+                    desired.end,
+                    "\(minutes)-minute warning must not precede the desired end"
+                )
+                if minutes == 5 {
+                    XCTAssertEqual(window.monitoring.end.timeIntervalSince1970, 10_901)
+                    XCTAssertEqual(warningSeconds(warningTime), 600)
+                    XCTAssertEqual(warningDate.timeIntervalSince1970, 10_301)
+                }
+            }
+        }
+    }
+
+    func testMonitoringPolicyRejectsSubsecondRemainderThatCannotFormAWholeSecondRegistration() {
+        let requestedAt = Date(timeIntervalSince1970: 50_000.35)
+        let desired = DateInterval(
+            start: requestedAt.addingTimeInterval(-60),
+            end: requestedAt.addingTimeInterval(0.20)
+        )
+
+        XCTAssertNil(QuietTimeShieldMonitoringPolicy.window(for: desired, requestedAt: requestedAt))
+    }
+
+    func testMonitoringPolicyFractionalGridKeepsSerializedWarningOnOrAfterDesiredEnd() throws {
+        for fractionalSecond in [0.01, 0.25, 0.99] {
+            let desiredStart = Date(timeIntervalSince1970: 60_000 + fractionalSecond)
+            let requestedAt = desiredStart.addingTimeInterval(0.10)
+            let desired = DateInterval(
+                start: desiredStart,
+                end: desiredStart.addingTimeInterval(5 * 60)
+            )
+            let window = try XCTUnwrap(
+                QuietTimeShieldMonitoringPolicy.window(for: desired, requestedAt: requestedAt)
+            )
+
+            XCTAssertEqual(
+                window.monitoring.start.timeIntervalSince1970,
+                requestedAt.timeIntervalSince1970.rounded(.up)
+            )
+            XCTAssertEqual(
+                window.monitoring.end.timeIntervalSince1970,
+                window.monitoring.end.timeIntervalSince1970.rounded(.towardZero)
+            )
+            XCTAssertGreaterThanOrEqual(window.monitoring.duration, 15 * 60)
+            let warning = try XCTUnwrap(window.warningTime)
+            XCTAssertGreaterThanOrEqual(
+                window.monitoring.end.addingTimeInterval(-warningSeconds(warning)),
+                desired.end
+            )
+        }
+    }
+
     func testScheduleUsesRemainingWindDownAndFullMorningBookend() {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         let plan = NightWatchPlan(
@@ -305,6 +426,14 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
             status: value,
             window: window,
             observedAt: date
+        )
+    }
+
+    private func warningSeconds(_ components: DateComponents) -> TimeInterval {
+        TimeInterval(
+            (components.hour ?? 0) * 3_600
+                + (components.minute ?? 0) * 60
+                + (components.second ?? 0)
         )
     }
 }
