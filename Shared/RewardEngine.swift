@@ -162,7 +162,7 @@ struct RewardEngine {
         case .stick: return "A good stick from the other room. Possibly the best stick."
         case .postcard: return "A postcard from the place where the phone slept."
         case .sheepBadge: return "A small badge for a phone-away night with Ollie."
-        case .fieldMap: return "A map of Ollie's Wind Down path."
+        case .fieldMap: return "A keepsake map from Ollie's Farm rounds."
         case .muddyPaw: return "A soft reminder that shorter runs are allowed."
         }
     }

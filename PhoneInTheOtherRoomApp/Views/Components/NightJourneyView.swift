@@ -58,7 +58,6 @@ struct NightJourneyView: View {
         return ZStack {
             backdrops(for: journey, size: size)
             terrain(profile: profile, travelled: travelled, tileWidth: tileWidth, size: size)
-            clueLayer(journey: journey, profile: profile, travelled: travelled, tileWidth: tileWidth, size: size)
             SheepWalkCycleView(frame: frame, size: sheepSize)
                 .rotationEffect(
                     .degrees(sheepRotation),
@@ -84,7 +83,9 @@ struct NightJourneyView: View {
                     )
                     Spacer()
                     sceneBadge(
-                        title: remainingText(journey: journey, at: date),
+                        title: run.nightWatchPlan?.role == .additionalQuiet
+                            ? "PHONE AWAY"
+                            : journey.phase.title.uppercased(),
                         detail: destinationText(for: journey)
                     )
                 }
@@ -176,45 +177,14 @@ struct NightJourneyView: View {
         return path
     }
 
-    private func clueLayer(
-        journey: NightJourneyProgress,
-        profile: NightJourneyTerrainProfile,
-        travelled: Double,
-        tileWidth: CGFloat,
-        size: CGSize
-    ) -> some View {
-        let count = reachedClueCount(journey.overallFraction)
-        return ZStack {
-            ForEach(0..<count, id: \.self) { index in
-                let x = size.width * [0.18, 0.70, 0.84][index]
-                let position = (Double(x) + (reduceMotion ? 0 : travelled * 0.22)) / Double(tileWidth)
-                let y = CGFloat(profile.normalizedHeight(at: position)) * size.height
-                JourneyAssetImage(
-                    name: NightJourneyAssets.clueAssets[stableClueIndex(index)],
-                    contentMode: .fit
-                )
-                .frame(width: index == 2 ? 58 : 42, height: index == 2 ? 58 : 42)
-                .position(x: x, y: y - 18)
-                .opacity(0.88)
-            }
-        }
-        .accessibilityHidden(true)
-    }
-
-    private func stableClueIndex(_ index: Int) -> Int {
-        let seed = run.id.uuidString.unicodeScalars.reduce(0) { $0 + Int($1.value) }
-        return (seed + index) % NightJourneyAssets.clueAssets.count
-    }
-
-    private func reachedClueCount(_ fraction: Double) -> Int {
-        [0.20, 0.55, 0.82].filter { fraction >= $0 }.count
-    }
-
     private func narrativeText(for journey: NightJourneyProgress) -> String {
-        let count = reachedClueCount(journey.overallFraction)
         if journey.phaseFraction >= 0.82 { return "The gate is just ahead." }
-        if count > 0 { return "\(count) clue\(count == 1 ? "" : "s") mapped." }
-        return "Ollie follows a quiet trail, one step at a time."
+        switch journey.phase {
+        case .windDown: return "Ollie follows a quiet trail, one step at a time."
+        case .overnight: return "The night can stay unhurried."
+        case .morningQuiet: return "The morning is yours before the phone returns."
+        case .complete: return "The quiet trail is complete."
+        }
     }
 
     private func remainingText(journey: NightJourneyProgress, at date: Date) -> String {
@@ -228,7 +198,10 @@ struct NightJourneyView: View {
 
     private func destinationText(for journey: NightJourneyProgress) -> String {
         guard let plan = run.nightWatchPlan else { return "QUIET LEFT" }
-        if plan.role == .additionalQuiet { return "QUIET LEFT" }
+        // Phone Away already has one countdown and end time in its active
+        // surface. A second "QUIET LEFT" scene label adds no duration and can
+        // make the mode look like Wind Down.
+        if plan.role == .additionalQuiet { return "" }
         switch journey.phase {
         case .windDown: return "TO BEDTIME"
         case .overnight: return "TO MORNING"
@@ -242,9 +215,11 @@ struct NightJourneyView: View {
             Text(title)
                 .font(pixelFont(.caption2))
                 .foregroundStyle(.white.opacity(0.94))
-            Text(detail)
-                .font(.system(size: 8, weight: .bold, design: .monospaced))
-                .foregroundStyle(.white.opacity(0.78))
+            if !detail.isEmpty {
+                Text(detail)
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .foregroundStyle(.white.opacity(0.78))
+            }
         }
         .padding(.horizontal, AppSpacing.xs)
         .padding(.vertical, 6)
@@ -269,8 +244,11 @@ struct NightJourneyView: View {
     }
 
     private func accessibilityLabel(for journey: NightJourneyProgress, at date: Date) -> String {
-        let clues = reachedClueCount(journey.overallFraction)
-        return "Ollie is following the \(journey.segment.title.lowercased()). \(Int(journey.phaseFraction * 100)) percent through this part. \(clues) clues mapped. \(remainingText(journey: journey, at: date)) \(destinationText(for: journey).lowercased())."
+        let remaining = remainingText(journey: journey, at: date)
+        if run.nightWatchPlan?.role == .additionalQuiet {
+            return "Phone Away. \(Int(journey.phaseFraction * 100)) percent complete. \(remaining) remaining."
+        }
+        return "Ollie is following \(journey.segment.title.lowercased()). \(journey.phase.title). \(Int(journey.phaseFraction * 100)) percent through this part. \(remaining) \(destinationText(for: journey).lowercased())."
     }
 }
 

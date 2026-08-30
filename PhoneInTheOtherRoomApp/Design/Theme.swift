@@ -80,6 +80,10 @@ enum AppColors {
         light: UIColor(red: 0.48, green: 0.45, blue: 0.68, alpha: 1),
         dark: UIColor(red: 0.68, green: 0.64, blue: 0.88, alpha: 1)
     )
+    /// Home's clock window depicts local time, so its night sky stays dark in
+    /// either system appearance instead of inheriting adaptive surface colors.
+    static let homeWindowNightSkyTop = Color(red: 0.13, green: 0.11, blue: 0.29)
+    static let homeWindowNightSkyBottom = Color(red: 0.25, green: 0.20, blue: 0.48)
     static let success = adaptive(
         light: UIColor(red: 0.22, green: 0.57, blue: 0.36, alpha: 1),
         dark: UIColor(red: 0.38, green: 0.72, blue: 0.48, alpha: 1)

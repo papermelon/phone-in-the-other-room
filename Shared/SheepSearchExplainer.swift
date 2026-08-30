@@ -14,12 +14,12 @@ enum SheepSearchExplainerPresentation {
         Source(
             id: .windDown,
             title: "Wind Down",
-            detail: "When Wind Down reaches 420 eligible phone-away minutes, Ollie gets one separate look. Screen-Free Morning does not change that result."
+            detail: "A completed Wind Down with at least 420 eligible phone-away minutes gives Ollie one look. Screen-Free Morning does not change it."
         ),
         Source(
             id: .sunrise,
-            title: "Sunrise Trail",
-            detail: "Every 100 actual eligible Screen-Free Morning minutes gives 1 wool and one independent look."
+            title: "Screen-Free Morning",
+            detail: "Each 100 eligible Screen-Free Morning minutes gives 1 wool and one separate look."
         ),
         Source(
             id: .phoneBreak,
@@ -29,5 +29,5 @@ enum SheepSearchExplainerPresentation {
     ]
 
     static let rulesTitle = "How Ollie’s searches work"
-    static let rulesDetail = "Sunrise Trail and Phone Away keep their own counters. Their first three looks each bring a missing sheep home. After that, each track uses its own 20%, 30%, 40%, then 50% ladder; four clues in a row make that track’s next look a homecoming. Wind Down stays separate."
+    static let rulesDetail = "Screen-Free Morning and Phone Away keep separate counters. Their first three looks each bring a missing sheep home. After that, each source uses its own 20%, 30%, 40%, then 50% chance; four clues in a row make that source’s next look a homecoming. Wind Down stays separate."
 }

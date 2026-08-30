@@ -325,9 +325,33 @@ struct PrimaryGreenCTA: View {
     var assetName: String? = nil
     var action: () -> Void
 
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     var body: some View {
         Button(action: action) {
-            HStack(spacing: AppSpacing.sm) {
+            Group {
+                if dynamicTypeSize.isAccessibilitySize {
+                    accessibilityContent
+                } else {
+                    standardContent
+                }
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity, minHeight: 86)
+            .background(
+                LinearGradient(colors: [AppColors.grass, Color(red: 0.26, green: 0.48, blue: 0.22)], startPoint: .topLeading, endPoint: .bottomTrailing),
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppColors.stroke, lineWidth: 2))
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .orientationTourTarget(.startAction)
+    }
+
+    private var standardContent: some View {
+        HStack(spacing: AppSpacing.sm) {
                 if let assetName {
                     PixelAssetImage(name: assetName)
                         .frame(width: 54, height: 54)
@@ -352,6 +376,7 @@ struct PrimaryGreenCTA: View {
                         .font(pixelFont(.caption))
                         .foregroundStyle(.white.opacity(0.92))
                         .lineLimit(2)
+                        .minimumScaleFactor(0.82)
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -359,19 +384,26 @@ struct PrimaryGreenCTA: View {
                 Image(systemName: "chevron.right")
                     .font(.system(size: 28, weight: .black))
                     .foregroundStyle(.white)
-            }
-            .padding(.horizontal, AppSpacing.md)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity, minHeight: 86)
-            .background(
-                LinearGradient(colors: [AppColors.grass, Color(red: 0.26, green: 0.48, blue: 0.22)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-            )
-            .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppColors.stroke, lineWidth: 2))
         }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .orientationTourTarget(.startAction)
+    }
+
+    private var accessibilityContent: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            if let eyebrow {
+                Text(eyebrow)
+                    .font(pixelFont(.caption2))
+                    .foregroundStyle(.white.opacity(0.84))
+            }
+            Text(title)
+                .font(AppTypography.title)
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(subtitle)
+                .font(pixelFont(.caption))
+                .foregroundStyle(.white.opacity(0.92))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

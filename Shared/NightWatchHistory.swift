@@ -88,6 +88,9 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
     var shieldProtectionEvidence: ShieldProtectionEvidence
     var briefAccessUseCount: Int
     var role: WindDownOccurrenceRole
+    /// New records state this explicitly. Missing legacy provenance remains
+    /// unknown so social backfill can conservatively omit ambiguous activity.
+    var isPractice: Bool?
     var updatedAt: Date
 
     init(
@@ -105,6 +108,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         shieldProtectionEvidence: ShieldProtectionEvidence = .notRequested,
         briefAccessUseCount: Int = 0,
         role: WindDownOccurrenceRole = .primarySleepBookend,
+        isPractice: Bool? = nil,
         updatedAt: Date = Date()
     ) {
         self.schemaVersion = schemaVersion
@@ -121,6 +125,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         self.shieldProtectionEvidence = shieldProtectionEvidence
         self.briefAccessUseCount = max(0, briefAccessUseCount)
         self.role = role
+        self.isPractice = isPractice
         self.updatedAt = updatedAt
     }
 
@@ -139,6 +144,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         case shieldProtectionEvidence
         case briefAccessUseCount
         case role
+        case isPractice
         case updatedAt
     }
 
@@ -175,6 +181,7 @@ struct NightWatchRecord: Codable, Identifiable, Equatable {
         briefAccessUseCount = max(0, try container.decodeIfPresent(Int.self, forKey: .briefAccessUseCount) ?? 0)
         role = try container.decodeIfPresent(WindDownOccurrenceRole.self, forKey: .role)
             ?? .primarySleepBookend
+        isPractice = try container.decodeIfPresent(Bool.self, forKey: .isPractice)
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
             ?? endedAt
             ?? startedAt
@@ -304,6 +311,7 @@ extension FocusRun {
             shieldProtectionEvidence: shieldProtectionEvidence,
             briefAccessUseCount: max(self.briefAccessUseCount, briefAccessUseCount ?? 0),
             role: nightWatchPlan.role,
+            isPractice: isPractice,
             updatedAt: updatedAt
         )
     }

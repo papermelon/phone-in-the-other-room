@@ -220,6 +220,51 @@ final class NightFlockRemoteErrorTests: XCTestCase {
         )
     }
 
+    func testSharedHabitsTerminalCodesDecodeAndChooseScopedOutboxDispositions() {
+        let deleted = NightFlockRemoteError.decode(
+            statusCode: 410,
+            data: Data(#"{"code":"shared_history_deleted"}"#.utf8)
+        )
+        XCTAssertEqual(deleted.code, .sharedHistoryDeleted)
+        XCTAssertFalse(deleted.retryable)
+        XCTAssertEqual(
+            NightFlockSharedHabitsOutboxFailurePolicy.disposition(for: deleted.code),
+            .dropSourceAndReconcile
+        )
+
+        let beforeAgreement = NightFlockRemoteError.decode(
+            statusCode: 409,
+            data: Data(#"{"code":"publication_before_agreement"}"#.utf8)
+        )
+        XCTAssertEqual(beforeAgreement.code, .publicationBeforeAgreement)
+        XCTAssertEqual(
+            NightFlockSharedHabitsOutboxFailurePolicy.disposition(for: beforeAgreement.code),
+            .dropRecordAndReconcile
+        )
+
+        let mismatch = NightFlockRemoteError.decode(
+            statusCode: 409,
+            data: Data(#"{"code":"agreement_timezone_mismatch"}"#.utf8)
+        )
+        XCTAssertEqual(mismatch.code, .agreementTimezoneMismatch)
+        XCTAssertEqual(
+            NightFlockSharedHabitsOutboxFailurePolicy.disposition(for: mismatch.code),
+            .dropRecordAndReconcile
+        )
+
+        let stale = NightFlockRemoteError.decode(
+            statusCode: 409,
+            data: Data(#"{"code":"stale_revision"}"#.utf8)
+        )
+        XCTAssertEqual(stale.code, .staleRevision)
+        XCTAssertFalse(stale.retryable)
+        XCTAssertEqual(stale.recovery, .reconcile)
+        XCTAssertEqual(
+            NightFlockSharedHabitsOutboxFailurePolicy.disposition(for: stale.code),
+            .dropRecordAndReconcile
+        )
+    }
+
     func testEveryDirectCommandSchemaUsesTheSameNoReplayRecoveryLane() {
         let id = UUID()
         let v1: [NightFlockCommand] = [
@@ -701,6 +746,12 @@ final class NightFlockRemoteErrorTests: XCTestCase {
         XCTAssertFalse(NightFlockAppleIdentityEvidence.preservesOriginalAccount(
             originalUserID: original,
             recoveredUserID: original,
+            hasAppleIdentity: false
+        ))
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.permitsExistingAccountSignIn(
+            hasAppleIdentity: true
+        ))
+        XCTAssertFalse(NightFlockAppleIdentityEvidence.permitsExistingAccountSignIn(
             hasAppleIdentity: false
         ))
     }

@@ -267,6 +267,46 @@ final class WindDownSchedulingTests: XCTestCase {
         XCTAssertEqual(selected.occurrence.interval, oneTime.interval)
     }
 
+    func testEligibleOccurrencesKeepScheduledPhoneAwayVisibleBesideWindDown() throws {
+        let now = try date(2026, 8, 3, 20, 15)
+        let primary = WindDownRoutine(
+            title: "Usual Wind Down",
+            role: .primarySleepBookend,
+            start: WindDownClockTime(hour: 20, minute: 0),
+            end: WindDownClockTime(hour: 22, minute: 0)
+        )
+        let phoneAway = WindDownOneTimePeriod(
+            id: UUID(),
+            title: "A little room",
+            role: .additionalQuiet,
+            interval: DateInterval(
+                start: now.addingTimeInterval(-60),
+                end: now.addingTimeInterval(45 * 60)
+            )
+        )
+        let state = WindDownScheduleState(oneTimePeriods: [phoneAway], routines: [primary])
+
+        let eligible = WindDownScheduleEngine.eligibleOccurrences(
+            in: state,
+            at: now,
+            calendar: calendar,
+            primaryExtensionMinutes: 30
+        )
+
+        XCTAssertTrue(eligible.contains { $0.occurrence.role == .primarySleepBookend })
+        XCTAssertTrue(eligible.contains { $0.sourceID == phoneAway.id && $0.occurrence.role == .additionalQuiet })
+        XCTAssertEqual(
+            WindDownScheduleEngine.eligibleOccurrence(
+                in: state,
+                at: now,
+                sourceID: phoneAway.id,
+                calendar: calendar,
+                primaryExtensionMinutes: 30
+            )?.sourceID,
+            phoneAway.id
+        )
+    }
+
     func testCancellingAdHocStartTransactionRollsBackOnlyItsTemporaryPeriod() throws {
         let now = try date(2026, 8, 3, 20, 15)
         let existing = WindDownOneTimePeriod(

@@ -10,6 +10,60 @@ extension FocusRunViewModel {
         userProfile.displayName
     }
 
+    var selectedSocialAvatarID: String {
+        userProfile.presentation.avatarID
+    }
+
+    var availableSocialAvatarIDs: [String] {
+        SocialAvatarRules.availableAvatarIDs(
+            discoveries: coordinator.farmState.discoveries
+        )
+    }
+
+    var socialAvatarSharingAvailable: Bool {
+        nightFlockViewModel.v4ListState?.supportsProfileAvatar == true
+    }
+
+    /// Stores the explicit choice independently from the Farm's featured sheep.
+    /// A discovered sheep stays eligible after it leaves the active flock.
+    @discardableResult
+    func selectSocialAvatar(_ avatarID: String) -> String? {
+        guard SocialAvatarRules.canSelect(
+            avatarID,
+            discoveries: coordinator.farmState.discoveries
+        ) else {
+            return "Choose your Shepherd, Ollie, or a sheep Ollie has already found."
+        }
+        var profile = persistence.userProfile
+        if profile.presentation.avatarID != avatarID {
+            profile.presentation.avatarID = avatarID
+            persistence.userProfile = profile
+        }
+        persistence.hasExplicitSocialAvatarSelection = true
+        if socialAvatarSharingAvailable {
+            if nightFlockViewModel.v4ListState?.profile?.presentation.avatarID == avatarID {
+                socialAvatarSyncMessage = "Shared with Slumber Party."
+            } else {
+                socialAvatarSyncMessage = "Saved on this iPhone. Slumber Party will refresh this choice when it can."
+                synchronizeSlumberPartyProfile { [weak self] result in
+                    guard let self, self.selectedSocialAvatarID == avatarID else { return }
+                    switch result {
+                    case .success(true):
+                        self.socialAvatarSyncMessage = "Shared with Slumber Party."
+                    case .success(false):
+                        self.socialAvatarSyncMessage = "Saved on this iPhone. Slumber Party has not confirmed it yet."
+                    case .failure:
+                        self.socialAvatarSyncMessage = "Saved on this iPhone. Slumber Party could not update it yet."
+                    }
+                }
+            }
+        } else {
+            socialAvatarSyncMessage = "Saved on this iPhone. It will share when your Slumber Party service supports avatars."
+        }
+        objectWillChange.send()
+        return nil
+    }
+
     /// Returns inline feedback when the name was not changed, keeping the
     /// editor gentle without presenting a punitive alert.
     @discardableResult
@@ -186,9 +240,9 @@ extension FocusRunViewModel {
             didTrack = definitionID != nil
             guard let definitionID,
                   let sheep = SheepCatalog.definition(for: definitionID) else {
-                return "Ollie will follow whichever trail looks strongest."
+                return "Ollie will watch for any missing sheep."
             }
-            return "Ollie will favour \(sheep.name)’s trail—not guarantee it."
+            return "Ollie will watch more closely for \(sheep.name)—without a guarantee."
         }
         if didTrack {
             recordFirstRunFarmAction(.choseTrackedSheep)
@@ -356,7 +410,16 @@ extension FocusRunViewModel {
         persistence.sheepSearchState = result.search
         persistence.nightFlockRewardLedger = result.ledger
         synchronizeSlumberPartyProfile()
-        if !result.applied.isEmpty { farmActionMessage = "A little wool arrived from Slumber Party." }
+        let appliedWool = result.applied
+            .filter { $0.rewardKind == .wool }
+            .reduce(0) { $0 + max(0, $1.woolAmount) }
+        if appliedWool > 0 {
+            farmActionMessage = appliedWool == 1
+                ? "1 wool came home from Slumber Party."
+                : "\(appliedWool) wool came home from Slumber Party."
+        } else if !result.applied.isEmpty {
+            farmActionMessage = "A Slumber Party update reached your Farm."
+        }
         // An acknowledgement may have failed after this durable ledger write.
         // Return prior and newly applied inbox IDs so the v4 ack command can
         // converge without duplicating a Farm reward.
@@ -369,6 +432,7 @@ extension FocusRunViewModel {
         // v4 records the factual local ritual independently of legacy goal
         // sharing and of Farm settlement. It never delays either path.
         nightFlockViewModel.publishV4TerminalActivity(for: run)
+        publishSharedHabitsOutcome(for: run)
         if run.nightWatchPlan?.role == .additionalQuiet, run.completedSuccessfully {
             let metrics = slumberPartyMetrics(for: run)
             nightFlockViewModel.sharePhoneAwayMetrics(metrics, for: run, at: nowProvider())
@@ -384,6 +448,57 @@ extension FocusRunViewModel {
         }
         let metrics = slumberPartyMetrics(for: run)
         nightFlockViewModel.handleTerminalRun(run, metrics: metrics)
+    }
+
+    /// Decision restoration and agreement restoration race independently on a
+    /// relaunch. Re-offer the bounded factual terminal records whenever either
+    /// becomes available; the existing source IDs and revisioned outboxes make
+    /// repeated callbacks converge instead of duplicating activity or receipts.
+    func replayRestoredSharedPrimaryTerminalOutcomes() {
+        let decisions = nightFlockViewModel.primaryRunSharingDecisions
+        var runsByID = Dictionary(
+            uniqueKeysWithValues: NightFlockPrimaryRunTerminalReplayRules
+                .recordsEligibleForReplay(
+                    from: persistence.nightWatchHistory.records,
+                    decisions: decisions
+                )
+                .map { ($0.id, terminalReplayRun(from: $0)) }
+        )
+        if let activeRun,
+           activeRun.nightWatchPlan?.role == .primarySleepBookend,
+           (activeRun.state == .completed || activeRun.state == .endedEarly),
+           decisions[activeRun.id]?.allowsSharing == true,
+           activeRun.isPractice == false {
+            runsByID[activeRun.id] = activeRun
+        }
+        for run in runsByID.values.sorted(by: { lhs, rhs in
+            if lhs.startedAt != rhs.startedAt { return lhs.startedAt < rhs.startedAt }
+            return lhs.id.uuidString < rhs.id.uuidString
+        }) {
+            publishSlumberPartyOutcome(for: run)
+        }
+    }
+
+    private func terminalReplayRun(from record: NightWatchRecord) -> FocusRun {
+        let terminalAt = record.endedAt ?? record.updatedAt
+        var run = FocusRun(
+            id: record.id,
+            plannedDurationSeconds: max(
+                0,
+                record.plan.protectedUntil.timeIntervalSince(record.startedAt)
+            ),
+            startedAt: record.startedAt,
+            state: record.outcome == .completed ? .completed : .endedEarly,
+            guardKind: record.startMethod,
+            nightWatchPlan: record.plan
+        )
+        run.actualDurationSeconds = max(0, terminalAt.timeIntervalSince(record.startedAt))
+        run.plannedEndAt = record.plan.protectedUntil
+        run.endedAt = record.endedAt
+        run.completedSuccessfully = record.outcome == .completed
+        run.briefAccessUseCount = record.briefAccessUseCount
+        run.isPractice = record.isPractice ?? false
+        return run
     }
 
     private func slumberPartyMetrics(for run: FocusRun) -> NightFlockLocalNightMetrics {
@@ -414,6 +529,10 @@ extension FocusRunViewModel {
         let record = persistence.nightWatchHistory.records.first { candidate in
             Calendar.current.isDate(candidate.plan.wakeTime, inSameDayAs: date)
                 && candidate.role == .primarySleepBookend
+        }
+        if let record,
+           !nightFlockViewModel.maySharePrimaryRun(runID: record.id, startedAt: record.startedAt) {
+            return
         }
         let sleepMinutes: Int? = sharing.shareSleepDuration
             ? recentNightSleeps.first { summary in
@@ -464,9 +583,12 @@ extension FocusRunViewModel {
     /// Farm state is reduced locally into the small curated snapshot before it
     /// crosses the Slumber Party boundary. The network gate inside the view
     /// model makes this a no-op for offline or unlinked accounts.
-    private func synchronizeSlumberPartyProfile() {
+    private func synchronizeSlumberPartyProfile(
+        onAvatarSyncSettled: ((Result<Bool, Error>) -> Void)? = nil
+    ) {
         nightFlockViewModel.synchronizeV4ProfileIfNeeded(
-            serverProfile: nightFlockViewModel.v4Profile
+            serverProfile: nightFlockViewModel.v4Profile,
+            onAvatarSyncSettled: onAvatarSyncSettled
         )
     }
 
@@ -497,7 +619,7 @@ extension FocusRunViewModel {
         case .displayFull:
             return "The keepsake shelf is full. Store one keepsake before displaying another."
         case .itemLocked:
-            return "That Farm Shop find is still waiting farther along Ollie’s trail."
+            return "That Farm Shop find is not unlocked yet."
         case .insufficientFunds:
             return "The till needs a little more wool."
         case .upgradeOutOfSequence:

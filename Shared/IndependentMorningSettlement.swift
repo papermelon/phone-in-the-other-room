@@ -9,6 +9,75 @@ enum MorningQuietOccurrenceOutcome: String, Codable, Equatable {
     case finished
 }
 
+/// The authorized terminal decision is separate from the Morning occurrence:
+/// an ordinary exit finalizes that occurrence, while an explicit early-wake
+/// choice preserves it. Keeping the terminal run here closes the gap between
+/// authorization and the independent persistence writes that follow.
+enum AuthorizedTerminalMorningDisposition: String, Codable, Equatable {
+    case finalizeOrdinary
+    case preserveExplicitIntent
+}
+
+/// Immutable terminal reward/progress projection written before any terminal
+/// state projection. It keeps a non-qualifying primary Wind Down from drawing
+/// a new consolation reward if the process dies before its completion marker.
+struct AuthorizedTerminalSettlementProjection: Codable, Equatable {
+    let reward: RewardItem?
+    let progress: UserProgress
+}
+
+struct AuthorizedTerminalMorningDecision: Codable, Equatable {
+    let runID: UUID
+    /// Recovery needs this only while the terminal transaction is pending.
+    /// Completion retains a bounded non-replay marker and removes the private
+    /// run payload, which includes the person's routine choices.
+    var terminalRun: FocusRun?
+    let disposition: AuthorizedTerminalMorningDisposition
+    let authorizedAt: Date
+    /// Present even when the reward is nil: that still records a completed
+    /// projection and prevents recovery from drawing another outcome.
+    var terminalProjection: AuthorizedTerminalSettlementProjection?
+    var completedAt: Date?
+}
+
+enum AuthorizedTerminalMorningRecoveryPolicy {
+    /// A decision can repair only its own persisted run. Legacy journals have
+    /// no decision, so recovery intentionally makes no guess about whether a
+    /// person selected an early-wake option before an older build terminated.
+    static func terminalRunForRecovery(
+        storedRun: FocusRun?,
+        decision: AuthorizedTerminalMorningDecision
+    ) -> FocusRun? {
+        guard let terminalRun = decision.terminalRun,
+              terminalRun.id == decision.runID,
+              ![.setup, .placementGrace, .running].contains(terminalRun.state) else { return nil }
+        guard storedRun == nil || storedRun?.id == decision.runID else { return nil }
+        return terminalRun
+    }
+}
+
+enum OrdinaryMorningTerminalFinalizationPolicy {
+    /// Applies the factual terminal timestamp without converting an explicit
+    /// early-wake choice into an ordinary exit. The coordinator chooses this
+    /// policy only for a durable `.finalizeOrdinary` decision.
+    static func finalized(
+        occurrence: MorningQuietOccurrence,
+        at terminalDate: Date
+    ) -> MorningQuietOccurrence? {
+        guard occurrence.outcome == .scheduled || occurrence.outcome == .active else { return nil }
+        var result = occurrence
+        if terminalDate < result.scheduledStart {
+            result.outcome = .skipped
+            result.endedAt = terminalDate
+        } else {
+            result.actualStart = result.actualStart ?? result.scheduledStart
+            result.endedAt = min(max(terminalDate, result.scheduledStart), result.scheduledEnd)
+            result.outcome = .finished
+        }
+        return result
+    }
+}
+
 enum MorningQuietOccurrenceIdentity {
     /// Stable, separate identity for the saved Morning attached to a Wind
     /// Down. It is reproducible after termination without sharing the run's
@@ -299,32 +368,37 @@ struct WindDownBenefitSettlement: Codable, Equatable, Identifiable {
 /// The journal is the only authority for hidden results and replay markers.
 /// User-facing histories, Farm state, search state, and App Group values are projections.
 struct WindDownMorningSettlementJournal: Codable, Equatable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
     static let storageKey = "ollie.windDownMorning.settlementJournal"
     static let maximumEffectMarkers = 512
+    static let maximumCompletedAuthorizedTerminalMorningDecisions = 90
 
     var schemaVersion: Int
     var windDownBenefits: [WindDownBenefitSettlement]
     var morningOccurrences: [MorningQuietOccurrence]
     var sunriseTrail: SunriseTrailState
     var deliveredEffectIDs: [String]
+    var authorizedTerminalMorningDecisions: [AuthorizedTerminalMorningDecision]
 
     init(
         schemaVersion: Int = currentSchemaVersion,
         windDownBenefits: [WindDownBenefitSettlement] = [],
         morningOccurrences: [MorningQuietOccurrence] = [],
         sunriseTrail: SunriseTrailState = .empty,
-        deliveredEffectIDs: [String] = []
+        deliveredEffectIDs: [String] = [],
+        authorizedTerminalMorningDecisions: [AuthorizedTerminalMorningDecision] = []
     ) {
         self.schemaVersion = max(schemaVersion, Self.currentSchemaVersion)
         self.windDownBenefits = windDownBenefits
         self.morningOccurrences = morningOccurrences
         self.sunriseTrail = sunriseTrail
         self.deliveredEffectIDs = Array(Array(Set(deliveredEffectIDs)).suffix(Self.maximumEffectMarkers))
+        self.authorizedTerminalMorningDecisions = authorizedTerminalMorningDecisions
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, windDownBenefits, morningOccurrences, sunriseTrail, deliveredEffectIDs
+        case authorizedTerminalMorningDecisions
     }
 
     init(from decoder: Decoder) throws {
@@ -334,12 +408,20 @@ struct WindDownMorningSettlementJournal: Codable, Equatable {
             windDownBenefits: try container.decodeIfPresent([WindDownBenefitSettlement].self, forKey: .windDownBenefits) ?? [],
             morningOccurrences: try container.decodeIfPresent([MorningQuietOccurrence].self, forKey: .morningOccurrences) ?? [],
             sunriseTrail: try container.decodeIfPresent(SunriseTrailState.self, forKey: .sunriseTrail) ?? .empty,
-            deliveredEffectIDs: try container.decodeIfPresent([String].self, forKey: .deliveredEffectIDs) ?? []
+            deliveredEffectIDs: try container.decodeIfPresent([String].self, forKey: .deliveredEffectIDs) ?? [],
+            authorizedTerminalMorningDecisions: try container.decodeIfPresent(
+                [AuthorizedTerminalMorningDecision].self,
+                forKey: .authorizedTerminalMorningDecisions
+            ) ?? []
         )
     }
 
     func benefit(for runID: UUID) -> WindDownBenefitSettlement? {
         windDownBenefits.first { $0.runID == runID }
+    }
+
+    var pendingAuthorizedTerminalMorningDecisions: [AuthorizedTerminalMorningDecision] {
+        authorizedTerminalMorningDecisions.filter { $0.completedAt == nil }
     }
 
     var oldestUnreadDeliveredBenefit: WindDownBenefitSettlement? {
@@ -415,6 +497,84 @@ struct WindDownMorningSettlementJournal: Codable, Equatable {
                           && $0.outcome != .skipped)
               }) else { return }
         morningOccurrences.append(occurrence)
+    }
+
+    @discardableResult
+    mutating func recordAuthorizedTerminalMorningDecision(
+        for terminalRun: FocusRun,
+        disposition: AuthorizedTerminalMorningDisposition,
+        at date: Date
+    ) -> AuthorizedTerminalMorningDecision? {
+        guard terminalRun.isProgressionEligibleNightWatch else { return nil }
+        if let existing = authorizedTerminalMorningDecisions.first(where: { $0.runID == terminalRun.id }) {
+            return existing
+        }
+        let decision = AuthorizedTerminalMorningDecision(
+            runID: terminalRun.id,
+            terminalRun: terminalRun,
+            disposition: disposition,
+            authorizedAt: date,
+            terminalProjection: nil,
+            completedAt: nil
+        )
+        authorizedTerminalMorningDecisions.append(decision)
+        return decision
+    }
+
+    func terminalProjection(for runID: UUID) -> AuthorizedTerminalSettlementProjection? {
+        authorizedTerminalMorningDecisions.first { $0.runID == runID }?.terminalProjection
+    }
+
+    @discardableResult
+    mutating func persistTerminalProjection(
+        for runID: UUID,
+        reward: RewardItem?,
+        progress: UserProgress
+    ) -> AuthorizedTerminalSettlementProjection? {
+        guard let index = authorizedTerminalMorningDecisions.firstIndex(where: { $0.runID == runID }) else {
+            return nil
+        }
+        if authorizedTerminalMorningDecisions[index].terminalProjection == nil {
+            authorizedTerminalMorningDecisions[index].terminalProjection = AuthorizedTerminalSettlementProjection(
+                reward: reward,
+                progress: progress
+            )
+        }
+        return authorizedTerminalMorningDecisions[index].terminalProjection
+    }
+
+    @discardableResult
+    mutating func markAuthorizedTerminalMorningDecisionCompleted(
+        for runID: UUID,
+        at date: Date
+    ) -> AuthorizedTerminalMorningDecision? {
+        guard let index = authorizedTerminalMorningDecisions.firstIndex(where: { $0.runID == runID }) else {
+            return nil
+        }
+        if authorizedTerminalMorningDecisions[index].completedAt == nil {
+            authorizedTerminalMorningDecisions[index].completedAt = date
+        }
+        // All terminal effects are durable before this marker is written, so
+        // recovery no longer needs the full persisted run.
+        authorizedTerminalMorningDecisions[index].terminalRun = nil
+        let completed = authorizedTerminalMorningDecisions[index]
+        pruneCompletedAuthorizedTerminalMorningDecisions()
+        return completed
+    }
+
+    private mutating func pruneCompletedAuthorizedTerminalMorningDecisions() {
+        let completedIndices = authorizedTerminalMorningDecisions.indices.filter {
+            authorizedTerminalMorningDecisions[$0].completedAt != nil
+        }
+        let excess = completedIndices.count - Self.maximumCompletedAuthorizedTerminalMorningDecisions
+        guard excess > 0 else { return }
+        let oldestFirst = completedIndices.sorted {
+            (authorizedTerminalMorningDecisions[$0].completedAt ?? .distantPast)
+                < (authorizedTerminalMorningDecisions[$1].completedAt ?? .distantPast)
+        }
+        for index in oldestFirst.prefix(excess).sorted(by: >) {
+            authorizedTerminalMorningDecisions.remove(at: index)
+        }
     }
 
     mutating func replaceOccurrence(_ occurrence: MorningQuietOccurrence) -> Bool {

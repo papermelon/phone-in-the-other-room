@@ -206,19 +206,19 @@ struct SettingsConnectionsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 SettingsDetailHeader(title: "Connections", detail: "Optional Apple services add context without changing your local ritual.")
-                SettingsConnectionRow(
-                    title: "Apple Health",
-                    detail: healthDetail,
-                    icon: "bed.double.fill",
-                    actionTitle: healthActionTitle,
-                    action: healthAction
+                HealthConnectionStatusCard(
+                    presentation: viewModel.healthSleepConnectionPresentation,
+                    onConnect: viewModel.connectAppleHealthSleep,
+                    onRefresh: viewModel.retryAppleHealthConnection
                 )
-                SettingsConnectionRow(
-                    title: "Screen Time",
-                    detail: screenTimeDetail,
-                    icon: "iphone.slash",
-                    actionTitle: viewModel.screenTimeAuthorization == .notDetermined ? "Connect" : nil,
-                    action: viewModel.screenTimeAuthorization == .notDetermined ? { viewModel.connectScreenTime() } : nil
+                ScreenTimeConnectionStatusCard(
+                    presentation: viewModel.screenTimeConnectionPresentation,
+                    onConnect: viewModel.connectScreenTime,
+                    onChooseSelection: {
+#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
+                        showScreenTimePicker = true
+#endif
+                    }
                 )
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
                 if viewModel.screenTimeAuthorization == .approved {
@@ -236,8 +236,8 @@ struct SettingsConnectionsView: View {
         .settingsHelp(.connections)
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
         .familyActivityPicker(
-            headerText: "Choose only the apps or categories you want Counting Sheep to show around sleep.",
-            footerText: "Your selection stays in Apple’s Screen Time system. Website entries are ignored.",
+            headerText: "Choose apps or categories for reports and future Wind Down or Phone Away app protection.",
+            footerText: "Changing this does not alter a current session. Your selection stays in Apple’s Screen Time system; website entries are ignored.",
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection
         )
@@ -245,46 +245,6 @@ struct SettingsConnectionsView: View {
             viewModel.saveScreenTimeSelection(.bedtime)
         }
 #endif
-    }
-    private var healthDetail: String {
-        switch viewModel.sleepAuthorization {
-        case .notRequested:
-            return "Optional sleep duration and stages beside your Wind Down history."
-        case .requested:
-            return "Access requested. Sleep context appears in Nights when Apple Health has a sample."
-        case .unavailable:
-            return "Apple Health sleep data is unavailable on this device."
-        case .error:
-            return "Apple Health could not complete the request. You can try again later."
-        }
-    }
-
-    private var healthActionTitle: String? {
-        switch viewModel.sleepAuthorization {
-        case .notRequested:
-            return "Connect"
-        case .error:
-            return "Try again"
-        case .requested, .unavailable:
-            return nil
-        }
-    }
-
-    private var healthAction: (() -> Void)? {
-        healthActionTitle == nil ? nil : { self.viewModel.connectAppleHealthSleep() }
-    }
-
-    private var screenTimeDetail: String {
-        switch viewModel.screenTimeAuthorization {
-        case .notDetermined:
-            return "Optional selected-app reports for late evening and after waking."
-        case .approved:
-            return "Connected. Choose the apps and report windows shown in Nights."
-        case .denied:
-            return "Access is off. Counting Sheep keeps working without it."
-        case .unavailable:
-            return "Screen Time reports are unavailable on this device."
-        }
     }
 }
 

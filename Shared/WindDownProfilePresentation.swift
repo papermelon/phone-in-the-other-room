@@ -177,15 +177,8 @@ extension WindDownProfileKind {
 
 enum WindDownGuidanceSourcePresentation {
     static func title(for sourceID: String) -> String? {
-        switch sourceID {
-        case "nhlbi-healthy-sleep": return "NHLBI healthy sleep habits"
-        case "nhlbi-sleep-wake-cycle": return "NHLBI sleep/wake cycle"
-        case "nhlbi-circadian-treatment": return "NHLBI circadian guidance"
-        case "va-stimulus-control": return "VA stimulus-control guidance"
-        case "aasm-cbt-i": return "AASM behavioral sleep guidance"
-        case "counting-sheep-principles": return "Counting Sheep product principles"
-        case "counting-sheep-booklet": return "Counting Sheep wellness booklet"
-        default: return nil
+        WindDownGuidanceSourceRegistry.source(for: sourceID).map {
+            $0.organization == "Counting Sheep" ? $0.title : "\($0.organization) · \($0.title)"
         }
     }
 

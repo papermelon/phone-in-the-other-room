@@ -31,6 +31,7 @@ final class PersistenceService {
     private let farmStateKey = "ollie.farm.state"
     private let farmPastureSceneKey = "ollie.farm.pastureScene"
     private let userProfileKey = "ollie.userProfile"
+    private let explicitSocialAvatarSelectionKey = "ollie.userProfile.socialAvatar.isExplicit"
     private let welcomeRewardLedgerKey = WelcomeRewardLedger.storageKey
     private let nightFlockRewardLedgerKey = NightFlockRewardLedger.storageKey
     private let windDownProfileKey = WindDownProfileRecord.storageKey
@@ -306,6 +307,8 @@ final class PersistenceService {
             sheepSearchStateKey,
             farmStateKey,
             farmPastureSceneKey,
+            userProfileKey,
+            explicitSocialAvatarSelectionKey,
             welcomeRewardLedgerKey,
             nightFlockRewardLedgerKey,
             windDownProfileKey
@@ -410,6 +413,13 @@ final class PersistenceService {
         set { save(newValue, key: userProfileKey) }
     }
 
+    /// Keeps a deliberate default-Shepherd choice distinct from a pristine
+    /// profile, so a restored account may adopt its server identity once.
+    var hasExplicitSocialAvatarSelection: Bool {
+        get { defaults.object(forKey: explicitSocialAvatarSelectionKey) as? Bool ?? false }
+        set { defaults.set(newValue, forKey: explicitSocialAvatarSelectionKey) }
+    }
+
     /// Character placement is visual preference, kept separate from Farm
     /// progression so a drag never changes the FarmState schema.
     var farmPastureSceneSnapshot: PastureSceneSnapshot? {
@@ -469,6 +479,9 @@ final class PersistenceService {
             in: CountingSheepPublicPresentationAllowlist.pastureThemeIDs,
             fallback: CountingSheepPublicPresentation.defaultValue.pastureThemeID
         )
+        // A person chooses this social identity explicitly. It must not follow
+        // the favorite or active flock when sheep are traded or released.
+        presentation.avatarID = profile.presentation.avatarID
         synchronized.presentation = presentation
         return synchronized
     }

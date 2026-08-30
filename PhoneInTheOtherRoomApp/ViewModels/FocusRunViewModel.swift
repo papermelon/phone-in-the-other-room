@@ -22,6 +22,7 @@ final class FocusRunViewModel: ObservableObject {
     @Published var windDownRoutines: [WindDownRoutine] = []
     @Published var nextWindDownOverride: NextWindDownOverride?
     @Published var offlinePurpose: OfflinePurposeProfile = .defaultProfile
+    @Published private(set) var currentPurposeCue: QuietPurposeCue?
     @Published var selectedDuration: TimeInterval = 25 * 60
     @Published var durationMinutes = 25
     @Published var durationSeconds = 0
@@ -37,6 +38,9 @@ final class FocusRunViewModel: ObservableObject {
     @Published var lastNightSleep: SleepSummary?
     @Published var recentNightSleeps: [SleepSummary] = []
     @Published var isRefreshingSleep = false
+    @Published private(set) var isRequestingSleepAccess = false
+    @Published private(set) var lastSleepQueryAt: Date?
+    @Published private(set) var sleepQueryError: String?
     @Published var morningCheckIns: MorningCheckInHistory = MorningCheckInHistory()
     @Published var analyticsExportURL: URL?
     @Published var analyticsExportError: String?
@@ -62,6 +66,11 @@ final class FocusRunViewModel: ObservableObject {
     @Published var showQRCodeScanner = false
     @Published var qrCodeStatus = ""
     @Published var nfcStatus = ""
+    /// NFC feedback for the currently presented start transaction. Settings
+    /// and active-run NFC feedback remain in `nfcStatus`; they must never leak
+    /// into a fresh Phone Away/Wind Down start sheet.
+    @Published private(set) var startNFCStatus = ""
+    @Published private(set) var homeStartAdmission: HomeStartAdmission?
     @Published var liveActivityEnabled = FocusRunLiveActivityService.preferenceEnabled
     @Published var showNightWatchStartPrompt = false
     @Published var liveActivityChoiceForNextRun = FocusRunLiveActivityService.preferenceEnabled
@@ -75,11 +84,20 @@ final class FocusRunViewModel: ObservableObject {
     @Published var orientationState: CountingSheepOrientationState
     @Published var appearancePreference: AppAppearancePreference = .automatic
     @Published private(set) var rootRoute: CountingSheepRootRoute = .freshOnboarding
+    @Published private(set) var homeGuidanceDismissedIDs: Set<String> = []
     /// Ephemeral navigation intent used by the practice-record handoff; it is not
     /// persisted and does not change the meaning of any recorded night.
     @Published var nightsRecordFocusID: UUID?
     @Published var shieldingEnabled: Bool
     @Published var farmActionMessage: String?
+    @Published var socialAvatarSyncMessage: String?
+#if DEBUG
+    /// Screenbook-only seam. It permits exercising the production admission and
+    /// root-navigation path without requesting Family Controls or applying a
+    /// real shield on a capture simulator.
+    private var screenbookStartReadinessEnabled = false
+    private var screenbookStartKeepsShielding = false
+#endif
     let nightFlockViewModel: NightFlockViewModel
 
     private let focusService = FocusModeSuggestionService()
@@ -87,11 +105,14 @@ final class FocusRunViewModel: ObservableObject {
     let persistence: PersistenceService
     let nowProvider: () -> Date
     private let screenTimeService = ScreenTimeAuthorizationService()
-    private let healthSleepService = HealthSleepService()
+    let healthSleepService = HealthSleepService()
     private let phoneBedNFCService = PhoneBedNFCService()
-    private let quietTimeShielding = QuietTimeShieldingService()
+    private let quietTimeShielding: QuietTimeShieldingProviding
+    private let purposeCueDefaults: UserDefaults?
     private let usageMonitoring = NightWatchUsageMonitoringService()
     private let impactDataSyncService = ImpactDataSyncService()
+    private let guidanceDismissalStore: WindDownGuidanceDismissalStore
+    private let guidanceDisplayStore: WindDownGuidanceDisplayStore
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     private let screenTimeSelectionService = ScreenTimeSelectionService.shared
 #endif
@@ -100,6 +121,25 @@ final class FocusRunViewModel: ObservableObject {
     private var pendingNightWatchSourceOccurrenceID: UUID?
     private var pendingAdHocQuietTransaction: WindDownStartTransaction?
     private var nightWatchStartInFlight = false
+    private var pendingNFCTagDigest: String?
+    private var pendingStartTransactionID: UUID?
+    /// Coalesces the async decision stage for a DeviceActivity callback. The
+    /// schedule can be reconciled repeatedly while the app returns to the
+    /// foreground, but only its one captured decision may reach admission.
+    private var automaticPrimarySharingAdmissionRunID: UUID?
+    /// Timer/NFC starts can synchronously validate the new primary run before
+    /// the start caller receives `.started`. Keep only that admission-sized
+    /// window in memory; the durable decision is written immediately after a
+    /// successful admission and before social publication resumes.
+    private var primaryRunSharingAdmissions: [UUID: Bool] = [:]
+    private var primaryRunsValidatedDuringSharingAdmission: [UUID: FocusRun] = [:]
+    private var sleepRefreshGeneration: UInt = 0
+    private var sleepAccessRequestGeneration: UInt = 0
+    private var sleepRefreshTask: Task<Void, Never>?
+    var sharedHabitSleepReconcileTask: Task<Void, Never>?
+    var sharedHabitSleepReconcileTaskID: UUID?
+    var sharedHabitSleepReconcileGeneration: UInt = 0
+    private let foregroundSleepRefreshInterval: TimeInterval = 5 * 60
 
     private var activeRunIsAdditionalQuiet: Bool {
         activeRun?.nightWatchPlan?.role == .additionalQuiet
@@ -113,11 +153,21 @@ final class FocusRunViewModel: ObservableObject {
         coordinator: FocusSessionCoordinator? = nil,
         persistence: PersistenceService = .shared,
         nowProvider: @escaping () -> Date = Date.init,
+        guidanceDismissalStore: WindDownGuidanceDismissalStore = WindDownGuidanceDismissalStore(),
+        guidanceDisplayStore: WindDownGuidanceDisplayStore = WindDownGuidanceDisplayStore(),
         startsExternalServices: Bool = true,
-        nightFlockViewModel: NightFlockViewModel? = nil
+        nightFlockViewModel: NightFlockViewModel? = nil,
+        quietTimeShielding: QuietTimeShieldingProviding? = nil,
+        purposeCueDefaults: UserDefaults? = UserDefaults(
+            suiteName: QuietTimeShieldPresentationStorage.appGroupIdentifier
+        )
     ) {
         self.persistence = persistence
         self.nowProvider = nowProvider
+        self.guidanceDismissalStore = guidanceDismissalStore
+        self.guidanceDisplayStore = guidanceDisplayStore
+        self.quietTimeShielding = quietTimeShielding ?? QuietTimeShieldingService()
+        self.purposeCueDefaults = purposeCueDefaults
         self.nightFlockViewModel = nightFlockViewModel
             ?? (startsExternalServices
                 ? NightFlockViewModel.configured()
@@ -167,6 +217,7 @@ final class FocusRunViewModel: ObservableObject {
             }
         screenTimeReportPreferences = initialReportPreferences
         offlinePurpose = persistence.offlinePurpose
+        currentPurposeCue = nil
         morningCheckIns = persistence.morningCheckIns
         phoneBedTagLibrary = persistence.phoneBedTagLibrary
         selectedGuardKind = normalizedQuietTime.guardKind
@@ -183,8 +234,7 @@ final class FocusRunViewModel: ObservableObject {
             self?.optionalSheepSearchBonusPoints() ?? 0
         }
         self.coordinator.onPhoneAwayValidated = { [weak self] run in
-            self?.nightFlockViewModel.publishV4PhoneAwayActive(for: run)
-            self?.nightFlockViewModel.publishPhoneTucked(for: run)
+            self?.handlePhoneAwayValidationForSocialPublication(run)
         }
         self.coordinator.onAuthorizedEarlyExit = { [weak self] preservingLinkedMorningShield in
             if !preservingLinkedMorningShield {
@@ -195,9 +245,13 @@ final class FocusRunViewModel: ObservableObject {
             guard let self else { return }
             self.publishSlumberPartyOutcome(for: run)
             self.reconcileOrientationAfterRun()
+            self.reloadCurrentPurposeCue()
             if !linkedMorningHandoff {
                 self.scheduleAutomaticWindDownIfNeeded()
             }
+        }
+        self.coordinator.onStateReconciled = { [weak self] in
+            self?.reloadCurrentPurposeCue()
         }
         self.nightFlockViewModel.onApplyRewardGrants = { [weak self] grants in
             self?.applySlumberPartyGrants(grants)
@@ -207,6 +261,19 @@ final class FocusRunViewModel: ObservableObject {
         }
         self.nightFlockViewModel.onV4CheerFeedback = { [weak self] feedback in
             self?.coordinator.showSlumberPartyCheer(feedback)
+        }
+        self.nightFlockViewModel.onSharedHabitsAgreementAvailable = { [weak self] in
+            self?.reconcileSharedHabitSleepAfterForeground()
+            self?.reconcileSharedNightPlans()
+            self?.reconcileRestoredPrivatePrimaryPlanFences()
+            self?.replayRestoredSharedPrimaryTerminalOutcomes()
+        }
+        self.nightFlockViewModel.onPrimaryRunSharingDecisionsRestored = { [weak self] in
+            self?.reconcileRestoredPrivatePrimaryPlanFences()
+            self?.replayRestoredSharedPrimaryTerminalOutcomes()
+        }
+        self.nightFlockViewModel.onSharedHabitsAuthorityInvalidated = { [weak self] in
+            self?.invalidateSharedHabitSleepReconciliation()
         }
         screenTimeAuthorization = startsExternalServices ? screenTimeService.currentState() : .notDetermined
         if startsExternalServices {
@@ -218,8 +285,7 @@ final class FocusRunViewModel: ObservableObject {
         if let activeRun, activeRun.state == .completed || activeRun.state == .endedEarly {
             Task { @MainActor [weak self] in
                 await Task.yield()
-                guard let self, let run = self.activeRun else { return }
-                self.publishSlumberPartyOutcome(for: run)
+                self?.replayRestoredSharedPrimaryTerminalOutcomes()
             }
         }
         sleepAuthorization = startsExternalServices
@@ -244,13 +310,73 @@ final class FocusRunViewModel: ObservableObject {
             applyShortcutPreparationIfNeeded()
             reconcileAutomaticWindDownIfNeeded()
             if sleepAuthorization == .requested {
-                refreshSleepSummary()
+                refreshHealthConnectionIfNeeded(maximumAge: 0)
             }
             reconcileOrientationAfterRun()
         }
+        reloadCurrentPurposeCue()
     }
 
     var activeRun: FocusRun? { coordinator.run }
+    var currentDate: Date { nowProvider() }
+
+    var healthSleepConnectionPresentation: HealthSleepConnectionPresentation {
+        let localRequestState: HealthSleepLocalRequestState
+        switch sleepAuthorization {
+        case .notRequested:
+            localRequestState = .notRequested
+        case .requested:
+            localRequestState = .requested
+        case .error:
+            localRequestState = .failed
+        case .unavailable:
+            localRequestState = .notRequested
+        }
+        let latestSampleDate = recentNightSleeps.compactMap {
+            $0.nightEndingDate ?? $0.endDate
+        }.max()
+        return HealthSleepConnectionPresentation.resolve(
+            HealthSleepConnectionObservation(
+                isAvailable: healthSleepService.isAvailable,
+                localRequestState: localRequestState,
+                isRequestInFlight: isRequestingSleepAccess,
+                isQueryInFlight: isRefreshingSleep,
+                latestSampleDate: latestSampleDate,
+                lastCheckedAt: lastSleepQueryAt,
+                lastQueryError: sleepQueryError ?? requestErrorDescription
+            )
+        )
+    }
+
+    var screenTimeConnectionPresentation: ScreenTimeConnectionPresentation {
+        let authorization: ScreenTimeConnectionAuthorization
+        switch screenTimeAuthorization {
+        case .unavailable:
+            authorization = .unavailable
+        case .notDetermined:
+            authorization = .notDetermined
+        case .approved:
+            authorization = .approved
+        case .denied:
+            authorization = .denied
+        }
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        let selectionSummary = bedtimeActivitySelection.phoneOtherIsEmpty
+            ? nil
+            : bedtimeActivitySelection.phoneOtherSelectionSummary
+#else
+        let selectionSummary: String? = nil
+#endif
+        return ScreenTimeConnectionPresentation.resolve(
+            authorization: authorization,
+            selectionSummary: selectionSummary
+        )
+    }
+
+    private var requestErrorDescription: String? {
+        guard case let .error(description) = sleepAuthorization else { return nil }
+        return description
+    }
 
     func briefAccessTrackerSummary(for run: FocusRun) -> QuietTimeBriefAccessTrackerSummary {
         quietTimeShielding.briefAccessTrackerSummary(for: run)
@@ -283,6 +409,15 @@ final class FocusRunViewModel: ObservableObject {
         )
     }
     var nextUpcomingQuietPeriod: WindDownSchedulePeriod? { upcomingQuietPeriods.first }
+    var nextUpcomingPrimaryWindDownPeriod: WindDownSchedulePeriod? {
+        upcomingQuietPeriods.first { $0.occurrence.role == .primarySleepBookend }
+    }
+    /// Home renders one resolved period so its four ritual times stay tied to
+    /// the same saved occurrence, whether the start window is open or still
+    /// ahead. This avoids composing a future start with today's bookends.
+    var homePrimaryWindDownPeriod: WindDownSchedulePeriod? {
+        currentPrimaryWindDownPeriod ?? nextUpcomingPrimaryWindDownPeriod
+    }
     var immediateAdditionalQuietMinutes: Int? {
         let now = nowProvider()
         guard let interval = immediateAdditionalQuietWindow(now: now) else { return nil }
@@ -310,14 +445,54 @@ final class FocusRunViewModel: ObservableObject {
     /// Home keeps the nightly ritual in the dominant position even when a
     /// separate Phone Away period happens to be eligible at the same moment.
     var currentPrimaryWindDownStartContext: WindDownStartContext? {
-        guard let context = currentWindDownStartContext, context.kind == .primary else { return nil }
-        return context
+        currentPrimaryWindDownPeriod.map {
+            WindDownStartContext(
+                period: $0,
+                practicePeriodID: orientationState.practicePeriodID
+            )
+        }
     }
 
     var currentPhoneAwayStartContext: WindDownStartContext? {
-        guard let context = currentWindDownStartContext, context.isAdditionalQuiet else { return nil }
-        return context
+        currentStartContext(for: .additionalQuiet)
     }
+
+    private func currentStartContext(for role: WindDownOccurrenceRole) -> WindDownStartContext? {
+        let period = WindDownScheduleEngine.eligibleOccurrences(
+            in: windDownSchedule,
+            at: nowProvider(),
+            calendar: .current,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        )
+        .first { $0.occurrence.role == role }
+        return period.map {
+            WindDownStartContext(
+                period: $0,
+                practicePeriodID: orientationState.practicePeriodID
+            )
+        }
+    }
+
+    private var currentPrimaryWindDownPeriod: WindDownSchedulePeriod? {
+        WindDownScheduleEngine.eligibleOccurrences(
+            in: windDownSchedule,
+            at: nowProvider(),
+            calendar: .current,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        )
+        .first { $0.occurrence.role == .primarySleepBookend }
+    }
+
+    func isPhoneAwayPeriodReady(_ sourceID: UUID) -> Bool {
+        guard let period = WindDownScheduleEngine.eligibleOccurrence(
+            in: windDownSchedule,
+            at: nowProvider(),
+            sourceID: sourceID,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        ) else { return false }
+        return period.occurrence.role == .additionalQuiet
+    }
+
     var readyOneTimeQuietPeriodID: UUID? {
         guard let eligible = WindDownScheduleEngine.eligibleOccurrence(
             in: windDownSchedule,
@@ -341,8 +516,11 @@ final class FocusRunViewModel: ObservableObject {
 #endif
     }
     var shieldingReadiness: ShieldingReadiness {
+        if coordinator.hasActiveShieldingFailure { return .runtimeFailure }
+#if DEBUG
+        if screenbookStartReadinessEnabled { return .ready }
+#endif
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
-        if case .failed = coordinator.shieldingState { return .runtimeFailure }
         switch screenTimeAuthorization {
         case .approved:
             return hasSelectedShieldingApps ? .ready : .noSelection
@@ -355,6 +533,14 @@ final class FocusRunViewModel: ObservableObject {
         return .unavailable
 #endif
     }
+
+#if DEBUG
+    func enableScreenbookStartReadiness(keepsShielding: Bool = false) {
+        screenbookStartReadinessEnabled = true
+        screenbookStartKeepsShielding = keepsShielding
+        shieldingEnabled = keepsShielding
+    }
+#endif
     var isRunning: Bool {
         guard let state = activeRun?.state else { return false }
         return ![.setup, .completed, .endedEarly].contains(state)
@@ -405,28 +591,133 @@ final class FocusRunViewModel: ObservableObject {
         persistence.windDownMorningSettlementJournal.morningOccurrences
     }
 
-    var currentPurposeCue: QuietPurposeCue? {
-        guard let defaults = UserDefaults(suiteName: QuietTimeShieldPresentationStorage.appGroupIdentifier) else {
-            return nil
-        }
-        return QuietPurposeCueState.load(from: defaults)?.cue
-    }
-
     func setCurrentPurposeCue(_ cue: QuietPurposeCue) {
-        guard let defaults = UserDefaults(suiteName: QuietTimeShieldPresentationStorage.appGroupIdentifier) else { return }
-        let registry = QuietTimeShieldScheduleRegistryStorage.load(from: defaults)
-        let occurrenceID = activeScreenFreeMorning?.id ?? activeRun?.id
-        guard let occurrenceID else { return }
-        let entry = registry.entry(for: occurrenceID)
+        guard let defaults = purposeCueDefaults,
+              let identity = currentPurposeCueIdentity else {
+            currentPurposeCue = nil
+            return
+        }
         QuietPurposeCueState.save(
             QuietPurposeCueState(
-                occurrenceID: entry?.occurrenceID ?? occurrenceID,
-                revision: entry?.revision ?? 1,
-                epoch: entry?.epoch ?? 1,
+                occurrenceID: identity.occurrenceID,
+                revision: identity.revision,
+                epoch: identity.epoch,
                 cue: cue
             ),
             to: defaults
         )
+        // The shield extension and the in-app menu now observe the same
+        // occurrence-scoped value without waiting for another lifecycle tick.
+        currentPurposeCue = cue
+    }
+
+    /// Re-reads only on lifecycle/occurrence boundaries. Purpose is not read
+    /// from UserDefaults on the active timer's render path.
+    func reloadCurrentPurposeCue() {
+        guard let defaults = purposeCueDefaults else {
+            currentPurposeCue = nil
+            return
+        }
+        guard let identity = currentPurposeCueIdentity else {
+            if activeRun == nil, activeScreenFreeMorning == nil {
+                QuietPurposeCueState.clear(from: defaults)
+            }
+            currentPurposeCue = nil
+            return
+        }
+        let stored = QuietPurposeCueState.load(from: defaults)
+        if let stored,
+           stored.occurrenceID != identity.occurrenceID
+                || stored.revision != identity.revision
+                || stored.epoch != identity.epoch {
+            QuietPurposeCueState.clear(from: defaults)
+        }
+        currentPurposeCue = QuietPurposeCueState.load(
+            matching: identity.occurrenceID,
+            revision: identity.revision,
+            epoch: identity.epoch,
+            from: defaults
+        )?.cue
+    }
+
+    private var currentPurposeCueIdentity: QuietTimeShieldScheduleRegistryEntry? {
+        let occurrenceID: UUID
+        if let morning = activeScreenFreeMorning {
+            occurrenceID = morning.id
+        } else {
+            guard let run = activeRun, isRunning else { return nil }
+            occurrenceID = run.id
+        }
+        guard let defaults = purposeCueDefaults else {
+            return nil
+        }
+        return QuietTimeShieldScheduleRegistryStorage.load(from: defaults).entry(for: occurrenceID)
+    }
+
+    var homeGuidanceItem: WindDownGuidanceItem? {
+        homeGuidanceItem(at: nowProvider())
+    }
+
+    func homeGuidanceItem(at date: Date) -> WindDownGuidanceItem? {
+        guard !isRunning, nightWatchPreferences.isConfigured else { return nil }
+        guard let item = WindDownGuidanceLibrary.homeGuidance(
+            eveningRoutine: nightWatchPreferences.eveningRoutine,
+            morningRoutine: nightWatchPreferences.morningRoutine
+        ) else { return nil }
+        guard !guidanceDismissalStore.isSuppressed(item.id, at: date) else {
+            return nil
+        }
+        let contextID = WindDownGuidanceDisplayPolicy.contextID(
+            for: item,
+            eveningRoutine: nightWatchPreferences.eveningRoutine,
+            morningRoutine: nightWatchPreferences.morningRoutine,
+            at: date
+        )
+        guard guidanceDisplayStore.shouldDisplay(itemID: item.id, contextID: contextID, at: date) else {
+            return nil
+        }
+        return item
+    }
+
+    func markHomeGuidanceShown(_ item: WindDownGuidanceItem, at date: Date? = nil) {
+        let shownAt = date ?? nowProvider()
+        let contextID = WindDownGuidanceDisplayPolicy.contextID(
+            for: item,
+            eveningRoutine: nightWatchPreferences.eveningRoutine,
+            morningRoutine: nightWatchPreferences.morningRoutine,
+            at: shownAt
+        )
+        guidanceDisplayStore.markShown(item.id, contextID: contextID, at: shownAt)
+    }
+
+    func dismissHomeGuidance(_ item: WindDownGuidanceItem) {
+        let now = nowProvider()
+        guidanceDismissalStore.dismiss(item.id, at: now)
+        homeGuidanceDismissedIDs.remove(item.id)
+    }
+
+    @discardableResult
+    func addGuidanceToRoutine(
+        _ item: WindDownGuidanceItem,
+        replacing stepID: UUID? = nil
+    ) -> WindDownGuidanceRoutineAddResult {
+        guard nightWatchPreferences.isConfigured,
+              let phase = item.routinePhase,
+              item.routineActivity != nil else {
+            return .unavailable
+        }
+
+        var updated = nightWatchPreferences
+        var steps = phase == .evening ? updated.eveningRoutine : updated.morningRoutine
+        let result = WindDownGuidanceRoutineMutation.add(item, replacing: stepID, to: &steps)
+        guard result == .added else { return result }
+
+        if phase == .evening { updated.eveningRoutine = steps }
+        else { updated.morningRoutine = steps }
+
+        nightWatchPreferences = updated
+        saveNightWatchPreferences()
+        return .added
     }
 
     func screenFreeMorningOccurrences(on day: Date, calendar: Calendar = .current) -> [MorningQuietOccurrence] {
@@ -454,6 +745,7 @@ final class FocusRunViewModel: ObservableObject {
         }
         guard activeRun?.guardKind == .nfcTag else {
             _ = coordinator.transitionToEarlyMorning(intent: intent, reason: .userEnded, at: nowProvider())
+            reloadCurrentPurposeCue()
             return
         }
         nfcStatus = ""
@@ -483,6 +775,7 @@ final class FocusRunViewModel: ObservableObject {
                     self.nfcStatus = "Wind Down is still running. Try again from the early-wake choices."
                     return
                 }
+                self.reloadCurrentPurposeCue()
                 self.nfcStatus = "Wind Down tag confirmed."
             case .cancelled:
                 self.nfcStatus = "No tag was read. Wind Down is still running."
@@ -494,6 +787,7 @@ final class FocusRunViewModel: ObservableObject {
 
     func finishScreenFreeMorning(_ occurrenceID: UUID) {
         _ = coordinator.finishScreenFreeMorning(occurrenceID: occurrenceID, at: nowProvider())
+        reloadCurrentPurposeCue()
     }
 
     var isOrientationActive: Bool { orientationState.isGuideActive }
@@ -726,20 +1020,33 @@ final class FocusRunViewModel: ObservableObject {
     /// mutation is rolled back when the confirmation cannot be prepared.
     @discardableResult
     func startNewOneTimeAdditionalQuietNow(
-        duration: TimeInterval = 30 * 60,
+        duration: TimeInterval = TimeInterval(PhoneAwayDurationPolicy.defaultMinutes * 60),
         title: String = "Phone Away",
-        now: Date = Date()
+        now: Date? = nil
     ) -> Bool {
-        guard !isRunning else {
+        let requestedMinutes = PhoneAwayDurationPolicy.normalized(
+            max(1, Int((duration / 60).rounded()))
+        )
+        let requestedAction = PhoneAwayStartAction.manual(
+            durationMinutes: requestedMinutes
+        )
+        switch PhoneAwayStartPolicy.preflight(
+            action: requestedAction,
+            isRunning: isRunning,
+            readiness: shieldingReadiness
+        ) {
+        case .alreadyRunning:
             windDownScheduleError = "Finish the current phone-away session before starting Phone Away."
             return false
-        }
-        guard ScreenTimeProtectionStartPolicy.canStart(shieldingReadiness) else {
-            windDownScheduleError = shieldingReadiness.detail
-            return false
+        case .ready, .needsProtectionRepair:
+            break
         }
 
-        guard let window = immediateAdditionalQuietWindow(now: now, maximumDuration: duration) else {
+        let requestedAt = now ?? nowProvider()
+        guard let window = immediateAdditionalQuietWindow(
+            now: requestedAt,
+            maximumDuration: TimeInterval(requestedMinutes * 60)
+        ) else {
             windDownScheduleError = "Your next scheduled Wind Down begins too soon for Phone Away."
             return false
         }
@@ -761,12 +1068,39 @@ final class FocusRunViewModel: ObservableObject {
         liveActivityChoiceForNextRun = liveActivityEnabled
         appShieldingChoiceForNextRun = shieldingEnabled && shieldingReadiness == .ready
         nightWatchStartStatus = ""
+        beginStartTransaction()
         showNightWatchStartPrompt = true
         guard showNightWatchStartPrompt else {
             windDownScheduleError = "Phone Away could not be prepared just now."
             return false
         }
         return true
+    }
+
+    /// Changes only the transient manual Phone Away transaction. Saved
+    /// occurrences keep their own schedule and therefore never expose this
+    /// control in the confirmation sheet.
+    func changePendingPhoneAwayDuration(to minutes: Int) {
+        guard let context = pendingWindDownStartContext,
+              context.kind == .oneTimeQuiet,
+              context.sourceID == nil else { return }
+
+        let normalizedMinutes = PhoneAwayDurationPolicy.normalized(minutes)
+        let interval = DateInterval(
+            start: context.interval.start,
+            duration: TimeInterval(normalizedMinutes * 60)
+        )
+        pendingWindDownStartContext = WindDownStartContext(
+            kind: .oneTimeQuiet,
+            title: context.title,
+            interval: interval
+        )
+        pendingNightWatchPlan = NightWatchPlan.additionalQuiet(
+            start: interval.start,
+            end: interval.end,
+            activity: nightWatchPreferences.eveningActivity,
+            cueText: nightWatchPreferences.eveningCueText
+        )
     }
 
     private func immediateAdditionalQuietWindow(
@@ -890,17 +1224,19 @@ final class FocusRunViewModel: ObservableObject {
         showFocusModePrompt = true
     }
 
-    func requestStartNightWatch(sourceID: UUID? = nil) {
+    @discardableResult
+    func requestStartNightWatch(sourceID: UUID? = nil) -> Bool {
         guard WindDownStartGate.canPresentPreflight(
             isRunning: isRunning,
             startInFlight: nightWatchStartInFlight
-        ) else { return }
-        guard ScreenTimeProtectionStartPolicy.canStart(shieldingReadiness) else {
-            nightWatchStartStatus = shieldingReadiness.detail
-            return
+        ) else {
+            nightWatchStartStatus = isRunning
+                ? "Wind Down is already running."
+                : "A Wind Down start is already in progress."
+            return false
         }
         saveNightWatchPreferences()
-        let requestedAt = Date()
+        let requestedAt = nowProvider()
         let eligible: WindDownSchedulePeriod?
         if let sourceID {
             eligible = WindDownScheduleEngine.eligibleOccurrence(
@@ -911,7 +1247,7 @@ final class FocusRunViewModel: ObservableObject {
             )
             guard eligible != nil else {
                 nightWatchStartStatus = "That quiet window has passed or is too short to start now."
-                return
+                return false
             }
         } else {
             eligible = WindDownScheduleEngine.eligibleOccurrence(
@@ -933,9 +1269,6 @@ final class FocusRunViewModel: ObservableObject {
                 practicePeriodID: orientationState.practicePeriodID
             )
         }
-        if pendingWindDownStartContext?.kind == .primary {
-            nightFlockViewModel.resetNextPrimaryRunSharing()
-        }
         pendingNightWatchPlan = eligible.map {
             WindDownScheduleEngine.plan(
                 for: $0,
@@ -946,23 +1279,39 @@ final class FocusRunViewModel: ObservableObject {
         liveActivityChoiceForNextRun = liveActivityEnabled
         appShieldingChoiceForNextRun = shieldingEnabled && shieldingReadiness == .ready
         nightWatchStartStatus = ""
+        beginStartTransaction()
         showNightWatchStartPrompt = true
+        return showNightWatchStartPrompt
     }
 
     func cancelNightWatchStart() {
         guard !nightWatchStartInFlight else { return }
+        pendingStartTransactionID = nil
+        startNFCStatus = ""
         isScanningNFCForStart = false
         rollbackPendingAdHocQuiet()
         pendingNightWatchPlan = nil
         pendingNightWatchSourceOccurrenceID = nil
         pendingWindDownStartContext = nil
+        pendingNFCTagDigest = nil
         nightWatchStartStatus = ""
         showNightWatchStartPrompt = false
     }
 
+    func consumeHomeStartAdmission(_ admission: HomeStartAdmission) {
+        guard homeStartAdmission == admission else { return }
+        homeStartAdmission = nil
+    }
+
+    private func beginStartTransaction() {
+        pendingStartTransactionID = UUID()
+        startNFCStatus = ""
+        homeStartAdmission = nil
+    }
+
     func confirmNightWatchStart() {
         guard pendingNightWatchPlan != nil, !nightWatchStartInFlight else { return }
-        guard ScreenTimeProtectionStartPolicy.canStart(shieldingReadiness) else {
+        guard shieldingReadiness.canStartProtectedSession else {
             nightWatchStartStatus = shieldingReadiness.detail
             return
         }
@@ -973,15 +1322,25 @@ final class FocusRunViewModel: ObservableObject {
         }
     }
 
-    private func startPendingNightWatch() {
+    private func startPendingNightWatch(
+        stagedRunID: UUID? = nil,
+        stagedStartedAt: Date? = nil,
+        stagedPrimaryShareSelection: Bool? = nil
+    ) {
+        let isVerifiedStagedContinuation = stagedRunID != nil
         guard let requestedPlan = pendingNightWatchPlan,
-              !nightWatchStartInFlight,
-              ScreenTimeProtectionStartPolicy.canStart(shieldingReadiness) else {
+              NightFlockPrimaryRunAdmissionRules.mayEnterStart(
+                isStartInFlight: nightWatchStartInFlight,
+                hasVerifiedStagedRun: isVerifiedStagedContinuation
+              ),
+              shieldingReadiness.canStartProtectedSession else {
             if pendingNightWatchPlan != nil { nightWatchStartStatus = shieldingReadiness.detail }
             return
         }
-        nightWatchStartInFlight = true
-        let startedAt = Date()
+        if !isVerifiedStagedContinuation {
+            nightWatchStartInFlight = true
+        }
+        let startedAt = stagedStartedAt ?? nowProvider()
         let plan: NightWatchPlan
         if let sourceID = pendingNightWatchSourceOccurrenceID {
             guard let eligible = WindDownScheduleEngine.eligibleOccurrence(
@@ -1001,78 +1360,222 @@ final class FocusRunViewModel: ObservableObject {
                 preferences: nightWatchPreferences,
                 startedAt: startedAt
             )
+        } else if requestedPlan.role == .additionalQuiet,
+                  let context = pendingWindDownStartContext,
+                  context.kind == .oneTimeQuiet {
+            // Manual Phone Away has no saved occurrence to claim. Rebuild its
+            // interval at the actual confirmation/tag success time so repair
+            // or a long picker visit never spends the person's quiet minutes.
+            let end = startedAt.addingTimeInterval(TimeInterval(context.durationMinutes * 60))
+            plan = NightWatchPlan.additionalQuiet(
+                start: startedAt,
+                end: end,
+                activity: nightWatchPreferences.eveningActivity,
+                cueText: nightWatchPreferences.eveningCueText
+            )
         } else {
             plan = requestedPlan
         }
-        let liveActivityRequested = liveActivityChoiceForNextRun
-        let appShieldingRequested = true
-        liveActivityEnabled = liveActivityRequested
-        UserDefaults.standard.set(
-            liveActivityRequested,
-            forKey: FocusRunLiveActivityService.preferenceKey
-        )
+        let liveActivityRequested: Bool
+#if DEBUG
+        liveActivityRequested = screenbookStartReadinessEnabled ? false : liveActivityChoiceForNextRun
+#else
+        liveActivityRequested = liveActivityChoiceForNextRun
+#endif
+        let appShieldingRequested: Bool
+#if DEBUG
+        appShieldingRequested = !screenbookStartReadinessEnabled || screenbookStartKeepsShielding
+#else
+        appShieldingRequested = true
+#endif
         let sourceID = pendingNightWatchSourceOccurrenceID
-        pendingNightWatchPlan = nil
-        pendingNightWatchSourceOccurrenceID = nil
-        pendingWindDownStartContext = nil
-        showNightWatchStartPrompt = false
-        notifications.cancelNightWatchReminder()
-        persistence.automaticWindDownSchedule = nil
-        quietTimeShielding.cancelAutomaticSchedule()
-        let runID = UUID()
-        if plan.role == .primarySleepBookend {
-            nightFlockViewModel.preparePrimaryRun(
+        let startNFCPurpose = currentNFCPurpose
+        let runID = stagedRunID ?? UUID()
+        let replacesAutomaticSchedule = persistence.automaticWindDownSchedule != nil
+        let isPractice = WindDownStartContext.isPracticeOccurrence(
+            sourceID: sourceID,
+            practicePeriodID: orientationState.practicePeriodID
+        )
+        let primaryShareSelection = plan.role == .primarySleepBookend
+            ? (stagedPrimaryShareSelection ?? NightFlockPrimaryRunSharingHandoffRules.capturedShareSelection(
+                nightFlockViewModel.shareNextPrimaryRun
+            ))
+            : nil
+        if let primaryShareSelection, stagedRunID == nil {
+            let decision = NightFlockPrimaryRunSharingDecision(
                 runID: runID,
-                at: startedAt,
-                share: nightFlockViewModel.shareNextPrimaryRun
+                allowsSharing: primaryShareSelection,
+                capturedAt: startedAt
             )
-            nightFlockViewModel.publishV4WindDownStarting(runID: runID, at: startedAt)
+            let transactionID = pendingStartTransactionID
+            Task { [weak self] in
+                guard let self,
+                      let durableDecision = await self.nightFlockViewModel
+                        .stagePrimaryRunSharingDecisionForAdmission(decision),
+                      NightFlockPrimaryRunAdmissionRules.mayAdmit(
+                        sharingDecisionStaged: true,
+                        transactionIsCurrent: self.nightWatchStartInFlight && self.pendingStartTransactionID == transactionID
+                      )
+                else {
+                    guard let self else { return }
+                    self.nightWatchStartInFlight = false
+                    self.nightWatchStartStatus = "Wind Down did not start because its sharing choice could not be saved safely. Please try again."
+                    return
+                }
+                self.primaryRunSharingAdmissions[runID] = durableDecision.allowsSharing
+                self.startPendingNightWatch(
+                    stagedRunID: runID,
+                    stagedStartedAt: startedAt,
+                    stagedPrimaryShareSelection: durableDecision.allowsSharing
+                )
+            }
+            return
         }
-        coordinator.start(
+        if let primaryShareSelection {
+            primaryRunSharingAdmissions[runID] = primaryShareSelection
+        }
+        let startResult = coordinator.start(
             configuration: FocusRunConfiguration(
                 nightWatchPlan: plan,
                 guardKind: selectedGuardKind,
-                isPractice: WindDownStartContext.isPracticeOccurrence(
-                    sourceID: sourceID,
-                    practicePeriodID: orientationState.practicePeriodID
-                )
+                isPractice: isPractice
             ),
             focusAccepted: false,
             startedAt: startedAt,
             autoConfirmPlacement: selectedGuardKind == .nfcTag,
             appShieldingRequested: appShieldingRequested,
             liveActivityRequested: liveActivityRequested,
+            replacesAutomaticSchedule: replacesAutomaticSchedule,
             runID: runID
         )
+        guard case let .started(startedRun) = startResult else {
+            primaryRunSharingAdmissions.removeValue(forKey: runID)
+            primaryRunsValidatedDuringSharingAdmission.removeValue(forKey: runID)
+            // A stale confirmation must not leave behind a temporary schedule
+            // mutation if another run or Morning won admission meanwhile.
+            rollbackPendingAdHocQuiet()
+            nightWatchStartInFlight = false
+            pendingNightWatchPlan = nil
+            pendingNightWatchSourceOccurrenceID = nil
+            pendingWindDownStartContext = nil
+            pendingNFCTagDigest = nil
+            pendingStartTransactionID = nil
+            startNFCStatus = ""
+            showNightWatchStartPrompt = false
+            nightWatchStartStatus = startRejectionMessage(for: startResult)
+            nfcStatus = nightWatchStartStatus
+            return
+        }
+
+        liveActivityEnabled = liveActivityRequested
+        persistLiveActivityChoiceIfNeeded(liveActivityRequested)
+        pendingNightWatchPlan = nil
+        pendingNightWatchSourceOccurrenceID = nil
+        pendingWindDownStartContext = nil
+        showNightWatchStartPrompt = false
+        pendingStartTransactionID = nil
+        startNFCStatus = ""
+        homeStartAdmission = HomeStartRoutingPolicy.admission(for: startResult)
+        notifications.cancelNightWatchReminder()
+        persistence.automaticWindDownSchedule = nil
+        if let pendingNFCTagDigest {
+            markNFCTagVerified(pendingNFCTagDigest, purpose: startNFCPurpose)
+            self.pendingNFCTagDigest = nil
+        }
+        if plan.role == .primarySleepBookend {
+            // Reset this one-shot preference only after coordinator admission
+            // succeeds. A confirmation can remain open while an automatic run
+            // starts, and cancelling that stale confirmation must not mutate
+            // the next social-sharing choice.
+            let shareThisPrimaryRun = primaryRunSharingAdmissions.removeValue(forKey: startedRun.id)
+                ?? primaryShareSelection
+                ?? NightFlockPrimaryRunSharingHandoffRules.capturedShareSelection(
+                    nightFlockViewModel.shareNextPrimaryRun
+                )
+            let validatedDuringAdmission = primaryRunsValidatedDuringSharingAdmission
+                .removeValue(forKey: startedRun.id) != nil
+            nightFlockViewModel.preparePrimaryRun(
+                startedRun,
+                share: shareThisPrimaryRun,
+                isPractice: isPractice,
+                publishValidatedStatusAfterAdmission: validatedDuringAdmission
+            )
+        }
+        reloadCurrentPurposeCue()
         if let sourceID,
            sourceID == orientationState.practicePeriodID,
-           let runID = activeRun?.id {
-            orientationState.recordPracticeRun(runID)
+           let startedRunID = activeRun?.id {
+            orientationState.recordPracticeRun(startedRunID)
             persistence.orientationState = orientationState
         }
         consumeScheduledOccurrence(sourceID)
         pendingAdHocQuietTransaction = nil
+        scheduleRunEffectsIfNeeded(for: plan, startedAt: startedAt, runID: startedRun.id)
+        nightWatchStartInFlight = false
+        nightWatchStartStatus = ""
+    }
+
+    private func handlePhoneAwayValidationForSocialPublication(_ run: FocusRun) {
+        let isPrimaryWindDown = run.nightWatchPlan?.role == .primarySleepBookend
+        let admissionIsPending = primaryRunSharingAdmissions[run.id] != nil
+        guard !NightFlockPrimaryRunValidationAdmissionRules.shouldDeferValidation(
+            isPrimaryWindDown: isPrimaryWindDown,
+            sharingAdmissionIsPending: admissionIsPending
+        ) else {
+            primaryRunsValidatedDuringSharingAdmission[run.id] = run
+            return
+        }
+        nightFlockViewModel.publishV4PhoneAwayActive(for: run)
+        nightFlockViewModel.publishPhoneTucked(for: run)
+    }
+
+    private func startRejectionMessage(for result: FocusSessionStartResult) -> String {
+        switch result {
+        case .started:
+            return ""
+        case .rejected(.activeRun):
+            return "A Wind Down or Phone Away session is already running. Ollie kept it in place."
+        case .rejected(.activeScreenFreeMorning):
+            return "Screen-Free Morning is already running. Finish or continue it before starting another session."
+        }
+    }
+
+    private func scheduleRunEffectsIfNeeded(
+        for plan: NightWatchPlan,
+        startedAt: Date,
+        runID: UUID
+    ) {
+#if DEBUG
+        guard !screenbookStartReadinessEnabled else { return }
+#endif
         notifications.scheduleNightWatchNotifications(
             for: plan,
             startedAt: startedAt,
             purpose: offlinePurpose,
-            seed: activeRun?.id ?? UUID(),
+            seed: runID,
             preferences: notificationPreferences
         )
         usageMonitoring.schedule(for: plan, startedAt: startedAt)
-        nightWatchStartInFlight = false
-        nightWatchStartStatus = ""
+    }
+
+    private func persistLiveActivityChoiceIfNeeded(_ enabled: Bool) {
+#if DEBUG
+        guard !screenbookStartReadinessEnabled else { return }
+#endif
+        UserDefaults.standard.set(enabled, forKey: FocusRunLiveActivityService.preferenceKey)
     }
 
     func saveWindDownRoutines() {
         windDownSchedule.routines = windDownRoutines
         persistence.windDownSchedule = windDownSchedule
+        reconcileSharedNightPlans()
     }
 
     func saveWindDownSchedule() {
         guard !isRunning else { return }
         windDownRoutines = windDownSchedule.routines
         persistence.windDownSchedule = windDownSchedule
+        reconcileSharedNightPlans()
         nextWindDownOverride = windDownSchedule.oneTimePeriods
             .filter(\.isAvailable)
             .sorted { $0.interval.start < $1.interval.start }
@@ -1449,6 +1952,7 @@ final class FocusRunViewModel: ObservableObject {
 
     func saveNightWatchPlanForTonight() {
         saveNightWatchPreferences()
+        publishNextSharedNightPlansAfterExplicitSave()
         markOrientation(.windDownSaved)
         scheduleAutomaticWindDownIfNeeded()
     }
@@ -1744,8 +2248,16 @@ final class FocusRunViewModel: ObservableObject {
             return
         }
         answerFocusPrompt(accepted)
-        coordinator.start(configuration: FocusRunConfiguration(duration: selectedDuration, guardKind: selectedGuardKind), focusAccepted: accepted)
-        notifications.scheduleLegacyCompletion(at: activeRun?.plannedEndAt)
+        let startResult = coordinator.start(
+            configuration: FocusRunConfiguration(duration: selectedDuration, guardKind: selectedGuardKind),
+            focusAccepted: accepted
+        )
+        guard case let .started(startedRun) = startResult else {
+            focusGuidance = startRejectionMessage(for: startResult)
+            showFocusModePrompt = false
+            return
+        }
+        notifications.scheduleLegacyCompletion(at: startedRun.plannedEndAt)
         if selectedGuardKind == .qrCode {
             showQRCodeScanner = true
         } else if selectedGuardKind == .nfcTag {
@@ -1776,15 +2288,21 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     func scanNFCTag() {
-        nfcStatus = ""
+        let isPendingStart = pendingNightWatchPlan != nil && !isRunning
+        let startTransactionID = isPendingStart ? pendingStartTransactionID : nil
+        if isPendingStart {
+            startNFCStatus = ""
+        } else {
+            nfcStatus = ""
+        }
         let purpose = currentNFCPurpose
         guard phoneBedTagLibrary.hasTag(for: purpose) else {
-            nfcStatus = pendingRunIsAdditionalQuiet || activeRunIsAdditionalQuiet
+            let message = pendingRunIsAdditionalQuiet || activeRunIsAdditionalQuiet
                 ? "Set up a Phone Away tag in Settings before starting with NFC."
                 : "Set up a Wind Down tag in Settings before starting with NFC."
+            if isPendingStart { startNFCStatus = message } else { nfcStatus = message }
             return
         }
-        let isPendingStart = pendingNightWatchPlan != nil && activeRun == nil
         guard WindDownStartGate.canBeginNFCRead(
             forPendingStart: isPendingStart,
             hasActiveRun: activeRun != nil,
@@ -1796,6 +2314,10 @@ final class FocusRunViewModel: ObservableObject {
             isAdditionalQuiet: pendingRunIsAdditionalQuiet || activeRunIsAdditionalQuiet
         ) { [weak self] result in
             guard let self else { return }
+            if let startTransactionID,
+               self.pendingStartTransactionID != startTransactionID {
+                return
+            }
             self.isScanningNFCForStart = false
             switch result {
             case .read(let read):
@@ -1803,19 +2325,20 @@ final class FocusRunViewModel: ObservableObject {
                     digest: read.digest,
                     purpose: purpose
                 ) != nil else {
-                    self.nfcStatus = self.pendingNightWatchPlan != nil
+                    let message = self.pendingNightWatchPlan != nil
                         ? (self.pendingRunIsAdditionalQuiet
                             ? "That tag is not set up for Phone Away. Phone Away has not started."
                             : "That tag is not set up for Wind Down. Wind Down has not started.")
                         : (self.activeRunIsAdditionalQuiet
                             ? "That tag is not set up for Phone Away. Phone Away is still running."
                             : "That tag is not set up for Wind Down. Wind Down is still running.")
+                    if startTransactionID != nil { self.startNFCStatus = message } else { self.nfcStatus = message }
                     return
                 }
                 if self.pendingNightWatchPlan != nil,
-                   self.activeRun == nil {
-                    self.markNFCTagVerified(read.digest, purpose: purpose)
-                    self.nfcStatus = self.pendingRunIsAdditionalQuiet
+                   !self.isRunning {
+                    self.pendingNFCTagDigest = read.digest
+                    self.startNFCStatus = self.pendingRunIsAdditionalQuiet
                         ? "Phone Away is starting."
                         : "Wind Down is starting."
                     self.startPendingNightWatch()
@@ -1836,7 +2359,7 @@ final class FocusRunViewModel: ObservableObject {
                 }
             case .cancelled:
                 if self.pendingNightWatchPlan != nil {
-                    self.nfcStatus = self.pendingRunIsAdditionalQuiet
+                    self.startNFCStatus = self.pendingRunIsAdditionalQuiet
                         ? "No tag was read. Phone Away has not started."
                         : "No tag was read. Wind Down has not started."
                 } else {
@@ -1845,7 +2368,11 @@ final class FocusRunViewModel: ObservableObject {
                         : "No tag was read. Wind Down is still running."
                 }
             case .unavailable(let message):
-                self.nfcStatus = message
+                if startTransactionID != nil {
+                    self.startNFCStatus = message
+                } else {
+                    self.nfcStatus = message
+                }
             }
         }
     }
@@ -2207,7 +2734,9 @@ final class FocusRunViewModel: ObservableObject {
 
     /// Rehydrates an automatic run after the app returns from the background or is
     /// relaunched. DeviceActivity handles the shield while the app is closed.
-    func reconcileAutomaticWindDownIfNeeded() {
+    func reconcileAutomaticWindDownIfNeeded(
+        stagedPrimaryDecision: NightFlockPrimaryRunSharingDecision? = nil
+    ) {
         guard !isRunning,
               nightWatchPreferences.isConfigured,
               hasAutomaticWindDownRoutine,
@@ -2240,11 +2769,48 @@ final class FocusRunViewModel: ObservableObject {
             return
         }
 
+        // Automatic Wind Down has no separate social prompt. It still honors
+        // the one-shot choice selected for the next primary run, but only
+        // consumes that choice after coordinator admission succeeds.
+        let automaticShareSelection = NightFlockPrimaryRunSharingHandoffRules
+            .selectionForStagedContinuation(
+                decision: stagedPrimaryDecision,
+                fallbackSelection: NightFlockPrimaryRunSharingHandoffRules
+                    .capturedShareSelection(nightFlockViewModel.shareNextPrimaryRun)
+            )
+        if stagedPrimaryDecision == nil {
+            let decision = NightFlockPrimaryRunSharingDecision(
+                runID: schedule.id,
+                allowsSharing: automaticShareSelection,
+                capturedAt: schedule.startedAt
+            )
+            guard automaticPrimarySharingAdmissionRunID != schedule.id else { return }
+            automaticPrimarySharingAdmissionRunID = schedule.id
+            Task { [weak self] in
+                guard let self,
+                      let durableDecision = await self.nightFlockViewModel
+                        .stagePrimaryRunSharingDecisionForAdmission(decision),
+                      !self.isRunning,
+                      self.persistence.automaticWindDownSchedule?.id == schedule.id
+                else {
+                    if let self,
+                       self.automaticPrimarySharingAdmissionRunID == schedule.id {
+                        self.automaticPrimarySharingAdmissionRunID = nil
+                        self.nightWatchStartStatus = "Automatic Wind Down did not start because its sharing choice could not be saved safely."
+                    }
+                    return
+                }
+                guard self.automaticPrimarySharingAdmissionRunID == schedule.id else { return }
+                self.automaticPrimarySharingAdmissionRunID = nil
+                self.reconcileAutomaticWindDownIfNeeded(stagedPrimaryDecision: durableDecision)
+            }
+            return
+        }
         guard now < schedule.plan.protectedUntil else {
-            notifications.cancelNightWatchReminder()
-            persistence.automaticWindDownSchedule = nil
-            consumeScheduledOccurrence(schedule.sourceOccurrenceID)
-            coordinator.reconcileExpiredAutomaticNightWatch(
+            guard NightFlockPrimaryRunAdmissionRules.mayMaterializeAutomaticRun(
+                stagedDecision: stagedPrimaryDecision
+            ) else { return }
+            let startResult = coordinator.reconcileExpiredAutomaticNightWatch(
                 plan: schedule.plan,
                 guardKind: nightWatchPreferences.guardKind,
                 startedAt: schedule.startedAt,
@@ -2253,13 +2819,35 @@ final class FocusRunViewModel: ObservableObject {
                 liveActivityRequested: liveActivityEnabled,
                 runID: schedule.id
             )
+            guard case let .started(startedRun) = startResult else {
+                if let startResult {
+                    nightWatchStartStatus = startRejectionMessage(for: startResult)
+                } else {
+                    nightWatchStartStatus = "The automatic Wind Down could not start. Your current session was left unchanged."
+                }
+                return
+            }
+            let reconciledRun = activeRun ?? startedRun
+            primaryRunSharingAdmissions[reconciledRun.id] = automaticShareSelection
+            nightFlockViewModel.preparePrimaryRun(
+                reconciledRun,
+                share: automaticShareSelection,
+                isPractice: false,
+                publishValidatedStatusAfterAdmission: false
+            )
+            // The coordinator can finish this run synchronously. Its first
+            // terminal callback already sees the durable decision; replaying
+            // the factual social outcome after context preparation restores
+            // the ordinary terminal path without inventing an active status.
+            publishSlumberPartyOutcome(for: reconciledRun)
+            notifications.cancelNightWatchReminder()
+            persistence.automaticWindDownSchedule = nil
+            consumeScheduledOccurrence(schedule.sourceOccurrenceID)
             scheduleNextAutomaticWindDown()
             return
         }
-
-        notifications.cancelNightWatchReminder()
-        consumeScheduledOccurrence(schedule.sourceOccurrenceID)
-        coordinator.start(
+        primaryRunSharingAdmissions[schedule.id] = automaticShareSelection
+        let startResult = coordinator.start(
             configuration: FocusRunConfiguration(
                 nightWatchPlan: schedule.plan,
                 guardKind: nightWatchPreferences.guardKind
@@ -2271,15 +2859,33 @@ final class FocusRunViewModel: ObservableObject {
             liveActivityRequested: liveActivityEnabled,
             runID: schedule.id
         )
-        if let activeRun, let plan = activeRun.nightWatchPlan {
+        guard case let .started(startedRun) = startResult else {
+            primaryRunSharingAdmissions.removeValue(forKey: schedule.id)
+            primaryRunsValidatedDuringSharingAdmission.removeValue(forKey: schedule.id)
+            nightWatchStartStatus = startRejectionMessage(for: startResult)
+            return
+        }
+        let shareThisPrimaryRun = primaryRunSharingAdmissions.removeValue(forKey: startedRun.id)
+            ?? automaticShareSelection
+        let validatedDuringAdmission = primaryRunsValidatedDuringSharingAdmission
+            .removeValue(forKey: startedRun.id) != nil
+        nightFlockViewModel.preparePrimaryRun(
+            startedRun,
+            share: shareThisPrimaryRun,
+            isPractice: false,
+            publishValidatedStatusAfterAdmission: validatedDuringAdmission
+        )
+        notifications.cancelNightWatchReminder()
+        consumeScheduledOccurrence(schedule.sourceOccurrenceID)
+        if let plan = startedRun.nightWatchPlan {
             notifications.scheduleNightWatchNotifications(
                 for: plan,
-                startedAt: activeRun.startedAt,
+                startedAt: startedRun.startedAt,
                 purpose: offlinePurpose,
-                seed: activeRun.id,
+                seed: startedRun.id,
                 preferences: notificationPreferences
             )
-            usageMonitoring.schedule(for: plan, startedAt: activeRun.startedAt)
+            usageMonitoring.schedule(for: plan, startedAt: startedRun.startedAt)
         }
     }
 
@@ -2410,7 +3016,7 @@ final class FocusRunViewModel: ObservableObject {
         )
         usageMonitoring.schedule(for: plan, startedAt: startDate, repeatsDaily: false)
         if plan.role == .primarySleepBookend {
-            quietTimeShielding.scheduleAutomatic(for: schedule)
+            quietTimeShielding.scheduleAutomatic(for: schedule, at: date)
         }
     }
 
@@ -2488,6 +3094,11 @@ final class FocusRunViewModel: ObservableObject {
         notifications.resetLocalState()
         quietTimeShielding.resetLocalState()
         healthSleepService.resetLocalState()
+        sleepRefreshTask?.cancel()
+        sleepRefreshTask = nil
+        invalidateSharedHabitSleepReconciliation()
+        sleepRefreshGeneration &+= 1
+        sleepAccessRequestGeneration &+= 1
         FocusRunShortcutStore.clearPendingDuration()
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         screenTimeSelectionService.clearAllSelections()
@@ -2514,6 +3125,9 @@ final class FocusRunViewModel: ObservableObject {
         lastNightSleep = nil
         recentNightSleeps = []
         isRefreshingSleep = false
+        isRequestingSleepAccess = false
+        lastSleepQueryAt = nil
+        sleepQueryError = nil
         analyticsExportURL = nil
         analyticsExportError = nil
         shieldingEnabled = false
@@ -2566,6 +3180,16 @@ final class FocusRunViewModel: ObservableObject {
         }
     }
 
+    /// Refreshes system-owned authorization and the App Group selection when
+    /// the app returns from Settings or the Family Activity picker.
+    func refreshScreenTimeState() {
+        screenTimeAuthorization = screenTimeService.currentState()
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        bedtimeActivitySelection = screenTimeSelectionService.load(.bedtime)
+#endif
+        reloadCurrentPurposeCue()
+    }
+
     @discardableResult
     func requestScreenTimeAuthorization() async -> Bool {
         screenTimeAuthorization = await screenTimeService.requestAuthorization()
@@ -2574,6 +3198,7 @@ final class FocusRunViewModel: ObservableObject {
             bedtimeActivitySelection = screenTimeSelectionService.load(.bedtime)
         }
 #endif
+        reloadCurrentPurposeCue()
         return screenTimeAuthorization == .approved
     }
 
@@ -2584,8 +3209,11 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     func retryShielding() {
-        guard let run = activeRun else { return }
-        coordinator.reconcileShieldingNow(for: run)
+        if let morning = activeScreenFreeMorning {
+            coordinator.reconcileShieldingNow(for: morning)
+        } else if let run = activeRun {
+            coordinator.reconcileShieldingNow(for: run)
+        }
     }
 
     func requestNotificationPermission() async -> Bool {
@@ -2662,18 +3290,83 @@ final class FocusRunViewModel: ObservableObject {
 #endif
 
     func connectAppleHealthSleep() {
-        Task { @MainActor in
-            sleepAuthorization = await healthSleepService.requestSleepAccess()
-            if sleepAuthorization == .requested {
-                await loadRecentSleepSummaries()
+        guard healthSleepService.isAvailable, !isRequestingSleepAccess else { return }
+        isRequestingSleepAccess = true
+        sleepAccessRequestGeneration &+= 1
+        let requestGeneration = sleepAccessRequestGeneration
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            let authorization = await self.healthSleepService.requestSleepAccess()
+            guard !Task.isCancelled,
+                  requestGeneration == self.sleepAccessRequestGeneration
+            else { return }
+            self.sleepAuthorization = authorization
+            self.isRequestingSleepAccess = false
+            if authorization == .requested {
+                self.refreshSleepSummary()
             }
         }
     }
 
     func refreshSleepSummary() {
-        Task { @MainActor in
-            guard sleepAuthorization == .requested else { return }
-            await loadRecentSleepSummaries()
+        beginSleepRefresh(force: true)
+    }
+
+    /// A screen appearance or foreground return may observe changed Health data,
+    /// but should not repeatedly query while the person moves through the app.
+    func refreshHealthConnectionIfNeeded(
+        maximumAge: TimeInterval = 0
+    ) {
+        guard sleepAuthorization == .requested else { return }
+        beginSleepRefresh(force: false, maximumAge: maximumAge)
+    }
+
+    func retryAppleHealthConnection() {
+        if case .error = sleepAuthorization,
+           recentNightSleeps.isEmpty {
+            connectAppleHealthSleep()
+        } else {
+            refreshSleepSummary()
+        }
+    }
+
+    func refreshConnectionsAfterForeground() {
+        refreshScreenTimeState()
+        refreshHealthConnectionIfNeeded(maximumAge: foregroundSleepRefreshInterval)
+        reconcileSharedHabitSleepAfterForeground()
+    }
+
+    private func beginSleepRefresh(
+        force: Bool,
+        maximumAge: TimeInterval = 0
+    ) {
+        guard healthSleepService.isAvailable else {
+            sleepAuthorization = .unavailable
+            return
+        }
+        guard !isRefreshingSleep else { return }
+        if !force,
+           let lastSleepQueryAt,
+           nowProvider().timeIntervalSince(lastSleepQueryAt) < maximumAge {
+            return
+        }
+        sleepRefreshGeneration &+= 1
+        let generation = sleepRefreshGeneration
+        isRefreshingSleep = true
+        sleepRefreshTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let result = await self.healthSleepService.recentNightSleepQuery(days: 30)
+            guard HealthSleepConnectionPresentation.acceptsCompletion(
+                generation: generation,
+                currentGeneration: self.sleepRefreshGeneration
+            ) else {
+                return
+            }
+            await self.applySleepQueryResult(result)
+            // A newly connected or refreshed Health source may make a fully
+            // post-agreement window available without another app foreground.
+            self.reconcileSharedHabitSleepAfterForeground()
+            self.sleepRefreshTask = nil
         }
     }
 
@@ -2720,14 +3413,16 @@ final class FocusRunViewModel: ObservableObject {
         saveMorningCheckIn(entry)
     }
 
-    private func loadRecentSleepSummaries() async {
-        isRefreshingSleep = true
-        defer { isRefreshingSleep = false }
-        recentNightSleeps = await healthSleepService.recentNightSleeps(days: 30)
+    private func applySleepQueryResult(_ result: HealthSleepService.SleepQueryResult) async {
+        isRefreshingSleep = false
+        lastSleepQueryAt = nowProvider()
+        sleepQueryError = result.errorDescription
+        guard result.errorDescription == nil else { return }
+        recentNightSleeps = result.summaries
         let calendar = Calendar.current
         lastNightSleep = recentNightSleeps.first { summary in
             guard let nightEndingDate = summary.nightEndingDate else { return false }
-            return calendar.isDate(nightEndingDate, inSameDayAs: Date())
+            return calendar.isDate(nightEndingDate, inSameDayAs: nowProvider())
         }
         linkHealthOutcomesToRitualHistory()
         let supplementWindow = calendar.date(byAdding: .day, value: -7, to: Date()) ?? Date()

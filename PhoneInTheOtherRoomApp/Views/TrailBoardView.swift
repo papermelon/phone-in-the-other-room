@@ -87,34 +87,27 @@ struct TrailBoardView: View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack(alignment: .top, spacing: AppSpacing.sm) {
-                    Image(systemName: "map.fill")
+                    Image(systemName: "binoculars.fill")
                         .font(.title.weight(.bold))
                         .foregroundStyle(AppColors.grass)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                         Text("OLLIE’S SEARCH")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.grass)
-                        Text("Choose one missing sheep for Ollie to favour.")
+                        Text("Choose one missing sheep for Ollie to watch for.")
                             .font(AppTypography.headline)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Ollie may look more closely here after Wind Down, Sunrise Trail, or Phone Away. Choosing a sheep never guarantees who comes home.")
+                        Text("Ollie may look more closely here after Wind Down, Screen-Free Morning, or Phone Away. Choosing a sheep never guarantees who comes home.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                HStack(spacing: AppSpacing.xs) {
-                    boardMetric(
-                        "\(viewModel.sheepSearchState.trailMap.pendingMappedMinutes) min",
-                        label: "Mapped",
-                        icon: "point.topleft.down.to.point.bottomright.curvepath"
-                    )
-                    boardMetric(
-                        "\(discoveredIDs.count) / \(SheepCatalog.all.count)",
-                        label: "Found",
-                        icon: "book.closed.fill"
-                    )
-                }
+                boardMetric(
+                    "\(discoveredIDs.count) / \(SheepCatalog.all.count)",
+                    label: "Found",
+                    icon: "book.closed.fill"
+                )
             }
         }
     }

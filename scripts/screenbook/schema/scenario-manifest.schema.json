@@ -10,8 +10,8 @@
     "manifestHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
     "scenarios": {
       "type": "array",
-      "minItems": 5,
-      "maxItems": 5,
+      "minItems": 9,
+      "maxItems": 9,
       "items": {
         "type": "object",
         "required": ["id", "title", "surface", "journey", "route", "state", "fixtureVersion", "captureProfile", "captureProvenance", "dependencies", "copy", "warnings", "screenshot", "fingerprint", "copyHash", "changeStatus"],

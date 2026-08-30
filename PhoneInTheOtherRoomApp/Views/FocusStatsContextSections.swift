@@ -49,6 +49,7 @@ struct NightsHealthContext: View {
     var record: NightWatchRecord?
     var isEmbedded = false
     @State private var isExpanded = false
+    @State private var showsHealthAccessHelp = false
 
     var body: some View {
         Group {
@@ -58,6 +59,9 @@ struct NightsHealthContext: View {
             } else {
                 PixelCard { disclosure }
             }
+        }
+        .sheet(isPresented: $showsHealthAccessHelp) {
+            HealthConnectionAccessHelpSheet()
         }
     }
 
@@ -97,51 +101,83 @@ struct NightsHealthContext: View {
     }
 
     private var summary: String {
-        switch viewModel.sleepAuthorization {
-        case .unavailable: return "Unavailable on this iPhone"
-        case .notRequested: return "Optional · not connected"
-        case .error: return "Could not load sleep context"
-        case .requested:
-            if viewModel.isRefreshingSleep { return "Checking Apple Health…" }
-            guard let availableSleep else { return "No matching sleep sample yet" }
-            return availableSleep.isStale
-                ? "Latest sample: \(nightEndingLabel(for: availableSleep.sleep))"
-                : "Sleep recorded for \(nightEndingLabel(for: availableSleep.sleep))"
+        switch viewModel.healthSleepConnectionPresentation {
+        case .unavailable:
+            return "Unavailable on this iPhone"
+        case .connect:
+            return "Optional · not connected"
+        case .checking:
+            return "Checking for sleep data…"
+        case let .dataAvailable(sampleDate, _):
+            return "Sleep data available · \(sampleDate.formatted(.dateTime.month(.abbreviated).day()))"
+        case .noData:
+            return "No sleep data for this period"
+        case .staleData:
+            return "Couldn’t refresh sleep context"
         }
     }
 
     @ViewBuilder
     private var healthDetails: some View {
-        switch viewModel.sleepAuthorization {
+        switch viewModel.healthSleepConnectionPresentation {
         case .unavailable:
             Text("Apple Health sleep data is unavailable on this device.")
                 .font(AppTypography.body)
-        case .notRequested:
-            Text("Connect Apple Health in Settings when you want sleep duration and available stage context beside your nights.")
+        case .connect:
+            Text("Connect Apple Health to show optional sleep duration and available stage context beside your nights.")
                 .font(AppTypography.body)
-        case .error:
-            Text("Apple Health could not complete the request. You can try again from the Health app or Settings.")
-                .font(AppTypography.body)
-        case .requested:
-            if viewModel.isRefreshingSleep {
-                HStack(spacing: AppSpacing.sm) {
-                    ProgressView()
-                        .tint(AppColors.grass)
-                    Text("Checking Apple Health…")
-                        .font(AppTypography.body)
-                }
-            } else if let availableSleep {
-                VStack(alignment: .leading, spacing: AppSpacing.md) {
+            Button("Connect Apple Health", action: viewModel.connectAppleHealthSleep)
+                .buttonStyle(PixelChipButtonStyle(isSelected: false))
+        case .checking:
+            HStack(spacing: AppSpacing.sm) {
+                ProgressView()
+                    .tint(AppColors.grass)
+                Text("Checking for sleep data…")
+                    .font(AppTypography.body)
+            }
+        case .dataAvailable, .noData, .staleData:
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                if let availableSleep {
                     sleepDetails(availableSleep.sleep, isStale: availableSleep.isStale)
                     if let comparison = viewModel.sleepOutcomeComparison {
                         Divider()
                         comparisonDetails(comparison)
                     }
+                } else {
+                    Text(noDataDetail)
+                        .font(AppTypography.body)
                 }
-            } else {
-                Text("No sleep sample was found for this night. Health context will appear when Apple has a matching sample.")
-                    .font(AppTypography.body)
+                healthRefreshAction
             }
+        }
+    }
+
+    private var noDataDetail: String {
+        switch viewModel.healthSleepConnectionPresentation {
+        case .noData:
+            return "Apple Health did not return a matching sleep sample for this period. This does not tell Counting Sheep whether read access was allowed."
+        case .staleData:
+            return "Counting Sheep could not refresh Apple Health just now. Any older sleep context stays dated rather than being treated as current."
+        default:
+            return "No matching sleep sample is available yet."
+        }
+    }
+
+    private var healthRefreshAction: some View {
+        let title: String
+        switch viewModel.healthSleepConnectionPresentation {
+        case .staleData: title = "Retry"
+        default: title = "Refresh"
+        }
+        return VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Button(title, action: viewModel.retryAppleHealthConnection)
+                .buttonStyle(PixelChipButtonStyle(isSelected: false))
+            Button("Manage access") { showsHealthAccessHelp = true }
+                .buttonStyle(.plain)
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.grass)
+                .frame(minHeight: 44, alignment: .leading)
+                .accessibilityHint("Explains how to review Apple Health access")
         }
     }
 
@@ -238,57 +274,46 @@ struct NightsHealthContext: View {
 struct NightsScreenTimeContext: View {
     @ObservedObject var viewModel: FocusRunViewModel
     var isEmbedded = false
+#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
+    @State private var showAppPicker = false
+#endif
 
     var body: some View {
-        switch viewModel.screenTimeAuthorization {
-        case .unavailable:
-            statusContent(
-                detail: "Unavailable on this iPhone. Counting Sheep keeps working without it."
-            )
-        case .notDetermined:
-            statusContent(
-                detail: "Optional · connect in Settings for separate evening and morning reports."
-            )
-        case .denied:
-            statusContent(
-                detail: "Access is off. You can change it later in Settings."
-            )
-        case .approved:
+        Group {
+            ScreenTimeConnectionStatusCard(
+                presentation: viewModel.screenTimeConnectionPresentation,
+                onConnect: viewModel.connectScreenTime,
+                onChooseSelection: {
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
-            ScreenTimeBookendCard(
-                showAppPicker: .constant(false),
-                mode: .reports,
+                    showAppPicker = true
+#endif
+                },
                 isEmbedded: isEmbedded
             )
-            .environmentObject(viewModel)
-#else
-            statusContent(
-                detail: "Connected, but the report extension is unavailable in this build."
-            )
+#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
+            if viewModel.screenTimeAuthorization == .approved,
+               !viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
+                Divider()
+                ScreenTimeBookendCard(
+                    showAppPicker: $showAppPicker,
+                    mode: .reports,
+                    isEmbedded: isEmbedded
+                )
+                .environmentObject(viewModel)
+            }
 #endif
         }
-    }
-
-    @ViewBuilder
-    private func statusContent(detail: String) -> some View {
-        let content = HStack(spacing: AppSpacing.sm) {
-            Image(systemName: "iphone.slash")
-                .foregroundStyle(AppColors.grass)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text("Screen Time")
-                    .font(AppTypography.headline)
-                Text(detail)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-            }
+#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
+        .familyActivityPicker(
+            headerText: "Choose apps or categories for reports and future Wind Down or Phone Away app protection.",
+            footerText: "Changing this does not alter a current session. Your selection stays in Apple’s Screen Time system; website entries are ignored.",
+            isPresented: $showAppPicker,
+            selection: $viewModel.bedtimeActivitySelection
+        )
+        .onChange(of: viewModel.bedtimeActivitySelection) { _, _ in
+            viewModel.saveScreenTimeSelection(.bedtime)
         }
-
-        if isEmbedded {
-            content.padding(.vertical, AppSpacing.sm)
-        } else {
-            PixelCard { content }
-        }
+#endif
     }
 }
 

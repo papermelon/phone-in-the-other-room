@@ -95,6 +95,7 @@ extension NightFlockViewModel {
         runID: UUID?,
         at date: Date
     ) {
+        if let runID, !maySharePrimaryRun(runID: runID, startedAt: date) { return }
         guard let snapshot else { return }
         let existing = runID.flatMap { runContexts[$0] }
             ?? runContexts.values.first { context in

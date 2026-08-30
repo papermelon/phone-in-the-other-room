@@ -17,7 +17,22 @@ enum NightFlockRemoteErrorCode: String, Codable, Equatable, Sendable {
     case blockedMembership = "blocked_membership"
     case hostPermissionRequired = "host_permission_required"
     case accountUnavailable = "account_unavailable"
+    case staleRevision = "stale_revision"
     case snapshotConstructionFailed = "snapshot_construction_failed"
+    case sharedHistoryDeleted = "shared_history_deleted"
+    case publicationBeforeAgreement = "publication_before_agreement"
+    case agreementTimezoneMismatch = "agreement_timezone_mismatch"
+    case publicationOutsidePlanWindow = "publication_outside_plan_window"
+    case publicationOutsideReceiptWindow = "publication_outside_receipt_window"
+    case invalidSharedNightPayload = "invalid_shared_night_payload"
+    case invalidPlanChronology = "invalid_plan_chronology"
+    case invalidReceiptChronology = "invalid_receipt_chronology"
+    case invalidPlanBinding = "invalid_plan_binding"
+    case invalidReceiptSource = "invalid_receipt_source"
+    case receiptPlanMismatch = "receipt_plan_mismatch"
+    case sharedNightPlanFrozen = "shared_night_plan_frozen"
+    case sharedNightPlanCancelled = "shared_night_plan_cancelled"
+    case receiptActualStartRequired = "receipt_actual_start_required"
     case serviceUnavailable = "service_unavailable"
     case internalError = "internal_error"
 }
@@ -105,6 +120,14 @@ enum NightFlockAppleIdentityEvidence {
         hasAppleIdentity: Bool
     ) -> Bool {
         originalUserID == recoveredUserID && hasAppleIdentity
+    }
+
+    /// An unbound installation may discover that Apple already owns a
+    /// Counting Sheep account. Apple authentication is sufficient to reopen
+    /// that account, but the caller must quarantine account-scoped local
+    /// transport before using the returned session.
+    static func permitsExistingAccountSignIn(hasAppleIdentity: Bool) -> Bool {
+        hasAppleIdentity
     }
 }
 
@@ -765,7 +788,21 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         case .blockedMembership: return "This Slumber Party is unavailable for this account."
         case .hostPermissionRequired: return "Only the host can do that."
         case .accountUnavailable: return "Slumber Party is unavailable for this account."
+        case .staleRevision: return "That shared update is already up to date."
         case .snapshotConstructionFailed: return "Slumber Party could not load your lobby. Please try again."
+        case .sharedHistoryDeleted: return "That shared record was removed and will not be sent again."
+        case .publicationBeforeAgreement: return "That shared record began before this group agreement and will not be sent."
+        case .agreementTimezoneMismatch: return "That sleep summary uses a different saved group time zone and will refresh."
+        case .publicationOutsidePlanWindow: return "That shared plan is outside this group’s next-seven-night window."
+        case .publicationOutsideReceiptWindow: return "That nightly result is outside this group’s current window."
+        case .invalidSharedNightPayload: return "That shared-night update could not be used."
+        case .invalidPlanChronology: return "That shared plan’s timing did not fit its night."
+        case .invalidReceiptChronology: return "That nightly result’s timing did not fit its night."
+        case .invalidPlanBinding, .receiptPlanMismatch: return "That nightly result no longer matches its saved plan."
+        case .invalidReceiptSource: return "That nightly result needs its saved night identity."
+        case .sharedNightPlanFrozen: return "That shared plan has already begun and will stay as it was."
+        case .sharedNightPlanCancelled: return "That shared night is no longer available and will not be sent."
+        case .receiptActualStartRequired: return "That factual nightly result needs its recorded start time."
         case .serviceUnavailable: return "Slumber Party is resting offline. Please try again."
         case .internalError: return "Slumber Party could not complete that request."
         }
@@ -836,10 +873,11 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         case .unauthorized: return (false, .authenticate)
         case .linkedAccountRequired: return (false, .linkAccount)
         case .activeMembershipExists, .currentMembershipRequired: return (false, .reconcileMembership)
-        case .inviteMemberConstraint, .activeInviteExists: return (false, .reconcile)
+        case .inviteMemberConstraint, .activeInviteExists, .staleRevision: return (false, .reconcile)
         case .unsupportedSchema: return (false, .fallbackSchema)
         case .lobbyStarted, .hostPermissionRequired: return (false, .reconcile)
         case .serviceUnavailable, .internalError, .snapshotConstructionFailed: return (true, .retry)
+        case .sharedHistoryDeleted, .publicationBeforeAgreement, .agreementTimezoneMismatch: return (false, .reconcile)
         default: return (false, nil)
         }
     }

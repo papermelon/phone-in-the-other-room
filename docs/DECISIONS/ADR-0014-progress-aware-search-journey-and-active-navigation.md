@@ -7,7 +7,8 @@ Accepted, 2026-08-07.
 **ADR-0019 cross-reference:** the active journey may show only factual Wind Down and
 Screen-Free Morning state. The 420-minute Wind Down result remains hidden until authorized
 terminal delivery, while Sunrise Trail has a separate 15-minute floor, 100-minute fills, and
-local Farm/Search Journal projection.
+local Farm/Search Journal projection. `SunriseTrail*` remains the internal compatibility name;
+release copy calls the source Screen-Free Morning and does not present it as a shared fixed trail.
 
 ## Context
 
@@ -30,12 +31,14 @@ from foreground distance. Deterministic, non-interactive environmental clues app
 progress thresholds and do not participate in reward resolution. Reduce Motion displays a
 static aligned scene with reached evidence. The scene reports real time to the next phase.
 
-Completed Phone Away runs credit their actual quiet minutes to a versioned search map in
+Completed Phone Away runs credit their actual quiet minutes to a versioned, compatibility-named search map in
 `SheepSearchState`, with a centrally configured 100-minute meter and up to one carried remainder.
 Credit starts at 15 minutes, caps at the configured 100-minute meter per run, and never comes from
 practice or early endings. After three protected Wind Downs, the next eligible completed Phone Away resolves one separate
 bonus search on a deterministic 20/30/40/50/100 ladder. Its clue counter and outcomes are
 isolated from Wind Down odds and bad-luck protection. Legacy map-bonus fields remain decodable.
+The release UI calls the meter Phone Away search progress and does not describe it as mapped
+distance or a shared path.
 
 As explicit product direction, a non-collectible companion sheep may appear beside Ollie on
 the app shield. It is decorative only: it does not represent a resolved search, a promised

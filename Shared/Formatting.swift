@@ -24,4 +24,19 @@ enum OllieFormat {
     static func minutes(_ seconds: TimeInterval) -> Int {
         max(0, Int(seconds / 60))
     }
+
+    static func duration(minutes: Int) -> String {
+        let value = max(0, minutes)
+        if value < 60 { return "\(value) min" }
+        return "\(value / 60)h \(value % 60)m"
+    }
+
+    /// A displayed mean is rounded only for reading; the stored derived value
+    /// remains the server-provided arithmetic mean.
+    static func approximateDuration(minutes: Double) -> String {
+        guard minutes.isFinite else { return "—" }
+        let value = max(0, minutes)
+        guard value.rounded() != value else { return duration(minutes: Int(value)) }
+        return "~\(duration(minutes: Int(value.rounded())))"
+    }
 }

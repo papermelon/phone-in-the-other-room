@@ -16,7 +16,7 @@ enum SheepSearchPresentation {
         case .onboardingPractice: return "Practice gift"
         case .slumberParty: return "Slumber Party gift"
         case .windDown: return "After Wind Down"
-        case .sunrise: return "Sunrise Trail"
+        case .sunrise: return "After Screen-Free Morning"
         case .phoneBreak: return "After Phone Away"
         case .unspecified: return "Farm note"
         }
@@ -51,7 +51,7 @@ enum SheepSearchPresentation {
         case .phoneBreak:
             return "Ollie kept a clue from Phone Away."
         case .sunrise:
-            return "Ollie kept a clue from Sunrise Trail."
+            return "Ollie kept a clue from Screen-Free Morning."
         case .windDown, .unspecified:
             return "Ollie kept a clue."
         case .starter, .onboardingPractice:
@@ -66,7 +66,7 @@ enum SheepSearchPresentation {
         case .phoneBreak:
             return "Ollie did not bring a sheep home this time. The clue is saved for another Phone Away."
         case .sunrise:
-            return "Ollie did not bring a sheep home this time. The clue is saved for another Sunrise Trail fill."
+            return "Ollie did not bring a sheep home this time. The clue is saved for another Screen-Free Morning."
         case .windDown, .unspecified:
             return "Ollie did not bring a sheep home this time. The clue is saved for another night."
         case .starter, .onboardingPractice:
@@ -87,7 +87,7 @@ enum SheepSearchPresentation {
         case .windDown:
             return "After this Wind Down"
         case .sunrise:
-            return "After a Sunrise Trail fill"
+            return "After \(SunriseTrailRules.meterMinutes) Screen-Free Morning minutes"
         case .phoneBreak:
             return "After \(PhoneAwaySearchMeter.maximumMinutes) Phone Away minutes"
         case .unspecified:
@@ -119,7 +119,7 @@ enum SheepSearchPresentation {
         case .phoneBreak:
             return "Shows the Search Journal note for this Phone Away"
         case .sunrise:
-            return "Shows the Search Journal note for this Sunrise Trail fill"
+            return "Shows the Search Journal note from Screen-Free Morning"
         case .windDown, .unspecified:
             return "Shows the Search Journal note for this Wind Down"
         }
@@ -138,8 +138,18 @@ enum SheepSearchPresentation {
         }
         switch outcome.origin {
         case .phoneBreak: return "Ollie kept a Phone Away clue"
-        case .sunrise: return "Ollie kept a Sunrise Trail clue"
+        case .sunrise: return "Ollie kept a Screen-Free Morning clue"
         default: return "Ollie kept a clue"
+        }
+    }
+
+    static func clueStatusLine(for origin: SheepSearchOrigin) -> String {
+        switch origin {
+        case .windDown, .unspecified: return "Wind Down clue saved"
+        case .sunrise: return "Screen-Free Morning clue saved"
+        case .phoneBreak: return "Phone Away clue saved"
+        case .starter, .onboardingPractice: return "Welcome gift saved"
+        case .slumberParty: return "Slumber Party gift saved"
         }
     }
 
@@ -150,12 +160,8 @@ enum SheepSearchPresentation {
         case .slumberParty:
             return "SLUMBER PARTY GIFT"
         case .windDown, .sunrise, .phoneBreak, .unspecified:
-            return "HOW THEY ARRIVED"
+            return "SOURCE"
         }
-    }
-
-    static func showsTrailMetrics(for origin: SheepSearchOrigin) -> Bool {
-        origin == .windDown || origin == .sunrise || origin == .phoneBreak
     }
 
     static func emptyJournalDetail(isPhoneAway: Bool) -> String {

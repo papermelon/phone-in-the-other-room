@@ -10,6 +10,8 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
     var ollieOrnamentID: String
     var featuredSheepDefinitionID: String
     var pastureThemeID: String
+    /// A distinct social identity. It never follows the featured active sheep.
+    var avatarID: String
 
     static let defaultValue = Self(
         skinToneID: ShepherdSkinTone.warm.rawValue,
@@ -18,7 +20,8 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
         shepherdAccessoryID: "none",
         ollieOrnamentID: "none",
         featuredSheepDefinitionID: "none",
-        pastureThemeID: "pasture_meadow"
+        pastureThemeID: "pasture_meadow",
+        avatarID: SocialAvatarRules.shepherdID
     )
 
     func isAllowlisted() -> Bool {
@@ -29,6 +32,100 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
             && CountingSheepPublicPresentationAllowlist.ollieOrnamentIDs.contains(ollieOrnamentID)
             && CountingSheepPublicPresentationAllowlist.featuredSheepDefinitionIDs.contains(featuredSheepDefinitionID)
             && CountingSheepPublicPresentationAllowlist.pastureThemeIDs.contains(pastureThemeID)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case skinToneID, hairStyleID, shepherdOutfitID, shepherdAccessoryID
+        case ollieOrnamentID, featuredSheepDefinitionID, pastureThemeID, avatarID
+    }
+
+    init(
+        skinToneID: String,
+        hairStyleID: String,
+        shepherdOutfitID: String,
+        shepherdAccessoryID: String,
+        ollieOrnamentID: String,
+        featuredSheepDefinitionID: String,
+        pastureThemeID: String,
+        avatarID: String = SocialAvatarRules.shepherdID
+    ) {
+        self.skinToneID = skinToneID
+        self.hairStyleID = hairStyleID
+        self.shepherdOutfitID = shepherdOutfitID
+        self.shepherdAccessoryID = shepherdAccessoryID
+        self.ollieOrnamentID = ollieOrnamentID
+        self.featuredSheepDefinitionID = featuredSheepDefinitionID
+        self.pastureThemeID = pastureThemeID
+        self.avatarID = avatarID
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            skinToneID: try container.decode(String.self, forKey: .skinToneID),
+            hairStyleID: try container.decode(String.self, forKey: .hairStyleID),
+            shepherdOutfitID: try container.decode(String.self, forKey: .shepherdOutfitID),
+            shepherdAccessoryID: try container.decode(String.self, forKey: .shepherdAccessoryID),
+            ollieOrnamentID: try container.decode(String.self, forKey: .ollieOrnamentID),
+            featuredSheepDefinitionID: try container.decode(String.self, forKey: .featuredSheepDefinitionID),
+            pastureThemeID: try container.decode(String.self, forKey: .pastureThemeID),
+            avatarID: try container.decodeIfPresent(String.self, forKey: .avatarID)
+                ?? SocialAvatarRules.shepherdID
+        )
+    }
+}
+
+enum SocialAvatarRules {
+    static let shepherdID = "shepherd"
+    static let ollieID = "ollie"
+    static let sheepPrefix = "sheep:"
+
+    static func sheepID(definitionID: String) -> String {
+        sheepPrefix + definitionID
+    }
+
+    static func sheepDefinitionID(from avatarID: String) -> String? {
+        guard avatarID.hasPrefix(sheepPrefix) else { return nil }
+        return String(avatarID.dropFirst(sheepPrefix.count))
+    }
+
+    static func isKnownWireAvatar(_ avatarID: String) -> Bool {
+        avatarID == shepherdID
+            || avatarID == ollieID
+            || sheepDefinitionID(from: avatarID).map {
+                CountingSheepPublicPresentationAllowlist.featuredSheepDefinitionIDs.contains($0)
+                    && $0 != "none"
+            } == true
+    }
+
+    static func availableAvatarIDs(discoveries: [SheepDiscoveryRecord]) -> [String] {
+        let discovered = Set(discoveries.map(\.definitionID))
+            .intersection(CountingSheepPublicPresentationAllowlist.featuredSheepDefinitionIDs)
+            .subtracting(["none"])
+            .sorted()
+            .map(sheepID)
+        return [shepherdID, ollieID] + discovered
+    }
+
+    static func canSelect(_ avatarID: String, discoveries: [SheepDiscoveryRecord]) -> Bool {
+        availableAvatarIDs(discoveries: discoveries).contains(avatarID)
+    }
+}
+
+/// Resolves server recovery without treating a generated default Shepherd as
+/// a deliberate local choice. Older list responses do not advertise avatars,
+/// so they cannot overwrite a selected character.
+enum SocialAvatarAdoptionRules {
+    static func resolvedAvatarID(
+        localAvatarID: String,
+        hasExplicitLocalSelection: Bool,
+        serverAvatarID: String,
+        serverSupportsAvatars: Bool
+    ) -> String {
+        guard serverSupportsAvatars, !hasExplicitLocalSelection else {
+            return localAvatarID
+        }
+        return serverAvatarID
     }
 }
 

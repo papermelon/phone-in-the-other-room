@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Counting Sheep · A quieter Home</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="studio">
+    <aside class="notes">
+      <p class="eyebrow">COUNTING SHEEP / DESIGN STUDY 02</p>
+      <h1>A little more home.<br>A little less screen.</h1>
+      <p class="intro">Ollie leads. Two small ornaments suggest home. Your group is close by, without a wall of activity.</p>
+      <div class="switches" role="group" aria-label="Design direction">
+        <button class="selected" id="personal" aria-pressed="true">Personal welcome</button>
+        <button id="shared" aria-pressed="false">Shared scene · deferred</button>
+        <button id="motion" aria-pressed="false">Motion study</button>
+      </div>
+      <p id="direction-note">Chosen direction: your Ollie is the focal point. The group preview connects through its colour, avatars and a single recent highlight. Your own Shepherd can be compared as a quiet companion.</p>
+      <section id="home-controls">
+        <label for="header-mark">Compare the header mark</label>
+        <select id="header-mark"><option value="moon">Purple moon · current</option><option value="logo">Supplied Counting Sheep logo</option></select>
+        <p class="small" id="header-note">The moon stays light at this size. The supplied logo is shown unchanged for a fair comparison.</p>
+        <label class="check"><input type="checkbox" id="personal-shepherd"> Compare the optional Shepherd composition</label>
+        <label for="highlight">Try a recent highlight</label>
+        <select id="highlight">
+          <option value="winddown">Completed Wind Down</option>
+          <option value="phoneaway">Completed Phone Away</option>
+          <option value="cheers">Cheers received</option>
+          <option value="round">Round milestone</option>
+          <option value="quiet">No recent activity</option>
+        </select>
+        <label class="check"><input type="checkbox" id="bedtime"> Preview eligible Wind Down</label>
+        <label class="check"><input type="checkbox" id="larger"> Larger text</label>
+        <div class="button-row"><button id="flop-preview">Preview flop timing</button><button id="pause">Pause motion</button></div>
+        <p class="small">Plan details expand. Other app actions are illustrative. All people, statuses and highlights here are sample data.</p>
+      </section>
+      <section id="motion-controls" hidden>
+        <div class="button-row"><button id="play-flop">Play body timing study</button><button id="show-ears">Photo-based ear candidate</button><button id="show-tongue">Tongue greeting candidate</button><button id="play-tilt">Play existing head tilt</button></div>
+        <p class="small">The photo-based ear pose and tongue greeting are approved references for both Home and Farm. The body timing holds the rest for three seconds before rising.</p>
+        <label for="pose">Inspect a keyframe</label><input id="pose" type="range" min="0" max="11" step="1" value="0">
+        <p id="pose-name">1 · Sitting</p>
+        <p class="warning">Approved poses, not finished animations. Earlier sideways, floppy and nearly earless variants remain rejected. The playable sheet demonstrates BODY TIMING ONLY and still has unapproved ears; it must be rebuilt from the approved photo-based reference. The ear and tongue candidates are separate stills. Production frames need consistent proportions, registration, true alpha, transitions and matching cosmetic layers for Home and Farm.</p>
+      </section>
+      <details class="design-notes"><summary>Layout and motion decisions</summary><ul>
+        <li>One hero, two ornaments, no illustrated room or scenery panel.</li>
+        <li>Phone-away and phone-wake times stay visible; bed and wake sit inside the plan disclosure.</li>
+        <li>People/statuses plus one highlight; full history remains in Slumber Party.</li>
+        <li>Personal Ollie is the chosen direction. The shared scene is deferred; a shared Farm can be explored later.</li>
+        <li>Your own Shepherd is an optional composition study, not a selected default. Keep Ollie prominent.</li>
+        <li>Production motion should choose occasional actions with long rests, pause offscreen, and honour Reduce Motion.</li>
+      </ul></details>
+      <p class="small footnote">Design comparison only. Native implementation and verification are tracked separately.</p>
+    </aside>
+
+    <section class="preview-area" aria-label="Home mockup">
+      <div class="preview-caption"><span id="preview-label">A · PERSONAL WELCOME</span><span>390 × 844</span></div>
+      <article class="phone" id="phone">
+        <div class="status"><span>9:41</span><span aria-hidden="true">▮▮▮ &nbsp;⌁ &nbsp;▰</span></div>
+        <div class="app-scroll">
+          <header class="app-header"><span class="moon" aria-hidden="true">☾</span><img class="brand-logo" src="assets/counting-sheep-logo-supplied.png" alt="" hidden> Counting Sheep</header>
+          <section class="welcome" aria-label="Ollie's welcome">
+            <div class="hero">
+              <img class="ornaments" src="assets/home-ornaments.png" alt="A small warm lamp and a small window; no room scenery">
+              <img class="friend friend-you" src="assets/shepherd-you.png" alt="Your Shepherd">
+              <img class="friend friend-moss" src="assets/shepherd-moss.png" alt="Moss's Shepherd">
+              <img class="friend friend-dog" src="assets/ollie-sleeping.png" alt="A friend's resting Ollie">
+              <img class="hero-ollie idle" src="assets/ollie-idle-1.png" alt="Ollie welcomes you home">
+              <div class="hero-motion motion-canvas" hidden><div class="sprite-clip"><img class="sprite-source" src="assets/ollie-flop-body-timing.png" alt=""></div></div>
+            </div>
+            <h2 id="greeting">Welcome home.</h2>
+            <p id="welcome-line">Ollie saved you a quiet spot.</p>
+          </section>
+          <details class="plan">
+            <summary><span><span class="overline">PHONE AWAY</span><strong>10:30 PM</strong></span><span class="plan-arrow" aria-hidden="true">→</span><span><span class="overline">PHONE WAKES</span><strong>7:30 AM</strong></span><span class="chevron" aria-hidden="true">⌄</span></summary>
+            <div class="plan-details"><span>Bed <b>11:00 PM</b></span><span>You wake <b>7:00 AM</b></span><small>30 quiet minutes before bed and after waking.</small><button class="text-action demo-action" data-message="Mockup only — this would open your existing Wind Down editor.">Edit Wind Down</button></div>
+          </details>
+          <button class="start-winddown demo-action" hidden data-message="Mockup only — no Wind Down has been started.">Put phone away</button>
+          <section class="party" aria-label="Slumber Party preview">
+            <button class="party-heading demo-action" data-message="Mockup only — this would open this group's full history and cheers."><span><span class="overline">SLUMBER PARTY</span><strong>Moonlit neighbours</strong></span><span aria-hidden="true">›</span></button>
+            <div class="people"><div class="person"><img src="assets/shepherd-you.png" alt=""><span>You</span></div><div class="person"><img src="assets/shepherd-moss.png" alt=""><span>Moss<small id="member-status">Phone is away</small></span></div><span class="round-note" id="round-note">Night 2 of 7</span></div>
+            <div class="highlight"><span class="highlight-icon" aria-hidden="true">☾</span><span id="highlight-copy">Moss completed 30 quiet minutes of Wind Down.</span></div>
+          </section>
+          <section class="phone-away"><div><strong>Phone Away</strong><button class="text-action demo-action" data-message="Mockup only — this would open Phone Away planning.">Plan ›</button></div><button class="quiet-start demo-action" data-message="Mockup only — no Phone Away session has been started.">Start now <span>· 30 min</span></button></section>
+          <button class="library demo-action" data-message="Mockup only — this would open the bundled ideas and sources library.">Ideas & sources</button>
+        </div>
+        <nav class="tabbar" aria-label="App tabs"><button class="active"><span>⌂</span>Home</button><button class="demo-action" data-message="Mockup only — Nights is unchanged."><span>☾</span>Nights</button><button class="demo-action" data-message="Mockup only — Farm is unchanged."><span>❧</span>Farm</button><button class="demo-action" data-message="Mockup only — Settings is unchanged."><span>⚙</span>Settings</button></nav>
+        <div class="toast" role="status" hidden></div>
+      </article>
+      <p class="under-preview" id="under-preview">Two ornaments. One welcoming Ollie. One group highlight.</p>
+    </section>
+
+    <section class="motion-panel" hidden aria-label="Ollie motion study">
+      <p class="eyebrow">OLLIE / EARS BACK → FLOP → REST → RISE</p>
+      <div class="motion-stage"><div class="motion-canvas" id="study-canvas"><div class="sprite-clip"><img class="sprite-source" src="assets/ollie-flop-body-timing.png" alt="Ollie animation keyframe"></div></div><img class="candidate-pose" src="assets/ollie-ear-reference-study.png" alt="Approved ear pose based on the real dog references" hidden><img class="study-idle idle" src="assets/ollie-idle-1.png" alt="Existing head-tilt animation" hidden></div>
+      <p class="motion-caption" aria-live="polite">Press Play body timing study.</p>
+      <details><summary>See all generated keyframes</summary><img class="sheet" src="assets/ollie-flop-body-timing.png" alt="Twelve keyframes from sitting through ear tuck, flop, rest and rise"></details>
+    </section>
+  </main>
+  <script src="preview.js"></script>
+</body>
+</html>

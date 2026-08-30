@@ -6,13 +6,19 @@ import FamilyControls
 struct WindDownStartSheet: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showScreenTimePicker = false
-    @State private var selectionConfirmed = false
+    @State private var showPhoneAwayDurationChoices = false
 
     private var usesNFC: Bool { viewModel.selectedGuardKind == .nfcTag }
 
     private var isAdHocQuiet: Bool {
         viewModel.pendingWindDownStartContext?.kind == .oneTimeQuiet
+    }
+
+    private var isManualPhoneAway: Bool {
+        guard let context = viewModel.pendingWindDownStartContext else { return false }
+        return context.kind == .oneTimeQuiet && context.sourceID == nil
     }
 
     private var adHocEndTime: String {
@@ -31,7 +37,10 @@ struct WindDownStartSheet: View {
 
     private var startButtonTitle: String {
         if viewModel.isScanningNFCForStart { return "Waiting for your tag…" }
-        if isAdHocQuiet { return "Start now" }
+        if isManualPhoneAway { return "Start now" }
+        if isAdHocQuiet {
+            return usesNFC ? "Tap tag to start Phone Away" : "Start Phone Away"
+        }
         if viewModel.pendingWindDownStartContext?.isPractice == true {
             let minutes = viewModel.pendingWindDownStartContext?.durationMinutes ?? 5
             return usesNFC ? "Tap tag to start practice" : "Start \(minutes)-minute practice"
@@ -43,6 +52,10 @@ struct WindDownStartSheet: View {
     }
 
     private var heading: String {
+        if isManualPhoneAway {
+            let minutes = viewModel.pendingWindDownStartContext?.durationMinutes ?? PhoneAwayDurationPolicy.defaultMinutes
+            return "Phone Away · \(minutes) minutes"
+        }
         if isAdHocQuiet {
             return "Phone Away until \(adHocEndTime)"
         }
@@ -56,8 +69,11 @@ struct WindDownStartSheet: View {
     }
 
     private var explanation: String {
-        if isAdHocQuiet {
+        if isManualPhoneAway {
             return "The minutes begin when you tap Start. Phone Away stays separate from Wind Down and appears in Nights."
+        }
+        if isAdHocQuiet {
+            return "This scheduled Phone Away period ends at \(adHocEndTime). Its saved end time stays in place while you confirm protection."
         }
         if viewModel.pendingNightWatchIsAdditionalQuiet {
             let end = viewModel.pendingNightWatchEndsAt.map(OllieFormat.time) ?? "the saved end time"
@@ -85,10 +101,14 @@ struct WindDownStartSheet: View {
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
 
-                    if isAdHocQuiet, usesNFC {
+                    if isManualPhoneAway, usesNFC {
                         Text("Tap your registered Phone Away tag after choosing Start now.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
+                    }
+
+                    if isManualPhoneAway {
+                        phoneAwayDurationChoice
                     }
 
                     shieldingChoice
@@ -102,10 +122,17 @@ struct WindDownStartSheet: View {
                         .font(AppTypography.body)
                         .tint(AppColors.grass)
 
-                    if !viewModel.nfcStatus.isEmpty {
-                        Text(viewModel.nfcStatus)
+                    if !viewModel.startNFCStatus.isEmpty {
+                        Text(viewModel.startNFCStatus)
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.muted)
+                    }
+
+                    if !viewModel.nightWatchStartStatus.isEmpty {
+                        Text(viewModel.nightWatchStartStatus)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.warning)
+                            .accessibilityAddTraits(.updatesFrequently)
                     }
 
                     Button {
@@ -121,7 +148,6 @@ struct WindDownStartSheet: View {
                     .disabled(
                         viewModel.isScanningNFCForStart
                             || !viewModel.shieldingReadiness.canStartProtectedSession
-                            || !selectionConfirmed
                     )
 
                     Button("Not now") {
@@ -139,6 +165,11 @@ struct WindDownStartSheet: View {
         .onDisappear {
             viewModel.cancelNightWatchStart()
         }
+        .onAppear { viewModel.refreshScreenTimeState() }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            viewModel.refreshScreenTimeState()
+        }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
             headerText: viewModel.pendingNightWatchIsAdditionalQuiet
@@ -151,9 +182,47 @@ struct WindDownStartSheet: View {
             .onChange(of: viewModel.bedtimeActivitySelection) { _, _ in
                 viewModel.saveScreenTimeSelection(.bedtime)
                 viewModel.appShieldingChoiceForNextRun = viewModel.shieldingReadiness == .ready
-                selectionConfirmed = false
         }
 #endif
+        .confirmationDialog(
+            "Phone Away duration",
+            isPresented: $showPhoneAwayDurationChoices,
+            titleVisibility: .visible
+        ) {
+            ForEach(PhoneAwayDurationPolicy.options, id: \.self) { minutes in
+                Button(PhoneAwayDurationPolicy.label(for: minutes)) {
+                    viewModel.changePendingPhoneAwayDuration(to: minutes)
+                }
+            }
+            Button("Keep \(viewModel.pendingWindDownStartContext?.durationMinutes ?? PhoneAwayDurationPolicy.defaultMinutes) minutes", role: .cancel) {}
+        } message: {
+            Text("Choose how long Phone Away should last after you start.")
+        }
+    }
+
+    private var phoneAwayDurationChoice: some View {
+        PixelCard {
+            HStack(alignment: .center, spacing: AppSpacing.sm) {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("Phone Away duration")
+                        .font(AppTypography.body.weight(.semibold))
+                    Text("Starts when you confirm. Choose 5–30 minutes.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+                Spacer(minLength: AppSpacing.sm)
+                Button("Change") {
+                    showPhoneAwayDurationChoices = true
+                }
+                .font(AppTypography.caption.weight(.semibold))
+                .foregroundStyle(AppColors.grass)
+                .accessibilityHint("Changes the manual Phone Away duration")
+                Text("\(viewModel.pendingWindDownStartContext?.durationMinutes ?? PhoneAwayDurationPolicy.defaultMinutes) min")
+                    .font(AppTypography.body.weight(.semibold))
+                    .foregroundStyle(AppColors.ink)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+        }
     }
 
     @ViewBuilder
@@ -194,18 +263,12 @@ struct WindDownStartSheet: View {
                 case .ready:
                     Text("App protection is ready")
                         .font(AppTypography.body.weight(.semibold))
-                    Text("Selected: \(viewModel.shieldingSelectionSummary). Does this include the apps that pull you back most often?")
+                    Text("Selected: \(viewModel.shieldingSelectionSummary).")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
-                    HStack {
-                        Button("Review", action: chooseAppsToRest)
-                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                        Button(selectionConfirmed ? "Yes" : "Yes, continue") {
-                            selectionConfirmed = true
-                        }
-                        .buttonStyle(PixelChipButtonStyle(isSelected: selectionConfirmed))
-                    }
-                    Text("Counting Sheep cannot verify named apps. Your answer is revisitable here or in Settings.")
+                    Button("Review selection", action: chooseAppsToRest)
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    Text("Counting Sheep cannot see the app names. You can revisit this selection here or in Settings.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 case .authorizationRequired, .noSelection, .revoked, .runtimeFailure:
@@ -219,7 +282,10 @@ struct WindDownStartSheet: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                     Button("Set up app protection", action: chooseAppsToRest)
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    Button("Open Screen Time Settings", action: viewModel.openAppSettings)
+                        .font(AppTypography.caption.weight(.semibold))
+                        .foregroundStyle(AppColors.grass)
                 case .unavailable:
                     Text("App protection is unavailable on this device. It must be ready before a new session can start.")
                         .font(AppTypography.caption)
@@ -232,9 +298,116 @@ struct WindDownStartSheet: View {
     private func chooseAppsToRest() {
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         Task { @MainActor in
-            guard await viewModel.requestScreenTimeAuthorization() else { return }
+            if viewModel.screenTimeAuthorization != .approved {
+                guard await viewModel.requestScreenTimeAuthorization() else {
+                    viewModel.nightWatchStartStatus = viewModel.shieldingReadiness.detail
+                    return
+                }
+            } else {
+                viewModel.refreshScreenTimeState()
+            }
             showScreenTimePicker = true
         }
+#else
+        viewModel.nightWatchStartStatus = viewModel.shieldingReadiness.detail
+#endif
+    }
+}
+
+/// A focused repair route used from Home and Settings. It never starts a run;
+/// the action that led here remains separate so repair cannot become an
+/// accidental scheduled or manual start.
+struct ScreenTimeProtectionRepairView: View {
+    @EnvironmentObject private var viewModel: FocusRunViewModel
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var showScreenTimePicker = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("APP PROTECTION")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.grass)
+                    Text("Choose what can rest with your phone.")
+                        .font(AppTypography.display(30))
+                    Text("Counting Sheep uses only the private selection you make with Apple. It cannot see the names, and Counting Sheep stays available.")
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.muted)
+                }
+
+                PixelCard {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Label(viewModel.shieldingReadiness.title, systemImage: "shield.lefthalf.filled")
+                            .font(AppTypography.headline)
+                        Text(viewModel.shieldingReadiness.detail)
+                            .font(AppTypography.body)
+                            .foregroundStyle(AppColors.secondaryText)
+                        if viewModel.shieldingReadiness == .ready {
+                            Text("Selected: \(viewModel.shieldingSelectionSummary)")
+                                .font(AppTypography.caption.weight(.semibold))
+                                .foregroundStyle(AppColors.grass)
+                        }
+                    }
+                }
+
+                Button { chooseApps() } label: {
+                    Label(
+                        viewModel.screenTimeAuthorization == .approved
+                            ? "Choose apps or categories"
+                            : "Allow Screen Time access",
+                        systemImage: "apps.iphone"
+                    )
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(PixelPrimaryButtonStyle())
+
+                if case .denied = viewModel.screenTimeAuthorization {
+                    Button("Open Screen Time Settings", action: viewModel.openAppSettings)
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                        .font(AppTypography.body.weight(.semibold))
+                        .foregroundStyle(AppColors.grass)
+                }
+
+                Text("When you return, review the selection here. Nothing starts automatically.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(AppSpacing.lg)
+        }
+        .background(AppColors.paper.ignoresSafeArea())
+        .navigationTitle("App protection")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { viewModel.refreshScreenTimeState() }
+        .onChange(of: scenePhase) { _, phase in
+            guard phase == .active else { return }
+            viewModel.refreshScreenTimeState()
+        }
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        .familyActivityPicker(
+            headerText: "Choose apps to limit during Wind Down and Phone Away.",
+            footerText: "Counting Sheep stays available. Websites are ignored.",
+            isPresented: $showScreenTimePicker,
+            selection: $viewModel.bedtimeActivitySelection
+        )
+        .onChange(of: viewModel.bedtimeActivitySelection) { _, _ in
+            viewModel.saveScreenTimeSelection(.bedtime)
+            viewModel.refreshScreenTimeState()
+        }
+#endif
+    }
+
+    private func chooseApps() {
+#if SCREEN_TIME_REPORTS && canImport(FamilyControls)
+        Task { @MainActor in
+            if viewModel.screenTimeAuthorization != .approved {
+                guard await viewModel.requestScreenTimeAuthorization() else { return }
+            }
+            showScreenTimePicker = true
+        }
+#else
+        viewModel.refreshScreenTimeState()
 #endif
     }
 }
@@ -257,4 +430,11 @@ struct WindDownStartSheet: View {
     return WindDownStartSheet()
         .environmentObject(viewModel)
         .environment(\.dynamicTypeSize, .accessibility2)
+}
+
+#Preview("Protection repair") {
+    NavigationStack {
+        ScreenTimeProtectionRepairView()
+            .environmentObject(FocusRunViewModel(startsExternalServices: false))
+    }
 }

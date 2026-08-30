@@ -6,6 +6,89 @@
 - Supersedes: v1–v3 Slumber Party product contract; those schemas remain legacy compatibility only
 - Related: ADR-0003, ADR-0005, ADR-0006, ADR-0010, ADR-0015
 
+## Founder decisions — shared accountability (2026-08-28; implementation pending)
+
+The following supersedes earlier product exclusions where they conflict; the deployed V4 and
+membership-stream descriptions below still describe their narrower implemented contracts.
+
+- Founder direction on 2026-08-30 makes shared Wind Down plans and factual follow-through part of
+  the core Slumber Party loop. Members should see agreed nightly timing and routine ideas, followed
+  by a per-night comparison between the frozen plan and Counting Sheep's factual run record.
+  Implement this additively with versioned plan instances, member-night receipts, coverage, and
+  explicit evidence states. Routine ideas remain unverified; unknown is not failure; the leader
+  cannot edit another adult's plan. Exact selected-app identity and per-app usage remain separate
+  platform gates. The implementation sequence and wire direction are in
+  `docs/plans/slumber-party-social-habit-loop-implementation.md`.
+
+- One social avatar is chosen by the member: Shepherd, Ollie or a deliberately selected sheep.
+  Keep cosmetics and owned/discovered character compatibility; do not change the personal Home
+  hero because a social avatar changes.
+- Start with adults and a group leader who coordinates the shared habit. The future parent/child
+  bedtime-negotiation use case informs the architecture, but does not authorize actual child
+  accounts, unilateral schedule changes or remote enforcement now. Exact leader powers need a
+  bounded specification. Friendly competition is a desired direction; scoring is not yet chosen.
+- Exact app identification must be automatic before category grouping, for Singapore/SEA users.
+  Self-described categories do not meet the requirement. This is a technical feasibility gate:
+  the documented EU data-export capability is not a Singapore distribution solution. No new
+  app-identity/usage upload is implemented or authorized by this ADR amendment alone.
+- Sleep summaries show last-night duration and week/month means with coverage and a detail path.
+  Exact schedules/stages and raw Health samples are not automatically added to the first slice.
+- A clear agreement at joining establishes one sharing contract. Sharing is active after explicit
+  acceptance; there is no per-field toggle matrix while a member. Withdrawing sharing leaves the
+  party, without deleting the local account/Farm or requiring the leader's approval. Creation must
+  disclose the same contract to its leader. Existing members must accept an expanded contract
+  before any newly included fields upload. Withdrawal must stop local sends even while offline;
+  remote membership/access removal completes on reconnect and must not wait for host transfer. A leader needs a
+  transfer or dissolve-and-leave route, not a consent trap.
+
+- Adults may join without readable Health sleep data; show “No data available” without inferring
+  refusal. Health and Screen Time connection actions belong where relevant, not only in Settings.
+  Health request completion, observed sleep data and system permission are distinct states.
+- Later joiners should see the group's previous shared history, including earlier contributions
+  from former members. Ordinary leave stops new publication and access but should retain approved
+  published history. It does not authorize private pre-join uploads or cross-party access.
+  Existing contributors must accept the broader audience before their history is exposed to it.
+  The founder selected archive duration for the lifetime of the party, subject to legitimate
+  deletion requests. Lawful continued disclosure, withdrawal/deletion, party dissolution and
+  account deletion still require review. A short joining disclosure is not irrevocable consent.
+
+This agreement does not grant Apple permissions, authorize access-control workarounds, or prove
+that missing sleep data means withholding. Privacy withdrawal/deletion remains distinct from
+ordinary leave; pending sends and the leaver's group cache are removed without automatically
+cascading into deletion of the permitted group archive. Explicit deletion requests still need
+enforced handling and cannot be defeated by the retained-history preference.
+No member data may upload before consent or beyond the reviewed permitted data route. Keep
+local sessions, emergency exit and independent reward ledgers intact. Implementation sequencing:
+`docs/plans/slumber-party-shared-habits-and-guide.md`; platform evidence and unsent Apple inquiry:
+`docs/plans/slumber-party-singapore-app-data-feasibility.md`.
+
+## Founder decision — sharing from joining (2026-08-27)
+
+Implementation clarification (2026-08-28): the shared-habits candidate removes the old client
+scan that republished private local records when entering a round. Retaining past history now
+means an explicit migration of the author's already group-shared coarse records under the
+expanded agreement. It never means scanning private pre-join Health/session history. The
+versioned archive is independent of the active membership stream and reward ledger. Its
+implementation and release gates are in `plans/shared-habits-implementation-20260828.md`.
+
+The founder explicitly approved member activity sharing immediately on joining, including before
+and between rounds. Seven-night rounds organize progress and rewards; they no longer gate all
+social activity. This supersedes round-only presentation/publication wording below for capable
+new clients/backends. Earlier clients' current-round backfill remains compatibility behavior,
+not authorization for the new archive to import private local history.
+
+Use an additive membership stream with explicit server capability and old-server fallback.
+A fresh membership epoch on rejoin fences activity, statuses and both cheer participants; general
+observations/completions must occur in the current epoch. Private terminal watermarks prevent
+stale live-status resurrection. General stream records use optional round association and never
+mint round grants. Round storage/eligibility/idempotency remains independent and unchanged.
+
+The added stream retains the same allowlisted factual fields, has a 90-day retention boundary
+and a latest-100 recent-activity projection. No private Purpose/routines, exact schedules,
+selected apps, Health or full Farm state is added. General pre-membership history is not
+backfilled. This decision authorizes local implementation, not an unreviewed hosted deployment.
+Contract, validation and rollout status: `docs/plans/slumber-party-membership-sharing.md`.
+
 ## Context
 
 Counting Sheep is not a social network. A bounded, invite-only group can nevertheless help people
@@ -16,12 +99,29 @@ repeated fixed seven-night rounds. This ADR records the contract implemented by 
 
 ## Decision
 
-Authentication recovery never creates an anonymous user. A 401 accepts Apple ID-token
-reauthentication only when its Supabase UUID matches the locally bound account.
-`linked_account_required` may link Apple only to a current anonymous session and must keep the
-same UUID. Missing, changed, or unexpected identities fail closed without exposing another
-account's snapshot; local snapshot, ritual contexts, and outboxes remain intact while state is
-reconciled after validation.
+### Founder clarification — core social surface, 2026-08-27
+
+Slumber Party is intended to be a core reason friends, couples, and families use and return to
+Counting Sheep. The earlier roadshow restriction to a subordinate, list-only Home bridge is
+superseded. Idle Home may use the same member-visible party data as detail, with recognizable
+people, factual shared activity, current statuses and clear feedback. No extra upload is needed
+merely to expose already shared data on Home. See `docs/plans/home-social-recovery.md`.
+
+The originally deployed v4 lifecycle gates activity on host-started seven-night rounds. The
+subsequent founder decision above approves separating sharing from reward-round eligibility
+through an explicit additive capability. Exact schedules, app selections, private purposes/routines, Health
+data and full Farm state are not newly authorized for sharing. Existing local session authority,
+account isolation, active-session boundaries and independent reward settlement remain in force.
+
+Authentication recovery never creates an anonymous user. A 401 on a bound installation accepts
+Apple ID-token reauthentication only when its Supabase UUID matches the locally bound account.
+On an unbound installation, `linked_account_required` first tries to link Apple to the current
+anonymous session without changing its UUID. If Apple reports that the identity already owns a
+Counting Sheep account, a verified Apple sign-in may reopen that existing account on this phone.
+Before admitting the different account UUID, the client quarantines account-scoped snapshots,
+ritual-sharing contexts, and outboxes so temporary-anonymous work cannot be replayed as the Apple
+account. Local Wind Down, Farm, and other non-social data remain untouched. Invalid local bindings,
+non-Apple authenticated sessions, and mismatches against an existing binding still fail closed.
 
 ### Party, rounds, and membership
 
@@ -81,8 +181,11 @@ failure fails quietly and cannot block the ritual.
 
 ### Privacy, invites, and version fence
 
-Slumber Party never uploads or exposes a full Farm, inventory, wool balance, exact schedules,
-private routine/reflection text, Family Controls tokens, app lists, raw reports, NFC, purpose,
+The local v2 social-loop source is capability- and agreement-gated; hosted migration/deployment and
+physical multi-account validation remain separate. It may share immutable rounded next-seven-night
+plan instances, comparison bookends, bundled idea IDs, and factual receipts. Slumber Party never
+uploads or exposes a full Farm, inventory, wool balance, a recurrence schedule, private routine/reflection
+text, Family Controls tokens, app lists or per-app use, raw reports, NFC, purpose,
 notification state, impact data, or raw Health data. It never joins or reuses `impact_nights`.
 Apple-linked authentication, blocking, reporting, moderation, member-only RLS, and minimum
 retention remain in force. A member can submit an existing fixed-reason safety report or block

@@ -7,7 +7,9 @@ struct NightFlockHubView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                SlumberPartyV4Header()
+                if !viewModel.usesSlumberPartyV4 {
+                    SlumberPartyV4Header()
+                }
                 content
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)

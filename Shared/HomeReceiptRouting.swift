@@ -22,18 +22,18 @@ enum HomeReceiptRouting {
             .first {
             return .activeScreenFreeMorning(active.id)
         }
+        if let activeRun, activeRun.state == .completed || activeRun.state == .endedEarly {
+            return .terminalWindDownReceipt(activeRun.id)
+        }
+        if let activeRun, ![.setup, .completed, .endedEarly].contains(activeRun.state) {
+            return .activeWindDown
+        }
         let unread = journal.oldestUnreadDeliveredBenefit?.runID
         if let deferred = journal.morningOccurrences
             .filter({ $0.outcome == .scheduled })
             .sorted(by: { $0.scheduledStart < $1.scheduledStart })
             .first {
             return .deferredScreenFreeMorning(occurrenceID: deferred.id, unreadWindDownRunID: unread)
-        }
-        if let activeRun, activeRun.state == .completed || activeRun.state == .endedEarly {
-            return .terminalWindDownReceipt(activeRun.id)
-        }
-        if let activeRun, ![.setup, .completed, .endedEarly].contains(activeRun.state) {
-            return .activeWindDown
         }
         if let unread { return .unreadWindDownReceipt(unread) }
         return .dashboard

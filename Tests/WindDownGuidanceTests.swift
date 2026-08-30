@@ -6,7 +6,9 @@ final class WindDownGuidanceTests: XCTestCase {
         XCTAssertTrue(WindDownGuidanceLibrary.items.allSatisfy { !$0.sourceIDs.isEmpty })
         XCTAssertTrue(WindDownGuidanceLibrary.items.allSatisfy { $0.body.count <= 180 })
         XCTAssertEqual(Set(WindDownGuidanceLibrary.items.map(\.id)).count, WindDownGuidanceLibrary.items.count)
-        XCTAssertTrue(WindDownGuidanceLibrary.items.allSatisfy { $0.sourceIDs.contains("nhlbi-healthy-sleep") || $0.sourceIDs.contains("counting-sheep-principles") || $0.sourceIDs.contains("nhlbi-sleep-wake-cycle") || $0.sourceIDs.contains("va-stimulus-control") || $0.sourceIDs.contains("counting-sheep-booklet") || $0.sourceIDs.contains("nhlbi-circadian-treatment") })
+        XCTAssertTrue(WindDownGuidanceLibrary.items.allSatisfy {
+            $0.sourceIDs.allSatisfy { WindDownGuidanceSourceRegistry.source(for: $0) != nil }
+        })
     }
 
     func testMealAndCaffeineCardsAreWindDownOnlyAndNonPrescriptive() throws {
@@ -102,5 +104,127 @@ final class WindDownGuidanceTests: XCTestCase {
         XCTAssertLessThanOrEqual(placements.count, 1)
         XCTAssertFalse(placements.contains { $0.id == "leave-room-after-heavy-meal" })
         XCTAssertFalse(placements.contains { $0.id == "personal-caffeine-cutoff" })
+    }
+
+    func testGuidanceLibraryUsesStableContextGroupsAndSourceMetadata() throws {
+        XCTAssertFalse(WindDownGuidanceLibrary.items(for: .evening).isEmpty)
+        XCTAssertFalse(WindDownGuidanceLibrary.items(for: WindDownGuidanceGroup.morning).isEmpty)
+        XCTAssertEqual(
+            WindDownGuidanceLibrary.items(for: .phoneAway).map(\.id),
+            ["phone-bed"]
+        )
+        let item = try XCTUnwrap(WindDownGuidanceLibrary.items.first { $0.id == "morning-light" })
+        let source = try XCTUnwrap(WindDownGuidanceSourceRegistry.source(for: item.sourceIDs[0]))
+        XCTAssertFalse(source.organization.isEmpty)
+        XCTAssertNotNil(source.url)
+        XCTAssertEqual(item.routineActivity, .openCurtains)
+    }
+
+    func testIdeasAndSourcesLibraryKeepsAllTopicAndSourceRecordsReachable() throws {
+        XCTAssertEqual(WindDownGuidanceLibrary.items.count, 10)
+        XCTAssertEqual(WindDownGuidanceTopic.allCases.count, 6)
+        XCTAssertEqual(WindDownGuidanceSourceRegistry.sources.count, 7)
+        XCTAssertEqual(
+            Set(WindDownGuidanceTopic.allCases.flatMap(WindDownGuidanceLibrary.items(for:)).map(\.id)),
+            Set(WindDownGuidanceLibrary.items.map(\.id))
+        )
+        XCTAssertEqual(
+            WindDownGuidanceTopic.allCases.map { WindDownGuidanceLibrary.items(for: $0).count },
+            [1, 4, 1, 2, 1, 1]
+        )
+
+        let external = WindDownGuidanceSourceRegistry.sources(of: .external)
+        let internalNotes = WindDownGuidanceSourceRegistry.sources(of: .internalReference)
+        XCTAssertEqual(external.count, 5)
+        XCTAssertEqual(internalNotes.count, 2)
+        XCTAssertEqual(Set(WindDownGuidanceSourceRegistry.sources.map(\.id)).count, 7)
+        XCTAssertTrue(external.allSatisfy { $0.url != nil })
+        XCTAssertTrue(internalNotes.allSatisfy { $0.url == nil })
+
+        let aasm = try XCTUnwrap(WindDownGuidanceSourceRegistry.source(for: "aasm-cbt-i"))
+        XCTAssertTrue(aasm.isBackgroundContext)
+        XCTAssertTrue(WindDownGuidanceLibrary.items(referencingSourceID: aasm.id).isEmpty)
+        XCTAssertEqual(
+            WindDownGuidanceLibrary.items(referencingSourceID: "va-stimulus-control").map(\.id),
+            ["rest-not-performance", "bed-as-cue"]
+        )
+    }
+
+    func testGuidanceDismissalStoreIsInjectedAndHasCooldown() {
+        let suiteName = "WindDownGuidanceTests.dismissal.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            return XCTFail("Expected defaults suite")
+        }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = WindDownGuidanceDismissalStore(defaults: defaults)
+        let now = Date(timeIntervalSince1970: 10_000)
+        store.dismiss("quiet-hour", at: now)
+        XCTAssertTrue(store.isSuppressed("quiet-hour", at: now.addingTimeInterval(60)))
+        XCTAssertFalse(store.isSuppressed("quiet-hour", at: now.addingTimeInterval(WindDownGuidanceDismissalStore.cooldown)))
+    }
+
+    func testBackgroundTimingIdeasHaveNoInventedRoutineMapping() throws {
+        let meal = try XCTUnwrap(WindDownGuidanceLibrary.items.first { $0.id == "leave-room-after-heavy-meal" })
+        let caffeine = try XCTUnwrap(WindDownGuidanceLibrary.items.first { $0.id == "personal-caffeine-cutoff" })
+        XCTAssertNil(meal.routineActivity)
+        XCTAssertNil(caffeine.routineActivity)
+    }
+
+    func testRoutineMutationPersistsTheSelectedGuidanceAndTitle() throws {
+        let item = try XCTUnwrap(WindDownGuidanceLibrary.items.first { $0.id == "morning-light" })
+        var steps = [WindDownRoutineStep.suggested(.makeBed, phase: .morning)]
+
+        XCTAssertEqual(WindDownGuidanceRoutineMutation.add(item, to: &steps), .added)
+        XCTAssertEqual(steps.last?.guidanceID, item.id)
+        XCTAssertEqual(steps.last?.activity, .openCurtains)
+        XCTAssertEqual(steps.last?.title, "Open the curtains")
+    }
+
+    func testRoutineMutationDoesNotCallDifferentIdeaTheSameActivityAlreadyAdded() throws {
+        let item = try XCTUnwrap(WindDownGuidanceLibrary.items.first { $0.id == "morning-light" })
+        var steps = [WindDownRoutineStep(
+            phase: .morning,
+            kind: .suggestion,
+            activity: .openCurtains,
+            guidanceID: "different-idea"
+        )]
+        let original = steps
+
+        XCTAssertEqual(WindDownGuidanceRoutineMutation.add(item, to: &steps), .unavailable)
+        XCTAssertEqual(steps, original)
+    }
+
+    func testGuidanceDisplayPolicyShowsOncePerContextAndSpacesLaterOpportunities() {
+        let suiteName = "WindDownGuidanceTests.display.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else {
+            return XCTFail("Expected defaults suite")
+        }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+
+        let store = WindDownGuidanceDisplayStore(defaults: defaults)
+        let item = WindDownGuidanceLibrary.items[1]
+        let now = Date(timeIntervalSince1970: 10_000)
+        let context = WindDownGuidanceDisplayPolicy.contextID(
+            for: item,
+            eveningRoutine: [],
+            morningRoutine: [],
+            at: now
+        )
+        XCTAssertTrue(store.shouldDisplay(itemID: item.id, contextID: context, at: now))
+        store.markShown(item.id, contextID: context, at: now)
+        XCTAssertFalse(store.shouldDisplay(itemID: item.id, contextID: context, at: now.addingTimeInterval(7 * 86_400)))
+
+        let laterContext = context + "|changed-routine"
+        XCTAssertFalse(store.shouldDisplay(
+            itemID: item.id,
+            contextID: laterContext,
+            at: now.addingTimeInterval(WindDownGuidanceDisplayStore.minimumRepeatInterval - 1)
+        ))
+        XCTAssertTrue(store.shouldDisplay(
+            itemID: item.id,
+            contextID: laterContext,
+            at: now.addingTimeInterval(WindDownGuidanceDisplayStore.minimumRepeatInterval)
+        ))
     }
 }

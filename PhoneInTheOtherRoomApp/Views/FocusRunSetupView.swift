@@ -8,6 +8,7 @@ struct FocusRunSetupView: View {
     @State private var customPurpose = ""
     @State private var includePurposeInNotifications = false
     @State private var expandedSection: PlanRoutineSection? = .schedule
+    @State private var showStartError = false
 
     var body: some View {
         ScrollView {
@@ -62,6 +63,13 @@ struct FocusRunSetupView: View {
         .onAppear(perform: loadPurpose)
         .onChange(of: viewModel.isRunning) { _, isRunning in
             if isRunning { dismiss() }
+        }
+        .alert("Wind Down could not start", isPresented: $showStartError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.nightWatchStartStatus.isEmpty
+                ? "Please try again."
+                : viewModel.nightWatchStartStatus)
         }
     }
 
@@ -309,7 +317,7 @@ struct FocusRunSetupView: View {
 
     private func saveOrStart() {
         if viewModel.canBeginNightWatchNow && !viewModel.isRunning {
-            viewModel.requestStartNightWatch()
+            showStartError = !viewModel.requestStartNightWatch()
         } else {
             viewModel.saveNightWatchPlanForTonight()
             dismiss()

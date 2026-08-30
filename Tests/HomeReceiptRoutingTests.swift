@@ -52,4 +52,52 @@ final class HomeReceiptRoutingTests: XCTestCase {
             .terminalWindDownReceipt(run.id)
         )
     }
+
+    func testLiveWindDownOwnsHomeBeforeItsScheduledMorning() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let run = FocusRun(
+            plannedDurationSeconds: 3_600,
+            startedAt: now,
+            state: .running,
+            guardKind: .honorTimer
+        )
+        let occurrence = MorningQuietOccurrence(
+            linkedWindDownRunID: run.id,
+            scheduledStart: now.addingTimeInterval(3_600),
+            scheduledEnd: now.addingTimeInterval(5_400),
+            outcome: .scheduled
+        )
+
+        XCTAssertEqual(
+            HomeReceiptRouting.route(
+                activeRun: run,
+                journal: WindDownMorningSettlementJournal(morningOccurrences: [occurrence])
+            ),
+            .activeWindDown
+        )
+    }
+
+    func testTerminalReceiptKeepsPriorityOverASeparateDeferredMorning() {
+        let now = Date(timeIntervalSince1970: 1_000)
+        let run = FocusRun(
+            plannedDurationSeconds: 3_600,
+            startedAt: now,
+            state: .completed,
+            guardKind: .honorTimer
+        )
+        let occurrence = MorningQuietOccurrence(
+            linkedWindDownRunID: UUID(),
+            scheduledStart: now.addingTimeInterval(3_600),
+            scheduledEnd: now.addingTimeInterval(5_400),
+            outcome: .scheduled
+        )
+
+        XCTAssertEqual(
+            HomeReceiptRouting.route(
+                activeRun: run,
+                journal: WindDownMorningSettlementJournal(morningOccurrences: [occurrence])
+            ),
+            .terminalWindDownReceipt(run.id)
+        )
+    }
 }

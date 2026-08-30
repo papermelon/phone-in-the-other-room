@@ -20,6 +20,17 @@ enum WindDownGuidanceTopic: String, Codable, CaseIterable, Identifiable {
         case .environment: return "A calmer room"
         }
     }
+
+    var detail: String {
+        switch self {
+        case .screenBoundary: return "Make a little distance from the screen."
+        case .lightAndTiming: return "Small cues around the shape of a day."
+        case .sleepCues: return "Let the bedroom feel more like a place to rest."
+        case .morning: return "Meet the morning before the phone does."
+        case .settle: return "Gentle ways to take the pressure out of rest."
+        case .environment: return "A few comforts for a calmer room."
+        }
+    }
 }
 
 struct WindDownGuidanceItem: Codable, Equatable, Identifiable {
@@ -122,6 +133,16 @@ enum WindDownGuidanceLibrary {
     static func items(for phase: NightWatchPhase) -> [WindDownGuidanceItem] {
         // Unphased ideas belong in the source-linked guide, never in an active-night cue.
         items.filter { $0.phase == phase }
+    }
+
+    static func items(for group: WindDownGuidanceGroup) -> [WindDownGuidanceItem] {
+        items.filter { $0.group == group }
+    }
+
+    /// The source registry is bundled locally, so this relationship remains
+    /// available offline for the source detail screen.
+    static func items(referencingSourceID sourceID: String) -> [WindDownGuidanceItem] {
+        items.filter { $0.sourceIDs.contains(sourceID) }
     }
 
     /// Returns one stable Home idea from the person's selected routines. The

@@ -49,17 +49,52 @@ final class NightFlockViewModel: ObservableObject {
     @Published var v4RequestID: String?
     @Published var v4Profile: CountingSheepUserProfile?
     @Published var v4GrantInbox: [NightFlockV4GrantInboxItem] = []
+    @Published var sharedHabitsPrivacyFences: [NightFlockSharedHabitsPrivacyFence] = []
+    @Published var sharedHabitsStates: [UUID: NightFlockSharedHabitsStateResponse] = [:]
+    @Published var sharedHabitsLoadingPartyIDs: Set<UUID> = []
+    @Published var sharedNightsLoadingPartyIDs: Set<UUID> = []
+    @Published var sharedHabitsAgreementSavingPartyIDs: Set<UUID> = []
+    @Published var sharedHabitsAgreementErrors: [UUID: String] = [:]
+    var sharedHabitsAgreementAttemptIDs: [UUID: UUID] = [:]
+    @Published var sharedHabitsFormerParties: [NightFlockSharedHabitsFormerParty] = []
+    @Published var sharedHabitsStagedJoinPartyIDs: Set<UUID> = []
+    var canonicalV4PartyIDs: Set<UUID> = []
+    var hasCanonicalV4PartySnapshot = false
     var pendingV4ProfileMutation: CountingSheepUserProfile?
-    var v4ObservedPartyDetails: [UUID: NightFlockV4PartyDetail] = [:]
+    /// The membership-filtered canonical detail cache feeds both the party
+    /// screen and Home. It is deliberately one store, never list inference.
+    // The v4 extension owns mutation. Cross-file Swift extensions cannot set a
+    // `private(set)` property, so these remain module-internal while views use
+    // the focused membership-filtered accessors in `+V4`.
+    @Published var v4ObservedPartyDetails: [UUID: NightFlockV4PartyDetail] = [:]
+    @Published var v4ObservedPartyRefreshDates: [UUID: Date] = [:]
+    @Published var v4ObservedPartyObservationStates: [UUID: NightFlockV4PartyObservationState] = [:]
+    @Published var v4RefreshingPartyIDs: Set<UUID> = []
+    @Published var v4CheerSendStates: [NightFlockV4CheerCommandKey: NightFlockV4CheerSendState] = [:]
+    var v4NextPartyDetailRequestSequence: UInt64 = 0
+    var v4AcceptedPartyDetailRequestSequences: [UUID: UInt64] = [:]
     var v4RealtimeRefreshTasks: [UUID: Task<Void, Never>] = [:]
     var v4RealtimeSetupTasks: [UUID: Task<Void, Never>] = [:]
+    var v4PartyObservationTasks: [UUID: Task<Void, Never>] = [:]
+    var v4PartyObservationNeedsRefresh: Set<UUID> = []
+    var v4RealtimeSetupAttemptIDs: [UUID: UUID] = [:]
+    var v4RealtimeRefreshAttemptIDs: [UUID: UUID] = [:]
+    var v4PartyObservationAttemptIDs: [UUID: UUID] = [:]
+    var v4SelectedPartyRefreshAttemptIDs: [UUID: UUID] = [:]
     var v4RealtimePartyIDs: Set<UUID> = []
+    var v4RealtimeConnectedPartyIDs: Set<UUID> = []
     var onApplyRewardGrants: (([NightFlockRewardGrant]) -> Void)?
     /// The v4 grant inbox uses party/round identifiers rather than legacy
     /// challenge milestones. The Farm layer owns the durable application and
     /// returns only grants it has actually recorded.
     var onApplyV4RewardGrants: (([NightFlockV4GrantInboxItem]) -> [UUID])?
     var onV4CheerFeedback: ((SlumberPartyCheerFeedback) -> Void)?
+    var onSharedHabitsAgreementAvailable: (() -> Void)?
+    /// The host restores local run history independently of this outbox. It
+    /// uses this callback to reapply durable per-run privacy decisions once
+    /// they have been decoded after a relaunch.
+    var onPrimaryRunSharingDecisionsRestored: (() -> Void)?
+    var onSharedHabitsAuthorityInvalidated: (() -> Void)?
 
     var v4InviteCode: String? {
         guard let party = selectedV4Party,
@@ -94,6 +129,8 @@ final class NightFlockViewModel: ObservableObject {
         }
     }
     var runContexts: [UUID: NightFlockRunShareContext] = [:]
+    var primaryRunSharingDecisions: [UUID: NightFlockPrimaryRunSharingDecision] = [:]
+    var primaryRunSharingRequiredAfter: Date?
     var localSocialGeneration: UInt64 = 0
     private var isDeletingOnlineAccount = false
     private var stagedDestructiveLocalEffect: NightFlockDestructiveLocalEffect = .none
@@ -108,6 +145,8 @@ final class NightFlockViewModel: ObservableObject {
     // Split Night Flock extensions share this main-actor transport token; it
     // remains internal to the app module rather than becoming public API.
     var transportRecoveryEpoch: UInt64 = 0
+    var sharedHabitsFenceGeneration: UInt64 = 0
+    var sharedHabitsDestructiveCommandPartyIDs: Set<UUID> = []
 
     func quiesceInvitePlaintextPresentationIfNeeded(
         authenticationAction: NightFlockAuthenticationAction = .none,
@@ -133,11 +172,10 @@ final class NightFlockViewModel: ObservableObject {
     private struct NightFlockTransportPaused: Error {}
 
     var homeSummary: NightFlockHomeSummary? {
-        guard featureEnabled else { return nil }
-        if let v4ListState {
-            return NightFlockHomeSummary.make(from: v4ListState.parties)
-        }
-        return snapshot.map { NightFlockHomeSummary.make(from: $0) } ?? .invitation
+        NightFlockHomeDiscoveryPolicy.summary(
+            featureEnabled: featureEnabled,
+            v4Parties: v4ListState?.parties
+        )
     }
 
     var canShowSocialUI: Bool { featureEnabled }
@@ -212,6 +250,7 @@ final class NightFlockViewModel: ObservableObject {
     private func clearLocalSocialWork(requestedEpoch: UInt64? = nil) async -> Bool {
         let requestedEpoch = requestedEpoch ?? (localSocialGeneration &+ 1)
         localSocialGeneration = requestedEpoch
+        onSharedHabitsAuthorityInvalidated?()
         let result = await outbox?.clear(epoch: requestedEpoch)
             ?? NightFlockOutboxClearResult(
                 epoch: NightFlockOutboxEpochPolicy.advancingClear(
@@ -230,12 +269,39 @@ final class NightFlockViewModel: ObservableObject {
         ) else { return false }
         localSocialGeneration = result.epoch
         runContexts = [:]
+        primaryRunSharingDecisions = [:]
         v4RealtimeRefreshTasks.values.forEach { $0.cancel() }
         v4RealtimeRefreshTasks = [:]
         v4RealtimeSetupTasks.values.forEach { $0.cancel() }
         v4RealtimeSetupTasks = [:]
+        v4PartyObservationTasks.values.forEach { $0.cancel() }
+        v4PartyObservationTasks = [:]
+        v4PartyObservationNeedsRefresh = []
+        v4RealtimeRefreshAttemptIDs = [:]
+        v4RealtimeSetupAttemptIDs = [:]
+        v4PartyObservationAttemptIDs = [:]
+        v4SelectedPartyRefreshAttemptIDs = [:]
         v4RealtimePartyIDs = []
+        v4RealtimeConnectedPartyIDs = []
+        v4RefreshingPartyIDs = []
         v4ObservedPartyDetails = [:]
+        v4ObservedPartyRefreshDates = [:]
+        v4ObservedPartyObservationStates = [:]
+        v4CheerSendStates = [:]
+        sharedHabitsPrivacyFences = []
+        sharedHabitsStates = [:]
+        sharedHabitsLoadingPartyIDs = []
+        sharedNightsLoadingPartyIDs = []
+        sharedHabitsAgreementSavingPartyIDs = []
+        sharedHabitsAgreementErrors = [:]
+        sharedHabitsAgreementAttemptIDs = [:]
+        sharedHabitsFormerParties = []
+        sharedHabitsStagedJoinPartyIDs = []
+        canonicalV4PartyIDs = []
+        hasCanonicalV4PartySnapshot = false
+        sharedHabitsDestructiveCommandPartyIDs = []
+        v4NextPartyDetailRequestSequence = 0
+        v4AcceptedPartyDetailRequestSequences = [:]
         await service?.stopV4Realtime()
         selectedV4Party = nil
         return true
@@ -404,23 +470,36 @@ final class NightFlockViewModel: ObservableObject {
             return
         }
         let generation = localSocialGeneration
-        let transportEpoch = transportRecoveryEpoch
         Task { [weak self] in
             let contexts = await outbox.runContexts()
+            let primaryRunSharingDecisions = await outbox.primaryRunSharingDecisions()
+            let primaryRunSharingRequiredAfter = await outbox.primaryRunSharingPolicyRequiredAfter()
             let stagedEffect = await outbox.stagedDestructiveEffect()
             let deletionTombstone = await outbox.hasAcceptedAccountDeletion()
             let pendingIntent = await outbox.pendingDestructiveIntent()
             let pendingAccountDeletion = await outbox.hasPendingAccountDeletionIntent()
+            let sharedHabitsFences = await outbox.sharedHabitsPrivacyFences()
             await MainActor.run {
                 guard let self else { return }
                 guard self.isCurrentLocalSocialGeneration(generation) else { return }
                 self.stagedDestructiveLocalEffect = stagedEffect
                 self.acceptedAccountDeletionTombstone = deletionTombstone
                 self.pendingAccountDeletionIntent = pendingAccountDeletion
+                self.sharedHabitsPrivacyFences = sharedHabitsFences
+                if !sharedHabitsFences.isEmpty {
+                    self.sharedHabitsFenceGeneration &+= 1
+                }
                 self.pendingDestructiveIntent = pendingIntent
                 self.hasRestoredStagedDestructiveEffect = true
                 for context in contexts where self.runContexts[context.runID] == nil {
                     self.runContexts[context.runID] = context
+                }
+                self.primaryRunSharingRequiredAfter = primaryRunSharingRequiredAfter
+                for decision in primaryRunSharingDecisions where self.primaryRunSharingDecisions[decision.runID] == nil {
+                    self.primaryRunSharingDecisions[decision.runID] = decision
+                }
+                if !primaryRunSharingDecisions.isEmpty {
+                    self.onPrimaryRunSharingDecisionsRestored?()
                 }
                 self.objectWillChange.send()
                 switch NightFlockAccountDeletionIntentPolicy.recoveryAction(
@@ -519,10 +598,6 @@ final class NightFlockViewModel: ObservableObject {
         }
     }
 
-    func resetNextPrimaryRunSharing() {
-        shareNextPrimaryRun = true
-    }
-
     func handleForeground() {
         guard featureEnabled, accountState == .linked, permitsNightFlockNetwork else { return }
         let generation = localSocialGeneration
@@ -599,11 +674,30 @@ final class NightFlockViewModel: ObservableObject {
             let recovery = attempt.recovery
             Task {
                 do {
+                    if recovery == .linkCurrentAnonymousApple || recovery == .none {
+                        // Quarantine account-scoped transport before Apple can
+                        // replace the temporary anonymous server session. This
+                        // order remains safe if the app terminates mid-sign-in.
+                        guard await clearLocalSocialWork() else {
+                            throw NightFlockAccountError.identityChanged
+                        }
+                        snapshot = nil
+                        v4ListState = nil
+                        selectedV4Party = nil
+                        v4ObservedPartyDetails = [:]
+                        v4InviteCodes = [:]
+                        v4InvitePreview = nil
+                        v4GrantInbox = []
+                        linkedAccountID = nil
+                    }
                     switch recovery {
                     case .reauthenticateApple:
                         try await accountService.reauthenticateAppleIdentity(identityToken: token, nonce: attempt.nonce)
                     case .linkCurrentAnonymousApple, .none:
-                        try await accountService.linkAppleIdentity(identityToken: token, nonce: attempt.nonce)
+                        try await accountService.linkAppleIdentity(
+                            identityToken: token,
+                            nonce: attempt.nonce
+                        )
                     case .failClosed:
                         throw NightFlockAccountError.identityChanged
                     }
@@ -939,6 +1033,7 @@ final class NightFlockViewModel: ObservableObject {
         let epoch = localSocialGeneration
         guard await outbox?.finalizeAcceptedAccountDeletion(epoch: epoch) != false else { return }
         runContexts = [:]
+        primaryRunSharingDecisions = [:]
         do {
             guard let inviteCredentialService else {
                 throw NightFlockInviteCredentialServiceError.encoding
@@ -960,6 +1055,7 @@ final class NightFlockViewModel: ObservableObject {
             return
         }
         runContexts = [:]
+        primaryRunSharingDecisions = [:]
         guard NightFlockAcceptedDeletionPolicy.mayCompleteFinalization(
                 inviteCredentialCleared: inviteCredential == nil,
                 verifiedLocalSignOut: true
@@ -972,8 +1068,23 @@ final class NightFlockViewModel: ObservableObject {
         isDeletingOnlineAccount = false
         snapshot = nil
         v4ListState = nil
+        sharedHabitsPrivacyFences = []
+        sharedHabitsStates = [:]
+        sharedHabitsLoadingPartyIDs = []
+        sharedNightsLoadingPartyIDs = []
+        sharedHabitsAgreementSavingPartyIDs = []
+        sharedHabitsAgreementErrors = [:]
+        sharedHabitsAgreementAttemptIDs = [:]
+        sharedHabitsFormerParties = []
+        sharedHabitsStagedJoinPartyIDs = []
+        sharedHabitsDestructiveCommandPartyIDs = []
         selectedV4Party = nil
         v4ObservedPartyDetails = [:]
+        v4ObservedPartyRefreshDates = [:]
+        v4ObservedPartyObservationStates = [:]
+        v4CheerSendStates = [:]
+        v4NextPartyDetailRequestSequence = 0
+        v4AcceptedPartyDetailRequestSequences = [:]
         v4InviteCodes = [:]
         v4InvitePreview = nil
         v4Profile = nil
@@ -983,7 +1094,16 @@ final class NightFlockViewModel: ObservableObject {
         v4RealtimeRefreshTasks = [:]
         v4RealtimeSetupTasks.values.forEach { $0.cancel() }
         v4RealtimeSetupTasks = [:]
+        v4PartyObservationTasks.values.forEach { $0.cancel() }
+        v4PartyObservationTasks = [:]
+        v4PartyObservationNeedsRefresh = []
+        v4RealtimeRefreshAttemptIDs = [:]
+        v4RealtimeSetupAttemptIDs = [:]
+        v4PartyObservationAttemptIDs = [:]
+        v4SelectedPartyRefreshAttemptIDs = [:]
         v4RealtimePartyIDs = []
+        v4RealtimeConnectedPartyIDs = []
+        v4RefreshingPartyIDs = []
         await service?.stopV4Realtime()
         accountState = .anonymous
         stagedDestructiveLocalEffect = .none
@@ -995,33 +1115,121 @@ final class NightFlockViewModel: ObservableObject {
         phase = .idle
     }
 
-    func preparePrimaryRun(runID: UUID, at date: Date, share: Bool) {
-        guard permitsLocalSocialMutation else { return }
+    /// Persists the primary run's one-shot decision before releasing a
+    /// validation that timer/NFC admission may have delivered synchronously.
+    func preparePrimaryRun(
+        _ run: FocusRun,
+        share: Bool,
+        isPractice: Bool,
+        publishValidatedStatusAfterAdmission: Bool
+    ) {
         defer { shareNextPrimaryRun = true }
-        guard share, let snapshot, snapshot.sharingEnabled,
-              let day = NightFlockChallengeDayRules.challengeDay(at: date, challenge: snapshot.challenge) else {
-            return
-        }
-        let context = NightFlockRunShareContext(
-            runID: runID,
-            challengeID: snapshot.challenge.id,
-            memberID: snapshot.myMemberID,
-            challengeDay: day,
-            createdAt: date
+        let decision = NightFlockPrimaryRunSharingDecision(
+            runID: run.id,
+            allowsSharing: share,
+            capturedAt: run.startedAt
         )
-        runContexts[runID] = context
+        primaryRunSharingDecisions[run.id] = decision
         let generation = localSocialGeneration
-        let transportEpoch = transportRecoveryEpoch
+        let context: NightFlockRunShareContext?
+        if permitsLocalSocialMutation,
+           share,
+           let snapshot,
+           snapshot.sharingEnabled,
+           let day = NightFlockChallengeDayRules.challengeDay(
+                at: run.startedAt,
+                challenge: snapshot.challenge
+           ) {
+            let prepared = NightFlockRunShareContext(
+                runID: run.id,
+                challengeID: snapshot.challenge.id,
+                memberID: snapshot.myMemberID,
+                challengeDay: day,
+                createdAt: run.startedAt
+            )
+            runContexts[run.id] = prepared
+            context = prepared
+        } else {
+            context = nil
+        }
         Task {
             guard isCurrentLocalSocialGeneration(generation) else { return }
-            await outbox?.saveRunContext(context, epoch: generation)
+            guard share else {
+                // The durable per-run decision is written before beginning
+                // plan retraction, so relaunch replay fails closed even if
+                // termination interrupts the network-facing cancellation.
+                cancelSharedNightPlansForPrivatePrimaryRun(run)
+                return
+            }
+            if let context {
+                await outbox?.saveRunContext(context, epoch: generation)
+            }
             guard isCurrentLocalSocialGeneration(generation) else { return }
+            // Rehydrated automatic runs may already be terminal by the time
+            // their durable decision/context reaches this path. Their factual
+            // outcome can publish, but they must never emit a late "starting"
+            // activity after the night has finished.
+            guard run.state != .completed, run.state != .endedEarly else { return }
+            publishV4WindDownStarting(runID: run.id, at: run.startedAt, isPractice: isPractice)
+            guard NightFlockPrimaryRunValidationAdmissionRules
+                .shouldPublishValidatedStatusAfterAdmission(
+                    sharesRun: share,
+                    wasValidatedDuringAdmission: publishValidatedStatusAfterAdmission
+                ) else { return }
+            publishV4PhoneAwayActive(for: run)
+            publishPhoneTucked(for: run)
         }
+    }
+
+    /// Admission callers await this before coordinator start. When social
+    /// authority is absent there is nothing remote to fence; when it is
+    /// present, failure to persist is a failed-closed admission.
+    func stagePrimaryRunSharingDecisionForAdmission(
+        _ decision: NightFlockPrimaryRunSharingDecision
+    ) async -> NightFlockPrimaryRunSharingDecision? {
+        guard featureEnabled, accountState == .linked, outbox != nil else { return decision }
+        let generation = localSocialGeneration
+        guard let outbox,
+              let durableDecision = await outbox.lookupOrCreatePrimaryRunSharingDecision(
+                decision,
+                epoch: generation
+              ),
+              isCurrentLocalSocialGeneration(generation)
+        else { return nil }
+        primaryRunSharingDecisions[durableDecision.runID] = durableDecision
+        return durableDecision
+    }
+
+    func hasPrimaryRunSharingDecision(for runID: UUID) -> Bool {
+        primaryRunSharingDecisions[runID] != nil
+    }
+
+    func maySharePrimaryRun(_ run: FocusRun) -> Bool {
+        maySharePrimaryRun(runID: run.id, startedAt: run.startedAt)
+    }
+
+    func maySharePrimaryRun(runID: UUID, startedAt: Date) -> Bool {
+        NightFlockPrimaryRunSharingPolicy.mayShare(
+            runID: runID, startedAt: startedAt,
+            decision: primaryRunSharingDecisions[runID],
+            requiredAfter: primaryRunSharingRequiredAfter
+        )
+    }
+
+    func mayShareV4Status(_ record: NightFlockV4StatusOutboxRecord) -> Bool {
+        NightFlockPrimaryRunStatusPublicationRules.mayShare(
+            requiresPrimaryRunDecision: record.requiresPrimaryRunDecision,
+            runID: record.sourceEventID, originStartedAt: record.originStartedAt,
+            observedAt: record.observedAt,
+            decision: primaryRunSharingDecisions[record.sourceEventID],
+            requiredAfter: primaryRunSharingRequiredAfter
+        )
     }
 
     func publishPhoneTucked(for run: FocusRun) {
         guard permitsLocalSocialMutation else { return }
         guard run.isProgressionEligibleNightWatch,
+              maySharePrimaryRun(run),
               run.phoneAwayValidatedAt != nil,
               var context = runContexts[run.id],
               !context.phoneTuckedQueued else { return }
@@ -1032,6 +1240,7 @@ final class NightFlockViewModel: ObservableObject {
 
     func handleTerminalRun(_ run: FocusRun, metrics: NightFlockLocalNightMetrics? = nil) {
         guard permitsLocalSocialMutation else { return }
+        guard run.nightWatchPlan?.role != .primarySleepBookend || maySharePrimaryRun(run) else { return }
         if runContexts[run.id] != nil {
             finishTerminalRun(run, metrics: metrics, persistedContexts: [])
             return
@@ -1146,8 +1355,15 @@ final class NightFlockViewModel: ObservableObject {
             guard permitsNightFlockNetwork,
                   isCurrentTransportTask(generation: generation, epoch: transportEpoch)
             else { return false }
-            v4ListState = v4
-            synchronizeV4RealtimeSubscriptions(with: v4.parties)
+            canonicalV4PartyIDs = Set(v4.parties.map(\.partyID))
+            hasCanonicalV4PartySnapshot = true
+            var visibleV4 = v4
+            visibleV4.parties.removeAll { isSharedHabitsPartySuppressed($0.partyID) }
+            reconcileSharedHabitsLeaveFences(with: v4.parties)
+            v4ListState = visibleV4
+            refreshSharedHabitsReceiptsForCurrentParties()
+            synchronizeV4RealtimeSubscriptions(with: visibleV4.parties)
+            reconcileV4ObservedPartyDetails(with: visibleV4.parties)
             adoptServerV4ProfileIfSafe(v4.profile)
             v4GrantInbox = v4.grantInbox
             phase = .ready
@@ -1476,16 +1692,21 @@ final class NightFlockViewModel: ObservableObject {
 
     func flushOutbox() async {
         guard accountState == .linked, permitsNightFlockNetwork,
+              mayPublishWhileSharedHabitsFenceIsOpen(),
               NightFlockPendingIntentPolicy.permitsFlush(intentPresent: pendingDestructiveIntent != nil),
               NightFlockRelaunchReconciliationPolicy.permitsOutboxFlush(staged: stagedDestructiveLocalEffect),
               let outbox, let service else { return }
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
+        guard await outbox.permitsSharedHabitsPublication() else { return }
+        await flushSharedHabitsOutbox()
+        guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
         await flushV4Outbox()
         guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
         let v3Records = await outbox.v3Records()
         guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
         for record in v3Records {
+            guard await outbox.permitsSharedHabitsPublication() else { return }
             do {
                 guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
                 let response = try await service.sendV3(.publishNightMetrics(
@@ -1529,6 +1750,7 @@ final class NightFlockViewModel: ObservableObject {
         let v2Records = await outbox.v2Records()
         guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
         for record in v2Records {
+            guard await outbox.permitsSharedHabitsPublication() else { return }
             let status: NightFlockMemberNightStatus = record.status
             do {
                 guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
@@ -1555,6 +1777,7 @@ final class NightFlockViewModel: ObservableObject {
         let v1Records = await outbox.records()
         guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
         for record in v1Records {
+            guard await outbox.permitsSharedHabitsPublication() else { return }
             do {
                 guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
                 let response = try await service.send(.publishCheckIn(

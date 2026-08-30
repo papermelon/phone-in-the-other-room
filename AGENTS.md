@@ -44,6 +44,7 @@ productivity timer or medical sleep tracker.
 **IS:**
 
 - A Wind Down ritual app: put the phone away, wind down, and wake before it does
+- A shared ritual with Slumber Party as a core reason friends, couples, and families return
 - Warm, playful, cozy, emotionally safe — pixel-art farm aesthetic, gentle copy
 - Low friction: configure once, then one tap to start Wind Down; Phone Away stays optional
 - Honest about what it measures (quiet minutes around sleep, and
@@ -58,9 +59,9 @@ productivity timer or medical sleep tracker.
 - A generic productivity / pomodoro app
 - A medical or clinical sleep-tracking app (no sleep-quality claims, no diagnoses)
 - A single prescribed play style in which every player must value or manage sheep identically
-- A social network. The narrow invite-only seven-night Slumber Party companion ritual is the
-  sole approved social exception (ADR-0016); Friends, feeds, chat, discovery, and comparison
-  remain gated.
+- A public social network. Slumber Party is a core invite-only social feature for friends,
+  couples, and families (founder clarification, 2026-08-27), not a subordinate optional bridge.
+  Public Friends, discovery, chat, and new comparison mechanics remain separate decisions.
 
 See `docs/DECISIONS/ADR-0006-sleep-bookends-positioning.md` for the current rationale.
 
@@ -113,13 +114,13 @@ flowchart LR
    from the eligible Wind Down start through the end of Screen-Free Morning, including overnight
    separation. Counting Sheep and its fail-open emergency exit remain available. The monitor
    extension records observed apply/clear evidence in the App Group. This barrier is not
-   progression: the Wind Down benefit and Sunrise Trail settle independently. Runtime
+   progression: Wind Down and Screen-Free Morning settle independently. Runtime
    apply/restore failures fail open, record no false observed evidence, and route to repair before
    another start (ADR-0012, ADR-0019).
 6. On finish, `Shared/RewardEngine.swift` credits Wind Down reward/progress and the shared
    Wind Down metric from the factual wind-down bookend only—not overnight or Screen-Free
-   Morning minutes. Actual Screen-Free Morning minutes settle independently through Sunrise
-   Trail and remain separately presented/private. `PersistenceService` saves JSON in
+   Morning minutes. Actual Screen-Free Morning minutes settle through the internal
+   `SunriseTrail` ledger and remain separately presented/private. `PersistenceService` saves JSON in
    `UserDefaults` under `ollie.*`, including a 90-day session-and-event history. Detailed
    ritual, reflection, and HealthKit history remains local. Separately consented impact
    records omit exact dates/times, source names, selected apps, and raw Health samples.
@@ -130,10 +131,16 @@ flowchart LR
    remains authoritative: local activity never waits for social transport, and active Wind Down
    has no in-app social UI. Current members may see factual round records, revisioned expiring
    statuses, curated profile snapshots, and fixed cheers. Best-effort silent Live Activity/Watch
-   feedback reconciles from a durable cheer ledger. Exact schedules, app tokens, full Farm state,
-   inventory, wool, impact data, and raw Health data remain outside the contract. Recovery never
-   creates an anonymous account: 401 reconnects only the locally bound Apple-linked Supabase UUID,
-   while `linked_account_required` links only the current anonymous account in place.
+   feedback reconciles from a durable cheer ledger. The additive v2 local-source capability, after
+   a version-2 agreement, shares immutable rounded next-seven-night plan instances, comparison
+   bookends, bundled idea IDs, and factual receipts—not recurrence rules, custom text, app identity,
+   per-app use, device credentials, impact data, or raw Health. Hosted migration/deployment and
+   physical multi-account validation remain separate gates. Recovery never
+   creates an anonymous account. A bound installation accepts 401 recovery only for its locally
+   expected Apple-linked Supabase UUID. An unbound installation first attempts to link its current
+   anonymous account in place; when Apple already owns a Counting Sheep account, verified Apple
+   sign-in may reopen that account after account-scoped local social queues are quarantined. Local
+   Wind Down and Farm data never move or wait for that transition.
 
 The iPhone is the **authoritative** side of a run. The Watch displays state and reports a brief optional placement distance only.
 Persistence is UserDefaults + Codable JSON only — no CoreData or SwiftData. Core app
@@ -269,18 +276,20 @@ skills/                        ← portable agent skills (see skills/README.md)
   then explicitly wear it now or keep their existing appearance. The first
   successful five-minute onboarding practice grants one additional sheep without consuming a
   protected-night or Phone Away guarantee. The first three qualifying protected Wind Down
-  searches, and independently the first three completed 100-minute Phone Away meter searches,
-  guarantee a sheep; later searches on each track use that track's chance and bad-luck
-  protection. A qualifying protected-night search requires a successfully completed primary
+  searches, the first three completed 100-minute Screen-Free Morning searches, and the first
+  three completed 100-minute Phone Away meter searches each guarantee a sheep; later searches
+  use their source's independent chance and bad-luck protection. A qualifying protected-night
+  search requires a successfully completed primary
   Wind Down whose protected span from eligible start through morning quiet is at least 420
   minutes. That span is a progression rule, not a claim about hours asleep. The configured
   bookends remain factual receipt rows; Wind Down progression uses its factual wind-down
-  bookend, while Screen-Free Morning settles independently through Sunrise Trail.
+  bookend, while Screen-Free Morning settles through its own internal ledger. **Screen-Free
+  Morning** is the release-facing name; `SunriseTrail*` names remain compatibility-safe internals.
 - Search outcomes are deterministic after resolution, persisted once, and protected against
   unreasonable bad luck. Missing data never lowers the search chance.
 - The Farm progression direction separates a permanent discovery/history record from the
-  currently owned flock. A found sheep can remain recorded in the catalogue and Ollie's Trail
-  Notes even if its owned instance is later sheared, traded, released, or otherwise cycled.
+  currently owned flock. A found sheep can remain recorded in the catalogue and Search Journal
+  even if its owned instance is later sheared, traded, released, or otherwise cycled.
 - The active flock has finite capacity. Players may prioritize collecting and capacity expansion,
   wool production, trading sheep to other farms, catalogue completion, or cosmetic customization.
   Do not assume that every collected sheep must occupy the Farm forever.
@@ -291,24 +300,111 @@ skills/                        ← portable agent skills (see skills/README.md)
 - Shearing is a deliberate flock-management action, not merely a loss state: it retains a
   sheep while its wool regrows. Trading or releasing may remove the owned instance while keeping
   its discovery and history. ADR-0015 records the current returns and timing.
-- An early-ended run advances no sheep search but keeps its factual trail receipt. The product
+- An early-ended run advances no sheep search but keeps its factual run receipt. The product
   does not need automatic sheep deletion after a missed night; future lifecycle mechanics remain
   open product decisions rather than assumed permanent restrictions.
-- Successfully completed additional-quiet periods map up to the centrally configured 100-minute
+- Successfully completed additional-quiet periods credit up to the centrally configured 100-minute
   Phone Away search meter. After three protected Wind Downs, each completed meter opens one
   Phone Away search. The first three of those meter searches guarantee a sheep; later ones use
   the isolated 20/30/40/50 ladder and a four-clue bad-luck guarantee. They never change Wind
-  Down odds. Practice and early-ended runs consume no mapped minutes.
+  Down odds. Practice and early-ended runs add no Phone Away search-meter minutes. Legacy
+  `trailDistance`, `trailStrength`, `trailMap`, `pendingMappedMinutes`, and odds fields remain
+  decodable, but release copy must not present distance, trail strength, mapped progress, or a
+  shared fixed trail as meaningful user progress.
 - The user-facing action labels are **“Put phone away,” “Start now,”** and **“Plan.”** Copy does
   not force the mode name into awkward verbs.
 - Wind Down setup may hold up to three ordered evening suggestions and two morning suggestions.
-  These are private, optional ideas with no checkmarks, verification, reward, score, streak, or
-  claim that a suggestion was completed. Guidance appears beside those choices, on Home, and at
-  phase-appropriate moments. The source library is bundled locally and reached from the secondary
-  **“About these ideas and sources”** link; “finite guide” is an internal description only.
+  These are private by default, optional ideas with no checkmarks, verification, reward, score,
+  streak, or claim that a suggestion was completed. A future versioned Slumber Party agreement
+  may share the stable selected ideas and their planned order without changing that evidence
+  boundary. Guidance appears beside those choices, on Home, and at phase-appropriate moments. The
+  source library is bundled locally and reached from the secondary **“About these ideas and
+  sources”** link; “finite guide” is an internal description only.
 - Settings is organized as **Your Wind Down**, **Connections**, **Privacy & data**, and **Help &
   app guide**. The compact root leads to focused detail screens with contextual help and progressive
   disclosure; there is one Wind Down configuration route, not a duplicate Review Wind Down route.
+- Founder clarification after device review (2026-08-27): Slumber Party is a core reason to
+  return, and Home must give it substantial, responsive presence rather than only a metadata
+  bridge below a large personal-plan card. Existing member-visible profiles, factual activity,
+  statuses, and cheers may inform idle Home as well as party detail. Keep the personal Wind Down
+  readable and quick to start, Phone Away reachable, and guidance occasional/contextual/dismissible.
+  The prior hierarchy and list-only Home restrictions are superseded; see
+  `docs/plans/home-social-recovery.md`. The founder subsequently approved sharing immediately
+  upon joining, before and between seven-night rounds. Rounds organize progress and rewards;
+  they do not unlock social activity. The local source implements the additive membership-stream
+  contract in `docs/plans/slumber-party-membership-sharing.md`, preserving old-server fallback,
+  membership epochs and independent round grants. No new private-data uploads or remote family
+  enforcement are authorized. Local implementation and hosted deployment remain distinct.
+- Slumber Party founder decisions (2026-08-28; planned, not implemented): members choose one
+  social identity character — their Shepherd, Ollie, or an explicitly selected sheep — while
+  preserving customization. The initial audience is adults, with a coordinating group leader;
+  actual child accounts and negotiated parent/child bedtime flows are later scope. Accountability
+  and friendly competition are approved directions, with exact leader powers/scoring still to be
+  specified. Automatically identified exact shielded apps, then category grouping, are essential
+  for the primary Singapore/SEA audience; self-described categories are not an accepted substitute.
+  No supported Singapore customer export path has yet been established. Prove a permitted route
+  before claiming this feature works; EU-only APIs do not satisfy this market requirement.
+  Sleep presentation should show last night and week/month means with coverage and drill-down.
+  One explicit sharing agreement accompanies joining each party; sharing is then on for the
+  agreed contract, without per-field toggles, and withdrawing party sharing means leaving that
+  party. Consent is not an automatic iOS permission grant, and missing data is not misconduct.
+  Adults may join without Health data. Offer contextual Health/Screen Time connection controls;
+  distinguish request completion, observed data and actual system authorization. Later joiners
+  should see all previously shared group history, including earlier contributions from leavers.
+  Ordinary leave stops new sharing and access but should not redact approved existing history.
+  These are planned requirements: existing contributors need agreement to expanded fields and
+  audiences; archive retention, meaningful privacy withdrawal/deletion and platform review remain
+  gates. The founder selected retention for the lifetime of the party, subject to legitimate
+  deletion requests; this duration still needs the stated privacy/operations review. A joining
+  clause does not make sensitive history irrevocable. This changes product
+  direction, not the current deployed wire contract or permission to upload anyone's data.
+  See `docs/plans/slumber-party-shared-habits-and-guide.md` and
+  `docs/plans/slumber-party-singapore-app-data-feasibility.md`.
+- Slumber Party habit-loop implementation (2026-08-30; local source complete, deployment and
+  physical multi-account validation pending): sharing each
+  member's planned Wind Down timing, agreed routine ideas, and factual per-night comparison to the
+  frozen plan is a core capability. Build it as additive versioned plan instances and member-night
+  receipts on the existing v4 membership/shared-habits foundation, not as a feed or parallel run
+  state. Suggestions remain unverified ideas; missing evidence is unknown; leaders cannot alter
+  another adult's plan or permissions. Automatically verified exact shielded-app identity and
+  per-app use remain separate Apple/Singapore gates and must not be replaced by a manual label or
+  inferred from protection evidence. See
+  `docs/plans/slumber-party-social-habit-loop-implementation.md`.
+- Home design approval (2026-08-28; native composition implemented, acceptance incomplete): personal Ollie
+  leads a minimalist hero with 1–3 home ornaments, a bordered Tonight timing card above it, and
+  a connected Slumber Party member/status preview with one recent highlight. Keep the round
+  label on one line. Photo-based ear and tongue poses are approved references for animation
+  in both Home and Farm; registered frame sets and the three finished cosmetic layers are now implemented. The
+  shared hero scene is deferred. A personal Shepherd companion, its art refresh and a logo
+  replacement are explorations, not selected defaults. Preserve clothing/cosmetic customization.
+  The native hero remains Ollie alone; the Shepherd is off by default in the optional design
+  comparison and, when enabled there, the pair is centered together. The window follows local
+  iPhone time (day 06:00–18:00, night otherwise), without location access. Home and Farm share
+  brief head-tilt, ear-tuck and tongue gestures plus a five-second rest. The first greeting
+  should be visible promptly on entry, with quiet pauses between the later gestures. Local image cleanup was explicitly authorized; sources and deterministic
+  processing provenance are retained. Physical-device performance and interaction acceptance
+  remain separate gates. No updated phone build or distribution is implied by source work.
+  See `docs/plans/home-hero-approved-direction.md` for sequencing and acceptance checks.
+  Founder correction at 20:37 on 28 August: restore the older bordered Tonight design with
+  bedtime/wake time and separate Before bed/After waking inset cells above Ollie. Restore one
+  prominent green start card beneath the hero, choosing eligible Wind Down or Phone Away.
+  Keep the rest of current Home and current character art; do not revive obsolete combined
+  quiet-minute claims or the old five-tab navigation.
+- Independent shared-habits refinement (2026-08-28, local candidate): Ideas & sources uses a
+  topic library with focused idea/source details. Nights and Connections share observed Health
+  status and contextual connection/help controls. Slumber Party member cards show one chosen
+  Shepherd, Ollie or discovered sheep; the new optional avatar wire field is capability-gated and
+  requires separate backend deployment. This does not enable sensitive Health/app-data sharing
+  or implement the approved party-lifetime archive. See
+  `docs/plans/shared-habits-independent-implementation.md` for validation and remaining gates.
+- Remaining shared-habits implementation is now authorized (2026-08-28): add separately
+  consented duration summaries and a party-lifetime archive with current/former-member deletion,
+  existing-member affirmation, and offline publication fencing. This is an additive capability;
+  it does not reinterpret older agreements or allow private pre-join backfill. The founder also
+  approved build 36 and Health purpose-text changes for the beta candidate. Backend deployment,
+  public disclosure, native validation and beta processing remain distinct gates. No Singapore
+  exact-app export capability is implied by this authorization. Follow
+  `docs/plans/shared-habits-implementation-20260828.md` and its reviewed wire contract.
 - Farm's user-facing task labels are **Ollie's Search** (the missing-sheep board) and
   **Search Journal** (history). Do not call a completed Wind Down or Phone Away note a
   “search” or a “protected night.” First-run sheep and the independently chosen Shepherd wearable are

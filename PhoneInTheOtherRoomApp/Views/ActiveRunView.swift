@@ -191,6 +191,14 @@ struct ActiveRunView: View {
                     briefAccessNotice(summary: tracker)
                 }
                 purposeCuePicker
+                if run.nightWatchPlan?.role == .primarySleepBookend,
+                   let routineSteps = activeRoutineSteps,
+                   !routineSteps.isEmpty {
+                    WindDownRoutineSequenceCard(
+                        eyebrow: routineEyebrow,
+                        steps: routineSteps
+                    )
+                }
                 if run.placementStatus == .awaitingConfirmation {
                     ritualStatus
                 } else if let message = viewModel.coordinator.backgroundReturnMessage {
@@ -200,12 +208,6 @@ struct ActiveRunView: View {
                     shieldingBanner(banner)
                 }
                 actions
-                if !presentation.isAdditionalQuiet,
-                   let phase,
-                   let plan = run.nightWatchPlan,
-                   let guidance = WindDownGuidanceLibrary.activeGuidance(for: phase, plan: plan) {
-                    WindDownGuideCard(item: guidance, compact: true)
-                }
             }
             .padding(AppSpacing.md)
         }
@@ -385,6 +387,19 @@ struct ActiveRunView: View {
         }
     }
 
+    private var activeRoutineSteps: [WindDownRoutineStep]? {
+        guard let plan = run?.nightWatchPlan else { return nil }
+        switch phase {
+        case .windDown: return plan.eveningRoutine
+        case .morningQuiet: return plan.morningRoutine
+        case .overnight, .complete, nil: return nil
+        }
+    }
+
+    private var routineEyebrow: String {
+        phase == .morningQuiet ? "BEFORE THE PHONE RETURNS" : "AFTER THE PHONE GOES AWAY"
+    }
+
     private func activityCue(
         eyebrow: String,
         activity: PhoneFreeActivity,
@@ -502,21 +517,34 @@ struct ActiveRunView: View {
 
     private var purposeCuePicker: some View {
         PixelCard {
-            Menu {
-                ForEach(QuietPurposeCue.allCases, id: \.self) { cue in
-                    Button(cue.shieldText) { viewModel.setCurrentPurposeCue(cue) }
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                Text("THIS TIME IS FOR")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                Menu {
+                    ForEach(QuietPurposeCue.allCases, id: \.self) { cue in
+                        Button {
+                            viewModel.setCurrentPurposeCue(cue)
+                        } label: {
+                            if viewModel.currentPurposeCue == cue {
+                                Label(cue.appFacingTitle, systemImage: "checkmark")
+                            } else {
+                                Text(cue.appFacingTitle)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Label("Purpose", systemImage: "leaf.fill")
+                        Spacer()
+                        Text(viewModel.currentPurposeCue?.appFacingTitle ?? "Choose")
+                    }
+                    .font(AppTypography.body.weight(.semibold))
+                    .foregroundStyle(AppColors.ink)
                 }
-            } label: {
-                HStack {
-                    Label("Purpose", systemImage: "leaf.fill")
-                    Spacer()
-                    Text(viewModel.currentPurposeCue?.shieldText ?? "Choose")
-                }
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.ink)
+                .accessibilityLabel("Current purpose: \(viewModel.currentPurposeCue?.appFacingTitle ?? "not chosen")")
+                .accessibilityHint("Sets a short local purpose cue for this protected occurrence")
             }
-            .accessibilityLabel("Current purpose: \(viewModel.currentPurposeCue?.shieldText ?? "not chosen")")
-            .accessibilityHint("Sets a short local purpose cue for this protected occurrence")
         }
     }
 

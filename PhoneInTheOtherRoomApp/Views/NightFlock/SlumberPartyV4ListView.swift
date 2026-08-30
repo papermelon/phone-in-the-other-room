@@ -3,13 +3,13 @@ import SwiftUI
 struct SlumberPartyV4Header: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Text("INVITE-ONLY · SEVEN NIGHTS")
+            Text("PRIVATE · INVITE-ONLY")
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
-            Text("Put phones away together")
+            Text("Give your phones some time away — together.")
                 .font(AppTypography.title)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Create a group, invite your people, and see how everyone is putting their phone away.")
+            Text("A private group for family, a partner, or close friends. Share small moments together; seven-night rounds organize progress and rewards.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -47,6 +47,11 @@ struct SlumberPartyV4UnavailableCard: View {
 }
 
 struct SlumberPartyV4ListView: View {
+    private enum AcquisitionEntry: Hashable {
+        case create
+        case join
+    }
+
     @ObservedObject var viewModel: NightFlockViewModel
     @EnvironmentObject private var appViewModel: FocusRunViewModel
     @State private var groupName = ""
@@ -55,8 +60,22 @@ struct SlumberPartyV4ListView: View {
     @State private var shepherdNameDraft = ""
     @State private var shepherdNameFeedback: String?
     @State private var showsAccountDeletionConfirmation = false
+    @State private var formerPartyAwaitingHistoryDeletion: NightFlockRetainedSharedHabitParty?
+    @State private var acquisitionEntry: AcquisitionEntry?
     @FocusState private var groupNameFocused: Bool
     @FocusState private var invitationCodeFocused: Bool
+
+    init(viewModel: NightFlockViewModel, initialAcquisition: String? = nil) {
+        self.viewModel = viewModel
+        switch initialAcquisition {
+        case "create":
+            _acquisitionEntry = State(initialValue: .create)
+        case "join":
+            _acquisitionEntry = State(initialValue: .join)
+        default:
+            _acquisitionEntry = State(initialValue: nil)
+        }
+    }
 
     private var isAtPartyLimit: Bool {
         !viewModel.canCreateOrJoinAnotherParty
@@ -68,7 +87,24 @@ struct SlumberPartyV4ListView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            listHeader
+            SlumberPartyV4Header()
+            if let notice = viewModel.sharedHabitsPrivacyNotice {
+                SlumberPartyV4UnavailableCard(
+                    title: "A privacy change is still pending.",
+                    detail: notice,
+                    requestID: viewModel.v4RequestID ?? viewModel.requestReference
+                )
+                Button("Retry privacy change") { viewModel.retrySharedHabitsPrivacyAction() }
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+            }
+            if !viewModel.slumberParties.isEmpty {
+                listHeader
+                Text("Your invited groups stay together between each set of 7 nights.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if !hasShepherdName {
                 ShepherdNameCard(
                     profile: appViewModel.userProfile,
@@ -92,10 +128,7 @@ struct SlumberPartyV4ListView: View {
                 )
             }
             if viewModel.slumberParties.isEmpty {
-                SlumberPartyV4UnavailableCard(
-                    title: "No Slumber Parties yet.",
-                    detail: "Start one for people you know, or join with an invitation code."
-                )
+                emptyState
             } else {
                 ForEach(viewModel.slumberParties) { party in
                     NavigationLink {
@@ -105,13 +138,30 @@ struct SlumberPartyV4ListView: View {
                     }
                     .buttonStyle(.plain)
                 }
+                acquisitionDisclosure
             }
-            createCard
-            joinCard
             accountCard
         }
         .task {
             _ = await viewModel.refreshState(showLoading: false)
+        }
+        .onAppear {
+            consumePreferredEntry()
+            viewModel.refreshSharedHabitsFormerParties()
+        }
+        .confirmationDialog("Remove retained shared history?", isPresented: Binding(
+            get: { formerPartyAwaitingHistoryDeletion != nil },
+            set: { if !$0 { formerPartyAwaitingHistoryDeletion = nil } }
+        )) {
+            Button("Remove my retained history", role: .destructive) {
+                guard viewModel.supportsSharedHabits,
+                      let formerPartyAwaitingHistoryDeletion
+                else { return }
+                viewModel.deleteRetainedSharedHabitsHistory(partyID: formerPartyAwaitingHistoryDeletion.partyID)
+                self.formerPartyAwaitingHistoryDeletion = nil
+            }
+        } message: {
+            Text("This asks the group service to delete your retained shared-habits contributions. It does not restore access to the party or change your local Wind Down and Farm.")
         }
         .confirmationDialog("Delete your online account?", isPresented: $showsAccountDeletionConfirmation) {
             Button("Delete online account", role: .destructive) {
@@ -122,13 +172,79 @@ struct SlumberPartyV4ListView: View {
         }
     }
 
+    private var emptyState: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("Start with people you trust.")
+                        .font(AppTypography.headline)
+                    Text("Each person uses their own Wind Down or Phone Away. Shared moments appear only inside the party.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Button("Start a party") {
+                acquisitionEntry = .create
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .buttonStyle(PixelPrimaryButtonStyle())
+            Button("Join with a code") {
+                acquisitionEntry = .join
+            }
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+            if acquisitionEntry == .create {
+                createCard
+            } else if acquisitionEntry == .join {
+                joinCard
+            }
+        }
+    }
+
+    private var acquisitionDisclosure: some View {
+        PixelCard {
+            DisclosureGroup("Start or join another", isExpanded: Binding(
+                get: { acquisitionEntry != nil },
+                set: { expanded in
+                    if !expanded { acquisitionEntry = nil }
+                    else if acquisitionEntry == nil { acquisitionEntry = .create }
+                }
+            )) {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    Picker("Party action", selection: Binding(
+                        get: { acquisitionEntry ?? .create },
+                        set: { acquisitionEntry = $0 }
+                    )) {
+                        Text("Start a party").tag(AcquisitionEntry.create)
+                        Text("Join with a code").tag(AcquisitionEntry.join)
+                    }
+                    .pickerStyle(.segmented)
+                    if acquisitionEntry == .create {
+                        createCard
+                    } else {
+                        joinCard
+                    }
+                }
+                .padding(.top, AppSpacing.sm)
+            }
+            .font(AppTypography.body)
+        }
+    }
+
+    private func consumePreferredEntry() {
+        guard viewModel.prefersJoinEntry else { return }
+        acquisitionEntry = .join
+        viewModel.prefersJoinEntry = false
+    }
+
     private var listHeader: some View {
         HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text("YOUR SLUMBER PARTIES")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Up to \(NightFlockV4Rules.maximumConcurrentParties) groups can keep their own seven-night rounds.")
+                Text("Up to \(NightFlockV4Rules.maximumConcurrentParties) groups can keep their own seven-night windows.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -149,12 +265,12 @@ struct SlumberPartyV4ListView: View {
     private var createCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("CREATE A SLUMBER PARTY")
+                Text("START A PARTY")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Give your group a name.")
+                Text("Name your group.")
                     .font(AppTypography.headline)
-                TextField("Group name", text: $groupName)
+                TextField("Party name", text: $groupName)
                     .font(AppTypography.body)
                     .textFieldStyle(.roundedBorder)
                     .textInputAutocapitalization(.words)
@@ -162,18 +278,27 @@ struct SlumberPartyV4ListView: View {
                     .focused($groupNameFocused)
                     .frame(minHeight: 44)
                     .accessibilityHint("Only the group name is needed to create an invite-only Slumber Party.")
+                if viewModel.supportsSharedHabits {
+                    SlumberPartySharedHabitsConsentDisclosure(
+                        partyName: groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? "this new Slumber Party"
+                            : groupName.trimmingCharacters(in: .whitespacesAndNewlines),
+                        includesSharedNightPlans: viewModel.supportsSharedNightPlans
+                    )
+                }
                 if isAtPartyLimit {
-                    Text("Your five Slumber Party places are full. Leave a group before starting or joining another.")
+                    Text("You’re already in five Slumber Parties. Leave one before starting or joining another.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                Button("Create group") {
+                Button(viewModel.supportsSharedHabits ? "Create & agree" : "Create party") {
                     viewModel.createSlumberParty(named: groupName)
                     groupNameFocused = false
                 }
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .buttonStyle(PixelPrimaryButtonStyle())
+                .disabled(!hasShepherdName || isAtPartyLimit || groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .disabled(
                     !hasShepherdName || isAtPartyLimit
                         || groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -185,10 +310,10 @@ struct SlumberPartyV4ListView: View {
     private var joinCard: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("JOIN A SLUMBER PARTY")
+                Text("JOIN WITH A CODE")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Use an invitation code from someone you know.")
+                Text("Use a code from someone you know.")
                     .font(AppTypography.headline)
                 TextField("Invitation code", text: $invitationCode)
                     .font(AppTypography.body)
@@ -199,7 +324,7 @@ struct SlumberPartyV4ListView: View {
                     .frame(minHeight: 44)
                     .accessibilityLabel("Slumber Party invitation code")
                 if isAtPartyLimit {
-                    Text("Your five Slumber Party places are full. Leave a group before joining another.")
+                    Text("You’re already in five Slumber Parties. Leave one before starting or joining another.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -230,7 +355,19 @@ struct SlumberPartyV4ListView: View {
             Text("\(preview.memberCount) of \(preview.capacity) places are filled.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
-            Button("Join this group") {
+            Text(viewModel.supportsSharedNightPlans
+                ? "Joining shares rounded Wind Down and Phone Away updates, your curated Farm look, and—after the v2 agreement—your bounded next-seven-night plan. Your recurrence rule and selected apps stay private."
+                : "Joining lets this group see shared Wind Down and Phone Away updates, rounded minutes, and your curated Farm look. Your schedule and selected apps stay private.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            if viewModel.supportsSharedHabits {
+                SlumberPartySharedHabitsConsentDisclosure(
+                    partyName: preview.name,
+                    includesSharedNightPlans: viewModel.supportsSharedNightPlans
+                )
+            }
+            Button("Join this party") {
                 viewModel.redeemSlumberPartyInvite(code: invitationCode)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
@@ -247,6 +384,22 @@ struct SlumberPartyV4ListView: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
+                    if viewModel.supportsSharedHabits,
+                       !viewModel.retainedSharedHabitParties.isEmpty {
+                        Text("Former party shared history")
+                            .font(AppTypography.caption.weight(.semibold))
+                        Text("You can ask to remove your retained shared-habits contributions without rejoining a party.")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                        ForEach(viewModel.retainedSharedHabitParties) { formerParty in
+                            Button("Remove history from \(formerParty.partyName)", role: .destructive) {
+                                formerPartyAwaitingHistoryDeletion = formerParty
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        }
+                    }
                     Button("Delete online account", role: .destructive) {
                         showsAccountDeletionConfirmation = true
                     }
@@ -264,6 +417,7 @@ struct SlumberPartyV4PartyCard: View {
     let summary: NightFlockV4PartySummary
 
     var body: some View {
+        let presentation = NightFlockV4PartyCardPresentation.make(from: summary)
         PixelCard {
             HStack(alignment: .top, spacing: AppSpacing.sm) {
                 Image(systemName: "person.3.fill")
@@ -275,10 +429,10 @@ struct SlumberPartyV4PartyCard: View {
                     Text(summary.name)
                         .font(AppTypography.headline)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("\(roleTitle(summary.myRole)) · \(memberCountTitle(summary.memberCount))")
+                    Text("\(presentation.roleTitle) · \(presentation.memberCountTitle)")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
-                    Text(roundTitle(summary.currentRound))
+                    Text(presentation.stateTitle)
                         .font(AppTypography.caption.weight(.semibold))
                         .foregroundStyle(AppColors.ink)
                 }
@@ -293,24 +447,6 @@ struct SlumberPartyV4PartyCard: View {
         .accessibilityHint("Opens this Slumber Party")
     }
 
-    private func roleTitle(_ role: NightFlockV4Role) -> String {
-        role == .host ? "You’re the host" : "Member"
-    }
-
-    private func memberCountTitle(_ count: Int) -> String {
-        count == 1 ? "1 person" : "\(count) people"
-    }
-
-    private func roundTitle(_ round: NightFlockV4Round?) -> String {
-        guard let round else { return "Ready for the next seven nights" }
-        switch round.status {
-        case .pending: return "Round \(round.number) is ready to begin"
-        case .active:
-            let day = NightFlockV4RoundRules.day(at: Date(), round: round) ?? 7
-            return "Round \(round.number) · Day \(day) of 7"
-        case .completed: return "Round \(round.number) is complete"
-        }
-    }
 }
 
 #Preview("Slumber Party v4 list card · accessibility · iPhone 12", traits: .fixedLayout(width: 390, height: 844)) {

@@ -41,6 +41,15 @@ that future slice.
 
 ## Consequences
 
+### Home refinement accepted 2026-08-27
+
+The founder approved retaining the personal ritual with one prominent Slumber Party bridge on
+Home, and occasional contextual guidance with dismissal backed by a browsable library. This
+replaces a permanent explanatory Home card as the intended presentation. Implementation remains
+pending; see `docs/plans/home-phone-away-and-guidance-review.md` for the Phone Away protection
+repair, current-session Purpose refresh fix and proposed Home/Active hierarchy changes. Approval
+of this direction does not establish a family account model or approve every visual proposal.
+
 The app teaches the interface near the moment it matters without turning first launch into a tour of
 every screen or adding tutorial cards that look like permanent features. Phone Away remains legible
 as a secondary phone-away tool while its bonus search gives the meter a visible, honest payoff.

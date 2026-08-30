@@ -545,7 +545,7 @@ enum WindDownScheduleEngine {
         ).first { $0.sourceID == sourceID }
     }
 
-    private static func eligibleOccurrences(
+    static func eligibleOccurrences(
         in state: WindDownScheduleState,
         at date: Date,
         calendar: Calendar,
@@ -654,7 +654,8 @@ enum WindDownScheduleEngine {
             eveningActivity: preferences.eveningActivity,
             morningActivity: preferences.morningActivity,
             eveningCueText: preferences.eveningCueText,
-            morningCueText: preferences.morningCueText
+            morningCueText: preferences.morningCueText,
+            calendar: calendar
         )
     }
 
