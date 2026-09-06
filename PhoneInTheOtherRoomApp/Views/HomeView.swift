@@ -48,7 +48,6 @@ struct HomeView: View {
                     shellFooter
                 }
             }
-            .accessibilityHidden(isOrientationCoachPresented)
         }
         .alert("Turn on Sleep Focus?", isPresented: $viewModel.showFocusModePrompt) {
             Button("Skip", role: .cancel) {
@@ -134,22 +133,15 @@ struct HomeView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
-        .overlayPreferenceValue(OrientationTourTargetPreferenceKey.self) { targets in
-            GeometryReader { proxy in
-                if shouldPresentOrientationCoach {
-                    let frame = targets[activeOrientationTarget].map { proxy[$0] }
-                    CountingSheepOrientationTourOverlay(
-                        step: viewModel.orientationState.currentStep,
-                        targetFrame: frame,
-                        context: viewModel.firstRunAdvanceContext,
-                        onBack: viewModel.moveBackInOrientationTour,
-                        onNext: advanceOrientationTour,
-                        onSkip: viewModel.skipOrientationLesson
-                    )
-                    .zIndex(50)
-                }
-            }
-        }
+        .modifier(GuidePresentationModifier(target: shouldPresentOrientationCoach ? activeOrientationTarget : nil) {
+            CountingSheepOrientationTourOverlay(
+                step: viewModel.orientationState.currentStep,
+                context: viewModel.firstRunAdvanceContext,
+                onBack: viewModel.moveBackInOrientationTour,
+                onNext: advanceOrientationTour,
+                onSkip: viewModel.skipOrientationLesson
+            )
+        })
         .sheet(isPresented: $showOrientationPracticeOffer) {
             CountingSheepPracticeOfferSheet(
                 onStartPractice: startOrientationPractice,
