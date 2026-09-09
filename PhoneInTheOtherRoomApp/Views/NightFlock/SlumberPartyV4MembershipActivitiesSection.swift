@@ -7,12 +7,16 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
     let party: NightFlockV4PartyDetail
     let membershipActivities: [NightFlockV4SharedActivity]
     let legacyRoundActivities: [NightFlockV4Activity]
+    var compact = false
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            membershipMoments
-            if !legacyRoundActivities.isEmpty {
+            if compact {
+                ForEach(membershipActivities) { membershipActivityCard($0) }
+                ForEach(legacyRoundActivities) { legacyActivityCard($0) }
+            } else { membershipMoments }
+            if !compact && !legacyRoundActivities.isEmpty {
                 legacyRoundHistory
             }
         }
@@ -70,6 +74,8 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
     private func membershipActivityCard(_ activity: NightFlockV4SharedActivity) -> some View {
         let cheers = party.sharedCheers.filter { $0.activityID == activity.activityID }
         return activityCard(
+            activityID: activity.activityID,
+            occurredAt: activity.occurredAt,
             memberID: activity.memberID,
             status: activity.status,
             presentation: NightFlockV4Presentation.activityPresentation(for: activity),
@@ -88,6 +94,8 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
     private func legacyActivityCard(_ activity: NightFlockV4Activity) -> some View {
         let cheers = party.cheers.filter { $0.activityID == activity.activityID }
         return activityCard(
+            activityID: activity.activityID,
+            occurredAt: activity.occurredAt,
             memberID: activity.memberID,
             status: activity.status,
             presentation: NightFlockV4Presentation.activityPresentation(for: activity),
@@ -104,6 +112,8 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
     }
 
     private func activityCard(
+        activityID: UUID,
+        occurredAt: Date,
         memberID: UUID,
         status: NightFlockV4ActivityStatus,
         presentation: NightFlockV4ActivityPresentation,
@@ -116,6 +126,8 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(memberName(for: memberID))
                     .font(AppTypography.headline)
+                Text(occurredAt, format: .dateTime.day().month().year())
+                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                 Text(presentation.cardSummary)
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
@@ -126,12 +138,23 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
                     Text(cheerSummary(cheers))
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
-                } else if !isYou, status == .completed {
+                } else if !isYou {
                     Text("Send a quiet cheer")
                         .font(AppTypography.caption.weight(.semibold))
                         .foregroundStyle(AppColors.ink)
                     cheerControls(target: target, cheers: cheers, onCheer: onCheer)
+                    if NightFlockV4Cheer.allCases.contains(where: { cheer in
+                        viewModel.v4CheerSendState(for: .init(partyID: party.summary.partyID, target: target, cheer: cheer)) == .failed
+                    }) {
+                        Text("Your cheer isn’t confirmed. It’s safe to retry.")
+                            .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                    }
+                    Text(party.updateCheerReceiptVersion == 1
+                        ? "Accepted means saved by Slumber Party. App received means it reached their app; it doesn’t mean they saw it."
+                        : "Accepted means saved by Slumber Party. This server doesn’t confirm receipt by their app.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                 }
+                SlumberPartyUpdateCheerReceiptsView(viewModel: viewModel, party: party, activityID: activityID)
             }
         }
     }
@@ -167,6 +190,7 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
             .frame(maxWidth: .infinity, minHeight: 44)
             .buttonStyle(PixelChipButtonStyle(isSelected: sent))
             .disabled(sent || state == .pending)
+            .accessibilityLabel("\(cheerTitle(cheer)), \(cheerButtonTitle(cheer, count: summary?.count ?? 0, state: state, sent: sent))")
         }
     }
 
@@ -180,8 +204,8 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
         state: NightFlockV4CheerSendState?,
         sent: Bool
     ) -> String {
-        if state == .pending { return "Sending…" }
-        if sent { return "Sent" }
+        if state == .pending { return "Pending…" }
+        if sent { return "Accepted" }
         if state == .failed { return "Try again" }
         return "\(cheerTitle(cheer)) \(count)"
     }

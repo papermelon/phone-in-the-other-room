@@ -182,6 +182,7 @@ targets:
     sources:
       - path: Shared
       - path: Tests
+      - path: PhoneInTheOtherRoomApp/Services/NightFlockOutboxService.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.tests

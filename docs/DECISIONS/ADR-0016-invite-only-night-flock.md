@@ -6,6 +6,22 @@
 - Supersedes: v1–v3 Slumber Party product contract; those schemas remain legacy compatibility only
 - Related: ADR-0003, ADR-0005, ADR-0006, ADR-0010, ADR-0015
 
+## Founder decision — shared Farm and contextual cheers (9 September 2026)
+
+Source implementation is authorized for a shared Farm containing each member's chosen
+Shepherd, Ollie or explicitly selected sheep, supported clothing and head shape, readable names,
+stable selection and an accessible list. Idle Home uses its existing party route. Character
+selection opens the latest eligible already-shared update; fixed cheers sit beside the update.
+Recipients can reopen named cheers at their original update. An app acknowledgement confirms
+receipt by the recipient app, never that a person saw a cheer. These additions reuse membership,
+identity, activity and reward boundaries; active Wind Down remains quiet.
+
+The optional allowlisted public head shape extends curated appearance; it does not expose a
+private Farm profile. Both the existing social-avatar agreement gate and independent server
+capabilities remain required. Backend source/migrations and disposable native fixtures are
+included; production deployment, sharing activation and release distribution are separate,
+unapproved actions in this task. See [plan and evidence](../plans/slumber-party-shared-farm-and-cheers.md).
+
 ## Founder decisions — shared accountability (2026-08-28; implementation pending)
 
 The following supersedes earlier product exclusions where they conflict; the deployed V4 and

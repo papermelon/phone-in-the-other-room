@@ -148,6 +148,7 @@ struct SlumberPartyHomeSection: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Open \(party.name)")
+            .accessibilityHint("Opens the shared Farm, member updates and cheers")
 
             if let detail {
                 memberMoments(in: detail, party: party)

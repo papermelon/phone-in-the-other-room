@@ -3,6 +3,9 @@ import SwiftUI
 struct SlumberPartyV4PartyDetailView: View {
     @ObservedObject var viewModel: NightFlockViewModel
     let summary: NightFlockV4PartySummary
+    @State private var selectedFarmActivity: UUID?
+    @State private var selectedFarmMember: UUID?
+    @State private var showsMemberUpdates = false
     @State private var showsBlockConfirmation = false
     @State private var memberAwaitingBlock: NightFlockV4Membership?
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -54,6 +57,13 @@ struct SlumberPartyV4PartyDetailView: View {
         .navigationTitle(summary.name)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { viewModel.selectSlumberParty(summary.partyID) }
+        .sheet(isPresented: $showsMemberUpdates) {
+            if let selectedFarmMember {
+                SlumberPartyMemberUpdatesView(viewModel: viewModel, partyID: summary.partyID, memberID: selectedFarmMember,
+                    showsSocialAvatar: SlumberPartyReleasePresentationGate.showsSocialAvatar(
+                        listState: viewModel.v4ListState, partyState: viewModel.sharedHabitsState(for: summary.partyID)), initialActivityID: selectedFarmActivity)
+            }
+        }
         .onChange(of: viewModel.v4ListState?.parties) { _, parties in
             guard let parties,
                   !parties.contains(where: { $0.partyID == summary.partyID })
@@ -78,8 +88,19 @@ struct SlumberPartyV4PartyDetailView: View {
     @ViewBuilder
     private func partyContent(_ party: NightFlockV4PartyDetail, at date: Date) -> some View {
         let presentation = NightFlockV4Presentation.detail(for: party, at: date)
+        let showsSocialAvatar = SlumberPartyReleasePresentationGate.showsSocialAvatar(listState: viewModel.v4ListState, partyState: viewModel.sharedHabitsState(for: party.summary.partyID))
         partyHeader(party, at: date)
         observationNotice(for: party, at: date)
+        SlumberPartySharedFarmView(party: party, showsSocialAvatar: showsSocialAvatar, selectedMemberID: selectedFarmMember) { memberID in
+            selectedFarmMember = memberID
+            selectedFarmActivity = nil
+            showsMemberUpdates = true
+        }
+        SlumberPartyReceivedCheersSection(party: party) { memberID, activityID in
+            selectedFarmMember = memberID
+            selectedFarmActivity = activityID
+            showsMemberUpdates = true
+        }
         if presentation.showsContextCard && !party.summary.supportsMembershipSharing {
             contextSection(presentation, party: party)
         }
@@ -154,6 +175,7 @@ struct SlumberPartyV4PartyDetailView: View {
 
     private func partyHeader(_ party: NightFlockV4PartyDetail, at date: Date) -> some View {
         let presentation = NightFlockV4Presentation.detail(for: party, at: date)
+        let showsSocialAvatar = SlumberPartyReleasePresentationGate.showsSocialAvatar(listState: viewModel.v4ListState, partyState: viewModel.sharedHabitsState(for: party.summary.partyID))
         return PixelCard {
             HStack(alignment: .top, spacing: AppSpacing.sm) {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {

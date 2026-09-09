@@ -760,3 +760,19 @@ function stateRequest(body: Record<string, unknown>): Request {
     body: JSON.stringify(body),
   });
 }
+
+Deno.test("public head shape and update cheer acknowledgement stay strictly allowlisted", () => {
+  const profile = { idempotencyKey: key, schemaVersion: 4, command: "updatePublicProfile", expectedRevision: 0,
+    nameSelectionKind: "initial", displayName: "Clover", skinToneID: "warm", hairStyleID: "long",
+    shepherdOutfitID: "shepherd_moon_coat", shepherdAccessoryID: "none", ollieOrnamentID: "none",
+    featuredSheepDefinitionID: "none", pastureThemeID: "pasture_meadow" };
+  for (const headShapeID of ["pear", "round", "boxy", "triangular"]) {
+    assertEquals(validateNightFlockCommand({ ...profile, headShapeID }, key).headShapeID, headShapeID);
+  }
+  assertThrows(() => validateNightFlockCommand({ ...profile, headShapeID: "future" }, key));
+  assertEquals(validateNightFlockCommand(profile, key).headShapeID, undefined);
+  const ack = { idempotencyKey: key, schemaVersion: 4, command: "acknowledgeUpdateCheer", partyID: userID, reactionID: userID };
+  assertEquals(validateNightFlockCommand(ack, key).command, "acknowledgeUpdateCheer");
+  assertThrows(() => validateNightFlockCommand({ ...ack, seenAt: "2026-09-09" }, key));
+  assertThrows(() => validateNightFlockCommand({ ...ack, recipientMemberID: userID }, key));
+});

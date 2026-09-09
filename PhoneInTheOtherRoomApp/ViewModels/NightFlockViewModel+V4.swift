@@ -58,6 +58,9 @@ extension NightFlockViewModel {
         visibleResponse.parties.removeAll { isSharedHabitsPartySuppressed($0.partyID) }
         reconcileSharedHabitsLeaveFences(with: response.parties)
         v4ListState = visibleResponse
+        let visiblePartyIDs = Set(visibleResponse.parties.map(\.partyID))
+        await outbox?.retainUpdateCheers(in: visiblePartyIDs, epoch: generation)
+        guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
         refreshSharedHabitsReceiptsForCurrentParties()
         synchronizeV4RealtimeSubscriptions(with: visibleResponse.parties)
         reconcileV4ObservedPartyDetails(with: visibleResponse.parties)
@@ -345,12 +348,14 @@ extension NightFlockViewModel {
         else { return }
         let effectiveSelectionKind = selectionKind
             ?? (profile.hasEstablishedDisplayName ? .change : .initial)
+        var wirePresentation = profile.presentation
+        if v4ListState?.profileHeadShapeVersion != 1 { wirePresentation.headShapeID = nil }
         pendingV4ProfileMutation = profile
         performV4(.updatePublicProfile(
             expectedRevision: profile.revision,
             nameSelectionKind: effectiveSelectionKind,
             displayName: profile.displayName,
-            presentation: profile.presentation,
+            presentation: wirePresentation,
             avatarID: avatarID,
             idempotencyKey: NightFlockV4Idempotency.command("public-profile")
         ), onSettled: { result in
@@ -548,7 +553,8 @@ extension NightFlockViewModel {
         key: NightFlockV4CheerCommandKey,
         command: NightFlockV4Command
     ) {
-        guard v4CheerSendStates[key] != .pending else { return }
+        guard v4CheerSendStates[key] != .pending, v4CheerSendStates[key] != .sent else { return }
+        if stageUpdateCheerIfApplicable(key: key) { return }
         guard accountState == .linked, permitsNightFlockNetwork, service != nil else {
             v4CheerSendStates[key] = .failed
             return
@@ -754,7 +760,8 @@ extension NightFlockViewModel {
         guard let plan = NightFlockV4ProfileSyncRules.routinePlan(
             local: local,
             server: serverProfile,
-            supportsSocialAvatar: supportsSocialAvatar
+            supportsSocialAvatar: supportsSocialAvatar,
+            supportsHeadShape: v4ListState?.profileHeadShapeVersion == 1
         ) else { return }
         syncPublicProfile(
             plan.profile,
@@ -798,6 +805,7 @@ extension NightFlockViewModel {
         }
         resumeResolvedSharedHabitsJoinAgreementIfPossible(partyID: partyID)
         v4GrantInbox = detail.grantInbox
+        recoverUpdateCheers(in: detail)
 
         // Do not replay a party's existing cheers when it is first selected.
         // A subsequent canonical refresh may surface only genuinely new totals.
@@ -883,7 +891,7 @@ extension NightFlockViewModel {
              let .leaveParty(partyID, _), let .deleteParty(partyID, _),
              let .blockMember(partyID, _, _), let .reportMember(partyID, _, _, _),
              let .cheerMember(partyID, _, _, _), let .cheerMembershipMember(partyID, _, _, _, _),
-             let .completeBackfill(partyID, _, _, _), let .react(partyID, _, _, _), let .reactMembership(partyID, _, _, _):
+             let .completeBackfill(partyID, _, _, _), let .react(partyID, _, _, _), let .reactMembership(partyID, _, _, _), let .acknowledgeUpdateCheer(partyID, _, _):
             return partyID
         case .createParty, .previewInvite, .redeemInvite, .updatePublicProfile,
              .publishActivity, .publishStatus, .publishMembershipStatus, .acknowledgeGrant, .deleteAccount:
@@ -1102,6 +1110,7 @@ extension NightFlockViewModel {
         v4ObservedPartyRefreshDates = [:]
         v4ObservedPartyObservationStates = [:]
         v4CheerSendStates = [:]
+        updateCheerAcknowledgements = [:]
         v4NextPartyDetailRequestSequence = 0
         v4AcceptedPartyDetailRequestSequences = [:]
         Task { [service] in

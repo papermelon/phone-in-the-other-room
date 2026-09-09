@@ -4,6 +4,7 @@ actor NightFlockOutboxService {
     static let outboxKey = "ollie.nightFlock.outbox"
     static let v2OutboxKey = "ollie.nightFlock.commitmentOutbox"
     static let v3OutboxKey = "ollie.nightFlock.metricsOutbox"
+    static let updateCheerOutboxKey = "ollie.nightFlock.updateCheerOutbox.v1"
     static let v4OutboxKey = "ollie.nightFlock.v4SourceOutbox"
     static let v4StatusOutboxKey = "ollie.nightFlock.v4StatusOutbox"
     static let runContextsKey = "ollie.nightFlock.runContexts"
@@ -125,6 +126,29 @@ actor NightFlockOutboxService {
     func removeV3(_ id: UUID, epoch: UInt64) {
         guard admits(epoch) else { return }
         save(v3Records().filter { $0.id != id }, key: Self.v3OutboxKey)
+    }
+
+    func updateCheers() -> [SlumberPartyQueuedUpdateCheer] {
+        load([SlumberPartyQueuedUpdateCheer].self, key: Self.updateCheerOutboxKey) ?? []
+    }
+
+    func enqueueUpdateCheer(_ record: SlumberPartyQueuedUpdateCheer, epoch: UInt64) -> Bool {
+        guard admits(epoch) else { return false }
+        var records = updateCheers()
+        if !records.contains(where: { $0.identity == record.identity }) { records.append(record) }
+        guard records.count <= 120 else { return false }
+        save(records, key: Self.updateCheerOutboxKey)
+        return updateCheers().contains { $0.identity == record.identity }
+    }
+
+    func removeUpdateCheer(_ identity: String, epoch: UInt64) {
+        guard admits(epoch) else { return }
+        save(updateCheers().filter { $0.identity != identity }, key: Self.updateCheerOutboxKey)
+    }
+
+    func retainUpdateCheers(in partyIDs: Set<UUID>, epoch: UInt64) {
+        guard admits(epoch) else { return }
+        save(updateCheers().filter { partyIDs.contains($0.partyID) }, key: Self.updateCheerOutboxKey)
     }
 
     /// Schema four deliberately stores one factual source activity per account.  The
@@ -735,6 +759,7 @@ actor NightFlockOutboxService {
         defaults.removeObject(forKey: Self.outboxKey)
         defaults.removeObject(forKey: Self.v2OutboxKey)
         defaults.removeObject(forKey: Self.v3OutboxKey)
+        defaults.removeObject(forKey: Self.updateCheerOutboxKey)
         defaults.removeObject(forKey: Self.v4OutboxKey)
         defaults.removeObject(forKey: Self.v4StatusOutboxKey)
         defaults.removeObject(forKey: Self.sharedHabitsPrivacyFencesKey)
@@ -864,6 +889,7 @@ actor NightFlockOutboxService {
         defaults.removeObject(forKey: Self.outboxKey)
         defaults.removeObject(forKey: Self.v2OutboxKey)
         defaults.removeObject(forKey: Self.v3OutboxKey)
+        defaults.removeObject(forKey: Self.updateCheerOutboxKey)
         defaults.removeObject(forKey: Self.v4OutboxKey)
         defaults.removeObject(forKey: Self.v4StatusOutboxKey)
         defaults.removeObject(forKey: Self.sharedHabitsPrivacyFencesKey)
