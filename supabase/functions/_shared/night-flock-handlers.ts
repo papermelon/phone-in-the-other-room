@@ -41,7 +41,7 @@ const knownCommands = new Set([
   "createFlock", "createInvite", "revokeInvite", "join", "leave", "setSharing", "block", "report",
   "publishCheckIn", "react", "deleteNightFlockData", "deleteAccount", "createParty", "previewInvite",
   "redeemInvite", "acceptGoal", "setLocalSetup", "setSharingPreferences", "setRoutineIdeas", "startChallenge",
-  "publishProgress", "publishNightMetrics", "acknowledgeGrant", "replaceInvite", "renameParty", "startRound",
+  "publishProgress", "publishNightMetrics", "acknowledgeUpdateCheer", "acknowledgeGrant", "replaceInvite", "renameParty", "startRound",
   "retrieveInvite", "leaveParty", "deleteParty", "updatePublicProfile", "publishActivity", "completeBackfill", "publishStatus",
   "blockMember", "reportMember", "cheerMember",
   "acceptSharedHabitsAgreement", "publishSharedHabit", "deleteSharedHabitHistory", "migrateSharedHabits",

@@ -1,5 +1,28 @@
 # Future Agent Tasks — Prioritised Backlog
 
+## Shared Farm and contextual cheers — rollout and device gates (9 September 2026)
+
+Production native source now integrates the shared Farm, member update sheets, contextual
+cheers, durable queued update-cheer recovery and named recipient entries. The additive backend
+source includes optional public head shape, participant-only app acknowledgements and a bounded
+projection retaining each member's latest/cheered update. See [plan and validation](plans/slumber-party-shared-farm-and-cheers.md).
+
+- With separate authorization, deploy the matching Edge validator/handler before migration
+  `20260909090000_slumber_party_farm_cheer_receipts.sql`; verify advertised capabilities and
+  mixed-version profile writes against the deployed catalog. This task deploys nothing.
+- Run physical two-account A/B tests: different characters/outfits/head shapes, exact update
+  selection, duplicate taps, ambiguous send + relaunch, acknowledgement + sender reconnect,
+  account A/sign-out/B/A, leave/rejoin/block, and loss of consent. Use disposable accounts.
+- Verify the unchanged active Wind Down boundary with live background/foreground/overnight
+  transitions: no new in-app social interruption and no claim of human attention from app receipt.
+- Confirm native VoiceOver speech/focus and Reduce Motion on physical iPhones. Simulator
+  accessibility-tree/layout inspection is separate evidence from physical assistive technology.
+- Operate existing 90-day stream cleanup and verify cascading acknowledgement cleanup;
+  legacy round retention continues to require its existing operations review. Receipt metadata
+  is participant-only and never a read receipt or a party-lifetime history grant.
+
+
+
 The shared work queue for Codex, Cursor, and human sessions. Pick from the top; read
 `AGENTS.md` first. When you finish a task, mark it done here (with date + session) and
 file any follow-ups as new entries.

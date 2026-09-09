@@ -915,6 +915,7 @@ struct NightFlockRefreshFailure: Equatable {
             return "Your cheer couldn’t be sent"
         case .publishActivity, .completeBackfill: return "Your shared moment couldn’t be sent"
         case .publishStatus, .publishMembershipStatus: return "Your session update couldn’t be shared"
+        case .acknowledgeUpdateCheer: return "App receipt couldn’t be confirmed"
         case .acknowledgeGrant: return "Your party reward couldn’t be confirmed"
         }
     }

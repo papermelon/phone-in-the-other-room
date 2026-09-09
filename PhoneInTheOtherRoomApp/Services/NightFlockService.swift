@@ -394,7 +394,7 @@ private extension NightFlockV4Command {
              let .blockMember(_, _, key), let .reportMember(_, _, _, key), let .deleteAccount(key),
              let .cheerMember(_, _, _, key), let .cheerMembershipMember(_, _, _, _, key),
              let .updatePublicProfile(_, _, _, _, _, key), let .publishStatus(_, _, _, _, key), let .publishMembershipStatus(_, _, _, _, key),
-             let .completeBackfill(_, _, _, key), let .react(_, _, _, key), let .reactMembership(_, _, _, key), let .acknowledgeGrant(_, key):
+             let .completeBackfill(_, _, _, key), let .react(_, _, _, key), let .reactMembership(_, _, _, key), let .acknowledgeGrant(_, key), let .acknowledgeUpdateCheer(_, _, key):
             return key
         case let .publishActivity(record):
             return record.idempotencyKey

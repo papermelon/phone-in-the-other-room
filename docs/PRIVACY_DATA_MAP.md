@@ -155,6 +155,32 @@ The extension adds no upload of Purpose, private routine choices, exact planned 
 
 See `plans/slumber-party-membership-sharing.md` for compatibility, verification and rollout gates. The public policy must be reconciled before distribution; the historical description below is not a statement that v2 sharing toggles or Health sharing remain part of v4.
 
+## Shared Farm and update cheer receipts — 9 September 2026 source candidate
+
+The public curated appearance gains optional `headShapeID` (pear, round, boxy, triangular),
+advertised by `profileHeadShapeVersion: 1`. It is projected from the chosen Shepherd look;
+no private Farm document, ownership ledger or inventory is copied. The social-avatar agreement
+and capability gate remains unchanged. Older writes preserve the new field; older servers
+receive no head-shape field.
+
+`updateCheerReceiptVersion: 1` adds participant-only reaction IDs, original public update IDs,
+sender/recipient membership IDs, fixed cheer type, server acceptance time and optional app-receipt
+time. The optional acknowledgement means a recipient app received the update's cheer record;
+it never proves human attention. No seen/read timestamp, push entitlement or new reward is added.
+Current membership epochs and blocking fence both participants. Existing reaction deletion
+cascades the private acknowledgement row. Existing 90-day stream retention applies; no
+party-lifetime archive of these receipt records is introduced. No third member receives a pair's
+delivery metadata.
+
+The `memberUpdates` projection keeps each current member's latest eligible update and the
+original updates behind that viewer's cheers accessible beyond the global latest-100 feed.
+It uses the same existing allowlisted stream fields, current membership/block checks and
+90-day limit. Account/membership-fenced local pending cheer intent is stored through the existing
+outbox service and cleared with social account reset or loss of party membership.
+
+This migration is **not deployed by this task**. See
+[implementation and validation](plans/slumber-party-shared-farm-and-cheers.md).
+
 ## Historical Slumber Party mapping (v2/v3 compatibility)
 
 

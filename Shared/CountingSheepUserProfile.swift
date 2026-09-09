@@ -3,6 +3,7 @@ import Foundation
 /// The small, curated identity a member may show inside an invited Slumber Party.
 /// It deliberately stores identifiers only; local Farm ownership never crosses this boundary.
 struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
+    var headShapeID: String? = nil
     var skinToneID: String
     var hairStyleID: String
     var shepherdOutfitID: String
@@ -34,8 +35,20 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
             && CountingSheepPublicPresentationAllowlist.pastureThemeIDs.contains(pastureThemeID)
     }
 
+    /// Unknown fields use their individual fallback; valid clothes are never discarded.
+    var renderableAppearance: Self {
+        var result = self
+        let fallback = Self.defaultValue
+        if !CountingSheepPublicPresentationAllowlist.skinToneIDs.contains(skinToneID) { result.skinToneID = fallback.skinToneID }
+        if !CountingSheepPublicPresentationAllowlist.hairStyleIDs.contains(hairStyleID) { result.hairStyleID = fallback.hairStyleID }
+        if !CountingSheepPublicPresentationAllowlist.shepherdOutfitIDs.contains(shepherdOutfitID) { result.shepherdOutfitID = fallback.shepherdOutfitID }
+        if !CountingSheepPublicPresentationAllowlist.shepherdAccessoryIDs.contains(shepherdAccessoryID) { result.shepherdAccessoryID = fallback.shepherdAccessoryID }
+        if !CountingSheepPublicPresentationAllowlist.ollieOrnamentIDs.contains(ollieOrnamentID) { result.ollieOrnamentID = fallback.ollieOrnamentID }
+        return result
+    }
+
     private enum CodingKeys: String, CodingKey {
-        case skinToneID, hairStyleID, shepherdOutfitID, shepherdAccessoryID
+        case headShapeID, skinToneID, hairStyleID, shepherdOutfitID, shepherdAccessoryID
         case ollieOrnamentID, featuredSheepDefinitionID, pastureThemeID, avatarID
     }
 
@@ -47,8 +60,10 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
         ollieOrnamentID: String,
         featuredSheepDefinitionID: String,
         pastureThemeID: String,
-        avatarID: String = SocialAvatarRules.shepherdID
+        avatarID: String = SocialAvatarRules.shepherdID,
+        headShapeID: String? = nil
     ) {
+        self.headShapeID = headShapeID
         self.skinToneID = skinToneID
         self.hairStyleID = hairStyleID
         self.shepherdOutfitID = shepherdOutfitID
@@ -70,7 +85,8 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
             featuredSheepDefinitionID: try container.decode(String.self, forKey: .featuredSheepDefinitionID),
             pastureThemeID: try container.decode(String.self, forKey: .pastureThemeID),
             avatarID: try container.decodeIfPresent(String.self, forKey: .avatarID)
-                ?? SocialAvatarRules.shepherdID
+                ?? SocialAvatarRules.shepherdID,
+            headShapeID: try container.decodeIfPresent(String.self, forKey: .headShapeID)
         )
     }
 }

@@ -57,7 +57,7 @@ const v4CommandFields: Record<string, string[]> = {
   reportMember: ["schemaVersion", "command", "partyID", "memberID", "reason", "idempotencyKey"],
   deleteAccount: ["schemaVersion", "command", "idempotencyKey"],
   updatePublicProfile: [
-    "schemaVersion", "command", "expectedRevision", "displayName", "nameSelectionKind", "skinToneID", "hairStyleID", "shepherdOutfitID", "shepherdAccessoryID", "ollieOrnamentID", "featuredSheepDefinitionID", "pastureThemeID", "idempotencyKey",
+    "schemaVersion", "command", "expectedRevision", "displayName", "nameSelectionKind", "skinToneID", "hairStyleID", "shepherdOutfitID", "shepherdAccessoryID", "ollieOrnamentID", "featuredSheepDefinitionID", "pastureThemeID", "headShapeID", "idempotencyKey",
   ],
   publishActivity: [
     "schemaVersion", "command", "sourceEventID", "kind", "outcome", "startedAt", "endedAt", "windDownMinutes", "phoneAwayMinutes", "statusRevision", "sharingScope", "idempotencyKey",
@@ -66,6 +66,7 @@ const v4CommandFields: Record<string, string[]> = {
   publishStatus: ["schemaVersion", "command", "sourceEventID", "status", "revision", "observedAt", "sharingScope", "idempotencyKey"],
   react: ["schemaVersion", "command", "partyID", "activityID", "cheer", "sharingScope", "idempotencyKey"],
   cheerMember: ["schemaVersion", "command", "partyID", "memberID", "cheer", "statusID", "idempotencyKey"],
+  acknowledgeUpdateCheer: ["schemaVersion", "command", "partyID", "reactionID", "idempotencyKey"],
   acknowledgeGrant: ["schemaVersion", "command", "grantID", "idempotencyKey"],
   acceptSharedHabitsAgreement: ["schemaVersion", "command", "partyID", "agreementVersion", "timeZoneIdentifier", "idempotencyKey"],
   publishSharedHabit: ["schemaVersion", "command", "partyID", "agreementID", "memberEpochID", "sourceID", "revision", "kind", "localDate", "timeZoneIdentifier", "minutes", "outcome", "protectionMinutes", "evidence", "idempotencyKey"],
@@ -88,6 +89,7 @@ const socialCommandFields: Record<string, string[]> = {
     "windDownMinutes", "phoneAwayMinutes", "sleepDurationMinutes", "restfulness",
     "idempotencyKey",
   ],
+  acknowledgeUpdateCheer: ["schemaVersion", "command", "partyID", "reactionID", "idempotencyKey"],
   acknowledgeGrant: ["schemaVersion", "command", "grantID", "idempotencyKey"],
 };
 
@@ -223,6 +225,7 @@ function validateV4Command(body: Record<string, unknown>, command: string): void
       requireEnum(body, "nameSelectionKind", ["initial", "migration", "change"]);
       validateFlatPresentation(body);
       if (body.avatarID !== undefined) validateAvatarID(body);
+      if (body.headShapeID !== undefined) requireEnum(body, "headShapeID", ["pear", "round", "boxy", "triangular"]);
       break;
     case "publishActivity":
       requireUUID(body, "sourceEventID");
@@ -240,6 +243,7 @@ function validateV4Command(body: Record<string, unknown>, command: string): void
       break;
     case "blockMember": requireUUID(body, "memberID"); break;
     case "reportMember": requireUUID(body, "memberID"); requireEnum(body, "reason", ["unwantedContact", "harmfulConduct", "impersonation", "otherSafetyConcern"]); break;
+    case "acknowledgeUpdateCheer": requireUUID(body, "partyID"); requireUUID(body, "reactionID"); break;
     case "cheerMember": requireUUID(body, "memberID"); requireEnum(body, "cheer", ["warmWave", "moonGlow", "pawPrint"]); if(body.statusID!==undefined) requireUUID(body,"statusID"); break;
     case "acknowledgeGrant": requireUUID(body, "grantID"); break;
     case "acceptSharedHabitsAgreement":

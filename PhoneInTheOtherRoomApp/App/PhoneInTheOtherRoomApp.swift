@@ -5,7 +5,9 @@ struct PhoneInTheOtherRoomApp: App {
     var body: some Scene {
         WindowGroup {
 #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("--shepherd-art-study") {
+            if ProcessInfo.processInfo.arguments.contains("--slumber-farm-fixture") {
+                SlumberPartySharedFarmNativeFixture()
+            } else if ProcessInfo.processInfo.arguments.contains("--shepherd-art-study") {
                 if ProcessInfo.processInfo.arguments.contains("--shepherd-production-preview") {
                     NavigationStack { ShepherdProductionPreview() }
                 } else {

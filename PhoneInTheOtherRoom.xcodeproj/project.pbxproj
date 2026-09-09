@@ -112,6 +112,7 @@
 		1A5F7C5B2BBF25396BBB1CE0 /* NightFlockV4Rewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D02D6B734CCEAA5550A323 /* NightFlockV4Rewards.swift */; };
 		1A756A5B4A98418C47675D93 /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
 		1A845CA7800901854ABCAE9B /* NightFlockRemoteError.swift in Sources */ = {isa = PBXBuildFile; fileRef = F34BF2BC536636521908B263 /* NightFlockRemoteError.swift */; };
+		1AA38AC0EC53AEE66D43734E /* SlumberPartySharedFarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27073F3EB6C6EB5B870A7F9 /* SlumberPartySharedFarm.swift */; };
 		1AC01546472596D97D4A6AEC /* CompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6F6F711960B149665B4E5B3 /* CompletionView.swift */; };
 		1B94AE3F5BF74E0CBFFBCB76 /* WindDownGuidanceSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F112584D281DE13D26D4A84 /* WindDownGuidanceSources.swift */; };
 		1BE7CE6D6AC31ABE4901BF85 /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E109FBC4F835E47324D0F295 /* FarmModels.swift */; };
@@ -169,6 +170,7 @@
 		28B609C8E1BDF0A6799317E1 /* WindDownSchedulePreviews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E55F3D28135241E092DA0C86 /* WindDownSchedulePreviews.swift */; };
 		2908814B2BB6A63B322AE28F /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
 		29701D43ACC9A81E08F4F0AB /* NightJourneyTerrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */; };
+		297754D41138372BA4A41AB3 /* SlumberPartySharedFarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27073F3EB6C6EB5B870A7F9 /* SlumberPartySharedFarm.swift */; };
 		29981B01A698D1ACE471160B /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
 		2A1FAB0E270E7BD7F795C6AB /* NightFlockV4Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FF9468554FC475650E6948B /* NightFlockV4Models.swift */; };
 		2A8DF2D0F4685FFE717E6B34 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
@@ -196,6 +198,7 @@
 		3061666632EC0766C3E3407A /* ScreenFreeMorningPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFC3CC3B89C99D7C395BA2C /* ScreenFreeMorningPresentation.swift */; };
 		30A07E2415E652AAB698C16E /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
 		30A4F43CD08D444AF06F89BA /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
+		30B62D61C262D7DB0FD005D8 /* SlumberPartySharedFarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27073F3EB6C6EB5B870A7F9 /* SlumberPartySharedFarm.swift */; };
 		3118DE5A2A8CFCC32E62E5F4 /* HomeReceiptRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3001351373E2912EB653842 /* HomeReceiptRouting.swift */; };
 		311B5BC61AB9DE6952A0E571 /* FarmShopCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B627FD9CFCEA07258CD90E1 /* FarmShopCatalog.swift */; };
 		3139268D752352BBE34972FD /* ConnectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */; };
@@ -228,6 +231,7 @@
 		3912643133F5E2BDC9DBEFA0 /* QuietTimeShieldPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */; };
 		39451F02DE90F5EA07D09905 /* NightFlockCommitment.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD7734FF73CD436CE4D9CD60 /* NightFlockCommitment.swift */; };
 		394FB71A964F8FB0486F0C06 /* NightFlockAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */; };
+		39B099C8D458F268F0C1BDC6 /* SlumberPartySharedFarmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F329B00C12AAABC6A7458F1B /* SlumberPartySharedFarmView.swift */; };
 		3A1C643123B783E101B224C5 /* SlumberPartyFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E55F6B3BBBE4FF6C3C6897B /* SlumberPartyFeedback.swift */; };
 		3A446C95E3F3D5B1B554224C /* QuietTimeShieldSchedule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F9AA8785AA4CAEFFC547324 /* QuietTimeShieldSchedule.swift */; };
 		3AC316CE143FD99BDAAFE917 /* FarmSharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = D298D556D163C71582736B0F /* FarmSharedComponents.swift */; };
@@ -261,6 +265,7 @@
 		4412DF3FFA818274C331CC15 /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
 		444AEF4E2CAE4C7643677BBE /* DistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDB7EFE4D58BBF25A01B0A4F /* DistanceProvider.swift */; };
 		444B5516AF37D7EA01AF8497 /* NotificationPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06D5412EB0A88211750BD467 /* NotificationPreferences.swift */; };
+		448859A3BA7A0B80974A6021 /* SlumberPartyReceivedCheersSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C83519899FD04CC79FAC281 /* SlumberPartyReceivedCheersSection.swift */; };
 		449B04F3B1702E29E5C21E6A /* ConnectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */; };
 		44D1C824D48EACBB2ABE4783 /* NightFlockMemberBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 156E67A2C41E12C90EDAC0FD /* NightFlockMemberBoardView.swift */; };
 		44E4DF1AC4C86D655428C35F /* NightFlockSharedHabitsFenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AACBF0DDC07BE817316D593 /* NightFlockSharedHabitsFenceTests.swift */; };
@@ -369,6 +374,7 @@
 		5FBD224FB334BEC3E126B865 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
 		5FDDA30A046959BAA98ABFF4 /* ShepherdStudyMasterPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F021CBB328480524FBF153EE /* ShepherdStudyMasterPaths.swift */; };
 		6137227141F505BD3B474F93 /* PhoneInTheOtherRoomDeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2DC676E8259E7A18655B6986 /* PhoneInTheOtherRoomDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		61945D72196B06871E2B6262 /* SlumberPartySharedFarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27073F3EB6C6EB5B870A7F9 /* SlumberPartySharedFarm.swift */; };
 		61C0578BB16C792CAE20C7EA /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		625DD18A21906EE55B2C3C46 /* NightFlockRewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E743BEE0142538219616C76 /* NightFlockRewards.swift */; };
 		627A6C0414F7C5838157609F /* SheepSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47AE0567955634A07E71846 /* SheepSearchState.swift */; };
@@ -456,6 +462,7 @@
 		768307E4FD77C431013D4394 /* NightFlockSharedHabitsOutbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */; };
 		76834AE38449514821657D04 /* NightWatchUsageMonitoringService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4553AA68080C4280F7560845 /* NightWatchUsageMonitoringService.swift */; };
 		76C2E53494AB0CEE2EA1387B /* NightWatch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0017C31179B4E0FF551A79D4 /* NightWatch.swift */; };
+		772D43A697A6E649E23E16F1 /* SlumberPartySharedFarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27073F3EB6C6EB5B870A7F9 /* SlumberPartySharedFarm.swift */; };
 		77756881078921DDB8A93E2D /* FocusAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CB9D7F6CBF2FB36B03D2B /* FocusAnalytics.swift */; };
 		77A51F5C262BABAAEA616A47 /* NightFlockDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5456845B6FE5574658098B3 /* NightFlockDiagnostics.swift */; };
 		77CDE4650AB12CF46716C17B /* NightsDayDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9EF128A45FEA565E5DAC499 /* NightsDayDetailView.swift */; };
@@ -474,6 +481,7 @@
 		7B1FB36DEA23C8B45562C7C7 /* OnboardingJourney.swift in Sources */ = {isa = PBXBuildFile; fileRef = A24BDC9E1716AA10A37DB1C3 /* OnboardingJourney.swift */; };
 		7B83A93CBBFAF80B6AEEF1A9 /* FarmEconomySimulationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101622737E06BAC7145FF71 /* FarmEconomySimulationTests.swift */; };
 		7BFD5984D09F858DCE39F79B /* PhoneInTheOtherRoomApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 323C9D00D1DC5BC5B0D0B3D8 /* PhoneInTheOtherRoomApp.swift */; };
+		7C2B9AFFD02EBAE1308D58B0 /* SlumberPartySharedFarmTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67180452846F8F9F3096CDB4 /* SlumberPartySharedFarmTests.swift */; };
 		7C2E64FC31A7672F8FA93D08 /* HomeReceiptRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3001351373E2912EB653842 /* HomeReceiptRouting.swift */; };
 		7C3A43C8855000BB2ADA459F /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		7C5D05F54A37D515B29B602A /* NightFlockSharedHabitsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */; };
@@ -508,6 +516,7 @@
 		855CDCED3EFB285291EA03AF /* WindDownStartSourcePolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC64F2695F387F8FADF2C22F /* WindDownStartSourcePolicyTests.swift */; };
 		859D8F115278B4A6339D8DF8 /* NightsWeekSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = ECC9B78384C74CC3192CFD2C /* NightsWeekSection.swift */; };
 		85AE6ACA0349B0B1016B5910 /* FocusSessionCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D2D7800DC20784D79515266 /* FocusSessionCoordinator.swift */; };
+		85B9D48BCD8807ECDD994F2A /* NightFlockViewModel+UpdateCheers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EDF8F30AC3EFD01191E5ED8 /* NightFlockViewModel+UpdateCheers.swift */; };
 		85C267080AEB6D3BE028560B /* SlumberPartyFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E55F6B3BBBE4FF6C3C6897B /* SlumberPartyFeedback.swift */; };
 		860C695F086798633685CE51 /* FarmEconomyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */; };
 		862D316BA42A0635BEEF4862 /* FarmView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E965042A8DE4CCAE76137376 /* FarmView.swift */; };
@@ -692,6 +701,7 @@
 		B6EC0930EF5F9EDF1DB31C0B /* WatchNotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D492CABD33A3BC68F45C56 /* WatchNotificationService.swift */; };
 		B6F356C2D7A0139C08E2DB8C /* CountingSheepUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9833AE367470A8440023AF38 /* CountingSheepUserProfile.swift */; };
 		B72295CFA36A9526458A91BF /* NightFlockSharedHabitsAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = F63FEBF0D625ABE5E98F11FA /* NightFlockSharedHabitsAPI.swift */; };
+		B7610E2A100D376E0C581265 /* SlumberPartySharedFarm.swift in Sources */ = {isa = PBXBuildFile; fileRef = E27073F3EB6C6EB5B870A7F9 /* SlumberPartySharedFarm.swift */; };
 		B77BE780A0F57F5EF0B62A4D /* NightFlockV4API.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45D3BD9546C811086F4D9250 /* NightFlockV4API.swift */; };
 		B7A56020598C9EABA543348D /* ShepherdNameCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB130154DC4EC531454055AC /* ShepherdNameCard.swift */; };
 		B7B18A5D7ED0F533E938D8E8 /* HomeReceiptRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3001351373E2912EB653842 /* HomeReceiptRouting.swift */; };
@@ -784,6 +794,7 @@
 		D0780C1A74AC163D550F7DE5 /* OrientationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 657822B85060A72926C6069A /* OrientationTests.swift */; };
 		D0F17F7C1F45B2A4DEFEDF32 /* PhoneAwaySearchSettlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB4F3A6783D5E1106B72F2E /* PhoneAwaySearchSettlement.swift */; };
 		D1EFF6F3900E3CB2B886604B /* FocusAnalytics.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0CB9D7F6CBF2FB36B03D2B /* FocusAnalytics.swift */; };
+		D24D6945FE287322FCA834C1 /* NightFlockOutboxService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA5CFEB51D35E8C302B15B6E /* NightFlockOutboxService.swift */; };
 		D2785EB5D97DA573EDFF309D /* WatchCompletionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4D2CC91D7C7FE4CAD506DCD /* WatchCompletionView.swift */; };
 		D28EC543B101A637FDD1B8CB /* NightFlockV4Rewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D02D6B734CCEAA5550A323 /* NightFlockV4Rewards.swift */; };
 		D2F9A4A2BEC0F920616FE9C9 /* NotificationCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F93972DA8F2073D37A04DFC6 /* NotificationCopy.swift */; };
@@ -864,6 +875,7 @@
 		E9D92B98B682606ADDCA7DA7 /* NightJourneyTerrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */; };
 		E9F4DA532D5C767C643E9137 /* NightFlockPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DB187B79332895B17084F74 /* NightFlockPresentation.swift */; };
 		EA5FD2C99FF24358194B7E19 /* IndependentMorningSettlement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66A1636CD678FB4C1B1BF913 /* IndependentMorningSettlement.swift */; };
+		EAD14F8F948C96E4216DA211 /* SlumberPartySharedFarmFixtures.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99FADBF1F17CE4FB72187CCA /* SlumberPartySharedFarmFixtures.swift */; };
 		EB168616C20B8D390DA75A37 /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
 		EB5EFCE47050CFBC606BAAD6 /* EarlyWakeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9BF9E90F3A7FC03662C6A69 /* EarlyWakeSheet.swift */; };
 		EB90578CFA6F3996454942B0 /* FarmShopCatalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B627FD9CFCEA07258CD90E1 /* FarmShopCatalog.swift */; };
@@ -891,6 +903,7 @@
 		F26FF1108E977596B8B41EBE /* NightsHistorySummary.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */; };
 		F2A3C736F99BD5DC632E1197 /* SlumberPartyHomePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */; };
 		F301A16F9D4774C0DF28AE81 /* SunriseTrail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 249B4AF9B120045F2B5EAA36 /* SunriseTrail.swift */; };
+		F37A2910929FF0DA7520D051 /* SlumberPartyUpdateCheerReceiptsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B2BE1A9CA26BCF753C57A4A /* SlumberPartyUpdateCheerReceiptsView.swift */; };
 		F46F86290DECDB5A018BB551 /* WindDownGuidanceSourcesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31AC3431486F9B88FFF79AE8 /* WindDownGuidanceSourcesView.swift */; };
 		F48377902D560C8420220FC8 /* QuietTimeShieldingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3235011194BE427E8F19AD0 /* QuietTimeShieldingService.swift */; };
 		F4DD186DF14BC616CD52E2F5 /* FocusRunLiveActivityPushContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */; };
@@ -1045,6 +1058,7 @@
 		0A0BA55E2FBC5876A06B5077 /* OllieCompanionAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllieCompanionAnimationView.swift; sourceTree = "<group>"; };
 		0ACDE9990E79FB60A58352C2 /* SheepSearchExplainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearchExplainer.swift; sourceTree = "<group>"; };
 		0AF575665FDEDDFAC4BF7310 /* ShepherdStudyHeadDrawing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdStudyHeadDrawing.swift; sourceTree = "<group>"; };
+		0B2BE1A9CA26BCF753C57A4A /* SlumberPartyUpdateCheerReceiptsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyUpdateCheerReceiptsView.swift; sourceTree = "<group>"; };
 		0B97166551A0616FC19980F1 /* PixelHomeDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelHomeDashboard.swift; sourceTree = "<group>"; };
 		0BD250A597F00860153BE645 /* IndependentMorningSettlementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndependentMorningSettlementTests.swift; sourceTree = "<group>"; };
 		0C18F2A9F6A867D8C17822A8 /* SlumberPartySharedHabitsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedHabitsViews.swift; sourceTree = "<group>"; };
@@ -1159,6 +1173,7 @@
 		5DC007D5F710402FCC8D8422 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		5DFC3CC3B89C99D7C395BA2C /* ScreenFreeMorningPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenFreeMorningPresentation.swift; sourceTree = "<group>"; };
 		5E01DCDE3B22D74F2B27C753 /* FocusRunViewModel+SharedHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FocusRunViewModel+SharedHabits.swift"; sourceTree = "<group>"; };
+		5EDF8F30AC3EFD01191E5ED8 /* NightFlockViewModel+UpdateCheers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NightFlockViewModel+UpdateCheers.swift"; sourceTree = "<group>"; };
 		5F762568D06F843D2FB6D7EF /* WindDownGuidanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidanceTests.swift; sourceTree = "<group>"; };
 		6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWindowPhase.swift; sourceTree = "<group>"; };
 		614B9364D99787A4B03FAB79 /* ShepherdStudyPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdStudyPalette.swift; sourceTree = "<group>"; };
@@ -1169,6 +1184,7 @@
 		657822B85060A72926C6069A /* OrientationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrientationTests.swift; sourceTree = "<group>"; };
 		66A1636CD678FB4C1B1BF913 /* IndependentMorningSettlement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndependentMorningSettlement.swift; sourceTree = "<group>"; };
 		66DF0DEF514C026CD82AAFF7 /* Supabase.release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Supabase.release.xcconfig; sourceTree = "<group>"; };
+		67180452846F8F9F3096CDB4 /* SlumberPartySharedFarmTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedFarmTests.swift; sourceTree = "<group>"; };
 		6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabits.swift; sourceTree = "<group>"; };
 		699FD1A342B33E49AEA2D7ED /* UpcomingQuietTimesCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpcomingQuietTimesCard.swift; sourceTree = "<group>"; };
 		69B8EC3C928FE031D88AF0C6 /* WindDownGuidanceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidanceDetailView.swift; sourceTree = "<group>"; };
@@ -1202,6 +1218,7 @@
 		7AACBF0DDC07BE817316D593 /* NightFlockSharedHabitsFenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitsFenceTests.swift; sourceTree = "<group>"; };
 		7B627FD9CFCEA07258CD90E1 /* FarmShopCatalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmShopCatalog.swift; sourceTree = "<group>"; };
 		7C539AE8F2B7B3590101EBB1 /* FarmEconomyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmEconomyTests.swift; sourceTree = "<group>"; };
+		7C83519899FD04CC79FAC281 /* SlumberPartyReceivedCheersSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartyReceivedCheersSection.swift; sourceTree = "<group>"; };
 		7C8EBA2BFE8E2FDEADE480C5 /* FocusRunViewModel+Farm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FocusRunViewModel+Farm.swift"; sourceTree = "<group>"; };
 		7CA912B4A47E398E18D5F0B2 /* NightFlockDiagnosticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockDiagnosticsTests.swift; sourceTree = "<group>"; };
 		7CB21F4F561F0CDDE5838E2E /* AppAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAppearance.swift; sourceTree = "<group>"; };
@@ -1243,6 +1260,7 @@
 		986993A5FA41631E86B7C253 /* MoreView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreView.swift; sourceTree = "<group>"; };
 		9952865E5CA53DA058CAC23C /* LockScreenQuietNoteGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockScreenQuietNoteGuideView.swift; sourceTree = "<group>"; };
 		997850C3F446A904A8E32B6E /* PhoneAwaySettlementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneAwaySettlementTests.swift; sourceTree = "<group>"; };
+		99FADBF1F17CE4FB72187CCA /* SlumberPartySharedFarmFixtures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedFarmFixtures.swift; sourceTree = "<group>"; };
 		99FE5F2A3932E1E4814EEE25 /* PhoneFreeCueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneFreeCueTests.swift; sourceTree = "<group>"; };
 		9A30132FA06A42148938276B /* FirstRunGuideCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunGuideCards.swift; sourceTree = "<group>"; };
 		9B2EA2B025D77BE05F1451EC /* PhoneInTheOtherRoomScreenTimeReport.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = PhoneInTheOtherRoomScreenTimeReport.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -1368,6 +1386,7 @@
 		E189BEFB5814021029DA343F /* NightFlockOrientationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockOrientationView.swift; sourceTree = "<group>"; };
 		E18C5790C60F638AAB46FB4C /* ShepherdAvatarAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdAvatarAppearance.swift; sourceTree = "<group>"; };
 		E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpactMeasurement.swift; sourceTree = "<group>"; };
+		E27073F3EB6C6EB5B870A7F9 /* SlumberPartySharedFarm.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedFarm.swift; sourceTree = "<group>"; };
 		E3235011194BE427E8F19AD0 /* QuietTimeShieldingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldingService.swift; sourceTree = "<group>"; };
 		E3B2563134136BD2136655BD /* NightFlockTipCallout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockTipCallout.swift; sourceTree = "<group>"; };
 		E4285A43B1B1DCA41115E52D /* PastureCharacterHitTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastureCharacterHitTarget.swift; sourceTree = "<group>"; };
@@ -1396,6 +1415,7 @@
 		F2AD704C0BE588AF5B3DBDE1 /* NightFlockSharedHabitsFence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitsFence.swift; sourceTree = "<group>"; };
 		F2B4094E1123762C21960270 /* PastureScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastureScene.swift; sourceTree = "<group>"; };
 		F2C85EA9D76BDF72E306FC1F /* NightFlockSharingAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharingAccountView.swift; sourceTree = "<group>"; };
+		F329B00C12AAABC6A7458F1B /* SlumberPartySharedFarmView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedFarmView.swift; sourceTree = "<group>"; };
 		F3461D2938B2EDD0143CDBE1 /* NightsHistorySummary.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightsHistorySummary.swift; sourceTree = "<group>"; };
 		F34BF2BC536636521908B263 /* NightFlockRemoteError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockRemoteError.swift; sourceTree = "<group>"; };
 		F4AFA2769B1B9866001DB88D /* GameComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameComponents.swift; sourceTree = "<group>"; };
@@ -1571,6 +1591,7 @@
 				D680879F94FF3E85B2EFD703 /* ShieldingReadinessTests.swift */,
 				AD4D476A956E716B20E375A9 /* SlumberPartyFeedbackTests.swift */,
 				6F818388296382E12C5E9F9B /* SlumberPartyHomePresentationTests.swift */,
+				67180452846F8F9F3096CDB4 /* SlumberPartySharedFarmTests.swift */,
 				1DC5279548CF98E53EAEB6DD /* SlumberPartySocialHabitLoopTests.swift */,
 				AF1EF831C34B695262897E31 /* WelcomeRewardTests.swift */,
 				5F762568D06F843D2FB6D7EF /* WindDownGuidanceTests.swift */,
@@ -1813,10 +1834,14 @@
 				6CFAE2418AA82478569AF2EC /* NightFlockSharedPastureView.swift */,
 				F2C85EA9D76BDF72E306FC1F /* NightFlockSharingAccountView.swift */,
 				E3B2563134136BD2136655BD /* NightFlockTipCallout.swift */,
+				7C83519899FD04CC79FAC281 /* SlumberPartyReceivedCheersSection.swift */,
+				99FADBF1F17CE4FB72187CCA /* SlumberPartySharedFarmFixtures.swift */,
+				F329B00C12AAABC6A7458F1B /* SlumberPartySharedFarmView.swift */,
 				6E8C2669732D7E8E5E31546D /* SlumberPartySharedHabitsConsentDisclosure.swift */,
 				E64DD16B4C145FFC970D4A21 /* SlumberPartySharedHabitsSummaryViews.swift */,
 				0C18F2A9F6A867D8C17822A8 /* SlumberPartySharedHabitsViews.swift */,
 				9EA70CBB78D62B0788758502 /* SlumberPartySocialAvatar.swift */,
+				0B2BE1A9CA26BCF753C57A4A /* SlumberPartyUpdateCheerReceiptsView.swift */,
 				0C2B0F320BAD56245267D266 /* SlumberPartyV4GroupDetailsView.swift */,
 				033FFDB53140B4A0C6EBE8AC /* SlumberPartyV4ListView.swift */,
 				7E46C11C6E319BCE0D35E132 /* SlumberPartyV4MemberCard.swift */,
@@ -1899,6 +1924,7 @@
 				6C7EE51C69C7261C331353D8 /* NightFlockViewModel+SharedHabitsAgreement.swift */,
 				C9F4EFAF4F812F350131E588 /* NightFlockViewModel+SharedHabitsFence.swift */,
 				A4AC5D839F47EF9BA9C0C529 /* NightFlockViewModel+Social.swift */,
+				5EDF8F30AC3EFD01191E5ED8 /* NightFlockViewModel+UpdateCheers.swift */,
 				D6526F57542BF01F59A51CCE /* NightFlockViewModel+V4.swift */,
 				8AD9DDE7EED419BC93BDA42E /* PastureSceneController.swift */,
 				F600DE2E47379444ABD60760 /* RewardShelfViewModel.swift */,
@@ -2030,6 +2056,7 @@
 				9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */,
 				9E55F6B3BBBE4FF6C3C6897B /* SlumberPartyFeedback.swift */,
 				88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */,
+				E27073F3EB6C6EB5B870A7F9 /* SlumberPartySharedFarm.swift */,
 				249B4AF9B120045F2B5EAA36 /* SunriseTrail.swift */,
 				D5B830DE525CC379D8E1929C /* WatchMessage.swift */,
 				ADD3B38996742C55147041DA /* WelcomeReward.swift */,
@@ -2484,6 +2511,7 @@
 				849850F7B990A37BDA7DA55B /* NightFlockViewModel+SharedHabitsAgreement.swift in Sources */,
 				933E6F0F6778121745CBEA29 /* NightFlockViewModel+SharedHabitsFence.swift in Sources */,
 				13283C395FF1394E6A9B0424 /* NightFlockViewModel+Social.swift in Sources */,
+				85B9D48BCD8807ECDD994F2A /* NightFlockViewModel+UpdateCheers.swift in Sources */,
 				B6D1A5990BF95C0BAA382F45 /* NightFlockViewModel+V4.swift in Sources */,
 				C505E401C00A207B66804C6C /* NightFlockViewModel.swift in Sources */,
 				F7D09980F0A747FE035BF831 /* NightJourneyAssets.swift in Sources */,
@@ -2598,10 +2626,15 @@
 				3A1C643123B783E101B224C5 /* SlumberPartyFeedback.swift in Sources */,
 				553056DE84F5B906199FC192 /* SlumberPartyHomePresentation.swift in Sources */,
 				66B2E3CD82B638978259D130 /* SlumberPartyHomeSection.swift in Sources */,
+				448859A3BA7A0B80974A6021 /* SlumberPartyReceivedCheersSection.swift in Sources */,
+				61945D72196B06871E2B6262 /* SlumberPartySharedFarm.swift in Sources */,
+				EAD14F8F948C96E4216DA211 /* SlumberPartySharedFarmFixtures.swift in Sources */,
+				39B099C8D458F268F0C1BDC6 /* SlumberPartySharedFarmView.swift in Sources */,
 				4E2112051005FA6B639EE7F2 /* SlumberPartySharedHabitsConsentDisclosure.swift in Sources */,
 				BA0FF24E5E28577DF77F0704 /* SlumberPartySharedHabitsSummaryViews.swift in Sources */,
 				EF5F2735EC58581AFB282B2E /* SlumberPartySharedHabitsViews.swift in Sources */,
 				FE65F4AA46D352AD183AB03A /* SlumberPartySocialAvatar.swift in Sources */,
+				F37A2910929FF0DA7520D051 /* SlumberPartyUpdateCheerReceiptsView.swift in Sources */,
 				4DD15C8988747430C653EAA3 /* SlumberPartyV4GroupDetailsView.swift in Sources */,
 				D3DAEDE9EE95157DD61FDCF0 /* SlumberPartyV4ListView.swift in Sources */,
 				FF2A9B40F720200134A0DF30 /* SlumberPartyV4MemberCard.swift in Sources */,
@@ -2749,6 +2782,7 @@
 				CE63A4962D304A0A3D69F1F1 /* SleepIntervalMath.swift in Sources */,
 				F86801FC9806385A50A9CD3E /* SlumberPartyFeedback.swift in Sources */,
 				F2A3C736F99BD5DC632E1197 /* SlumberPartyHomePresentation.swift in Sources */,
+				B7610E2A100D376E0C581265 /* SlumberPartySharedFarm.swift in Sources */,
 				FFE7E7EA01CE9E96B8670F5A /* SunriseTrail.swift in Sources */,
 				D6CF10C0442B8D15662A8752 /* WatchMessage.swift in Sources */,
 				5A8AE171DD4A7CEF2304E74B /* WelcomeReward.swift in Sources */,
@@ -2868,6 +2902,7 @@
 				C7B8F63A0362C4103ADE8895 /* SleepIntervalMath.swift in Sources */,
 				85C267080AEB6D3BE028560B /* SlumberPartyFeedback.swift in Sources */,
 				89023A69B339D38B756C8F2A /* SlumberPartyHomePresentation.swift in Sources */,
+				1AA38AC0EC53AEE66D43734E /* SlumberPartySharedFarm.swift in Sources */,
 				F301A16F9D4774C0DF28AE81 /* SunriseTrail.swift in Sources */,
 				1491D088655BF8F895522217 /* WatchMessage.swift in Sources */,
 				133B77F6158F2161CB7537DA /* WelcomeReward.swift in Sources */,
@@ -2986,6 +3021,7 @@
 				56DBD04F39227005E79616B6 /* SleepIntervalMath.swift in Sources */,
 				43E32682176B76CFD81FB8CB /* SlumberPartyFeedback.swift in Sources */,
 				2228883B906183C4F0D51181 /* SlumberPartyHomePresentation.swift in Sources */,
+				297754D41138372BA4A41AB3 /* SlumberPartySharedFarm.swift in Sources */,
 				461294B67EEA35296113809E /* SunriseTrail.swift in Sources */,
 				08C8173E50911325713FB510 /* WatchMessage.swift in Sources */,
 				C55FAE9B12ED1E9C201A4DF8 /* WelcomeReward.swift in Sources */,
@@ -3122,6 +3158,7 @@
 				993E731FB647A1A7C6E5763B /* SleepIntervalMath.swift in Sources */,
 				0700D4D79EF90295C5D76C2C /* SlumberPartyFeedback.swift in Sources */,
 				74335B05DE6AEFEFC326EFE8 /* SlumberPartyHomePresentation.swift in Sources */,
+				30B62D61C262D7DB0FD005D8 /* SlumberPartySharedFarm.swift in Sources */,
 				66FCB8B74BA9BDFE6D2D2AFC /* SunriseTrail.swift in Sources */,
 				4C2D5CE9F22A294928FDFE74 /* WatchCaptureFixtures.swift in Sources */,
 				D2785EB5D97DA573EDFF309D /* WatchCompletionView.swift in Sources */,
@@ -3206,6 +3243,7 @@
 				0FDD34E13FADC9B6BEFECDAA /* NightFlockInviteRecoveryTests.swift in Sources */,
 				C246B9AEC1819D0F8238C65C /* NightFlockModels.swift in Sources */,
 				6E840F0D7535EB5489220F22 /* NightFlockOrientation.swift in Sources */,
+				D24D6945FE287322FCA834C1 /* NightFlockOutboxService.swift in Sources */,
 				DE29AB9F220756B88FFE45BA /* NightFlockPresentation.swift in Sources */,
 				A2057E1AD8645157F5CBCB70 /* NightFlockRemoteError.swift in Sources */,
 				8A8BA15E93F46191F42FEB11 /* NightFlockRemoteErrorTests.swift in Sources */,
@@ -3310,6 +3348,8 @@
 				14980815836F0D2021F6F1F5 /* SlumberPartyFeedbackTests.swift in Sources */,
 				D9F1C36DA450B01FFFD7F64B /* SlumberPartyHomePresentation.swift in Sources */,
 				423F4ADEA9A0324A4551B440 /* SlumberPartyHomePresentationTests.swift in Sources */,
+				772D43A697A6E649E23E16F1 /* SlumberPartySharedFarm.swift in Sources */,
+				7C2B9AFFD02EBAE1308D58B0 /* SlumberPartySharedFarmTests.swift in Sources */,
 				FF6EEBBD35E4C442A4BC6614 /* SlumberPartySocialHabitLoopTests.swift in Sources */,
 				9857678D0368A4FD13FB0A2A /* SunriseTrail.swift in Sources */,
 				F719DE4F31521670DCD32C67 /* WatchMessage.swift in Sources */,

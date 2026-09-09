@@ -71,6 +71,7 @@ final class NightFlockViewModel: ObservableObject {
     @Published var v4ObservedPartyObservationStates: [UUID: NightFlockV4PartyObservationState] = [:]
     @Published var v4RefreshingPartyIDs: Set<UUID> = []
     @Published var partyRefreshFailures: [UUID: NightFlockRefreshFailure] = [:]
+    @Published var updateCheerAcknowledgements: [UUID: NightFlockV4CheerSendState] = [:]
     @Published var v4CheerSendStates: [NightFlockV4CheerCommandKey: NightFlockV4CheerSendState] = [:]
     var v4NextPartyDetailRequestSequence: UInt64 = 0
     var v4AcceptedPartyDetailRequestSequences: [UUID: UInt64] = [:]
@@ -289,6 +290,7 @@ final class NightFlockViewModel: ObservableObject {
         v4ObservedPartyRefreshDates = [:]
         v4ObservedPartyObservationStates = [:]
         v4CheerSendStates = [:]
+        updateCheerAcknowledgements = [:]
         sharedHabitsPrivacyFences = []
         sharedHabitsStates = [:]
         sharedHabitsLoadingPartyIDs = []
@@ -1084,6 +1086,7 @@ final class NightFlockViewModel: ObservableObject {
         v4ObservedPartyRefreshDates = [:]
         v4ObservedPartyObservationStates = [:]
         v4CheerSendStates = [:]
+        updateCheerAcknowledgements = [:]
         v4NextPartyDetailRequestSequence = 0
         v4AcceptedPartyDetailRequestSequences = [:]
         v4InviteCodes = [:]

@@ -443,6 +443,7 @@ final class PersistenceService {
     ) -> CountingSheepUserProfile {
         var synchronized = profile
         var presentation = CountingSheepPublicPresentation.defaultValue
+        presentation.headShapeID = farm.shepherd.headShape.rawValue
         presentation.skinToneID = allowedProfileID(
             farm.shepherd.skinTone.rawValue,
             in: CountingSheepPublicPresentationAllowlist.skinToneIDs,

@@ -7,11 +7,13 @@ struct SlumberPartySocialAvatarView: View {
     let presentation: CountingSheepPublicPresentation
     let avatarID: String
     var size: CGFloat = 72
+    var showsBackdrop = true
 
     var body: some View {
         ZStack {
-            Circle()
-                .fill(AppColors.grassLight.opacity(0.48))
+            if showsBackdrop {
+                Circle().fill(AppColors.grassLight.opacity(0.48))
+            }
             avatarContent
                 .padding(AppSpacing.xxs)
         }
@@ -46,17 +48,18 @@ struct SlumberPartySocialAvatarView: View {
     }
 
     private var shepherdProfile: ShepherdProfile {
-        let source = presentation.isAllowlisted() ? presentation : .defaultValue
+        let source = presentation.renderableAppearance
         return ShepherdProfile(
             skinTone: ShepherdSkinTone(rawValue: source.skinToneID) ?? .warm,
             hairStyle: ShepherdHairStyle(rawValue: source.hairStyleID) ?? .waves,
             outfitItemID: source.shepherdOutfitID == "none" ? nil : source.shepherdOutfitID,
-            accessoryItemID: source.shepherdAccessoryID == "none" ? nil : source.shepherdAccessoryID
+            accessoryItemID: source.shepherdAccessoryID == "none" ? nil : source.shepherdAccessoryID,
+            headShapeID: source.headShapeID
         )
     }
 
     private var ollieAccessoryID: String? {
-        let source = presentation.isAllowlisted() ? presentation : .defaultValue
+        let source = presentation.renderableAppearance
         return source.ollieOrnamentID == "none" ? nil : source.ollieOrnamentID
     }
 
