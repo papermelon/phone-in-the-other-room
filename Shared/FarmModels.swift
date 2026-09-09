@@ -177,11 +177,45 @@ enum ShepherdHairStyle: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum ShepherdHeadShape: String, CaseIterable, Identifiable {
+    case pear, round, boxy, triangular
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+}
+
 struct ShepherdProfile: Codable, Equatable {
     var skinTone: ShepherdSkinTone
     var hairStyle: ShepherdHairStyle
     var outfitItemID: String?
     var accessoryItemID: String?
+    // Preserve future IDs through a save round-trip; render a known shape until supported.
+    var headShapeID: String? = nil
+    var headShape: ShepherdHeadShape {
+        get { headShapeID.flatMap(ShepherdHeadShape.init(rawValue:)) ?? .pear }
+        set { headShapeID = newValue.rawValue }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case skinTone, hairStyle, outfitItemID, accessoryItemID, headShapeID
+    }
+
+    init(skinTone: ShepherdSkinTone, hairStyle: ShepherdHairStyle,
+         outfitItemID: String?, accessoryItemID: String?, headShapeID: String? = nil) {
+        self.skinTone = skinTone
+        self.hairStyle = hairStyle
+        self.outfitItemID = outfitItemID
+        self.accessoryItemID = accessoryItemID
+        self.headShapeID = headShapeID
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        skinTone = try c.decode(ShepherdSkinTone.self, forKey: .skinTone)
+        hairStyle = try c.decode(ShepherdHairStyle.self, forKey: .hairStyle)
+        outfitItemID = try c.decodeIfPresent(String.self, forKey: .outfitItemID)
+        accessoryItemID = try c.decodeIfPresent(String.self, forKey: .accessoryItemID)
+        headShapeID = try c.decodeIfPresent(String.self, forKey: .headShapeID)
+    }
 
     static let defaultProfile = ShepherdProfile(
         skinTone: .warm,

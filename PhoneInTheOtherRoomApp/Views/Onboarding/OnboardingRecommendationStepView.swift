@@ -161,6 +161,7 @@ struct OnboardingShepherdGiftStep: View {
                 ShepherdAppearanceControls(
                     profile: viewModel.farmState.shepherd,
                     onSkinTone: viewModel.setShepherdSkinTone,
+                    onHeadShape: viewModel.setShepherdHeadShape,
                     onHairStyle: viewModel.setShepherdHairStyle,
                     compact: true
                 )

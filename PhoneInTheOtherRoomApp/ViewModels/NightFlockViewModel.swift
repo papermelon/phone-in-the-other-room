@@ -70,6 +70,7 @@ final class NightFlockViewModel: ObservableObject {
     @Published var v4ObservedPartyRefreshDates: [UUID: Date] = [:]
     @Published var v4ObservedPartyObservationStates: [UUID: NightFlockV4PartyObservationState] = [:]
     @Published var v4RefreshingPartyIDs: Set<UUID> = []
+    @Published var partyRefreshFailures: [UUID: NightFlockRefreshFailure] = [:]
     @Published var v4CheerSendStates: [NightFlockV4CheerCommandKey: NightFlockV4CheerSendState] = [:]
     var v4NextPartyDetailRequestSequence: UInt64 = 0
     var v4AcceptedPartyDetailRequestSequences: [UUID: UInt64] = [:]

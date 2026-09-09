@@ -2,27 +2,41 @@ import SwiftUI
 
 @main
 struct PhoneInTheOtherRoomApp: App {
-    @Environment(\.scenePhase) private var scenePhase
-    @StateObject private var runViewModel: FocusRunViewModel
+    var body: some Scene {
+        WindowGroup {
 #if DEBUG
-    private let screenbookRequest: ScreenbookLaunchRequest?
+            if ProcessInfo.processInfo.arguments.contains("--shepherd-art-study") {
+                if ProcessInfo.processInfo.arguments.contains("--shepherd-production-preview") {
+                    NavigationStack { ShepherdProductionPreview() }
+                } else {
+                    ShepherdArtStudyView()
+                }
+            } else {
+                PhoneInTheOtherRoomRuntimeView()
+            }
+#else
+            PhoneInTheOtherRoomRuntimeView()
+#endif
+        }
+    }
+}
+
+/// Delay production dependencies until the normal application surface is actually requested.
+private struct PhoneInTheOtherRoomRuntimeView: View {
+    @Environment(\.scenePhase) private var scenePhase
+    @StateObject private var runViewModel = Self.makeRunViewModel()
+#if DEBUG
+    private let screenbookRequest = ScreenbookLaunchRequest.current
 #endif
 
-    init() {
+    /// StateObject evaluates this factory once, rather than on every view-value recreation.
+    private static func makeRunViewModel() -> FocusRunViewModel {
 #if DEBUG
-        let request = ScreenbookLaunchRequest.current
-        screenbookRequest = request
-        if let request {
-            _runViewModel = StateObject(
-                wrappedValue: ScreenbookFixtures.makeViewModel(for: request.kind)
-            )
-            return
+        if let request = ScreenbookLaunchRequest.current {
+            return ScreenbookFixtures.makeViewModel(for: request.kind)
         }
         if WatchPhysicalQAFixture.isRequested {
-            _runViewModel = StateObject(
-                wrappedValue: WatchPhysicalQAFixture.makeViewModel()
-            )
-            return
+            return WatchPhysicalQAFixture.makeViewModel()
         }
 #endif
         PhoneNotificationService.shared.configure()
@@ -45,11 +59,10 @@ struct PhoneInTheOtherRoomApp: App {
             liveActivityService = FocusRunLiveActivityService()
         }
         let coordinator = FocusSessionCoordinator(liveActivity: liveActivityService)
-        _runViewModel = StateObject(wrappedValue: FocusRunViewModel(coordinator: coordinator))
+        return FocusRunViewModel(coordinator: coordinator)
     }
 
-    var body: some Scene {
-        WindowGroup {
+    var body: some View {
             rootView
                 .environmentObject(runViewModel)
                 .preferredColorScheme(preferredColorScheme)
@@ -70,7 +83,6 @@ struct PhoneInTheOtherRoomApp: App {
                         break
                     }
                 }
-        }
     }
 
     @ViewBuilder

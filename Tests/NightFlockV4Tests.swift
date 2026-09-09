@@ -3,6 +3,70 @@ import XCTest
 final class NightFlockV4Tests: XCTestCase {
     private let utc = "UTC"
 
+    func testReleasePresentationGateRequiresExactCapabilitiesAndAcceptedAgreement() {
+        let v1 = NightFlockV4ListStateResponse(
+            parties: [],
+            profileAvatarVersion: 1,
+            sharedHabitsVersion: 1
+        )
+        let v2 = NightFlockV4ListStateResponse(
+            parties: [],
+            profileAvatarVersion: 1,
+            sharedHabitsVersion: 2,
+            sharedRoutinePlansVersion: 1
+        )
+        let unknown = NightFlockV4ListStateResponse(
+            parties: [],
+            profileAvatarVersion: 2,
+            sharedHabitsVersion: 3,
+            sharedRoutinePlansVersion: 2
+        )
+
+        func partyState(agreementVersion: Int?) -> NightFlockSharedHabitsStateResponse {
+            let agreement = agreementVersion.map {
+                NightFlockSharedHabitsAgreementReceipt(
+                    agreementID: UUID(),
+                    memberEpochID: UUID(),
+                    acceptedAt: Date(timeIntervalSince1970: 100),
+                    timeZoneIdentifier: utc,
+                    firstEligibleSleepNight: nil,
+                    agreementVersion: $0
+                )
+            }
+            return NightFlockSharedHabitsStateResponse(
+                agreement: agreement,
+                records: [],
+                nextCursor: nil,
+                snapshotRevision: 1,
+                periods: []
+            )
+        }
+
+        let noAgreement = partyState(agreementVersion: nil)
+        let agreementV1 = partyState(agreementVersion: 1)
+        let agreementV2 = partyState(agreementVersion: 2)
+        let unknownAgreement = partyState(agreementVersion: 3)
+
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: v1, partyState: noAgreement))
+        XCTAssertTrue(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: v1, partyState: agreementV1))
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: v1, partyState: agreementV2))
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedNightPlans(listState: v2, partyState: agreementV1))
+        XCTAssertTrue(SlumberPartyReleasePresentationGate.showsSharedNightPlans(listState: v2, partyState: agreementV2))
+        XCTAssertTrue(SlumberPartyReleasePresentationGate.showsSocialAvatar(listState: v2, partyState: agreementV2))
+        XCTAssertEqual(
+            SlumberPartyReleasePresentationGate.avatarID(
+                requested: "sheep:juniper",
+                listState: v2,
+                partyState: noAgreement
+            ),
+            SocialAvatarRules.shepherdID
+        )
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: unknown, partyState: agreementV1))
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedNightPlans(listState: unknown, partyState: agreementV2))
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSocialAvatar(listState: v2, partyState: unknownAgreement))
+    }
+
+
     func testRoundBoundariesAndLateJoinCurrentWindow() throws {
         let round = NightFlockV4Round(roundID: UUID(), number: 1, timeZoneIdentifier: utc, startsOn: NightFlockLocalDate(year: 2026, month: 8, day: 20), status: .active)
         let dayOne = try XCTUnwrap(round.startsOn.date(in: utc, calendar: .init(identifier: .gregorian)))
@@ -576,7 +640,7 @@ final class NightFlockV4Tests: XCTestCase {
         let memberPresentation = NightFlockV4Presentation.member(member, in: detail, at: now)
         XCTAssertNil(memberPresentation.liveStatus)
         XCTAssertEqual(memberPresentation.latestActivity?.activityID, latest.activityID)
-        XCTAssertEqual(memberPresentation.latestActivityLine, "Latest shared · Wind Down · 30 min · Night 2")
+        XCTAssertEqual(memberPresentation.latestActivityLine, "App-recorded/self-reported · Wind Down · 30 min (rounded) · Night 2")
     }
 
     func testV4PresentationUsesModeNeutralPhoneAwayCopyAndCountsPartialMoments() {
@@ -607,9 +671,9 @@ final class NightFlockV4Tests: XCTestCase {
         let memberPresentation = NightFlockV4Presentation.member(member, in: detail, at: now)
         let activityPresentation = NightFlockV4Presentation.activityPresentation(for: partial)
 
-        XCTAssertEqual(activityPresentation.cardSummary, "Phone Away · 15 quiet min")
+        XCTAssertEqual(activityPresentation.cardSummary, "Phone Away · 15 min · rounded")
         XCTAssertEqual(activityPresentation.cardState, "Night 3 · Ended early")
-        XCTAssertEqual(memberPresentation.latestActivityLine, "Latest shared · Phone Away ended early · 15 min · Night 3")
+        XCTAssertEqual(memberPresentation.latestActivityLine, "App-recorded/self-reported · Phone Away ended early · 15 min (rounded) · Night 3")
         XCTAssertEqual(NightFlockV4Presentation.detail(for: detail, at: now).sharedMomentCount, 1)
 
         var liveDetail = detail
@@ -666,7 +730,7 @@ final class NightFlockV4Tests: XCTestCase {
         XCTAssertNil(suppressed.liveStatus)
         XCTAssertFalse(suppressed.canSendLiveCheer)
         XCTAssertEqual(suppressed.liveCheerCount, 0)
-        XCTAssertEqual(suppressed.latestActivityLine, "Latest shared · Phone Away ended early · 12 min · Night 1")
+        XCTAssertEqual(suppressed.latestActivityLine, "App-recorded/self-reported · Phone Away ended early · 12 min (rounded) · Night 1")
 
         var newerLiveDetail = detail
         newerLiveDetail.activities[0].occurredAt = now.addingTimeInterval(-120)
@@ -832,7 +896,7 @@ final class NightFlockV4Tests: XCTestCase {
         let party = NightFlockV4PartyDetail(summary: .init(partyID: partyID, name: "Moonfield", memberCount: 2, myRole: .member, currentRound: nil, revision: 1, sharingScope: .membership), myMemberID: memberID, memberships: [host, member], sharedActivities: [stale, recent])
         XCTAssertEqual(NightFlockV4Presentation.lifecycle(for: party, at: now), .readyMember)
         XCTAssertEqual(NightFlockV4Presentation.recentSharedActivities(in: party, at: now).map(\.activityID), [recent.activityID])
-        XCTAssertEqual(NightFlockV4Presentation.member(member, in: party, at: now).latestActivityLine, "Latest shared · Phone Away · 30 min")
+        XCTAssertEqual(NightFlockV4Presentation.member(member, in: party, at: now).latestActivityLine, "App-recorded/self-reported · Phone Away · 30 min (rounded)")
         XCTAssertEqual(NightFlockV4Presentation.detail(for: party, at: now).sharedMomentCount, 0)
     }
 

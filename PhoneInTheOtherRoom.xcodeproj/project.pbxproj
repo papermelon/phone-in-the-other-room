@@ -63,6 +63,7 @@
 		102EEDF4C97841C7389559A8 /* NearbyInteractionDistanceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCA883DF2B718ECF95251587 /* NearbyInteractionDistanceProvider.swift */; };
 		1072EC25F771777FC0A5E72C /* HomeWindowPhaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FA5C6A26495A14B146EE41 /* HomeWindowPhaseTests.swift */; };
 		10BD067878870884774F6DE9 /* WindDownGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7B90812500022857C5B05D0 /* WindDownGuidance.swift */; };
+		110ED8429E0EF0C80B35C6A8 /* ShepherdStudyCanvas.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFD535C1CE0CAFF40C7A72FB /* ShepherdStudyCanvas.swift */; };
 		111C88B554F0F338B1F28BE1 /* NightWatchGuidance.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE29836613BFD365670A422D /* NightWatchGuidance.swift */; };
 		116756BDEE56A3F99BBE4DE7 /* AppearancePreferenceCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFE0398B242518D3AF3B6070 /* AppearancePreferenceCard.swift */; };
 		1174700CEB2F4E5CE86C4B26 /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
@@ -282,6 +283,7 @@
 		49180AF09142C37FE94D490A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3DF58B2DAC7FE37451EAB87E /* Assets.xcassets */; };
 		496496740A5096B62F5DE343 /* NightFlockV4Rewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D02D6B734CCEAA5550A323 /* NightFlockV4Rewards.swift */; };
 		49A44BC0B84BBC21984D02C4 /* NightJourneyAssets.swift in Sources */ = {isa = PBXBuildFile; fileRef = D9F400723302CBA7A9213F37 /* NightJourneyAssets.swift */; };
+		49AC595AEA46086E0AC7B6AB /* ShepherdArtStudy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E532360310AE1A33C1C54577 /* ShepherdArtStudy.swift */; };
 		4A63B59A11827C4B6CCE2797 /* WindDownProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417A5E80D30B2379E6F9C166 /* WindDownProfile.swift */; };
 		4AC763846240FC2A93F45C06 /* ScreenFreeMorningPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54C3D1D2FB516B84C51EC9E6 /* ScreenFreeMorningPresentationTests.swift */; };
 		4B06DF825920E04A5F7DF90B /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
@@ -321,6 +323,7 @@
 		535138E2E0AD27B86A78EF1C /* WindDownGuidanceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69B8EC3C928FE031D88AF0C6 /* WindDownGuidanceDetailView.swift */; };
 		538CEAF6A7A8C06A48EDD382 /* QuietPeriodScheduling.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3505E7C64139CE4F4E17143 /* QuietPeriodScheduling.swift */; };
 		53958E403A8BD660164A5BBA /* SlumberPartyFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E55F6B3BBBE4FF6C3C6897B /* SlumberPartyFeedback.swift */; };
+		53F6E73C98D939ED17A4D575 /* ShepherdAvatarAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18C5790C60F638AAB46FB4C /* ShepherdAvatarAppearance.swift */; };
 		540C92A614BF8934F40A4DCB /* WindDownStartTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */; };
 		544EECB2DCA829BC8A1CCACD /* SheepSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47AE0567955634A07E71846 /* SheepSearchState.swift */; };
 		54F38CD09C4A91198E2D1202 /* NightFlockV4Rewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D02D6B734CCEAA5550A323 /* NightFlockV4Rewards.swift */; };
@@ -357,12 +360,14 @@
 		5D5A74C804B3C725B47DFEF0 /* Orientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF7E46FDD6564DB0A78FC1E3 /* Orientation.swift */; };
 		5D669EC7D9691B7DC0F2CF36 /* OnboardingProtectionStepView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429C98D6F18DFB592546EAAD /* OnboardingProtectionStepView.swift */; };
 		5D760A0E743BEAF0FFAE80F1 /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
+		5DE6697B4884BFDF666C0AA9 /* ShepherdArtStudyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE608E73E0674AB49FDC69 /* ShepherdArtStudyView.swift */; };
 		5E1AEE0BE546FB9A3FB0CE6C /* EmergencyExitChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD96BC14249CA900698352DB /* EmergencyExitChallenge.swift */; };
 		5E3A2AD6711E62EDD6658B97 /* SheepSearchState.swift in Sources */ = {isa = PBXBuildFile; fileRef = C47AE0567955634A07E71846 /* SheepSearchState.swift */; };
 		5F37BFC1F0E65AD41FFA2D80 /* NightFlockInviteRecovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = D94013E9C7BDDAE4E4463EAD /* NightFlockInviteRecovery.swift */; };
 		5F3BF3BAB1BB152BFD67EF56 /* MorningCheckIn.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB26D6F059FCF9C7F92BCCD9 /* MorningCheckIn.swift */; };
 		5F9841E3D8DE9ECFF9B73DDA /* HomeWindowPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */; };
 		5FBD224FB334BEC3E126B865 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
+		5FDDA30A046959BAA98ABFF4 /* ShepherdStudyMasterPaths.swift in Sources */ = {isa = PBXBuildFile; fileRef = F021CBB328480524FBF153EE /* ShepherdStudyMasterPaths.swift */; };
 		6137227141F505BD3B474F93 /* PhoneInTheOtherRoomDeviceActivityMonitor.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2DC676E8259E7A18655B6986 /* PhoneInTheOtherRoomDeviceActivityMonitor.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		61C0578BB16C792CAE20C7EA /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		625DD18A21906EE55B2C3C46 /* NightFlockRewards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E743BEE0142538219616C76 /* NightFlockRewards.swift */; };
@@ -415,6 +420,7 @@
 		6DC46E6D052CD5A5BAC17C29 /* NightsHistorySummaryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5091A90B501C64D66D6C3608 /* NightsHistorySummaryTests.swift */; };
 		6DC8B8FCFBF4B8BC23590469 /* PastureSceneController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AD9DDE7EED419BC93BDA42E /* PastureSceneController.swift */; };
 		6DDE07C592B543B47D8E7879 /* QuietNoteText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 075F8FE54AF036CB8A62A9C7 /* QuietNoteText.swift */; };
+		6E59E78275B80ADDDCE56761 /* ShepherdStudyMasterExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39BC0DC50F0A5B0244A0E074 /* ShepherdStudyMasterExporter.swift */; };
 		6E628BD0BF9498C4A5114764 /* HomeWindowPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */; };
 		6E753BBF9CA2F9DC8585725C /* OllieModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 406ECAB92520D24B3AB96BF0 /* OllieModels.swift */; };
 		6E840F0D7535EB5489220F22 /* NightFlockOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 860F2DF3DB811DE0436B331F /* NightFlockOrientation.swift */; };
@@ -456,9 +462,11 @@
 		78119B96E99ED4FA177EEC9C /* Orientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF7E46FDD6564DB0A78FC1E3 /* Orientation.swift */; };
 		78307EC1CC40710ED513E709 /* FocusRunRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7479F9FF862CDA06790D8869 /* FocusRunRules.swift */; };
 		7839834017F3644864646F03 /* FocusRunLiveActivityPushContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E31B0828F6BBD838D68ECDD /* FocusRunLiveActivityPushContract.swift */; };
+		788A6CBCCEE12E35BA134F66 /* ShepherdAvatarAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18C5790C60F638AAB46FB4C /* ShepherdAvatarAppearance.swift */; };
 		78B4FFDF1B9192D259BE0074 /* NotificationMessageLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 363A8D02BA8637085233FB93 /* NotificationMessageLibraryView.swift */; };
 		78DE4BC8D5E7F5E034A4B6A2 /* SessionGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D7A93AA462082036AB119D5 /* SessionGuard.swift */; };
 		78EE448CDCA2A9DE46DFA2C6 /* QuietTimeShielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F0FF354B369E470C16D40BB /* QuietTimeShielding.swift */; };
+		7928E0472FDC61403E7C96F3 /* ShepherdArtStudy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E532360310AE1A33C1C54577 /* ShepherdArtStudy.swift */; };
 		7951D0E0C25194D1C6CFBFBD /* FocusRunLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6E0FB5243159FA4A4E188B /* FocusRunLiveActivity.swift */; };
 		799A1583C630B61C5D6EFFF5 /* ScreenTimeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */; };
 		7A399E3E66F58BDC90C2A788 /* NightFlockQADiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BBE95E47D4C6803AF9F33B5 /* NightFlockQADiagnosticsView.swift */; };
@@ -523,6 +531,7 @@
 		8AE6887278A2FD60C73E9B6C /* FarmEconomyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C539AE8F2B7B3590101EBB1 /* FarmEconomyTests.swift */; };
 		8B4DEC6550469552CDB1B1C1 /* ImpactDataSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A86147F5D5B2180BAA8BA8B /* ImpactDataSyncService.swift */; };
 		8BA8080D347D0392A61B9A23 /* CountingSheepUserProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9833AE367470A8440023AF38 /* CountingSheepUserProfile.swift */; };
+		8BBD69083CCC487C8646871F /* ShepherdAvatarIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17BE4DB106868461DFDD6C8C /* ShepherdAvatarIntegrationTests.swift */; };
 		8C02F5FCB6CDD0EEED58B202 /* FocusSessionCoordinator+Placement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A59E63A5A08D69CE438ADC /* FocusSessionCoordinator+Placement.swift */; };
 		8C624C08680FACEB9B2DB0B1 /* CountingSheepStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F944D82DFD76323D0FF627B0 /* CountingSheepStorage.swift */; };
 		8D1F57D53E73D6520D3D07B5 /* QuietTimeShielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F0FF354B369E470C16D40BB /* QuietTimeShielding.swift */; };
@@ -618,11 +627,13 @@
 		A6C05F4B1A407E53467C10BF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A443D86BFE32DF94DAC7D8B8 /* PrivacyInfo.xcprivacy */; };
 		A6C5237B13D2211A4C9C18CE /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
 		A8163CFD873B30CACE83217B /* NightFlockSharedHabits.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6946759835D6A262B4D072C5 /* NightFlockSharedHabits.swift */; };
+		A847AF6EC0F54BA2E905CB09 /* ShepherdStudyHeadDrawing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF575665FDEDDFAC4BF7310 /* ShepherdStudyHeadDrawing.swift */; };
 		A8ABAF9E7A49557C78F4439A /* SheepSearchPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98F3869CB594F1B70F8A49D /* SheepSearchPresentation.swift */; };
 		A8B002EE788123AAB4DD98DA /* FocusRunRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7479F9FF862CDA06790D8869 /* FocusRunRules.swift */; };
 		A925AA8D9569018A32242A75 /* WindDownStartContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A8DE1577776C5D581D0ACCD /* WindDownStartContextTests.swift */; };
 		A92C6A1278B52FAF09D4F474 /* Onboarding.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBC7095F0DEBB1934429025 /* Onboarding.swift */; };
 		A934070E0091B72968599DA2 /* ActiveRunPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD93D4896D42F81A142F85F5 /* ActiveRunPresentation.swift */; };
+		A9A3EBF2784AEC79B6EA0CAE /* ShepherdArtStudy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E532360310AE1A33C1C54577 /* ShepherdArtStudy.swift */; };
 		A9B043A60219D62602E4189F /* ActiveRunPresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAC3F61F4E30B8DA8EEB2818 /* ActiveRunPresentationTests.swift */; };
 		AA94ADC88349D6750A9285F1 /* PhoneAwayStartPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */; };
 		AAA8656CBA9A707C7D17DDC1 /* PastureScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B4094E1123762C21960270 /* PastureScene.swift */; };
@@ -673,6 +684,7 @@
 		B43CAC224F7AC80ADBAF1975 /* SheepSearchPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = F98F3869CB594F1B70F8A49D /* SheepSearchPresentation.swift */; };
 		B46E8AAB04BE67F0ED9C42CB /* SheepPosterBoard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22C34979C3AB354BD361D810 /* SheepPosterBoard.swift */; };
 		B51A234BE6159E575DECDAE8 /* ScreenTimeReportExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E438AF90E0E9ED338A5F5B9 /* ScreenTimeReportExtension.swift */; };
+		B5A0A406A26E98ED7D90FB77 /* ShepherdAvatarAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18C5790C60F638AAB46FB4C /* ShepherdAvatarAppearance.swift */; };
 		B5DBD5A830A96C9D74C32C4A /* EmergencyExitChallengeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92BDC12BAFB7B11F9A17B3B8 /* EmergencyExitChallengeTests.swift */; };
 		B68E45A8D7FC32F6C112273A /* FocusStatsRecordSections.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6FF7A2845BE78235E38A277 /* FocusStatsRecordSections.swift */; };
 		B6CA5C58BCE35C1F18A8E9E7 /* FarmShopExpansionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A36BBF40B716995523653E4E /* FarmShopExpansionTests.swift */; };
@@ -690,6 +702,7 @@
 		BA0FF24E5E28577DF77F0704 /* SlumberPartySharedHabitsSummaryViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = E64DD16B4C145FFC970D4A21 /* SlumberPartySharedHabitsSummaryViews.swift */; };
 		BA9543D34B25572B73E4F1B5 /* ActiveRunView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCE67F996AC2C3BDD00A1717 /* ActiveRunView.swift */; };
 		BADC449C710BDD6F6AD5F3D4 /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
+		BB616AA1DA8EBB4F1B410513 /* ShepherdAvatarAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18C5790C60F638AAB46FB4C /* ShepherdAvatarAppearance.swift */; };
 		BB89B8F1CE5FAA40BE9F2FBF /* HomeStartRouting.swift in Sources */ = {isa = PBXBuildFile; fileRef = C75221D637B58B586CF85CD0 /* HomeStartRouting.swift */; };
 		BC0D3D9B82A5083045EA3A30 /* NightFlockV3API.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9CE0725085BDB4C2C4448E8 /* NightFlockV3API.swift */; };
 		BC2C20558FB745705267349C /* ConnectionPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */; };
@@ -713,6 +726,7 @@
 		C127C5F84D905E5ECF8D2727 /* FocusSessionStartResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C7D108D6023C76401482057 /* FocusSessionStartResult.swift */; };
 		C1A85EF813C789BD7F99EE24 /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 627A5DA42D08C5C40DA30548 /* PersistenceService.swift */; };
 		C246B9AEC1819D0F8238C65C /* NightFlockModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E1DE8E2B95DF2CE6890E0AC /* NightFlockModels.swift */; };
+		C2864F441D9EF7CBB2B8AC6D /* ShepherdAvatarAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18C5790C60F638AAB46FB4C /* ShepherdAvatarAppearance.swift */; };
 		C29D295CAEAC83392CD3A9F4 /* RewardModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12B99272B084140706D6F37 /* RewardModels.swift */; };
 		C2B25171432179C89EDF3267 /* FarmShop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B88496FDD90E4C58DA8ED19 /* FarmShop.swift */; };
 		C2CE381ADC249C646303A830 /* ScreenTimeIntegration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6BE26E1FB73229AF96B7E323 /* ScreenTimeIntegration.swift */; };
@@ -729,6 +743,7 @@
 		C48377C707B2B17EC5C2EE2D /* SheepSearchWelcome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C0C1564F4FD15228C55FF8B /* SheepSearchWelcome.swift */; };
 		C500303F220D95AB5D643911 /* NotificationPlanning.swift in Sources */ = {isa = PBXBuildFile; fileRef = C860CC9156D96757F65A7097 /* NotificationPlanning.swift */; };
 		C505E401C00A207B66804C6C /* NightFlockViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 745FB7D374C727192ED7EB22 /* NightFlockViewModel.swift */; };
+		C50D14326DB31A35B6E09664 /* ShepherdArtStudy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E532360310AE1A33C1C54577 /* ShepherdArtStudy.swift */; };
 		C519151350FE88A5EAE2DF0C /* FarmModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E109FBC4F835E47324D0F295 /* FarmModels.swift */; };
 		C55FAE9B12ED1E9C201A4DF8 /* WelcomeReward.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD3B38996742C55147041DA /* WelcomeReward.swift */; };
 		C57F065ACCBB7C41ABAFE18E /* MorningCheckInTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BDC3C8DA311A6319747CCBE /* MorningCheckInTests.swift */; };
@@ -738,6 +753,7 @@
 		C74D2E7995D836C0D4CA9917 /* ScreenFreeMorningTransportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A37886AC363180A8F5EBD8D4 /* ScreenFreeMorningTransportTests.swift */; };
 		C75A9056849E551C6D6EBB2C /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		C7B8F63A0362C4103ADE8895 /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
+		C7EA142AAC8263CE644653A1 /* ShepherdArtStudyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E43FBA54A597510452DBB25 /* ShepherdArtStudyTests.swift */; };
 		C87C9EBFE40662784CD84FB4 /* QuietTimeShieldPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3613A7FF950869439AE42C /* QuietTimeShieldPresentation.swift */; };
 		C8E4434E424BFD969317A226 /* WatchTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 923402E1B84511D945E213C4 /* WatchTheme.swift */; };
 		C901F58073E6EC15824D4D96 /* NightFlockSharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BEE7AA1F7ADED8F0910140 /* NightFlockSharing.swift */; };
@@ -752,6 +768,7 @@
 		CD50E34B387FCECE5271255C /* ScreenTimeReportMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3F1506ABDD3D2BFEF174E96 /* ScreenTimeReportMath.swift */; };
 		CD6A523A3741BCA874E592BD /* SheepSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7511446B06F170927883265 /* SheepSearch.swift */; };
 		CDA0BC083A860BBD1C375412 /* HomeWindowPhase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */; };
+		CDCEBA86B17E948074E8FA83 /* ShepherdArtStudy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E532360310AE1A33C1C54577 /* ShepherdArtStudy.swift */; };
 		CE48762879212A44ADA41E45 /* WindDownStartTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7F9EF15EB7FB199675B9CC0 /* WindDownStartTransaction.swift */; };
 		CE54168AB66AAD4DE81A11DA /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
 		CE63A4962D304A0A3D69F1F1 /* SleepIntervalMath.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */; };
@@ -776,6 +793,8 @@
 		D45826F8B26B6EACBBE7585A /* QuietNoteWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 275A6BF06B6A265EBBA920C7 /* QuietNoteWidget.swift */; };
 		D47C90EC6DFD1BD6A21EF183 /* NightFlockSharedHabitsOutbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */; };
 		D494C0C4965E51E4AD2FBE7B /* NightFlockOrientation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 860F2DF3DB811DE0436B331F /* NightFlockOrientation.swift */; };
+		D54718F3F9A7B2CBD2561604 /* ShepherdArtStudy.swift in Sources */ = {isa = PBXBuildFile; fileRef = E532360310AE1A33C1C54577 /* ShepherdArtStudy.swift */; };
+		D5704356C0C29F191297D2EA /* ShepherdStudyPainter.swift in Sources */ = {isa = PBXBuildFile; fileRef = D11159DD241A7274BF9354AF /* ShepherdStudyPainter.swift */; };
 		D67523B0978023A86BA4C71B /* MoreView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986993A5FA41631E86B7C253 /* MoreView.swift */; };
 		D6CF10C0442B8D15662A8752 /* WatchMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5B830DE525CC379D8E1929C /* WatchMessage.swift */; };
 		D720BE3458652684CED858E2 /* EmergencyExitChallenge.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD96BC14249CA900698352DB /* EmergencyExitChallenge.swift */; };
@@ -901,6 +920,7 @@
 		FACDD2A197A078050EA7B4C8 /* ScreenFreeMorningPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DFC3CC3B89C99D7C395BA2C /* ScreenFreeMorningPresentation.swift */; };
 		FB7A2B844E351CE79CDD07B8 /* WelcomeReward.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADD3B38996742C55147041DA /* WelcomeReward.swift */; };
 		FBE07838FAA89AF950A0ED3C /* FarmEconomyRules.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */; };
+		FC1B0CF47992AD879DCC258B /* ShepherdAvatarAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = E18C5790C60F638AAB46FB4C /* ShepherdAvatarAppearance.swift */; };
 		FC1BDD6125714D0E43E903E5 /* NightFlockSharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BEE7AA1F7ADED8F0910140 /* NightFlockSharing.swift */; };
 		FC49212874229D6F5F55F378 /* QuietTimeBriefAccess.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D8ED50B756C1284D8161069 /* QuietTimeBriefAccess.swift */; };
 		FCCA8FA0A5687A756B76AEDD /* SheepSearchSlumberParty.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03C99DEB69F16CC14EB68810 /* SheepSearchSlumberParty.swift */; };
@@ -910,6 +930,7 @@
 		FDE5727F9E2864355B66461A /* NightJourneyTerrain.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAAA628FE677612F284A9AD5 /* NightJourneyTerrain.swift */; };
 		FE0BB95542C3BF531A3827D8 /* QuietTimeShieldAction.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5544D086B0D783DF7D3E26C /* QuietTimeShieldAction.swift */; };
 		FE1318B55C0ACADA6083DA4B /* WindDownStartContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = C74F95083C7FB12F58F957CF /* WindDownStartContext.swift */; };
+		FE5F59DFF7E1EA379592454F /* ShepherdStudyPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 614B9364D99787A4B03FAB79 /* ShepherdStudyPalette.swift */; };
 		FE65F4AA46D352AD183AB03A /* SlumberPartySocialAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA70CBB78D62B0788758502 /* SlumberPartySocialAvatar.swift */; };
 		FE91EBE925697164F9896013 /* WindDownProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 417A5E80D30B2379E6F9C166 /* WindDownProfile.swift */; };
 		FEC14768E63EBD27C0165582 /* NightFlockSharedHabitPresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 945BF06967132A220DD6D185 /* NightFlockSharedHabitPresentation.swift */; };
@@ -1023,6 +1044,7 @@
 		09EF3D06CCC068DCECED0330 /* QuietTimeShieldScheduleRegistryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldScheduleRegistryTests.swift; sourceTree = "<group>"; };
 		0A0BA55E2FBC5876A06B5077 /* OllieCompanionAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllieCompanionAnimationView.swift; sourceTree = "<group>"; };
 		0ACDE9990E79FB60A58352C2 /* SheepSearchExplainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearchExplainer.swift; sourceTree = "<group>"; };
+		0AF575665FDEDDFAC4BF7310 /* ShepherdStudyHeadDrawing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdStudyHeadDrawing.swift; sourceTree = "<group>"; };
 		0B97166551A0616FC19980F1 /* PixelHomeDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PixelHomeDashboard.swift; sourceTree = "<group>"; };
 		0BD250A597F00860153BE645 /* IndependentMorningSettlementTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndependentMorningSettlementTests.swift; sourceTree = "<group>"; };
 		0C18F2A9F6A867D8C17822A8 /* SlumberPartySharedHabitsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedHabitsViews.swift; sourceTree = "<group>"; };
@@ -1046,6 +1068,7 @@
 		1703E9A69A2A56DE2F850967 /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
 		171FC69B9B26C8CE06176069 /* SupabaseConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfiguration.swift; sourceTree = "<group>"; };
 		178B9C188A57E4CF9E7296C0 /* FarmEconomyRules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmEconomyRules.swift; sourceTree = "<group>"; };
+		17BE4DB106868461DFDD6C8C /* ShepherdAvatarIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdAvatarIntegrationTests.swift; sourceTree = "<group>"; };
 		180FD34F0C45EF5E28E01556 /* OfflinePurpose.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflinePurpose.swift; sourceTree = "<group>"; };
 		1B477F5C61D1A9EABC230193 /* SheepSearchPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SheepSearchPresentationTests.swift; sourceTree = "<group>"; };
 		1BDC3C8DA311A6319747CCBE /* MorningCheckInTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MorningCheckInTests.swift; sourceTree = "<group>"; };
@@ -1082,6 +1105,7 @@
 		383D687A001DE06D8980D011 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		38953C0D1F7DB7FDBDE4E8E6 /* FarmShopView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmShopView.swift; sourceTree = "<group>"; };
 		39A59E63A5A08D69CE438ADC /* FocusSessionCoordinator+Placement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FocusSessionCoordinator+Placement.swift"; sourceTree = "<group>"; };
+		39BC0DC50F0A5B0244A0E074 /* ShepherdStudyMasterExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdStudyMasterExporter.swift; sourceTree = "<group>"; };
 		39BC24BC9476F914AC5236AB /* NightFlockInviteRecoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockInviteRecoveryTests.swift; sourceTree = "<group>"; };
 		3CA00822B21B34F0CD136BBC /* EmergencyExitReasonPersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmergencyExitReasonPersistenceTests.swift; sourceTree = "<group>"; };
 		3DBC779CA1E0414914E287E4 /* AutomaticWindDownSchedulingDecisionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomaticWindDownSchedulingDecisionTests.swift; sourceTree = "<group>"; };
@@ -1108,6 +1132,7 @@
 		4DE0240AA2FD5EDF90A1AD42 /* ConnectionStatusCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionStatusCard.swift; sourceTree = "<group>"; };
 		4E380CE5C4EF450772817B63 /* ProximityClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProximityClassifier.swift; sourceTree = "<group>"; };
 		4E438AF90E0E9ED338A5F5B9 /* ScreenTimeReportExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeReportExtension.swift; sourceTree = "<group>"; };
+		4E43FBA54A597510452DBB25 /* ShepherdArtStudyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdArtStudyTests.swift; sourceTree = "<group>"; };
 		4EDCFECB0BBAFD73749828B4 /* OllieCompanionAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OllieCompanionAnimation.swift; sourceTree = "<group>"; };
 		4FD5AC342523B66ED804749A /* WindDownPhaseProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownPhaseProgressView.swift; sourceTree = "<group>"; };
 		4FF9468554FC475650E6948B /* NightFlockV4Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockV4Models.swift; sourceTree = "<group>"; };
@@ -1136,6 +1161,7 @@
 		5E01DCDE3B22D74F2B27C753 /* FocusRunViewModel+SharedHabits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FocusRunViewModel+SharedHabits.swift"; sourceTree = "<group>"; };
 		5F762568D06F843D2FB6D7EF /* WindDownGuidanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownGuidanceTests.swift; sourceTree = "<group>"; };
 		6004C44317944FAAE289F1FD /* HomeWindowPhase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWindowPhase.swift; sourceTree = "<group>"; };
+		614B9364D99787A4B03FAB79 /* ShepherdStudyPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdStudyPalette.swift; sourceTree = "<group>"; };
 		616BD2FE681F7C18BA5E5FE0 /* ConnectionPresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionPresentation.swift; sourceTree = "<group>"; };
 		61F483F3BDC430CEE460E95D /* PhoneInTheOtherRoomScreenTimeReport.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PhoneInTheOtherRoomScreenTimeReport.entitlements; sourceTree = "<group>"; };
 		627A5DA42D08C5C40DA30548 /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
@@ -1274,6 +1300,7 @@
 		BECA9F4D7F04D1AA055D0540 /* NotificationCopyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationCopyTests.swift; sourceTree = "<group>"; };
 		BF3F88823E3E8F6624E9B308 /* ScreenTimeSelectionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeSelectionService.swift; sourceTree = "<group>"; };
 		BF7E46FDD6564DB0A78FC1E3 /* Orientation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Orientation.swift; sourceTree = "<group>"; };
+		BFD535C1CE0CAFF40C7A72FB /* ShepherdStudyCanvas.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdStudyCanvas.swift; sourceTree = "<group>"; };
 		BFF41AEB694504EBE4F7633E /* PhoneInTheOtherRoomWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneInTheOtherRoomWatchApp.swift; sourceTree = "<group>"; };
 		C0526BEF9524D722F103FFEC /* HomeWelcomeHero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeWelcomeHero.swift; sourceTree = "<group>"; };
 		C09CC89F616D84C91797729E /* PhoneBedTagInspectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneBedTagInspectionTests.swift; sourceTree = "<group>"; };
@@ -1307,6 +1334,7 @@
 		CF3BAD2EE31A2BDADB840203 /* AppAppearanceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAppearanceTests.swift; sourceTree = "<group>"; };
 		CF6FC38E493F7600E7AD1FE1 /* ScreenbookScenarioRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenbookScenarioRegistry.swift; sourceTree = "<group>"; };
 		CFE779B168A1164CCB633FB3 /* ConnectionPresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionPresentationTests.swift; sourceTree = "<group>"; };
+		D11159DD241A7274BF9354AF /* ShepherdStudyPainter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdStudyPainter.swift; sourceTree = "<group>"; };
 		D1885CE3DC9E3BA2E43991F2 /* NightFlockV2API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockV2API.swift; sourceTree = "<group>"; };
 		D298D556D163C71582736B0F /* FarmSharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmSharedComponents.swift; sourceTree = "<group>"; };
 		D32453F8F4F954861D4558A0 /* OnboardingProfileStepView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingProfileStepView.swift; sourceTree = "<group>"; };
@@ -1338,11 +1366,13 @@
 		E109FBC4F835E47324D0F295 /* FarmModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FarmModels.swift; sourceTree = "<group>"; };
 		E10F6B198F7484F2D1475ED0 /* FocusRunViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusRunViewModel.swift; sourceTree = "<group>"; };
 		E189BEFB5814021029DA343F /* NightFlockOrientationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockOrientationView.swift; sourceTree = "<group>"; };
+		E18C5790C60F638AAB46FB4C /* ShepherdAvatarAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdAvatarAppearance.swift; sourceTree = "<group>"; };
 		E2212BD5619A4220B7C03922 /* ImpactMeasurement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpactMeasurement.swift; sourceTree = "<group>"; };
 		E3235011194BE427E8F19AD0 /* QuietTimeShieldingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuietTimeShieldingService.swift; sourceTree = "<group>"; };
 		E3B2563134136BD2136655BD /* NightFlockTipCallout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockTipCallout.swift; sourceTree = "<group>"; };
 		E4285A43B1B1DCA41115E52D /* PastureCharacterHitTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PastureCharacterHitTarget.swift; sourceTree = "<group>"; };
 		E4D2CC91D7C7FE4CAD506DCD /* WatchCompletionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchCompletionView.swift; sourceTree = "<group>"; };
+		E532360310AE1A33C1C54577 /* ShepherdArtStudy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdArtStudy.swift; sourceTree = "<group>"; };
 		E5456845B6FE5574658098B3 /* NightFlockDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockDiagnostics.swift; sourceTree = "<group>"; };
 		E55F3D28135241E092DA0C86 /* WindDownSchedulePreviews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownSchedulePreviews.swift; sourceTree = "<group>"; };
 		E64DD16B4C145FFC970D4A21 /* SlumberPartySharedHabitsSummaryViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlumberPartySharedHabitsSummaryViews.swift; sourceTree = "<group>"; };
@@ -1357,7 +1387,9 @@
 		EC64F2695F387F8FADF2C22F /* WindDownStartSourcePolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindDownStartSourcePolicyTests.swift; sourceTree = "<group>"; };
 		ECC86FE71B9E1FB5AFFC7741 /* SettingsHelpGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsHelpGuideView.swift; sourceTree = "<group>"; };
 		ECC9B78384C74CC3192CFD2C /* NightsWeekSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightsWeekSection.swift; sourceTree = "<group>"; };
+		EEEE608E73E0674AB49FDC69 /* ShepherdArtStudyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdArtStudyView.swift; sourceTree = "<group>"; };
 		EEEF86107B5A971C63FAF73B /* NightFlockAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockAPI.swift; sourceTree = "<group>"; };
+		F021CBB328480524FBF153EE /* ShepherdStudyMasterPaths.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShepherdStudyMasterPaths.swift; sourceTree = "<group>"; };
 		F0E28E0A415925CB468AB8E4 /* NightFlockSharedHabitsOutbox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NightFlockSharedHabitsOutbox.swift; sourceTree = "<group>"; };
 		F155290D562D7CB38E2AB55F /* PhoneInTheOtherRoomLiveActivity.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PhoneInTheOtherRoomLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2687CC61BD6B7F3313A9114 /* PhoneAwayStartPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhoneAwayStartPolicy.swift; sourceTree = "<group>"; };
@@ -1534,6 +1566,8 @@
 				A37886AC363180A8F5EBD8D4 /* ScreenFreeMorningTransportTests.swift */,
 				1B477F5C61D1A9EABC230193 /* SheepSearchPresentationTests.swift */,
 				7A8A6295962D940E55C5992D /* SheepSearchTests.swift */,
+				4E43FBA54A597510452DBB25 /* ShepherdArtStudyTests.swift */,
+				17BE4DB106868461DFDD6C8C /* ShepherdAvatarIntegrationTests.swift */,
 				D680879F94FF3E85B2EFD703 /* ShieldingReadinessTests.swift */,
 				AD4D476A956E716B20E375A9 /* SlumberPartyFeedbackTests.swift */,
 				6F818388296382E12C5E9F9B /* SlumberPartyHomePresentationTests.swift */,
@@ -1760,6 +1794,7 @@
 				D659BE7A19CFBF29D88A511C /* MVP */,
 				773144292B181E496792CA85 /* NightFlock */,
 				114A3BB936871B096EC20FBD /* Onboarding */,
+				9AB0ECA07F8241BD2130F6EE /* ShepherdArtStudy */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -1816,6 +1851,19 @@
 				323C9D00D1DC5BC5B0D0B3D8 /* PhoneInTheOtherRoomApp.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		9AB0ECA07F8241BD2130F6EE /* ShepherdArtStudy */ = {
+			isa = PBXGroup;
+			children = (
+				EEEE608E73E0674AB49FDC69 /* ShepherdArtStudyView.swift */,
+				BFD535C1CE0CAFF40C7A72FB /* ShepherdStudyCanvas.swift */,
+				0AF575665FDEDDFAC4BF7310 /* ShepherdStudyHeadDrawing.swift */,
+				39BC0DC50F0A5B0244A0E074 /* ShepherdStudyMasterExporter.swift */,
+				F021CBB328480524FBF153EE /* ShepherdStudyMasterPaths.swift */,
+				D11159DD241A7274BF9354AF /* ShepherdStudyPainter.swift */,
+			);
+			path = ShepherdArtStudy;
 			sourceTree = "<group>";
 		};
 		AB8876CF935622B0C0F7B09A /* PhoneInTheOtherRoomShieldConfiguration */ = {
@@ -1977,6 +2025,8 @@
 				03C99DEB69F16CC14EB68810 /* SheepSearchSlumberParty.swift */,
 				C47AE0567955634A07E71846 /* SheepSearchState.swift */,
 				8C0C1564F4FD15228C55FF8B /* SheepSearchWelcome.swift */,
+				E532360310AE1A33C1C54577 /* ShepherdArtStudy.swift */,
+				E18C5790C60F638AAB46FB4C /* ShepherdAvatarAppearance.swift */,
 				9C8104C8CF458B9CE9743037 /* SleepIntervalMath.swift */,
 				9E55F6B3BBBE4FF6C3C6897B /* SlumberPartyFeedback.swift */,
 				88FF4A2701ABDA210DF9873B /* SlumberPartyHomePresentation.swift */,
@@ -2019,6 +2069,7 @@
 			isa = PBXGroup;
 			children = (
 				36B1C7F90F0227A8698B5810 /* PixelComponents.swift */,
+				614B9364D99787A4B03FAB79 /* ShepherdStudyPalette.swift */,
 				CC03E8137A0193E690B45BB3 /* Theme.swift */,
 			);
 			path = Design;
@@ -2532,8 +2583,17 @@
 				BE85301905EA887D2AB6F054 /* SheepSearchSlumberParty.swift in Sources */,
 				627A6C0414F7C5838157609F /* SheepSearchState.swift in Sources */,
 				E36C978E0DB56470B3296D3E /* SheepSearchWelcome.swift in Sources */,
+				49AC595AEA46086E0AC7B6AB /* ShepherdArtStudy.swift in Sources */,
+				5DE6697B4884BFDF666C0AA9 /* ShepherdArtStudyView.swift in Sources */,
+				FC1B0CF47992AD879DCC258B /* ShepherdAvatarAppearance.swift in Sources */,
 				71FD3B7EC1D80C5E71E788B5 /* ShepherdCustomizationView.swift in Sources */,
 				B7A56020598C9EABA543348D /* ShepherdNameCard.swift in Sources */,
+				110ED8429E0EF0C80B35C6A8 /* ShepherdStudyCanvas.swift in Sources */,
+				A847AF6EC0F54BA2E905CB09 /* ShepherdStudyHeadDrawing.swift in Sources */,
+				6E59E78275B80ADDDCE56761 /* ShepherdStudyMasterExporter.swift in Sources */,
+				5FDDA30A046959BAA98ABFF4 /* ShepherdStudyMasterPaths.swift in Sources */,
+				D5704356C0C29F191297D2EA /* ShepherdStudyPainter.swift in Sources */,
+				FE5F59DFF7E1EA379592454F /* ShepherdStudyPalette.swift in Sources */,
 				CE54168AB66AAD4DE81A11DA /* SleepIntervalMath.swift in Sources */,
 				3A1C643123B783E101B224C5 /* SlumberPartyFeedback.swift in Sources */,
 				553056DE84F5B906199FC192 /* SlumberPartyHomePresentation.swift in Sources */,
@@ -2684,6 +2744,8 @@
 				45DC93F9C59DE8DD62A4C21A /* SheepSearchSlumberParty.swift in Sources */,
 				22D51D6A12E0864EEBEB1064 /* SheepSearchState.swift in Sources */,
 				7302344419B4198EC87AF649 /* SheepSearchWelcome.swift in Sources */,
+				CDCEBA86B17E948074E8FA83 /* ShepherdArtStudy.swift in Sources */,
+				788A6CBCCEE12E35BA134F66 /* ShepherdAvatarAppearance.swift in Sources */,
 				CE63A4962D304A0A3D69F1F1 /* SleepIntervalMath.swift in Sources */,
 				F86801FC9806385A50A9CD3E /* SlumberPartyFeedback.swift in Sources */,
 				F2A3C736F99BD5DC632E1197 /* SlumberPartyHomePresentation.swift in Sources */,
@@ -2801,6 +2863,8 @@
 				62BB51DAA6EE8A5E22D0BB86 /* SheepSearchSlumberParty.swift in Sources */,
 				5BEF9EDDF75764AA3A4FE5E3 /* SheepSearchState.swift in Sources */,
 				2FD893F01CFFD64E98BE2AA2 /* SheepSearchWelcome.swift in Sources */,
+				D54718F3F9A7B2CBD2561604 /* ShepherdArtStudy.swift in Sources */,
+				B5A0A406A26E98ED7D90FB77 /* ShepherdAvatarAppearance.swift in Sources */,
 				C7B8F63A0362C4103ADE8895 /* SleepIntervalMath.swift in Sources */,
 				85C267080AEB6D3BE028560B /* SlumberPartyFeedback.swift in Sources */,
 				89023A69B339D38B756C8F2A /* SlumberPartyHomePresentation.swift in Sources */,
@@ -2917,6 +2981,8 @@
 				AE3E31E5CE2A6A615736FBA3 /* SheepSearchSlumberParty.swift in Sources */,
 				031B6228C1BC8B1C24A87EA1 /* SheepSearchState.swift in Sources */,
 				C48377C707B2B17EC5C2EE2D /* SheepSearchWelcome.swift in Sources */,
+				7928E0472FDC61403E7C96F3 /* ShepherdArtStudy.swift in Sources */,
+				BB616AA1DA8EBB4F1B410513 /* ShepherdAvatarAppearance.swift in Sources */,
 				56DBD04F39227005E79616B6 /* SleepIntervalMath.swift in Sources */,
 				43E32682176B76CFD81FB8CB /* SlumberPartyFeedback.swift in Sources */,
 				2228883B906183C4F0D51181 /* SlumberPartyHomePresentation.swift in Sources */,
@@ -3051,6 +3117,8 @@
 				2B021C50242D8FAC36610F6F /* SheepSearchSlumberParty.swift in Sources */,
 				5E3A2AD6711E62EDD6658B97 /* SheepSearchState.swift in Sources */,
 				5C7D1EFB1CB37DBC9514BF2B /* SheepSearchWelcome.swift in Sources */,
+				A9A3EBF2784AEC79B6EA0CAE /* ShepherdArtStudy.swift in Sources */,
+				53F6E73C98D939ED17A4D575 /* ShepherdAvatarAppearance.swift in Sources */,
 				993E731FB647A1A7C6E5763B /* SleepIntervalMath.swift in Sources */,
 				0700D4D79EF90295C5D76C2C /* SlumberPartyFeedback.swift in Sources */,
 				74335B05DE6AEFEFC326EFE8 /* SlumberPartyHomePresentation.swift in Sources */,
@@ -3232,6 +3300,10 @@
 				544EECB2DCA829BC8A1CCACD /* SheepSearchState.swift in Sources */,
 				0E8B87444B0FEA1FDB8EC9B9 /* SheepSearchTests.swift in Sources */,
 				EE21BAFC81C20DF5BCE7ECC4 /* SheepSearchWelcome.swift in Sources */,
+				C50D14326DB31A35B6E09664 /* ShepherdArtStudy.swift in Sources */,
+				C7EA142AAC8263CE644653A1 /* ShepherdArtStudyTests.swift in Sources */,
+				C2864F441D9EF7CBB2B8AC6D /* ShepherdAvatarAppearance.swift in Sources */,
+				8BBD69083CCC487C8646871F /* ShepherdAvatarIntegrationTests.swift in Sources */,
 				19380974B054B81345E46B5D /* ShieldingReadinessTests.swift in Sources */,
 				D7408280A98EB7A1069D30A3 /* SleepIntervalMath.swift in Sources */,
 				53958E403A8BD660164A5BBA /* SlumberPartyFeedback.swift in Sources */,
