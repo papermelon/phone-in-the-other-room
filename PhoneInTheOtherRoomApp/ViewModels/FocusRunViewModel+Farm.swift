@@ -257,6 +257,13 @@ extension FocusRunViewModel {
         }
     }
 
+    func setShepherdHeadShape(_ shape: ShepherdHeadShape) {
+        mutateFarm { state in
+            state.shepherd.headShape = shape
+            return nil
+        }
+    }
+
     func setShepherdHairStyle(_ hairStyle: ShepherdHairStyle) {
         mutateFarm { state in
             state.setShepherdHairStyle(hairStyle)

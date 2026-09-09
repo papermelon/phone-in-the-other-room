@@ -623,10 +623,10 @@ enum NightFlockV4Presentation {
         let latestMode = activity.status == .completed ? mode : "\(mode) ended early"
         return NightFlockV4ActivityPresentation(
             modeTitle: mode,
-            minutesTitle: "\(max(0, activity.roundedMinutes)) quiet min",
+            minutesTitle: "\(max(0, activity.roundedMinutes)) min · rounded",
             nightTitle: "Night \(activity.day)",
             outcomeTitle: outcome,
-            latestMemberLine: "Latest shared · \(latestMode) · \(max(0, activity.roundedMinutes)) min · Night \(activity.day)"
+            latestMemberLine: "App-recorded/self-reported · \(latestMode) · \(max(0, activity.roundedMinutes)) min (rounded) · Night \(activity.day)"
         )
     }
 
@@ -635,7 +635,13 @@ enum NightFlockV4Presentation {
         let outcome = activity.status == .completed ? "Completed" : "Ended early"
         let latestMode = activity.status == .completed ? mode : "\(mode) ended early"
         let association = activity.day.map { "Night \($0)" } ?? "Recent shared moment"
-        return NightFlockV4ActivityPresentation(modeTitle: mode, minutesTitle: "\(max(0, activity.roundedMinutes)) quiet min", nightTitle: association, outcomeTitle: outcome, latestMemberLine: "Latest shared · \(latestMode) · \(max(0, activity.roundedMinutes)) min")
+        return NightFlockV4ActivityPresentation(
+            modeTitle: mode,
+            minutesTitle: "\(max(0, activity.roundedMinutes)) min · rounded",
+            nightTitle: association,
+            outcomeTitle: outcome,
+            latestMemberLine: "App-recorded/self-reported · \(latestMode) · \(max(0, activity.roundedMinutes)) min (rounded)"
+        )
     }
 
     static func recentSharedActivities(in party: NightFlockV4PartyDetail, at date: Date = Date()) -> [NightFlockV4SharedActivity] {
@@ -927,5 +933,53 @@ enum NightFlockMemberBoard {
                 sharedRoutineTitles: sharing.shareRoutineIdeas ? routines : []
             )
         }
+    }
+}
+
+/// Release UI must prove both the additive server capability and the exact
+/// party agreement before presenting fields outside the baseline V4 contract.
+/// Unknown capability versions fail closed through the response helpers.
+enum SlumberPartyReleasePresentationGate {
+    static func showsSharedHabits(
+        listState: NightFlockV4ListStateResponse?,
+        partyState: NightFlockSharedHabitsStateResponse?
+    ) -> Bool {
+        guard let capabilityVersion = listState?.sharedHabitsVersion,
+              let agreementVersion = partyState?.agreement?.agreementVersion
+        else { return false }
+        switch capabilityVersion {
+        case 1:
+            return agreementVersion == 1
+        case 2:
+            return agreementVersion == 1 || agreementVersion == 2
+        default:
+            return false
+        }
+    }
+
+    static func showsSharedNightPlans(
+        listState: NightFlockV4ListStateResponse?,
+        partyState: NightFlockSharedHabitsStateResponse?
+    ) -> Bool {
+        listState?.supportsSharedNightPlans == true
+            && partyState?.agreement?.agreementVersion == 2
+    }
+
+    static func showsSocialAvatar(
+        listState: NightFlockV4ListStateResponse?,
+        partyState: NightFlockSharedHabitsStateResponse?
+    ) -> Bool {
+        listState?.supportsProfileAvatar == true
+            && showsSharedHabits(listState: listState, partyState: partyState)
+    }
+
+    static func avatarID(
+        requested: String,
+        listState: NightFlockV4ListStateResponse?,
+        partyState: NightFlockSharedHabitsStateResponse?
+    ) -> String {
+        showsSocialAvatar(listState: listState, partyState: partyState)
+            ? requested
+            : SocialAvatarRules.shepherdID
     }
 }

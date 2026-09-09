@@ -131,12 +131,21 @@ struct FarmShopItemImage: View {
     var size: CGFloat = 64
 
     var body: some View {
-        FarmCatalogAssetImage(
-            assetName: item.inventoryAssetName,
-            fallbackSymbol: item.symbolName,
-            fallbackColor: farmVisualColor(item.visualStyle),
-            size: size
-        )
+        Group {
+            if item.effect == .shepherdOutfit || item.effect == .shepherdAccessory {
+                ShepherdAvatarView(profile: ShepherdProfile(
+                    skinTone: .warm, hairStyle: .waves,
+                    outfitItemID: item.effect == .shepherdOutfit ? item.id : nil,
+                    accessoryItemID: item.effect == .shepherdAccessory ? item.id : nil
+                ), size: size)
+            } else {
+                FarmCatalogAssetImage(
+                    assetName: item.inventoryAssetName,
+                    fallbackSymbol: item.symbolName,
+                    fallbackColor: farmVisualColor(item.visualStyle), size: size
+                )
+            }
+        }
         .accessibilityHidden(true)
     }
 }
@@ -313,98 +322,18 @@ struct ShepherdAvatarView: View {
     let profile: ShepherdProfile
     var size: CGFloat = 84
 
-    private var outfit: FarmShopItem? {
-        profile.outfitItemID.flatMap(FarmShopCatalog.item)
-    }
-
-    private var accessoryRenderAssetName: String? {
-        guard let accessory = profile.accessoryItemID.flatMap(FarmShopCatalog.item),
-              let equippedRenderAsset = accessory.equippedRenderAsset,
-              let assetName = equippedRenderAsset.assetName(for: profile.hairStyle),
-              UIImage(named: assetName) != nil else {
-            return nil
-        }
-        return assetName
-    }
-
-    private var outfitRenderAssetName: String? {
-        guard let render = outfit?.equippedRenderAsset,
-              case let .shepherdOutfit(assetName) = render,
-              UIImage(named: assetName) != nil else { return nil }
-        return assetName
-    }
-
     var body: some View {
-        ZStack(alignment: .top) {
-            avatarImage(avatarAssets.base)
-
-            avatarMask(avatarAssets.skinMask)
-                .foregroundStyle(shepherdSkinColor(profile.skinTone))
-
-            if let outfit, outfitRenderAssetName == nil {
-                avatarMask(avatarAssets.outfitMask)
-                    .foregroundStyle(farmVisualColor(outfit.visualStyle))
-            }
-
-            FarmEquippedOverlayImage(assetName: outfitRenderAssetName, size: size)
-
-            FarmEquippedOverlayImage(assetName: accessoryRenderAssetName, size: size)
-        }
-        .frame(width: size, height: size)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Your Shepherd, \(profile.skinTone.title) skin, \(profile.hairStyle.title) hair")
-    }
-
-    private func avatarImage(_ name: String) -> some View {
-        Image(name)
-            .resizable()
-            .antialiased(true)
-            .scaledToFit()
+        ShepherdStudyCanvas(appearance: ShepherdStudyAppearance(profile: profile))
             .frame(width: size, height: size)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Your Shepherd, \(profile.headShape.title) head, \(profile.skinTone.title) skin, \(profile.hairStyle.title) hair")
+            .accessibilityValue(equipmentDescription)
     }
 
-    private func avatarMask(_ name: String) -> some View {
-        Image(name)
-            .renderingMode(.template)
-            .resizable()
-            .antialiased(true)
-            .scaledToFit()
-            .frame(width: size, height: size)
-    }
-
-    private var avatarAssets: (base: String, skinMask: String, outfitMask: String) {
-        switch profile.hairStyle {
-        case .cropped:
-            (
-                AssetSlot.Farm.shepherdDefault,
-                AssetSlot.Farm.shepherdSkinMask,
-                AssetSlot.Farm.shepherdOutfitMask
-            )
-        case .waves:
-            (
-                AssetSlot.Farm.shepherdHairWaves,
-                AssetSlot.Farm.shepherdHairWavesSkinMask,
-                AssetSlot.Farm.shepherdHairWavesOutfitMask
-            )
-        case .curls:
-            (
-                AssetSlot.Farm.shepherdHairCurls,
-                AssetSlot.Farm.shepherdHairCurlsSkinMask,
-                AssetSlot.Farm.shepherdHairCurlsOutfitMask
-            )
-        case .coils:
-            (
-                AssetSlot.Farm.shepherdHairCoils,
-                AssetSlot.Farm.shepherdHairCoilsSkinMask,
-                AssetSlot.Farm.shepherdHairCoilsOutfitMask
-            )
-        case .long:
-            (
-                AssetSlot.Farm.shepherdHairLong,
-                AssetSlot.Farm.shepherdHairLongSkinMask,
-                AssetSlot.Farm.shepherdHairLongOutfitMask
-            )
-        }
+    private var equipmentDescription: String {
+        [profile.outfitItemID, profile.accessoryItemID]
+            .compactMap { $0.flatMap(FarmShopCatalog.item)?.title }
+            .joined(separator: ", ")
     }
 }
 
@@ -457,13 +386,7 @@ struct FarmKeepsakeDisplay: View {
 }
 
 func shepherdSkinColor(_ tone: ShepherdSkinTone) -> Color {
-    switch tone {
-    case .porcelain: return Color(red: 0.95, green: 0.78, blue: 0.66)
-    case .warm: return Color(red: 0.82, green: 0.59, blue: 0.43)
-    case .olive: return Color(red: 0.68, green: 0.49, blue: 0.33)
-    case .brown: return Color(red: 0.47, green: 0.30, blue: 0.20)
-    case .deep: return Color(red: 0.29, green: 0.18, blue: 0.13)
-    }
+    ShepherdStudyPalette.skin(tone)
 }
 
 func farmVisualColor(_ style: String) -> Color {

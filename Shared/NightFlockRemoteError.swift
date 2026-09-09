@@ -888,6 +888,51 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
     }
 }
 
+/// A read failure belongs to its section, not the last command or another party.
+struct NightFlockRefreshFailure: Equatable {
+    let detail: String
+    let requestReference: String?
+    let canRetry: Bool
+
+    static func actionTitle(for command: NightFlockV4Command, accepted: Bool) -> String {
+        // A failed follow-up read must not invite repetition of a saved action.
+        if accepted { return "Your change was saved. The latest view couldn’t be loaded." }
+        switch command {
+        case .updatePublicProfile: return "Your Slumber Party profile couldn’t be updated"
+        case .createParty: return "Your Slumber Party couldn’t be created"
+        case .renameParty: return "The party name couldn’t be changed"
+        case .startRound: return "The next round couldn’t be started"
+        case .createInvite, .replaceInvite, .revokeInvite, .retrieveInvite:
+            return "The invitation couldn’t be updated"
+        case .previewInvite: return "The invitation couldn’t be checked"
+        case .redeemInvite: return "You couldn’t join this party yet"
+        case .leaveParty: return "Your request to leave couldn’t be completed"
+        case .deleteParty: return "The party couldn’t be deleted"
+        case .blockMember: return "The member couldn’t be blocked"
+        case .reportMember: return "Your report couldn’t be sent"
+        case .deleteAccount: return "Your account couldn’t be deleted"
+        case .cheerMember, .cheerMembershipMember, .react, .reactMembership:
+            return "Your cheer couldn’t be sent"
+        case .publishActivity, .completeBackfill: return "Your shared moment couldn’t be sent"
+        case .publishStatus, .publishMembershipStatus: return "Your session update couldn’t be shared"
+        case .acknowledgeGrant: return "Your party reward couldn’t be confirmed"
+        }
+    }
+
+    init(remote: NightFlockRemoteError?) {
+        requestReference = NightFlockSupportReference.format(requestID: remote?.requestID)
+        canRetry = remote?.retryable ?? true
+        switch remote?.code {
+        case .invalidRequest, .methodNotAllowed, .unsupportedSchema:
+            detail = "The app and Slumber Party couldn’t complete this request. Trying again may not help."
+        case .none:
+            detail = "The latest update couldn’t be reached. Check your connection and try again."
+        default:
+            detail = remote?.errorDescription ?? "The latest update couldn’t be loaded."
+        }
+    }
+}
+
 enum NightFlockSupportReference {
     static func canonicalRequestID(_ value: String?) -> String? {
         guard let value, value.range(of: #"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89a-fA-F][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"#, options: .regularExpression) != nil else { return nil }

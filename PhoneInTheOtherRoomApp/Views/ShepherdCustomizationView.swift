@@ -23,6 +23,7 @@ struct ShepherdCustomizationView: View {
                 ShepherdAppearanceControls(
                     profile: state.shepherd,
                     onSkinTone: viewModel.setShepherdSkinTone,
+                    onHeadShape: viewModel.setShepherdHeadShape,
                     onHairStyle: viewModel.setShepherdHairStyle
                 )
                 wardrobeSection
@@ -123,13 +124,34 @@ struct ShepherdCustomizationView: View {
 }
 
 struct ShepherdAppearanceControls: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let profile: ShepherdProfile
     let onSkinTone: (ShepherdSkinTone) -> Void
+    let onHeadShape: (ShepherdHeadShape) -> Void
     let onHairStyle: (ShepherdHairStyle) -> Void
     var compact = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                Text("HEAD SHAPE")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
+                LazyVGrid(columns: appearanceColumns) {
+                    ForEach(ShepherdHeadShape.allCases) { shape in
+                        Button { onHeadShape(shape) } label: {
+                            VStack(spacing: AppSpacing.xxs) {
+                                ShepherdAvatarView(profile: headPreview(shape), size: compact ? 58 : 68)
+                                Text(shape.title).font(AppTypography.caption)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 64)
+                        }
+                        .buttonStyle(PixelChipButtonStyle(isSelected: profile.headShape == shape))
+                        .accessibilityLabel("\(shape.title) head")
+                        .accessibilityAddTraits(profile.headShape == shape ? .isSelected : [])
+                    }
+                }
+            }
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text("SKIN TONE")
                     .font(pixelFont(.caption))
@@ -146,13 +168,26 @@ struct ShepherdAppearanceControls: View {
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
                 LazyVGrid(
-                    columns: [GridItem(.adaptive(minimum: compact ? 78 : 88), spacing: AppSpacing.sm)],
+                    columns: appearanceColumns,
                     spacing: AppSpacing.sm
                 ) {
                     ForEach(ShepherdHairStyle.allCases) { style in hairChoice(style) }
                 }
             }
         }
+    }
+
+    private var appearanceColumns: [GridItem] {
+        dynamicTypeSize.isAccessibilitySize
+            ? [GridItem(.flexible())]
+            : [GridItem(.adaptive(minimum: compact ? 78 : 88), spacing: AppSpacing.sm)]
+    }
+
+    private func headPreview(_ shape: ShepherdHeadShape) -> ShepherdProfile {
+        var preview = profile
+        preview.headShape = shape
+        preview.accessoryItemID = nil
+        return preview
     }
 
     private func skinChoice(_ tone: ShepherdSkinTone) -> some View {
@@ -186,7 +221,8 @@ struct ShepherdAppearanceControls: View {
                         skinTone: profile.skinTone,
                         hairStyle: style,
                         outfitItemID: profile.outfitItemID,
-                        accessoryItemID: nil
+                        accessoryItemID: nil,
+                        headShapeID: profile.headShapeID
                     ),
                     size: compact ? 58 : 68
                 )
