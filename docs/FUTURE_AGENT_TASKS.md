@@ -11,9 +11,9 @@
 - Campfire source is implemented: free gathering place, separate version 1 sharing consent,
   bounded Phone Away intentions, overnight validity, terminal precedence and temporary seating.
   See [contract](plans/campfire-implementation-2026-09-13.md) and
-  [local evidence](../output/design/campfire-20260913/README.md). Authorize/review hosted rollout
-  of `20260913120000_campfire_sessions.sql`, its prerequisite pasture migration and matching Edge
-  command validation separately. Verify two-device consent/start/expiry/early-end retry, killed
+  [local evidence](../output/design/campfire-20260913/README.md). Production migrations and matching
+  Edge version 5 were [deployed and verified on 13 September](evidence/campfire-deploy-20260913/deployment.md).
+  Verify two-device consent/start/expiry/early-end retry, killed
   app/relaunch, leave/block/account switching, and real shielding. Mac lock prevented native tap
   and VoiceOver automation during this pass; complete physical interaction/accessibility checks.
 - A future separate small charm slot for selected keepsakes needs fitted art and backward-compatible
@@ -33,9 +33,9 @@ page; Shepherd customization keeps its live model above the scrolling options. S
 [current decisions](plans/slumber-party-pasture-redesign-2026-09-12.md).
 The earlier prototype/research work is historical; its simulated store remains out of release wiring.
 
-- **Hosted activation is not authorized or performed.** Review/deploy the additive migration
-  `20260912120000_shared_pasture.sql` and matching existing Edge function changes in a separately
-  authorized rollout. Older servers retain the existing readable scene and capability handling.
+- **Production backend deployed 13 September with founder authorization.** The additive pasture
+  and campfire migrations and both Edge functions passed hosted checks; see
+  [deployment evidence](evidence/campfire-deploy-20260913/deployment.md).
   Policy starts at migration activation; pre-activation private sessions do not backfill the lantern.
 - Run physical disposable-account A/B tests: contribute/recall, remove/trade sheep then sync,
   two-party exclusivity, account A/sign-out/B/A, leave/rejoin, block, party deletion, offline

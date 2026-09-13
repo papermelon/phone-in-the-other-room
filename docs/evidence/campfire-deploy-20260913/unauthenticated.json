@@ -1,0 +1,10 @@
+[
+  {
+    "function": "night-flock-command",
+    "unauthenticatedStatus": 401
+  },
+  {
+    "function": "night-flock-state",
+    "unauthenticatedStatus": 401
+  }
+]

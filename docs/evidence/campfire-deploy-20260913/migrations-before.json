@@ -1,0 +1,74 @@
+[
+  {
+    "name": "activitykit_delivery",
+    "version": "20260712030000"
+  },
+  {
+    "name": "focus_run_sync",
+    "version": "20260718090000"
+  },
+  {
+    "name": "live_activity_phase_updates",
+    "version": "20260727010000"
+  },
+  {
+    "name": "optional_impact_data",
+    "version": "20260730090000"
+  },
+  {
+    "name": "fix_live_activity_rpc_overload",
+    "version": "20260730100000"
+  },
+  {
+    "name": "app_feedback",
+    "version": "20260801090000"
+  },
+  {
+    "name": "night_flock_mvp",
+    "version": "20260812120000"
+  },
+  {
+    "name": "night_flock_shared_commitment_v2",
+    "version": "20260816100000"
+  },
+  {
+    "name": "night_flock_social_rewards_v3",
+    "version": "20260816220000"
+  },
+  {
+    "name": "night_flock_invite_recovery",
+    "version": "20260824150000"
+  },
+  {
+    "name": "night_flock_parties_v4",
+    "version": "20260825110000"
+  },
+  {
+    "name": "night_flock_membership_sharing",
+    "version": "20260827120000"
+  },
+  {
+    "name": "night_flock_v4_social_avatar",
+    "version": "20260828170000"
+  },
+  {
+    "name": "night_flock_shared_habits_archive",
+    "version": "20260828180000"
+  },
+  {
+    "name": "private_farm_save",
+    "version": "20260905090000"
+  },
+  {
+    "name": "farm_revision_read",
+    "version": "20260905100000"
+  },
+  {
+    "name": "account_identity_and_farm_sync",
+    "version": "20260907110000"
+  },
+  {
+    "name": "slumber_party_farm_cheer_receipts",
+    "version": "20260909090000"
+  }
+]

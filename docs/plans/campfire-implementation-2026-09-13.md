@@ -2,8 +2,9 @@
 
 The founder authorized campfire implementation after the Shop/Ollie pass. This implements the
 free gathering-place direction from the [collection/flow review](shop-ollie-and-campfire-2026-09-13.md).
-Local production source is implemented. Hosted rollout and physical two-device acceptance are
-separate, outstanding gates. No deployment, archive, upload, commit or push was performed.
+Source is implemented and committed. The founder-authorized production backend rollout completed
+on 13 September: [deployment evidence](../evidence/campfire-deploy-20260913/deployment.md).
+Physical two-device acceptance and updated app distribution remain separate, outstanding gates.
 
 ## Product behavior
 
@@ -66,8 +67,9 @@ entitlements, targets, reward rules or protection transitions were introduced.
 
 See [local evidence](../../output/design/campfire-20260913/README.md) for actual build/test results,
 native screenshots and limitations. Migration `20260913120000_campfire_sessions.sql` follows the
-shared-pasture migration `20260912120000_shared_pasture.sql`. Deploy both missing migrations and
-matching Edge command validation only under a separately authorized rollout. Older apps ignore
+shared-pasture migration `20260912120000_shared_pasture.sql`. Both migrations and matching Edge
+command validation were deployed under the founder’s separate authorization on 13 September,
+with migration checksums and downloaded Edge source verified. Older apps ignore
 the added projection. Existing habit agreements retain their versions and meaning.
 
 Physical acceptance must cover two disposable accounts/devices, before-bed → overnight → wake,
