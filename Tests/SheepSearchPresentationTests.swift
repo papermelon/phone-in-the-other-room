@@ -35,9 +35,12 @@ final class SheepSearchPresentationTests: XCTestCase {
         XCTAssertEqual(SheepSearchPresentation.clueStatusLine(for: .phoneBreak), "Phone Away clue saved")
         XCTAssertEqual(SheepSearchExplainerPresentation.sources.map(\.id), [.windDown, .sunrise, .phoneBreak])
         XCTAssertEqual(SheepSearchExplainerPresentation.sources[1].title, "Screen-Free Morning")
-        XCTAssertTrue(SheepSearchExplainerPresentation.rulesDetail.contains("first three"))
-        XCTAssertTrue(SheepSearchExplainerPresentation.rulesDetail.contains("20%, 30%, 40%, then 50%"))
-        XCTAssertTrue(SheepSearchExplainerPresentation.sources[0].detail.contains("does not change"))
+        XCTAssertTrue(SheepSearchExplainerPresentation.sources.allSatisfy { $0.detail.contains("first three") })
+        XCTAssertTrue(SheepSearchExplainerPresentation.sources[1].detail.contains("20%, 30%, 40%, then 50%"))
+        XCTAssertTrue(SheepSearchExplainerPresentation.sources[2].detail.contains("carry forward"))
+        XCTAssertTrue(SheepSearchExplainerPresentation.sources[0].detail.contains("seven hours of Wind Down timer credit"))
+        XCTAssertTrue(SheepSearchExplainerPresentation.rulesDetail.contains("does not make a find more likely"))
+        XCTAssertEqual(SheepSearchExplainerPresentation.rulesTitle, "Three ways Ollie searches")
         XCTAssertFalse(SheepSearchExplainerPresentation.rulesDetail.contains("Sunrise Trail"))
     }
 

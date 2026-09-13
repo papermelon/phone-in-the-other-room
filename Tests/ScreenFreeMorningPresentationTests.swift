@@ -1,6 +1,17 @@
 import XCTest
 
 final class ScreenFreeMorningPresentationTests: XCTestCase {
+    func testReceiptIgnoresNewerUnrelatedMorningAndHandlesMissingLink() {
+        let runID = UUID()
+        let now = Date(timeIntervalSince1970: 2_000)
+        let linked = MorningQuietOccurrence(linkedWindDownRunID: runID,
+            scheduledStart: now, scheduledEnd: now.addingTimeInterval(1800), outcome: .finished)
+        let unrelated = MorningQuietOccurrence(linkedWindDownRunID: UUID(),
+            scheduledStart: now.addingTimeInterval(86400), scheduledEnd: now.addingTimeInterval(88200), outcome: .finished)
+        XCTAssertEqual(ScreenFreeMorningPresentationRouting.latestLinked(to: runID, occurrences: [unrelated, linked])?.id, linked.id)
+        XCTAssertNil(ScreenFreeMorningPresentationRouting.latestLinked(to: UUID(), occurrences: [linked, unrelated]))
+    }
+
     func testWatchDoesNotLetFutureMorningMaskActiveWindDown() {
         let now = Date(timeIntervalSince1970: 2_000)
         var run = FocusRun(plannedDurationSeconds: 60 * 60, startedAt: now)

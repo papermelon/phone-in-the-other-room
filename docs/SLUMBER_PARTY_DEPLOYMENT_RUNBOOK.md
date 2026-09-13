@@ -1,5 +1,9 @@
 # Slumber Party deployment runbook
 
+Latest deployment: [10 September shared Farm, cheer receipts and activity-date repair](evidence/slumber-backend-20260910/deployment.md).
+This record supersedes the historical deployment revisions below. The repository remains linked
+to development; explicitly target production for every production command.
+
 The founder explicitly authorized the production Slumber Party backend deployment on 2026-08-25.
 The Release/TestFlight production project received all five Slumber Party migrations, both
 JWT-protected Edge Functions, and invitation-encryption key version 1. Its migration head is

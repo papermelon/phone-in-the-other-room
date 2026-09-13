@@ -3,6 +3,19 @@ import XCTest
 final class RewardEngineTests: XCTestCase {
     private let earnedAt = Date(timeIntervalSince1970: 2_000_000_000)
 
+    func testRestoredFarmCounterContinuesWithoutAddingPastRunsToNights() throws {
+        var current = UserProgress.empty
+        current.restoredFarmCompletedRuns = 9
+        let run = completedNightWatch()
+        let engine = RewardEngine()
+        let reward = try XCTUnwrap(engine.generateReward(for: run, progress: current, earnedAt: earnedAt))
+        XCTAssertEqual(reward.context?.protectedNightNumber, 10)
+        let next = engine.updatedProgress(after: run, current: current, reward: reward)
+        XCTAssertEqual(next.totalCompletedRuns, 1)
+        XCTAssertEqual(next.farmCompletedRuns, 10)
+        XCTAssertEqual(next.dailyFocusRecords.reduce(0) { $0 + $1.successfulRuns }, 1)
+    }
+
     func testFirstCompletionUsesWindDownBookendAndExcludesIndependentMorning() throws {
         let reward = try XCTUnwrap(
             RewardEngine().generateReward(

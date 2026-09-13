@@ -8,6 +8,19 @@ Down, Screen-Free Morning, and Phone Away start; a missing authorization/opaque 
 the start rather than providing a timer-only alternative. Runtime failure after a valid start
 still fails open and records no false observed barrier evidence.
 
+**Evidence/presentation clarification (2026-08-31):** Family Controls authorization and a saved
+opaque selection are readiness, not runtime evidence. Receipts classify monitor apply/clear
+evidence as observed, partial, unavailable, or not requested. Timer timestamps and recorded
+elapsed minutes remain accurate when protection fails open, but the app does not claim
+selected-app limits held. Brief Access
+temporarily lifts selected-app/category limits for no longer than five minutes or until an earlier
+session end while the timer and Screen-Free Morning eligible elapsed time continue.
+
+DeviceActivity delivers callbacks after its serialized boundary. An observed receipt therefore
+requires a monitor-reported apply, no monitor-reported interruption before the terminal boundary,
+and a terminal clear recorded by the monitor or by the authoritative main-app cleanup. It does not
+backdate the callback or claim continuous attestation; observed minutes begin at the callback time.
+
 ## Context
 
 The Wind Down screen previously created a running session and countdown before the

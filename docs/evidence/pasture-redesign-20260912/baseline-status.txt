@@ -1,0 +1,331 @@
+ M .cursor/rules/counting-sheep.mdc
+ M AGENTS.md
+ M Config/Supabase.release.xcconfig
+ M Config/Supabase.xcconfig
+ M PhoneInTheOtherRoom.xcodeproj/project.pbxproj
+ M PhoneInTheOtherRoomApp/App/AppRootView.swift
+ M PhoneInTheOtherRoomApp/App/FocusRunShortcuts.swift
+ M PhoneInTheOtherRoomApp/App/PhoneInTheOtherRoomApp.swift
+ M PhoneInTheOtherRoomApp/Copy/AppCopyToken.swift
+ M PhoneInTheOtherRoomApp/Design/PixelComponents.swift
+ M PhoneInTheOtherRoomApp/Design/Theme.swift
+ M PhoneInTheOtherRoomApp/Info.plist
+ M PhoneInTheOtherRoomApp/Proximity/FocusSessionCoordinator+Placement.swift
+ M PhoneInTheOtherRoomApp/Proximity/FocusSessionCoordinator.swift
+ M PhoneInTheOtherRoomApp/Screenbook/ScreenbookFixtures.swift
+ M PhoneInTheOtherRoomApp/Screenbook/ScreenbookRecoveryProbe.swift
+ M PhoneInTheOtherRoomApp/Screenbook/ScreenbookRootView.swift
+ M PhoneInTheOtherRoomApp/Screenbook/ScreenbookScenarioRegistry.swift
+ M PhoneInTheOtherRoomApp/Services/FocusRunLiveActivityService.swift
+ M PhoneInTheOtherRoomApp/Services/NightFlockAccountService.swift
+ M PhoneInTheOtherRoomApp/Services/PersistenceService.swift
+ M PhoneInTheOtherRoomApp/Services/PhoneBedNFCService.swift
+ M PhoneInTheOtherRoomApp/Services/PhoneNotificationService.swift
+ M PhoneInTheOtherRoomApp/Services/QuietTimeShieldingService.swift
+ M PhoneInTheOtherRoomApp/Services/ScreenTimeAuthorizationService.swift
+ M PhoneInTheOtherRoomApp/ViewModels/FocusRunViewModel+Farm.swift
+ M PhoneInTheOtherRoomApp/ViewModels/FocusRunViewModel.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Errors.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+SharedHabits.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+SharedHabitsFence.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Social.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+V4.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel.swift
+ M PhoneInTheOtherRoomApp/ViewModels/PastureSceneController.swift
+ M PhoneInTheOtherRoomApp/Views/ActiveRunView.swift
+ M PhoneInTheOtherRoomApp/Views/BarnView.swift
+ M PhoneInTheOtherRoomApp/Views/CompletionView.swift
+ M PhoneInTheOtherRoomApp/Views/Components/AppShieldExplainerSheet.swift
+ M PhoneInTheOtherRoomApp/Views/Components/ConnectionStatusCard.swift
+ M PhoneInTheOtherRoomApp/Views/Components/FirstRunGuideCards.swift
+ M PhoneInTheOtherRoomApp/Views/Components/HomeWindDownSummary.swift
+ M PhoneInTheOtherRoomApp/Views/Components/ImpactSharingConsentSheet.swift
+ M PhoneInTheOtherRoomApp/Views/Components/MorningCheckInCard.swift
+ M PhoneInTheOtherRoomApp/Views/Components/NightJourneyView.swift
+ M PhoneInTheOtherRoomApp/Views/Components/NightWatchReceiptCard.swift
+ M PhoneInTheOtherRoomApp/Views/Components/OllieRitualView.swift
+ M PhoneInTheOtherRoomApp/Views/Components/PastureCharacterHitTarget.swift
+ M PhoneInTheOtherRoomApp/Views/Components/PhoneBedTagEditorViews.swift
+ M PhoneInTheOtherRoomApp/Views/Components/SlumberPartyHomeSection.swift
+ M PhoneInTheOtherRoomApp/Views/Components/UpcomingQuietTimesCard.swift
+ M PhoneInTheOtherRoomApp/Views/Components/WindDownGuidanceLibraryView.swift
+ M PhoneInTheOtherRoomApp/Views/Components/WindDownGuideCard.swift
+ M PhoneInTheOtherRoomApp/Views/Components/WindDownMethodPicker.swift
+ M PhoneInTheOtherRoomApp/Views/Components/WindDownRoutineSequenceCard.swift
+ M PhoneInTheOtherRoomApp/Views/Components/WindDownStartSheet.swift
+ M PhoneInTheOtherRoomApp/Views/EarlyEndView.swift
+ M PhoneInTheOtherRoomApp/Views/FarmView.swift
+ M PhoneInTheOtherRoomApp/Views/FocusRunSetupView.swift
+ M PhoneInTheOtherRoomApp/Views/FocusStatsContextSections.swift
+ M PhoneInTheOtherRoomApp/Views/FocusStatsRecordSections.swift
+ M PhoneInTheOtherRoomApp/Views/HomeView.swift
+ M PhoneInTheOtherRoomApp/Views/MonthlyNightsView.swift
+ M PhoneInTheOtherRoomApp/Views/MoreView.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/NightFlockHubView.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/NightFlockSharedPastureView.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/NightFlockSharingAccountView.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmView.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedHabitsConsentDisclosure.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedHabitsSummaryViews.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedHabitsViews.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySocialAvatar.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4GroupDetailsView.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4ListView.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4MemberCard.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4MembershipActivitiesSection.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4PartyDetailView.swift
+ M PhoneInTheOtherRoomApp/Views/NightsDayDetailView.swift
+ M PhoneInTheOtherRoomApp/Views/NightsWeekSection.swift
+ M PhoneInTheOtherRoomApp/Views/NotificationMessageEditorView.swift
+ M PhoneInTheOtherRoomApp/Views/NotificationMessageLibraryView.swift
+ M PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingFlowView.swift
+ M PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingProtectionStepView.swift
+ M PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingQuietStepView.swift
+ M PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingReadyStepView.swift
+ M PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingScheduleStepView.swift
+ M PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingWelcomeStepView.swift
+ M PhoneInTheOtherRoomApp/Views/PixelHomeDashboard.swift
+ M PhoneInTheOtherRoomApp/Views/ScreenFreeMorningView.swift
+ M PhoneInTheOtherRoomApp/Views/SettingsDetailViews.swift
+ M PhoneInTheOtherRoomApp/Views/ShepherdArtStudy/ShepherdStudyCanvas.swift
+ M PhoneInTheOtherRoomApp/Views/ShepherdArtStudy/ShepherdStudyMasterPaths.swift
+ M PhoneInTheOtherRoomApp/Views/ShepherdArtStudy/ShepherdStudyPainter.swift
+ M PhoneInTheOtherRoomApp/Views/ShepherdNameCard.swift
+ M PhoneInTheOtherRoomApp/Views/TrailBoardView.swift
+ M PhoneInTheOtherRoomDeviceActivityMonitor/QuietTimeDeviceActivityMonitor.swift
+ M PhoneInTheOtherRoomLiveActivity/FocusRunLiveActivityWidget.swift
+ M PhoneInTheOtherRoomShieldAction/BriefAccessShieldActionContract.swift
+ M PhoneInTheOtherRoomShieldAction/QuietTimeShieldAction.swift
+ M PhoneInTheOtherRoomShieldConfiguration/QuietTimeShieldConfiguration.swift
+ M PhoneInTheOtherRoomWatchApp/Services/WatchNotificationService.swift
+ M PhoneInTheOtherRoomWatchApp/ViewModels/WatchRunViewModel.swift
+ M PhoneInTheOtherRoomWatchApp/Views/WatchCompletionView.swift
+ M PhoneInTheOtherRoomWatchApp/Views/WatchEarlyEndView.swift
+ M PhoneInTheOtherRoomWatchApp/Views/WatchRunView.swift
+ M README.md
+ M Shared/ActiveRunPresentation.swift
+ M Shared/AutomaticWindDownSchedulingDecision.swift
+ M Shared/CountingSheepStorage.swift
+ M Shared/FarmEconomyRules.swift
+ M Shared/FarmModels.swift
+ M Shared/FarmShopCatalog.swift
+ M Shared/FirstRunJourney.swift
+ M Shared/FocusAnalytics.swift
+ M Shared/FocusRunLiveActivity.swift
+ M Shared/FocusRunRules.swift
+ M Shared/FocusSessionStartResult.swift
+ M Shared/HomeReceiptRouting.swift
+ M Shared/IndependentMorningSettlement.swift
+ M Shared/Models/OllieModels.swift
+ M Shared/NightFlockPresentation.swift
+ M Shared/NightFlockRemoteError.swift
+ M Shared/NightJourneyProgress.swift
+ M Shared/NightWatch.swift
+ M Shared/NightWatchGuidance.swift
+ M Shared/NightWatchHistory.swift
+ M Shared/NightsHistorySummary.swift
+ M Shared/NotificationCopy.swift
+ M Shared/Onboarding.swift
+ M Shared/OnboardingJourney.swift
+ M Shared/Orientation.swift
+ M Shared/PastureScene.swift
+ M Shared/PhoneAwaySearchSettlement.swift
+ M Shared/PhoneBedTagInspection.swift
+ M Shared/QuietTimeBriefAccess.swift
+ M Shared/QuietTimeShieldPresentation.swift
+ M Shared/QuietTimeShieldSchedule.swift
+ M Shared/RewardEngine.swift
+ M Shared/ScreenFreeMorningPresentation.swift
+ M Shared/ScreenTimeIntegration.swift
+ M Shared/SessionGuard.swift
+ M Shared/SheepSearchExplainer.swift
+ M Shared/SheepSearchPresentation.swift
+ M Shared/SheepSearchSlumberParty.swift
+ M Shared/SheepSearchState.swift
+ M Shared/SlumberPartySharedFarm.swift
+ M Shared/WatchMessage.swift
+ M Shared/WindDownGuidance.swift
+ M Shared/WindDownGuidanceSources.swift
+ M Shared/WindDownProfilePresentation.swift
+ M Shared/WindDownScheduling.swift
+ M Tests/ActiveRunPresentationTests.swift
+ M Tests/AutomaticWindDownSchedulingDecisionTests.swift
+ M Tests/FarmShopExpansionTests.swift
+ M Tests/FirstRunJourneyTests.swift
+ M Tests/FocusRunLiveActivityPushContractTests.swift
+ M Tests/HomeReceiptRoutingTests.swift
+ M Tests/LocalResetContractTests.swift
+ M Tests/NightFlockRemoteErrorTests.swift
+ M Tests/NightFlockTests.swift
+ M Tests/NightFlockV4Tests.swift
+ M Tests/NightJourneyProgressTests.swift
+ M Tests/NightWatchTests.swift
+ M Tests/NightsHistorySummaryTests.swift
+ M Tests/NotificationCopyTests.swift
+ M Tests/OnboardingTests.swift
+ M Tests/PhoneAwaySettlementTests.swift
+ M Tests/PhoneBedTagInspectionTests.swift
+ M Tests/PhoneFreeCueTests.swift
+ M Tests/ProximityClassifierTests.swift
+ M Tests/QuietTimeBriefAccessTests.swift
+ M Tests/QuietTimeShieldPresentationTests.swift
+ M Tests/QuietTimeShieldScheduleTests.swift
+ M Tests/RewardEngineTests.swift
+ M Tests/ScreenFreeMorningTransportTests.swift
+ M Tests/SheepSearchPresentationTests.swift
+ M Tests/ShepherdAvatarIntegrationTests.swift
+ M Tests/ShieldingReadinessTests.swift
+ M Tests/SlumberPartyHomePresentationTests.swift
+ M Tests/SlumberPartySharedFarmTests.swift
+ M Tests/WindDownGuidanceTests.swift
+ M Tests/WindDownSchedulingTests.swift
+ M docs/ACTIVITYKIT_PUSH_BACKEND.md
+ M docs/ARCHITECTURE.md
+ M docs/ASSET_NAMING.md
+ M docs/CHARACTER_ASSET_PRODUCTION.md
+ M docs/DECISIONS/ADR-0002-ai-agent-collaboration.md
+ M docs/DECISIONS/ADR-0004-watch-independent-sessions.md
+ M docs/DECISIONS/ADR-0006-sleep-bookends-positioning.md
+ M docs/DECISIONS/ADR-0008-wind-down-guidance.md
+ M docs/DECISIONS/ADR-0009-lost-sheep-search-and-rarity.md
+ M docs/DECISIONS/ADR-0012-wind-down-start-and-continuous-shielding.md
+ M docs/DECISIONS/ADR-0014-progress-aware-search-journey-and-active-navigation.md
+ M docs/DECISIONS/ADR-0015-farm-lifecycle-economy-and-customization.md
+ M docs/DECISIONS/ADR-0016-invite-only-night-flock.md
+ M docs/DECISIONS/ADR-0017-progressive-guide-phone-break-and-sleep-guidance.md
+ M docs/DECISIONS/ADR-0018-first-run-welcome-rewards.md
+ M docs/DECISIONS/ADR-0019-independent-wind-down-and-morning-quiet.md
+ M docs/FIRST_RUN_COPY_INVENTORY.md
+ M docs/FUTURE_AGENT_TASKS.md
+ M docs/IMPLEMENTATION_NOTES.md
+ M docs/PLAYBOOKS/git-workflow.md
+ M docs/PLAYBOOKS/pre-merge-review.md
+ M docs/PLAYBOOKS/screenbook.md
+ M docs/PLAYBOOKS/testflight-readiness.md
+ M docs/PRIVACY_DATA_MAP.md
+ M docs/PRODUCT_PRINCIPLES.md
+ M docs/PROJECT_BRIEF.md
+ M docs/PUBLIC_PRIVACY_POLICY.md
+ M docs/REWARDS.md
+ M docs/SCREEN_ASSET_MAP.md
+ M docs/SLUMBER_PARTY_DEPLOYMENT_RUNBOOK.md
+ M docs/UI_VISUAL_REVAMP_ASSET_GUIDE.md
+ M docs/plans/slumber-party-shared-farm-and-cheers.md
+ M project.yml
+ M scripts/screenbook/schema/scenario-manifest.schema.json
+ M scripts/screenbook/screenbook.py
+ M scripts/screenbook/tests/test_screenbook.py
+ M skills/README.md
+ M skills/product-copy-review/SKILL.md
+ M skills/swiftui-feature/SKILL.md
+ M skills/testflight-review/SKILL.md
+ M supabase/config.toml
+ M supabase/functions/_shared/night-flock.ts
+ M supabase/tests/slumber_party_farm_cheer_receipts_test.sql
+?? Assets.xcassets/farm/farm_shared_meadow_dusk.imageset/
+?? PhoneInTheOtherRoomApp/Design/AccountControls.swift
+?? PhoneInTheOtherRoomApp/Proximity/FocusSessionCoordinator+FarmSave.swift
+?? PhoneInTheOtherRoomApp/Screenbook/AccountScreenbookView.swift
+?? PhoneInTheOtherRoomApp/Screenbook/ScreenbookHabitLoopProbe.swift
+?? PhoneInTheOtherRoomApp/Services/FarmBackupService.swift
+?? PhoneInTheOtherRoomApp/Services/FarmSaveStore+Accounts.swift
+?? PhoneInTheOtherRoomApp/Services/FarmSaveStore.swift
+?? PhoneInTheOtherRoomApp/Services/FarmSyncConnectivityService.swift
+?? PhoneInTheOtherRoomApp/Services/NightFlockAccountService+Password.swift
+?? PhoneInTheOtherRoomApp/Services/PersistenceService+WindDownHabit.swift
+?? PhoneInTheOtherRoomApp/ViewModels/FarmBackupPresentation.swift
+?? PhoneInTheOtherRoomApp/ViewModels/FarmBackupViewModel+AccountSync.swift
+?? PhoneInTheOtherRoomApp/ViewModels/FarmBackupViewModel+Recovery.swift
+?? PhoneInTheOtherRoomApp/ViewModels/FarmBackupViewModel+Retry.swift
+?? PhoneInTheOtherRoomApp/ViewModels/FarmBackupViewModel.swift
+?? PhoneInTheOtherRoomApp/ViewModels/FocusRunViewModel+FarmBackup.swift
+?? PhoneInTheOtherRoomApp/ViewModels/FocusRunViewModel+WindDownHabit.swift
+?? PhoneInTheOtherRoomApp/ViewModels/PasswordAccountViewModel.swift
+?? PhoneInTheOtherRoomApp/ViewModels/SharedFarmPrototypeStore.swift
+?? PhoneInTheOtherRoomApp/ViewModels/SharedMeadowSceneController.swift
+?? PhoneInTheOtherRoomApp/Views/AccountAccessGate.swift
+?? PhoneInTheOtherRoomApp/Views/AccountCredentialsView.swift
+?? PhoneInTheOtherRoomApp/Views/Components/CumulativeFarmProgressCard.swift
+?? PhoneInTheOtherRoomApp/Views/Components/FarmSaveNotice.swift
+?? PhoneInTheOtherRoomApp/Views/Components/SharedFarmHomeLine.swift
+?? PhoneInTheOtherRoomApp/Views/Components/WindDownHabitHomeCard.swift
+?? PhoneInTheOtherRoomApp/Views/Components/WindDownHabitReflectionCard.swift
+?? PhoneInTheOtherRoomApp/Views/Components/WindDownHabitSupportEditor.swift
+?? PhoneInTheOtherRoomApp/Views/FarmAccountControlsView.swift
+?? PhoneInTheOtherRoomApp/Views/FarmBackupView.swift
+?? PhoneInTheOtherRoomApp/Views/NightFlock/SharedFarmForYouSection.swift
+?? PhoneInTheOtherRoomApp/Views/NightFlock/SharedFarmPrototypeFixtures.swift
+?? PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyFriendCardView.swift
+?? PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedMeadowView.swift
+?? PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingAccountStepView.swift
+?? PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingPersonalizationView.swift
+?? Shared/AccountCredentials.swift
+?? Shared/AccountFarmOwnership.swift
+?? Shared/CumulativeFarmCredit.swift
+?? Shared/FarmAccountSocialOwnerGate.swift
+?? Shared/FarmBackupPayload.swift
+?? Shared/FarmBackupSync.swift
+?? Shared/FarmSaveDocument.swift
+?? Shared/SharedMeadow.swift
+?? Shared/WindDownHabit.swift
+?? Tests/AccountFarmOwnershipTests.swift
+?? Tests/AccountFarmStoreTests.swift
+?? Tests/CumulativeFarmCreditTests.swift
+?? Tests/FarmBackupViewModelTests.swift
+?? Tests/FarmPersistenceAdapterTests.swift
+?? Tests/FarmSaveDocumentTests.swift
+?? Tests/FarmSaveStoreTests.swift
+?? Tests/OnboardingAccountTests.swift
+?? Tests/SharedMeadowTests.swift
+?? Tests/WindDownHabitTests.swift
+?? docs/ACCOUNT_AUTH_DEPLOYMENT.md
+?? docs/DECISIONS/ADR-0020-cumulative-farm-credit.md
+?? docs/DECISIONS/ADR-0021-account-backed-farm-save.md
+?? docs/DECISIONS/ADR-0022-onboarding-account-experience.md
+?? docs/DECISIONS/ADR-0023-account-owned-farm-sync.md
+?? docs/FARM_BACKUP_DEPLOYMENT.md
+?? docs/PLAYBOOKS/final-build-acceptance.md
+?? docs/PLAYBOOKS/release-archive.md
+?? docs/PRODUCT_DIRECTION.md
+?? docs/agent-instruction-audit-2026-09-06.md
+?? docs/agent-instruction-cleanup-2026-09-07.md
+?? docs/evidence/pasture-redesign-20260912/
+?? docs/evidence/shared-farm-prototype-20260912/
+?? docs/evidence/slumber-backend-20260910/
+?? docs/evidence/slumber-grounded-farm-20260910/
+?? docs/history/
+?? docs/plans/account-backed-farm-save.md
+?? docs/plans/account-owned-farm-sync.md
+?? docs/plans/device-protection-and-slumber-entry-repair.md
+?? docs/plans/farm-art-retirement-2026-09-12.md
+?? docs/plans/farm-interaction-research-2026-09-12.md
+?? docs/plans/farm-save-contract.md
+?? docs/plans/live-activity-and-app-copy-2026-09-07.md
+?? docs/plans/onboarding-account-experience.md
+?? docs/plans/product-copy-blocked-decisions-2026-08-31.md
+?? docs/plans/shared-farm-prototype-2026-09-12.md
+?? docs/plans/shepherd-native-art-integration.md
+?? docs/plans/slumber-party-pasture-redesign-2026-09-12.md
+?? docs/plans/slumber-party-redesign-implementation-prompt.md
+?? docs/plans/slumber-party-refresh-and-experience.md
+?? docs/plans/wind-down-habit-loop-2026-09-08.md
+?? output/design/shepherd-body-20260912/
+?? output/design/shepherd-hair-20260909/
+?? output/design/shepherd-motion-20260908/
+?? output/design/shepherd-native-20260908/
+?? output/design/shepherd-production-20260909/
+?? output/design/shepherd-review-20260908/
+?? scripts/archive-release.py
+?? scripts/support/
+?? scripts/tests/
+?? scripts/validate-farm-save.py
+?? supabase/functions/_shared/night-flock-activity-wire.ts
+?? supabase/functions/_shared/night-flock-activity-wire_test.ts
+?? supabase/functions/account-password-login/
+?? supabase/migrations/20260905090000_private_farm_save.sql
+?? supabase/migrations/20260905100000_farm_revision_read.sql
+?? supabase/migrations/20260907110000_account_identity_and_farm_sync.sql
+?? supabase/templates/
+?? supabase/tests/account_identity_test.sql
+?? supabase/tests/farm_save_test.sql

@@ -1,6 +1,47 @@
 import XCTest
 
 final class NightJourneyProgressTests: XCTestCase {
+    func testIndependentMorningUsesActualStartAndItsOwnEnd() throws {
+        let plannedStart = Date(timeIntervalSince1970: 10_000)
+        let actualStart = plannedStart.addingTimeInterval(600)
+        let morning = MorningQuietOccurrence(scheduledStart: plannedStart,
+            scheduledEnd: plannedStart.addingTimeInterval(1800), actualStart: actualStart, outcome: .active)
+        let progress = try XCTUnwrap(NightJourneyProgress.resolve(morning: morning, at: actualStart.addingTimeInterval(600)))
+        XCTAssertEqual(progress.phaseFraction, 0.5, accuracy: 0.001)
+        XCTAssertEqual(progress.segment, .sunrise)
+        XCTAssertEqual(progress.phase, .morningQuiet)
+        XCTAssertEqual(progress.nextTransition, morning.scheduledEnd)
+        XCTAssertEqual(NightJourneyProgress.resolve(morning: morning, at: morning.scheduledEnd)?.phase, .complete)
+        XCTAssertEqual(morning.outcome, .active)
+    }
+
+    func testScheduledAndSkippedMorningDoNotShowAnActiveJourney() {
+        let start = Date(timeIntervalSince1970: 10_000)
+        for outcome in [MorningQuietOccurrenceOutcome.scheduled, .skipped] {
+            let morning = MorningQuietOccurrence(scheduledStart: start,
+                scheduledEnd: start.addingTimeInterval(1800), outcome: outcome)
+            XCTAssertNil(NightJourneyProgress.resolve(morning: morning, at: start.addingTimeInterval(900)))
+        }
+    }
+
+    func testEarlyMorningFinishFreezesVisualProgressWithoutInventingFullDuration() throws {
+        let start = Date(timeIntervalSince1970: 10_000)
+        let morning = MorningQuietOccurrence(scheduledStart: start, scheduledEnd: start.addingTimeInterval(1800),
+            actualStart: start, endedAt: start.addingTimeInterval(900), outcome: .finished)
+        let progress = try XCTUnwrap(NightJourneyProgress.resolve(morning: morning, at: start.addingTimeInterval(3600)))
+        XCTAssertEqual(progress.phaseFraction, 0.5, accuracy: 0.001)
+        XCTAssertEqual(progress.phase, .complete)
+        XCTAssertNil(progress.nextTransition)
+    }
+
+    func testSegmentTitlesDescribeScenesWithoutInventingTrailProgress() {
+        let titles = NightJourneySegment.allCases.map(\.title)
+
+        XCTAssertEqual(titles, ["Prairie evening", "Mountain dusk", "Moonlit hills", "Morning pasture"])
+        XCTAssertFalse(titles.contains { $0.localizedCaseInsensitiveContains("trail") })
+        XCTAssertFalse(titles.contains { $0.localizedCaseInsensitiveContains("path") })
+    }
+
     func testPrimaryProgressTracksOverallAndCurrentPhase() throws {
         let start = Date(timeIntervalSince1970: 1_000)
         let bedtime = start.addingTimeInterval(30 * 60)

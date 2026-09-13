@@ -36,6 +36,39 @@ struct WatchMessage: Codable {
 }
 
 extension WatchMessage {
+    /// Normalizes persisted compatibility data before either device presents
+    /// or acts on it. Raw decoding remains backwards-compatible.
+    var normalizedForCurrentRelease: Self {
+        var normalized = self
+        normalized.run = run?.normalizedForCurrentRelease
+        return normalized
+    }
+
+    /// One routing boundary shared by phone and Watch. Retired Nearby
+    /// Interaction messages remain decodable but never reach either device's
+    /// current-release action switch.
+    var routedForCurrentRelease: Self? {
+        let normalized = normalizedForCurrentRelease
+        return normalized.isRetiredNearbyInteractionMessage ? nil : normalized
+    }
+
+    /// Nearby Interaction transport remains decodable for old installations,
+    /// but current release flows must never act on it.
+    var isRetiredNearbyInteractionMessage: Bool {
+        switch type {
+        case .nearbyDiscoveryToken,
+             .nearbyDiscoveryTokenAcknowledged,
+             .distanceCheckRequest,
+             .distanceCheckEnded,
+             .watchDistanceReading,
+             .proximityStateUpdate,
+             .calibrationUpdate:
+            return true
+        default:
+            return false
+        }
+    }
+
     func isFreshRealtimeMessage(for currentRun: FocusRun?, now: Date = Date()) -> Bool {
         guard let currentRun, run?.id == currentRun.id else { return false }
         guard sentAt <= now.addingTimeInterval(5) else { return false }

@@ -2,6 +2,8 @@ export type NightFlockErrorCode =
   | "unauthorized"
   | "linked_account_required"
   | "method_not_allowed"
+  | "pasture_sheep_not_owned"
+  | "pasture_sheep_already_visiting"
   | "invalid_request"
   | "unsupported_schema"
   | "active_membership_exists"
@@ -54,6 +56,8 @@ const safeMessages: Record<NightFlockErrorCode, string> = {
   unauthorized: "Unauthorized",
   linked_account_required: "Linked account required",
   method_not_allowed: "Method not allowed",
+  pasture_sheep_not_owned: "Save this sheep to your account before sending it to visit.",
+  pasture_sheep_already_visiting: "This sheep is already visiting another party. Bring it home first.",
   invalid_request: "Invalid request",
   unsupported_schema: "Unsupported schema",
   active_membership_exists: "You already belong to this Slumber Party.",
@@ -135,6 +139,8 @@ export function nightFlockError(code: NightFlockErrorCode): NightFlockErrorDescr
     case "host_permission_required": return { status: 403, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
     case "snapshot_construction_failed": return { status: 500, code, error: safeMessages[code], retryable: true, recovery: "retry" };
     case "service_unavailable": return { status: 503, code, error: safeMessages[code], retryable: true, recovery: "retry" };
+    case "pasture_sheep_not_owned":
+    case "pasture_sheep_already_visiting": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: null };
     case "invalid_request": return { status: 400, code, error: safeMessages[code], retryable: false, recovery: null };
     case "internal_error": return { status: 500, code, error: safeMessages[code], retryable: true, recovery: "retry" };
   }
@@ -142,6 +148,8 @@ export function nightFlockError(code: NightFlockErrorCode): NightFlockErrorDescr
 
 export function classifyNightFlockError(error: unknown): NightFlockErrorDescriptor {
   const detail = safeClassificationDetail(error);
+  if (detail.includes("pasture_sheep_not_owned")) return nightFlockError("pasture_sheep_not_owned");
+  if (detail.includes("pasture_sheep_already_visiting")) return nightFlockError("pasture_sheep_already_visiting");
   if (detail.includes("unauthorized") || detail.includes("invalid jwt")) return nightFlockError("unauthorized");
   if (detail.includes("apple-linked account") || detail.includes("linked account required")) return nightFlockError("linked_account_required");
   if (detail.includes("one active slumber party")) return nightFlockError("active_membership_exists");

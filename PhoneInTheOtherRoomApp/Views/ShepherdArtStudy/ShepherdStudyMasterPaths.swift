@@ -94,15 +94,96 @@ enum ShepherdStudyMasterPaths {
         p.closeSubpath()
     }
 
+    /// Soft shoulders and authored hems keep clothes readable below the oversized head.
     static func garment(_ outfit: ShepherdStudyOutfit, side: Bool) -> Path {
-        let left: CGFloat = side ? 104 : 94, right: CGFloat = side ? 142 : 145
-        let hem: CGFloat = outfit == .shirt || outfit == .overalls ? 207 : outfit == .cloak ? 239 : 234
-        let flare: CGFloat = outfit == .cloak ? 30 : outfit == .dress ? 17 : 10
+        let short = outfit == .shirt || outfit == .overalls
+        let hem: CGFloat = short ? 222 : outfit == .cloak ? 239 : 234
+        let left: CGFloat = side ? 101 : outfit == .dress ? 80 : outfit == .cloak ? 74 : 85
+        let right: CGFloat = side ? 154 : outfit == .dress ? 166 : outfit == .cloak ? 172 : 163
         return Path { p in
-            p.move(to: CGPoint(x: left, y: 166))
-            p.addQuadCurve(to: CGPoint(x: right, y: 166), control: CGPoint(x: 122, y: 158))
-            p.addLine(to: CGPoint(x: right + flare, y: hem))
-            p.addQuadCurve(to: CGPoint(x: left - flare, y: hem), control: CGPoint(x: 121, y: hem + 7))
+            p.move(to: CGPoint(x: side ? 117 : 110, y: 161))
+            p.addQuadCurve(to: CGPoint(x: side ? 142 : 143, y: 166), control: CGPoint(x: 135, y: 157))
+            p.addCurve(to: CGPoint(x: side ? 149 : 153, y: 195),
+                       control1: CGPoint(x: 152, y: 171), control2: CGPoint(x: 150, y: 185))
+            p.addQuadCurve(to: CGPoint(x: right, y: hem - 2), control: CGPoint(x: right - 3, y: hem - 14))
+            p.addCurve(to: CGPoint(x: left, y: hem - 1),
+                       control1: CGPoint(x: right - 17, y: hem + 2), control2: CGPoint(x: left + 22, y: hem + 3))
+            p.addQuadCurve(to: CGPoint(x: side ? 103 : 94, y: 192), control: CGPoint(x: left + 3, y: hem - 19))
+            p.addCurve(to: CGPoint(x: side ? 117 : 110, y: 161),
+                       control1: CGPoint(x: side ? 103 : 96, y: 174), control2: CGPoint(x: side ? 108 : 100, y: 165))
+            p.closeSubpath()
+        }
+    }
+
+    /// Local coordinates point out from the left shoulder; the other sleeve is mirrored.
+    static func sleeve(short: Bool, side: Bool) -> Path {
+        let cuff: CGFloat = short ? 25 : 44
+        let reach: CGFloat = side ? 6 : 20
+        return Path { p in
+            p.move(to: CGPoint(x: 4, y: -6))
+            p.addCurve(to: CGPoint(x: -10, y: 4), control1: CGPoint(x: -2, y: -9), control2: CGPoint(x: -7, y: -3))
+            p.addQuadCurve(to: CGPoint(x: -reach - 6, y: cuff - 2), control: CGPoint(x: -reach - 1, y: 20))
+            p.addQuadCurve(to: CGPoint(x: -reach + 12, y: cuff + 3), control: CGPoint(x: -reach + 3, y: cuff + 2))
+            p.addQuadCurve(to: CGPoint(x: 9, y: 11), control: CGPoint(x: 5, y: cuff - 12))
+            p.addQuadCurve(to: CGPoint(x: 4, y: -6), control: CGPoint(x: 11, y: -1))
+            p.closeSubpath()
+        }
+    }
+
+    static func hand(shortSleeve: Bool, side: Bool) -> Path {
+        let reach: CGFloat = side ? 6 : 20
+        let cuff: CGFloat = shortSleeve ? 25 : 44
+        let wrist: CGFloat = shortSleeve ? 16 : 3
+        return Path { p in
+            p.move(to: CGPoint(x: -reach - 4, y: cuff - 4))
+            p.addQuadCurve(to: CGPoint(x: -reach - 6, y: cuff + wrist + 5), control: CGPoint(x: -reach - 5, y: cuff + wrist))
+            p.addCurve(to: CGPoint(x: -reach + 2, y: cuff + wrist + 14),
+                       control1: CGPoint(x: -reach - 7, y: cuff + wrist + 11), control2: CGPoint(x: -reach - 2, y: cuff + wrist + 15))
+            p.addQuadCurve(to: CGPoint(x: -reach + 10, y: cuff + wrist + 8), control: CGPoint(x: -reach + 10, y: cuff + wrist + 15))
+            p.addQuadCurve(to: CGPoint(x: -reach + 12, y: cuff + wrist + 2), control: CGPoint(x: -reach + 16, y: cuff + wrist + 5))
+            p.addQuadCurve(to: CGPoint(x: -reach + 10, y: cuff - 1), control: CGPoint(x: -reach + 9, y: cuff + wrist - 1))
+            p.closeSubpath()
+        }
+    }
+
+    static func boot(x: CGFloat, ankle: CGFloat, toeRight: Bool) -> Path {
+        let direction: CGFloat = toeRight ? 1 : -1
+        func point(_ dx: CGFloat, _ dy: CGFloat) -> CGPoint { CGPoint(x: x + dx * direction, y: ankle + dy) }
+        return Path { p in
+            p.move(to: point(-10, -4))
+            p.addQuadCurve(to: point(9, -4), control: point(0, -2))
+            p.addLine(to: point(9, 5))
+            p.addCurve(to: point(18, 12), control1: point(14, 5), control2: point(19, 7))
+            p.addQuadCurve(to: point(12, 15), control: point(19, 15))
+            p.addQuadCurve(to: point(-10, 14), control: point(-1, 16))
+            p.addQuadCurve(to: point(-12, 8), control: point(-13, 14))
+            p.closeSubpath()
+        }
+    }
+
+    static func collar(side: Bool) -> Path {
+        return Path { p in
+            if side {
+                p.move(to: CGPoint(x: 116, y: 159))
+                p.addQuadCurve(to: CGPoint(x: 148, y: 165), control: CGPoint(x: 136, y: 154))
+                p.addQuadCurve(to: CGPoint(x: 145, y: 177), control: CGPoint(x: 153, y: 183))
+                p.addQuadCurve(to: CGPoint(x: 115, y: 169), control: CGPoint(x: 127, y: 168))
+            } else {
+                p.move(to: CGPoint(x: 103, y: 160))
+                p.addQuadCurve(to: CGPoint(x: 144, y: 160), control: CGPoint(x: 123, y: 156))
+                p.addCurve(to: CGPoint(x: 124, y: 167), control1: CGPoint(x: 149, y: 184), control2: CGPoint(x: 129, y: 185))
+                p.addCurve(to: CGPoint(x: 103, y: 160), control1: CGPoint(x: 118, y: 187), control2: CGPoint(x: 98, y: 180))
+            }
+            p.closeSubpath()
+        }
+    }
+
+    static func pocket(x: CGFloat, y: CGFloat, width: CGFloat = 18) -> Path {
+        Path { p in
+            p.move(to: CGPoint(x: x + 1, y: y))
+            p.addQuadCurve(to: CGPoint(x: x + width, y: y - 1), control: CGPoint(x: x + width / 2, y: y + 1))
+            p.addLine(to: CGPoint(x: x + width + 1, y: y + 14))
+            p.addCurve(to: CGPoint(x: x, y: y + 14), control1: CGPoint(x: x + width, y: y + 19), control2: CGPoint(x: x - 1, y: y + 18))
             p.closeSubpath()
         }
     }

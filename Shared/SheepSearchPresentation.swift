@@ -3,7 +3,7 @@ import Foundation
 /// User-facing copy for Search Journal notes, completion receipts, and Barn arrival.
 /// Internal type names stay `SheepSearch*`; these strings are what people read after
 /// Wind Down or Phone Away has already finished, so they do not call the note a search
-/// or a protected night.
+/// or a qualifying Wind Down.
 enum SheepSearchPresentation {
     static func originLine(for outcome: SheepSearchOutcome, date: Date? = nil) -> String {
         let stamp = (date ?? outcome.createdAt).formatted(date: .abbreviated, time: .omitted)

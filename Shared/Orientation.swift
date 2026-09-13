@@ -71,15 +71,15 @@ enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identi
     var message: String {
         switch self {
         case .practice:
-            return "A short, optional Wind Down practice creates a real Nights record. It does not count as a protected night."
+            return "A short, optional Wind Down practice creates a real Nights record. It does not count toward Wind Down search progress or the Phone Away meter."
         case .nights:
             return "Wind Down is your nightly ritual.\nPhone Away stays here as a smaller, separate record."
         case .farm:
-            return "Wind Down is when Ollie may bring a missing sheep home.\nPhone Away minutes build separate search progress."
+            return "A qualifying Wind Down can open one of Ollie’s searches.\nScreen-Free Morning and Phone Away build separate search progress."
         case .settings:
             return "Change Wind Down, connections, and guidance here.\nYou can replay this guide whenever you like."
         case .phoneBreak:
-            return "Start one now or save one for later.\nEvery \(PhoneAwaySearchMeter.maximumMinutes) completed minutes, Ollie can look for a missing sheep after three Wind Downs."
+            return "Start one now or plan one for later.\nEligible minutes carry forward; each \(PhoneAwaySearchMeter.maximumMinutes)-minute meter opens a search after three qualifying Wind Down searches."
         case .trailNote:
             return "A homecoming means Ollie found a missing sheep.\nA clue means Ollie will look again another night."
         case .barnCapacity:

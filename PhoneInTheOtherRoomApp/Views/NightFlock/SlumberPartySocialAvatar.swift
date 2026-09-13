@@ -188,11 +188,6 @@ struct SlumberPartySocialAvatarPicker: View {
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
-        } else if !appViewModel.socialAvatarSharingAvailable {
-            Text("Sharing this choice needs group service support. You can preview it here; your group keeps its current identity for now.")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 

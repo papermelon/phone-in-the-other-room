@@ -16,7 +16,7 @@ final class ScreenTimeAuthorizationService {
             switch self {
             case .unavailable: return "Unavailable"
             case .notDetermined: return "Not connected"
-            case .approved: return "Connected"
+            case .approved: return "Access granted"
             case .denied: return "Needs permission"
             }
         }

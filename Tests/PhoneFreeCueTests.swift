@@ -35,7 +35,7 @@ final class PhoneFreeCueTests: XCTestCase {
         let data = Data("{\"intendedBedtime\":1003600,\"wakeTime\":1032400,\"protectedUntil\":1034200,\"windDownMinutes\":30,\"morningQuietMinutes\":30,\"eveningActivity\":\"read\",\"morningActivity\":\"openCurtains\"}".utf8)
 
         let decoded = try JSONDecoder().decode(NightWatchPlan.self, from: data)
-        XCTAssertEqual(decoded.eveningActivityTitle, "Read")
-        XCTAssertEqual(decoded.morningActivityTitle, "Open curtains")
+        XCTAssertEqual(decoded.eveningActivityTitle, "Read a paper book")
+        XCTAssertEqual(decoded.morningActivityTitle, "Open the curtains")
     }
 }

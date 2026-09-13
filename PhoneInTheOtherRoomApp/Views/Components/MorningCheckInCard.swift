@@ -56,7 +56,7 @@ struct MorningCheckInCard: View {
                     selection: bedtimeSleepinessBinding,
                     choices: BedtimeSleepiness.allCases
                 )
-                Text("Optional and kept in this app. It is a reflection, not a sleep score.")
+                Text("Optional. The complete note stays on this iPhone. If you separately enable impact sharing, only the restfulness category may be included in its minimised records. This is a reflection, not a sleep score.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }

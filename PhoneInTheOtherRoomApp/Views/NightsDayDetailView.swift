@@ -8,7 +8,11 @@ struct WindDownDayDetailView: View {
     @State private var showsAdditionalRecords = false
 
     private var summary: NightsHistoryDay {
-        NightsHistoryAggregator.summary(for: day, from: records)
+        NightsHistoryAggregator.summary(
+            for: day,
+            from: records,
+            morningOccurrences: screenFreeMorningOccurrences
+        )
     }
 
     private var primaryRecords: [NightWatchRecord] {
@@ -20,7 +24,10 @@ struct WindDownDayDetailView: View {
     }
 
     private var screenFreeMorningOccurrences: [MorningQuietOccurrence] {
-        viewModel.screenFreeMorningOccurrences(on: day)
+        NightsHistoryAggregator.morningOccurrences(
+            for: day,
+            from: viewModel.screenFreeMorningOccurrences
+        )
     }
 
     var body: some View {
@@ -31,27 +38,31 @@ struct WindDownDayDetailView: View {
 
                 daySummary
 
-                if primaryRecords.isEmpty && additionalRecords.isEmpty {
+                WindDownHabitReflectionCard(day: day)
+                WindDownHabitReflectionCard(day: day, mode: .morning)
+
+                if !summary.hasRecords {
                     PixelCard {
                         Text("No completed quiet periods were recorded for this day.")
                             .font(AppTypography.body)
                     }
                 } else {
                     occurrenceGroup(
-                        title: "USUAL WIND DOWN",
+                        title: "WIND DOWN",
                         records: primaryRecords,
-                        totalMinutes: summary.primaryQuietMinutes,
+                        totalMinutes: summary.windDownMinutes,
                         accent: AppColors.grass,
                         isExpanded: $showsPrimaryRecords
                     )
+                    screenFreeMorningGroup
+                    legacyMorningCreditCard
                     occurrenceGroup(
                         title: "PHONE AWAY",
                         records: additionalRecords,
-                        totalMinutes: summary.additionalQuietMinutes,
+                        totalMinutes: summary.phoneAwayMinutes,
                         accent: AppColors.lavender,
                         isExpanded: $showsAdditionalRecords
                     )
-                    screenFreeMorningGroup
                 }
             }
             .padding(AppSpacing.md)
@@ -90,21 +101,42 @@ struct WindDownDayDetailView: View {
         }
     }
 
+    @ViewBuilder
+    private var legacyMorningCreditCard: some View {
+        if summary.legacyMorningQuietMinutes > 0 {
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("EARLIER APP RECORD")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.muted)
+                    Text("\(summary.legacyMorningQuietMinutes) min after waking")
+                        .font(AppTypography.headline)
+                    Text("An earlier Counting Sheep version stored these minutes with Wind Down. They stay separate from Screen-Free Morning. No Morning details are inferred from this value.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+            }
+        }
+    }
+
     private func morningStatus(_ occurrence: MorningQuietOccurrence) -> String {
         switch occurrence.outcome {
         case .scheduled: return "Planned"
         case .active: return "In progress"
         case .skipped: return "Skipped"
-        case .finished: return "Finished"
+        case .finished: return "Timer ended"
         }
     }
 
     private func morningDetail(_ occurrence: MorningQuietOccurrence) -> String {
         let minutes = occurrence.eligibleElapsedMinutes(at: occurrence.endedAt ?? Date())
-        if occurrence.outcome == .finished, minutes < SunriseTrailRules.minimumOccurrenceMinutes {
-            return "\(minutes) actual minutes · below the 15-minute Screen-Free Morning minimum"
+        if occurrence.outcome == .skipped {
+            return "No Screen-Free Morning minutes were recorded."
         }
-        return "\(minutes) actual minutes · tracked independently from Wind Down"
+        if occurrence.outcome == .finished, minutes < SunriseTrailRules.minimumOccurrenceMinutes {
+            return "\(minutes) eligible elapsed minutes · below the 15-minute Screen-Free Morning minimum"
+        }
+        return "\(minutes) eligible elapsed minutes · recorded independently from Wind Down"
     }
 
     private var daySummary: some View {
@@ -148,11 +180,11 @@ struct WindDownDayDetailView: View {
                                 .padding(.top, AppSpacing.xs)
                         } label: {
                             HStack(spacing: AppSpacing.sm) {
-                                Image(systemName: records.first?.occurrenceRole == .additionalQuiet ? "sparkles" : "moon.stars.fill")
+                                Image(systemName: groupSystemImage(records))
                                     .foregroundStyle(accent)
                                     .accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                                    Text("\(records.count) periods · \(totalMinutes) min recorded")
+                                    Text(groupSummary(records: records, totalMinutes: totalMinutes))
                                         .font(AppTypography.headline)
                                     Text("Show each recorded period")
                                         .font(AppTypography.caption)
@@ -185,42 +217,72 @@ struct WindDownDayDetailView: View {
         }
     }
 
+    private func groupSystemImage(_ records: [NightWatchRecord]) -> String {
+        if records.first?.occurrenceRole == .additionalQuiet { return "sparkles" }
+        return records.contains { $0.outcome == .completed }
+            ? "checkmark.circle.fill"
+            : "moon.stars.fill"
+    }
+
+    private func groupSummary(records: [NightWatchRecord], totalMinutes: Int) -> String {
+        if records.first?.occurrenceRole == .additionalQuiet {
+            return "\(records.count) periods · \(totalMinutes) min"
+        }
+        return "\(records.count) attempts · \(totalMinutes) min before bed"
+    }
+
     private var summaryTitle: String {
+        let sourceCount = (summary.primaryAttemptCount > 0 ? 1 : 0)
+            + (summary.screenFreeMorningCount > 0 ? 1 : 0)
+            + (summary.additionalCount > 0 ? 1 : 0)
+        if sourceCount > 1 { return "Day record" }
         switch summary.primaryOutcome {
-        case .protected: return "Wind Down completed"
+        case .completed: return "Wind Down completed"
         case .endedEarly: return "Ended early"
-        case nil: return summary.additionalCount > 0 ? "Phone Away" : "No recorded quiet"
+        case nil:
+            if summary.screenFreeMorningCount > 0 { return "Screen-Free Morning" }
+            return summary.additionalCount > 0 ? "Phone Away" : "No recorded quiet"
         }
     }
 
     private var summaryDetail: String {
         var parts: [String] = []
         if summary.primaryAttemptCount > 0 {
-            parts.append("\(summary.primaryAttemptCount) usual Wind Down attempt\(summary.primaryAttemptCount == 1 ? "" : "s")")
+            let status = summary.primaryOutcome == .completed ? "completed" : "ended early"
+            parts.append("Wind Down: \(summary.windDownMinutes) min before bed, \(status)")
         }
-        if summary.primaryOutcome == .protected, summary.earlyEndedPrimaryCount > 0 {
-            parts.append("\(summary.earlyEndedPrimaryCount) ended early")
+        if summary.primaryOutcome == .completed, summary.earlyEndedPrimaryCount > 0 {
+            parts.append("\(summary.earlyEndedPrimaryCount) other Wind Down attempt\(summary.earlyEndedPrimaryCount == 1 ? "" : "s") ended early")
+        }
+        if summary.screenFreeMorningCount > 0 {
+            parts.append("Screen-Free Morning: \(summary.screenFreeMorningMinutes) eligible elapsed min")
         }
         if summary.additionalCount > 0 {
-            parts.append("\(summary.additionalCount) one-time period\(summary.additionalCount == 1 ? "" : "s")")
+            parts.append("Phone Away: \(summary.phoneAwayMinutes) min")
         }
-        parts.append("\(summary.recordedQuietMinutes) min recorded quiet")
+        if summary.legacyMorningQuietMinutes > 0 {
+            parts.append("Earlier record: \(summary.legacyMorningQuietMinutes) after-waking min kept separate")
+        }
         return parts.joined(separator: " · ")
     }
 
     private var summarySystemImage: String {
         switch summary.primaryOutcome {
-        case .protected: return "shield.fill"
+        case .completed: return "checkmark.circle.fill"
         case .endedEarly: return "moon.stars.fill"
-        case nil: return summary.additionalCount > 0 ? "sparkles" : "minus"
+        case nil:
+            if summary.screenFreeMorningCount > 0 { return "sun.max.fill" }
+            return summary.additionalCount > 0 ? "sparkles" : "minus"
         }
     }
 
     private var summaryColor: Color {
         switch summary.primaryOutcome {
-        case .protected: return AppColors.grass
+        case .completed: return AppColors.grass
         case .endedEarly: return AppColors.warning
-        case nil: return summary.additionalCount > 0 ? AppColors.lavender : AppColors.muted
+        case nil:
+            if summary.screenFreeMorningCount > 0 { return AppColors.amber }
+            return summary.additionalCount > 0 ? AppColors.lavender : AppColors.muted
         }
     }
 }
@@ -230,7 +292,7 @@ struct WindDownOccurrenceRow: View {
 
     var body: some View {
         HStack(spacing: AppSpacing.sm) {
-            Image(systemName: record.occurrenceRole == .additionalQuiet ? "sparkles" : "moon.stars.fill")
+            Image(systemName: statusSystemImage)
                 .font(AppTypography.headline)
                 .foregroundStyle(statusColor)
                 .frame(width: AppSpacing.xl)
@@ -256,9 +318,20 @@ struct WindDownOccurrenceRow: View {
     }
 
     private var intervalLabel: String {
-        let intervals = record.creditedIntervals
-        if let first = intervals.first, let last = intervals.last {
-            return "\(OllieFormat.timeRange(from: first.start, to: last.end)) · \(quietMinutes) min"
+        if record.occurrenceRole == .additionalQuiet {
+            let intervals = record.creditedIntervals
+            if let first = intervals.first, let last = intervals.last {
+                return "\(OllieFormat.timeRange(from: first.start, to: last.end)) · \(quietMinutes) min"
+            }
+        } else if let interval = windDownInterval {
+            return "\(OllieFormat.timeRange(from: interval.start, to: interval.end)) · \(quietMinutes) min before bed"
+        } else if quietMinutes == 0, record.startedAt >= record.plan.intendedBedtime {
+            // Truthful zero: the Wind Down began at or after bedtime, so no
+            // before-bed minutes exist. "0 min before bed" beside "Completed"
+            // read as a broken record.
+            return "\(OllieFormat.time(record.startedAt)) · 0 before-bed min recorded"
+        } else {
+            return "\(OllieFormat.time(record.startedAt)) · \(quietMinutes) min before bed"
         }
         let end = record.endedAt ?? record.updatedAt
         guard end > record.startedAt else { return OllieFormat.time(record.startedAt) }
@@ -266,7 +339,24 @@ struct WindDownOccurrenceRow: View {
     }
 
     private var quietMinutes: Int {
-        record.creditedWindDownMinutes + record.creditedMorningQuietMinutes
+        record.occurrenceRole == .additionalQuiet
+            ? record.creditedWindDownMinutes + record.creditedMorningQuietMinutes
+            : record.creditedWindDownMinutes
+    }
+
+    private var windDownInterval: DateInterval? {
+        guard record.creditedWindDownMinutes > 0 else { return nil }
+        let plannedStart = record.plan.intendedBedtime.addingTimeInterval(
+            TimeInterval(-record.plan.windDownMinutes * 60)
+        )
+        let start = max(record.startedAt, plannedStart)
+        let availableEnd = min(record.endedAt ?? record.updatedAt, record.plan.intendedBedtime)
+        let end = min(
+            availableEnd,
+            start.addingTimeInterval(TimeInterval(record.creditedWindDownMinutes * 60))
+        )
+        guard end > start else { return nil }
+        return DateInterval(start: start, end: end)
     }
 
     private var statusLabel: String {
@@ -276,6 +366,11 @@ struct WindDownOccurrenceRow: View {
     private var statusColor: Color {
         if record.outcome == .endedEarly { return AppColors.warning }
         return record.occurrenceRole == .additionalQuiet ? AppColors.lavender : AppColors.grass
+    }
+
+    private var statusSystemImage: String {
+        if record.outcome == .endedEarly { return "moon.stars.fill" }
+        return record.occurrenceRole == .additionalQuiet ? "sparkles" : "checkmark.circle.fill"
     }
 }
 
@@ -322,8 +417,18 @@ struct WindDownRecordDetailView: View {
                             detailMetric("Phone-away time", value: "\(record.creditedWindDownMinutes + record.creditedMorningQuietMinutes) min")
                         } else {
                             detailMetric("Quiet before bed", value: "\(record.creditedWindDownMinutes) min")
-                            detailMetric("Quiet after waking", value: "\(record.creditedMorningQuietMinutes) min")
-                            detailMetric("Total quiet", value: "\(record.creditedWindDownMinutes + record.creditedMorningQuietMinutes) min")
+                            if record.creditedMorningQuietMinutes > 0 {
+                                Divider()
+                                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                                    detailMetric(
+                                        "Earlier after-waking record",
+                                        value: "\(record.creditedMorningQuietMinutes) min"
+                                    )
+                                    Text("An earlier app version stored this value with Wind Down. It stays separate from Screen-Free Morning. No Morning details are inferred from it.")
+                                        .font(AppTypography.caption)
+                                        .foregroundStyle(AppColors.muted)
+                                }
+                            }
                         }
                         if record.briefAccessUseCount > 0 {
                             detailMetric(

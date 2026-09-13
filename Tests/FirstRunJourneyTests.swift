@@ -6,8 +6,8 @@ final class FirstRunJourneyTests: XCTestCase {
         XCTAssertEqual(CountingSheepOnboardingStep.ready.rawValue, 5)
         XCTAssertEqual(CountingSheepOnboardingStep.profile.rawValue, 6)
         XCTAssertEqual(
-            CountingSheepOnboardingStep.visibleSteps,
-            [.welcome, .profile, .recommendation, .gift, .schedule, .quiet, .protection, .ready]
+            CountingSheepOnboardingStep.legacyVisibleSteps,
+            [.welcome, .profile, .recommendation, .gift, .account, .schedule, .quiet, .protection, .ready]
         )
 
         var legacy = OnboardingDraft()

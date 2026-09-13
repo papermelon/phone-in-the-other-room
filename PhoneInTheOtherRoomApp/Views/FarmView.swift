@@ -8,7 +8,8 @@ struct FarmView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var selectedSheepID: UUID?
     @State private var contextualTip: CountingSheepContextualTip?
-    @State private var presentsOllieShop = false
+    @State private var presentsOllie = false
+    @State private var pasturePlayRequest: FarmPasturePlayAction?
     @State private var presentsShepherdCustomization = false
     let pastureVisitSeed: UInt64
     @Binding var opensNightFlock: Bool
@@ -25,28 +26,39 @@ struct FarmView: View {
     }
 
     var body: some View {
-        FarmDashboardContent(
-            state: viewModel.farmState,
-            searchState: viewModel.sheepSearchState,
-            protectedNightCount: viewModel.coordinator.progress.totalCompletedRuns,
-            isWindDownActive: viewModel.isRunning,
-            shepherdDisplayName: viewModel.shepherdDisplayName,
-            pastureVisitSeed: pastureVisitSeed,
-            persistedScene: viewModel.pastureSceneSnapshot,
-            showsGuideOffer: viewModel.orientationState.activeChapter == .farmTour
-                && viewModel.orientationState.presentationState == .offered,
-            onShowGuide: viewModel.startFarmGuide,
-            onExploreWithoutGuide: viewModel.deferFarmGuide,
-            nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
-            onOpenNightFlock: { nightFlockPartyID in
-                self.nightFlockPartyID = nightFlockPartyID
-                opensNightFlock = true
-            },
-            onPersistScene: viewModel.persistPastureSceneSnapshot,
-            onSelectOllie: { presentsOllieShop = true },
-            onSelectShepherd: { presentsShepherdCustomization = true },
-            onSelectSheep: { selectedSheepID = $0.id }
-        )
+        Group {
+            if viewModel.coordinator.farmSaveUnavailable {
+                FarmSaveNotice(
+                    message: viewModel.coordinator.farmSaveMessage ?? "Your Farm save could not be read. The original has been kept.",
+                    onRetry: viewModel.coordinator.retryFarmSave
+                )
+            } else {
+                FarmDashboardContent(
+                    state: viewModel.farmState,
+                    searchState: viewModel.sheepSearchState,
+                    protectedNightCount: viewModel.coordinator.progress.farmCompletedRuns,
+                    isWindDownActive: viewModel.isRunning,
+                    shepherdDisplayName: viewModel.shepherdDisplayName,
+                    pastureVisitSeed: pastureVisitSeed,
+                    persistedScene: viewModel.pastureSceneSnapshot,
+                    showsGuideOffer: viewModel.orientationState.activeChapter == .farmTour
+                        && viewModel.orientationState.presentationState == .offered,
+                    onShowGuide: viewModel.startFarmGuide,
+                    onExploreWithoutGuide: viewModel.deferFarmGuide,
+                    nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
+                    visitingSheepIDs: viewModel.nightFlockViewModel.visitingSheepIDs,
+                    onOpenNightFlock: { nightFlockPartyID in
+                        self.nightFlockPartyID = nightFlockPartyID
+                        opensNightFlock = true
+                    },
+                    onPersistScene: viewModel.persistPastureSceneSnapshot,
+                    onSelectOllie: { presentsOllie = true },
+                    onSelectShepherd: { presentsShepherdCustomization = true },
+                    playRequest: $pasturePlayRequest,
+                    onSelectSheep: { selectedSheepID = $0.id }
+                )
+            }
+        }
         .navigationDestination(isPresented: Binding(
             get: { selectedSheepID != nil },
             set: { if !$0 { selectedSheepID = nil } }
@@ -69,8 +81,11 @@ struct FarmView: View {
                 NightFlockHubView(viewModel: viewModel.nightFlockViewModel)
             }
         }
-        .navigationDestination(isPresented: $presentsOllieShop) {
-            FarmShopView(initialCategory: .ollie)
+        .navigationDestination(isPresented: $presentsOllie) {
+            OllieDetailView { action in
+                pasturePlayRequest = action
+                presentsOllie = false
+            }
                 .environmentObject(viewModel)
         }
         .navigationDestination(isPresented: $presentsShepherdCustomization) {
@@ -78,6 +93,11 @@ struct FarmView: View {
                 .environmentObject(viewModel)
         }
         .farmActionAlert(viewModel: viewModel)
+        .safeAreaInset(edge: .bottom) {
+            if !viewModel.coordinator.farmSaveUnavailable, let message = viewModel.coordinator.farmSaveMessage {
+                FarmSaveNotice(message: message, onRetry: viewModel.coordinator.retryFarmSave)
+            }
+        }
         .onAppear {
             viewModel.markOrientation(.farmExplored)
             viewModel.offerFarmGuideIfNeeded()
@@ -106,10 +126,12 @@ struct FarmDashboardContent: View {
     var onShowGuide: () -> Void = {}
     var onExploreWithoutGuide: () -> Void = {}
     var nightFlockSummary: NightFlockHomeSummary? = nil
+    var visitingSheepIDs: Set<UUID> = []
     var onOpenNightFlock: (UUID?) -> Void = { _ in }
     var onPersistScene: (PastureSceneSnapshot) -> Void = { _ in }
     var onSelectOllie: () -> Void = {}
     var onSelectShepherd: () -> Void = {}
+    var playRequest: Binding<FarmPasturePlayAction?> = .constant(nil)
     let onSelectSheep: (FlockSheep) -> Void
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -149,10 +171,15 @@ struct FarmDashboardContent: View {
                         onSelectOllie: onSelectOllie,
                         onSelectShepherd: onSelectShepherd,
                         scrollViewportSize: farmScrollViewportSize,
-                        tracksScrollViewport: true
+                        tracksScrollViewport: true,
+                        visitingSheepIDs: visitingSheepIDs,
+                        playRequest: playRequest
                     )
                     .contextualGuideTarget(.farm)
                     .orientationTourTarget(.farmPasture)
+                    if let credit = state.cumulativeCredit, !isWindDownActive {
+                        CumulativeFarmProgressCard(credit: credit)
+                    }
                     priorityCard
                     if let nightFlockSummary, !isWindDownActive {
                         NightFlockHomeCard(
@@ -216,7 +243,7 @@ struct FarmDashboardContent: View {
                     Text("HOW OLLIE’S SEARCHES WORK")
                         .font(pixelFont(.caption2))
                         .foregroundStyle(AppColors.grass)
-                    Text("Wind Down, Screen-Free Morning, and Phone Away are three separate sources.")
+                    Text("Three ways Ollie searches: Wind Down, Screen-Free Morning, and Phone Away.")
                         .font(AppTypography.body.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
                     Text("Open the guide to see when each one gives Ollie a look.")
@@ -230,7 +257,7 @@ struct FarmDashboardContent: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("How Ollie’s searches work. Wind Down, Screen-Free Morning, and Phone Away are three separate sources.")
+        .accessibilityLabel("Three ways Ollie searches: Wind Down, Screen-Free Morning, and Phone Away. Each keeps its own progress, guarantees, chances, and clues.")
     }
 
     @ViewBuilder
@@ -238,9 +265,9 @@ struct FarmDashboardContent: View {
         if isWindDownActive {
             priorityLabel(
                 icon: "moon.stars.fill",
-                eyebrow: "OLLIE IS ON THE TRAIL",
-                title: "Wind Down is still moving.",
-                detail: "Return to Home when you’re ready to see the live journey.",
+                eyebrow: "WIND DOWN IS ACTIVE",
+                title: "Wind Down is still running.",
+                detail: "Return to Home when you’re ready to see the live timer.",
                 showsDisclosure: false
             )
         } else if let pending = state.pendingSheep.first {
@@ -301,7 +328,7 @@ struct FarmDashboardContent: View {
                     icon: "map.fill",
                     eyebrow: "OLLIE’S SEARCH",
                     title: "Ollie’s Search is ready.",
-                    detail: "Choose one missing sheep for Ollie to favour."
+                    detail: "Choose one missing sheep for Ollie to favour after a successful find. This does not raise the chance of finding one."
                 )
             }
             .buttonStyle(.plain)
@@ -310,7 +337,7 @@ struct FarmDashboardContent: View {
                 icon: "pawprint.fill",
                 eyebrow: "THE PASTURE",
                 title: "The pasture is ready.",
-                detail: "Finish Wind Down and Ollie may bring a missing sheep home.",
+                detail: "Seven hours of Wind Down credit opens a search. Shorter sessions carry forward. Screen-Free Morning and Phone Away keep separate searches.",
                 showsDisclosure: false
             )
         }
@@ -461,7 +488,7 @@ struct FarmDashboardContent: View {
                 } else {
                     Text("Ollie is watching the empty gate.")
                         .font(AppTypography.headline)
-                    Text("The first completed Wind Down will start the Farm story.")
+                    Text("A resolved find or clue from any of Ollie’s three search paths will add to this Farm story.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                 }

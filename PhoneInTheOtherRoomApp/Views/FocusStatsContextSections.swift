@@ -17,6 +17,10 @@ struct NightsContextSection: View {
                 }
                 .padding(.bottom, AppSpacing.sm)
 
+                Divider()
+                WindDownHabitReflectionCard(day: Date(), embedded: true)
+                    .environmentObject(viewModel)
+
                 if record != nil {
                     Divider()
                     MorningCheckInCard(record: record, presentation: .embedded)
@@ -37,10 +41,7 @@ struct NightsContextSection: View {
     }
 
     private var contextSubtitle: String {
-        guard let record else {
-            return "Optional local context appears after a completed Wind Down."
-        }
-        return "Night ending \(record.plan.wakeTime.formatted(.dateTime.weekday(.wide).month(.wide).day()))"
+        "Private reflections and optional context."
     }
 }
 
@@ -242,7 +243,7 @@ struct NightsHealthContext: View {
         } else {
             comparisonText = "\(abs(difference)) minutes \(difference > 0 ? "longer" : "shorter")"
         }
-        return "Across \(comparison.protectedNightCount) nights the phone slept in the other room and \(comparison.baselineNightCount) other measured nights, recorded sleep averaged \(comparisonText) on those phone-away nights."
+        return "Across \(comparison.protectedNightCount) completed Wind Downs and \(comparison.baselineNightCount) other measured nights, recorded sleep averaged \(comparisonText) on the completed-Wind-Down nights. Completion records the app timer; it does not prove physical placement or sleep."
     }
 
     private func stageMetric(_ title: String, seconds: TimeInterval) -> some View {

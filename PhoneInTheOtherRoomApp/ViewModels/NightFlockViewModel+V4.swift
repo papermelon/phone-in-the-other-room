@@ -22,12 +22,6 @@ enum NightFlockV4CheerSendState: Equatable {
     case failed
 }
 
-enum NightFlockV4PartyObservationState: Equatable {
-    case notRequested
-    case refreshing(lastReceivedAt: Date?)
-    case current(lastReceivedAt: Date)
-    case stale(lastReceivedAt: Date?)
-}
 
 @MainActor
 extension NightFlockViewModel {
@@ -59,6 +53,7 @@ extension NightFlockViewModel {
         reconcileSharedHabitsLeaveFences(with: response.parties)
         v4ListState = visibleResponse
         let visiblePartyIDs = Set(visibleResponse.parties.map(\.partyID))
+        restorePastureVisitIndex(eligiblePartyIDs: visiblePartyIDs)
         await outbox?.retainUpdateCheers(in: visiblePartyIDs, epoch: generation)
         guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
         refreshSharedHabitsReceiptsForCurrentParties()
@@ -92,7 +87,6 @@ extension NightFlockViewModel {
         v4ObservedPartyObservationStates[partyID] = .refreshing(
             lastReceivedAt: v4ObservedPartyRefreshDates[partyID]
         )
-        phase = .loading
         let requestSequence = beginV4PartyDetailRequest()
         Task {
             defer {
@@ -117,7 +111,6 @@ extension NightFlockViewModel {
                 if let current = v4ObservedPartyDetail(for: partyID) {
                     selectedV4Party = current
                 }
-                phase = .ready
                 applyPendingV4GrantsIfPossible()
             } catch {
                 guard isCurrentTransportTask(generation: generation, epoch: transportEpoch),
@@ -128,14 +121,15 @@ extension NightFlockViewModel {
                 v4ObservedPartyObservationStates[partyID] = .stale(
                     lastReceivedAt: v4ObservedPartyRefreshDates[partyID]
                 )
-                presentNightFlockError(error, lane: .snapshot(schema: NightFlockV4Rules.schemaVersion))
+                partyRefreshFailures[partyID] = refreshFailure(for: error)
             }
         }
     }
 
     func refreshSelectedSlumberParty() {
         guard let partyID = selectedV4Party?.summary.partyID else { return }
-        selectSlumberParty(partyID, cursor: selectedV4Party?.cursor)
+        selectSlumberParty(partyID)
+        refreshSharedHabits(partyID: partyID)
     }
 
     func v4ObservedPartyDetail(for partyID: UUID) -> NightFlockV4PartyDetail? {
@@ -505,7 +499,7 @@ extension NightFlockViewModel {
 
     /// Factual social activity is independent from legacy shared-goal setup
     /// and from local reward-settlement eligibility. It records only a primary
-    /// Wind Down or an additional Phone Away—not practice or morning quiet.
+    /// Wind Down or an additional Phone Away—not practice or Screen-Free Morning.
     func publishV4TerminalActivity(for run: FocusRun) {
         guard NightFlockV4PublicationPolicy.allows(
             .terminal,
@@ -580,6 +574,12 @@ extension NightFlockViewModel {
         onResolvedNewParty: ((UUID) -> Void)? = nil
     ) {
         guard accountState == .linked, permitsNightFlockNetwork, let service else { return }
+        let acceptedNotice = NightFlockV4AcceptedCommandPresentation.notice(for: command)
+        if acceptedNotice != nil {
+            // A new consequence-bearing action owns the next acknowledgement;
+            // an older accepted notice must not survive its rejection.
+            warmNotice = nil
+        }
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         let directCommandPartyID = v4PartyID(for: command)
@@ -599,6 +599,9 @@ extension NightFlockViewModel {
                     return
                 }
                 commandAccepted = true
+                if let acceptedNotice {
+                    warmNotice = acceptedNotice
+                }
                 onSettled?(.success(()))
                 onAcceptedResponse?(response)
                 let resolvedPartyID = response.resolvedPartyID
@@ -668,7 +671,10 @@ extension NightFlockViewModel {
                     pendingV4ProfileMutation = nil
                 }
                 if !commandAccepted { onSettled?(.failure(error)) }
-                presentNightFlockError(error, lane: .directCommand(schema: NightFlockV4Rules.schemaVersion))
+                presentNightFlockError(
+                    error, lane: .directCommand(schema: NightFlockV4Rules.schemaVersion),
+                    actionTitle: NightFlockRefreshFailure.actionTitle(for: command, accepted: commandAccepted)
+                )
             }
         }
     }
@@ -676,7 +682,7 @@ extension NightFlockViewModel {
     /// The Farm integration installs this closure. Returning applied IDs keeps
     /// acknowledgement safely downstream of the existing durable reward ledger.
     func applyPendingV4GrantsIfPossible() {
-        guard let apply = onApplyV4RewardGrants else { return }
+        guard permitsFarmOwnerScopedSocialEffects, let apply = onApplyV4RewardGrants else { return }
         let pending = v4GrantInbox.filter { $0.acknowledgedAt == nil }
         let applied = apply(pending)
         guard !applied.isEmpty else { return }
@@ -797,6 +803,7 @@ extension NightFlockViewModel {
         let refreshedAt = Date()
         v4ObservedPartyRefreshDates[partyID] = refreshedAt
         v4ObservedPartyObservationStates[partyID] = .current(lastReceivedAt: refreshedAt)
+        partyRefreshFailures.removeValue(forKey: partyID)
         if v4InviteCodes[partyID]?.inviteID != detail.invitation?.inviteID {
             v4InviteCodes.removeValue(forKey: partyID)
         }
@@ -806,6 +813,8 @@ extension NightFlockViewModel {
         resumeResolvedSharedHabitsJoinAgreementIfPossible(partyID: partyID)
         v4GrantInbox = detail.grantInbox
         recoverUpdateCheers(in: detail)
+        recordPastureVisits(detail)
+        recoverPasture(partyID: partyID)
 
         // Do not replay a party's existing cheers when it is first selected.
         // A subsequent canonical refresh may surface only genuinely new totals.
@@ -1107,6 +1116,12 @@ extension NightFlockViewModel {
         v4RealtimeConnectedPartyIDs = []
         v4RefreshingPartyIDs = []
         v4ObservedPartyDetails = [:]
+        cachedPastureVisits = [:]
+        pastureMessages = [:]
+        pastureSending = []
+        pastureAttempts = []
+        pastureRefreshTokens = [:]
+        partyRefreshFailures = [:]
         v4ObservedPartyRefreshDates = [:]
         v4ObservedPartyObservationStates = [:]
         v4CheerSendStates = [:]

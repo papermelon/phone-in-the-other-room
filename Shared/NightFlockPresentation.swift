@@ -33,9 +33,9 @@ struct NightFlockAggregatePresentation: Equatable, Sendable {
         presentation(
             positiveCount: positiveCount,
             memberCount: memberCount,
-            allTitle: "The whole flock has tucked in.",
-            someTitle: "Someone in the flock has tucked in.",
-            countTitle: { "\($0) phones are resting away." },
+            allTitle: "The whole flock shared a Wind Down or Phone Away update.",
+            someTitle: "Someone in the flock shared a Wind Down or Phone Away update.",
+            countTitle: { "\($0) members shared a Wind Down or Phone Away update." },
             emptyDetail: "Your group’s shared progress will appear here when someone chooses to share an update.",
             positiveDetail: "Named progress is shown only inside this invited group."
         )
@@ -45,10 +45,10 @@ struct NightFlockAggregatePresentation: Equatable, Sendable {
         presentation(
             positiveCount: positiveCount,
             memberCount: memberCount,
-            allTitle: "The whole flock kept the morning quiet.",
-            someTitle: "A quiet morning reached the pasture.",
-            countTitle: { "\($0) quiet mornings reached the pasture." },
-            emptyDetail: "Your group’s morning progress will appear here when someone chooses to share an update.",
+            allTitle: "The whole flock shared a Screen-Free Morning update.",
+            someTitle: "A Screen-Free Morning update reached the pasture.",
+            countTitle: { "\($0) Screen-Free Morning updates reached the pasture." },
+            emptyDetail: "Your group’s Screen-Free Morning updates will appear here when someone chooses to share one.",
             positiveDetail: "No update shared is not counted as completion."
         )
     }
@@ -189,6 +189,75 @@ enum NightFlockHomeCardContext: Equatable, Sendable {
     case farm
 }
 
+/// Release UI must prove both the additive server capability and the exact
+/// party agreement before presenting fields outside the baseline V4 contract.
+/// Unknown capability versions fail closed through the response helpers.
+enum SlumberPartyReleasePresentationGate {
+    static func showsSharedHabits(
+        listState: NightFlockV4ListStateResponse?,
+        partyState: NightFlockSharedHabitsStateResponse?
+    ) -> Bool {
+        guard let capabilityVersion = listState?.sharedHabitsVersion,
+              let agreementVersion = partyState?.agreement?.agreementVersion
+        else { return false }
+        switch capabilityVersion {
+        case 1:
+            return agreementVersion == 1
+        case 2:
+            return agreementVersion == 1 || agreementVersion == 2
+        default:
+            return false
+        }
+    }
+
+    static func showsSharedNightPlans(
+        listState: NightFlockV4ListStateResponse?,
+        partyState: NightFlockSharedHabitsStateResponse?
+    ) -> Bool {
+        listState?.supportsSharedNightPlans == true
+            && partyState?.agreement?.agreementVersion == 2
+    }
+
+    static func showsSocialAvatar(
+        listState: NightFlockV4ListStateResponse?,
+        partyState: NightFlockSharedHabitsStateResponse?
+    ) -> Bool {
+        listState?.supportsProfileAvatar == true
+            && showsSharedHabits(listState: listState, partyState: partyState)
+    }
+
+    static func avatarID(
+        requested: String,
+        listState: NightFlockV4ListStateResponse?,
+        partyState: NightFlockSharedHabitsStateResponse?
+    ) -> String {
+        showsSocialAvatar(listState: listState, partyState: partyState)
+            ? requested
+            : SocialAvatarRules.shepherdID
+    }
+}
+
+enum NightFlockV4AcceptedCommandPresentation {
+    static func notice(for command: NightFlockV4Command) -> String? {
+        switch command {
+        case .replaceInvite:
+            return "New invitation accepted. The old code no longer works. Current members stay in the party."
+        case .revokeInvite:
+            return "Invitation revoked. That code no longer works. Current members stay in the party."
+        case .leaveParty:
+            return "Leave accepted. New sharing and group access have stopped. Earlier records follow the agreement you accepted."
+        case .deleteParty:
+            return "Party dissolved. Its invitation and group access are closed for everyone. Local Wind Down and Farm records stay on each phone."
+        case .blockMember:
+            return "Block accepted. You and this person no longer share groups or visibility, and cannot join a party together."
+        case .reportMember:
+            return "Report accepted. It does not block this person or promise a response or moderation outcome."
+        default:
+            return nil
+        }
+    }
+}
+
 struct NightFlockV4BridgePresentation: Equatable, Sendable {
     var eyebrow: String
     var title: String
@@ -208,26 +277,26 @@ struct NightFlockV4BridgePresentation: Equatable, Sendable {
                 detail = "Share quiet nights with family, a partner, or close friends."
             case .needsInvite:
                 title = summary.title
-                detail = "Invite someone, then start 7 nights together."
+                detail = "Invite someone you trust. Seven-night rounds begin with 2 people."
             case .readyHost:
                 title = summary.title
-                detail = "Ready to start 7 nights together."
+                detail = "Start the next seven-night round when you choose."
             case .readyMember:
                 title = summary.title
-                detail = "Waiting for the host to start 7 nights."
+                detail = "No round is running. The host can start the next seven nights."
             case let .active(night):
                 title = summary.title
                 detail = "\(summary.memberCount ?? 0) people · Your Wind Down or Phone Away can become a shared moment."
                 return Self(eyebrow: "SLUMBER PARTY · NIGHT \(night) OF 7", title: title, detail: detail)
             case .elapsedHost:
                 title = summary.title
-                detail = "These 7 nights are complete · Ready for another."
+                detail = "Last seven-night round complete · Start another when you choose."
             case .elapsedMember:
                 title = summary.title
-                detail = "These 7 nights are complete · Waiting for the host."
+                detail = "Last seven-night round complete · No round is running."
             case .multiple:
                 title = "\(summary.partyCount) Slumber Parties"
-                detail = "Choose a party to see its current 7 nights."
+                detail = "Choose a long-lived group to see its current round."
             }
             return Self(eyebrow: "SLUMBER PARTY", title: title, detail: detail)
         case .farm:
@@ -275,9 +344,11 @@ enum NightFlockV4PresentationLifecycle: Equatable, Sendable {
 
     var listStateTitle: String {
         switch self {
-        case .needsInvite: return "Invite someone to begin"
-        case .readyHost, .readyMember, .elapsedHost, .elapsedMember, .none, .multiple:
-            return "Ready for the next 7 nights"
+        case .needsInvite: return "Invite someone you trust"
+        case .readyHost, .readyMember, .none, .multiple:
+            return "Between seven-night rounds"
+        case .elapsedHost, .elapsedMember:
+            return "Last seven-night round complete"
         case let .active(night): return "Night \(night) of 7"
         }
     }
@@ -413,7 +484,7 @@ enum NightFlockV4Presentation {
                 memberCount: party.memberships.count,
                 headerStateTitle: "1 person · You’re hosting",
                 contextTitle: party.summary.supportsMembershipSharing ? "Invite someone to share with" : "Invite someone to begin",
-                contextDetail: party.summary.supportsMembershipSharing ? "Slumber Party is ready when someone you trust joins. Seven-night rounds need 2 people; sharing itself is not held for a round." : "Slumber Party starts with 2 people. Your group stays together after these 7 nights.",
+                contextDetail: party.summary.supportsMembershipSharing ? "Sharing begins when someone you trust joins. Seven-night rounds need 2 people; sharing itself is not held for a round." : "Slumber Party starts with 2 people. Your group stays together after these 7 nights.",
                 hostActionTitle: nil,
                 sharedMomentCount: count,
                 sharedMomentRecap: recap
@@ -423,7 +494,7 @@ enum NightFlockV4Presentation {
                 lifecycle: lifecycle,
                 memberCount: party.memberships.count,
                 headerStateTitle: "\(party.memberships.count) people · You’re hosting",
-                contextTitle: "Ready to start 7 nights together",
+                contextTitle: "Start the next seven-night round",
                 contextDetail: party.summary.supportsMembershipSharing ? "People can share Wind Down and Phone Away moments now. Starting seven nights organizes progress and rewards." : "Shared sessions appear here after you start these 7 nights. Each person uses their own Wind Down or Phone Away.",
                 hostActionTitle: "Start 7 nights",
                 sharedMomentCount: count,
@@ -434,7 +505,7 @@ enum NightFlockV4Presentation {
                 lifecycle: lifecycle,
                 memberCount: party.memberships.count,
                 headerStateTitle: "\(party.memberships.count) people · You’re a member",
-                contextTitle: party.summary.supportsMembershipSharing ? "Choose the next seven nights when ready" : "Waiting for the host to begin",
+                contextTitle: party.summary.supportsMembershipSharing ? "The next round begins when your group chooses" : "No round is running",
                 contextDetail: party.summary.supportsMembershipSharing ? "People can share Wind Down and Phone Away moments now. The next seven nights organize progress and rewards." : "Shared sessions appear here after the host starts seven nights. You’ll still use your own Wind Down or Phone Away.",
                 hostActionTitle: nil,
                 sharedMomentCount: count,
@@ -478,7 +549,7 @@ enum NightFlockV4Presentation {
                 lifecycle: lifecycle,
                 memberCount: party.memberships.count,
                 headerStateTitle: "\(party.memberships.count) people",
-                contextTitle: "Ready for the next 7 nights",
+                contextTitle: "Between seven-night rounds",
                 contextDetail: "Each person uses their own Wind Down or Phone Away.",
                 hostActionTitle: nil,
                 sharedMomentCount: count,
@@ -623,10 +694,10 @@ enum NightFlockV4Presentation {
         let latestMode = activity.status == .completed ? mode : "\(mode) ended early"
         return NightFlockV4ActivityPresentation(
             modeTitle: mode,
-            minutesTitle: "\(max(0, activity.roundedMinutes)) min · rounded",
+            minutesTitle: minutesTitle(kind: activity.kind, status: activity.status, roundedMinutes: activity.roundedMinutes),
             nightTitle: "Night \(activity.day)",
             outcomeTitle: outcome,
-            latestMemberLine: "App-recorded/self-reported · \(latestMode) · \(max(0, activity.roundedMinutes)) min (rounded) · Night \(activity.day)"
+            latestMemberLine: "App-recorded/self-reported · \(latestMode) · \(minutesFragment(kind: activity.kind, status: activity.status, roundedMinutes: activity.roundedMinutes)) · Night \(activity.day)"
         )
     }
 
@@ -637,11 +708,32 @@ enum NightFlockV4Presentation {
         let association = activity.day.map { "Night \($0)" } ?? "Recent shared moment"
         return NightFlockV4ActivityPresentation(
             modeTitle: mode,
-            minutesTitle: "\(max(0, activity.roundedMinutes)) min · rounded",
+            minutesTitle: minutesTitle(kind: activity.kind, status: activity.status, roundedMinutes: activity.roundedMinutes),
             nightTitle: association,
             outcomeTitle: outcome,
-            latestMemberLine: "App-recorded/self-reported · \(latestMode) · \(max(0, activity.roundedMinutes)) min (rounded)"
+            latestMemberLine: "App-recorded/self-reported · \(latestMode) · \(minutesFragment(kind: activity.kind, status: activity.status, roundedMinutes: activity.roundedMinutes))"
         )
+    }
+
+    /// Shared minutes are before-bed minutes for Wind Down. A completed Wind
+    /// Down that began at or after bedtime truthfully carries zero of them;
+    /// showing "0 min" beside "Completed" reads as nothing happened, so the
+    /// zero case is explained instead of printed.
+    static func minutesTitle(kind: NightFlockV4ActivityKind, status: NightFlockV4ActivityStatus, roundedMinutes: Int) -> String {
+        let minutes = max(0, roundedMinutes)
+        guard minutes == 0 else { return "\(minutes) min · rounded" }
+        switch (kind, status) {
+        case (.windDown, .completed): return "0 before-bed min recorded · rounded"
+        case (.windDown, _): return "No before-bed minutes"
+        case (.phoneAway, .completed): return "Under a minute counted"
+        case (.phoneAway, _): return "Under a minute"
+        }
+    }
+
+    static func minutesFragment(kind: NightFlockV4ActivityKind, status: NightFlockV4ActivityStatus, roundedMinutes: Int) -> String {
+        let minutes = max(0, roundedMinutes)
+        guard minutes == 0 else { return "\(minutes) min (rounded)" }
+        return minutesTitle(kind: kind, status: status, roundedMinutes: 0).lowercased()
     }
 
     static func recentSharedActivities(in party: NightFlockV4PartyDetail, at date: Date = Date()) -> [NightFlockV4SharedActivity] {
@@ -801,9 +893,9 @@ enum NightFlockV4Presentation {
     private static func liveStatusTitle(_ status: NightFlockV4LiveStatusKind) -> String {
         switch status {
         case .windDownStarting: return "Wind Down is starting"
-        case .phoneAwayActive: return "Phone is away"
-        case .windDownCompleted: return "Wind Down completed"
-        case .phoneAwayCompleted: return "Phone Away completed"
+        case .phoneAwayActive: return "Phone Away timer is active"
+        case .windDownCompleted: return "Wind Down recorded complete"
+        case .phoneAwayCompleted: return "Phone Away recorded complete"
         }
     }
 
@@ -933,53 +1025,5 @@ enum NightFlockMemberBoard {
                 sharedRoutineTitles: sharing.shareRoutineIdeas ? routines : []
             )
         }
-    }
-}
-
-/// Release UI must prove both the additive server capability and the exact
-/// party agreement before presenting fields outside the baseline V4 contract.
-/// Unknown capability versions fail closed through the response helpers.
-enum SlumberPartyReleasePresentationGate {
-    static func showsSharedHabits(
-        listState: NightFlockV4ListStateResponse?,
-        partyState: NightFlockSharedHabitsStateResponse?
-    ) -> Bool {
-        guard let capabilityVersion = listState?.sharedHabitsVersion,
-              let agreementVersion = partyState?.agreement?.agreementVersion
-        else { return false }
-        switch capabilityVersion {
-        case 1:
-            return agreementVersion == 1
-        case 2:
-            return agreementVersion == 1 || agreementVersion == 2
-        default:
-            return false
-        }
-    }
-
-    static func showsSharedNightPlans(
-        listState: NightFlockV4ListStateResponse?,
-        partyState: NightFlockSharedHabitsStateResponse?
-    ) -> Bool {
-        listState?.supportsSharedNightPlans == true
-            && partyState?.agreement?.agreementVersion == 2
-    }
-
-    static func showsSocialAvatar(
-        listState: NightFlockV4ListStateResponse?,
-        partyState: NightFlockSharedHabitsStateResponse?
-    ) -> Bool {
-        listState?.supportsProfileAvatar == true
-            && showsSharedHabits(listState: listState, partyState: partyState)
-    }
-
-    static func avatarID(
-        requested: String,
-        listState: NightFlockV4ListStateResponse?,
-        partyState: NightFlockSharedHabitsStateResponse?
-    ) -> String {
-        showsSocialAvatar(listState: listState, partyState: partyState)
-            ? requested
-            : SocialAvatarRules.shepherdID
     }
 }

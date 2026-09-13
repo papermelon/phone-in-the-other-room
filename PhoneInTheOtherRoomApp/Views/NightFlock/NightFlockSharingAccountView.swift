@@ -151,7 +151,7 @@ struct NightFlockSharingAccountView: View {
         .confirmationDialog("Delete full online account?", isPresented: $showAccountDeletionConfirmation) {
             Button("Delete full online account", role: .destructive, action: viewModel.deleteOnlineAccount)
         } message: {
-            Text("Your local Wind Down, Nights, Farm, and rewards stay on this iPhone.")
+            Text("This deletes your account, its online Farm and Slumber Party data, and its saved Farm on this phone. You’ll be signed out.")
         }
     }
 }

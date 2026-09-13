@@ -77,6 +77,14 @@ enum WindDownGuidanceLibrary {
             sourceIDs: ["nhlbi-healthy-sleep"]
         ),
         WindDownGuidanceItem(
+            id: "exercise-timing-experiment",
+            topic: .lightAndTiming,
+            title: "Notice when movement suits you",
+            body: "Daytime movement can give the day shape. If intense exercise near bed feels activating, try it earlier and notice what fits you.",
+            phase: .windDown,
+            sourceIDs: ["nhlbi-healthy-sleep"]
+        ),
+        WindDownGuidanceItem(
             id: "steady-wake",
             topic: .lightAndTiming,
             title: "Give morning a familiar shape",

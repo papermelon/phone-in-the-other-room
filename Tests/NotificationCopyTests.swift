@@ -65,19 +65,47 @@ final class NotificationCopyTests: XCTestCase {
             ]
         )
 
-        XCTAssertEqual(copy.title, "A quick protection note")
+        XCTAssertEqual(copy.title, "Selected-app limits need attention")
         XCTAssertFalse(copy.body.contains("A different body"))
+    }
+
+    func testDefaultNotificationCopyUsesTimerFactsAndRoleAwareShieldFailure() {
+        let moments: [NightWatchNotificationMoment] = [
+            .windDownLeadIn(minutes: 60), .windDownLeadIn(minutes: 30),
+            .windDownLeadIn(minutes: 10), .windDownReminder, .windDownMidpoint,
+            .sleepTime, .phoneFreeMorning, .morningMidpoint,
+            .usageCue(.windDown), .usageCue(.overnight), .usageCue(.morningQuiet),
+            .complete, .quietPeriodComplete
+        ]
+        let defaults = moments.map {
+            NightWatchGuidance.notificationCopy(for: $0)
+        }
+        let copy = defaults.map { "\($0.title) \($0.body)" }
+            .joined(separator: " ")
+            .lowercased()
+        for forbidden in ["tucked away", "phone rests", "phone slept", "phone can wake", "phone-free minutes"] {
+            XCTAssertFalse(copy.contains(forbidden), "Unexpected notification claim: \(forbidden)")
+        }
+
+        XCTAssertTrue(NightWatchGuidance.notificationCopy(
+            for: .shieldingFailed,
+            role: .additionalQuiet
+        ).body.contains("Phone Away"))
+        XCTAssertTrue(NightWatchGuidance.notificationCopy(
+            for: .shieldingFailed,
+            role: .screenFreeMorning
+        ).body.contains("Screen-Free Morning"))
     }
 
     func testCopyOverrideRoundTripsAndCanBeReset() throws {
         var preferences = NotificationPreferences.defaults
         preferences.setCopyOverride(
-            NotificationCopyOverride(id: .complete, title: "Wake", body: "The phone can wake.")
+            NotificationCopyOverride(id: .complete, title: "Timer ended", body: "Open the timer record.")
         )
         let data = try JSONEncoder().encode(preferences)
         let decoded = try JSONDecoder().decode(NotificationPreferences.self, from: data)
 
-        XCTAssertEqual(decoded.copyOverride(for: .complete)?.title, "Wake")
+        XCTAssertEqual(decoded.copyOverride(for: .complete)?.title, "Timer ended")
         var reset = decoded
         reset.resetCopy(for: .complete)
         XCTAssertNil(reset.copyOverride(for: .complete))

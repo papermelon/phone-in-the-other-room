@@ -202,8 +202,8 @@ struct SheepTrailMapPresentation: Equatable {
                 : "Every \(SheepTrailMapState.maximumMappedMinutes) completed Phone Away minutes, Ollie looks for a missing sheep."
         } else {
             detail = minutes == SheepTrailMapState.maximumMappedMinutes
-                ? "Search progress is full. It will wait until three Wind Downs are complete."
-                : "These minutes are saved. Ollie looks for a missing sheep after three Wind Downs."
+                ? "Search progress is full. It will wait until three qualifying Wind Downs are complete."
+                : "These minutes are saved. Phone Away searches open after three qualifying Wind Downs."
         }
         return Self(
             title: "Phone Away search progress · \(minutes) / \(SheepTrailMapState.maximumMappedMinutes) minutes",

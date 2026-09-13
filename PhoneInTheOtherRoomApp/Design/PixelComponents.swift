@@ -30,7 +30,7 @@ struct PixelAssetImage: View {
     var body: some View {
         Image(name)
             .resizable()
-            .interpolation(.none)
+            .interpolation([AssetSlot.Farm.sharedMeadowDusk, AssetSlot.Farm.backgroundDay, AssetSlot.Farm.barn].contains(name) ? .high : .none)
             .antialiased(false)
             .aspectRatio(contentMode: contentMode)
     }
@@ -829,7 +829,7 @@ struct FocusSessionStartBar: View {
         Button(action: action) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Start Wind Down")
+                    Text("Put phone away")
                         .font(PixelTypography.title(.title3))
                     Text("Tuck your phone in for the night")
                         .font(PixelTypography.title(.caption))

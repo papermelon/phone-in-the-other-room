@@ -160,6 +160,7 @@ struct BriefAccessLedgerEntry: Codable {
     let runID: UUID
     let successfulUseCount: Int
     let updatedAt: Date
+    var uses: [BriefAccessUse]? = nil
 }
 
 struct BriefAccessShieldActionState: Codable {
@@ -243,7 +244,7 @@ struct BriefAccessShieldActionState: Codable {
         successfulUses.append(
             BriefAccessUse(nonce: nonce, requestedAt: grant.requestedAt, expiresAt: grant.expiresAt)
         )
-        successfulUses = Array(successfulUses.suffix(Self.maximumHistoryCount))
+        // Retain all access intervals for the current run.
         rejectedGrantNonce = nil
         rejectedAt = nil
         archivedAt = nil
@@ -268,12 +269,20 @@ struct BriefAccessShieldActionState: Codable {
 
     mutating func archiveCurrentRun(at date: Date) {
         if successfulUseCount > 0 {
+            let prior = completedRunCounts.first { $0.runID == runID }
+            var uses = prior?.uses ?? []
+            for use in successfulUses where !uses.contains(where: { $0.nonce == use.nonce }) {
+                uses.append(use)
+            }
+            let missing = max(max(0, (prior?.successfulUseCount ?? 0) - (prior?.uses?.count ?? 0)),
+                              max(0, successfulUseCount - successfulUses.count))
             completedRunCounts.removeAll { $0.runID == runID }
             completedRunCounts.insert(
                 BriefAccessLedgerEntry(
                     runID: runID,
-                    successfulUseCount: successfulUseCount,
-                    updatedAt: date
+                    successfulUseCount: uses.count + missing,
+                    updatedAt: date,
+                    uses: uses
                 ),
                 at: 0
             )

@@ -5,6 +5,7 @@ import SwiftUI
 struct SlumberPartySharedHabitsConsentDisclosure: View {
     let partyName: String
     let includesSharedNightPlans: Bool
+    var actionLead: String? = nil
     var receiptIsPending = false
     var isSaving = false
     var isCheckingReceipt = false
@@ -25,7 +26,11 @@ struct SlumberPartySharedHabitsConsentDisclosure: View {
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Accepted history stays for this party’s lifetime, including after you leave. You can request deletion of your shared records.")
+                Text("Wind Down and Phone Away summaries come from app-recorded entries on the member’s iPhone and are self-reported to Slumber Party. They are not independently verified. Sleep duration is derived only when Apple Health has an eligible record.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Leaving stops future sharing and group access. Earlier shared records may remain visible unless a separate removal request is accepted.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -48,12 +53,12 @@ struct SlumberPartySharedHabitsConsentDisclosure: View {
                         Text("Coverage shows the available nights behind a summary. Missing data is unavailable, not a missed habit.")
                         if includesSharedNightPlans {
                             Text("The group also receives a plan rounded to five minutes for your next seven local nights: Wind Down timing, bedtime and wake bookends for comparison, and ordered bundled routine ideas.")
-                            Text("Factual nightly results can include rounded start and terminal timing, outcome and minutes, protection evidence, and emergency-exit status. Missing evidence stays unknown. Ideas are planned context, never verified completion.")
+                            Text("App-recorded nightly results can include rounded start and terminal timing, outcome and minutes, protection evidence, and emergency-exit status. Missing evidence stays unknown. Ideas are planned context, never verified completion.")
                             Text("Your recurrence rule, custom routine text, exact app identity, per-app use, raw Health samples, Screen Time tokens, and phone-bed credentials stay private.")
                         } else {
                             Text("Your recurrence rule, routine ideas and custom text, exact times, raw Health samples, app identity, per-app use, Screen Time tokens, and phone-bed credentials stay private.")
                         }
-                        Text("Leaving stops future sharing and group access. Earlier accepted records remain in the archive unless a deletion request is completed.")
+                        Text("Leaving stops future sharing and group access. Account and safety offers a separate request to remove your earlier shared records; Counting Sheep confirms that request separately.")
                     }
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
@@ -91,9 +96,9 @@ struct SlumberPartySharedHabitsConsentDisclosure: View {
     }
 
     private var summaryDisclosure: String {
-        let action = onConfirm == nil ? "Joining includes sharing" : "Confirm to share"
+        let action = actionLead ?? (onConfirm == nil ? "Continuing shares" : "Confirm to share")
         if includesSharedNightPlans {
-            return "\(action) dated sleep-duration, Wind Down, and Phone Away summaries, plus your rounded next-seven-night Wind Down plan and factual nightly results, with current and future members of \(partyName)."
+            return "\(action) dated sleep-duration, Wind Down, and Phone Away summaries, plus your rounded next-seven-night Wind Down plan and app-recorded nightly results, with current and future members of \(partyName)."
         }
         return "\(action) dated sleep-duration, Wind Down, and Phone Away summaries with current and future members of \(partyName)."
     }

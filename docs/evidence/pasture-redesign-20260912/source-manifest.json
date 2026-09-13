@@ -1,0 +1,272 @@
+[
+  {
+    "path": "Assets.xcassets/farm/farm_background_day.imageset/farm_background_day.png",
+    "change": "modified",
+    "sha256": "308696db7c1b56ce8bbeac3eb8b31a2561d2d2abae283b67f188812be071600f"
+  },
+  {
+    "path": "Assets.xcassets/farm/farm_barn.imageset/farm_barn.png",
+    "change": "modified",
+    "sha256": "b25f124a3c0e1d4543ed9e35716463af497cdea0e5459c1f0b1a174c41382921"
+  },
+  {
+    "path": "Assets.xcassets/farm/farm_hills_side_scroll_test.imageset/Contents.json",
+    "change": "retired",
+    "sha256": null
+  },
+  {
+    "path": "Assets.xcassets/farm/farm_hills_side_scroll_test.imageset/farm_hills_side_scroll_test.png",
+    "change": "retired",
+    "sha256": null
+  },
+  {
+    "path": "Assets.xcassets/generated_sources/counting-sheep-sprite-sheet-gpt-image-2.png",
+    "change": "retired",
+    "sha256": null
+  },
+  {
+    "path": "Assets.xcassets/generated_sources/farm-background-day-gpt-image-2.png",
+    "change": "retired",
+    "sha256": null
+  },
+  {
+    "path": "PhoneInTheOtherRoom.xcodeproj/project.pbxproj",
+    "change": "modified",
+    "sha256": "5d593e57601e84a0407f01164b4bf4a216d302dea7ad690d637fbd13d3d13d3b"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Design/PixelComponents.swift",
+    "change": "modified",
+    "sha256": "2979743d60fdc3e5e35d95f87798387a03f8afdb2aed4d5b1dcfd42467a9c758"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Services/NightFlockService.swift",
+    "change": "modified",
+    "sha256": "4d0de1ed037a7462a8e9b52475f61870a970bc4504cf827eb0f2f9fcd39ffd72"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Services/SharedPastureOutboxService.swift",
+    "change": "new",
+    "sha256": "ba900a0e8ad0dd4fbdd18a5b47a5721097f449e72a6add1e383d7dcc955aa598"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Pasture.swift",
+    "change": "new",
+    "sha256": "6c7b7fb54e0bfe8abcf65dd648f54fcb5a309f32838dbc0cf2b8813b1b058ec1"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+V4.swift",
+    "change": "modified",
+    "sha256": "046ffa895ae0a97dee0402ebfef572d68a6164a3c12e0cde421cddd7122c124f"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel.swift",
+    "change": "modified",
+    "sha256": "539ac99e85a8c073d9a77b12f64cd9104edf8a56a98dc7de9bef03815cde991f"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/ViewModels/PastureSceneController.swift",
+    "change": "modified",
+    "sha256": "ce60af6866ef7bbdcf664f87877ba20e02097e3a3c7481afc00cb88a88c92ecd"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/ViewModels/SharedMeadowSceneController.swift",
+    "change": "modified",
+    "sha256": "ae2c7b97fbaa268a8275d2eb7411776051a9fa7d008ff47286fe22d81a9b1992"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/BarnView.swift",
+    "change": "modified",
+    "sha256": "a6f84bec08e8e7e954c535c7beabb4823b5914ad03f801bf595a89d4611282b6"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/Components/PastureCharacterHitTarget.swift",
+    "change": "modified",
+    "sha256": "c1a6e487b23c748f7b9b057544be5c359f8be07bec1828e82ff692053d9c7bf7"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/FarmPastureView.swift",
+    "change": "modified",
+    "sha256": "89c90f020f9cd15b3b4883ec1198aa79fb52ed12ceb901cb48b114c73a53ad10"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/FarmView.swift",
+    "change": "modified",
+    "sha256": "91b03e62576d45d4175a797d349ae14035791765d854b09e5885c72c37438649"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/HomeView.swift",
+    "change": "modified",
+    "sha256": "6971f1378465423d17399c85d20558ade8fb0c08daa59cba950b782724a1f44d"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/NightFlock/SharedPastureControls.swift",
+    "change": "new",
+    "sha256": "7a610b42b2b0f2f9ae1a625b51ef8b70d0a56bc5a048c1e98bdcc68f859353cf"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyGroupStreamView.swift",
+    "change": "new",
+    "sha256": "54e6fe171c9d655e94a022ab9d6aad5be79cfc57b367697018cba875d438f4c3"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyPastureView.swift",
+    "change": "new",
+    "sha256": "6500a453b4146575387ba49c03dc1c7fb2b47c5816ba67c228e4f8eba93cd5d5"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift",
+    "change": "modified",
+    "sha256": "efe55a895cbbac9949a8497947ba6dfa818adc4920145f8dd25b895d7f99ee07"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmView.swift",
+    "change": "modified",
+    "sha256": "b856344b724864ad608b6be311d04e9a9f5d4585bd776ccceb4027331f5d670c"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4MemberCard.swift",
+    "change": "modified",
+    "sha256": "e7a6782e35d5633809e92f71cd7da826fc463e9bb7e73f021ea41fbf1cd2e4ca"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4MembershipActivitiesSection.swift",
+    "change": "modified",
+    "sha256": "c35d6b609db61007cfb45f3f9b978829c2e7084a0d7137968b18760d5a02273c"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4PartyDetailView.swift",
+    "change": "modified",
+    "sha256": "78c345dd2e3a1a11042e2279b003b794206a0848b5933cfb9d50e7f36958d403"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/NightsDayDetailView.swift",
+    "change": "modified",
+    "sha256": "01454164250025825da91370dab657015fa2a21e196efc31a8947e2272135d55"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/OllieDetailView.swift",
+    "change": "new",
+    "sha256": "74c3c596026cf89511cc3c1026a019533e6db179128913e222f47fddba31ac77"
+  },
+  {
+    "path": "PhoneInTheOtherRoomApp/Views/ShepherdCustomizationView.swift",
+    "change": "modified",
+    "sha256": "9fa33f77fc65a68c0e19f9f3e3e8656aca6abe57fe188efe58f097426ebd5059"
+  },
+  {
+    "path": "Shared/NightFlockPresentation.swift",
+    "change": "modified",
+    "sha256": "b9095ba1065a087bb47b12e0bbc4f90b7c0c621803ceec17b4018d9e0fc919cc"
+  },
+  {
+    "path": "Shared/NightFlockRemoteError.swift",
+    "change": "modified",
+    "sha256": "0d238b2d05aae293ffb950c28b0fd631af499e6104af25f3083e207e4a828d83"
+  },
+  {
+    "path": "Shared/NightFlockV4Models.swift",
+    "change": "modified",
+    "sha256": "6644641c6002708f19fc708572161e8c9596b9b3968c9d35e837a63ee3b8d8b5"
+  },
+  {
+    "path": "Shared/PasturePlay.swift",
+    "change": "new",
+    "sha256": "5f68e9a216c96c27ff5e755943b97cf981ced914d451f90c3ba9234008501f25"
+  },
+  {
+    "path": "Shared/SharedMeadow.swift",
+    "change": "modified",
+    "sha256": "02a4182a8116f744e05f5cd0603e62db862c5d7ef8e1dac45f15ed00425b7dd6"
+  },
+  {
+    "path": "Shared/SharedPasture.swift",
+    "change": "new",
+    "sha256": "4df491ad88c343851c223413dd4218f5d678957535e347533967bfc9e44e1762"
+  },
+  {
+    "path": "Shared/SlumberPartySharedFarm.swift",
+    "change": "modified",
+    "sha256": "11053936c050abf1ca718577da01d85c3865c0e1b4ed0840b618cd9326bf0e04"
+  },
+  {
+    "path": "Tests/SharedMeadowTests.swift",
+    "change": "modified",
+    "sha256": "3062cc92e2c92a43cef51ab14c7bf9485429c82a003744ca1ace7dc4d70b615a"
+  },
+  {
+    "path": "Tests/SharedPastureTests.swift",
+    "change": "new",
+    "sha256": "02870f7b52eeb0d7fbbc1c1f3f4aaaf4953136c8e1af3044dba0f6f06af1a570"
+  },
+  {
+    "path": "Tests/SlumberPartySharedFarmTests.swift",
+    "change": "modified",
+    "sha256": "f29649b65f1f3cb192f98a0af3005d5d15a2290ec47705e5d5f3ed1e5f4d4fe4"
+  },
+  {
+    "path": "docs/DECISIONS/ADR-0016-invite-only-night-flock.md",
+    "change": "modified",
+    "sha256": "ead72ed535fb10b36ae5ce469180507cd402763a8953c096dbd167bccf5849cc"
+  },
+  {
+    "path": "docs/FUTURE_AGENT_TASKS.md",
+    "change": "modified",
+    "sha256": "43954d2e4317cab82679ec1526124595793f88b28ff63f64aa78f9c2481a74c5"
+  },
+  {
+    "path": "docs/PRODUCT_DIRECTION.md",
+    "change": "modified",
+    "sha256": "10f92a050d583742ba681c402bf101f8467c5ce9d6af796b8dff586599029f64"
+  },
+  {
+    "path": "docs/plans/farm-art-retirement-2026-09-12.md",
+    "change": "modified",
+    "sha256": "a5f590c84de7124f7a08c2299c34017d79b2d242f8fe53813f0508df168e5016"
+  },
+  {
+    "path": "docs/plans/slumber-party-pasture-redesign-2026-09-12.md",
+    "change": "modified",
+    "sha256": "5b15cf98b4fc9099573d5bc2051e20c7f2feb67f6282e8863c85b0949383da5a"
+  },
+  {
+    "path": "project.yml",
+    "change": "modified",
+    "sha256": "6633c92d1e8e9f4f455db4f525291b23fdb8ff0475411d0aaa01f81344642065"
+  },
+  {
+    "path": "supabase/functions/_shared/night-flock-errors.ts",
+    "change": "modified",
+    "sha256": "0f70534a79fdd0a1345c0972f2130f833bfc04bcc8d4323f71abadde0719b3de"
+  },
+  {
+    "path": "supabase/functions/_shared/night-flock-handlers.ts",
+    "change": "modified",
+    "sha256": "431114f674e07d6dda00c48c23341922819c52d880d5b59eb28cd09669caa9b2"
+  },
+  {
+    "path": "supabase/functions/_shared/night-flock.ts",
+    "change": "modified",
+    "sha256": "ecbc83a6e0c6a731d2137f490ed67e7622ee618deacbde994b2efb9b165ac89c"
+  },
+  {
+    "path": "supabase/migrations/20260912120000_shared_pasture.sql",
+    "change": "new",
+    "sha256": "eaec5006588a8bb7e125cd740a9e732f4e874de0d3b42f40d7afec1dfdfd2f6a"
+  },
+  {
+    "path": "supabase/tests/shared_pasture_concurrency.py",
+    "change": "new",
+    "sha256": "28d27d6915c53ec980289f21d7285ffa307abed2aaa4a6b80205733885335ddc"
+  },
+  {
+    "path": "supabase/tests/shared_pasture_test.sql",
+    "change": "new",
+    "sha256": "bf0cccbefc09203e7adf57f7cbfca49b615d280570b9db8e4490b33665aeb6b4"
+  },
+  {
+    "path": "supabase/tests/shared_pasture_validation.mjs",
+    "change": "new",
+    "sha256": "b2a245138a418f359d214cb93be53861b57b42d35bb5a65033beded3ac2eec2a"
+  }
+]

@@ -4,6 +4,8 @@ enum NightFlockRemoteErrorCode: String, Codable, Equatable, Sendable {
     case unauthorized
     case linkedAccountRequired = "linked_account_required"
     case methodNotAllowed = "method_not_allowed"
+    case pastureSheepNotOwned = "pasture_sheep_not_owned"
+    case pastureSheepAlreadyVisiting = "pasture_sheep_already_visiting"
     case invalidRequest = "invalid_request"
     case unsupportedSchema = "unsupported_schema"
     case activeMembershipExists = "active_membership_exists"
@@ -94,6 +96,7 @@ enum NightFlockObservedAccountSession: Equatable, Sendable {
     case missing
     case anonymous
     case appleLinked(UUID)
+    case passwordLinked(UUID)
     case unsupported
 }
 
@@ -164,7 +167,7 @@ enum NightFlockAccountSessionPolicy {
             case .invalid:
                 return .failClosed(signOutLocalSession: true)
             }
-        case let .appleLinked(id):
+        case let .appleLinked(id), let .passwordLinked(id):
             switch expectedIdentity {
             case .absent:
                 return .returnLinked(adopting: id)
@@ -620,6 +623,10 @@ enum NightFlockRelaunchReconciliationPolicy {
 /// be a server-side deletion whose response was lost, so no transport or
 /// account inspection can safely occur and the command is never replayed.
 enum NightFlockAccountDeletionIntentPolicy {
+    static func permitsFarmTransport(restored: Bool, deleting: Bool, phase: Phase) -> Bool {
+        restored && !deleting && permitsAdmission(phase: phase)
+    }
+
     enum Phase: Equatable, Sendable {
         case complete
         case pendingPreflight
@@ -773,9 +780,11 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
 
     var errorDescription: String? {
         switch code {
-        case .unauthorized: return "Please link your Apple account to continue."
-        case .linkedAccountRequired: return "Link your Apple account to join Slumber Party."
-        case .methodNotAllowed, .invalidRequest: return "Slumber Party could not understand that request."
+        case .unauthorized: return "Reconnect the Apple account already linked to Slumber Party."
+        case .linkedAccountRequired: return "Use Apple sign-in to link this account or reopen an existing Counting Sheep account."
+        case .pastureSheepNotOwned: return "Save this sheep to your account before sending it to visit."
+        case .pastureSheepAlreadyVisiting: return "This sheep is already visiting another party. Bring it home first."
+        case .methodNotAllowed, .invalidRequest: return "Slumber Party couldn’t accept the app’s request."
         case .unsupportedSchema: return "Slumber Party needs a newer connection."
         case .activeMembershipExists: return "You already have a Slumber Party."
         case .aliasConflict: return "Ollie couldn’t choose a unique alias for this lobby."

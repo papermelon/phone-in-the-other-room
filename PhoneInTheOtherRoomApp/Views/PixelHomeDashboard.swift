@@ -16,6 +16,9 @@ struct PixelHomeDashboard: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @ObservedObject private var watch: WatchConnectivityManager
     @Binding private var destination: PixelHomeDashboardDestination?
+    @State private var showsRoutineReview = false
+    @State private var showsPersonalization = false
+    @State private var personalizationStep: OnboardingPersonalizationStep = .startingPoint
     private let homeScrollViewportSize: CGSize
 
     init(
@@ -44,12 +47,15 @@ struct PixelHomeDashboard: View {
             nextUpcoming: viewModel.nextUpcomingAdditionalQuietPeriod,
             upcomingAdditionalCount: viewModel.upcomingAdditionalQuietPeriods.count,
             immediateAdditionalQuietMinutes: viewModel.immediateAdditionalQuietMinutes,
-            phoneBreakMeterMinutes: viewModel.sheepSearchState.trailMap.pendingMappedMinutes,
+            phoneBreakMeterMinutes: Int((viewModel.farmState.cumulativeCredit?.phoneAwaySeconds ?? Double(viewModel.sheepSearchState.trailMap.pendingMappedMinutes * 60)) / 60),
             ollieAccessoryItemID: viewModel.farmState.equipment.ollieAccessoryItemID,
             homeScrollViewportSize: homeScrollViewportSize,
             nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
             nightFlockViewModel: viewModel.nightFlockViewModel,
             homeGuidanceItem: viewModel.homeGuidanceItem,
+            habitPlan: viewModel.windDownHabitPlan,
+            useSmallerVersion: $viewModel.useSmallerWindDownNextTime,
+            habitSaveMessage: viewModel.habitSaveMessage,
             protectionPresentation: HomeProtectionStartPresentation.resolve(
                 readiness: viewModel.shieldingReadiness,
                 selectionSummary: viewModel.shieldingSelectionSummary
@@ -70,6 +76,7 @@ struct PixelHomeDashboard: View {
             },
             onRepairProtection: { destination = .protectionRepair },
             onSetup: { destination = .setup },
+            onEditRoutine: { showsRoutineReview = true },
             onEditTiming: { destination = .timing },
             onQuietTimeSchedule: { destination = .quietTimeSchedule },
             onStartNow: {
@@ -91,7 +98,47 @@ struct PixelHomeDashboard: View {
                 )
             }
         )
+            RitualReflectionInvitation()
+            personalization
         }
+        .navigationDestination(isPresented: $showsRoutineReview) {
+            FocusRunSetupView(initialHabitFocus: .activity)
+                .environmentObject(viewModel)
+        }
+        .sheet(isPresented: $showsPersonalization) {
+            OnboardingPersonalizationView(initialStep: personalizationStep)
+                .environmentObject(viewModel)
+        }
+        .onChange(of: viewModel.habitEditingIdentity) { _, _ in
+            showsPersonalization = false
+            showsRoutineReview = false
+        }
+    }
+
+    private var personalization: some View {
+        DisclosureGroup {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                NavigationLink("What I’m working toward") { RitualPersonalisationView() }
+                .frame(minHeight: 44)
+                Text("An optional goal, a small plan, and a chance to reflect on what helped.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                if viewModel.claimedWelcomeGiftItemID == nil {
+                    Button("Choose my welcome gift") {
+                        personalizationStep = .welcomeGift
+                        showsPersonalization = true
+                    }
+                    .frame(minHeight: 44)
+                }
+            }
+            .font(AppTypography.body)
+            .padding(.top, AppSpacing.sm)
+        } label: {
+            Text("Make it yours")
+                .font(AppTypography.caption.weight(.semibold))
+                .frame(minHeight: 44, alignment: .leading)
+        }
+        .tint(AppColors.grass)
     }
 
     @ViewBuilder
@@ -166,10 +213,14 @@ private struct PixelHomeDashboardContent: View {
     var nightFlockSummary: NightFlockHomeSummary? = nil
     var nightFlockViewModel: NightFlockViewModel? = nil
     var homeGuidanceItem: WindDownGuidanceItem? = nil
+    var habitPlan = WindDownHabitPlan()
+    var useSmallerVersion: Binding<Bool> = .constant(false)
+    var habitSaveMessage: String? = nil
     var protectionPresentation: HomeProtectionStartPresentation
     var onPrimaryAction: () -> Void
     var onRepairProtection: () -> Void = {}
     var onSetup: () -> Void = {}
+    var onEditRoutine: () -> Void = {}
     var onEditTiming: () -> Void
     var onQuietTimeSchedule: () -> Void
     var onStartNow: () -> Void
@@ -219,6 +270,14 @@ private struct PixelHomeDashboardContent: View {
                 content: .actions
             )
 
+            WindDownHabitHomeCard(
+                activity: preferences.eveningRoutine.first?.title,
+                plan: habitPlan,
+                useSmallerVersion: useSmallerVersion,
+                saveMessage: habitSaveMessage,
+                onEdit: onEditRoutine
+            )
+
             if shouldLeadWithSlumberParty, let nightFlockViewModel {
                 SlumberPartyHomeSection(viewModel: nightFlockViewModel, openParty: onOpenNightFlock)
             } else if let nightFlockSummary {
@@ -235,10 +294,7 @@ private struct PixelHomeDashboardContent: View {
                 immediateStartMinutes: immediateAdditionalQuietMinutes,
                 scheduledStart: phoneAwayStartContext,
                 windDownIsReady: canBeginNow,
-                trailMapPresentation: SheepTrailMapPresentation.home(
-                    pendingMappedMinutes: phoneBreakMeterMinutes,
-                    protectedWindDownCount: progress.totalCompletedRuns
-                ),
+                trailMapPresentation: SheepTrailMapPresentation.cumulative(minutes: phoneBreakMeterMinutes),
                 protectionPresentation: protectionPresentation,
                 action: onQuietTimeSchedule,
                 startNow: onStartNow,

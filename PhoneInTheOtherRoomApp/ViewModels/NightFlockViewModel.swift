@@ -16,6 +16,12 @@ final class NightFlockViewModel: ObservableObject {
         case error(String)
     }
 
+    @Published var pastureMessages: [UUID: String] = [:]
+    @Published var pastureSending: Set<UUID> = []
+    @Published var pastureRefreshTokens: [UUID: Int] = [:]
+    @Published var cachedPastureVisits: [UUID: Set<UUID>] = [:]
+    let pastureOutbox = SharedPastureOutboxService()
+    var pastureAttempts: Set<String> = []
     @Published var phase: Phase
     @Published private(set) var diagnostics: NightFlockDiagnostics
     @Published private(set) var accountState: NightFlockAccountState {
@@ -29,6 +35,7 @@ final class NightFlockViewModel: ObservableObject {
     @Published var invitePreview: NightFlockInvitePreview?
     @Published var inviteRecoveryPresentation: NightFlockInviteRecoveryPresentation = .hidden
     @Published var warmNotice: String?
+    @Published var actionFailureTitle: String?
     @Published var requestReference: String?
     @Published var orientationState: NightFlockOrientationState
     @Published var commitmentDraft = NightFlockCommitmentDraft()
@@ -52,6 +59,9 @@ final class NightFlockViewModel: ObservableObject {
     @Published var sharedHabitsPrivacyFences: [NightFlockSharedHabitsPrivacyFence] = []
     @Published var sharedHabitsStates: [UUID: NightFlockSharedHabitsStateResponse] = [:]
     @Published var sharedHabitsLoadingPartyIDs: Set<UUID> = []
+    @Published var sharedHabitsRefreshFailures: [UUID: NightFlockRefreshFailure] = [:]
+    @Published var partyRefreshFailures: [UUID: NightFlockRefreshFailure] = [:]
+    var sharedHabitsRefreshAttemptIDs: [UUID: UUID] = [:]
     @Published var sharedNightsLoadingPartyIDs: Set<UUID> = []
     @Published var sharedHabitsAgreementSavingPartyIDs: Set<UUID> = []
     @Published var sharedHabitsAgreementErrors: [UUID: String] = [:]
@@ -70,7 +80,6 @@ final class NightFlockViewModel: ObservableObject {
     @Published var v4ObservedPartyRefreshDates: [UUID: Date] = [:]
     @Published var v4ObservedPartyObservationStates: [UUID: NightFlockV4PartyObservationState] = [:]
     @Published var v4RefreshingPartyIDs: Set<UUID> = []
-    @Published var partyRefreshFailures: [UUID: NightFlockRefreshFailure] = [:]
     @Published var updateCheerAcknowledgements: [UUID: NightFlockV4CheerSendState] = [:]
     @Published var v4CheerSendStates: [NightFlockV4CheerCommandKey: NightFlockV4CheerSendState] = [:]
     var v4NextPartyDetailRequestSequence: UInt64 = 0
@@ -134,10 +143,21 @@ final class NightFlockViewModel: ObservableObject {
     var primaryRunSharingDecisions: [UUID: NightFlockPrimaryRunSharingDecision] = [:]
     var primaryRunSharingRequiredAfter: Date?
     var localSocialGeneration: UInt64 = 0
+    var prepareFarmForAccountDeletion: (() -> Bool)?
+    var removeDeletedAccountFarm: (() -> Bool)?
+    var didRemoveAccountCredentials: (() -> Bool)?
+    weak var sharedFarmAccount: FarmBackupViewModel?
     private var isDeletingOnlineAccount = false
+
+    var permitsFarmAccountTransport: Bool {
+        NightFlockAccountDeletionIntentPolicy.permitsFarmTransport(
+            restored: hasRestoredStagedDestructiveEffect,
+            deleting: isDeletingOnlineAccount, phase: accountDeletionIntentPhase)
+    }
     private var stagedDestructiveLocalEffect: NightFlockDestructiveLocalEffect = .none
     private var hasRestoredStagedDestructiveEffect = false
     private var accountEntryInFlight = false
+    private var accountEntryRefreshPending = false
     var inviteMutationInFlight = false
     var inviteCredential: NightFlockInviteCredential?
     var linkedAccountID: UUID?
@@ -191,8 +211,23 @@ final class NightFlockViewModel: ObservableObject {
 
     /// A recovery action quiesces all Night Flock transport, even before the
     /// UI's account state has changed away from `.linked`.
+    var permitsFarmOwnerScopedSocialEffects: Bool {
+        guard let sharedFarmAccount else { return true }
+        let activeOwner = (try? sharedFarmAccount.persistence.farmSaveStore.snapshot())
+            .flatMap { $0.effectiveScope.ownerID }
+        let expectedOwner = NightFlockExpectedIdentityBinding.classify(
+            defaults.string(forKey: NightFlockAccountService.expectedLinkedUserIDKey)
+        ).validUserID
+        return FarmAccountSocialOwnerGate.permits(
+            sharedFarmAttached: true,
+            activeFarmOwner: activeOwner,
+            expectedIdentity: expectedOwner
+        )
+    }
+
     var permitsNightFlockNetwork: Bool {
-        hasRestoredStagedDestructiveEffect && pendingDestructiveIntent == nil
+        permitsFarmOwnerScopedSocialEffects
+            && hasRestoredStagedDestructiveEffect && pendingDestructiveIntent == nil
             && NightFlockAccountDeletionIntentPolicy.permitsAdmission(phase: accountDeletionIntentPhase)
             && !isDeletingOnlineAccount
             && permitsNightFlockAuthenticationTransport
@@ -236,7 +271,8 @@ final class NightFlockViewModel: ObservableObject {
     }
 
     var permitsLocalSocialMutation: Bool {
-        NightFlockAccountDeletionIntentPolicy.permitsAdmission(phase: accountDeletionIntentPhase)
+        permitsFarmOwnerScopedSocialEffects
+            && NightFlockAccountDeletionIntentPolicy.permitsAdmission(phase: accountDeletionIntentPhase)
             && NightFlockAcceptedDeletionPolicy.permitsLocalMutation(tombstonePresent: isDeletingOnlineAccount)
             && NightFlockPendingIntentPolicy.permitsLocalMutation(
                 intentPresent: pendingDestructiveIntent != nil,
@@ -294,6 +330,9 @@ final class NightFlockViewModel: ObservableObject {
         sharedHabitsPrivacyFences = []
         sharedHabitsStates = [:]
         sharedHabitsLoadingPartyIDs = []
+        sharedHabitsRefreshFailures = [:]
+        partyRefreshFailures = [:]
+        sharedHabitsRefreshAttemptIDs = [:]
         sharedNightsLoadingPartyIDs = []
         sharedHabitsAgreementSavingPartyIDs = []
         sharedHabitsAgreementErrors = [:]
@@ -454,6 +493,7 @@ final class NightFlockViewModel: ObservableObject {
         orientationState = previewOrientationState ?? orientationStore.load()
         warmNotice = nil
         requestReference = nil
+        actionFailureTitle = nil
         snapshot = previewSnapshot
         v4ListState = nil
         selectedV4Party = nil
@@ -468,7 +508,7 @@ final class NightFlockViewModel: ObservableObject {
         )
         accountState = previewAccountState
         phase = previewPhase ?? (featureEnabled ? .idle : .hidden)
-        guard featureEnabled, let outbox else {
+        guard let outbox else {
             hasRestoredStagedDestructiveEffect = true
             return
         }
@@ -527,11 +567,16 @@ final class NightFlockViewModel: ObservableObject {
         }
     }
 
-    static func configured(bundle: Bundle = .main, defaults: UserDefaults = .standard) -> NightFlockViewModel {
+    static func configured(bundle: Bundle = .main, defaults: UserDefaults = .standard,
+                           sharedProvider: SupabaseClientProviding? = nil,
+                           sharedAccount: NightFlockAccountService? = nil) -> NightFlockViewModel {
         let featureFlag = SupabaseConfiguration.nightFlockFeatureFlag(bundle: bundle)
         guard featureFlag == .enabled else {
             return NightFlockViewModel(
                 featureEnabled: false,
+                accountService: sharedAccount,
+                service: sharedProvider.map { NightFlockService(provider: $0) },
+                outbox: sharedProvider == nil ? nil : NightFlockOutboxService(defaults: defaults),
                 diagnostics: .initial(featureFlag: featureFlag, configuration: .notEvaluated)
             )
         }
@@ -548,10 +593,10 @@ final class NightFlockViewModel: ObservableObject {
                 )
             )
         }
-        let provider = ConfiguredSupabaseClientProvider(configuration: configuration)
+        let provider = sharedProvider ?? ConfiguredSupabaseClientProvider(configuration: configuration)
         return NightFlockViewModel(
             featureEnabled: true,
-            accountService: NightFlockAccountService(provider: provider, defaults: defaults),
+            accountService: sharedAccount ?? NightFlockAccountService(provider: provider, defaults: defaults),
             service: NightFlockService(provider: provider),
             outbox: NightFlockOutboxService(defaults: defaults),
             diagnostics: .initial(featureFlag: featureFlag, configuration: .valid)
@@ -559,7 +604,7 @@ final class NightFlockViewModel: ObservableObject {
     }
 
     func entryAppeared() {
-        guard featureEnabled, phase != .loading, permitsNightFlockAccountSessionInspection else { return }
+        guard featureEnabled, permitsNightFlockAccountSessionInspection else { return }
         Task { await activateEntry() }
     }
 
@@ -569,7 +614,7 @@ final class NightFlockViewModel: ObservableObject {
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         Task {
-            defer { accountEntryInFlight = false }
+            defer { finishAccountEntry() }
             guard let accountService else { return }
             do {
                 let currentAccountState = try await accountService.currentState(createAnonymousIfMissing: false)
@@ -628,6 +673,66 @@ final class NightFlockViewModel: ObservableObject {
                 phase = .error(error.localizedDescription)
             }
         }
+    }
+
+    func prepareForFarmAccountSignIn() async -> Bool {
+        guard permitsNightFlockAccountSessionInspection,
+              pendingDestructiveIntent == nil, accountState != .linking else { return false }
+        if NightFlockExpectedIdentityBinding.classify(
+            defaults.string(forKey: NightFlockAccountService.expectedLinkedUserIDKey)
+        ).validUserID != nil {
+            // Reauthentication is UUID-bound by the shared account service.
+            // Preserve pending social work when no account switch is possible.
+            transportRecoveryEpoch = NightFlockTransportEpochPolicy.advancing(transportRecoveryEpoch)
+            return true
+        }
+        guard await clearLocalSocialWork() else { return false }
+        transportRecoveryEpoch = NightFlockTransportEpochPolicy.advancing(transportRecoveryEpoch)
+        snapshot = nil
+        v4ListState = nil
+        selectedV4Party = nil
+        v4ObservedPartyDetails = [:]
+        v4InviteCodes = [:]
+        v4InvitePreview = nil
+        v4GrantInbox = []
+        linkedAccountID = nil
+        return true
+    }
+
+    func inspectAccountForFarm() async {
+        guard permitsNightFlockAccountSessionInspection, let accountService else { return }
+        do {
+            accountState = try await accountService.currentState(createAnonymousIfMissing: false)
+            if accountState == .linked { _ = await refreshState(showLoading: false) }
+        } catch { presentAccountRecoveryRequirement(error) }
+    }
+
+    func clearSignedOutAccountContext() async -> Bool {
+        transportRecoveryEpoch = NightFlockTransportEpochPolicy.advancing(transportRecoveryEpoch)
+        guard await clearLocalSocialWork() else { return false }
+        snapshot = nil
+        v4ListState = nil
+        selectedV4Party = nil
+        v4InviteCodes = [:]
+        v4InvitePreview = nil
+        v4GrantInbox = []
+        linkedAccountID = nil
+        hideInvitePlaintextPresentation()
+        return true
+    }
+
+    func farmAccountDidSignOut() {
+        transportRecoveryEpoch = NightFlockTransportEpochPolicy.advancing(transportRecoveryEpoch)
+        pendingAuthenticationRecovery = .reauthenticateApple
+        accountState = .unavailable
+    }
+
+    func farmAccountDidSignIn() {
+        transportRecoveryEpoch = NightFlockTransportEpochPolicy.advancing(transportRecoveryEpoch)
+        pendingAuthenticationRecovery = .none
+        accountState = .linked
+        phase = .idle
+        entryAppeared()
     }
 
     func completeAppleSignIn(_ result: Result<ASAuthorization, Error>) {
@@ -942,6 +1047,11 @@ final class NightFlockViewModel: ObservableObject {
         guard accountState == .linked, permitsNightFlockNetwork,
               let service, let outbox
         else { return }
+        guard prepareFarmForAccountDeletion?() == true else {
+            warmNotice = "Your Farm couldn’t be prepared for account deletion. Please try again."
+            return
+        }
+        isDeletingOnlineAccount = true
         let previousAccountState = accountState
         let generation = localSocialGeneration
         let initialTransportEpoch = transportRecoveryEpoch
@@ -949,6 +1059,7 @@ final class NightFlockViewModel: ObservableObject {
             var transportEpoch = initialTransportEpoch
             do {
                 guard await outbox.stagePendingAccountDeletionIntent(epoch: generation) else {
+                    isDeletingOnlineAccount = false
                     phase = .offline
                     warmNotice = "Ollie could not safely prepare your account deletion on this phone."
                     return
@@ -1053,10 +1164,15 @@ final class NightFlockViewModel: ObservableObject {
             phase = .error("Ollie is keeping this account closed while local invitation cleanup finishes. Please try again after reopening Counting Sheep.")
             return
         }
+        guard removeDeletedAccountFarm?() == true else {
+            phase = .error("Your account is deleted. Reopen the app to finish removing its local Farm.")
+            return
+        }
         guard await accountService?.signOutAfterAccountDeletion() ?? false else {
             phase = .error("Ollie is finishing your account cleanup here. Please try again when you’re ready.")
             return
         }
+        guard didRemoveAccountCredentials?() == true else { return }
         runContexts = [:]
         primaryRunSharingDecisions = [:]
         guard NightFlockAcceptedDeletionPolicy.mayCompleteFinalization(
@@ -1074,6 +1190,9 @@ final class NightFlockViewModel: ObservableObject {
         sharedHabitsPrivacyFences = []
         sharedHabitsStates = [:]
         sharedHabitsLoadingPartyIDs = []
+        sharedHabitsRefreshFailures = [:]
+        partyRefreshFailures = [:]
+        sharedHabitsRefreshAttemptIDs = [:]
         sharedNightsLoadingPartyIDs = []
         sharedHabitsAgreementSavingPartyIDs = []
         sharedHabitsAgreementErrors = [:]
@@ -1115,6 +1234,7 @@ final class NightFlockViewModel: ObservableObject {
         pendingNightFlockRecovery = nil
         pendingAppleSignInAttempt = nil
         requestReference = nil
+        actionFailureTitle = nil
         warmNotice = nil
         phase = .idle
     }
@@ -1308,12 +1428,30 @@ final class NightFlockViewModel: ObservableObject {
         runContexts[runID] != nil
     }
 
-    private func activateEntry() async {
-        guard !accountEntryInFlight, permitsNightFlockAccountSessionInspection, let accountService else { return }
+    private func finishAccountEntry() {
+        accountEntryInFlight = false
+        let shouldRefresh = accountEntryRefreshPending && permitsNightFlockNetwork
+        accountEntryRefreshPending = false
+        if shouldRefresh { entryAppeared() }
+    }
+
+    func activateEntry() async {
+        guard featureEnabled, permitsNightFlockAccountSessionInspection, let accountService else { return }
+        guard !accountEntryInFlight else {
+            accountEntryRefreshPending = true
+            return
+        }
         accountEntryInFlight = true
-        defer { accountEntryInFlight = false }
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
+        defer {
+            // Admission can pause after account inspection (for example while
+            // the matching Farm is loading). No request remains in flight then.
+            if isCurrentTransportTask(generation: generation, epoch: transportEpoch), phase == .loading {
+                phase = .idle
+            }
+            finishAccountEntry()
+        }
         phase = .loading
         do {
             let currentAccountState = try await accountService.currentState(
@@ -1333,11 +1471,13 @@ final class NightFlockViewModel: ObservableObject {
                     await flushOutbox()
                     return
                 }
-                await flushOutbox()
                 guard permitsNightFlockNetwork,
                       isCurrentTransportTask(generation: generation, epoch: transportEpoch)
                 else { return }
-                await refreshState(showLoading: false)
+                // A backlog of queued sharing must not delay opening the list.
+                if await refreshState(showLoading: false) {
+                    await flushOutbox()
+                }
             } else {
                 phase = .idle
             }

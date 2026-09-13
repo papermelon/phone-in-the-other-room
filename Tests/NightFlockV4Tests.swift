@@ -3,70 +3,6 @@ import XCTest
 final class NightFlockV4Tests: XCTestCase {
     private let utc = "UTC"
 
-    func testReleasePresentationGateRequiresExactCapabilitiesAndAcceptedAgreement() {
-        let v1 = NightFlockV4ListStateResponse(
-            parties: [],
-            profileAvatarVersion: 1,
-            sharedHabitsVersion: 1
-        )
-        let v2 = NightFlockV4ListStateResponse(
-            parties: [],
-            profileAvatarVersion: 1,
-            sharedHabitsVersion: 2,
-            sharedRoutinePlansVersion: 1
-        )
-        let unknown = NightFlockV4ListStateResponse(
-            parties: [],
-            profileAvatarVersion: 2,
-            sharedHabitsVersion: 3,
-            sharedRoutinePlansVersion: 2
-        )
-
-        func partyState(agreementVersion: Int?) -> NightFlockSharedHabitsStateResponse {
-            let agreement = agreementVersion.map {
-                NightFlockSharedHabitsAgreementReceipt(
-                    agreementID: UUID(),
-                    memberEpochID: UUID(),
-                    acceptedAt: Date(timeIntervalSince1970: 100),
-                    timeZoneIdentifier: utc,
-                    firstEligibleSleepNight: nil,
-                    agreementVersion: $0
-                )
-            }
-            return NightFlockSharedHabitsStateResponse(
-                agreement: agreement,
-                records: [],
-                nextCursor: nil,
-                snapshotRevision: 1,
-                periods: []
-            )
-        }
-
-        let noAgreement = partyState(agreementVersion: nil)
-        let agreementV1 = partyState(agreementVersion: 1)
-        let agreementV2 = partyState(agreementVersion: 2)
-        let unknownAgreement = partyState(agreementVersion: 3)
-
-        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: v1, partyState: noAgreement))
-        XCTAssertTrue(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: v1, partyState: agreementV1))
-        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: v1, partyState: agreementV2))
-        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedNightPlans(listState: v2, partyState: agreementV1))
-        XCTAssertTrue(SlumberPartyReleasePresentationGate.showsSharedNightPlans(listState: v2, partyState: agreementV2))
-        XCTAssertTrue(SlumberPartyReleasePresentationGate.showsSocialAvatar(listState: v2, partyState: agreementV2))
-        XCTAssertEqual(
-            SlumberPartyReleasePresentationGate.avatarID(
-                requested: "sheep:juniper",
-                listState: v2,
-                partyState: noAgreement
-            ),
-            SocialAvatarRules.shepherdID
-        )
-        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: unknown, partyState: agreementV1))
-        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedNightPlans(listState: unknown, partyState: agreementV2))
-        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSocialAvatar(listState: v2, partyState: unknownAgreement))
-    }
-
-
     func testRoundBoundariesAndLateJoinCurrentWindow() throws {
         let round = NightFlockV4Round(roundID: UUID(), number: 1, timeZoneIdentifier: utc, startsOn: NightFlockLocalDate(year: 2026, month: 8, day: 20), status: .active)
         let dayOne = try XCTUnwrap(round.startsOn.date(in: utc, calendar: .init(identifier: .gregorian)))
@@ -507,10 +443,40 @@ final class NightFlockV4Tests: XCTestCase {
         let summary = NightFlockHomeSummary.make(from: [party])
         let home = NightFlockV4BridgePresentation.make(from: summary, context: .home)
         XCTAssertEqual(home.title, "Moonfield")
-        XCTAssertEqual(home.detail, "Waiting for the host to start 7 nights.")
+        XCTAssertEqual(home.detail, "No round is running. The host can start the next seven nights.")
         let farm = NightFlockV4BridgePresentation.make(from: summary, context: .farm)
         XCTAssertEqual(farm.detail, "Your curated Farm look appears in your parties. Completed shared moments can bring wool home.")
         XCTAssertEqual(summary.destinationPartyID, party.partyID)
+
+        let completedRound = NightFlockV4Round(
+            roundID: UUID(),
+            number: 2,
+            timeZoneIdentifier: utc,
+            startsOn: NightFlockLocalDate(year: 2026, month: 8, day: 20),
+            status: .completed
+        )
+        let completedHost = NightFlockV4PartySummary(
+            partyID: UUID(), name: "Moonfield", memberCount: 2, myRole: .host,
+            currentRound: completedRound, revision: 2
+        )
+        let completedMember = NightFlockV4PartySummary(
+            partyID: UUID(), name: "Moonfield", memberCount: 2, myRole: .member,
+            currentRound: completedRound, revision: 2
+        )
+        XCTAssertEqual(
+            NightFlockV4BridgePresentation.make(
+                from: NightFlockHomeSummary.make(from: [completedHost]),
+                context: .home
+            ).detail,
+            "Last seven-night round complete · Start another when you choose."
+        )
+        XCTAssertEqual(
+            NightFlockV4BridgePresentation.make(
+                from: NightFlockHomeSummary.make(from: [completedMember]),
+                context: .home
+            ).detail,
+            "Last seven-night round complete · No round is running."
+        )
     }
 
     func testV4LifecycleDistinguishesInviteReadyActiveAndElapsedStates() throws {
@@ -686,7 +652,7 @@ final class NightFlockV4Tests: XCTestCase {
             memberID: memberID, cheer: .pawPrint, count: 2, sentByMe: false
         )]
         let livePresentation = NightFlockV4Presentation.member(member, in: liveDetail, at: now)
-        XCTAssertEqual(livePresentation.liveStatusTitle, "Phone is away")
+        XCTAssertEqual(livePresentation.liveStatusTitle, "Phone Away timer is active")
         XCTAssertTrue(livePresentation.canSendLiveCheer)
         XCTAssertEqual(livePresentation.liveCheerCount, 2)
     }
@@ -944,7 +910,7 @@ final class NightFlockV4Tests: XCTestCase {
 
         let fallback = NightFlockV4Presentation.member(member, in: party, at: now)
         XCTAssertEqual(fallback.liveStatus?.status, .phoneAwayActive)
-        XCTAssertEqual(fallback.liveStatusTitle, "Phone is away")
+        XCTAssertEqual(fallback.liveStatusTitle, "Phone Away timer is active")
         XCTAssertTrue(fallback.hasSharedUpdate)
         XCTAssertEqual(NightFlockV4Presentation.displayInvalidationDates(in: party, at: now), [expiry])
 
@@ -1023,6 +989,120 @@ final class NightFlockV4Tests: XCTestCase {
         XCTAssertTrue(v1.supportsSharedHabits)
         XCTAssertFalse(v1.supportsSharedNightPlans)
         XCTAssertTrue(v2.supportsSharedNightPlans)
+    }
+
+    func testReleasePresentationGateRequiresExactCapabilitiesAndAcceptedAgreement() {
+        let v1 = NightFlockV4ListStateResponse(
+            parties: [],
+            profileAvatarVersion: 1,
+            sharedHabitsVersion: 1
+        )
+        let v2 = NightFlockV4ListStateResponse(
+            parties: [],
+            profileAvatarVersion: 1,
+            sharedHabitsVersion: 2,
+            sharedRoutinePlansVersion: 1
+        )
+        let unknown = NightFlockV4ListStateResponse(
+            parties: [],
+            profileAvatarVersion: 2,
+            sharedHabitsVersion: 3,
+            sharedRoutinePlansVersion: 2
+        )
+
+        func partyState(agreementVersion: Int?) -> NightFlockSharedHabitsStateResponse {
+            let agreement = agreementVersion.map {
+                NightFlockSharedHabitsAgreementReceipt(
+                    agreementID: UUID(),
+                    memberEpochID: UUID(),
+                    acceptedAt: Date(timeIntervalSince1970: 100),
+                    timeZoneIdentifier: utc,
+                    firstEligibleSleepNight: nil,
+                    agreementVersion: $0
+                )
+            }
+            return NightFlockSharedHabitsStateResponse(
+                agreement: agreement,
+                records: [],
+                nextCursor: nil,
+                snapshotRevision: 1,
+                periods: []
+            )
+        }
+
+        let noAgreement = partyState(agreementVersion: nil)
+        let agreementV1 = partyState(agreementVersion: 1)
+        let agreementV2 = partyState(agreementVersion: 2)
+        let unknownAgreement = partyState(agreementVersion: 3)
+
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: v1, partyState: noAgreement))
+        XCTAssertTrue(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: v1, partyState: agreementV1))
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: v1, partyState: agreementV2))
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedNightPlans(listState: v2, partyState: agreementV1))
+        XCTAssertTrue(SlumberPartyReleasePresentationGate.showsSharedNightPlans(listState: v2, partyState: agreementV2))
+        XCTAssertTrue(SlumberPartyReleasePresentationGate.showsSocialAvatar(listState: v2, partyState: agreementV2))
+        XCTAssertEqual(
+            SlumberPartyReleasePresentationGate.avatarID(
+                requested: "sheep:juniper",
+                listState: v2,
+                partyState: noAgreement
+            ),
+            SocialAvatarRules.shepherdID
+        )
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedHabits(listState: unknown, partyState: agreementV1))
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSharedNightPlans(listState: unknown, partyState: agreementV2))
+        XCTAssertFalse(SlumberPartyReleasePresentationGate.showsSocialAvatar(listState: v2, partyState: unknownAgreement))
+    }
+
+    func testAcceptedSafetyAndMembershipNoticesStateConsequences() throws {
+        let partyID = UUID()
+        let memberID = UUID()
+        let inviteID = UUID()
+
+        XCTAssertEqual(
+            NightFlockV4AcceptedCommandPresentation.notice(for: .replaceInvite(
+                partyID: partyID,
+                expectedInviteID: inviteID,
+                idempotencyKey: "replace"
+            )),
+            "New invitation accepted. The old code no longer works. Current members stay in the party."
+        )
+        XCTAssertEqual(
+            NightFlockV4AcceptedCommandPresentation.notice(for: .leaveParty(
+                partyID: partyID,
+                idempotencyKey: "leave"
+            )),
+            "Leave accepted. New sharing and group access have stopped. Earlier records follow the agreement you accepted."
+        )
+        XCTAssertEqual(
+            NightFlockV4AcceptedCommandPresentation.notice(for: .deleteParty(
+                partyID: partyID,
+                idempotencyKey: "delete"
+            )),
+            "Party dissolved. Its invitation and group access are closed for everyone. Local Wind Down and Farm records stay on each phone."
+        )
+        XCTAssertEqual(
+            NightFlockV4AcceptedCommandPresentation.notice(for: .blockMember(
+                partyID: partyID,
+                memberID: memberID,
+                idempotencyKey: "block"
+            )),
+            "Block accepted. You and this person no longer share groups or visibility, and cannot join a party together."
+        )
+        XCTAssertEqual(
+            NightFlockV4AcceptedCommandPresentation.notice(for: .reportMember(
+                partyID: partyID,
+                memberID: memberID,
+                reason: .unwantedContact,
+                idempotencyKey: "report"
+            )),
+            "Report accepted. It does not block this person or promise a response or moderation outcome."
+        )
+        XCTAssertNil(NightFlockV4AcceptedCommandPresentation.notice(for: .createParty(
+            name: "Moonfield",
+            timeZoneIdentifier: utc,
+            idempotencyKey: "create"
+        )))
     }
 
     func testSharedNightPlanContentSkipsEqualSaveAndVersionsChangedSave() {

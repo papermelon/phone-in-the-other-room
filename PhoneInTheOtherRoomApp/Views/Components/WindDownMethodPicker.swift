@@ -30,7 +30,7 @@ struct WindDownProtectionPicker: View {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text("App limits")
                     .font(AppTypography.headline)
-                Text("Selected apps are paused for Wind Down and the linked Screen-Free Morning.")
+                Text("Counting Sheep requests limits for selected apps and categories from Wind Down start through Screen-Free Morning, including overnight, and during Phone Away.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
@@ -44,7 +44,7 @@ struct WindDownProtectionPicker: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("About app limits")
-            .accessibilityHint("Learn how selected apps are limited during Wind Down.")
+            .accessibilityHint("Explains the selected-app limits for Wind Down, overnight, Screen-Free Morning, and Phone Away")
         }
     }
 
@@ -115,7 +115,7 @@ struct WindDownProtectionPicker: View {
                     Text(selectedAppsSummary ?? "Selected apps")
                         .font(AppTypography.caption.weight(.semibold))
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("Ready for Wind Down")
+                    Text("Ready for the next start")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }

@@ -22,7 +22,7 @@ enum NightFlockAccountError: LocalizedError, Equatable {
     var errorDescription: String? {
         switch self {
         case .identityChanged:
-            return "That Apple account does not match this Slumber Party. Your local Wind Down and shared updates were kept safe."
+            return "That account does not match the current Farm. Your local Wind Down and shared updates were kept safe."
         case .expectedIdentityMissing:
             return "This Slumber Party cannot safely reconnect without its original account record. Your local Wind Down and shared updates were kept safe."
         case .accountIsNotAnonymous:
@@ -32,9 +32,9 @@ enum NightFlockAccountError: LocalizedError, Equatable {
         case .invalidExpectedIdentityBinding:
             return "This Slumber Party account record cannot be safely read, so Counting Sheep will not reconnect or replace it. Your local Wind Down and shared updates were kept safe."
         case .unsupportedAuthenticatedSession:
-            return "This signed-in account is not linked to Apple for Slumber Party. Counting Sheep kept your local data safe."
+            return "Verify your email or reconnect with Apple to use this account. Counting Sheep kept your local data safe."
         case .reauthenticationRequired:
-            return "Reconnect your Apple account to reopen this Slumber Party. Your local Wind Down and queued updates are safe here."
+            return "Sign in again to reconnect your account. Your local Wind Down and queued updates are safe here."
         case .identityTokenMissing:
             return "Apple did not return an identity token. Please try again."
         case .nonceUnavailable:
@@ -45,8 +45,8 @@ enum NightFlockAccountError: LocalizedError, Equatable {
 
 actor NightFlockAccountService {
     static let expectedLinkedUserIDKey = "ollie.nightFlock.expectedLinkedUserID"
-    private let provider: SupabaseClientProviding
-    private let defaults: UserDefaults
+    let provider: SupabaseClientProviding
+    let defaults: UserDefaults
 
     init(provider: SupabaseClientProviding, defaults: UserDefaults = .standard) {
         self.provider = provider
@@ -189,14 +189,59 @@ actor NightFlockAccountService {
 
     func currentLinkedAccountID() async throws -> UUID? {
         let client = try provider.client()
-        let user = try await client.auth.session.user
-        guard !user.isAnonymous, Self.hasAppleIdentity(user) else { return nil }
+        let user: User
+        do { user = try await client.auth.session.user }
+        catch let error as AuthError where error == .sessionMissing { return nil }
+        guard Self.hasSupportedIdentity(user) else { return nil }
+        if let expected = expectedLinkedUserID.validUserID, user.id != expected {
+            throw NightFlockAccountError.identityChanged
+        }
+        guard expectedLinkedUserID != .invalid else { throw NightFlockAccountError.invalidExpectedIdentityBinding }
         return user.id
+    }
+
+    /// The standalone Farm entry does not need a temporary social account.
+    /// Existing anonymous sessions still link in place through the shared path.
+    func signInForFarm(identityToken: String, nonce: String) async throws {
+        if expectedLinkedUserID.validUserID != nil {
+            try await reauthenticateAppleIdentity(identityToken: identityToken, nonce: nonce)
+            return
+        }
+        guard expectedLinkedUserID.permitsInitialBinding else {
+            throw NightFlockAccountError.invalidExpectedIdentityBinding
+        }
+        let client = try provider.client()
+        do {
+            let user = try await client.auth.session.user
+            if user.isAnonymous {
+                try await linkAppleIdentity(identityToken: identityToken, nonce: nonce)
+                return
+            }
+            guard Self.hasAppleIdentity(user) else { throw NightFlockAccountError.identityChanged }
+            persistExpectedLinkedUserID(user.id)
+            try await reauthenticateAppleIdentity(identityToken: identityToken, nonce: nonce)
+        } catch let error as AuthError where error == .sessionMissing {
+            let session = try await client.auth.signInWithIdToken(credentials: OpenIDConnectCredentials(
+                provider: .apple, idToken: identityToken, nonce: nonce))
+            guard Self.hasAppleIdentity(session.user) else { throw NightFlockAccountError.identityChanged }
+            persistExpectedLinkedUserID(session.user.id)
+        }
     }
 
     func signOutLocallyAfterFailedRecovery() async {
         guard let client = try? provider.client() else { return }
         try? await client.auth.signOut(scope: .local)
+    }
+
+    func signOutPreservingFarmBinding() async throws {
+        try await provider.client().auth.signOut(scope: .local)
+    }
+
+    /// Explicit logout permits a later account switch; expiry recovery does not.
+    func signOutForAccountSwitch() async throws {
+        do { try await provider.client().auth.signOut(scope: .local) }
+        catch let error as AuthError where error == .sessionMissing { }
+        defaults.removeObject(forKey: Self.expectedLinkedUserIDKey)
     }
 
     nonisolated static func linkFailureMessage(for error: Error) -> String {
@@ -248,9 +293,18 @@ actor NightFlockAccountService {
         )
     }
 
+    static func hasSupportedIdentity(_ user: User) -> Bool {
+        let providers = (user.identities?.map(\.provider) ?? [])
+            + (user.appMetadata["providers"]?.arrayValue?.compactMap(\.stringValue) ?? [])
+            + [user.appMetadata["provider"]?.stringValue].compactMap { $0 }
+        return AccountIdentityEvidence.isSupported(isAnonymous: user.isAnonymous,
+            providers: providers, emailVerified: user.emailConfirmedAt != nil)
+    }
+
     private static func observedSession(for user: User) -> NightFlockObservedAccountSession {
         if user.isAnonymous { return .anonymous }
         if hasAppleIdentity(user) { return .appleLinked(user.id) }
+        if hasSupportedIdentity(user) { return .passwordLinked(user.id) }
         return .unsupported
     }
 
@@ -262,20 +316,20 @@ actor NightFlockAccountService {
         switch observed {
         case .unsupported:
             return .unsupportedAuthenticatedSession
-        case .appleLinked:
+        case .appleLinked, .passwordLinked:
             return .identityChanged
         case .anonymous, .missing:
             return .expectedIdentityMissing
         }
     }
 
-    private var expectedLinkedUserID: NightFlockExpectedIdentity {
+    var expectedLinkedUserID: NightFlockExpectedIdentity {
         NightFlockExpectedIdentityBinding.classify(
             defaults.string(forKey: Self.expectedLinkedUserIDKey)
         )
     }
 
-    private func persistExpectedLinkedUserID(_ id: UUID) {
+    func persistExpectedLinkedUserID(_ id: UUID) {
         guard expectedLinkedUserID.permitsInitialBinding else { return }
         defaults.set(id.uuidString.lowercased(), forKey: Self.expectedLinkedUserIDKey)
     }

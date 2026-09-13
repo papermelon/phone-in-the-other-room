@@ -328,7 +328,7 @@ final class SlumberPartyHomePresentationTests: XCTestCase {
         let previews = SlumberPartyHomePresentation.memberPreviews(in: detail, at: now)
 
         XCTAssertEqual(previews.map(\.memberID), [me, other])
-        XCTAssertEqual(previews[0].statusTitle, "Phone is away")
+        XCTAssertEqual(previews[0].statusTitle, "Phone Away timer is active")
         XCTAssertEqual(previews[1].statusTitle, "No current status")
     }
 

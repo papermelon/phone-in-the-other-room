@@ -1,9 +1,21 @@
 # Ollie's Search and Sheep Homecomings
 
+## Cumulative Farm credit — 5 September 2026
+
+The founder now requires cumulative Farm credit that survives early endings and
+excludes Brief Access. [ADR-0020](DECISIONS/ADR-0020-cumulative-farm-credit.md)
+supersedes the completion-only Farm/search and wool-regrowth rules below for new runs.
+Wind Down credits overnight timer time up to its actual/planned end, excluding the
+separately rewarded morning window; 420 cumulative minutes opens a search. Phone Away
+uses an independent 100-minute meter without the old three-night gate. Both grow wool.
+Factual before-bed minutes, completed-night counts, Health and social metrics remain
+separate. Old settled rewards are preserved and supported early history is backfilled.
+
+
 Counting Sheep marks the phone-away ritual, not time asleep and not time spent in the app.
 Ollie guards and guides. A new Farm starts with one sheep. The first three qualifying
-protected nights bring another sheep home; later protected nights advance a probabilistic
-search with visible trail progress and bad-luck protection. A qualifying Wind Down search
+Wind Down searches bring another sheep home; later qualifying Wind Downs advance a probabilistic
+search with visible clue history and bad-luck protection. A qualifying Wind Down search
 needs a primary Wind Down whose eligible phone-away span reaches 420 minutes. That span is a Farm progression rule,
 not a description of hours asleep, and overnight time still never becomes credited quiet
 minutes.
@@ -13,9 +25,9 @@ minutes.
 ```mermaid
 flowchart LR
     Plan[Choose the two quiet bookends] --> Away[Put the phone in its other-room bed]
-    Away --> Evening[Phone-free wind-down]
-    Evening --> Night[Ollie keeps Night Watch]
-    Night --> Morning[Phone-free morning]
+    Away --> Evening[Wind Down before bed]
+    Evening --> Night[Overnight timer]
+    Night --> Morning[Screen-Free Morning timer]
     Morning --> Search[Sheep found or trail advanced]
     Search --> Note[Search Journal]
     Note --> Arrival[Active flock or pending gate]
@@ -37,7 +49,7 @@ wool yield, regrowth, trade value, art, and story.
   configured window. Each 100-minute fill grants 1 wool and one separate look. Its first three
   looks guarantee a homecoming; later looks use its own 20/30/40/50 ladder, with the next look
   guaranteed after four clues.
-- **Phone Away:** completed Phone Away minutes use a separate 100-minute meter and its own
+- **Phone Away:** eligible elapsed minutes from completed Phone Away timers use a separate 100-minute meter and its own
   first-three/ladder/bad-luck state. Brief Access does not subtract Sunrise elapsed minutes.
 
 Every fill and arrival is idempotent. Farm capacity still applies: a found sheep is recorded in
@@ -88,7 +100,7 @@ recorded after an owned sheep is traded. The active flock begins at 12 spaces an
 overflow waits at the arrival gate.
 
 Shearing keeps the sheep and yields 1/2/4/7 wool for common/uncommon/rare/legendary sheep. Wool
-regrows after 2/3/4/5 subsequently completed protected nights. Trading a sheep to another farm
+regrows after 2/3/4/5 subsequently completed qualifying Wind Downs. Trading a sheep to another farm
 returns 3/6/13/30 wool; a sheep traded while regrowing returns 75% of its base value. The local
 Farm Shop spends wool on Barn capacity, Ollie and shepherd wearables, Farm decoration, and collectibles.
 See ADR-0015 for the full rules.
@@ -129,7 +141,7 @@ Sources:
 
 - **Slow living:** the reveal repeats what the quiet made room for and the two offline cues;
   it adds no routine checklist.
-- **Purposeful accumulation:** protected nights advance search and wool regrowth; wanted trails,
+- **Purposeful accumulation:** qualifying Wind Downs advance search and wool regrowth; wanted sheep,
   finite capacity, shearing, trading, expansion, and customization give arrivals meaning.
 - **Mindful screen-time management:** the rewarded behavior is physical separation during
   the selected bookends. Optional Screen Time reports can supply context elsewhere but
@@ -143,10 +155,10 @@ Sources:
 
 Judge this loop by protected behavior, not collection engagement:
 
-- completed Night Watches in a tester's first 14 nights;
+- completed Wind Downs in a tester's first 14 planned nights;
 - factual wind-down and Screen-Free Morning minutes, kept separate; only the former feeds
   Wind Down reward/progress, while the latter settles through its independent internal ledger;
-- whether users understand that the first three qualifying protected-night searches and the
+- whether users understand that the first three qualifying Wind Down searches and the
   first three Phone Away meter searches guarantee homecomings, that a 420-minute protected
   span is required for a Wind Down search, and that later searches can produce clues, odds,
   or rarer sheep;

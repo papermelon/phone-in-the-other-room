@@ -1,8 +1,8 @@
 # ActivityKit push backend contract
 
-This document is the implementation contract for ADR-0005. The migration and Edge
-Functions are scaffolded under `supabase/`, but are not deployed and the iOS remote sink
-is disabled by default. The active hosted development project is `counting-sheep-dev` in
+This document is the implementation contract for ADR-0005. The migrations and Edge
+Functions are deployed. Following founder authorization on 12 September 2026, the Debug
+and Release app configurations enable the existing remote sink for opted-in Live Activities. The active hosted development project is `counting-sheep-dev` in
 Singapore. Its reference may be used for CLI linking, but no access token, database
 password, secret API key, or APNs credential belongs in this repository.
 
@@ -87,20 +87,29 @@ when an event already ran, was cancelled, or never existed.
 - Use `apns-push-type: liveactivity`, `apns-topic:
   com.ngawangchime.countingsheep.push-type.liveactivity`, and priority 10.
 - Phase payloads include `aps.timestamp`, `aps.event = "update"`, and the full
-  `content-state` needed to switch the Live Activity from wind-down to sleep time and
-  then morning quiet. The normal terminal payload uses `aps.event = "end"`, the full
+  `content-state` needed to switch the Live Activity from Wind Down to the overnight interval
+  and then Screen-Free Morning. The normal terminal payload uses `aps.event = "end"`, the full
   ActivityKit-compatible terminal `content-state`, and a dismissal date roughly 15 minutes
   in the future. An early end is a factual non-completion state; reset and replacement
   cancellation cancels the scheduled row and does not send completion copy.
-- `staleDate` is only a freshness marker. It does not deliver a content-state transition,
-  end an activity, or dismiss it. The exact background phase and terminal transitions require
-  the existing optional `pushType: .token` ActivityKit path: the remote sink, deployed Edge
-  Functions, APNs credentials, and scheduler must all be enabled and healthy. Without that
-  path, local completion remains authoritative and the activity is reconciled when the app
-  next runs; a stale activity is not itself evidence that completion was delivered.
-- On the iPhone, successful completion ends locally with the final content state and a
-  roughly 15-minute dismissal policy. Early endings use distinct factual content and end
-  immediately; reset and replacement use immediate nil-content cancellation.
+- `staleDate` changes `ActivityViewContext.isStale`; it does not deliver a new content state,
+  end an activity, or dismiss it. The local presentation now sets freshness to its next
+  clock boundary and explicitly depends on `isStale`. At bedtime it can redraw the already
+  saved schedule as an overnight countdown without foregrounding the app. The saved phase
+  never overrides known date anchors during rendering. This display projection neither
+  settles the run nor proves protection or sleep.
+- A freshness change is a single invalidation, not a repeating WidgetKit timeline. Subsequent
+  background state delivery and terminal dismissal still require the existing optional
+  `pushType: .token` path: remote sink, deployed Edge Functions, APNs credentials, and a healthy
+  scheduler. Debug and Release configurations now enable that flag. An app update resets
+  freshness to the next boundary; without an update, a second precise boundary is not promised.
+  Local completion remains authoritative. Physical-device acceptance of the first bedtime
+  redraw remains required; see `docs/plans/live-activity-and-app-copy-2026-09-07.md`.
+- On the iPhone, successful completion ends immediately while the app is active. A
+  background completion can retain final content for roughly 15 minutes; returning to the
+  app dismisses completed/orphaned surfaces, including retained local completion handles.
+  Early endings, reset and replacement dismiss immediately. Active linked Morning timers
+  retain their surface after the parent Wind Down has ended.
 - Treat 2xx as delivered; 400 invalid/expired token responses as terminal; 429 and 5xx as
   retryable. Retry with jittered exponential backoff, capped before token/run retention.
 - Check the row generation immediately before send. A stale generation exits without APNs.
@@ -129,10 +138,20 @@ dispatch function uses the service role only inside the server runtime.
 
 ## Development project activation
 
-Hosted Singapore status verified 2026-07-27: all three versioned migrations are applied,
-the four Edge Functions are deployed, and the expected APNs/dispatch secret names exist.
-The remaining activation checks are the once-per-minute dispatch Cron, physical-device
-Sandbox delivery, retry/rotation cases, and local database tests when Docker is available.
+Hosted status rechecked 12 September 2026: release project `sxjlkcccsentmhowgoqe`
+has all four active Edge Functions, the Live Activity tables, the required secret names,
+and an active once-per-minute `live-activity-dispatch` Cron. Three recent Cron runs
+succeeded and their HTTP responses were 200 with zero due events. Secret digests confirm
+production APNs environment/host. Development project `gftqcxfbzngopwndvjyp` also has an
+active once-per-minute scheduler and the expected sandbox APNs environment/host and
+credential names. No secret values were printed, no customer records changed, and no
+server deployment or scheduler mutation was needed. Credential presence and idle-worker
+success do not prove APNs delivery to a device.
+
+The remaining acceptance checks are a new signed physical-device build, background phase
+and completion delivery, app-reopen dismissal, retry/token rotation, and offline/relaunch
+fallbacks. Independent or rescheduled Morning-only activities still use their local path;
+the existing remote schedule covers the original Wind Down plan.
 
 1. Start Docker Desktop, then run `npx supabase start` and
    `npx supabase db reset` to validate the migration locally.

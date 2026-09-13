@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The phone owns the clock. Watch and UWB are deliberately only a gentle
-/// placement assist at the beginning of a run, never an ongoing requirement.
+/// The phone owns the clock. Legacy guards may still decode, but the current
+/// presentation reports timer and selected-app-limit state only.
 struct ActiveRunView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -40,14 +40,14 @@ struct ActiveRunView: View {
             ? ActiveRunExitPresentation(
                 actionTitle: "End Phone Away early",
                 confirmationTitle: "End Phone Away early?",
-                confirmationBody: "This ends the timer and removes any app limits.",
+                confirmationBody: "This ends the timer and lifts selected-app limits.",
                 cancelTitle: "Keep Phone Away running",
                 confirmTitle: "End Phone Away"
             )
             : ActiveRunExitPresentation(
                 actionTitle: "End Wind Down early",
                 confirmationTitle: "End Wind Down early?",
-                confirmationBody: "This immediately lifts app limits and ends this Wind Down early.",
+                confirmationBody: "This ends the timer early and lifts selected-app limits.",
                 cancelTitle: "Keep Wind Down running",
                 confirmTitle: "Use emergency exit"
             )
@@ -100,7 +100,7 @@ struct ActiveRunView: View {
         .navigationTitle(
             run?.isNightWatch == true
                 ? (presentation?.returnBarTitle ?? fallbackReturnBarTitle)
-                : "Phone-away time"
+                : "Timer"
         )
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(
@@ -160,7 +160,7 @@ struct ActiveRunView: View {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(
                         presentation.phase == .windDown && !presentation.isAdditionalQuiet
-                            ? AppCopy.ActiveWindDown.cueEyebrow.value
+                            ? "EVENING PHASE"
                             : presentation.eyebrow
                     )
                         .font(pixelFont(.caption))
@@ -190,7 +190,17 @@ struct ActiveRunView: View {
                 if tracker.pauseCount > 0 {
                     briefAccessNotice(summary: tracker)
                 }
-                purposeCuePicker
+                if let plan = run.nightWatchPlan, plan.role == .primarySleepBookend,
+                   presentation.phase == .windDown {
+                    Text(plan.phonePlacement.actionCue)
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.muted)
+                    if plan.usesSmallerRoutine {
+                        Text("Your smaller version · same timing and protection")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                    }
+                }
                 if run.nightWatchPlan?.role == .primarySleepBookend,
                    let routineSteps = activeRoutineSteps,
                    !routineSteps.isEmpty {
@@ -221,7 +231,7 @@ struct ActiveRunView: View {
                 HStack(alignment: .top, spacing: 14) {
                     OllieRitualView(state: ollieState, presentation: .inline)
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(presentation?.eyebrow ?? "OLLIE IS ON WATCH")
+                        Text(presentation?.eyebrow ?? "TIMER")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.secondaryText)
                         Text(headline)
@@ -272,8 +282,8 @@ struct ActiveRunView: View {
         case .notRequired, .confirmed:
             PixelCard {
                 Label(
-                    presentation?.phaseStatusText ?? "Your phone-away time is still running.",
-                    systemImage: presentation?.statusSystemImage ?? "moon.stars.fill"
+                    presentation?.phaseStatusText ?? "The timer is still running.",
+                    systemImage: presentation?.statusSystemImage ?? "timer"
                 )
                     .font(pixelFont(.body))
                     .foregroundStyle(AppColors.secondaryText)
@@ -316,7 +326,7 @@ struct ActiveRunView: View {
         case .unavailable:
             PixelCard {
                 VStack(alignment: .leading, spacing: 9) {
-                    Text("WATCH CHECK RESTING")
+                    Text("OLDER CHECK UNAVAILABLE")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.secondaryText)
                     Text("Your timer keeps going. No action needed.")
@@ -328,12 +338,12 @@ struct ActiveRunView: View {
 
     private var placementEyebrow: String {
         if presentation?.isAdditionalQuiet == true {
-            return "START QUIET"
+            return "START TIMER"
         }
         switch guardKind {
         case .qrCode: return "START SCAN"
         case .nfcTag: return "START TAG"
-        default: return "WATCH CHECK"
+        default: return "OLDER SETUP"
         }
     }
 
@@ -342,13 +352,13 @@ struct ActiveRunView: View {
             switch guardKind {
             case .qrCode: return "Scan the code to start the phone-away session."
             case .nfcTag: return "Tap your saved tag to start the phone-away session."
-            default: return "Ollie only needs one short check before the phone-away session continues."
+            default: return "This older setup continues with the iPhone timer."
             }
         }
         switch guardKind {
         case .qrCode: return "Scan the code to begin Wind Down."
         case .nfcTag: return "Tap your Wind Down tag to begin."
-        default: return "Ollie only needs one short Watch check before the Wind Down continues."
+        default: return "This older setup continues with the iPhone timer."
         }
     }
 
@@ -356,7 +366,7 @@ struct ActiveRunView: View {
         switch guardKind {
         case .qrCode: return "Scan to start"
         case .nfcTag: return "Tap to start"
-        default: return "Check Watch placement"
+        default: return "Continue on iPhone"
         }
     }
 
@@ -369,14 +379,14 @@ struct ActiveRunView: View {
             switch phase {
             case .windDown:
                 activityCue(
-                    eyebrow: AppCopy.ActiveWindDown.cueEyebrow.value,
+                    eyebrow: "EVENING IDEA",
                     activity: plan.eveningActivity,
                     title: plan.eveningActivityTitle,
                     detail: guidanceTip
                 )
             case .morningQuiet:
                 activityCue(
-                    eyebrow: "PHONE-FREE MORNING",
+                    eyebrow: "MORNING IDEA",
                     activity: plan.morningActivity,
                     title: plan.morningActivityTitle,
                     detail: guidanceTip
@@ -397,7 +407,7 @@ struct ActiveRunView: View {
     }
 
     private var routineEyebrow: String {
-        phase == .morningQuiet ? "BEFORE THE PHONE RETURNS" : "AFTER THE PHONE GOES AWAY"
+        phase == .morningQuiet ? "MORNING IDEAS" : "EVENING IDEAS"
     }
 
     private func activityCue(
@@ -437,7 +447,7 @@ struct ActiveRunView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                .accessibilityHint("Choose how to handle Screen-Free Morning tonight")
+                .accessibilityHint("Choose how to handle the planned Screen-Free Morning")
             }
 
             if guardKind == .watchPlacement {
@@ -511,39 +521,6 @@ struct ActiveRunView: View {
                 }
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.secondaryText)
-            }
-        }
-    }
-
-    private var purposeCuePicker: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("THIS TIME IS FOR")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                Menu {
-                    ForEach(QuietPurposeCue.allCases, id: \.self) { cue in
-                        Button {
-                            viewModel.setCurrentPurposeCue(cue)
-                        } label: {
-                            if viewModel.currentPurposeCue == cue {
-                                Label(cue.appFacingTitle, systemImage: "checkmark")
-                            } else {
-                                Text(cue.appFacingTitle)
-                            }
-                        }
-                    }
-                } label: {
-                    HStack {
-                        Label("Purpose", systemImage: "leaf.fill")
-                        Spacer()
-                        Text(viewModel.currentPurposeCue?.appFacingTitle ?? "Choose")
-                    }
-                    .font(AppTypography.body.weight(.semibold))
-                    .foregroundStyle(AppColors.ink)
-                }
-                .accessibilityLabel("Current purpose: \(viewModel.currentPurposeCue?.appFacingTitle ?? "not chosen")")
-                .accessibilityHint("Sets a short local purpose cue for this protected occurrence")
             }
         }
     }
@@ -647,7 +624,7 @@ struct ActiveRunView: View {
 
     private func shieldingBanner(_ banner: ActiveRunShieldingBanner) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            Label(banner.message, systemImage: "iphone.slash")
+            Label(banner.message, systemImage: "shield")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
             if let retryTitle = banner.retryTitle {
@@ -666,12 +643,12 @@ struct ActiveRunView: View {
     private func briefAccessNotice(summary: QuietTimeBriefAccessTrackerSummary) -> some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text("SHORT BREAKS")
+                Text("BRIEF ACCESS")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
                 Text(summary.subtitle)
                     .font(AppTypography.body)
-                Text("Ollie is keeping count for this session.")
+                Text(shieldRole.briefAccessExplanation)
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }
@@ -680,7 +657,7 @@ struct ActiveRunView: View {
     }
 
     private var headline: String {
-        presentation?.headline ?? "Phone resting. You can too."
+        presentation?.headline ?? "The timer is running."
     }
 
     private var subheadline: String {
@@ -688,9 +665,9 @@ struct ActiveRunView: View {
             return subheadline
         }
         switch guardKind {
-        case .honorTimer: return "No Watch check needed. Take your phone to its bed."
-        case .watchPlacement: return "The Watch helps with one short Wind Down check, then it can rest too."
-        case .qrCode: return "A Wind Down code confirms the app-access barrier."
+        case .honorTimer: return "The timer runs on this iPhone; no Watch check is needed."
+        case .watchPlacement: return "This older setup continues as an iPhone timer."
+        case .qrCode: return "This older setup continues as an iPhone timer."
         case .nfcTag: return "Your Wind Down tag is the normal way to finish early."
         }
     }
@@ -738,7 +715,7 @@ struct ActiveRunView: View {
     }
 
     private var transitionCaption: String {
-        presentation?.transitionCaption ?? "Ollie will check in when the phone-away time is done."
+        presentation?.transitionCaption ?? "The timer ends at the planned time."
     }
 
     private var guidanceTip: String? {
@@ -748,6 +725,10 @@ struct ActiveRunView: View {
     private var timerAccessibilityLabel: String {
         presentation?.timerAccessibilityLabel(remainingSeconds: transitionRemainingSeconds)
             ?? "Less than a minute remaining"
+    }
+
+    private var shieldRole: QuietTimeShieldRole {
+        run?.nightWatchPlan?.role == .additionalQuiet ? .additionalQuiet : .primaryWindDown
     }
 }
 

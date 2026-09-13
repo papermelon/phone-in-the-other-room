@@ -1,5 +1,36 @@
 # Future Agent Tasks — Prioritised Backlog
 
+## Farm / shared pasture — device and rollout gates (12 September 2026)
+
+Production source now includes the original wide shared meadow with movable Shepherds and
+separate owned sheep, recall-based visits, revisioned placements, contextual member sheets,
+one group stream, and the 12-contribution lantern. Personal Farm/barn art is refreshed; four
+verified unused runtime files are retired. Ollie stays personal, with fetch/gather and a detail
+page; Shepherd customization keeps its live model above the scrolling options. See
+[implementation evidence](evidence/pasture-redesign-20260912/README.md) and
+[current decisions](plans/slumber-party-pasture-redesign-2026-09-12.md).
+The earlier prototype/research work is historical; its simulated store remains out of release wiring.
+
+- **Hosted activation is not authorized or performed.** Review/deploy the additive migration
+  `20260912120000_shared_pasture.sql` and matching existing Edge function changes in a separately
+  authorized rollout. Older servers retain the existing readable scene and capability handling.
+  Policy starts at migration activation; pre-activation private sessions do not backfill the lantern.
+- Run physical disposable-account A/B tests: contribute/recall, remove/trade sheep then sync,
+  two-party exclusivity, account A/sign-out/B/A, leave/rejoin, block, party deletion, offline
+  placement retry after a concurrent move, and relaunch with ambiguous contribution acknowledgement.
+  Isolated SQL and durable native storage tests establish source contracts, not live transport.
+- Verify fresh session cues, expiry, reconnect and exact original-update cheer context on two
+  devices. Preserve pending/accepted/app-received distinctions; no claim that a person saw a cheer.
+- Verify active Wind Down Home → party → live Home on physical devices with actual selected-app
+  shielding, emergency exit, background/foreground and independent settlement. Simulator fixtures
+  exercise navigation only and deliberately request no shielding.
+- Test real tap versus double-tap pet versus 0.35-second hold/drag, camera swipe, collision and
+  interruption on SE and larger phones. Simulator accessibility move/select/pan controls are
+  inspectable; automation could not reliably reproduce touch hold/drag. Confirm physical VoiceOver
+  focus/speech and Reduce Motion. Do not treat screenshot evidence as motion/protection evidence.
+- Check pinned Shepherd/Ollie previews with the keyboard, landscape, largest Dynamic Type and
+  fitted accessories on physical devices. Keep the four release tabs and return navigation intact.
+
 ## Shared Farm and contextual cheers — rollout and device gates (9 September 2026)
 
 Production native source now integrates the shared Farm, member update sheets, contextual
@@ -7,20 +38,131 @@ cheers, durable queued update-cheer recovery and named recipient entries. The ad
 source includes optional public head shape, participant-only app acknowledgements and a bounded
 projection retaining each member's latest/cheered update. See [plan and validation](plans/slumber-party-shared-farm-and-cheers.md).
 
-- With separate authorization, deploy the matching Edge validator/handler before migration
-  `20260909090000_slumber_party_farm_cheer_receipts.sql`; verify advertised capabilities and
-  mixed-version profile writes against the deployed catalog. This task deploys nothing.
+- Backend rollout completed with founder authorization on 10 September: both Edge functions v4
+  and migration `20260909090000`, including the shipped Foundation-date compatibility repair.
+  See [deployment evidence](evidence/slumber-backend-20260910/deployment.md). Confirm the installed
+  TestFlight app clears the publication error after reopen/refresh; no physical retry was observed
+  during deployment. Add an explicit native transport date contract and an end-to-end encoded
+  request test in the next native maintenance batch; retain the backend adapter for older builds.
+- Native flashing/layout repair is integrated in source on 10 September; validate repeated
+  background refresh on the next installed TestFlight build for both self and friend sheets.
+  Confirm fixed card position, truthful failure recovery, grounded feet, name readability and
+  VoiceOver/Reduce Motion on-device. See [native review](evidence/slumber-grounded-farm-20260910/review.md).
 - Run physical two-account A/B tests: different characters/outfits/head shapes, exact update
   selection, duplicate taps, ambiguous send + relaunch, acknowledgement + sender reconnect,
   account A/sign-out/B/A, leave/rejoin/block, and loss of consent. Use disposable accounts.
-- Verify the unchanged active Wind Down boundary with live background/foreground/overnight
-  transitions: no new in-app social interruption and no claim of human attention from app receipt.
+- Verify active Wind Down behavior with background/foreground/overnight transitions against
+  the 12 September redesign: deliberate interactive pasture access is allowed; shielding and
+  settlement remain intact, no new unsolicited notification policy is assumed, and app receipt
+  never claims human attention. Earlier no-social-UI requirements are superseded for this journey.
 - Confirm native VoiceOver speech/focus and Reduce Motion on physical iPhones. Simulator
   accessibility-tree/layout inspection is separate evidence from physical assistive technology.
 - Operate existing 90-day stream cleanup and verify cascading acknowledgement cleanup;
   legacy round retention continues to require its existing operations review. Receipt metadata
   is participant-only and never a read receipt or a party-lifetime history grant.
 
+
+## Meaningful personalisation — release checks and optional AI (13 September 2026)
+
+The [local loop](plans/meaningful-personalisation-implementation-2026-09-13.md) is implemented;
+see its [validation record](evidence/personalisation-20260913/validation.md). Before distribution,
+validate on physical devices: VoiceOver action order, large text with keyboard/long custom
+wording, account switch with a sheet open, offline relaunch, and a real independent/linked
+morning preserving its countdown, app protection and compact reward receipt. Run a consenting
+usefulness study for goal labels, weekly invitation burden, and accepted changes' later
+self-reported helpfulness. Simulator tests do not establish habit improvement.
+
+The [AI pilot proposal](plans/personalisation-ai-pilot-2026-09-13.md) and offline synthetic harness
+are ready for review. API credit balance/expiry/project access are unverified. No paid evaluation,
+server endpoint, AI consent flow, quota ledger, remote retention or deployment exists. Authorise
+a bounded evaluation budget separately before any model calls; ship AI only if the held-out
+comparison clears the documented quality/privacy/authority gates. Cross-device personalisation
+sync and secure removal from OS backups/recovery history require separate storage designs.
+
+## Wind Down habit loop — validation beyond local implementation (8 September 2026)
+
+The [implementation and pilot record](plans/wind-down-habit-loop-2026-09-08.md) describes the
+plan-first route, private support/reflections, and unchanged admission/reward boundaries.
+Before claiming release readiness, validate on physical iPhones: denied/revoked/empty-selection
+repair; actual selected-app shielding and emergency exit; essential communication/transcription
+and visual alerts with category selections; automatic-start relaunch and the smaller-choice
+snapshot; notification delivery; Watch transport; account A/sign-out/B/A with private drafts.
+Simulator probes establish local behavior only. No distribution or production activation was
+performed by this task.
+
+Run the independent-use pilot and 40-minute SADeaf activity, with interpretation/access needs
+co-designed with participants. Prepare one tested iOS or device-specific Android setup per
+person and a visual way to test, undo, and revise it; app use is optional. Record independent
+use/revision, appeal, and return after interruption separately from long-term habit/sleep claims.
+Do not infer effectiveness from feature completion or add remote analytics by default.
+
+If real corruption of the new private support/reflection values is encountered, add an explicit,
+owner-scoped recovery flow that preserves the unreadable bytes before any replacement. Current
+saves protect those bytes and show an error; reopening retries loading. Deferred personalization
+questionnaire answers are not saved until the person accepts the result; closing it discards
+that optional draft without changing existing answers or gift eligibility.
+
+## Shepherd artwork and fitted clothing — 12 September 2026
+
+The founder-approved body correction is implemented in the shared production renderer:
+broader curved clothes, angled sleeves, mitten hands, shorter trouser sections, rounded boots
+and a broad paper wash. [Before/after proofs and validation](../output/design/shepherd-body-20260912/README.md)
+record the current source state. Existing equipment and customization IDs are unchanged.
+
+Long-hair cheek overlap repaired after founder screenshot review; see the
+[repair and rendered checks](../output/design/shepherd-hair-20260909/README.md).
+
+The [production integration](plans/shepherd-native-art-integration.md) now connects the shared
+paper-textured Canvas renderer to normal avatar surfaces, provides four saved head shapes,
+retains five hairstyles/skin tones and fits all seven existing wearables. Shop thumbnails
+match the renderer. Legacy saves retain their original absence of a head-shape field; future
+IDs remain intact. See [validation and visual evidence](../output/design/shepherd-production-20260909/README.md).
+
+Public head-shape support is now part of the capability-gated
+[shared Farm work](plans/slumber-party-shared-farm-and-cheers.md), with legacy pear fallback.
+Remaining: connect actual pasture locomotion/turns with grounded feet; complete the continuous
+motion and side/back fit review for every garment before enabling motion; add eye-expression
+selection, wardrobe collections and neckwear only with saved-state/fit coverage. Physical
+update/restore, VoiceOver and low-end iPhone rendering performance remain release acceptance
+checks. No archive or distribution is claimed. Screenbook remains shelved; use the dedicated
+Debug study or ordinary SwiftUI previews. Historical [batch-1 evidence](../output/design/shepherd-native-20260908/README.md)
+and [design review](../output/design/shepherd-review-20260908/REVIEW.md) remain references.
+
+## Agent instruction maintenance — 7 September 2026
+
+Repository cleanup is complete; see [the implementation and validation record](agent-instruction-cleanup-2026-09-07.md).
+Provider-managed Figma/Google Docs discovery-description changes remain an upstream or
+maintained-plugin-source follow-up. Prepared replacement wording is in the record; do not
+edit versioned caches or disable plugins as a substitute. After any future metadata change,
+check relevant and unrelated task selection while preserving tool prerequisites and consent.
+
+
+## Account-backed Farm save — native acceptance remaining (2026-09-05)
+
+The founder authorized production deployment and physical-device testing. The local
+transaction store, private Supabase RPCs, account-scoped pending operations,
+restore/conflict/revision controls, shared Apple sign-in, onboarding/Settings entry
+and in-app disclosures are implemented. Farm-only production migrations were
+applied without the unrelated pending social migration. See
+`docs/FARM_BACKUP_DEPLOYMENT.md` for evidence and actual remaining gates.
+
+Release-review restore publication and shared account-deletion fencing are fixed
+locally, with focused fault-injection tests. The complete final-candidate acceptance
+matrix is `docs/PLAYBOOKS/final-build-acceptance.md`; unchecked items remain gates.
+
+Finish physical Apple sign-in, real backup/restore, network interruption and second
+account/device acceptance. Update/reinstall testing must use a disposable install;
+do not erase the founder's existing Farm. Public policy publication and app
+shipping remain separately reported from source edits and Supabase deployment.
+
+## Cumulative Farm credit — physical acceptance remaining (2026-09-05)
+
+Local implementation and migration: ADR-0020. Before distributing, test a real overnight
+run, five-minute access while the app is terminated, same-run schedule revision,
+permission/restore failure, early NFC/emergency exit, and morning handoff. Confirm access
+expiry and actual shield reapplication on supported iOS versions. Simulator arithmetic,
+replay and receipt capture do not establish Family Controls enforcement. Local accounting
+keeps consumed spans/receipt IDs until reset; no new backend deployment is needed.
 
 
 The shared work queue for Codex, Cursor, and human sessions. Pick from the top; read
@@ -376,7 +518,7 @@ execute without human sign-off mid-task (final merge review still applies per
   notifications, ActivityKit, and optional Watch timer mirroring that unit tests and a
   short simulator run cannot fully reproduce.
 - **Mode:** Human + Codex · **Size:** S · **Autonomous:** no
-- **Accept:** run from wind-down through morning quiet on a physical iPhone; cover locked
+- **Accept:** run from Wind Down through Screen-Free Morning on a physical iPhone; cover locked
   screen, termination/relaunch, notification delivery, Live Activity phase changes, early
   end, Watch reachable/unreachable timer mirroring, and NFC recovery; record results in the TestFlight QA playbook. Repeat one
   schedule across a DST or timezone boundary before broader rollout. For the notification
@@ -506,7 +648,7 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ### D3. Curated educational Live Activity notes — completed 2026-08-01
 - **Gate:** source register and locally bundled guidance surfaces are shipped in onboarding, Home,
-  the active run, completion, and More. Live Activity remains limited to a single phase cue.
+  the active run, completion, and More. The initial implementation used a single phase cue; the 7 September device review replaces the unrelated educational pairing with the chosen routine ideas (see `plans/live-activity-and-app-copy-2026-09-07.md`).
 - **Mode:** Product + Codex · **Size:** S · **Autonomous:** no
 - **Accept:** satisfied by `docs/DECISIONS/ADR-0008-wind-down-guidance.md` and
   `docs/SLEEP_GUIDANCE_SOURCES.md`: short static notes, authoritative source IDs, user goals
@@ -514,6 +656,21 @@ execute without human sign-off mid-task (final merge review still applies per
   nighttime interaction requirement. Any future expansion still needs product review.
 
 ### D4. Slumber Party v4 production follow-through and two-account proof — backend deployed, human gates pending
+- **2026-09-07 · Build 40 Profile / Apple return-sign-in review:** local source moves
+  Profile to the Farm header, separates identity/sync/destructive controls, and fixes
+  Apple callback-slot and cancelled-link cleanup. Before calling the reported native
+  failure resolved, verify sign-out → Apple sign-in on a physical device using the new
+  stage/code diagnostic. A system-sheet failure is distinct from Supabase/account or
+  Farm-load failure. Do not change signing or hosted settings without identifying the
+  failing stage and obtaining any required activation authorization.
+- **2026-09-07 · Refresh and experience draft:** local changes scope summary/detail read
+  failures, correct error support references, name failed v4 actions, and simplify the party
+  screen. See [draft and acceptance](plans/slumber-party-refresh-and-experience.md).
+  Correlate the device's rejected request with the affected build and hosted logs; a screenshot
+  reference may have belonged to an earlier successful command. Prove delayed reads, reconnect,
+  successful retry, and two-account updates on devices. The source draft does not establish or
+  repair the underlying hosted rejection. Broader command/outbox error ownership and cursor
+  recovery remain follow-ups; the draft does not replace every legacy global error path.
 - **2026-08-28 activation update:** reviewed membership/avatar/shared-habits migrations and
   both matching Edge handlers are deployed to Release; the expanded public policy is live;
   build 37 shows Testing in internal and external QA. See
@@ -566,8 +723,8 @@ execute without human sign-off mid-task (final merge review still applies per
   Party, Settings, and Nights. Skipping the questions never removes gift eligibility. Wear now
   equips through the correct effect-aware slot; keep for later preserves appearance. Resume
   restores the current surface. Founder review of copy and tour flow remains the merge gate. No `project.yml`,
-  entitlement, or backend changes. Screenbook remains the five-scenario spike; additional
-  first-run states are covered by `#Preview`s.
+  entitlement, or backend changes. Screenbook is shelved (founder confirmed 8 September 2026);
+  first-run states are covered by ordinary `#Preview`s and applicable native validation.
 
 ### D7. Review the expanded Farm economy after four weeks of TestFlight data
 - **Gate:** at least four weeks of real TestFlight use with user-initiated economy exports.
@@ -584,13 +741,9 @@ execute without human sign-off mid-task (final merge review still applies per
   bounds, avatar fit across all five hairstyles, and pasture scale. Do not delete or replace the
   existing production assets until the approved inventory, equipped-overlay, and scene-prop set is
   selected and visually verified.
-- **Screenbook Phase 2+** — after founder acceptance of the five-scenario technical spike,
-  separately approve production hardening, the broader iPhone catalogue, copy application,
-  localization, secondary Apple surfaces, and any private hosting. Keep investigating simulator
-  profile changes that could invalidate the home-indicator canonicalizer, dependency-map
-  omissions, browser-storage backup ergonomics, and equipped Farm decorations inheriting a
-  transient `TabView` pre-layout position without expanding the Phase 1 registry or checking
-  generated screenshots into Git.
+- **Screenbook — shelved** — founder reconfirmed 8 September 2026. Do not cite it as the
+  default review workflow, expand its registry, or pursue its maintenance backlog. Retain
+  existing tooling as historical work; restarting it requires explicit founder direction.
 - **General Friends / broader social** — Slumber Party is the sole ADR-0016 exception; every feed,
   chat, discovery, friendship graph, leaderboard, or other social surface still requires its own
   founder decision and ADR (ADR-0003).
@@ -806,3 +959,18 @@ execute without human sign-off mid-task (final merge review still applies per
   policy, updated privacy materials, Apple-link recovery, and physical two-account/three-account
   QA evidence before broader tester rollout.
 - Brief Access has no `BriefAccessReflectionSheet` and no app-side reflection persistence key. It uses the existing extension/system purpose confirmation and run-scoped tracker; preserve emergency-exit reason storage separately.
+
+- Profile sync follow-up (7 September device screenshots): shared header Profile icon and visible consent-operation feedback implemented locally. Physical device validation remains: enable automatic sync on the affected legacy Apple account, confirm success removes the consent card, and capture any remaining server failure. No production account operation was performed during implementation.
+
+- **Production sync endpoint blocker resolved (7 September 2026):** Founder authorized repair. Production catalog confirmed the account migration was absent. Deployed `20260907110000_account_identity_and_farm_sync.sql` and recorded migration history atomically on `sxjlkcccsentmhowgoqe`; new sync/revision/username HTTPS endpoints resolve and reject anonymous access. Transactional randomized production tests passed, including actual authenticated-role save and restore; all fixtures rolled back and zero test users remain. See [deployment evidence](FARM_BACKUP_DEPLOYMENT.md#7-september-2026--account-sync-production-repair). Remaining: physical Profile consent/save and native Apple sign-out/sign-in on the affected build. No founder Farm was modified in testing.
+
+- **7 September device protection / Slumber Party entry:** Local repair routes, monitor-installation result handling, and account-Farm loading recovery are implemented. Confirm automatic scheduling and two-account Slumber Party on the affected device/build; a screenshot does not identify an underlying hosted rejection. See [repair and validation](plans/device-protection-and-slumber-entry-repair.md).
+
+- **13 September morning / completion redesign:** Source now shares the sunrise countdown scene, removes active-session Purpose menus, and makes completion reward-led with linked morning summaries. Verify compact-screen and accessibility layouts, scene/background behavior, NFC/emergency exit, saved reward destinations, and protection repair on the final build; the founder deferred full build/device verification during these visual edits. Focused macOS XCTest execution passed 21 journey/morning/receipt domain tests (the unchanged ActivityKit adapter was excluded from the harness); affected SwiftUI files passed syntax parsing. These checks do not type-check or visually validate the iOS app. Meaningful personalisation is now implemented separately in the [local delivery record](plans/meaningful-personalisation-implementation-2026-09-13.md); a paid AI pilot remains proposed only.
+- **7 September Live Activity / copy:** Verify the background bedtime redraw on a locked phone without reopening the app, including offline and app-terminated cases. The local next-boundary freshness projection does not provide repeated background transitions or terminal dismissal. On 12 September the founder approved APNs, Debug/Release client flags were enabled, and existing hosted scheduler/configuration health was verified; signed-device delivery remains unproven. Inspect the three-idea Lock Screen layout, large text and VoiceOver; see [implementation and acceptance](plans/live-activity-and-app-copy-2026-09-07.md). The 13 September icon update uses a crescent moon for Wind Down/overnight and a sun for Screen-Free Morning; include both in the next Lock Screen and Dynamic Island device check.
+
+- **12 September Wind Down completion repair:** On a new signed build, verify Wind Down → overnight → Morning → checkmark/completion copy while locked; then open from both the activity and app icon and confirm the activity disappears. Repeat completion with Farm/Nights/Settings selected, dismiss the receipt, and switch all four tabs. Include active linked Morning, no saved run, relaunch, offline, early end, APNs rotation and retry. Local source and isolated Simulator checks do not establish physical APNs/Lock Screen behavior. Original Wind Down schedules use the enabled existing backend; independent/rescheduled Morning-only push scheduling remains a separate follow-up.
+
+- **NFC start repair, 12 September:** Source now permits a new NFC scan when the coordinator retains a completed/early-ended receipt, gives the pending mode priority over the prior run's tag purpose, and cancels preflight only on actual sheet dismissal rather than temporary disappearance under system UI. Confirm on a physical iPhone: open the start sheet → start the scanner → read a registered tag → one admitted run with the correct mode; repeat Wind Down after Phone Away and the reverse, completed/early-ended receipt retention, scanner cancellation/retry, picker return, mismatched tag, and protection-readiness rejection. A bare tag tap outside the in-app scanner is not currently a start entry point; the reported tap context remains to be confirmed.
+
+- **Old NFC tag recovery, 12 September:** Idle pairing/replacement now routes recognized orphaned credentials through explicit reset confirmation; the lost-tag wizard owns that dialog. Error copy distinguishes unreadable tags from readable unrecognized formats and a different tag scanned at confirmation. Physically retest the reported old tag on an updated build, including ordinary pairing, lost-tag replacement, recovery after local-data reset, cancellation, same-tag confirmation, and preservation of the old pairing after write failure. The screenshot alone cannot identify the tag's NDEF format. Unrecognized legacy/foreign formats remain unsupported; collect the new error category before deciding on a format migration or an explicitly confirmed erase flow. Simulator checks do not prove a physical write or NFC-sheet presentation.

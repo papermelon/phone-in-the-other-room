@@ -598,6 +598,9 @@ final class QuietTimeBriefAccessTests: XCTestCase {
         )
 
         XCTAssertEqual(state.durableCount(for: schedule.runID), 1)
+        let recovered = try JSONDecoder().decode(QuietTimeBriefAccessState.self, from: JSONEncoder().encode(state))
+        XCTAssertEqual(recovered.completedRunCounts.first?.uses?.first?.requestedAt, grant.requestedAt)
+        XCTAssertEqual(recovered.completedRunCounts.first?.uses?.first?.expiresAt, grant.expiresAt)
         XCTAssertEqual(state.occurrenceID, nextOccurrence)
         XCTAssertEqual(state.scheduleEpoch, 6)
         XCTAssertFalse(

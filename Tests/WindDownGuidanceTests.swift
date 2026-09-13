@@ -23,6 +23,20 @@ final class WindDownGuidanceTests: XCTestCase {
         XCTAssertFalse(caffeine.body.contains("after 2"))
     }
 
+    func testExerciseTimingIsAnOptionalExperimentWithoutAUniversalCutoff() throws {
+        let exercise = try XCTUnwrap(
+            WindDownGuidanceLibrary.items.first { $0.id == "exercise-timing-experiment" }
+        )
+
+        XCTAssertEqual(exercise.phase, .windDown)
+        XCTAssertEqual(exercise.sourceIDs, ["nhlbi-healthy-sleep"])
+        XCTAssertNil(exercise.routineActivity)
+        XCTAssertTrue(exercise.body.contains("If"))
+        XCTAssertTrue(exercise.body.contains("notice"))
+        XCTAssertFalse(exercise.body.contains("must"))
+        XCTAssertFalse(exercise.body.contains("hours before"))
+    }
+
     func testOvernightHasNoActivePhaseGuidance() {
         XCTAssertTrue(WindDownGuidanceLibrary.items(for: .overnight).isEmpty)
         XCTAssertNil(NightWatchGuidance.tip(for: .overnight, seed: UUID()))
@@ -121,7 +135,7 @@ final class WindDownGuidanceTests: XCTestCase {
     }
 
     func testIdeasAndSourcesLibraryKeepsAllTopicAndSourceRecordsReachable() throws {
-        XCTAssertEqual(WindDownGuidanceLibrary.items.count, 10)
+        XCTAssertEqual(WindDownGuidanceLibrary.items.count, 11)
         XCTAssertEqual(WindDownGuidanceTopic.allCases.count, 6)
         XCTAssertEqual(WindDownGuidanceSourceRegistry.sources.count, 7)
         XCTAssertEqual(
@@ -130,7 +144,7 @@ final class WindDownGuidanceTests: XCTestCase {
         )
         XCTAssertEqual(
             WindDownGuidanceTopic.allCases.map { WindDownGuidanceLibrary.items(for: $0).count },
-            [1, 4, 1, 2, 1, 1]
+            [1, 5, 1, 2, 1, 1]
         )
 
         let external = WindDownGuidanceSourceRegistry.sources(of: .external)

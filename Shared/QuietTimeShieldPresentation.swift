@@ -6,6 +6,23 @@ enum QuietTimeShieldRole: String, Codable, Equatable, Hashable {
     case primaryWindDown
     case additionalQuiet
     case screenFreeMorning
+
+    var timerName: String {
+        switch self {
+        case .primaryWindDown: return "Wind Down"
+        case .additionalQuiet: return "Phone Away"
+        case .screenFreeMorning: return "Screen-Free Morning"
+        }
+    }
+
+    /// Shared verbatim by the shield and active-run surfaces so Brief Access
+    /// cannot be mistaken for ending or shortening the underlying timer.
+    var briefAccessExplanation: String {
+        if self == .screenFreeMorning {
+            return "Selected apps unlock for up to 5 minutes. The morning timer continues."
+        }
+        return "Selected apps unlock for up to 5 minutes. The \(timerName) timer continues. Farm growth pauses during access; saved progress stays."
+    }
 }
 
 enum QuietTimeShieldCueGroup: String, Codable, CaseIterable, Equatable, Hashable {
@@ -333,7 +350,7 @@ enum ShieldCueCatalog {
     ]
 
     static let overnight = [
-        "Your phone is tucked away. There is nothing else to do here."
+        "The overnight phase is running. Leave this check for later."
     ]
 
     static let morningQuiet = [

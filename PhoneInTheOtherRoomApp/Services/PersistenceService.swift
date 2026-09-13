@@ -5,6 +5,7 @@ final class PersistenceService {
     static let shared = PersistenceService()
 
     private let defaults: UserDefaults
+    let farmSaveStore: FarmSaveStore
     private let progressKey = "ollie.progress"
     private let rewardsKey = "ollie.rewards"
     private let thresholdKey = "ollie.thresholds"
@@ -46,8 +47,63 @@ final class PersistenceService {
     private var debugLastSaveAt: [String: Date] = [:]
 #endif
 
-    init(defaults: UserDefaults = .standard) {
+    init(defaults: UserDefaults = .standard, farmSaveDirectory: URL? = nil,
+         farmSaveFiles: FarmSaveFileAccess = LocalFarmSaveFileAccess()) {
         self.defaults = defaults
+        let root = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let scope: String
+        if defaults === UserDefaults.standard {
+            scope = "FarmSave"
+        } else {
+            let key = "ollie.farm.localStoreID"
+            let identifier = defaults.string(forKey: key) ?? UUID().uuidString
+            defaults.set(identifier, forKey: key)
+            scope = "FarmSave-\(identifier)"
+        }
+        farmSaveStore = FarmSaveStore(
+            directory: farmSaveDirectory ?? root.appendingPathComponent(scope),
+            files: farmSaveFiles,
+            didCommit: { defaults.set(true, forKey: "ollie.farm.saveMigrated") },
+            legacy: {
+                guard !defaults.bool(forKey: "ollie.farm.saveMigrated") else {
+                    throw FarmSaveError.unavailable
+                }
+                var values: [String: Data] = [:]
+                for key in FarmSaveDocument.keys {
+                    if defaults.object(forKey: key) != nil {
+                        guard let data = defaults.data(forKey: key) else {
+                            throw FarmSaveError.invalidComponent(key)
+                        }
+                        values[key] = data
+                    }
+                }
+                return values
+            }
+        )
+        do {
+            try farmSaveStore.migrateAccountLocalValues {
+                var values: [String: Data] = [:]
+                for key in AccountFarmLocalKeys.all {
+                    if key == "ollie.userProfile.socialAvatar.isExplicit" {
+                        if let value = defaults.object(forKey: key) as? Bool {
+                            values[key] = try JSONEncoder().encode(value)
+                        }
+                    } else if defaults.object(forKey: key) != nil {
+                        guard let data = defaults.data(forKey: key) else { throw FarmSaveError.invalidComponent(key) }
+                        values[key] = data
+                    }
+                }
+                return values
+            }
+        } catch { farmSaveStore.reject(error) }
+    }
+
+    /// Legacy defaults are no longer read after scoped migration. Remove their
+    /// redundant copies when deleting account data, after the durable store commit.
+    func purgeLegacyFarmDefaultsAfterAccountDeletion() {
+        for key in FarmSaveDocument.keys.union(AccountFarmLocalKeys.all) {
+            defaults.removeObject(forKey: key)
+        }
     }
 
     var progress: UserProgress {
@@ -288,12 +344,14 @@ final class PersistenceService {
     }
 
     func deleteNightWatchHistory() {
-        defaults.removeObject(forKey: nightWatchHistoryKey)
+        save(Optional<NightWatchHistory>.none, key: nightWatchHistoryKey)
     }
 
     /// Clears local ritual progression while leaving the person's setup and physical
     /// phone-bed pairing intact so a fresh trail does not require reconfiguration.
-    func resetLocalProgress() {
+    @discardableResult
+    func resetLocalProgress() -> Bool {
+        do { try farmSaveStore.reset() } catch { farmSaveStore.reject(error); return false }
         [
             progressKey,
             rewardsKey,
@@ -313,13 +371,17 @@ final class PersistenceService {
             nightFlockRewardLedgerKey,
             windDownProfileKey
         ].forEach { defaults.removeObject(forKey: $0) }
+        return true
     }
 
     /// Removes every user-facing Counting Sheep value stored in the standard
     /// defaults suite. App Group values and runtime side effects are cleared by
     /// their owning services so each boundary remains explicit and testable.
-    func resetLocalProductData() {
+    @discardableResult
+    func resetLocalProductData() -> Bool {
+        do { try farmSaveStore.reset() } catch { farmSaveStore.reject(error); return false }
         CountingSheepOwnedStorage.clearStandardDefaults(defaults)
+        return true
     }
 
     var impactSharingPreferences: ImpactSharingPreferences {
@@ -370,6 +432,8 @@ final class PersistenceService {
     var farmState: FarmState {
         get {
             let stored = load(FarmState.self, key: farmStateKey) ?? .empty
+            guard farmSaveStore.failure == nil,
+                  (try? farmSaveStore.snapshot().effectiveScope) != .signedOut else { return stored }
             let search = sheepSearchState
             let ledger = welcomeRewardLedger
             // Search settlement is persisted before Farm projection. Replaying
@@ -380,20 +444,21 @@ final class PersistenceService {
                 search: search,
                 ledger: ledger
             )
-            if reconciled.search != search {
-                save(reconciled.search, key: sheepSearchStateKey)
-            }
-            if reconciled.ledger != ledger {
-                save(reconciled.ledger, key: welcomeRewardLedgerKey)
-            }
-            if stored != reconciled.farm {
-                save(reconciled.farm, key: farmStateKey)
+            do {
+                try farmSaveStore.transaction {
+                    if reconciled.search != search { save(reconciled.search, key: sheepSearchStateKey) }
+                    if reconciled.ledger != ledger { save(reconciled.ledger, key: welcomeRewardLedgerKey) }
+                    if stored != reconciled.farm { save(reconciled.farm, key: farmStateKey) }
+                }
+            } catch {
+                return stored
             }
             return reconciled.farm
         }
         set {
             save(newValue, key: farmStateKey)
-            synchronizeUserProfilePresentation(from: newValue)
+            // Profile getters derive from committed Farm state. Do not persist
+            // a new appearance while an outer Farm transaction can still fail.
         }
     }
 
@@ -401,6 +466,10 @@ final class PersistenceService {
     /// appearance follows the current Farm look before any future transport uses it.
     var userProfile: CountingSheepUserProfile {
         get {
+            guard farmSaveStore.hasReadableSave,
+                  (try? farmSaveStore.snapshot().effectiveScope) != .signedOut else {
+                return CountingSheepUserProfile(displayName: "")
+            }
             let farm = farmState
             let stored = load(CountingSheepUserProfile.self, key: userProfileKey)
                 ?? CountingSheepUserProfile(displayName: "")
@@ -416,8 +485,8 @@ final class PersistenceService {
     /// Keeps a deliberate default-Shepherd choice distinct from a pristine
     /// profile, so a restored account may adopt its server identity once.
     var hasExplicitSocialAvatarSelection: Bool {
-        get { defaults.object(forKey: explicitSocialAvatarSelectionKey) as? Bool ?? false }
-        set { defaults.set(newValue, forKey: explicitSocialAvatarSelectionKey) }
+        get { load(Bool.self, key: explicitSocialAvatarSelectionKey) ?? false }
+        set { save(newValue, key: explicitSocialAvatarSelectionKey) }
     }
 
     /// Character placement is visual preference, kept separate from Farm
@@ -425,16 +494,6 @@ final class PersistenceService {
     var farmPastureSceneSnapshot: PastureSceneSnapshot? {
         get { load(PastureSceneSnapshot.self, key: farmPastureSceneKey) }
         set { save(newValue, key: farmPastureSceneKey) }
-    }
-
-    private func synchronizeUserProfilePresentation(from farm: FarmState) {
-        let stored = load(CountingSheepUserProfile.self, key: userProfileKey)
-            ?? CountingSheepUserProfile(displayName: "")
-        let synchronized = profile(stored, synchronizedWith: farm)
-        guard synchronized != stored || load(CountingSheepUserProfile.self, key: userProfileKey) == nil else {
-            return
-        }
-        save(synchronized, key: userProfileKey)
     }
 
     private func profile(
@@ -511,8 +570,56 @@ final class PersistenceService {
         set { save(newValue, key: windDownProfileKey) }
     }
 
-    func deleteImpactUploadRecords() {
-        defaults.removeObject(forKey: impactUploadRecordsKey)
+    /// Removes only the records held by the current Farm scope. The optional
+    /// identity fence keeps an async cloud deletion for one account from
+    /// erasing a different account after a local account transition.
+    @discardableResult
+    func deleteImpactUploadRecords(
+        expectedScope: AccountFarmScope? = nil,
+        expectedLineageID: UUID? = nil
+    ) -> Bool {
+        deleteImpactSharingState(
+            includePreferences: false,
+            expectedScope: expectedScope,
+            expectedLineageID: expectedLineageID
+        )
+    }
+
+    /// The local acknowledgement of a successful remote deletion commits the
+    /// preference and its upload ledger together in the active account scope.
+    @discardableResult
+    func deleteSharedImpactData(
+        expectedScope: AccountFarmScope,
+        expectedLineageID: UUID
+    ) -> Bool {
+        deleteImpactSharingState(
+            includePreferences: true,
+            expectedScope: expectedScope,
+            expectedLineageID: expectedLineageID
+        )
+    }
+
+    private func deleteImpactSharingState(
+        includePreferences: Bool,
+        expectedScope: AccountFarmScope?,
+        expectedLineageID: UUID?
+    ) -> Bool {
+        do {
+            try farmSaveStore.transaction {
+                let active = try farmSaveStore.snapshot()
+                guard active.effectiveScope != .signedOut,
+                      expectedScope.map({ active.effectiveScope == $0 }) ?? true,
+                      expectedLineageID.map({ active.lineageID == $0 }) ?? true
+                else { throw FarmSaveError.unavailable }
+                if includePreferences {
+                    try farmSaveStore.setLocalData(nil, for: impactSharingPreferencesKey)
+                }
+                try farmSaveStore.setLocalData(nil, for: impactUploadRecordsKey)
+            }
+            return true
+        } catch {
+            return false
+        }
     }
 
     var installationID: UUID {
@@ -550,7 +657,10 @@ final class PersistenceService {
     }
 
     private func load<T: Decodable>(_ type: T.Type, key: String) -> T? {
-        guard let data = defaults.data(forKey: key) else { return nil }
+        let data = FarmSaveDocument.keys.contains(key)
+            ? farmSaveStore.data(for: key) : (AccountFarmLocalKeys.all.contains(key)
+                ? farmSaveStore.localData(for: key) : defaults.data(forKey: key))
+        guard let data else { return nil }
         return try? JSONDecoder().decode(type, from: data)
     }
 
@@ -564,10 +674,23 @@ final class PersistenceService {
             "write key=\(key, privacy: .public) count=\(self.debugSaveCounts[key, default: 0]) secondsSincePrevious=\(interval, format: .fixed(precision: 3))"
         )
 #endif
-        guard let value, let data = try? JSONEncoder().encode(value) else {
-            defaults.removeObject(forKey: key)
-            return
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys]
+            let data = try value.map { try encoder.encode($0) }
+            if FarmSaveDocument.keys.contains(key) {
+                try farmSaveStore.set(data, for: key)
+            } else if AccountFarmLocalKeys.all.contains(key) {
+                try farmSaveStore.setLocalData(data, for: key)
+            } else if let data {
+                defaults.set(data, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
+        } catch {
+            // Encoding failure is not an intentional deletion. Preserve the
+            // previous value and fail the entire surrounding Farm transaction.
+            farmSaveStore.reject(error)
         }
-        defaults.set(data, forKey: key)
     }
 }

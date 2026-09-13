@@ -31,7 +31,7 @@ struct WindDownStartSheet: View {
             return "PRACTICE QUIET · \(viewModel.pendingWindDownStartContext?.durationMinutes ?? 5) MIN"
         case .oneTimeQuiet: return "PHONE AWAY"
         case .repeatingQuiet: return "PHONE AWAY"
-        case .primary, .none: return "START WIND DOWN"
+        case .primary, .none: return "WIND DOWN"
         }
     }
 
@@ -39,16 +39,16 @@ struct WindDownStartSheet: View {
         if viewModel.isScanningNFCForStart { return "Waiting for your tag…" }
         if isManualPhoneAway { return "Start now" }
         if isAdHocQuiet {
-            return usesNFC ? "Tap tag to start Phone Away" : "Start Phone Away"
+            return "Start now"
         }
         if viewModel.pendingWindDownStartContext?.isPractice == true {
             let minutes = viewModel.pendingWindDownStartContext?.durationMinutes ?? 5
             return usesNFC ? "Tap tag to start practice" : "Start \(minutes)-minute practice"
         }
         if viewModel.pendingNightWatchIsAdditionalQuiet {
-            return usesNFC ? "Tap tag to start Phone Away" : "Start now"
+            return "Start now"
         }
-        return usesNFC ? "Tap Wind Down tag to start" : "Start now"
+        return "Put phone away"
     }
 
     private var heading: String {
@@ -70,22 +70,22 @@ struct WindDownStartSheet: View {
 
     private var explanation: String {
         if isManualPhoneAway {
-            return "The minutes begin when you tap Start. Phone Away stays separate from Wind Down and appears in Nights."
+            return "The timer begins when you tap Start now. Use the room beyond doomscrolling apps for reading, making, movement, cooking, conversation, rest, work, or anything else you value. Phone Away stays separate in Nights."
         }
         if isAdHocQuiet {
             return "This scheduled Phone Away period ends at \(adHocEndTime). Its saved end time stays in place while you confirm protection."
         }
         if viewModel.pendingNightWatchIsAdditionalQuiet {
             let end = viewModel.pendingNightWatchEndsAt.map(OllieFormat.time) ?? "the saved end time"
-            let protection = " Your chosen apps and categories will pause until then."
+            let protection = " Counting Sheep requests limits for your chosen apps and categories until then."
             if viewModel.pendingWindDownStartContext?.isPractice == true {
-                return "This practice ends at \(end). It creates a real Nights record. It is not a protected night, and it does not add to the usual Phone Away search meter. Finishing this one-time introduction lets Ollie bring home the second starter sheep.\(protection)"
+                return "This practice ends at \(end). It creates a real Nights record without counting toward Wind Down search progress or the Phone Away meter. Finishing this one-time introduction lets Ollie bring home the second starter sheep.\(protection)"
             }
             return "This Phone Away period ends at \(end). Its minutes begin when you start, and it stays separate from Wind Down.\(protection)"
         }
         return usesNFC
-            ? "Your chosen apps and categories will pause after you tap your Wind Down tag. Counting Sheep stays available."
-            : "Your chosen apps and categories will pause from Wind Down start. Counting Sheep stays available."
+            ? "After you choose Put phone away, tap your registered tag. Counting Sheep then requests limits for your selected apps and categories through Screen-Free Morning, including overnight. Counting Sheep stays available."
+            : "Counting Sheep requests limits for your selected apps and categories from Wind Down start through Screen-Free Morning, including overnight. Counting Sheep stays available."
     }
 
     var body: some View {
@@ -109,6 +109,26 @@ struct WindDownStartSheet: View {
 
                     if isManualPhoneAway {
                         phoneAwayDurationChoice
+                    }
+
+                    if !viewModel.pendingNightWatchIsAdditionalQuiet {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                            Text(viewModel.pendingWindDownHabitPlan.phonePlacement.actionCue)
+                                .font(AppTypography.body.weight(.semibold))
+                            if viewModel.pendingWindDownHabitPlan.phonePlacement == .accessibleNearby {
+                                Text("Keep the communication and alerts you need available. Nearby placement uses the same selected-app limits; review your selection below.")
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.muted)
+                            }
+                            if viewModel.pendingWindDownHabitPlan.useSmallerVersionNextTime,
+                               let activity = WindDownHabitRules.smallerActivityInvitation(for: viewModel.pendingWindDownHabitPlan) {
+                                Text("Smaller version: \(activity)")
+                                    .font(AppTypography.body)
+                                Text("One Wind Down only. Your timing and protection stay the same.")
+                                    .font(AppTypography.caption)
+                                    .foregroundStyle(AppColors.muted)
+                            }
+                        }
                     }
 
                     shieldingChoice
@@ -162,9 +182,6 @@ struct WindDownStartSheet: View {
             }
             .background(AppColors.paper.ignoresSafeArea())
         }
-        .onDisappear {
-            viewModel.cancelNightWatchStart()
-        }
         .onAppear { viewModel.refreshScreenTimeState() }
         .onChange(of: scenePhase) { _, phase in
             guard phase == .active else { return }
@@ -174,7 +191,7 @@ struct WindDownStartSheet: View {
         .familyActivityPicker(
             headerText: viewModel.pendingNightWatchIsAdditionalQuiet
                 ? "Choose apps to limit during this Phone Away period."
-                : "Choose apps to limit during Wind Down.",
+                : "Choose apps to limit from Wind Down start through Screen-Free Morning, including overnight.",
             footerText: "Counting Sheep stays available. Websites are ignored.",
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection
@@ -318,6 +335,7 @@ struct WindDownStartSheet: View {
 /// the action that led here remains separate so repair cannot become an
 /// accidental scheduled or manual start.
 struct ScreenTimeProtectionRepairView: View {
+    var repairsAutomaticStart = false
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.scenePhase) private var scenePhase
     @State private var showScreenTimePicker = false
@@ -329,9 +347,11 @@ struct ScreenTimeProtectionRepairView: View {
                     Text("APP PROTECTION")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("Choose what can rest with your phone.")
+                    Text(repairsAutomaticStart ? "Repair automatic Wind Down" : "Choose what can rest with your phone.")
                         .font(AppTypography.display(30))
-                    Text("Counting Sheep uses only the private selection you make with Apple. It cannot see the names, and Counting Sheep stays available.")
+                    Text(repairsAutomaticStart
+                         ? "Check Screen Time access, review your selected apps or categories, then retry the schedule."
+                         : "Counting Sheep uses only the private selection you make with Apple. It cannot see the names, and Counting Sheep stays available.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
                 }
@@ -369,7 +389,25 @@ struct ScreenTimeProtectionRepairView: View {
                         .foregroundStyle(AppColors.grass)
                 }
 
-                Text("When you return, review the selection here. Nothing starts automatically.")
+                if repairsAutomaticStart {
+                    PixelCard {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                            Text(viewModel.automaticWindDownStatusPresentation.title)
+                                .font(AppTypography.headline)
+                            Text(viewModel.automaticWindDownStatusPresentation.detail)
+                                .font(AppTypography.body)
+                                .foregroundStyle(AppColors.secondaryText)
+                            Button("Retry automatic scheduling", action: viewModel.retryAutomaticWindDownScheduling)
+                                .frame(maxWidth: .infinity, minHeight: 44)
+                                .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                                .disabled(viewModel.shieldingReadiness != .ready || viewModel.isRunning)
+                        }
+                    }
+                }
+
+                Text(repairsAutomaticStart
+                     ? "Review Screen Time access and your selection, then retry. Your next scheduled start will appear here."
+                     : "When you return, review the selection here before starting your session.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                     .fixedSize(horizontal: false, vertical: true)
@@ -386,7 +424,7 @@ struct ScreenTimeProtectionRepairView: View {
         }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
-            headerText: "Choose apps to limit during Wind Down and Phone Away.",
+            headerText: "Choose apps to limit through Wind Down and Screen-Free Morning, including overnight, and during Phone Away.",
             footerText: "Counting Sheep stays available. Websites are ignored.",
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection

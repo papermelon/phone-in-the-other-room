@@ -41,8 +41,10 @@ Receipt metadata is visible only to sender/recipient, described alongside cheer 
 contains no read/seen timestamp. It does not expand Health, plans, archives or app-data sharing.
 Deploy matching additive Edge validation before the database advertises new capabilities, only
 with separate authorization. Existing shared-habits agreements and withdrawal fences still apply.
-Repository records establish earlier deployments, not deployment of this migration. Physical
-multi-account, reconnect, leave/block and overnight quiet checks remain separate release gates.
+The founder authorized deployment on 10 September 2026. Both production Edge functions are
+version 4 and this migration is deployed, with hosted rollback-isolated compatibility and
+permission tests passing; see [deployment evidence](../evidence/slumber-backend-20260910/deployment.md).
+Physical multi-account, reconnect, leave/block and overnight quiet checks remain separate gates.
 
 ## Implementation and evidence
 
@@ -99,3 +101,10 @@ Edge validator. No hosted change or release upload was performed. Deployment, ph
 reconnect/acknowledgement, account switching, overnight quiet behavior and physical assistive
 technology checks remain in the backlog. Source and permission-contract review is complete;
 production rollout still requires its separate authorization and review.
+
+
+10 September native refinement: the founder approved replacing floating grid avatars with a grounded
+paper-textured meadow, fixed ground line, contact shadows and quieter names beneath the landscape.
+Two members share each scene; accessibility sizes use one. Background refresh is distinct from an
+actual stale/failure state and must not insert recovery UI or shift an already loaded update.
+See [native review](../evidence/slumber-grounded-farm-20260910/review.md).

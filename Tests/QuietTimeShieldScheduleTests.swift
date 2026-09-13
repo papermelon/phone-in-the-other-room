@@ -331,7 +331,7 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
         )
     }
 
-    func testProtectionSummaryUsesObservedStatusWindows() {
+    func testLegacyBookendMonitorWindowsRemainPartialEvidence() {
         let start = Date(timeIntervalSince1970: 1_800_000_000)
         let plan = NightWatchPlan(
             intendedBedtime: start.addingTimeInterval(30 * 60),
@@ -364,7 +364,128 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
 
         XCTAssertEqual(summary.windDownMinutes, 30)
         XCTAssertEqual(summary.morningQuietMinutes, 30)
+        XCTAssertEqual(summary.evidence, .partial)
+    }
+
+    func testDelayedMonitorApplyAndMainAppTerminalClearProduceObservedEvidence() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(30 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: plan.protectedUntil.timeIntervalSince(start),
+            startedAt: start,
+            state: .completed,
+            nightWatchPlan: plan
+        )
+        let statuses = [
+            status(
+                run: run,
+                value: .applied,
+                window: .protectedSession,
+                at: start.addingTimeInterval(2.2)
+            ),
+            QuietTimeShieldStatusSnapshot(
+                runID: run.id,
+                revision: 1,
+                status: .cleared,
+                window: nil,
+                observedAt: plan.protectedUntil.addingTimeInterval(0.5),
+                provenance: .mainApp
+            )
+        ]
+
+        let summary = QuietTimeShieldEvidenceMath.summary(
+            for: run,
+            statuses: statuses,
+            at: plan.protectedUntil
+        )
+
+        // The callback timestamp intentionally does not backfill the
+        // unobserved first seconds.
+        XCTAssertEqual(summary.windDownMinutes, 29)
+        XCTAssertEqual(summary.morningQuietMinutes, 30)
         XCTAssertEqual(summary.evidence, .observed)
+    }
+
+    func testMonitorApplyWithoutTerminalClearProducesPartialEvidence() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan.additionalQuiet(
+            start: start,
+            end: start.addingTimeInterval(30 * 60)
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: 30 * 60,
+            startedAt: start,
+            state: .completed,
+            nightWatchPlan: plan
+        )
+
+        let summary = QuietTimeShieldEvidenceMath.summary(
+            for: run,
+            statuses: [status(
+                run: run,
+                value: .applied,
+                window: .protectedSession,
+                at: start
+            )],
+            at: plan.protectedUntil
+        )
+
+        XCTAssertEqual(summary.evidence, .partial)
+    }
+
+    func testGlobalMonitorClearCreatesAnObservedGap() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan.additionalQuiet(
+            start: start,
+            end: start.addingTimeInterval(30 * 60)
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: 30 * 60,
+            startedAt: start,
+            state: .completed,
+            nightWatchPlan: plan
+        )
+        let statuses = [
+            status(run: run, value: .applied, window: .protectedSession, at: start),
+            QuietTimeShieldStatusSnapshot(
+                runID: run.id,
+                revision: 1,
+                status: .cleared,
+                window: nil,
+                observedAt: start.addingTimeInterval(10 * 60),
+                provenance: .deviceActivityMonitor
+            ),
+            status(
+                run: run,
+                value: .applied,
+                window: .protectedSession,
+                at: start.addingTimeInterval(15 * 60)
+            ),
+            QuietTimeShieldStatusSnapshot(
+                runID: run.id,
+                revision: 1,
+                status: .cleared,
+                window: nil,
+                observedAt: plan.protectedUntil,
+                provenance: .deviceActivityMonitor
+            )
+        ]
+
+        let summary = QuietTimeShieldEvidenceMath.summary(
+            for: run,
+            statuses: statuses,
+            at: plan.protectedUntil
+        )
+
+        XCTAssertEqual(summary.evidence, .partial)
     }
 
     func testProtectionSummaryCanUseAutomaticScheduleEvidence() {
@@ -392,14 +513,16 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
                 revision: 1,
                 status: .applied,
                 window: .windDown,
-                observedAt: start
+                observedAt: start,
+                provenance: .deviceActivityMonitor
             ),
             QuietTimeShieldStatusSnapshot(
                 runID: scheduleID,
                 revision: 1,
                 status: .cleared,
                 window: .windDown,
-                observedAt: plan.intendedBedtime
+                observedAt: plan.intendedBedtime,
+                provenance: .deviceActivityMonitor
             )
         ]
 
@@ -414,6 +537,247 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
         XCTAssertEqual(summary.evidence, .partial)
     }
 
+    func testPriorDayRepeatingScheduleApplyCannotBecomeCurrentObservedEvidence() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(30 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: plan.protectedUntil.timeIntervalSince(start),
+            startedAt: start,
+            state: .completed,
+            nightWatchPlan: plan
+        )
+        let scheduleID = UUID()
+        let statuses = [
+            QuietTimeShieldStatusSnapshot(
+                runID: scheduleID,
+                revision: 1,
+                status: .applied,
+                window: .protectedSession,
+                observedAt: start.addingTimeInterval(-24 * 60 * 60),
+                provenance: .deviceActivityMonitor
+            ),
+            QuietTimeShieldStatusSnapshot(
+                runID: run.id,
+                revision: 1,
+                status: .cleared,
+                window: nil,
+                observedAt: plan.protectedUntil.addingTimeInterval(0.5),
+                provenance: .mainApp
+            )
+        ]
+
+        let summary = QuietTimeShieldEvidenceMath.summary(
+            for: run,
+            statuses: statuses,
+            at: plan.protectedUntil,
+            additionalRunIDs: [scheduleID]
+        )
+
+        XCTAssertEqual(summary.windDownMinutes, 0)
+        XCTAssertEqual(summary.morningQuietMinutes, 0)
+        XCTAssertEqual(summary.evidence, .unavailable)
+    }
+
+    func testLateReconciliationClearCannotCompleteHistoricalOccurrenceEvidence() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan(
+            intendedBedtime: start.addingTimeInterval(30 * 60),
+            wakeTime: start.addingTimeInterval(8 * 60 * 60),
+            protectedUntil: start.addingTimeInterval(8.5 * 60 * 60),
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: plan.protectedUntil.timeIntervalSince(start),
+            startedAt: start,
+            state: .completed,
+            nightWatchPlan: plan
+        )
+        let repeatingScheduleID = UUID()
+        let statuses = [
+            QuietTimeShieldStatusSnapshot(
+                runID: repeatingScheduleID,
+                revision: 1,
+                status: .applied,
+                window: .protectedSession,
+                observedAt: start.addingTimeInterval(2),
+                provenance: .deviceActivityMonitor
+            ),
+            QuietTimeShieldStatusSnapshot(
+                runID: repeatingScheduleID,
+                revision: 1,
+                status: .cleared,
+                window: nil,
+                observedAt: plan.protectedUntil.addingTimeInterval(24 * 60 * 60),
+                provenance: .mainApp
+            )
+        ]
+
+        let summary = QuietTimeShieldEvidenceMath.summary(
+            for: run,
+            statuses: statuses,
+            at: plan.protectedUntil,
+            additionalRunIDs: [repeatingScheduleID]
+        )
+
+        XCTAssertEqual(summary.evidence, .partial)
+    }
+
+    func testMainAppApplyDoesNotBecomeObservedMonitorEvidence() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan.additionalQuiet(
+            start: start,
+            end: start.addingTimeInterval(30 * 60)
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: 30 * 60,
+            startedAt: start,
+            state: .completed,
+            nightWatchPlan: plan
+        )
+        let status = QuietTimeShieldStatusSnapshot(
+            runID: run.id,
+            revision: 1,
+            status: .applied,
+            window: .protectedSession,
+            observedAt: start,
+            provenance: .mainApp
+        )
+
+        let summary = QuietTimeShieldEvidenceMath.summary(
+            for: run,
+            statuses: [status],
+            at: plan.protectedUntil
+        )
+
+        XCTAssertEqual(summary.windDownMinutes, 0)
+        XCTAssertEqual(summary.morningQuietMinutes, 0)
+        XCTAssertEqual(summary.evidence, .unavailable)
+    }
+
+    func testMonitorFailureAfterApplyProducesPartialEvidence() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan.additionalQuiet(
+            start: start,
+            end: start.addingTimeInterval(30 * 60)
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: 30 * 60,
+            startedAt: start,
+            state: .completed,
+            nightWatchPlan: plan
+        )
+        let statuses = [
+            status(run: run, value: .applied, window: .protectedSession, at: start),
+            status(
+                run: run,
+                value: .failed,
+                window: .protectedSession,
+                at: start.addingTimeInterval(10 * 60)
+            )
+        ]
+
+        let summary = QuietTimeShieldEvidenceMath.summary(
+            for: run,
+            statuses: statuses,
+            at: plan.protectedUntil
+        )
+
+        XCTAssertEqual(summary.evidence, .partial)
+    }
+
+    func testLegacyStatusDecodesWithUnknownProvenanceAndCannotBecomeObserved() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan.additionalQuiet(
+            start: start,
+            end: start.addingTimeInterval(30 * 60)
+        )
+        let run = FocusRun(
+            plannedDurationSeconds: 30 * 60,
+            startedAt: start,
+            state: .completed,
+            nightWatchPlan: plan
+        )
+        let encoded = try JSONEncoder().encode(QuietTimeShieldStatusSnapshot(
+            schemaVersion: 1,
+            runID: run.id,
+            revision: 1,
+            status: .applied,
+            window: .protectedSession,
+            observedAt: start,
+            provenance: .mainApp
+        ))
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object.removeValue(forKey: "provenance")
+        let decoded = try JSONDecoder().decode(
+            QuietTimeShieldStatusSnapshot.self,
+            from: JSONSerialization.data(withJSONObject: object)
+        )
+
+        XCTAssertEqual(decoded.schemaVersion, QuietTimeShieldStatusSnapshot.currentSchemaVersion)
+        XCTAssertEqual(decoded.provenance, .legacyUnknown)
+        XCTAssertEqual(
+            QuietTimeShieldEvidenceMath.summary(
+                for: run,
+                statuses: [decoded],
+                at: plan.protectedUntil
+            ).evidence,
+            .unavailable
+        )
+    }
+
+    func testReceiptPresentationSeparatesRequestedEvidenceFromAuthorization() throws {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan.additionalQuiet(
+            start: start,
+            end: start.addingTimeInterval(30 * 60)
+        )
+        var run = FocusRun(
+            plannedDurationSeconds: 30 * 60,
+            startedAt: start,
+            state: .completed,
+            nightWatchPlan: plan
+        )
+        run.endedAt = plan.protectedUntil
+        run.completedSuccessfully = true
+        let observedRecord = try XCTUnwrap(run.nightWatchRecord(
+            updatedAt: plan.protectedUntil,
+            shieldProtectionEvidence: .observed
+        ))
+
+        XCTAssertEqual(
+            QuietTimeShieldReceiptPresentation.make(
+                shieldingRequested: true,
+                record: observedRecord
+            ).value,
+            "Observed"
+        )
+        XCTAssertEqual(
+            QuietTimeShieldReceiptPresentation.make(
+                shieldingRequested: true,
+                record: nil
+            ).value,
+            "Unavailable"
+        )
+        XCTAssertEqual(
+            QuietTimeShieldReceiptPresentation.make(
+                shieldingRequested: false,
+                record: observedRecord
+            ).value,
+            "Not requested"
+        )
+    }
+
     private func status(
         run: FocusRun,
         value: QuietTimeShieldStatus,
@@ -425,7 +789,8 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
             revision: 1,
             status: value,
             window: window,
-            observedAt: date
+            observedAt: date,
+            provenance: .deviceActivityMonitor
         )
     }
 

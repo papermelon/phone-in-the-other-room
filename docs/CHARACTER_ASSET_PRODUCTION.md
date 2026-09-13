@@ -1,21 +1,65 @@
 # Character Asset Production
 
-The production checklist for moving Ollie and the flock from the legacy pixel sprites to the
-rounded cut-paper style established by Your Shepherd. This file tracks artwork contracts; the
+The production checklist for the rounded cut-paper character family. The 8 September 2026
+founder direction preserves approved Ollie and sheep art and revises the human Shepherd to
+match them. This file tracks artwork contracts; the
 runtime and persistence decisions remain in `AGENTS.md`, `docs/ARCHITECTURE.md`, and ADR-0015.
 
 ## Approved style anchors
 
-- Rendering authority: `farm/farm_shepherd_default_idle`
+- Rendering authorities: `dog/dog_classic_farm_idle` and `sheep/sheep_mabel_wool_ready`.
+- `farm/farm_shepherd_default_idle` is the existing human implementation, not the style
+  authority for its revision. See [Shepherd review](../output/design/shepherd-review-20260908/REVIEW.md)
+  for the concept and outstanding production work; the concept is not yet integrated.
 - Classic Ollie identity: `dog/dog_classic_idle`
 - Common-sheep direction: the approved broad cloud-body concept; canonical named sheep still
   require individual production assets.
 - Shapes: broad overlapping geometry, no exterior keyline, no pixel edges, no individual fur or
   fleece strands.
-- Face: white circular eyes with solid plum pupils, no iris or highlight. Keep animal eyes smaller
-  than the Shepherd's proportional eye size so expressions remain calm.
-- Surface: restrained paper grain and soft internal gradients; no glossy 3D finish.
+- Animal faces: preserve approved white circular eyes with solid plum pupils, no iris or highlight.
+- Shepherd: the founder rejected the first revised face as generic and the second study as
+  too complicated and realistic. Return to the original Shepherd's oversized head, tiny body,
+  and broad simple shapes. Use Moomin-inspired oval eyes, small pupils, and spare cartoon
+  nose/mouth lines. Avoid anatomical facial modeling, detailed hair, fingers, and fabric folds.
+  Keep paper grain subtle. Selective fine facial lines are compatible with the soft paper body;
+  the animal eye formula is not a requirement for the human. The founder accepted B and C
+  in `shepherd-cartoon-v3.png` as head-shape customization directions; A has generation defects
+  and is not accepted. Both shapes must support fitted clothing and headwear. This is design
+  acceptance. Saved head choices and static native rendering were integrated on 9 September;
+  see the native integration plan for current validation and remaining motion work.
+  B/C are starting options, not a closed set. The founder explicitly welcomes future boxy,
+  triangular, and other silhouettes; keep head geometry independent of hair, eyes, and clothing.
+- Surface: soft paper texture is the founder's shared standard across app illustration,
+  including characters, clothing, props, and environments. Use restrained grain and soft
+  internal shading; no glossy 3D finish. This direction does not claim all legacy art has
+  already been converted.
 - Output: sRGB RGBA PNG with transparent corners and no matte fringe.
+
+## Shepherd static production renderer
+
+As of 9 September, normal avatar surfaces use the shared native Canvas drawing with cached
+paper grain, fitted garments and headwear. Legacy PNG masks are retained as historical assets;
+they no longer tint the production shepherd. The [integration record](../output/design/shepherd-production-20260909/README.md)
+separates source/build evidence from deployment and physical validation.
+
+The 12 September body revision follows the approved turnaround more closely: curved, broader
+garment silhouettes; tapered angled sleeves and separate mitten hands; a longer default shirt
+over an overlapping trouser waist; short trouser sections and rounded boot toes. Fine grain
+and a cached broad pigment wash share the resting garment coordinates. Pockets stay beneath
+moving hands. [Native before/after proofs](../output/design/shepherd-body-20260912/README.md)
+cover matching garments, Farm size, all head shapes and sampled motion. This remains authored
+native artwork, rather than a pixel-identical extraction of the generated concept.
+
+## Shepherd movement study
+
+The founder authorized the recommended small movement prototype before bulk generation.
+The native first batch uses a dedicated Debug-only harness and ordinary SwiftUI previews;
+Screenbook is shelved. See the [native integration plan](plans/shepherd-native-art-integration.md).
+The [interactive study and production contract](../output/design/shepherd-motion-20260908/README.md)
+cover B/C, short/long hair, unrestricted clothing presentation, five viewing angles, removable
+headwear, and a layered idle/walk experiment. Its vector rig and generated turnaround are
+concept evidence, not production-ready replacements. Preserve accepted B/C identity when
+refining the angle drawings; finalize fit, foot placement, and texture before generating at scale.
 
 ## Canvas contracts
 
@@ -89,7 +133,7 @@ looks for the same Ollie unless a later product decision introduces separate nam
 
 ## Generation and review sequence
 
-1. Generate one character per request using the Shepherd plus the approved identity master.
+1. Generate one character per request using the approved animal style anchors plus the relevant identity master.
 2. Generate a chroma-key source; remove the key locally with soft matte and despill.
 3. Normalize canvas, baseline, and padding mechanically rather than trusting generated placement.
 4. Derive new poses from the approved identity. Never generate unrelated poses without the
@@ -105,14 +149,14 @@ normalized transparent production PNGs belong in the asset catalogue.
 
 ## Production prompt templates
 
-Use one output per prompt. Attach the approved Shepherd style anchor and the relevant character
+Use one output per prompt. Attach the approved animal style anchors and the relevant character
 master; for a derived pose also attach the preceding approved pose or legacy timing frame.
 
 ### Ollie static state
 
 > Edit the attached approved Ollie master into `{state}`. Preserve the exact head shape, muzzle,
 > blaze, coat colors, eye construction, ear asymmetry, body proportions, and tail. `{pose and
-> expression direction}`. Rounded layered cut-paper storybook illustration matching the Shepherd:
+> expression direction}`. Rounded layered cut-paper storybook illustration matching the approved animals:
 > broad overlapping shapes, subtle paper grain, soft warm internal shading, no exterior keyline,
 > no individual fur strands, no pixel art, no glossy 3D finish. Full body on a flat chroma-green
 > background, centered on a 1:1 canvas, stable paw baseline, no text, props, collar, or shadow.
@@ -122,7 +166,7 @@ master; for a derived pose also attach the preceding approved pose or legacy tim
 > Create run-cycle frame `{01–06}` from the attached approved Ollie identity and timing reference.
 > Ollie faces right. Match the reference limb phase only; preserve identical head, muzzle, blaze,
 > coat markings, torso length, tail length, apparent scale, and baseline across every frame. Use
-> the approved rounded cut-paper Shepherd style. Flat chroma-green 1:1 background; no motion blur,
+> the approved rounded cut-paper animal style. Flat chroma-green 1:1 background; no motion blur,
 > scenery, text, accessory, ground, or cast shadow.
 
 ### Farm ornament overlay
@@ -155,5 +199,5 @@ master; for a derived pose also attach the preceding approved pose or legacy tim
 > Reimagine the attached Classic Ollie as `{Grown adult rough-coat border collie | Swift athletic
 > smooth-coat border collie | Meadow sable-and-white Shetland sheepdog}` while keeping the same
 > friendly shepherd-dog identity. Preserve the Farm pose direction, canvas occupancy, paw baseline,
-> head center, and neck-equipment anchor. Match the approved rounded cut-paper Shepherd style.
+> head center, and neck-equipment anchor. Match the approved rounded cut-paper animal style.
 > No ornament or clothing. Flat chroma-green 1:1 background; no scenery, text, ground, or shadow.

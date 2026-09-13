@@ -1,9 +1,15 @@
 # Playbook: App Store 1.0 Readiness
 
+Final candidate: use [the final-build acceptance checklist](final-build-acceptance.md)
+for account-owned Farm sync, account deletion, recovery, accessibility and evidence requirements.
+
 Prepare Counting Sheep 1.0 for TestFlight and App Store review. Product scope is fixed by
-`PROJECT_BRIEF.md` and ADR-0003/0004/0006/0007: four Release tabs, one user-facing Wind Down
-ritual, optional NFC and continuous shielding, optional read-only sleep context, and only the
-feature-flagged invite-only Slumber Party exception defined by ADR-0016.
+[AGENTS.md](../../AGENTS.md) and current topic decisions: four Release tabs, one user-facing
+Wind Down ritual, required selected-app readiness with optional NFC, optional read-only
+sleep context, and the invite-only Slumber Party contract. ADR-0020 governs cumulative
+Farm credit and ADR-0023 governs account ownership/automatic sync. Older dated evidence
+and checklist wording below do not supersede these contracts. Use the final-build checklist
+for the current account matrix and the root guide for proportionate validation.
 
 Last reconciled with `project.yml`: 2026-08-05.
 
@@ -102,19 +108,14 @@ Not locally provable:
 ## 2. Generated project, versions, and archive
 
 - [ ] `project.yml` is the only project source of truth.
-- [ ] Increase `CURRENT_PROJECT_VERSION` above the already-uploaded TestFlight build before
-      the next upload; confirm `MARKETING_VERSION` is `1.0`.
-- [ ] `xcodegen generate` completes.
-- [ ] Automatic distribution signing resolves for all eight targets.
-- [ ] A Release archive succeeds:
+- [ ] Use the [release archive command](release-archive.md) with the latest uploaded build
+      confirmed in App Store Connect. It reserves a fresh number, updates `project.yml`,
+      regenerates XcodeGen, archives Release, and checks bundle versions and membership.
+- [ ] Automatic distribution signing resolves for all release targets.
+- [ ] The command completes successfully; retain its printed archive path:
 
 ```bash
-xcodebuild archive \
-  -project PhoneInTheOtherRoom.xcodeproj \
-  -scheme PhoneInTheOtherRoom \
-  -configuration Release \
-  -destination 'generic/platform=iOS' \
-  -archivePath /tmp/CountingSheep.xcarchive
+python3 scripts/archive-release.py --latest-uploaded <highest-uploaded-build>
 ```
 
 - [ ] Inspect the archive: all six embedded iOS extensions and the Watch app are present;
@@ -134,18 +135,18 @@ xcodebuild archive \
       The production Farm/Shop remain real-data surfaces; Slumber Party is present in
       TestFlight/Release when `SUPABASE_NIGHT_FLOCK_ENABLED=YES`, and hidden in ordinary Debug.
 - [ ] No customer surface calls the ritual a Focus Run or generic productivity session.
-- [ ] Current setup exposes App Shielding or NFC + App Shielding. Legacy timer, Watch, and QR
-      values remain decodable but are not offered to new configurations.
+- [ ] Current setup exposes App Shielding or NFC + App Shielding. Legacy Watch-placement and
+      QR values remain decodable, normalize to the timer, and are not offered to new configurations.
 - [ ] Automatic Wind Down sends 60/30/10-minute lead-ins; with shielding enabled, selected
       apps are limited at the saved start time while the main app is closed.
-- [ ] The selected-app barrier continues through Wind Down, sleep, and morning quiet, and
-      never prevents opening Counting Sheep.
+- [ ] The selected-app barrier continues through Wind Down, the overnight interval, and
+      Screen-Free Morning, and never prevents opening Counting Sheep.
 - [ ] Sleep outcomes are described as context/association, never diagnosis or causation.
 
 ## 4. Fresh-install permission sequence
 
 - [ ] Notifications are requested only when saving/starting a requested ritual.
-- [ ] Legacy QR and Honor Timer values remain decode-only and are absent from release setup.
+- [ ] Legacy Watch-placement and QR values remain decode-only and are absent from release setup.
 - [ ] NFC unavailable/cancelled/read-only/full/multiple-tag states leave the requested start
       uncommitted and preserve the app-protection repair path.
 - [ ] Screen Time denial, revocation, unavailability, or empty selection blocks every new Wind
@@ -271,7 +272,7 @@ xcodebuild archive \
 
 ## 9. Core lifecycle and restoration
 
-- [ ] Wind-down, overnight, and morning quiet remain phases of one persisted run.
+- [ ] Wind Down, Overnight, and Screen-Free Morning remain phases of one persisted run.
 - [ ] Overnight hours never enter quiet-minute totals or change flock value.
 - [ ] Background/terminate/relaunch in every phase reconciles correctly.
 - [ ] Completion and early end clear Live Activity, notifications, shielding, and placement

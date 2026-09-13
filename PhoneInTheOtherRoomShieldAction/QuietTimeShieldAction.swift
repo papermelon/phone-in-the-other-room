@@ -42,12 +42,9 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
         }
 
         if #available(iOS 26.4, *) {
-            // Every role-specific submenu choice confirms the same bounded
-            // grant. The system-provided Cancel action is the sole no-op path.
+            // The single explicit duration choice grants access; Cancel is a no-op.
             switch action {
-            case .firstSecondarySubmenuItemPressed,
-                 .secondSecondarySubmenuItemPressed,
-                 .thirdSecondarySubmenuItemPressed:
+            case .firstSecondarySubmenuItemPressed:
                 break
             default:
                 return .none
@@ -62,9 +59,6 @@ final class QuietTimeShieldAction: ShieldActionDelegate {
     }
 
     private func returnToQuietTimeResponse() -> ShieldActionResponse {
-        if #available(iOS 26.5, *) {
-            return .openParentalControlsApp
-        }
         return .close
     }
 

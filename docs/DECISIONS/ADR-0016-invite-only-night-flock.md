@@ -6,7 +6,47 @@
 - Supersedes: v1–v3 Slumber Party product contract; those schemas remain legacy compatibility only
 - Related: ADR-0003, ADR-0005, ADR-0006, ADR-0010, ADR-0015
 
-## Founder decision — shared Farm and contextual cheers (9 September 2026)
+## Founder redesign direction — shared pasture and body doubling (12 September 2026)
+
+Founder correction during implementation (12 September 2026): retain the existing shared
+meadow artwork and its wide, open framing. It already matches the characters; the scenery
+refresh belongs to the personal Farm, barn and related previews. New shared interaction,
+visits, hierarchy and lantern improvement remain in scope, without replacing this backdrop.
+Lantern pacing approved: 12 contributions, at most one existing completed-session round
+grant per member per party-day; progress carries across rounds and membership changes.
+
+
+Local production source is implemented; backend activation and physical two-device acceptance remain outstanding. This direction supersedes the
+mixed Shepherd/Ollie/sheep identity choice and the prohibition on active-Wind-Down social UI
+for the shared pasture. People are represented by their customized Shepherds; owned sheep are
+separate contributions staying until recalled, preserving private ownership and progression.
+Visiting sheep appear in the party's shared pasture together with their owners. Every current
+member may arrange the group's earned decorations and structures. Accepted starting limits:
+one active sheep per member per party, one party per owned sheep; its private flock entry and
+progression persist with a visiting badge while the animal is drawn in the shared scene.
+Founder confirmed after the working eight-person study: keep Ollie on the personal Farm for this release. Fetch/gather remain personal play; the shared companion experiment is DEBUG-only. Keep the original shared meadow; add the earned lantern as a separate movable prop.
+Keep Home and Farm entries, preserving the existing Farm card title/body/eyebrow exactly.
+The setting is an illustrated, slightly elevated farm diorama with meaningful gathering and
+grazing areas. Eligible Wind Down/Phone Away participation earns shared decorations/improvements;
+the first completed Wind Down or Phone Away receiving an existing round grant per member per party-day contributes once, starting at activation. The lantern requires 12 contributions, carries across rounds, and preserves all personal grants. Early endings do not contribute to the project.
+
+Character positions and deliberate moves are shared in the first version. Every current member
+may move any character or sheep; movement does not transfer ownership, appearance control or
+recall authority. Full live multiplayer is a later direction. Timely, expiring app-reported
+session cues are needed now to support body doubling and peer motivation; they do not prove
+online attention, sleep or physical placement. The interactive pasture remains available during
+active Wind Down without ending/pausing protection or changing ritual settlement. This does not
+authorize new unsolicited notifications or reward for keeping the app open.
+
+Preserve account/membership isolation, agreements, compatible public appearance and truthful
+acknowledgements. The 12 September prototype's simulated backend, seven-night visits and local-only
+arrangement are not production contracts. See the [redesign plan and answered questions](../plans/slumber-party-pasture-redesign-2026-09-12.md)
+for visual batches, contracts and validation. [Implementation evidence](../evidence/pasture-redesign-20260912/README.md) distinguishes local source, isolated checks and outstanding device/rollout work. No deployment or distribution was performed.
+
+## Earlier implementation decision — shared Farm and contextual cheers (9 September 2026)
+
+Historical source scope below; the 12 September redesign supersedes mixed scene identities and
+the active-session UI exclusion. Update-context references and truthful receipt rules remain.
 
 Source implementation is authorized for a shared Farm containing each member's chosen
 Shepherd, Ollie or explicitly selected sheep, supported clothing and head shape, readable names,
@@ -36,9 +76,10 @@ membership-stream descriptions below still describe their narrower implemented c
   platform gates. The implementation sequence and wire direction are in
   `docs/plans/slumber-party-social-habit-loop-implementation.md`.
 
-- One social avatar is chosen by the member: Shepherd, Ollie or a deliberately selected sheep.
-  Keep cosmetics and owned/discovered character compatibility; do not change the personal Home
-  hero because a social avatar changes.
+- Historical 28 August social-avatar choice was Shepherd, Ollie or a selected sheep. The
+  12 September redesign uses Shepherds for people and sheep as separate contributions.
+  Preserve legacy decoding/appearance consent while migrating; personal Home identity is not
+  overwritten by a historical social-avatar selection.
 - Start with adults and a group leader who coordinates the shared habit. The future parent/child
   bedtime-negotiation use case informs the architecture, but does not authorize actual child
   accounts, unilateral schedule changes or remote enforcement now. Exact leader powers need a
@@ -77,6 +118,28 @@ No member data may upload before consent or beyond the reviewed permitted data r
 local sessions, emergency exit and independent reward ledgers intact. Implementation sequencing:
 `docs/plans/slumber-party-shared-habits-and-guide.md`; platform evidence and unsent Apple inquiry:
 `docs/plans/slumber-party-singapore-app-data-feasibility.md`.
+
+### Presentation and disclosure clarification — 2026-08-31
+
+- Create and join disclose the baseline contract before the action: the Shepherd display name,
+  curated Farm appearance, app-recorded Wind Down/Phone Away round activity, and rounded minutes
+  are shared with the invite-only group. Exact times, private routine/purpose/reflection text,
+  selected apps/categories, NFC/tag data, raw Screen Time/Health samples, full Farm inventory and
+  wool remain private under the base contract. These records are self-reported by the member's
+  iPhone to Slumber Party, not independently verified.
+- The UI describes a party as one long-lived group organized by repeated seven-night rounds. It
+  does not revive goals, readiness ceremonies, or “seven-night group” language.
+- Shared Habits, plan comparison, social-avatar transport, sleep summaries, and archive history
+  appear only when the exact capability and accepted agreement authorize the surface. An older
+  server does not produce a broken, unavailable, or “coming later” advertisement.
+- Account-recovery copy covers both valid branches: link the temporary anonymous account in place,
+  or reopen an existing Apple-owned Counting Sheep account after temporary account-scoped social
+  work is quarantined. Local Wind Down and Farm data remain untouched.
+- Shepherd-name copy identifies its Slumber Party audience and the enforced limit of two successful
+  changes in a rolling 14-day window after free initial/migration selection.
+- Leave, host dissolve, explicit invite replacement, block, report-submitted, and request-accepted
+  states name their actual local/server effect. Copy does not promise investigation, response time,
+  removal, retention, or another moderation outcome that operations have not established.
 
 ## Founder decision — sharing from joining (2026-08-27)
 
@@ -156,7 +219,7 @@ Deletion tombstones the party, revokes invites, deactivates membership, and pres
 earned account-inbox grants. It also creates only the minimum moderation audit needed for the
 configured retention period.
 
-A member may join an active round. On joining, the member can backfill all factual Wind Down and
+A member may join an active round. On joining, the member can backfill all app-recorded Wind Down and
 Phone Away records from that round. Backfill is an idempotent self-report of local history, not a
 claim of independent verification. All current members see the round's records and statuses.
 
@@ -172,7 +235,7 @@ updates routinely for all current parties. The server accepts only allowlisted c
 identifiers and revisions. This profile is visible only through parties and Farm; it creates no
 directory, discovery, feed, chat, follower graph, leaderboard, rank, or competitive score.
 
-Party detail is people-first: it shows current members, factual round records, curated snapshots,
+Party detail is people-first: it shows current members, app-recorded/self-reported round records, curated snapshots,
 and statuses with `revision`, `observed_at`, and `expires_at`. Fixed cheers are the only social
 reaction and can encourage a member during an active Wind Down or Phone Away before its completed
 record exists. Realtime may make membership, curated profiles, statuses, and cheers feel prompt
@@ -183,17 +246,18 @@ state and ledger records; stale or absent realtime is never interpreted as activ
 
 The local iPhone remains authoritative for Wind Down and Phone Away. Local start, protection,
 completion, reward settlement, and the fail-open emergency exit never wait for a party request or
-response. An account-level local activity ledger first records factual activity; a transactional
+response. An account-level local activity ledger first records app-recorded activity; a transactional
 per-party fan-out then evaluates every eligible current party, up to the five-party cap, and
 creates independent party records and rewards. Thus the same local activity can earn separately
 in each eligible party without duplicate delivery inside a party. Grants are server-authoritative,
 idempotent, and applied from an account inbox once per grant ID.
 
-During an active Wind Down there is no Slumber Party UI, feed, panel, badge, in-app reaction, or
-social navigation. Best-effort silent Live Activity and Watch feedback may appear on a system
-surface immediately, with accumulated completion cheers reconciled later from the durable ledger.
-It is never an in-app ritual interruption or a dependency of local completion. Network or social
-failure fails quietly and cannot block the ritual.
+The 12 September founder direction permits opening and interacting with the shared pasture
+during active Wind Down, including truthful peer-session cues. Earlier no-social-UI guards are
+implementation to revise, not a veto on this direction. Deliberate pasture interaction does not
+pause/end protection or change the local session. Best-effort silent Live Activity/Watch feedback
+and durable cheer reconciliation remain; no new unsolicited interruption policy is selected.
+Network or social failure cannot block the ritual or local completion.
 
 ### Privacy, invites, and version fence
 

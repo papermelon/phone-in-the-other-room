@@ -67,7 +67,7 @@ struct NightsRecordSection: View {
                     .foregroundStyle(AppColors.grass)
                 Text("Your first completed Wind Down will settle here.")
                     .font(AppTypography.headline)
-                Text("Quiet before bed and after waking will appear together after Wind Down.")
+                Text("Wind Down before-bed minutes appear here. Screen-Free Morning and Phone Away keep separate records.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }

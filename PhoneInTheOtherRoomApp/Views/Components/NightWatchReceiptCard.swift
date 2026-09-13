@@ -1,100 +1,143 @@
 import SwiftUI
 
 struct NightWatchReceiptCard: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let run: FocusRun?
     let sleepSummary: SleepSummary?
     let sleepAuthorization: HealthSleepService.AuthorizationState
     let screenTimeAuthorization: ScreenTimeAuthorizationService.AuthorizationState
     let screenFreeMorning: MorningQuietOccurrence?
+    let record: NightWatchRecord?
+    let farmCredit: FarmCreditReceipt?
 
     init(
         run: FocusRun?,
         sleepSummary: SleepSummary?,
         sleepAuthorization: HealthSleepService.AuthorizationState,
         screenTimeAuthorization: ScreenTimeAuthorizationService.AuthorizationState,
-        screenFreeMorning: MorningQuietOccurrence? = nil
+        screenFreeMorning: MorningQuietOccurrence? = nil,
+        record: NightWatchRecord? = nil,
+        farmCredit: FarmCreditReceipt? = nil
     ) {
         self.run = run
         self.sleepSummary = sleepSummary
         self.sleepAuthorization = sleepAuthorization
         self.screenTimeAuthorization = screenTimeAuthorization
         self.screenFreeMorning = screenFreeMorning
+        self.record = record
+        self.farmCredit = farmCredit
     }
 
     var body: some View {
         PixelCard {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(run?.nightWatchPlan?.role == .additionalQuiet ? "YOUR PHONE AWAY" : "YOUR WIND DOWN")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-
-                receiptRow(
-                    icon: "iphone.slash",
-                    title: "Phone-away time",
-                    value: elapsedLabel,
-                    detail: run?.nightWatchPlan?.role == .additionalQuiet
-                        ? "Elapsed from the moment Phone Away began"
-                        : "Elapsed from the moment Wind Down began"
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                compactRow(
+                    icon: run?.nightWatchPlan?.role == .additionalQuiet ? "timer" : "moon.fill",
+                    title: run?.nightWatchPlan?.role == .additionalQuiet ? "Phone Away" : "Wind Down",
+                    value: elapsedLabel
                 )
-
-                if let run, run.isNightWatch {
-                    receiptRow(
-                        icon: "moon.zzz.fill",
-                        title: run.nightWatchPlan?.role == .additionalQuiet ? "Phone Away" : "Phone-free time",
-                        value: "\(run.isProgressionEligibleNightWatch ? run.creditedWindDownMinutes : run.creditedQuietMinutes) min",
-                        detail: run.nightWatchPlan?.role == .additionalQuiet
-                            ? "A short phone-away period outside Wind Down"
-                            : "Factual Wind Down time; Screen-Free Morning is tracked separately"
-                    )
-
-                    if run.briefAccessUseCount > 0 {
-                        receiptRow(
-                            icon: "arrow.triangle.2.circlepath",
-                            title: "Short breaks",
-                            value: "\(run.briefAccessUseCount) short break\(run.briefAccessUseCount == 1 ? "" : "s")",
-                            detail: "Selected apps were available for about five minutes"
-                        )
-                    }
+                if run?.nightWatchPlan?.role != .additionalQuiet, let screenFreeMorning {
+                    compactRow(icon: "sun.max.fill", title: "Screen-Free Morning", value: morningSummary(screenFreeMorning))
                 }
 
-                if run?.nightWatchPlan?.role != .additionalQuiet {
-                    if let screenFreeMorning {
-                        receiptRow(
-                            icon: "sunrise.fill",
-                            title: "Screen-Free Morning",
-                            value: screenFreeMorningStatus(screenFreeMorning),
-                            detail: "\(screenFreeMorning.eligibleElapsedMinutes(at: screenFreeMorning.endedAt ?? Date())) actual minutes; tracked independently from Wind Down"
-                        )
-                    }
-                    receiptRow(
-                        icon: "bed.double.fill",
-                        title: "Sleep from Apple Health",
-                        value: sleepValue,
-                        detail: sleepDetail
-                    )
+                DisclosureGroup("Session details") {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        if let credit = farmCredit,
+                           !credit.migrated || credit.creditedSeconds > 0 || credit.trackingIncomplete {
+                            receiptRow(icon: "leaf.fill", title: "Farm credit",
+                                value: "\(Int(credit.creditedSeconds / 60)) min", detail: credit.detail)
+                        }
 
-                    receiptRow(
-                        icon: "hourglass.bottomhalf.filled",
-                        title: "Screen time around sleep",
-                        value: screenTimeValue,
-                        detail: screenTimeDetail
-                    )
+                        if let run, run.isNightWatch {
+                            receiptRow(
+                                icon: "clock",
+                                title: run.nightWatchPlan?.role == .additionalQuiet ? "Phone Away minutes" : "Pre-Sleep Wind Down",
+                                value: "\(run.isProgressionEligibleNightWatch ? run.creditedWindDownMinutes : run.creditedQuietMinutes) min",
+                                detail: recordedMinutesDetail(for: run)
+                            )
+
+                            let shieldEvidence = QuietTimeShieldReceiptPresentation.make(
+                                shieldingRequested: run.appShieldingRequested,
+                                record: record
+                            )
+                            receiptRow(
+                                icon: shieldEvidence.systemImage,
+                                title: "App protection record",
+                                value: shieldEvidence.value,
+                                detail: shieldEvidence.detail
+                            )
+
+                            if run.briefAccessUseCount > 0 {
+                                receiptRow(
+                                    icon: "arrow.triangle.2.circlepath",
+                                    title: "Brief Access",
+                                    value: "\(run.briefAccessUseCount) use\(run.briefAccessUseCount == 1 ? "" : "s")",
+                                    detail: "Selected-app limits lifted temporarily; the timer continued"
+                                )
+                            }
+                        }
+
+                        if run?.nightWatchPlan?.role != .additionalQuiet {
+                            receiptRow(
+                                icon: "bed.double.fill",
+                                title: "Sleep from Apple Health",
+                                value: sleepValue,
+                                detail: sleepDetail
+                            )
+
+                            receiptRow(
+                                icon: "chart.bar",
+                                title: "Screen Time reports",
+                                value: screenTimeValue,
+                                detail: screenTimeDetail
+                            )
+                        }
+                    }
+                    .padding(.top, AppSpacing.sm)
                 }
+                .font(AppTypography.caption)
+                .tint(AppColors.grass)
             }
         }
     }
 
-    private func screenFreeMorningStatus(_ occurrence: MorningQuietOccurrence) -> String {
-        switch occurrence.outcome {
-        case .scheduled: return "Planned"
+    private func morningSummary(_ morning: MorningQuietOccurrence) -> String {
+        switch morning.outcome {
+        case .scheduled: return "Planned · \(OllieFormat.time(morning.scheduledStart))"
         case .active: return "In progress"
         case .skipped: return "Skipped"
-        case .finished: return "Finished"
+        case .finished: return "\(morning.eligibleElapsedMinutes(at: morning.endedAt ?? morning.scheduledEnd)) min"
         }
     }
 
+    private func compactRow(icon: String, title: String, value: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .foregroundStyle(AppColors.grass)
+                .accessibilityHidden(true)
+            if dynamicTypeSize.isAccessibilitySize {
+                stackedReceiptRowHeader(title: title, value: value)
+            } else {
+                ViewThatFits(in: .horizontal) {
+                    HStack {
+                        Text(title).fixedSize()
+                        Spacer(minLength: AppSpacing.xs)
+                        Text(value).fixedSize()
+                    }
+                    stackedReceiptRowHeader(title: title, value: value)
+                }
+            }
+        }
+        .font(AppTypography.body)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title) timer: \(value)")
+    }
+
     private var elapsedLabel: String {
-        guard let seconds = run?.actualDurationSeconds, seconds >= 60 else {
+        guard let run else { return "Under 1 min" }
+        let datedElapsed = run.endedAt.map { max(0, $0.timeIntervalSince(run.startedAt)) } ?? 0
+        let seconds = max(run.actualDurationSeconds, datedElapsed)
+        guard seconds >= 60 else {
             return "Under 1 min"
         }
         let minutes = Int(seconds / 60)
@@ -141,7 +184,7 @@ struct NightWatchReceiptCard: View {
 
     private var screenTimeValue: String {
         switch screenTimeAuthorization {
-        case .approved: return "Connected"
+        case .approved: return "Access granted"
         case .unavailable: return "Not available yet"
         case .notDetermined: return "Not connected"
         case .denied: return "Needs permission"
@@ -151,7 +194,7 @@ struct NightWatchReceiptCard: View {
     private var screenTimeDetail: String {
         switch screenTimeAuthorization {
         case .approved:
-            return "See the separate late-evening and morning reports in Nights"
+            return "Authorization is separate from observed selected-app limits and optional usage reports"
         case .unavailable:
             return "Late-evening and morning reports are unavailable on this device"
         case .notDetermined:
@@ -162,24 +205,46 @@ struct NightWatchReceiptCard: View {
     }
 
     private func receiptRow(icon: String, title: String, value: String, detail: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .top, spacing: AppSpacing.sm) {
             Image(systemName: icon)
                 .foregroundStyle(AppColors.grass)
                 .frame(width: 24)
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(title)
-                        .font(pixelFont(.body))
-                    Spacer(minLength: 8)
-                    Text(value)
-                        .font(pixelFont(.caption))
-                        .multilineTextAlignment(.trailing)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                if dynamicTypeSize.isAccessibilitySize {
+                    stackedReceiptRowHeader(title: title, value: value)
+                } else {
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(title)
+                                .font(AppTypography.caption)
+                            Spacer(minLength: AppSpacing.xs)
+                            Text(value)
+                                .font(AppTypography.caption)
+                                .multilineTextAlignment(.trailing)
+                        }
+                        stackedReceiptRowHeader(title: title, value: value)
+                    }
                 }
                 Text(detail)
-                    .font(pixelFont(.caption))
+                    .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }
         }
+    }
+
+    private func stackedReceiptRowHeader(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+            Text(title)
+                .font(AppTypography.caption)
+            Text(value)
+                .font(AppTypography.caption)
+        }
+    }
+
+    private func recordedMinutesDetail(for run: FocusRun) -> String {
+        run.nightWatchPlan?.role == .additionalQuiet
+            ? "Elapsed timer minutes. Farm credit excludes brief access and is saved separately."
+            : "Time on the timer before your planned bedtime. Farm credit also includes eligible overnight time."
     }
 }
 

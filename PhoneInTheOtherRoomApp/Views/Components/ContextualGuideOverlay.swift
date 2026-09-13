@@ -35,6 +35,7 @@ private struct ContextualGuideOverlayModifier: ViewModifier {
     @Binding var tip: CountingSheepContextualTip?
     let onAcknowledge: (CountingSheepContextualTip) -> Void
     let onSkipAll: () -> Void
+    @State private var guideContentHeight: CGFloat = .infinity
 
     func body(content: Content) -> some View {
         GeometryReader { viewport in
@@ -63,7 +64,10 @@ private struct ContextualGuideOverlayModifier: ViewModifier {
                             onAcknowledge: { onAcknowledge(tip); self.tip = nil },
                             onSkipAll: { onSkipAll(); self.tip = nil }
                         )
-                        .frame(height: viewport.size.height * 0.48)
+                        .frame(height: min(guideContentHeight, viewport.size.height * 0.48))
+                        .onPreferenceChange(GuideContentHeightPreferenceKey.self) { height in
+                            if height > 0 { guideContentHeight = height }
+                        }
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.bottom, AppSpacing.sm)
                     }
@@ -102,6 +106,17 @@ struct CountingSheepContextualTourOverlay: View {
         }
         .id(tip)
     }
+}
+
+#Preview("Contextual guide · content-sized Search Journal") {
+    ScrollView {
+        Text("Search Journal entry")
+            .frame(maxWidth: .infinity, minHeight: 200)
+            .contextualGuideTarget(.trailNote)
+    }
+    .contextualGuideOverlay(tip: .constant(.trailNote), onAcknowledge: { _ in }, onSkipAll: {})
+    .frame(width: 390, height: 700)
+    .background(AppColors.paper)
 }
 
 #Preview("Contextual guide · largest text") {

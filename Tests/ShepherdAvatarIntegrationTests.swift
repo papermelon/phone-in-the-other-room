@@ -60,4 +60,23 @@ final class ShepherdAvatarIntegrationTests: XCTestCase {
         }
     }
 
+    func testPrivateBackupAndRestorePreserveAllHeadChoicesAndLegacyProfile() throws {
+        for headID in [nil] + ShepherdHeadShape.allCases.map({ Optional($0.rawValue) }) + ["future_shape"] {
+            var farm = FarmState.empty
+            farm.migrateCumulativeCredit(records: [], searchState: .empty, protectedNightCount: 0)
+            farm.shepherd.headShapeID = headID
+            farm.shepherd.hairStyle = .long
+            farm.shepherd.outfitItemID = "shepherd_moss_coat"
+            farm.ownedShopItemIDs = ["shepherd_moss_coat"]
+            farm.woolBalance = 27
+            let document = FarmSaveDocument(lineageID: UUID(), generation: 1,
+                values: ["ollie.farm.state": try JSONEncoder().encode(farm)])
+            let payload = try FarmBackupPayload(document: document)
+            let remote = try FarmBackupPayload.decodeRemote(JSONEncoder().encode(payload))
+            XCTAssertEqual(try remote.fingerprint(), try payload.fingerprint())
+            let values = try remote.restoredValues(preservingLocalProgress: .empty)
+            let restored = try JSONDecoder().decode(FarmState.self, from: XCTUnwrap(values["ollie.farm.state"]))
+            XCTAssertEqual(restored, farm)
+        }
+    }
 }

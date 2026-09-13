@@ -655,6 +655,8 @@ enum WindDownScheduleEngine {
             morningActivity: preferences.morningActivity,
             eveningCueText: preferences.eveningCueText,
             morningCueText: preferences.morningCueText,
+            eveningRoutine: preferences.eveningRoutine,
+            morningRoutine: preferences.morningRoutine,
             calendar: calendar
         )
     }

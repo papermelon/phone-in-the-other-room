@@ -48,6 +48,7 @@ struct WindDownGuideCard: View {
 struct WindDownRoutineEditor: View {
     @Binding var eveningSteps: [WindDownRoutineStep]
     @Binding var morningSteps: [WindDownRoutineStep]
+    var phonePlacement: WindDownPhonePlacement = .anotherRoom
     var onChange: () -> Void = {}
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -58,7 +59,7 @@ struct WindDownRoutineEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             routineSection(
-                title: "After the phone goes away",
+                title: "Make room for your evening",
                 detail: "Choose up to three familiar evening ideas, in the order you want them.",
                 phase: .evening,
                 steps: $eveningSteps
@@ -69,7 +70,7 @@ struct WindDownRoutineEditor: View {
                 phase: .morning,
                 steps: $morningSteps
             )
-            Text("Ideas are invitations. Counting Sheep does not track whether you do them.")
+            Text("Your chosen ideas appear together during the session and on the Lock Screen when Live Activity is on. They have no individual timers or check-offs.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.muted)
         }
@@ -255,9 +256,9 @@ struct WindDownRoutineEditor: View {
                 .frame(width: 24)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(WindDownRoutineStep.phoneAwayTitle)
+                Text(phonePlacement.actionCue)
                     .font(AppTypography.body.weight(.semibold))
-                Text("Always first")
+                Text(phonePlacement == .accessibleNearby ? "Keep needed access within reach" : "Your first invitation")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
@@ -270,7 +271,7 @@ struct WindDownRoutineEditor: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Put phone away, always first")
+        .accessibilityLabel(phonePlacement.actionCue)
     }
 
     @ViewBuilder
@@ -463,7 +464,7 @@ struct WindDownHowItWorksView: View {
                         .foregroundStyle(AppColors.grass)
                     Text("One small ritual around sleep.")
                         .font(AppTypography.display(30))
-                    Text("Counting Sheep helps you make the phone-away choice, fill the quiet with something offline, and keep the first part of morning phone-free.")
+                    Text("Put your phone in another room, get ready for bed, and leave a little time in the morning before picking it up.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
                 }
@@ -471,7 +472,7 @@ struct WindDownHowItWorksView: View {
                 howCard(
                     icon: "iphone.slash",
                     title: "Protect",
-                    detail: "Selected apps can be limited from Wind Down start through morning quiet. Counting Sheep stays available."
+                    detail: "Selected apps can be limited from Wind Down start through Screen-Free Morning. Counting Sheep stays available."
                 )
                 howCard(
                     icon: "book.closed.fill",

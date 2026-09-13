@@ -38,6 +38,7 @@ RUNTIME_ID = "com.apple.CoreSimulator.SimRuntime.iOS-26-5"
 DEVICE_TYPE_NAME = "iPhone 17"
 CAPTURE_PROFILE = "iphone17-ios26.5-enSG-standard"
 SERVER_PORT = 4173
+CAPTURE_SETTLE_SECONDS = 0.75
 
 # This is the Debug registry contract exported by `ScreenbookScenarioKind`.
 # Keep its explicit IDs here so capture cannot silently widen when a fixture is
@@ -50,9 +51,21 @@ EXPECTED_SCENARIO_IDS = frozenset({
     "iphone.home.active-phone-away.default",
     "iphone.slumber-party.membership-no-round.default",
     "iphone.slumber-party.membership-between-rounds.default",
+    "iphone.slumber-party.shared-habits-summary.default",
+    "iphone.slumber-party.shared-habits-consent.default",
     "iphone.home.early-end.default",
     "iphone.farm.populated.default",
 })
+
+# These scenarios exist specifically to prove distinct production states. A
+# byte-identical capture means the intended state stayed off-screen or failed
+# to render, even when both files are individually valid PNGs.
+DISTINCT_CAPTURE_PAIRS = (
+    (
+        "iphone.slumber-party.membership-no-round.default",
+        "iphone.slumber-party.membership-between-rounds.default",
+    ),
+)
 
 
 class ScreenbookError(RuntimeError):
@@ -179,8 +192,15 @@ def boot_and_normalize(udid: str) -> None:
         command(item)
 
 
+def project_needs_generation(root: Path = ROOT) -> bool:
+    specification = root / "project.yml"
+    generated = root / "PhoneInTheOtherRoom.xcodeproj" / "project.pbxproj"
+    return not generated.exists() or specification.stat().st_mtime_ns > generated.stat().st_mtime_ns
+
+
 def build_app(udid: str) -> Path:
-    command(["xcodegen", "generate"])
+    if project_needs_generation():
+        command(["xcodegen", "generate"])
     DERIVED.mkdir(parents=True, exist_ok=True)
     result = command([
         "xcodebuild", "build",
@@ -251,7 +271,7 @@ def validate_registry(registry: dict) -> None:
         if unexpected:
             detail.append(f"unexpected: {', '.join(unexpected)}")
         raise ScreenbookError(
-            "Screenbook registry does not match the nine stable scenario identifiers"
+            "Screenbook registry does not match the eleven stable scenario identifiers"
             + (f" ({'; '.join(detail)})" if detail else ".")
         )
     for scenario in scenarios:
@@ -434,6 +454,17 @@ def copy_hash(copy_records: list[dict]) -> str:
     return stable_hash([{key: item.get(key) for key in ("id", "rendered", "authored", "status", "parameters")} for item in copy_records])
 
 
+def validate_distinct_capture_pairs(manifest: dict) -> list[str]:
+    by_id = {item.get("id"): item for item in manifest.get("scenarios", [])}
+    errors = []
+    for first_id, second_id in DISTINCT_CAPTURE_PAIRS:
+        first_hash = by_id.get(first_id, {}).get("screenshot", {}).get("sha256")
+        second_hash = by_id.get(second_id, {}).get("screenshot", {}).get("sha256")
+        if first_hash and first_hash == second_hash:
+            errors.append(f"Distinct states produced identical captures: {first_id}, {second_id}")
+    return errors
+
+
 def baseline_by_id() -> dict[str, dict]:
     manifest = read_json(BASELINE_MANIFEST, {"scenarios": []})
     return {item["id"]: item for item in manifest.get("scenarios", [])}
@@ -446,6 +477,9 @@ def capture_one(udid: str, container: Path, scenario: dict, fingerprint: str) ->
     stage.mkdir(parents=True)
     staged_png = stage / f"{identifier}.png"
     launch_and_wait(udid, container, ["-screenbook-scenario", identifier], run_id)
+    # Readiness proves the fixture reached its intended state; allow the final
+    # SwiftUI navigation/layout transaction to commit before sampling pixels.
+    time.sleep(CAPTURE_SETTLE_SECONDS)
     command(["xcrun", "simctl", "io", udid, "screenshot", "--type=png", str(staged_png)])
     canonicalize_transient_home_indicator(staged_png)
     width, height = png_dimensions(staged_png)
@@ -638,6 +672,9 @@ def verify(_args=None) -> None:
     current_ids = [item["id"] for item in manifest.get("scenarios", [])]
     if current_ids != registered_ids:
         raise ScreenbookError("Current manifest does not contain the complete registry in registry order.")
+    distinct_errors = validate_distinct_capture_pairs(manifest)
+    if distinct_errors:
+        raise ScreenbookError("Screenbook state coverage failed:\n" + "\n".join(f"- {item}" for item in distinct_errors))
     for scenario in manifest["scenarios"]:
         image = WORK / scenario["screenshot"]["path"]
         if not image.exists() or png_dimensions(image) != (scenario["screenshot"]["width"], scenario["screenshot"]["height"]):

@@ -1,0 +1,13 @@
+personalisation-build-final.log
+** BUILD SUCCEEDED **
+
+personalisation-tests-final.log
+	 Executed 1002 tests, with 0 failures (0 unexpected) in 1.865 (2.488) seconds
+Test Suite 'All tests' passed at 2026-09-13 10:11:47.099.
+	 Executed 1002 tests, with 0 failures (0 unexpected) in 1.865 (2.501) seconds
+** TEST SUCCEEDED **
+
+personalisation-storage-tests-final.log
+	 Executed 79 tests, with 0 failures (0 unexpected) in 2.571 (2.585) seconds
+Test Suite 'All tests' passed at 2026-09-13 09:59:36.226.
+	 Executed 79 tests, with 0 failures (0 unexpected) in 2.571 (2.589) seconds

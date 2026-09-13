@@ -1,8 +1,8 @@
 import Foundation
 
 extension SheepSearchEngine {
-    /// A guaranteed Slumber Party find that never consumes protected-night or
-    /// Phone Away guarantees. The grant identity keeps settlement idempotent.
+    /// A guaranteed Slumber Party find that never consumes Wind Down or Phone Away
+    /// guarantees. The grant identity keeps settlement idempotent.
     static func calculateSlumberParty(
         grantID: UUID,
         protectedNightNumber: Int,

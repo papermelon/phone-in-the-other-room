@@ -17,11 +17,11 @@ struct PhoneInTheOtherRoomShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: PrepareNightWatchIntent(),
             phrases: [
-                "Start Wind Down in \(.applicationName)",
+                "Put my phone away with \(.applicationName)",
                 "Put my phone to bed with \(.applicationName)",
-                "Start Wind Down with Ollie in \(.applicationName)"
+                "Put my phone away with Ollie in \(.applicationName)"
             ],
-            shortTitle: "Wind Down",
+            shortTitle: "Put phone away",
             systemImageName: "moon.stars.fill"
         )
     }

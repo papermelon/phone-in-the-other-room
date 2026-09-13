@@ -5,31 +5,33 @@ import WidgetKit
 struct FocusRunLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: FocusRunLiveActivityAttributes.self) { context in
-            FocusRunLiveActivityView(state: context.state, runID: context.attributes.runID)
+            FocusRunLiveActivityView(
+                state: context.state.resolvedForDisplay(at: Date(), isStale: context.isStale),
+                runID: context.attributes.runID
+            )
                 .activityBackgroundTint(Color(red: 0.08, green: 0.14, blue: 0.09))
                 .activitySystemActionForegroundColor(.white)
         } dynamicIsland: { context in
-            DynamicIsland {
+            let state = context.state.resolvedForDisplay(at: Date(), isStale: context.isStale)
+            return DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
-                    Image("dog/dog_sleeping")
-                        .resizable()
-                        .interpolation(.none)
-                        .scaledToFit()
+                    Image(systemName: state.symbolName)
                         .frame(width: 32, height: 32)
+                        .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
                 }
                 DynamicIslandExpandedRegion(.center) {
-                    FocusRunCountdown(state: context.state)
+                    FocusRunCountdown(state: state)
                         .font(.headline.monospacedDigit())
                         .frame(maxWidth: .infinity, alignment: .center)
                         .multilineTextAlignment(.center)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
-                    Image(systemName: "moon.zzz.fill")
+                    Image(systemName: state.symbolName)
                         .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     let guidance = guidance(
-                        for: context.state,
+                        for: state,
                         runID: context.attributes.runID
                     )
                     VStack(alignment: .leading, spacing: 2) {
@@ -46,17 +48,17 @@ struct FocusRunLiveActivityWidget: Widget {
                     .lineLimit(2)
                 }
             } compactLeading: {
-                Image(systemName: "moon.stars.fill")
+                Image(systemName: state.symbolName)
                     .font(.caption2)
                     .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
-                    .accessibilityLabel(context.state.isAdditionalQuiet ? "Phone Away is active" : "Wind Down is active")
+                    .accessibilityLabel(state.statusAccessibilityLabel)
             } compactTrailing: {
                 EmptyView()
             } minimal: {
-                Image(systemName: "moon.stars.fill")
+                Image(systemName: state.symbolName)
                     .font(.caption2)
                     .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
-                    .accessibilityLabel(context.state.isAdditionalQuiet ? "Phone Away is active" : "Wind Down is active")
+                    .accessibilityLabel(state.statusAccessibilityLabel)
             }
         }
     }
@@ -65,40 +67,9 @@ struct FocusRunLiveActivityWidget: Widget {
         for state: FocusRunLiveActivityAttributes.ContentState,
         runID: UUID
     ) -> NightWatchLiveActivityGuidance {
-        if let feedback = state.slumberPartyCheer {
-            return NightWatchLiveActivityGuidance(
-                primary: "A quiet cheer from your party",
-                secondary: feedback.presentation.message
-            )
-        }
-        if let morning = state.screenFreeMorning {
-            return NightWatchLiveActivityGuidance(
-                primary: morning.status.title,
-                secondary: morning.isActive ? "Ends at \(OllieFormat.time(morning.endsAt))" : nil
-            )
-        }
-        if let terminalPresentation = state.terminalPresentation {
-            return NightWatchLiveActivityGuidance(
-                primary: terminalPresentation.headline,
-                secondary: terminalPresentation.message
-            )
-        }
-        if state.isAdditionalQuiet {
-            return NightWatchLiveActivityGuidance(
-                primary: "Phone Away is running.",
-                secondary: "Ends at \(OllieFormat.time(state.plannedEndAt))"
-            )
-        }
-        let phase = state.currentPhase
-        let activityTitle = phase == .windDown
-            ? state.eveningActivityTitle
-            : phase == .morningQuiet ? state.morningActivityTitle : nil
-        return NightWatchGuidance.liveActivityGuidance(
-            for: phase,
-            activityTitle: activityTitle,
-            seed: runID
-        )
+        state.guidance(runID: runID)
     }
+
 }
 
 private enum FocusRunLiveActivityPreviewData {
@@ -112,14 +83,16 @@ private enum FocusRunLiveActivityPreviewData {
         let now = Date()
         let nextTransition = now.addingTimeInterval(remaining)
         return FocusRunLiveActivityAttributes.ContentState(
-            plannedEndAt: now.addingTimeInterval(3 * 60 * 60),
+            plannedEndAt: nextTransition.addingTimeInterval(8 * 60 * 60),
             isComplete: false,
             phase: .windDown,
             bedtimeAt: nextTransition,
             wakeAt: nextTransition.addingTimeInterval(8 * 60 * 60),
             morningQuietEndsAt: nextTransition.addingTimeInterval(8 * 60 * 60 + 30 * 60),
             eveningActivityTitle: PhoneFreeActivity.read.title,
-            morningActivityTitle: PhoneFreeActivity.openCurtains.title
+            morningActivityTitle: PhoneFreeActivity.openCurtains.title,
+            eveningRoutineTitles: [PhoneFreeActivity.sleepwear, .brushTeeth, .relaxation].map(\.title),
+            morningRoutineTitles: [PhoneFreeActivity.openCurtains, .breakfast].map(\.title)
         )
     }
 
@@ -226,6 +199,52 @@ private enum FocusRunLiveActivityPreviewData {
     FocusRunLiveActivityPreviewData.screenFreeMorningState
 }
 
+#Preview("Live Activity — Screen-Free Morning, compact", as: .dynamicIsland(.compact), using: FocusRunLiveActivityPreviewData.attributes) {
+    FocusRunLiveActivityWidget()
+} contentStates: {
+    FocusRunLiveActivityPreviewData.screenFreeMorningState
+}
+
+#Preview("Live Activity — Screen-Free Morning, expanded", as: .dynamicIsland(.expanded), using: FocusRunLiveActivityPreviewData.attributes) {
+    FocusRunLiveActivityWidget()
+} contentStates: {
+    FocusRunLiveActivityPreviewData.screenFreeMorningState
+}
+
+#Preview("Live Activity — Screen-Free Morning, minimal", as: .dynamicIsland(.minimal), using: FocusRunLiveActivityPreviewData.attributes) {
+    FocusRunLiveActivityWidget()
+} contentStates: {
+    FocusRunLiveActivityPreviewData.screenFreeMorningState
+}
+
+#Preview("Live Activity — bedtime passed, old evening payload", as: .content, using: FocusRunLiveActivityPreviewData.attributes) {
+    FocusRunLiveActivityWidget()
+} contentStates: {
+    FocusRunLiveActivityPreviewData.activeState(remaining: -1)
+}
+
+#Preview("Live Activity — three ideas, large text") {
+    FocusRunLiveActivityView(
+        state: FocusRunLiveActivityPreviewData.activeState(remaining: 1800),
+        runID: FocusRunLiveActivityPreviewData.runID
+    )
+    .environment(\.dynamicTypeSize, .accessibility1)
+    .frame(width: 350)
+    .background(Color(red: 0.08, green: 0.14, blue: 0.09))
+}
+
+#Preview("Live Activity — expired payload, large text") {
+    FocusRunLiveActivityView(
+        state: FocusRunLiveActivityAttributes.ContentState(
+            plannedEndAt: Date().addingTimeInterval(-60), isComplete: false, phase: .morningQuiet
+        ).resolvedForDisplay(at: Date(), isStale: true),
+        runID: FocusRunLiveActivityPreviewData.runID
+    )
+    .environment(\.dynamicTypeSize, .accessibility1)
+    .frame(width: 350)
+    .background(Color(red: 0.08, green: 0.14, blue: 0.09))
+}
+
 private struct FocusRunLiveActivityView: View {
     let state: FocusRunLiveActivityAttributes.ContentState
     let runID: UUID
@@ -233,10 +252,8 @@ private struct FocusRunLiveActivityView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 11) {
-                Image("dog/dog_sleeping")
-                    .resizable()
-                    .interpolation(.none)
-                    .scaledToFit()
+                Image(systemName: state.symbolName)
+                    .font(.title2.weight(.semibold))
                     .frame(width: 42, height: 42)
                     .padding(5)
                     .background(
@@ -248,16 +265,13 @@ private struct FocusRunLiveActivityView: View {
                     Text(headerText)
                         .font(.caption.weight(.bold))
                         .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
-                        .lineLimit(1)
-                    if let terminalStatus = state.terminalStatus {
-                        Image(systemName: terminalStatus == .completed ? "checkmark.circle.fill" : "pause.circle.fill")
+                        .lineLimit(state.isDisplayComplete ? nil : 1)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if state.terminalStatus == .endedEarly {
+                        Image(systemName: "pause.circle.fill")
                             .font(.title2)
                             .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
-                    } else if state.isComplete {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.title2)
-                            .foregroundStyle(Color(red: 0.75, green: 0.84, blue: 0.60))
-                    } else {
+                    } else if !state.isDisplayComplete {
                         Text(
                             timerInterval: timerInterval,
                             countsDown: true,
@@ -278,14 +292,16 @@ private struct FocusRunLiveActivityView: View {
                 Text(guidance.primary)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.white)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(2)
                 if let secondary = guidance.secondary {
                     Text(secondary)
                         .font(.caption)
                         .foregroundStyle(.white.opacity(0.78))
-                        .fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(2)
                 }
             }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel([guidance.primary, guidance.secondary].compactMap { $0 }.joined(separator: " "))
         }
         .foregroundStyle(.white)
         .padding(.horizontal, 14)
@@ -293,61 +309,31 @@ private struct FocusRunLiveActivityView: View {
     }
 
     private var headerText: String {
+        if let completion = state.completionPresentation { return completion.headline }
         if state.slumberPartyCheer != nil { return "SLUMBER PARTY" }
-        if let morning = state.screenFreeMorning { return morning.status.title.uppercased() }
+        if let morning = state.screenFreeMorning { return morning.status.timerTitle.uppercased() }
         if let terminalPresentation = state.terminalPresentation {
             return terminalPresentation.headline
         }
         if state.isAdditionalQuiet { return "PHONE AWAY" }
         switch state.currentPhase {
-        case .windDown: return "PHONE-FREE WIND-DOWN"
-        case .overnight: return "SLEEP TIME"
-        case .morningQuiet: return "PHONE-FREE MORNING"
-        case .complete: return "WIND DOWN COMPLETE"
-        case nil: return "OLLIE IS ON WATCH"
+        case .windDown: return "WIND DOWN · UNTIL BEDTIME"
+        case .overnight: return "OVERNIGHT · UNTIL MORNING"
+        case .morningQuiet: return "SCREEN-FREE MORNING"
+        case .complete: return "WIND DOWN TIMER ENDED"
+        case nil: return "WIND DOWN"
         }
     }
 
     private var timerInterval: ClosedRange<Date> {
         let now = Date()
-        return now...max(now, state.nextTransitionAt)
+        return now...max(now, state.countdownEnd(at: now))
     }
 
     private var guidance: NightWatchLiveActivityGuidance {
-        if let feedback = state.slumberPartyCheer {
-            return NightWatchLiveActivityGuidance(
-                primary: "A quiet cheer from your party",
-                secondary: feedback.presentation.message
-            )
-        }
-        if let morning = state.screenFreeMorning {
-            return NightWatchLiveActivityGuidance(
-                primary: morning.status.title,
-                secondary: morning.isActive ? "Ends at \(OllieFormat.time(morning.endsAt))" : nil
-            )
-        }
-        if let terminalPresentation = state.terminalPresentation {
-            return NightWatchLiveActivityGuidance(
-                primary: terminalPresentation.headline,
-                secondary: terminalPresentation.message
-            )
-        }
-        if state.isAdditionalQuiet {
-            return NightWatchLiveActivityGuidance(
-                primary: "Phone Away is running.",
-                secondary: "Ends at \(OllieFormat.time(state.plannedEndAt))"
-            )
-        }
-        let phase = state.currentPhase
-        let activityTitle = phase == .windDown
-            ? state.eveningActivityTitle
-            : phase == .morningQuiet ? state.morningActivityTitle : nil
-        return NightWatchGuidance.liveActivityGuidance(
-            for: phase,
-            activityTitle: activityTitle,
-            seed: runID
-        )
+        state.guidance(runID: runID)
     }
+
 }
 
 private struct FocusRunCountdown: View {
@@ -371,11 +357,63 @@ private struct FocusRunCountdown: View {
 
     private var timerInterval: ClosedRange<Date> {
         let now = Date()
-        return now...max(now, state.nextTransitionAt)
+        return now...max(now, state.countdownEnd(at: now))
     }
 }
 
 private extension FocusRunLiveActivityAttributes.ContentState {
+    var symbolName: String {
+        if isDisplayComplete { return "checkmark.circle.fill" }
+        if screenFreeMorning != nil { return "sun.max.fill" }
+        if isAdditionalQuiet { return "timer" }
+        return currentPhase == .morningQuiet ? "sun.max.fill" : "moon.fill"
+    }
+
+    func guidance(runID: UUID) -> NightWatchLiveActivityGuidance {
+        if let completion = completionPresentation {
+            return NightWatchLiveActivityGuidance(primary: completion.message, secondary: nil)
+        }
+        if let feedback = self.slumberPartyCheer {
+            return NightWatchLiveActivityGuidance(
+                primary: "A quiet cheer from your party",
+                secondary: feedback.presentation.message
+            )
+        }
+        if let morning = self.screenFreeMorning {
+            return NightWatchLiveActivityGuidance(
+                primary: morning.status.timerTitle,
+                secondary: morning.isActive ? "Ends at \(OllieFormat.time(morning.endsAt))" : nil
+            )
+        }
+        if let terminalPresentation = self.terminalPresentation {
+            return NightWatchLiveActivityGuidance(
+                primary: terminalPresentation.headline,
+                secondary: terminalPresentation.message
+            )
+        }
+        if self.isAdditionalQuiet {
+            return NightWatchLiveActivityGuidance(
+                primary: "Phone Away is running.",
+                secondary: "Ends at \(OllieFormat.time(self.plannedEndAt))"
+            )
+        }
+        let phase = self.currentPhase
+        if phase == .overnight {
+            return NightWatchLiveActivityGuidance(
+                primary: "Settle in for the night.",
+                secondary: "Morning starts at \(OllieFormat.time(wakeAt ?? plannedEndAt))."
+            )
+        }
+        let activityTitle = phase == .windDown
+            ? self.eveningActivityTitle
+            : phase == .morningQuiet ? self.morningActivityTitle : nil
+        return NightWatchGuidance.liveActivityGuidance(
+            for: phase,
+            activityTitle: activityTitle,
+            seed: runID,
+            routineTitles: phase == .windDown ? eveningRoutineTitles : morningRoutineTitles
+        )
+    }
     var occurrenceRole: WindDownOccurrenceRole {
         role ?? .primarySleepBookend
     }
@@ -385,48 +423,46 @@ private extension FocusRunLiveActivityAttributes.ContentState {
     }
 
     var terminalPresentation: FocusRunLiveActivityTerminalPresentation? {
+        guard screenFreeMorning == nil else { return nil }
         if let terminalStatus {
-            return terminalStatus.presentation
+            return terminalStatus.presentation(for: occurrenceRole)
         }
-        return isComplete ? FocusRunLiveActivityTerminalStatus.completed.presentation : nil
+        return isComplete
+            ? FocusRunLiveActivityTerminalStatus.completed.presentation(for: occurrenceRole)
+            : nil
+    }
+
+    var statusAccessibilityLabel: String {
+        if let completion = completionPresentation {
+            return "\(completion.headline.capitalized). \(completion.message)"
+        }
+        if let morning = screenFreeMorning {
+            return morning.status.timerTitle
+        }
+        if let terminalPresentation {
+            return terminalPresentation.headline.capitalized
+        }
+        return isAdditionalQuiet ? "Phone Away timer is active" : "Wind Down timer is active"
     }
 
     var currentPhase: NightWatchPhase? {
-        if terminalStatus == .endedEarly {
-            return nil
-        }
-        if terminalStatus == .completed || isComplete {
-            return .complete
-        }
-        if isAdditionalQuiet {
-            return .windDown
-        }
-        return phase ?? phase(at: Date())
+        if terminalStatus == .endedEarly { return nil }
+        if terminalStatus == .completed || isComplete { return .complete }
+        return phase ?? displayPhase(at: Date())
     }
 
-    var isDisplayComplete: Bool {
-        terminalStatus == .completed || (terminalStatus == nil && (isComplete || currentPhase == .complete))
-    }
 
-    var nextTransitionAt: Date {
-        if let morning = screenFreeMorning { return morning.endsAt }
-        if isAdditionalQuiet { return plannedEndAt }
-        switch currentPhase {
-        case .windDown: return bedtimeAt ?? plannedEndAt
-        case .overnight: return wakeAt ?? plannedEndAt
-        case .morningQuiet, .complete, nil: return morningQuietEndsAt ?? plannedEndAt
-        }
-    }
 
-    func phase(at date: Date) -> NightWatchPhase? {
-        if isAdditionalQuiet {
-            return date >= plannedEndAt ? .complete : .windDown
+}
+
+private extension ScreenFreeMorningPresentation.Status {
+    var timerTitle: String {
+        switch self {
+        case .scheduled: return "Screen-Free Morning is planned"
+        case .active: return "Screen-Free Morning timer is running"
+        case .skipped: return "Screen-Free Morning was skipped"
+        case .finished: return "Screen-Free Morning timer ended"
         }
-        guard let bedtimeAt, let wakeAt, let morningQuietEndsAt else { return nil }
-        if date >= morningQuietEndsAt { return .complete }
-        if date >= wakeAt { return .morningQuiet }
-        if date >= bedtimeAt { return .overnight }
-        return .windDown
     }
 }
 

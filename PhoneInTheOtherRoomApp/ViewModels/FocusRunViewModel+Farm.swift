@@ -110,7 +110,7 @@ extension FocusRunViewModel {
         mutateFarm { state in
             let amount = try state.shear(
                 sheepID: sheepID,
-                protectedNightCount: coordinator.progress.totalCompletedRuns
+                protectedNightCount: coordinator.progress.farmCompletedRuns
             )
             didShear = true
             return "+\(amount) wool. The fleece will grow back over more Wind Downs."
@@ -124,7 +124,7 @@ extension FocusRunViewModel {
         mutateFarm { state in
             let amount = try state.tradeToAnotherFarm(
                 sheepID: sheepID,
-                protectedNightCount: coordinator.progress.totalCompletedRuns
+                protectedNightCount: coordinator.progress.farmCompletedRuns
             )
             return "+\(amount) wool. This sheep has moved to another farm. Its story stays in the Search Journal."
         }
@@ -301,9 +301,11 @@ extension FocusRunViewModel {
                 ledger: persistence.welcomeRewardLedger,
                 now: date
             )
-            coordinator.farmState = result.farm
-            persistence.farmState = result.farm
-            persistence.welcomeRewardLedger = result.ledger
+            guard coordinator.commitFarmChanges(using: persistence, {
+                coordinator.farmState = result.farm
+                persistence.farmState = result.farm
+                persistence.welcomeRewardLedger = result.ledger
+            }) else { return false }
             synchronizeSlumberPartyProfile()
             return true
         } catch let error as FarmActionError {
@@ -321,9 +323,11 @@ extension FocusRunViewModel {
                 search: coordinator.sheepSearchState,
                 ledger: persistence.welcomeRewardLedger
             )
-            coordinator.farmState = result.farm
-            persistence.farmState = result.farm
-            persistence.welcomeRewardLedger = result.ledger
+            guard coordinator.commitFarmChanges(using: persistence, {
+                coordinator.farmState = result.farm
+                persistence.farmState = result.farm
+                persistence.welcomeRewardLedger = result.ledger
+            }) else { return }
             synchronizeSlumberPartyProfile()
             if let itemID = result.ledger.claimedWearableGrant?.itemID,
                let title = FarmShopCatalog.item(for: itemID)?.title {
@@ -346,8 +350,10 @@ extension FocusRunViewModel {
                 search: coordinator.sheepSearchState,
                 ledger: persistence.welcomeRewardLedger
             )
-            coordinator.farmState = result.farm
-            persistence.farmState = result.farm
+            guard coordinator.commitFarmChanges(using: persistence, {
+                coordinator.farmState = result.farm
+                persistence.farmState = result.farm
+            }) else { return }
             synchronizeSlumberPartyProfile()
             if let itemID = result.ledger.claimedWearableGrant?.itemID,
                let title = FarmShopCatalog.item(for: itemID)?.title {
@@ -374,16 +380,18 @@ extension FocusRunViewModel {
             farm: coordinator.farmState,
             search: coordinator.sheepSearchState,
             ledger: persistence.nightFlockRewardLedger,
-            protectedNightCount: max(1, coordinator.progress.totalCompletedRuns)
+            protectedNightCount: max(1, coordinator.progress.farmCompletedRuns)
         )
-        coordinator.farmState = result.farm
-        coordinator.sheepSearchState = result.search
-        if let outcome = result.outcome {
-            coordinator.latestSheepSearchOutcome = outcome
-        }
-        persistence.farmState = result.farm
-        persistence.sheepSearchState = result.search
-        persistence.nightFlockRewardLedger = result.ledger
+        guard coordinator.commitFarmChanges(using: persistence, {
+            coordinator.farmState = result.farm
+            coordinator.sheepSearchState = result.search
+            if let outcome = result.outcome {
+                coordinator.latestSheepSearchOutcome = outcome
+            }
+            persistence.farmState = result.farm
+            persistence.sheepSearchState = result.search
+            persistence.nightFlockRewardLedger = result.ledger
+        }) else { return }
         synchronizeSlumberPartyProfile()
         if !result.applied.isEmpty {
             nightFlockViewModel.acknowledgeAppliedGrants(result.applied.map(\.id))
@@ -408,14 +416,16 @@ extension FocusRunViewModel {
             farm: coordinator.farmState,
             search: coordinator.sheepSearchState,
             ledger: persistence.nightFlockRewardLedger,
-            protectedNightCount: max(1, coordinator.progress.totalCompletedRuns)
+            protectedNightCount: max(1, coordinator.progress.farmCompletedRuns)
         )
-        coordinator.farmState = result.farm
-        coordinator.sheepSearchState = result.search
-        if let outcome = result.outcome { coordinator.latestSheepSearchOutcome = outcome }
-        persistence.farmState = result.farm
-        persistence.sheepSearchState = result.search
-        persistence.nightFlockRewardLedger = result.ledger
+        guard coordinator.commitFarmChanges(using: persistence, {
+            coordinator.farmState = result.farm
+            coordinator.sheepSearchState = result.search
+            if let outcome = result.outcome { coordinator.latestSheepSearchOutcome = outcome }
+            persistence.farmState = result.farm
+            persistence.sheepSearchState = result.search
+            persistence.nightFlockRewardLedger = result.ledger
+        }) else { return [] }
         synchronizeSlumberPartyProfile()
         let appliedWool = result.applied
             .filter { $0.rewardKind == .wool }
@@ -576,8 +586,13 @@ extension FocusRunViewModel {
         var state = coordinator.farmState
         do {
             let message = try mutation(&state)
-            coordinator.farmState = state
-            persistence.farmState = state
+            guard coordinator.commitFarmChanges(using: persistence, {
+                coordinator.farmState = state
+                persistence.farmState = state
+            }) else {
+                farmActionMessage = coordinator.farmSaveMessage
+                return
+            }
             farmActionMessage = message
             synchronizeSlumberPartyProfile()
         } catch let error as FarmActionError {

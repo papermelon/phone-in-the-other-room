@@ -1,0 +1,156 @@
+<div id="shepherd-motion-study">
+  <div class="viz-controls">
+    <label class="form-label">Head shape<select class="form-select" data-choice="head"><option value="B">B · Pear</option><option value="C">C · Round</option></select></label>
+    <label class="form-label">Hair<select class="form-select" data-choice="hair"><option value="short">Short</option><option value="long">Long</option></select></label>
+    <label class="form-label">Clothes<select class="form-select" data-choice="outfit"><option value="coat">Moss coat</option><option value="shirt">Shirt + trousers</option><option value="dress">Berry dress</option></select></label>
+    <label class="form-label">Skin tone<select class="form-select" data-choice="skin"><option value="warm">Warm</option><option value="porcelain">Porcelain</option><option value="olive">Olive</option><option value="brown">Brown</option><option value="deep">Deep</option></select></label>
+  </div>
+  <div class="viz-row motion-options">
+    <label class="form-check form-switch"><input class="form-check-input" type="checkbox" data-choice="hat"><span class="form-check-label">Wool hat</span></label>
+    <label class="form-label">Facing<select class="form-select" data-choice="direction"><option value="front">Front</option><option value="quarter" selected>Three-quarter</option><option value="side">Side</option><option value="rear">Back three-quarter</option><option value="back">Back</option></select></label>
+    <label class="form-check form-switch"><input class="form-check-input" type="checkbox" data-choice="left"><span class="form-check-label">Face left</span></label>
+  </div>
+  <div class="motion-stage" role="group" aria-label="Character movement study">
+    <figure><div class="motion-large" data-render="large"></div><figcaption>Drawing study · 220 px</figcaption></figure>
+    <figure><div class="motion-small" data-render="small"></div><figcaption>Farm size · 72 px</figcaption></figure>
+  </div>
+  <div class="viz-row">
+    <button class="btn" type="button" data-action="idle" aria-pressed="false">Idle</button>
+    <button class="btn" type="button" data-action="walk" aria-pressed="false">Walk</button>
+    <button class="btn" type="button" data-action="stop">Stop</button>
+    <button class="btn" type="button" data-action="turn">Turn</button>
+    <button class="btn" type="button" data-action="step">Step frame</button>
+    <label class="form-check form-switch"><input class="form-check-input" type="checkbox" data-choice="texture" checked><span class="form-check-label">Paper texture</span></label>
+  </div>
+  <div class="text-small motion-status" role="status" aria-live="polite">Standing · Three-quarter · Hat off</div>
+</div>
+<style>
+  #shepherd-motion-study .motion-options { margin-top: 12px; }
+  #shepherd-motion-study .motion-stage { display:flex; align-items:flex-end; justify-content:center; gap:clamp(12px,6vw,56px); padding:20px 0 24px; min-height:276px; }
+  #shepherd-motion-study figure { margin:0; display:flex; flex-direction:column; align-items:center; gap:12px; }
+  #shepherd-motion-study figcaption { color:var(--foreground); }
+  #shepherd-motion-study .motion-large { width:188.57px; height:220px; }
+  #shepherd-motion-study .motion-small { width:61.72px; height:72px; }
+  #shepherd-motion-study svg { display:block; width:100%; height:100%; overflow:visible; }
+  #shepherd-motion-study .motion-status { margin-top:12px; color:var(--foreground); }
+  @media(max-width:380px) { #shepherd-motion-study .motion-stage { gap:12px; } }
+</style>
+<script>
+(() => {
+  const root = document.getElementById('shepherd-motion-study');
+  const state = {head:'B',hair:'short',outfit:'coat',skin:'warm',hat:false,direction:'quarter',left:false,texture:true,walking:false,idling:false,phase:0};
+  const tones={porcelain:'#edbd98',warm:'#dca064',olive:'#b68150',brown:'#94603e',deep:'#65412f'};
+  const colors={hair:'#60364f',ink:'#54334b',cream:'#f3e5bb',green:'#747c46',berry:'#a85461',trousers:'#aa644d',boots:'#59384b',hat:'#cda04d'};
+  const directions=['front','quarter','side','rear','back'];
+  const names={front:'Front',quarter:'Three-quarter',side:'Side',rear:'Back three-quarter',back:'Back'};
+  const renderers=[...root.querySelectorAll('[data-render]')];
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
+  let raf=0, last=0;
+  function path(d,fill,extra=''){ return `<path d="${d}" fill="${fill}" ${extra}/>`; }
+  function ellipse(cx,cy,rx,ry,fill,extra=''){return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fill}" ${extra}/>`;}
+  function line(d,width=2.4){return path(d,'none',`stroke="${colors.ink}" stroke-width="${width}" stroke-linecap="round" stroke-linejoin="round"`);}
+  function picture(id){
+    const c=colors, skin=tones[state.skin], side=state.direction==='side', rear=state.direction==='rear', back=state.direction==='back', away=rear||back;
+    const quarter=state.direction==='quarter', round=state.head==='C', slim=side?0.69:rear?0.89:1;
+    const stride=Math.sin(state.phase), bounce=state.walking?Math.abs(Math.sin(state.phase))*1.5:0;
+    const angle=state.walking?stride*(side?23:14):0;
+    const armAngle=angle*.7, headX=(quarter?5:side?9:rear?-4:0);
+    const headRot=state.walking?Math.sin(state.phase)*.65:state.idling?Math.sin(state.phase*.2)*.7:0;
+    const torso=state.outfit==='coat'?c.green:state.outfit==='dress'?c.berry:c.cream;
+    const trousers=state.outfit==='dress'?skin:c.trousers;
+    const leg=(x,rotation)=>`<g data-part="leg" transform="rotate(${rotation} ${x} 218)">${path(`M${x-9} 209 L${x+10} 209 L${x+9} 251 Q${x} 257 ${x-9} 251Z`,trousers)}${path(`M${x-10} 245 Q${x} 247 ${x+10} 245 L${x+10} 256 Q${x+24} 257 ${x+22} 265 Q${x+4} 269 ${x-11} 264Z`,c.boots)}</g>`;
+    const arm=(x,rotation)=>`<g data-part="arm" transform="rotate(${rotation} ${x} 174)">${path(`M${x-10} 170 Q${x} 164 ${x+10} 173 L${x+13} 207 L${x-7} 211Z`,torso)}${path(`M${x-6} 204 L${x+12} 202 Q${x+18} 224 ${x+6} 228 Q${x-5} 228 ${x-6} 216Z`,skin)}</g>`;
+    let body='';
+    if(state.hair==='long') body+=path('M59 85 Q52 130 58 199 Q75 214 92 206 L159 205 Q186 211 185 185 L174 88Z',c.hair,'data-part="back-hair"');
+    body+=path('M111 146 L134 146 L134 174 Q123 181 111 174Z',skin,'data-part="neck"');
+    body+=`<g transform="translate(120 0) scale(${slim} 1) translate(-120 0)">`;
+    body+=leg(side?114:104,angle)+leg(side?126:139,-angle);
+    body+=arm(84,-armAngle);
+    body+=state.outfit==='shirt'?path('M97 164 Q120 155 144 165 L158 204 Q126 212 84 205Z',torso):path(`M98 162 Q121 156 144 164 L${state.outfit==='dress'?164:158} ${state.outfit==='dress'?232:228} Q122 236 79 229Z`,torso);
+    if(!away){
+      body+=path('M105 160 L121 164 Q118 183 105 179 Q96 176 98 167Z',c.cream)+path('M122 164 L139 161 Q147 176 136 180 Q124 183 122 164Z',c.cream);
+      if(state.outfit==='coat'){
+        body+=ellipse(123,191,4.8,5,c.hat)+ellipse(123,211,4.8,5,c.hat);
+        body+=path('M89 205 L109 207 L108 222 Q96 225 88 221Z','#68713f')+path('M137 207 L151 205 L153 221 Q145 225 137 222Z','#68713f');
+      }
+      if(state.outfit==='dress') body+=ellipse(122,190,3.4,3.4,c.cream);
+    }
+    body+=arm(side?135:153,armAngle);
+    body+='</g>';
+    let head='';
+    const headShape=round?'M49 90 C44 49 77 37 122 39 C171 36 195 62 192 101 C194 137 164 158 121 157 C78 160 46 135 49 90Z':state.direction==='front'?'M65 85 C65 53 85 33 119 33 C154 33 175 57 180 89 C191 134 160 160 120 157 C76 158 51 130 65 85Z':'M66 87 C65 57 86 35 117 34 C156 32 174 59 178 88 L181 98 Q197 95 197 106 Q197 115 183 114 C178 146 148 160 115 155 C77 154 56 130 60 104Z';
+    head+=`<g data-part="head" transform="translate(${headX} ${-bounce}) rotate(${headRot} 120 153) translate(120 0) scale(${slim} 1) translate(-120 0)">`;
+    head+=path(headShape,skin);
+    if(!away) head+=ellipse(round?49:63,109,15,19,skin);
+    if(away){
+      head+=path(round?'M48 104 C39 46 85 32 125 37 C174 35 201 68 190 125 Q178 150 150 155 L93 157 Q55 145 48 104Z':'M64 110 C51 47 96 23 132 35 Q178 39 182 91 L176 135 Q150 161 104 152 Q69 145 64 110Z',c.hair);
+      if(state.hair==='long') head+=path('M52 101 Q47 155 62 190 Q115 207 183 190 Q193 154 185 96Z',c.hair);
+      if(rear) head+=ellipse(178,115,9,14,skin);
+    } else {
+      const hairShape=round?'M49 90 C41 45 81 30 124 36 C167 30 197 57 192 86 Q179 82 173 70 Q157 91 140 73 Q124 90 107 72 Q89 92 71 76 L55 96Z':'M63 91 C54 48 86 30 124 34 Q162 25 178 64 Q157 58 153 49 Q129 73 92 83 L70 105Z';
+      head+=path(hairShape,c.hair);
+      if(state.head==='B'&&!state.hat) head+=path('M147 45 Q148 21 158 27 Q165 15 171 31 Q178 45 161 52Z',c.hair);
+      if(state.hair==='long') head+=path('M53 93 Q61 86 68 90 L70 173 Q58 170 57 156Z',c.hair)+path('M177 89 Q188 85 190 96 L183 174 Q172 170 174 154Z',c.hair);
+      const eyeX=side?[161]:quarter?[128,164]:[102,146];
+      let eyes='';
+      for(const ex of eyeX){
+        eyes+=ellipse(ex,106,round?12:11,round?19:22,c.cream);
+        eyes+=ellipse(ex+(quarter||side?5:2),108,5.5,10.2,c.ink);
+        if(!round) eyes+=line(`M${ex-13} 96 L${ex+13} 96`,2.8);
+      }
+      const blink=state.idling&&state.phase%36>33&&state.phase%36<34.4?.08:1;
+      head+=`<g data-part="eyes" transform="translate(0 106) scale(1 ${blink}) translate(0 -106)">${eyes}</g>`;
+      if(round&&!side) head+=ellipse(quarter?146:124,125,8,7.8,'none',`stroke="${c.ink}" stroke-width="2.2"`);
+      if(!round&&state.direction==='front') head+=line('M124 119 L129 126 L123 128',2);
+      if(side&&round) head+=path('M189 115 Q206 113 203 123 Q199 129 190 125Z',skin);
+      head+=line(round?`M${quarter?138:115} 144 Q${quarter?147:124} 145 ${quarter?154:132} 143`:`M${quarter?137:115} 139 Q${quarter?145:123} 145 ${quarter?153:131} 139`,2.2);
+    }
+    if(state.hat){
+      const x=round?45:61, width=round?151:126;
+      head+=path(`M${x} 75 Q${x+4} 18 ${x+width*.51} 21 Q${x+width-4} 22 ${x+width} 77Z`,c.hat);
+      head+=path(`M${x-7} 73 Q${x+width*.4} 60 ${x+width+4} 73 Q${x+width+14} 86 ${x+width-2} 89 Q${x+width*.5} 76 ${x-7} 88 Q${x-14} 85 ${x-7} 73Z`,'#b88a3e');
+    }
+    head+='</g>';
+    const filter=`<filter id="paper-${id}" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency=".42" numOctaves="3" seed="12" result="grain"/><feColorMatrix in="grain" type="saturate" values="0"/><feComponentTransfer><feFuncR type="linear" slope=".15" intercept=".84"/><feFuncG type="linear" slope=".15" intercept=".84"/><feFuncB type="linear" slope=".15" intercept=".84"/></feComponentTransfer><feComposite in2="SourceGraphic" operator="in"/><feBlend in2="SourceGraphic" mode="multiply"/></filter>`;
+    return `<svg viewBox="0 0 240 280" role="img" aria-label="Head ${state.head}, ${state.hair} hair, ${state.outfit}, ${names[state.direction]}, ${state.hat?'hat on':'hat off'}"><defs>${filter}</defs><g transform="${state.left?'translate(240 0) scale(-1 1)':''}"><g ${state.texture?`filter="url(#paper-${id})"`:''}>${body}${head}</g></g></svg>`;
+  }
+  function draw(){renderers.forEach((el,i)=>{el.innerHTML=picture(i);});}
+  function status(){
+    root.querySelector('.motion-status').textContent=`${state.walking?'Walking':state.idling?'Idle':'Standing'} · ${names[state.direction]}${state.left?' left':''} · Hat ${state.hat?'on':'off'}${reduced.matches?' · Reduced motion':''}`;
+    root.querySelector('[data-action="walk"]').setAttribute('aria-pressed',String(state.walking));
+    root.querySelector('[data-action="idle"]').setAttribute('aria-pressed',String(state.idling));
+  }
+  function tick(now){
+    if(!state.walking&&!state.idling)return;
+    if(document.hidden){last=now;raf=requestAnimationFrame(tick);return;}
+    const dt=Math.min((now-last)||0,50); last=now;
+    state.phase+=dt*.009; draw(); raf=requestAnimationFrame(tick);
+  }
+  function stop(){state.walking=false;state.idling=false;state.phase=0;cancelAnimationFrame(raf);draw();status();}
+  root.querySelectorAll('[data-choice]').forEach(control=>control.addEventListener('change',()=>{
+    state[control.dataset.choice]=control.type==='checkbox'?control.checked:control.value;draw();status();
+  }));
+  root.querySelector('[data-action="walk"]').addEventListener('click',()=>{
+    if(state.walking){stop();return;}
+    state.idling=false;cancelAnimationFrame(raf);
+    if(reduced.matches){state.phase+=Math.PI/4;state.walking=true;draw();state.walking=false;status();return;}
+    state.walking=true;last=performance.now();status();raf=requestAnimationFrame(tick);
+  });
+  root.querySelector('[data-action="idle"]').addEventListener('click',()=>{
+    if(state.idling){stop();return;}
+    stop();if(reduced.matches)return;
+    state.idling=true;last=performance.now();status();raf=requestAnimationFrame(tick);
+  });
+  root.querySelector('[data-action="stop"]').addEventListener('click',stop);
+  root.querySelector('[data-action="turn"]').addEventListener('click',()=>{
+    state.direction=directions[(directions.indexOf(state.direction)+1)%directions.length];
+    root.querySelector('[data-choice="direction"]').value=state.direction;draw();status();
+  });
+  root.querySelector('[data-action="step"]').addEventListener('click',()=>{
+    cancelAnimationFrame(raf);state.idling=false;state.phase+=Math.PI/4;state.walking=true;draw();state.walking=false;status();
+    root.querySelector('.motion-status').textContent=`Walk pose · ${names[state.direction]} · Hat ${state.hat?'on':'off'}`;
+  });
+  reduced.addEventListener('change',()=>{if(reduced.matches)stop();});
+  draw();status();
+})();
+</script>

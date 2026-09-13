@@ -13,7 +13,7 @@ struct AppShieldExplainerSheet: View {
                         explainerRow(
                             icon: "square.stack.3d.up.fill",
                             title: "Apps and categories you choose",
-                            detail: "App protection covers only the private app and category selection you make in Apple’s picker. Websites and anything unselected remain available."
+                            detail: "App protection covers only the private app and category selection you make in Apple’s picker. Counting Sheep requests those limits from Wind Down start through Screen-Free Morning, including overnight, and during Phone Away. Websites and anything unselected remain available."
                         )
                         explainerRow(
                             icon: "pawprint.fill",
@@ -28,7 +28,7 @@ struct AppShieldExplainerSheet: View {
                         explainerRow(
                             icon: "clock.arrow.circlepath",
                             title: "Brief Access is deliberate",
-                            detail: "A short pause is counted factually. It does not reduce Screen-Free Morning minutes."
+                            detail: "Brief Access temporarily lifts selected-app limits for up to five minutes, or until the session ends sooner. Protection then returns when time remains. The Wind Down, Screen-Free Morning, or Phone Away timer keeps running; Screen-Free Morning elapsed minutes are not verified no-screen time. Websites do not support Brief Access."
                         )
                         explainerRow(
                             icon: "dot.radiowaves.left.and.right",

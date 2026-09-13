@@ -1,6 +1,26 @@
 import XCTest
 
 final class HomeReceiptRoutingTests: XCTestCase {
+    func testOnlyTerminalReceiptReplacesTabs() {
+        let id = UUID()
+        XCTAssertTrue(HomeReceiptRoute.terminalWindDownReceipt(id).replacesTabShell)
+        for route in [HomeReceiptRoute.activeWindDown, .activeScreenFreeMorning(id),
+                      .deferredScreenFreeMorning(occurrenceID: id, unreadWindDownRunID: id),
+                      .unreadWindDownReceipt(id), .dashboard] {
+            XCTAssertFalse(route.replacesTabShell)
+        }
+    }
+
+    func testActiveMorningKeepsTabsAvailableAfterParentCompletes() {
+        let now = Date()
+        let run = FocusRun(plannedDurationSeconds: 60, startedAt: now, state: .completed, guardKind: .honorTimer)
+        let morning = MorningQuietOccurrence(linkedWindDownRunID: run.id, scheduledStart: now,
+            scheduledEnd: now.addingTimeInterval(1800), actualStart: now, outcome: .active)
+        let route = HomeReceiptRouting.route(activeRun: run, journal: .init(morningOccurrences: [morning]))
+        XCTAssertEqual(route, .activeScreenFreeMorning(morning.id))
+        XCTAssertFalse(route.replacesTabShell)
+    }
+
     func testActiveMorningWinsOverUnreadWindDownReceipt() {
         let runID = UUID()
         let now = Date(timeIntervalSince1970: 1_000)
@@ -12,6 +32,7 @@ final class HomeReceiptRoutingTests: XCTestCase {
             morningOccurrences: [occurrence]
         )
         XCTAssertEqual(HomeReceiptRouting.route(activeRun: nil, journal: journal), .activeScreenFreeMorning(occurrence.id))
+        XCTAssertFalse(HomeReceiptRouting.route(activeRun: nil, journal: journal).replacesTabShell)
     }
 
     func testDeferredMorningKeepsUnreadReceiptRecoverable() {

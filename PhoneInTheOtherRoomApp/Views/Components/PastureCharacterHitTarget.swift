@@ -1,8 +1,26 @@
 import SwiftUI
 
-struct PastureCharacterHitTarget<Content: View>: View {
-    let entity: PastureSceneEntityID
-    let controller: PastureSceneController
+/// The touch contract shared by the personal pasture and the shared meadow:
+/// tap opens, long-press then drag moves, and a controller decides whether a
+/// tap that follows a drag should be swallowed.
+@MainActor
+protocol PastureInteractionControlling: AnyObject {
+    associatedtype Entity: Hashable
+    func behavior(for entity: Entity) -> PastureSceneBehavior
+    func beginDrag(_ entity: Entity)
+    func updateDrag(_ entity: Entity, translation: PastureScenePoint)
+    func finishDrag(_ entity: Entity)
+    func cancelInteraction()
+    func shouldAcceptTap(for entity: Entity) -> Bool
+}
+
+extension PastureSceneController: PastureInteractionControlling {
+    func cancelInteraction() { cancelInteraction(restartAutonomy: true) }
+}
+
+struct PastureCharacterHitTarget<Controller: PastureInteractionControlling, Content: View>: View {
+    let entity: Controller.Entity
+    let controller: Controller
     let canvasSize: CGSize
     let coordinateSpace: String
     let reduceMotion: Bool
@@ -12,25 +30,30 @@ struct PastureCharacterHitTarget<Content: View>: View {
     let action: () -> Void
     @ViewBuilder let content: () -> Content
 
+    @State private var responseStarted: Date?
     @State private var beganDrag = false
     @GestureState private var gestureInProgress = false
 
     var body: some View {
+        TimelineView(.animation(paused: responseStarted == nil || reduceMotion)) { context in
+        let response = PasturePlay.response(elapsed: responseStarted.map { context.date.timeIntervalSince($0) } ?? 1, reduceMotion: reduceMotion)
         content()
-            .accessibilityHidden(true)
             .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
-            .scaleEffect(visualScale)
-            .rotationEffect(.degrees(visualRotation))
-            .offset(y: visualOffset)
+            .scaleEffect(x: visualScale, y: visualScale * CGFloat(response.squash))
+            .rotationEffect(.degrees(visualRotation + response.tilt))
+            .offset(y: visualOffset - CGFloat(response.lift))
             .animation(
                 reduceMotion ? AppMotion.reducedFade : AppMotion.stateChange,
                 value: controller.behavior(for: entity)
             )
-            .onTapGesture {
+            .gesture(TapGesture(count: 2).exclusively(before: TapGesture()).onEnded { value in
                 guard controller.shouldAcceptTap(for: entity) else { return }
-                action()
-            }
+                switch value {
+                case .first: responseStarted = Date()
+                case .second: action()
+                }
+            })
             .simultaneousGesture(pressAndDragGesture)
             .onChange(of: gestureInProgress) { wasInProgress, isInProgress in
                 guard wasInProgress, !isInProgress, beganDrag else { return }
@@ -47,6 +70,37 @@ struct PastureCharacterHitTarget<Content: View>: View {
                 guard controller.shouldAcceptTap(for: entity) else { return }
                 action()
             }
+            .accessibilityAction(named: "Gentle nudge") { responseStarted = Date() }
+            .accessibilityAction(named: "Move left") { moveAccessibly(x: -0.06, y: 0) }
+            .accessibilityAction(named: "Move right") { moveAccessibly(x: 0.06, y: 0) }
+            .accessibilityAction(named: "Move toward the hills") { moveAccessibly(x: 0, y: -0.06) }
+            .accessibilityAction(named: "Move forward") { moveAccessibly(x: 0, y: 0.06) }
+        }
+        .accessibilityRepresentation {
+            Button(label) {
+                guard controller.shouldAcceptTap(for: entity) else { return }
+                action()
+            }
+            .accessibilityHint(hint)
+            .accessibilityAction(named: "Gentle nudge") { responseStarted = Date() }
+            .accessibilityAction(named: "Move left") { moveAccessibly(x: -0.06, y: 0) }
+            .accessibilityAction(named: "Move right") { moveAccessibly(x: 0.06, y: 0) }
+            .accessibilityAction(named: "Move toward the hills") { moveAccessibly(x: 0, y: -0.06) }
+            .accessibilityAction(named: "Move forward") { moveAccessibly(x: 0, y: 0.06) }
+        }
+        .task(id: responseStarted) {
+            guard responseStarted != nil else { return }
+            try? await Task.sleep(for: .milliseconds(700))
+            guard !Task.isCancelled else { return }
+            responseStarted = nil
+        }
+    }
+
+    private func moveAccessibly(x: Double, y: Double) {
+        controller.beginDrag(entity)
+        controller.updateDrag(entity, translation: .init(x: x, y: y))
+        controller.finishDrag(entity)
+        responseStarted = Date()
     }
 
     private var pressAndDragGesture: some Gesture {
@@ -73,6 +127,7 @@ struct PastureCharacterHitTarget<Content: View>: View {
                 defer { beganDrag = false }
                 if case .second(true, _) = value, beganDrag {
                     controller.finishDrag(entity)
+                    responseStarted = Date()
                 } else {
                     controller.cancelInteraction()
                 }
