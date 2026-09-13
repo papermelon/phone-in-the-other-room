@@ -19,6 +19,7 @@ struct SlumberPartyV4PartyDetailView: View {
     @State private var showsMoreFromGroup = false
     @State private var showsVisitPicker = false
     @State private var showsLantern = false
+    @State private var showsCampfire = false
 
     private var sharedHabitsHealthActionTitle: String? {
         switch appViewModel.healthSleepConnectionPresentation {
@@ -99,6 +100,7 @@ struct SlumberPartyV4PartyDetailView: View {
                 SharedPastureSheepSheet(social: viewModel, partyID: summary.partyID).environmentObject(appViewModel)
             }
         }
+        .sheet(isPresented: $showsCampfire) { CampfireSharingSheet(social: viewModel, partyID: summary.partyID) }
         .sheet(isPresented: $showsLantern) { SharedPastureLanternSheet(lantern: party?.pasture?.lantern) }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
@@ -212,7 +214,8 @@ struct SlumberPartyV4PartyDetailView: View {
                 onMove: { viewModel.movePasture(partyID: party.summary.partyID, arrangement: $0) },
                 onSelect: { memberID in
                     selectedFarmMember = memberID; selectedFarmActivity = nil; showsMemberUpdates = true
-                }, onSheep: { showsVisitPicker = true }, onImprovement: { showsLantern = true })
+                }, onSheep: { showsVisitPicker = true }, onImprovement: { showsLantern = true },
+                onCampfire: { showsCampfire = true }, now: date)
                 .id(viewModel.pastureRefreshTokens[party.summary.partyID, default: 0])
             SharedPastureSaveFeedback(social: viewModel, partyID: party.summary.partyID)
             SlumberPartyReceivedCheersSection(party: party) { memberID, activityID in
@@ -730,7 +733,7 @@ private struct SlumberPartyV4PresentationClock<Content: View>: View {
         // an explicit Timeline otherwise supplies its first scheduled future
         // date as the initial context, which would make every live status look
         // expired on first render.
-        return [now] + NightFlockV4Presentation
+        return [now] + (party.pasture?.campfire?.sessions.map(\.expiresAt).filter { $0 > now } ?? []) + NightFlockV4Presentation
             .displayInvalidationDates(in: party, at: now)
             .map { $0.addingTimeInterval(0.001) }
     }

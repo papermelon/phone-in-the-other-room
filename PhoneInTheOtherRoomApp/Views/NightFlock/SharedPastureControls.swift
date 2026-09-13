@@ -69,7 +69,8 @@ struct SharedPastureLanternSheet: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 PaperPastureLantern(isLit: lantern?.isComplete == true).frame(width: 96, height: 120).frame(maxWidth: .infinity)
                 if let lantern {
-                    Text(lantern.isComplete ? "A light to gather around" : "Build our lantern spot").font(AppTypography.title)
+                    Text(lantern.isComplete ? "A little more light" : "A lantern for our meadow").font(AppTypography.title)
+                    Text("The campfire is free from day one. This lantern is an extra light everyone earns together.").font(AppTypography.body)
                     ProgressView(value: Double(min(lantern.contributions, lantern.requiredContributions)), total: Double(max(1, lantern.requiredContributions)))
                         .tint(AppColors.grass)
                     Text("\(min(lantern.contributions, lantern.requiredContributions)) of \(lantern.requiredContributions) contributions").font(AppTypography.body)
@@ -77,7 +78,7 @@ struct SharedPastureLanternSheet: View {
                         .font(AppTypography.body)
                     if lantern.isComplete { Text("Everyone can arrange the lantern in the shared meadow.").font(AppTypography.caption) }
                 } else {
-                    Text("The lantern gathering spot isn’t available for this party yet.").font(AppTypography.body)
+                    Text("The earned lantern isn’t available for this party yet.").font(AppTypography.body)
                 }
             }.padding(AppSpacing.md)
             }.background(AppColors.paper.ignoresSafeArea())
@@ -94,7 +95,7 @@ struct SharedPastureSaveFeedback: View {
         if let message = social.pastureMessages[partyID] {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(message).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
-                if message.contains("hasn’t") {
+                if message.contains("hasn’t") || message.contains("retry") {
                     Button("Retry saved change") { social.recoverPasture(partyID: partyID, retry: true) }
                         .buttonStyle(PixelChipButtonStyle(isSelected: false)).frame(minHeight: 44)
                 }
@@ -113,7 +114,7 @@ struct PaperPastureLantern: View {
             RoundedRectangle(cornerRadius: 3).fill(AppColors.bark).frame(width: 37, height: 6).offset(y: -33)
             RoundedRectangle(cornerRadius: 5).fill(isLit ? AppColors.amber : AppColors.surfaceMuted)
                 .frame(width: 25, height: 32).overlay(RoundedRectangle(cornerRadius: 5).stroke(AppColors.bark, lineWidth: 3)).offset(x: 10, y: -12)
-        }.accessibilityLabel(isLit ? "Earned lantern gathering spot" : "Lantern gathering spot")
+        }.accessibilityLabel(isLit ? "Earned meadow lantern" : "Meadow lantern")
     }
 }
 

@@ -1,0 +1,318 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild build -project PhoneInTheOtherRoom.xcodeproj -scheme PhoneInTheOtherRoom -destination "generic/platform=iOS Simulator" -derivedDataPath /private/tmp/counting-sheep-shop-build
+
+Resolve Package Graph
+
+
+Resolved source packages:
+  swift-http-types: https://github.com/apple/swift-http-types.git @ 1.6.0
+  Supabase: https://github.com/supabase/supabase-swift.git @ 2.51.0
+  xctest-dynamic-overlay: https://github.com/pointfreeco/xctest-dynamic-overlay @ 1.11.0
+  swift-crypto: https://github.com/apple/swift-crypto.git @ 4.5.0
+  swift-concurrency-extras: https://github.com/pointfreeco/swift-concurrency-extras @ 1.4.0
+  swift-asn1: https://github.com/apple/swift-asn1.git @ 1.7.1
+  swift-clocks: https://github.com/pointfreeco/swift-clocks @ 1.1.0
+
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (29 targets)
+    Target 'PhoneInTheOtherRoom' in project 'PhoneInTheOtherRoom'
+        ➜ Explicit dependency on target 'PhoneInTheOtherRoomWatchApp' in project 'PhoneInTheOtherRoom'
+        ➜ Explicit dependency on target 'PhoneInTheOtherRoomLiveActivity' in project 'PhoneInTheOtherRoom'
+        ➜ Explicit dependency on target 'PhoneInTheOtherRoomScreenTimeReport' in project 'PhoneInTheOtherRoom'
+        ➜ Explicit dependency on target 'PhoneInTheOtherRoomDeviceActivityMonitor' in project 'PhoneInTheOtherRoom'
+        ➜ Explicit dependency on target 'PhoneInTheOtherRoomShieldConfiguration' in project 'PhoneInTheOtherRoom'
+        ➜ Explicit dependency on target 'PhoneInTheOtherRoomShieldAction' in project 'PhoneInTheOtherRoom'
+        ➜ Explicit dependency on target 'Supabase' in project 'Supabase'
+    Target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'RealtimeV2' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+    Target 'Supabase' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'RealtimeV2' in project 'Supabase'
+        ➜ Explicit dependency on target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+    Target 'Storage' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Realtime' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'RealtimeV2' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'RealtimeV2' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'PostgREST' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Functions' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Auth' in project 'Supabase'
+        ➜ Explicit dependency on target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+    Target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'swift-crypto_Crypto' in project 'swift-crypto'
+    Target 'Crypto' in project 'swift-crypto'
+        ➜ Explicit dependency on target 'swift-crypto_Crypto' in project 'swift-crypto'
+    Target 'swift-crypto_Crypto' in project 'swift-crypto' (no dependencies)
+    Target 'Helpers' in project 'Supabase'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'XCTestDynamicOverlay' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'Clocks' in project 'swift-clocks'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'IssueReporting' in project 'xctest-dynamic-overlay'
+        ➜ Explicit dependency on target 'IssueReporting' in project 'xctest-dynamic-overlay'
+    Target 'IssueReporting' in project 'xctest-dynamic-overlay' (no dependencies)
+    Target 'HTTPTypes' in project 'swift-http-types'
+        ➜ Explicit dependency on target 'HTTPTypes' in project 'swift-http-types'
+    Target 'HTTPTypes' in project 'swift-http-types' (no dependencies)
+    Target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+        ➜ Explicit dependency on target 'ConcurrencyExtras' in project 'swift-concurrency-extras'
+    Target 'ConcurrencyExtras' in project 'swift-concurrency-extras' (no dependencies)
+    Target 'PhoneInTheOtherRoomShieldAction' in project 'PhoneInTheOtherRoom' (no dependencies)
+    Target 'PhoneInTheOtherRoomShieldConfiguration' in project 'PhoneInTheOtherRoom' (no dependencies)
+    Target 'PhoneInTheOtherRoomDeviceActivityMonitor' in project 'PhoneInTheOtherRoom' (no dependencies)
+    Target 'PhoneInTheOtherRoomScreenTimeReport' in project 'PhoneInTheOtherRoom' (no dependencies)
+    Target 'PhoneInTheOtherRoomLiveActivity' in project 'PhoneInTheOtherRoom' (no dependencies)
+    Target 'PhoneInTheOtherRoomWatchApp' in project 'PhoneInTheOtherRoom' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/ngawangchime/Desktop/Developer Projects/Phone in the Other Room/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator26.5.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/ngawangchime/Desktop/Developer Projects/Phone in the Other Room/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+ReadFileContents /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/share/docc/features.json
+
+Build description signature: c6ebfadb977c51305001d25c663d874a
+Build description path: /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/XCBuildData/c6ebfadb977c51305001d25c663d874a.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk /tmp/counting-sheep-shop-build/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoom.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -o /tmp/counting-sheep-shop-build/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache
+
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator26.5.sdk /tmp/counting-sheep-shop-build/SDKStatCaches.noindex/watchsimulator26.5-23T570-1651579a441f1322ae888f0ed545cb80.sdkstatcache
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoom.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/WatchSimulator.platform/Developer/SDKs/WatchSimulator26.5.sdk -o /tmp/counting-sheep-shop-build/SDKStatCaches.noindex/watchsimulator26.5-23T570-1651579a441f1322ae888f0ed545cb80.sdkstatcache
+
+ProcessInfoPlistFile /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Wind\ Down\ Action.appex/Info.plist /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomShieldAction/Info.plist (in target 'PhoneInTheOtherRoomShieldAction' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-infoPlistUtility /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomShieldAction/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -o /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Wind\ Down\ Action.appex/Info.plist
+
+ProcessInfoPlistFile /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Wind\ Down\ Monitor.appex/Info.plist /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomDeviceActivityMonitor/Info.plist (in target 'PhoneInTheOtherRoomDeviceActivityMonitor' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-infoPlistUtility /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomDeviceActivityMonitor/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -o /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Wind\ Down\ Monitor.appex/Info.plist
+
+ProcessInfoPlistFile /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/swift-crypto_Crypto.bundle/Info.plist /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/swift-crypto_Crypto.build/empty-swift-crypto_Crypto.plist (in target 'swift-crypto_Crypto' from project 'swift-crypto')
+    cd /tmp/counting-sheep-shop-build/SourcePackages/checkouts/swift-crypto
+    builtin-infoPlistUtility /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/swift-crypto.build/Debug-iphonesimulator/swift-crypto_Crypto.build/empty-swift-crypto_Crypto.plist -producttype com.apple.product-type.bundle -expandbuildsettings -format binary -platform iphonesimulator -o /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/swift-crypto_Crypto.bundle/Info.plist
+
+ProcessInfoPlistFile /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Screen\ Time\ Report.appex/Info.plist /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomScreenTimeReport/Info.plist (in target 'PhoneInTheOtherRoomScreenTimeReport' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-infoPlistUtility /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomScreenTimeReport/Info.plist -producttype com.apple.product-type.extensionkit-extension -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoomScreenTimeReport.build/PhoneInTheOtherRoomScreenTimeReport-appextension-generated-info.plist -o /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Screen\ Time\ Report.appex/Info.plist
+
+SwiftDriver PhoneInTheOtherRoom normal arm64 com.apple.xcode.tools.swift.compiler (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Counting_Sheep -Onone @/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/arm64/Counting\ Sheep.SwiftFileList -DDEBUG -DSCREEN_TIME_REPORTS -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target arm64-apple-ios17.0-simulator -g -module-cache-path /tmp/counting-sheep-shop-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/counting-sheep-shop-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator -c -j8 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/counting-sheep-shop-build/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/arm64/PhoneInTheOtherRoom-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/counting-sheep-shop-build/ModuleCache.noindex -sdk-module-cache-path /tmp/counting-sheep-shop-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/arm64/Counting_Sheep.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/counting-sheep-shop-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/arm64/PhoneInTheOtherRoom_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-generated-files.hmap -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-own-target-headers.hmap -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom-d9a00fb94435e678319518e524e23875-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-project-headers.hmap -Xcc -I/tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/DerivedSources-normal/arm64 -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/DerivedSources/arm64 -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/arm64/Counting_Sheep-Swift.h -working-directory /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room -experimental-emit-module-separately -disable-cmo
+
+SwiftDriver PhoneInTheOtherRoom normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name Counting_Sheep -Onone @/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/Counting\ Sheep.SwiftFileList -DDEBUG -DSCREEN_TIME_REPORTS -enable-bare-slash-regex -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -target x86_64-apple-ios17.0-simulator -g -module-cache-path /tmp/counting-sheep-shop-build/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /tmp/counting-sheep-shop-build/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator -c -j8 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /tmp/counting-sheep-shop-build/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache -output-file-map /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/PhoneInTheOtherRoom-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /tmp/counting-sheep-shop-build/ModuleCache.noindex -sdk-module-cache-path /tmp/counting-sheep-shop-build/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/Counting_Sheep.swiftmodule -validate-clang-modules-once -clang-build-session-file /tmp/counting-sheep-shop-build/ModuleCache.noindex/Session.modulevalidation -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/PhoneInTheOtherRoom_const_extract_protocols.json -Xcc -iquote -Xcc /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-generated-files.hmap -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-own-target-headers.hmap -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom-d9a00fb94435e678319518e524e23875-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-project-headers.hmap -Xcc -I/tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/DerivedSources-normal/x86_64 -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/DerivedSources/x86_64 -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/Counting_Sheep-Swift.h -working-directory /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room -experimental-emit-module-separately -disable-cmo
+
+ProcessInfoPlistFile /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Live\ Activity.appex/Info.plist /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomLiveActivity/Info.plist (in target 'PhoneInTheOtherRoomLiveActivity' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-infoPlistUtility /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomLiveActivity/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoomLiveActivity.build/assetcatalog_generated_info.plist -o /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Live\ Activity.appex/Info.plist
+
+LinkAssetCatalog /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/Assets.xcassets (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-linkAssetCatalog --thinned /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/assetcatalog_output/thinned --thinned-dependencies /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/assetcatalog_dependencies_thinned --thinned-info-plist-content /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/assetcatalog_generated_info.plist_thinned --unthinned /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/assetcatalog_output/unthinned --unthinned-dependencies /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/assetcatalog_dependencies_unthinned --unthinned-info-plist-content /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/assetcatalog_generated_info.plist_unthinned --output /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep.app --plist-output /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/assetcatalog_generated_info.plist
+note: Emplaced /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting Sheep.app/AppIcon60x60@2x.png (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+note: Emplaced /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting Sheep.app/Assets.car (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+note: Emplaced /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting Sheep.app/AppIcon76x76@2x~ipad.png (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+
+ProcessInfoPlistFile /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Wind\ Down\ Shield.appex/Info.plist /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomShieldConfiguration/Info.plist (in target 'PhoneInTheOtherRoomShieldConfiguration' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-infoPlistUtility /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomShieldConfiguration/Info.plist -producttype com.apple.product-type.app-extension -expandbuildsettings -format binary -platform iphonesimulator -additionalcontentfile /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoomShieldConfiguration.build/assetcatalog_generated_info.plist -o /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/Counting\ Sheep\ Wind\ Down\ Shield.appex/Info.plist
+
+ProcessInfoPlistFile /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app/Info.plist /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-watchsimulator/PhoneInTheOtherRoomWatchApp.build/empty-Counting\ Sheep\ Watch.plist (in target 'PhoneInTheOtherRoomWatchApp' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-infoPlistUtility /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-watchsimulator/PhoneInTheOtherRoomWatchApp.build/empty-Counting\ Sheep\ Watch.plist -producttype com.apple.product-type.application -genpkginfo /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app/PkgInfo -expandbuildsettings -format binary -platform watchsimulator -additionalcontentfile /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-watchsimulator/PhoneInTheOtherRoomWatchApp.build/assetcatalog_generated_info.plist -o /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app/Info.plist
+
+CopySwiftLibs /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app (in target 'PhoneInTheOtherRoomWatchApp' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-swiftStdLibTool --copy --verbose --sign - --scan-executable /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app/Counting\ Sheep\ Watch.debug.dylib --scan-folder /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app/Frameworks --scan-folder /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app/PlugIns --scan-folder /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app/SystemExtensions --scan-folder /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app/Extensions --platform watchsimulator --toolchain /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain --destination /tmp/counting-sheep-shop-build/Build/Products/Debug-watchsimulator/Counting\ Sheep\ Watch.app/Frameworks --strip-bitcode --strip-bitcode-tool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/bitcode_strip --emit-dependency-info /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-watchsimulator/PhoneInTheOtherRoomWatchApp.build/SwiftStdLibToolInputDependencies.dep --filter-for-swift-os --back-deploy-swift-span
+
+SwiftCompile normal x86_64 Compiling\ NightFlockViewModel+Pasture.swift,\ NightFlockViewModel+V4.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Pasture.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+V4.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Pasture.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+V4.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 Compiling\ Campfire.swift,\ CampfireViews.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/Shared/Campfire.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireViews.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/Shared/Campfire.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireViews.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 Compiling\ SharedPasture.swift,\ SharedPastureControls.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/Shared/SharedPasture.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SharedPastureControls.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/Shared/SharedPasture.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SharedPastureControls.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 Compiling\ FocusRunViewModel.swift,\ NightFlockViewModel+Campfire.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/FocusRunViewModel.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Campfire.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/FocusRunViewModel.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Campfire.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 Compiling\ SlumberPartySharedFarmFixtures.swift,\ SlumberPartyV4PartyDetailView.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4PartyDetailView.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+Failed frontend command:
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -c -filelist /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/sources-2 -primary-file /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift -primary-file /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4PartyDetailView.swift -emit-dependencies-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartySharedFarmFixtures.d -emit-const-values-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartySharedFarmFixtures.swiftconstvalues -emit-reference-dependencies-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartySharedFarmFixtures.swiftdeps -serialize-diagnostics-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartySharedFarmFixtures.dia -emit-dependencies-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartyV4PartyDetailView.d -emit-const-values-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartyV4PartyDetailView.swiftconstvalues -emit-reference-dependencies-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartyV4PartyDetailView.swiftdeps -serialize-diagnostics-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartyV4PartyDetailView.dia -target x86_64-apple-ios17.0-simulator -module-can-import-version ActivityKit 268.5.9 1.0.0 -module-can-import-version DeveloperToolsSupport 23.40.26 23.40.26 -module-can-import-version DeviceActivity 392.5.1 0 -module-can-import-version FamilyControls 1223.120.2 0 -module-can-import-version HealthKit 6200.6.8.2 1.0.0 -module-can-import-version ManagedSettings 267.122.1 0 -module-can-import-version Network 5000.0.28 5812.122.1 -module-can-import-version WidgetKit 664.5.28.100 664.5.28 -disable-cross-import-overlay-search -swift-module-cross-import AppIntents /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/AppIntents.framework/Modules/AppIntents.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import AppIntents /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/AppIntents.framework/Modules/AppIntents.swiftcrossimport/UIKit.swiftoverlay -swift-module-cross-import AppIntents /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/System/Library/Frameworks/AppIntents.framework/Modules/AppIntents.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import AppIntents /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/System/Library/Frameworks/AppIntents.framework/Modules/AppIntents.swiftcrossimport/UIKit.swiftoverlay -swift-module-cross-import AuthenticationServices /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Cryptexes/OS/System/Library/Frameworks/AuthenticationServices.framework/Modules/AuthenticationServices.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import AuthenticationServices /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/System/Library/Frameworks/AuthenticationServices.framework/Modules/AuthenticationServices.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import CoreNFC /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/CoreNFC.framework/Modules/CoreNFC.swiftcrossimport/UIKit.swiftoverlay -swift-module-cross-import CoreNFC /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/System/Library/Frameworks/CoreNFC.framework/Modules/CoreNFC.swiftcrossimport/UIKit.swiftoverlay -swift-module-cross-import DeviceActivity /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/System/Library/Frameworks/DeviceActivity.framework/Modules/DeviceActivity.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import PhotosUI /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/PhotosUI.framework/Modules/PhotosUI.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import PhotosUI /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/PhotosUI.framework/Modules/PhotosUI.swiftcrossimport/WidgetKit.swiftoverlay -swift-module-cross-import PhotosUI /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/System/Library/Frameworks/PhotosUI.framework/Modules/PhotosUI.swiftcrossimport/SwiftUI.swiftoverlay -swift-module-cross-import PhotosUI /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/System/Library/Frameworks/PhotosUI.framework/Modules/PhotosUI.swiftcrossimport/WidgetKit.swiftoverlay -swift-module-cross-import RelevanceKit /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/System/Library/Frameworks/RelevanceKit.framework/Modules/RelevanceKit.swiftcrossimport/MapKit.swiftoverlay -swift-module-cross-import RelevanceKit /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk/System/Library/Frameworks/RelevanceKit.framework/Modules/RelevanceKit.swiftcrossimport/MapKit.swiftoverlay -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libAppIntentsMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#AppIntentsMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libFoundationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#FoundationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libObservationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#ObservationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libPreviewsMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#PreviewsMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftUIMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftUIMacros -disable-implicit-swift-modules -Xcc -fno-implicit-modules -Xcc -fno-implicit-module-maps -explicit-swift-module-map-file /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/Counting_Sheep-dependencies-1.json -debug-module-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/Counting_Sheep.swiftmodule -enable-objc-interop -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.5.sdk -I /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/PackageFrameworks -F /tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator -no-color-diagnostics -Xcc -fno-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=4 -module-cache-path /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -swift-version 5 -Onone -D DEBUG -D SCREEN_TIME_REPORTS -serialize-debugging-options -const-gather-protocols-file /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/PhoneInTheOtherRoom_const_extract_protocols.json -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /tmp/counting-sheep-shop-build/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room -enable-anonymous-context-mangled-names -file-compilation-dir /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -Xcc -ivfsstatcache -Xcc /tmp/counting-sheep-shop-build/SDKStatCaches.noindex/iphonesimulator26.5-23F81a-6cfe768891a92b912361537c460fe42b.sdkstatcache -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/swift-overrides.hmap -Xcc -iquote -Xcc /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-generated-files.hmap -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-own-target-headers.hmap -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-all-non-framework-target-headers.hmap -Xcc -ivfsoverlay -Xcc /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom-d9a00fb94435e678319518e524e23875-VFS-iphonesimulator/all-product-headers.yaml -Xcc -iquote -Xcc /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Counting\ Sheep-project-headers.hmap -Xcc -I/tmp/counting-sheep-shop-build/Build/Products/Debug-iphonesimulator/include -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/DerivedSources-normal/x86_64 -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/DerivedSources/x86_64 -Xcc -I/tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/DerivedSources -Xcc -DDEBUG\=1 -no-auto-bridging-header-chaining -module-name Counting_Sheep -frontend-parseable-output -disable-clang-spi -clang-target x86_64-apple-ios26.5-simulator -target-sdk-version 26.5 -target-sdk-name iphonesimulator26.5 -in-process-plugin-server-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -o /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartySharedFarmFixtures.o -o /tmp/counting-sheep-shop-build/Build/Intermediates.noindex/PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartyV4PartyDetailView.o -index-unit-output-path /PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartySharedFarmFixtures.o -index-unit-output-path /PhoneInTheOtherRoom.build/Debug-iphonesimulator/PhoneInTheOtherRoom.build/Objects-normal/x86_64/SlumberPartyV4PartyDetailView.o -index-store-path /tmp/counting-sheep-shop-build/Index.noindex/DataStore -index-system-modules
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+/Users/ngawangchime/Desktop/Developer Projects/Phone in the Other Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift:103:91: error: variable 'self.model' captured by a closure before being initialized
+                sessions: mode == "empty-party" ? [] : party.memberships.enumerated().map { index, member in
+                                                                                          ^
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4PartyDetailView.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 Compiling\ WindDownStartSheet.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/Components/WindDownStartSheet.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/Components/WindDownStartSheet.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 Compiling\ NightFlockViewModel.swift,\ NightWatch.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/Shared/NightWatch.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/Shared/NightWatch.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftEmitModule normal x86_64 Emitting\ module\ for\ Counting_Sheep (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+
+EmitSwiftModule normal x86_64 (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ Counting_Sheep (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+
+EmitSwiftModule normal arm64 (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    
+
+SwiftDriverJobDiscovery normal x86_64 Compiling NightFlockViewModel+Pasture.swift, NightFlockViewModel+V4.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+
+SwiftCompile normal arm64 Compiling\ SharedPastureOutboxService.swift,\ SlumberPartyPastureView.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Services/SharedPastureOutboxService.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyPastureView.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	SwiftCompile normal x86_64 Compiling\ SlumberPartySharedFarmFixtures.swift,\ SlumberPartyV4PartyDetailView.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4PartyDetailView.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+	SwiftCompile normal x86_64 /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room/PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+	Building project PhoneInTheOtherRoom with scheme PhoneInTheOtherRoom
+(3 failures)

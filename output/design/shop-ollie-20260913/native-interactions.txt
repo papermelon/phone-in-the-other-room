@@ -1,0 +1,24 @@
+Isolated ShopWardrobeNativeQA, Counting Sheep Review iPhone SE, iOS 26.5.
+No external services or founder Farm data used.
+
+Owned Moss Bandana detail:
+Take off Moss Bandana -> Farm update: Ollie is ready for the next search.
+Dismiss -> Wear Moss Bandana.
+Wear Moss Bandana -> Farm update: Ollie is wearing Moss Bandana.
+Dismiss -> Take off Moss Bandana.
+Sitting -> Running -> accessibility description changes to Ollie wearing Moss Bandana, running.
+
+Final accessibility3 Cape preview:
+Sitting -> Resting -> Preview: Ollie wearing Star-Keeper Cape, resting.
+Visually confirmed folded midnight fabric and cream star over the back, clear of face/paws.
+
+Final Shop purchase:
+Before: 5 wool available; Ollie wearing Moss Bandana; 1 of 6 brought home.
+Bring home (Brass Farm Bell, 4 wool) -> Brass Farm Bell is yours and ready at the Farm.
+After: 1 wool available; Ollie wearing Brass Farm Bell; 2 of 6 brought home.
+Moss Bandana: OWNED / Wear. Brass Farm Bell: WORN / Take off.
+Moon Kerchief: Need 5 wool, disabled.
+
+Simulator mouse scroll/drag did not reliably move the Shop list; used available native
+accessibility actions to inspect/open/buy the off-screen item. Physical touch/VoiceOver remains
+device acceptance, not inferred from these automated actions.

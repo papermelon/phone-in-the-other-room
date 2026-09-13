@@ -132,7 +132,11 @@ struct FarmShopItemImage: View {
 
     var body: some View {
         Group {
-            if item.effect == .shepherdOutfit || item.effect == .shepherdAccessory {
+            if item.effect == .ollieAccessory {
+                OllieFarmAvatar(accessoryItemID: item.id, size: size)
+            } else if PaperFarmObjectView.supportedIDs.contains(item.id) {
+                PaperFarmObjectView(itemID: item.id).frame(width: size, height: size)
+            } else if item.effect == .shepherdOutfit || item.effect == .shepherdAccessory {
                 ShepherdAvatarView(profile: ShepherdProfile(
                     skinTone: .warm, hairStyle: .waves,
                     outfitItemID: item.effect == .shepherdOutfit ? item.id : nil,
@@ -155,12 +159,14 @@ struct FarmDecorationSceneImage: View {
     let size: CGFloat
 
     var body: some View {
-        FarmCatalogAssetImage(
-            assetName: item.sceneAssetName,
-            fallbackSymbol: item.symbolName,
-            fallbackColor: farmVisualColor(item.visualStyle),
-            size: size
-        )
+        Group {
+            if PaperFarmObjectView.supportedIDs.contains(item.id) {
+                PaperFarmObjectView(itemID: item.id, anchoredToGround: true).frame(width: size, height: size)
+            } else {
+                FarmCatalogAssetImage(assetName: item.sceneAssetName, fallbackSymbol: item.symbolName,
+                                      fallbackColor: farmVisualColor(item.visualStyle), size: size)
+            }
+        }
         .accessibilityHidden(true)
     }
 }
@@ -208,14 +214,6 @@ struct OllieFarmAvatar: View {
     @State private var actionCapabilities: [OllieCompanionAction: Bool] = [:]
     @State private var capabilityRevision = 0
 
-    private var equippedOverlayAssetName: String? {
-        guard let item = renderedAccessoryItemID.flatMap(FarmShopCatalog.item),
-              case .ollieAccessory(let assetName) = item.equippedRenderAsset else {
-            return nil
-        }
-        return UIImage(named: assetName) == nil ? nil : assetName
-    }
-
     var body: some View {
         OllieCompanionAnimationView(
             schedule: animationSchedule,
@@ -229,46 +227,14 @@ struct OllieFarmAvatar: View {
                 size: size,
                 actionCapabilities: $actionCapabilities,
                 capabilityRevision: $capabilityRevision
-            ) { motionOverlayName in
-                if let motionOverlayName {
-                    ZStack(alignment: .bottom) {
-                        ollieBase
-                        PixelAssetImage(name: motionOverlayName)
-                            .frame(width: size, height: size)
-                    }
-                } else {
-                    neutralOllie
-                }
+            ) {
+                OllieDressedSprite(assetName: NightJourneyAssets.ollieHomeIdleFrames[0],
+                                   accessoryItemID: renderedAccessoryItemID)
             }
         }
         .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
-    }
-
-    private var ollieBase: some View {
-        FarmCatalogAssetImage(
-            assetName: AssetSlot.Dog.farmNeutralIdle,
-            fallbackSymbol: "pawprint.fill",
-            fallbackColor: AppColors.grass,
-            size: size
-        )
-    }
-
-    @ViewBuilder
-    private var neutralOllie: some View {
-        ZStack(alignment: .bottom) {
-            ollieBase
-            if equippedOverlayAssetName != nil {
-                FarmEquippedOverlayImage(assetName: equippedOverlayAssetName, size: size)
-                    .shadow(color: AppShadows.cardColor, radius: 1, y: 1)
-
-                // The existing neutral composition retains its authored depth
-                // treatment. Animated poses use pose-specific overlay alpha.
-                ollieBase
-                    .mask(accessoryDepthMask)
-            }
-        }
     }
 
     private func nextFrameChange(after animationFrame: OllieCompanionAnimationFrame) -> TimeInterval? {
@@ -295,19 +261,6 @@ struct OllieFarmAvatar: View {
         #else
         return accessoryItemID
         #endif
-    }
-
-    private var accessoryDepthMask: some View {
-        LinearGradient(
-            stops: [
-                .init(color: .white, location: 0),
-                .init(color: .white, location: 0.54),
-                .init(color: .clear, location: 0.64)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .frame(width: size, height: size)
     }
 
     private var accessibilityLabel: String {
@@ -338,6 +291,7 @@ struct ShepherdAvatarView: View {
 }
 
 struct FarmKeepsakeDisplay: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let state: FarmState
 
     private var displayedItems: [FarmShopItem] {
@@ -362,7 +316,7 @@ struct FarmKeepsakeDisplay: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    LazyHGrid(rows: [GridItem(.fixed(100))], spacing: AppSpacing.sm) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: dynamicTypeSize.isAccessibilitySize ? 150 : 92), alignment: .top)], spacing: AppSpacing.sm) {
                         ForEach(displayedItems) { item in
                             VStack(spacing: AppSpacing.xxs) {
                                 FarmShopItemImage(item: item, size: 58)
@@ -373,7 +327,7 @@ struct FarmKeepsakeDisplay: View {
                                     .lineLimit(2)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .frame(width: 84)
+                            .frame(maxWidth: .infinity)
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("Displayed keepsake: \(item.title)")
                         }

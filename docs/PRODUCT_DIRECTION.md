@@ -200,7 +200,27 @@ is a separate proposal: no AI processing, API spend, deployment or distribution 
   app guide**. The compact root leads to focused detail screens with contextual help and progressive
   disclosure; there is one Wind Down configuration route, not a duplicate Review Wind Down route.
 
+## Shop and Ollie’s wardrobe
+
+Founder direction on 13 September 2026: use simple paper-textured illustrations throughout
+Shop inventory and its purchased appearances. Ollie’s accessories must look fitted and follow
+the equipped choice across Home, personal Farm and active Wind Down/Phone Away chases.
+The local implementation uses one pose-registered garment renderer and native paper objects,
+with actual worn/placed previews and reversible equipment actions. Preserve inventory IDs,
+prices, unlocks and ownership. The seven existing fitted Shepherd items remain in the same style.
+See [collection review and implementation](plans/shop-ollie-and-campfire-2026-09-13.md).
+
 ## Slumber Party
+
+Founder authorized campfire implementation on 13 September 2026. Campfire is a free gathering
+place inside each existing meadow; the 12-contribution lantern remains an earned improvement.
+Customized Shepherds gather for explicitly shared app-reported sessions. Optional bounded Phone
+Away intentions require a separate per-party version 1 consent receipt and advertised capability;
+private task text never uploads. Default Wind Down validity ends at planned wake, Phone Away at
+its planned end, with terminal precedence and a 24-hour ceiling. Temporary gathering positions
+restore saved arrangements. Source is implemented; hosted activation remains pending. See
+[current campfire contract](plans/campfire-implementation-2026-09-13.md).
+
 
 Founder correction during implementation (12 September 2026): retain the existing shared
 meadow artwork and its wide, open framing. It already matches the characters; the scenery

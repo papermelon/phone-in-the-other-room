@@ -7,6 +7,7 @@ enum ShepherdStudyPalette {
     static let cream = Color(red: 0.96, green: 0.90, blue: 0.74)
     static let moon = Color(red: 0.39, green: 0.47, blue: 0.59)
     static let midnight = Color(red: 0.28, green: 0.33, blue: 0.47)
+    static let heather = Color(red: 0.52, green: 0.36, blue: 0.64)
     static let denim = Color(red: 0.48, green: 0.52, blue: 0.43)
     static let moss = Color(red: 0.45, green: 0.49, blue: 0.28)
     static let pocket = Color(red: 0.39, green: 0.43, blue: 0.23)

@@ -1,0 +1,48 @@
+[
+  {
+    "suite": "campfire_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false,
+    "note": "Passed standalone rerun after correcting fixture table reference; source migration unchanged."
+  },
+  {
+    "suite": "shared_pasture_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  },
+  {
+    "suite": "night_flock_v4_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": true
+  },
+  {
+    "suite": "night_flock_membership_sharing_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": true
+  },
+  {
+    "suite": "night_flock_v4_social_avatar_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": true
+  },
+  {
+    "suite": "slumber_party_farm_cheer_receipts_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  },
+  {
+    "suite": "night_flock_shared_habits_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": true
+  },
+  {
+    "suite": "farm_save_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  },
+  {
+    "suite": "account_identity_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  }
+]

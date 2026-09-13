@@ -1,0 +1,6 @@
+BEGIN
+INSERT 0 4
+INSERT 0 1
+psql:supabase/tests/account_identity_test.sql:81: NOTICE:  Account identity, username, rate limit, and account Farm sync tests passed
+DO
+ROLLBACK

@@ -10,6 +10,7 @@ struct SharedPastureState: Codable, Equatable, Sendable {
     var entities: [SharedPastureEntity]
     var visits: [SharedPastureVisit]
     var lantern: SharedPastureLantern
+    var campfire: CampfireState? = nil
 
     var isSupported: Bool { version == 1 && sceneRevision == 1 }
     var arrangement: SharedMeadowArrangement {
@@ -101,6 +102,16 @@ struct SharedPastureCommand: Codable, Equatable, Identifiable, Sendable {
     var sheepID: UUID?
     var visitID: UUID?
     var consentVersion: Int?
+    var enabled: Bool?
+    var agreementID: UUID?
+    var sourceID: UUID?
+    var kind: NightFlockV4ActivityKind?
+    var activity: CampfireActivity?
+    var startedAt: Date?
+    var observedAt: Date?
+    var expiresAt: Date?
+    var ended: Bool?
+    var revision: Int?
     var idempotencyKey: String
     var id: String { idempotencyKey }
 

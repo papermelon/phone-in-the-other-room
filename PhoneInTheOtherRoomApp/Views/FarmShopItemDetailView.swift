@@ -28,6 +28,9 @@ struct FarmShopItemDetailView: View {
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.secondaryText)
                 }
+                Text(placementDescription)
+                    .font(AppTypography.body)
+                    .foregroundStyle(AppColors.secondaryText)
                 statusCard
                 action
             }
@@ -47,6 +50,11 @@ struct FarmShopItemDetailView: View {
 
     @ViewBuilder
     private var preview: some View {
+        if item.effect == .ollieAccessory {
+            OllieWardrobePreview(itemID: item.id)
+                .frame(maxWidth: .infinity)
+                .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.lg))
+        } else {
         ZStack {
             RoundedRectangle(cornerRadius: AppRadius.lg)
                 .fill(farmVisualColor(item.visualStyle).opacity(0.14))
@@ -56,19 +64,19 @@ struct FarmShopItemDetailView: View {
             case .shepherdOutfit, .shepherdAccessory:
                 ShepherdAvatarView(profile: previewShepherd, size: 210)
             case .farmDecoration:
-                PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-                FarmDecorationSceneImage(item: item, size: 130)
-                    .offset(y: 38)
+                GeometryReader { proxy in
+                    ZStack {
+                        PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
+                            .frame(width: proxy.size.width, height: proxy.size.height).clipped()
+                        if let anchor = FarmShopCatalog.decorationAnchor(for: item.id) {
+                            FarmDecorationSceneImage(item: item, size: CGFloat(anchor.size))
+                                .position(x: proxy.size.width * anchor.normalizedCenterX,
+                                          y: proxy.size.height * anchor.normalizedGroundY - anchor.size / 2)
+                        }
+                    }
+                }.clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             case .capacity, .collectible:
                 FarmShopItemImage(item: item, size: 190)
-            }
-            if !isUnlocked {
-                Color.black.opacity(0.28)
-                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-                Image(systemName: "lock.fill")
-                    .font(.largeTitle.weight(.bold))
-                    .foregroundStyle(AppColors.paper)
             }
         }
         .frame(maxWidth: .infinity)
@@ -79,6 +87,7 @@ struct FarmShopItemDetailView: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Preview of \(item.title)")
+        }
     }
 
     private var statusCard: some View {
@@ -87,6 +96,7 @@ struct FarmShopItemDetailView: View {
                 Image(systemName: isUnlocked ? "cloud.fill" : "lock.fill")
                     .font(.title3.weight(.bold))
                     .foregroundStyle(isUnlocked ? AppColors.bark : AppColors.grass)
+                    .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(isWelcomeGift ? "Welcome gift · Owned" : isOwned ? "Already yours" : "\(item.woolCost) wool")
                         .font(AppTypography.headline)
@@ -107,16 +117,30 @@ struct FarmShopItemDetailView: View {
     @ViewBuilder
     private var action: some View {
         if isOwned {
-            Text("This item is safely stored at the Farm.")
-                .font(AppTypography.body)
-                .foregroundStyle(AppColors.secondaryText)
-                .frame(maxWidth: .infinity, alignment: .center)
+            FarmShopOwnedItemAction(item: item, state: state)
         } else if isUnlocked {
             Button(canAfford ? "Bring home for \(item.woolCost) wool" : "Keep gathering wool") {
                 viewModel.purchaseFarmShopItem(item.id)
             }
             .buttonStyle(PixelPrimaryButtonStyle())
             .disabled(!canAfford)
+        }
+    }
+
+    private var placementDescription: String {
+        switch item.effect {
+        case .ollieAccessory:
+            return "Ollie wears one accessory at a time. Bringing this home changes his look; his other accessories stay in the wardrobe."
+        case .shepherdOutfit, .shepherdAccessory:
+            return "Bringing this home changes your Shepherd’s look. Your other clothes stay in the wardrobe."
+        case .farmDecoration:
+            return item.id == "farm_lanterns"
+                ? "Placed beside your Barn. These are personal decorations; the Slumber Party lantern is a separate group project."
+                : "Placed in your pasture when you bring it home. Anything in the same spot returns to storage."
+        case .collectible:
+            return "Displayed on your Farm’s keepsake shelf. If all four spots are filled, it stays in storage until you make room."
+        case .capacity:
+            return "Opens more room for your flock. Pasture upgrades are added in order."
         }
     }
 

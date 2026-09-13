@@ -298,6 +298,10 @@ final class FocusRunViewModel: ObservableObject {
         self.nightFlockViewModel.onV4CheerFeedback = { [weak self] feedback in
             self?.coordinator.showSlumberPartyCheer(feedback)
         }
+        self.nightFlockViewModel.onCampfireAuthorityAvailable = { [weak self] in
+            guard let self, let run = self.activeRun else { return }
+            self.nightFlockViewModel.publishCampfireSession(run, ended: run.state == .completed || run.state == .endedEarly)
+        }
         self.nightFlockViewModel.onSharedHabitsAgreementAvailable = { [weak self] in
             self?.reconcileSharedHabitSleepAfterForeground()
             self?.reconcileSharedNightPlans()
@@ -307,6 +311,7 @@ final class FocusRunViewModel: ObservableObject {
         self.nightFlockViewModel.onPrimaryRunSharingDecisionsRestored = { [weak self] in
             self?.reconcileRestoredPrivatePrimaryPlanFences()
             self?.replayRestoredSharedPrimaryTerminalOutcomes()
+            self?.nightFlockViewModel.onCampfireAuthorityAvailable?()
         }
         self.nightFlockViewModel.onSharedHabitsAuthorityInvalidated = { [weak self] in
             self?.invalidateSharedHabitSleepReconciliation()
@@ -1365,6 +1370,8 @@ final class FocusRunViewModel: ObservableObject {
         }
     }
 
+    @Published var nextCampfireActivity: CampfireActivity = .phoneAway
+
     private func startPendingNightWatch(
         stagedRunID: UUID? = nil,
         stagedStartedAt: Date? = nil,
@@ -1441,6 +1448,8 @@ final class FocusRunViewModel: ObservableObject {
 #else
         appShieldingRequested = true
 #endif
+        plan.campfireOwnerID = nightFlockViewModel.campfireOwnerForNewRun
+        if plan.role == .additionalQuiet { plan.campfireActivity = nextCampfireActivity }
         let sourceID = pendingNightWatchSourceOccurrenceID
         let startNFCPurpose = currentNFCPurpose
         let runID = stagedRunID ?? UUID()
@@ -1559,6 +1568,7 @@ final class FocusRunViewModel: ObservableObject {
                 publishValidatedStatusAfterAdmission: validatedDuringAdmission
             )
         }
+        nextCampfireActivity = .phoneAway
         reloadCurrentPurposeCue()
         if let sourceID,
            sourceID == orientationState.practicePeriodID,
@@ -3077,13 +3087,14 @@ final class FocusRunViewModel: ObservableObject {
             usageMonitoring.cancel()
             return
         }
-        let plan = next.map {
+        var plan = next.map {
             WindDownScheduleEngine.plan(
                 for: $0,
                 preferences: nightWatchPreferences,
                 startedAt: startDate
             )
         } ?? nightWatchPreferences.makePlan(startedAt: startDate)
+        plan.campfireOwnerID = nightFlockViewModel.campfireOwnerForNewRun
         let supportedPlan = WindDownHabitRules.planForStart(
             plan, support: windDownHabitPlan,
             useSmallerVersion: windDownHabitPlan.useSmallerVersionNextTime
