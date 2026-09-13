@@ -18,7 +18,8 @@ struct ScreenFreeMorningView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
-                        NightJourneyView(morning: occurrence, reduceMotion: reduceMotion, fixedDate: fixedNow)
+                        NightJourneyView(morning: occurrence, reduceMotion: reduceMotion, fixedDate: fixedNow,
+                                         accessoryItemID: viewModel.farmState.equipment.ollieAccessoryItemID)
                         Label("Screen-Free Morning", systemImage: "sun.max.fill")
                             .font(AppTypography.headline)
                             .foregroundStyle(AppColors.grass)

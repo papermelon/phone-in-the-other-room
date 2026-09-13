@@ -134,6 +134,15 @@ struct WindDownStartSheet: View {
                     shieldingChoice
 
                     nightFlockPrivacyChoice
+                    if viewModel.pendingNightWatchIsAdditionalQuiet,
+                       viewModel.pendingWindDownStartContext?.isPractice != true,
+                       viewModel.nightFlockViewModel.hasCampfireSharing {
+                        Picker("At the campfire", selection: $viewModel.nextCampfireActivity) {
+                            ForEach(CampfireActivity.allCases) { Text($0.title).tag($0) }
+                        }.font(AppTypography.body)
+                        Text("An optional intention for parties where you’ve enabled campfire sharing. Your custom task title stays private.")
+                            .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                    }
 
                     Toggle(
                         isAdHocQuiet ? "Show on the Lock Screen" : "Show progress on the Lock Screen",

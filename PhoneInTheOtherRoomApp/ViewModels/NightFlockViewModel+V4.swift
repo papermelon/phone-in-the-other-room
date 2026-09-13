@@ -482,6 +482,7 @@ extension NightFlockViewModel {
     }
 
     func publishV4PhoneAwayActive(for run: FocusRun) {
+        publishCampfireSession(run)
         guard NightFlockV4PublicationPolicy.allows(
             .active,
             role: run.nightWatchPlan?.role,
@@ -501,6 +502,7 @@ extension NightFlockViewModel {
     /// and from local reward-settlement eligibility. It records only a primary
     /// Wind Down or an additional Phone Away—not practice or Screen-Free Morning.
     func publishV4TerminalActivity(for run: FocusRun) {
+        publishCampfireSession(run, ended: true)
         guard NightFlockV4PublicationPolicy.allows(
             .terminal,
             role: run.nightWatchPlan?.role,
@@ -815,6 +817,7 @@ extension NightFlockViewModel {
         recoverUpdateCheers(in: detail)
         recordPastureVisits(detail)
         recoverPasture(partyID: partyID)
+        onCampfireAuthorityAvailable?()
 
         // Do not replay a party's existing cheers when it is first selected.
         // A subsequent canonical refresh may surface only genuinely new totals.
@@ -1003,7 +1006,7 @@ extension NightFlockViewModel {
         }
     }
 
-    private func refreshV4PartyObservation(
+    func refreshV4PartyObservation(
         _ partyID: UUID,
         refreshListAfterward: Bool = true
     ) {

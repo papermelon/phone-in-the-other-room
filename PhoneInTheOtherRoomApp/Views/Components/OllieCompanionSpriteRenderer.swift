@@ -1,17 +1,6 @@
 import SwiftUI
 import UIKit
 
-/// Legacy neutral overlays keep an equipped accessory visible when its exact
-/// registered neutral overlay is not available yet.
-func ollieNeutralAccessoryOverlayAssetName(for accessoryItemID: String?) -> String? {
-    guard let item = accessoryItemID.flatMap(FarmShopCatalog.item),
-          case .ollieAccessory(let assetName) = item.equippedRenderAsset,
-          UIImage(named: assetName) != nil else {
-        return nil
-    }
-    return assetName
-}
-
 /// Resolves only the active action for one equipped choice. A missing frame
 /// holds the supplied neutral renderer for the whole action, preventing a
 /// partial sequence from flashing between neutral and an unrelated pose.
@@ -21,11 +10,10 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
     let size: CGFloat
     @Binding var actionCapabilities: [OllieCompanionAction: Bool]
     @Binding var capabilityRevision: Int
-    @ViewBuilder let neutral: (String?) -> Neutral
+    @ViewBuilder let neutral: () -> Neutral
 
     @State private var checkedAccessoryItemID: String?
     @State private var hasCheckedAccessory = false
-    @State private var neutralMotionOverlayName: String?
 
     init(
         animationFrame: OllieCompanionAnimationFrame,
@@ -33,7 +21,7 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
         size: CGFloat,
         actionCapabilities: Binding<[OllieCompanionAction: Bool]>,
         capabilityRevision: Binding<Int>,
-        @ViewBuilder neutral: @escaping (String?) -> Neutral
+        @ViewBuilder neutral: @escaping () -> Neutral
     ) {
         self.animationFrame = animationFrame
         self.accessoryItemID = accessoryItemID
@@ -46,17 +34,9 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
     var body: some View {
         Group {
             if let spriteFrame = resolvedSpriteFrame {
-                ZStack {
-                    PixelAssetImage(name: spriteFrame.assetName)
-                    if let overlayName = OllieCompanionSpriteManifest.production.overlayAssetName(
-                        for: accessoryItemID,
-                        frame: spriteFrame
-                    ) {
-                        PixelAssetImage(name: overlayName)
-                    }
-                }
+                OllieDressedSprite(assetName: spriteFrame.assetName, accessoryItemID: accessoryItemID)
             } else {
-                neutral(currentNeutralMotionOverlayName)
+                neutral()
             }
         }
         .frame(width: size, height: size)
@@ -75,11 +55,6 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
             .frame(at: animationFrame.actionElapsed)
     }
 
-    private var currentNeutralMotionOverlayName: String? {
-        guard hasCheckedAccessory, checkedAccessoryItemID == accessoryItemID else { return nil }
-        return neutralMotionOverlayName
-    }
-
     private var capabilityKey: CapabilityKey {
         CapabilityKey(action: animationFrame.action, accessoryItemID: accessoryItemID)
     }
@@ -89,16 +64,13 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
             checkedAccessoryItemID = accessoryItemID
             hasCheckedAccessory = true
             actionCapabilities = [:]
-            neutralMotionOverlayName = OllieCompanionSpriteManifest.production.neutralOverlayAssetName(
-                for: accessoryItemID
-            ).flatMap { UIImage(named: $0) == nil ? nil : $0 }
             capabilityRevision &+= 1
         }
         guard animationFrame.action != .neutral,
               actionCapabilities[animationFrame.action] == nil,
               let required = OllieCompanionSpriteManifest.production.requiredAssetNames(
                 for: animationFrame.action,
-                accessoryItemID: accessoryItemID
+                accessoryItemID: nil
               ) else {
             return
         }
@@ -106,11 +78,13 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
         let available = Set(required.filter { UIImage(named: $0) != nil })
         let canRender = OllieCompanionSpriteManifest.production.canRender(
             action: animationFrame.action,
-            accessoryItemID: accessoryItemID,
+            accessoryItemID: nil,
             availableAssetNames: available
         )
+        let fitted = OllieGarment(itemID: accessoryItemID) == nil
+            || required.allSatisfy { OllieGarmentFit.forAsset($0) != nil }
         for action in OllieCompanionSpriteManifest.production.capabilityActions(for: animationFrame.action) {
-            actionCapabilities[action] = canRender
+            actionCapabilities[action] = canRender && fitted
         }
         capabilityRevision &+= 1
     }
@@ -137,7 +111,7 @@ private struct OllieCompanionSpriteRendererPreview: View {
             size: 190,
             actionCapabilities: $actionCapabilities,
             capabilityRevision: $capabilityRevision
-        ) { _ in
+        ) {
             PixelAssetImage(name: NightJourneyAssets.ollieHomeIdleFrames[0])
         }
         .padding()

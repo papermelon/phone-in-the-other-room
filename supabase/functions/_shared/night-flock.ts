@@ -43,6 +43,8 @@ export type NightFlockCommandPayload = Record<string, unknown> & {
 };
 
 const v4CommandFields: Record<string, string[]> = {
+  setCampfireSharing: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","expectedRevision","consentVersion","enabled","idempotencyKey"],
+  publishCampfireSession: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","kind","activity","startedAt","observedAt","expiresAt","ended","revision","idempotencyKey"],
   movePastureEntity: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","entityID","expectedRevision","x","y","idempotencyKey"],
   contributePastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","sheepID","consentVersion","idempotencyKey"],
   recallPastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","visitID","idempotencyKey"],
@@ -201,6 +203,24 @@ export function validateNightFlockState(body: Record<string, unknown>): NightFlo
 }
 
 function validateV4Command(body: Record<string, unknown>, command: string): void {
+  if (["setCampfireSharing", "publishCampfireSession"].includes(command)) {
+    requireUUID(body, "partyID"); requireUUID(body, "memberEpochID");
+    if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
+    if (command === "setCampfireSharing") {
+      if (body.consentVersion !== 1 || typeof body.enabled !== "boolean"
+        || !Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0
+        || Number(body.expectedRevision) > 2147483646) throw new Error("Invalid campfire consent");
+    } else {
+      requireUUID(body, "agreementID"); requireUUID(body, "sourceID");
+      for (const key of ["startedAt", "observedAt", "expiresAt"]) body[key] = normalizeActivityTimestamp(body[key], key);
+      const start = Date.parse(String(body.startedAt)), end = Date.parse(String(body.expiresAt));
+      if (![start, end, Date.parse(String(body.observedAt))].every(Number.isFinite) || !["windDown","phoneAway"].includes(String(body.kind)) || typeof body.ended !== "boolean"
+        || body.revision !== (body.ended ? 2 : 1) || end <= start || end - start > 86400000
+        || Date.parse(String(body.observedAt)) < start) throw new Error("Invalid campfire session");
+      if (body.activity !== undefined && (body.kind !== "phoneAway" || !["phoneAway","reading","studying","making","chores","resting"].includes(String(body.activity)))) throw new Error("Invalid campfire activity");
+    }
+    return;
+  }
   if (["movePastureEntity", "contributePastureSheep", "recallPastureSheep"].includes(command)) {
     requireUUID(body, "partyID"); requireUUID(body, "memberEpochID");
     if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");

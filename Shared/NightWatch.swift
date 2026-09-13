@@ -699,12 +699,15 @@ struct NightWatchPlan: Codable, Equatable {
     var usesSmallerRoutine: Bool
     /// Matches one next-start choice so an admitted-run replay cannot consume a later choice.
     var smallerRoutineSelectionID: UUID?
+    var campfireActivity: CampfireActivity? = nil
+    /// Captured locally at admission/scheduling; never part of public presence.
+    var campfireOwnerID: UUID? = nil
 
     private enum CodingKeys: String, CodingKey {
         case intendedBedtime, wakeTime, protectedUntil, windDownMinutes, morningQuietMinutes
         case eveningActivity, morningActivity, eveningCueText, morningCueText
         case eveningRoutine, morningRoutine, role, localDateAnchor
-        case phonePlacement, usesSmallerRoutine, smallerRoutineSelectionID
+        case phonePlacement, usesSmallerRoutine, smallerRoutineSelectionID, campfireActivity, campfireOwnerID
     }
 
     init(
@@ -800,6 +803,8 @@ struct NightWatchPlan: Codable, Equatable {
         )
         phonePlacement = try container.decodeIfPresent(WindDownPhonePlacement.self, forKey: .phonePlacement) ?? .anotherRoom
         usesSmallerRoutine = try container.decodeIfPresent(Bool.self, forKey: .usesSmallerRoutine) ?? false
+        campfireOwnerID = try container.decodeIfPresent(UUID.self, forKey: .campfireOwnerID)
+        campfireActivity = try container.decodeIfPresent(CampfireActivity.self, forKey: .campfireActivity)
         smallerRoutineSelectionID = try container.decodeIfPresent(UUID.self, forKey: .smallerRoutineSelectionID)
     }
 

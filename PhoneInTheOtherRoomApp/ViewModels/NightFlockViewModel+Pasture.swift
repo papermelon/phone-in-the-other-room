@@ -52,12 +52,12 @@ extension NightFlockViewModel {
         enqueuePasture(command)
     }
 
-    private func enqueuePasture(_ command: SharedPastureCommand) {
+    func enqueuePasture(_ command: SharedPastureCommand) {
         guard let owner = pastureOwner, permitsNightFlockNetwork, accountState == .linked,
-              !isSharedHabitsPartySuppressed(command.partyID), !pastureSending.contains(command.partyID) else { return }
+              !isSharedHabitsPartySuppressed(command.partyID) else { return }
         do {
             let pending = try pastureOutbox.commands(owner: owner)
-            if pending.contains(where: { $0.partyID == command.partyID && $0.command == command.command && $0.sheepID == command.sheepID && $0.visitID == command.visitID && $0.entityID == command.entityID }) {
+            if command.command != "publishCampfireSession", pending.contains(where: { $0.partyID == command.partyID && $0.command == command.command && $0.sheepID == command.sheepID && $0.visitID == command.visitID && $0.entityID == command.entityID }) {
                 recoverPasture(partyID: command.partyID, retry: true)
                 return
             }
@@ -78,9 +78,15 @@ extension NightFlockViewModel {
         let transport = transportRecoveryEpoch
         let fence = sharedHabitsFenceGeneration
         pastureSending.insert(partyID)
-        pastureMessages[partyID] = "Saving to the shared pasture…"
+        pastureMessages[partyID] = commands.contains { $0.command == "publishCampfireSession" } ? "Sharing your session…" : "Saving to the shared pasture…"
         Task {
-            defer { if generation == localSocialGeneration { pastureSending.remove(partyID) } }
+            defer {
+                if generation == localSocialGeneration {
+                    pastureSending.remove(partyID)
+                    // An end/revocation can arrive while its start is in flight.
+                    recoverPasture(partyID: partyID)
+                }
+            }
             for command in commands {
                 guard permitsNightFlockNetwork, pastureOwner == owner,
                       isCurrentTransportTask(generation: generation, epoch: transport),
@@ -88,6 +94,9 @@ extension NightFlockViewModel {
                 guard command.memberEpochID == state.memberEpochID else {
                     try? pastureOutbox.remove(command.id, owner: owner); continue
                 }
+                // The durable queue may have replaced a start with an end, or
+                // removed it after revocation while another command was in flight.
+                guard (try? pastureOutbox.commands(owner: owner).contains(where: { $0.id == command.id })) == true else { continue }
                 let attempt = "\(generation):\(command.id)"
                 if !retry && pastureAttempts.contains(attempt) { continue }
                 pastureAttempts.insert(attempt)
@@ -99,10 +108,10 @@ extension NightFlockViewModel {
                     guard result.accepted else { throw NightFlockServiceError.unsupportedResponse }
                     try pastureOutbox.remove(command.id, owner: owner)
                     pastureMessages[partyID] = result.conflict == true
-                        ? "Someone placed this first. Showing the shared arrangement."
-                        : "Saved to the shared pasture"
+                        ? command.command == "setCampfireSharing" ? "Sharing changed on another device. Showing the latest choice." : "Someone placed this first. Showing the shared arrangement."
+                        : command.command == "publishCampfireSession" ? (command.ended == true ? "Session end shared" : "Session shared") : "Saved to the shared pasture"
                     pastureRefreshTokens[partyID, default: 0] += 1
-                    selectSlumberParty(partyID)
+                    refreshV4PartyObservation(partyID, refreshListAfterward: false)
                 } catch {
                     guard generation == localSocialGeneration, pastureOwner == owner else { return }
                     if let remote = error as? NightFlockRemoteError, !remote.retryable,
@@ -111,9 +120,9 @@ extension NightFlockViewModel {
                         pastureMessages[partyID] = [NightFlockRemoteErrorCode.pastureSheepNotOwned, .pastureSheepAlreadyVisiting].contains(remote.code)
                             ? remote.errorDescription : "That change is no longer available. Refresh the party before trying again."
                         pastureRefreshTokens[partyID, default: 0] += 1
-                        selectSlumberParty(partyID)
+                        refreshV4PartyObservation(partyID, refreshListAfterward: false)
                     } else {
-                        pastureMessages[partyID] = "That change hasn’t been saved. Refresh, then retry."
+                        pastureMessages[partyID] = command.command == "publishCampfireSession" ? (command.ended == true ? "Your session ended. Sharing will retry." : "Your session is running. Sharing will retry.") : "That change hasn’t been saved. Refresh, then retry."
                     }
                     return
                 }

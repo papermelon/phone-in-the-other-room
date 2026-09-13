@@ -29,7 +29,7 @@ private struct OllieDetailContent: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                Text("Your companion at the Farm.")
+                Text("Ollie’s look follows him from Home to the Farm and every chase.")
                     .font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     sectionTitle("PLAY TOGETHER")
@@ -46,6 +46,8 @@ private struct OllieDetailContent: View {
                 }
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     sectionTitle("OLLIE’S ACCESSORIES")
+                    Text("One accessory at a time. Everything else stays in his wardrobe.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                     if accessories.isEmpty {
                         Text("Ollie is ready just as he is. Any accessories you bring home will be here.")
                             .font(AppTypography.body).foregroundStyle(AppColors.secondaryText)

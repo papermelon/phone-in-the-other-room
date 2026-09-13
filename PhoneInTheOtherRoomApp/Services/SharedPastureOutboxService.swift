@@ -27,6 +27,18 @@ final class SharedPastureOutboxService {
     func enqueue(_ command: SharedPastureCommand, owner: UUID) throws {
         var saved = try commands(owner: owner)
         guard !saved.contains(where: { $0.id == command.id }) else { return }
+        if command.command == "setCampfireSharing" {
+            // Revocation wins locally before transport; queued starts cannot escape it.
+            saved.removeAll { $0.partyID == command.partyID && $0.command == "publishCampfireSession" }
+        }
+        if command.command == "publishCampfireSession" {
+            guard !saved.contains(where: { $0.partyID == command.partyID && $0.command == "setCampfireSharing" }) else { return }
+            let sameSource: (SharedPastureCommand) -> Bool = {
+                $0.partyID == command.partyID && $0.command == command.command && $0.sourceID == command.sourceID
+            }
+            guard !saved.contains(where: { sameSource($0) && ($0.revision ?? 0) >= (command.revision ?? 0) }) else { return }
+            saved.removeAll(where: sameSource)
+        }
         guard saved.count < 64 else { throw CocoaError(.fileWriteOutOfSpace) }
         saved.append(command)
         try write(saved, owner: owner)

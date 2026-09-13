@@ -155,7 +155,8 @@ struct ActiveRunView: View {
                 NightJourneyView(
                     run: run,
                     reduceMotion: reduceMotion,
-                    fixedDate: fixedNow
+                    fixedDate: fixedNow,
+                    accessoryItemID: viewModel.farmState.equipment.ollieAccessoryItemID
                 )
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(

@@ -99,6 +99,7 @@ final class NightFlockViewModel: ObservableObject {
     /// challenge milestones. The Farm layer owns the durable application and
     /// returns only grants it has actually recorded.
     var onApplyV4RewardGrants: (([NightFlockV4GrantInboxItem]) -> [UUID])?
+    var onCampfireAuthorityAvailable: (() -> Void)?
     var onV4CheerFeedback: ((SlumberPartyCheerFeedback) -> Void)?
     var onSharedHabitsAgreementAvailable: (() -> Void)?
     /// The host restores local run history independently of this outbox. It
@@ -1294,6 +1295,7 @@ final class NightFlockViewModel: ObservableObject {
             // outcome can publish, but they must never emit a late "starting"
             // activity after the night has finished.
             guard run.state != .completed, run.state != .endedEarly else { return }
+            publishCampfireSession(run)
             publishV4WindDownStarting(runID: run.id, at: run.startedAt, isPractice: isPractice)
             guard NightFlockPrimaryRunValidationAdmissionRules
                 .shouldPublishValidatedStatusAfterAdmission(

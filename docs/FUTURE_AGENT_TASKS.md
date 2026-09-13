@@ -1,5 +1,27 @@
 # Future Agent Tasks — Prioritised Backlog
 
+## Shop/Ollie and campfire follow-up (13 September 2026)
+
+- Local shop pass replaces floating cutouts with fitted paper garments for all six Ollie items,
+  and adds native paper art for all eight decorations, six keepsakes and four pasture upgrades.
+  Home, Farm, Shop previews and chase share the equipped look. See [review and campfire direction](plans/shop-ollie-and-campfire-2026-09-13.md)
+  and [native visual/build evidence](../output/design/shop-ollie-20260913/README.md).
+- Confirm fitted motion, small Farm scale, large text, physical VoiceOver and Reduce Motion on
+  the next device build. Source/Simulator checks do not constitute installed TestFlight acceptance.
+- Campfire source is implemented: free gathering place, separate version 1 sharing consent,
+  bounded Phone Away intentions, overnight validity, terminal precedence and temporary seating.
+  See [contract](plans/campfire-implementation-2026-09-13.md) and
+  [local evidence](../output/design/campfire-20260913/README.md). Authorize/review hosted rollout
+  of `20260913120000_campfire_sessions.sql`, its prerequisite pasture migration and matching Edge
+  command validation separately. Verify two-device consent/start/expiry/early-end retry, killed
+  app/relaunch, leave/block/account switching, and real shielding. Mac lock prevented native tap
+  and VoiceOver automation during this pass; complete physical interaction/accessibility checks.
+- A future separate small charm slot for selected keepsakes needs fitted art and backward-compatible
+  storage/public appearance rules. Current keepsakes remain on their four-slot shelf.
+- Legacy Shop/overlay PNGs are bypassed by the new native renderers but retain catalog compatibility
+  references. Retire only after all-target/static/dynamic reference and recovery checks; do not
+  claim resource savings from this rendering change.
+
 ## Farm / shared pasture — device and rollout gates (12 September 2026)
 
 Production source now includes the original wide shared meadow with movable Shepherds and
@@ -736,11 +758,10 @@ execute without human sign-off mid-task (final merge review still applies per
 
 ## E. Later / explicitly postponed (do not start; citable refusals)
 
-- **Expanded Shop art installation** — generated exploration drafts remain outside the asset
-  catalogue pending founder review for pixel style, palette, lighting, outline weight, transparent
-  bounds, avatar fit across all five hairstyles, and pasture scale. Do not delete or replace the
-  existing production assets until the approved inventory, equipped-overlay, and scene-prop set is
-  selected and visually verified.
+- **Historical expanded Shop bitmap drafts** — the old pixel-art selection requirement is
+  superseded by the founder's 13 September paper-art revision. The active collection now uses
+  fitted native paper garments/objects; old exploration drafts are not awaiting installation.
+  See the current Shop follow-up above for physical acceptance and legacy asset retirement.
 - **Screenbook — shelved** — founder reconfirmed 8 September 2026. Do not cite it as the
   default review workflow, expand its registry, or pursue its maintenance backlog. Retain
   existing tooling as historical work; restarting it requires explicit founder direction.

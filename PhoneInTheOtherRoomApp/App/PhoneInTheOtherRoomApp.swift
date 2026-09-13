@@ -5,7 +5,9 @@ struct PhoneInTheOtherRoomApp: App {
     var body: some Scene {
         WindowGroup {
 #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("--slumber-farm-fixture") {
+            if ProcessInfo.processInfo.arguments.contains("--shop-wardrobe-qa") {
+                ShopWardrobeNativeQA()
+            } else if ProcessInfo.processInfo.arguments.contains("--slumber-farm-fixture") {
                 SlumberPartySharedFarmNativeFixture()
             } else if ProcessInfo.processInfo.arguments.contains("--shared-farm-prototype") {
                 SharedFarmPrototypeFixture()

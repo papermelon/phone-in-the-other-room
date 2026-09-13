@@ -15,6 +15,8 @@ struct SlumberPartyPastureView: View {
     var onSelect: (UUID) -> Void
     var onSheep: () -> Void = {}
     var onImprovement: () -> Void = {}
+    var onCampfire: () -> Void = {}
+    var now: Date = Date()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.scenePhase) private var scenePhase
@@ -23,10 +25,19 @@ struct SlumberPartyPastureView: View {
 
     private var members: [NightFlockV4Membership] { SlumberPartySharedFarmRules.members(in: party) }
     private var shepherdSize: CGFloat { (3...4).contains(members.count) ? 64 : 82 }
+    private var sessions: [CampfireSession] {
+        CampfireRules.currentSessions(party.pasture?.campfire, members: Set(members.map(\.memberID)), isFresh: statusIsFresh, at: now)
+    }
     private let coordinateSpace = "ReleaseSharedPasture"
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            HStack {
+                Text("Campfire").font(AppTypography.headline)
+                Spacer()
+                Button(action: onCampfire) { Label("Sharing", systemImage: "person.2.wave.2") }
+                    .font(AppTypography.caption).tint(AppColors.grass).frame(minHeight: 44)
+            }
             ScrollViewReader { camera in
                 VStack(spacing: AppSpacing.xs) {
                     GeometryReader { viewport in
@@ -34,16 +45,17 @@ struct SlumberPartyPastureView: View {
                             // The distant landscape keeps its original wide framing
                             // while the foreground grazing area pans.
                             Image(AssetSlot.Farm.sharedMeadowDusk).resizable().interpolation(.high)
-                                .frame(width: viewport.size.width, height: 230).accessibilityHidden(true)
+                                .frame(width: viewport.size.width, height: 280).accessibilityHidden(true)
                             ScrollView(.horizontal) {
-                                scene(size: CGSize(width: members.count > 4 ? max(680, viewport.size.width) : viewport.size.width, height: 230))
+                                scene(size: CGSize(width: members.count > 4 ? max(680, viewport.size.width) : viewport.size.width, height: 280))
                                     .id("meadow")
                             }
+                            .defaultScrollAnchor(.center)
                             .scrollIndicators(.hidden)
                             .scrollDisabled(controller.isInteractionActive || members.count <= 4)
                         }
                     }
-                    .frame(height: 230)
+                    .frame(height: 280)
                     .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
                     if members.count > 4 {
                         HStack {
@@ -62,13 +74,23 @@ struct SlumberPartyPastureView: View {
                     }
                 }
             }
-            TimelineView(.periodic(from: .now, by: 15)) { context in
-                let active = statusIsFresh ? members.first { $0.memberID != party.myMemberID && NightFlockV4Presentation.member($0, in: party, at: context.date).canSendLiveCheer } : nil
-                if let active {
-                    Button { onSelect(active.memberID) } label: {
-                        Label("\(active.profile.displayName) · \(NightFlockV4Presentation.member(active, in: party, at: context.date).liveStatusTitle ?? "Shared session")", systemImage: "moon.stars")
-                            .font(AppTypography.caption).frame(minHeight: 44)
+            if !statusIsFresh {
+                Text("Campfire updates are unavailable. Refresh to see shared sessions.")
+                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            } else if party.pasture?.campfire?.isSupported != true {
+                Text("Live campfire sharing isn’t available on this server yet.")
+                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            } else if sessions.isEmpty {
+                Text("The fire is here whenever you’re ready. No current shared sessions.")
+                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            }
+            ForEach(sessions) { session in
+                if let member = members.first(where: { $0.memberID == session.memberID }) {
+                    Button { onSelect(member.memberID) } label: {
+                        Label("\(member.profile.displayName) · \(session.title)", systemImage: "flame")
+                            .font(AppTypography.body).frame(minHeight: 44)
                     }.buttonStyle(.plain)
+                    .accessibilityHint("App-reported intention. Opens their shared updates.")
                 }
             }
             if let owner = studyCompanionOwner {
@@ -124,6 +146,10 @@ struct SlumberPartyPastureView: View {
     private func scene(size: CGSize) -> some View {
         ZStack {
             Color.clear.frame(width: size.width, height: size.height).accessibilityHidden(true)
+            Button(action: onCampfire) { PaperCampfire().frame(width: 60, height: 60) }
+                .buttonStyle(.plain).accessibilityLabel("Campfire sharing and details")
+                .position(x: size.width * CampfireRules.fire.x, y: size.height * CampfireRules.fire.y - 20)
+                .zIndex(CampfireRules.fire.y)
             if lantern?.isComplete == true {
                 let entity = SharedMeadowOccupant.lantern(party.summary.partyID)
                 let point = controller.position(for: entity)
@@ -131,7 +157,7 @@ struct SlumberPartyPastureView: View {
                 Group {
                     if canArrange {
                         PastureCharacterHitTarget(entity: entity, controller: controller, canvasSize: size,
-                            coordinateSpace: coordinateSpace, reduceMotion: reduceMotion, label: "Earned lantern gathering spot",
+                            coordinateSpace: coordinateSpace, reduceMotion: reduceMotion, label: "Earned meadow lantern",
                             hint: "Tap for project details. Hold and drag to arrange.", actionTitle: "Open lantern",
                             action: onImprovement) { PaperPastureLantern(isLit: true).frame(width: 55, height: 75) }
                     } else {
@@ -162,9 +188,10 @@ struct SlumberPartyPastureView: View {
             }
             ForEach(members) { member in
                 let entity = SharedMeadowOccupant.member(member.memberID)
-                let point = controller.position(for: entity)
+                let seatIndex = sessions.firstIndex { $0.memberID == member.memberID }
+                let point = seatIndex.map { CampfireRules.seat(index: $0, count: sessions.count) } ?? controller.position(for: entity)
                 shadow(point, in: size, width: 35)
-                resident(entity, size: size, label: "\(member.profile.displayName), Shepherd", owner: member.memberID) {
+                resident(entity, size: size, label: "\(member.profile.displayName), Shepherd", owner: member.memberID, isGathering: seatIndex != nil) {
                     SlumberPartySocialAvatarView(presentation: member.profile.presentation, avatarID: "shepherd", size: shepherdSize, showsBackdrop: false)
                 }
                 .position(x: point.x * size.width, y: point.y * size.height - shepherdSize * 0.43)
@@ -180,10 +207,11 @@ struct SlumberPartyPastureView: View {
             }
             ForEach(visits) { visit in
                 let entity = SharedMeadowOccupant.visitor(visit.id)
-                let point = controller.position(for: entity)
+                let ownerSeat = sessions.firstIndex { $0.memberID == visit.memberID }
+                let point = ownerSeat.map { CampfireRules.visitorSeat(index: $0, count: sessions.count) } ?? controller.position(for: entity)
                 let owner = members.first { $0.memberID == visit.memberID }?.profile.displayName ?? "Member"
                 shadow(point, in: size, width: 28)
-                resident(entity, size: size, label: "\(visit.sheepDisplayName), visiting sheep belonging to \(owner)", owner: visit.memberID, isSheep: true) {
+                resident(entity, size: size, label: "\(visit.sheepDisplayName), visiting sheep belonging to \(owner)", owner: visit.memberID, isSheep: true, isGathering: ownerSeat != nil) {
                     PixelAssetImage(name: SheepCatalog.definition(for: visit.sheepDefinitionID)?.assetName ?? AssetSlot.Sheep.common)
                         .frame(width: 48, height: 48)
                 }
@@ -196,9 +224,9 @@ struct SlumberPartyPastureView: View {
     }
 
     private func resident<Content: View>(_ entity: SharedMeadowOccupant, size: CGSize, label: String,
-                                         owner: UUID, isSheep: Bool = false, @ViewBuilder content: @escaping () -> Content) -> some View {
+                                         owner: UUID, isSheep: Bool = false, isGathering: Bool = false, @ViewBuilder content: @escaping () -> Content) -> some View {
         Group {
-            if canArrange {
+            if canArrange && !isGathering {
                 PastureCharacterHitTarget(entity: entity, controller: controller, canvasSize: size,
                     coordinateSpace: coordinateSpace, reduceMotion: reduceMotion, label: label,
                     hint: "Tap to open their card. Double tap for a gentle nudge. Hold and drag to arrange the shared pasture.",

@@ -97,6 +97,16 @@ struct SlumberPartySharedFarmNativeFixture: View {
                 memberID: SlumberPartySharedFarmFixtures.friend, status: .windDownStarting, revision: 1,
                 observedAt: Date().addingTimeInterval(-60), expiresAt: Date().addingTimeInterval(900))]
         }
+        if mode != "old-server" {
+            let clock = Date()
+            let campfireExpired = mode == "campfire-expired"
+            party.pasture?.campfire = .init(agreement: .init(id: UUID(), version: 1, revision: 1, enabled: true, acceptedAt: clock.addingTimeInterval(-3600)),
+                sessions: mode == "empty-party" ? [] : party.memberships.enumerated().map { index, member in
+                    CampfireSession(id: UUID(), memberID: member.memberID, kind: index == 0 ? .windDown : .phoneAway,
+                        activity: index == 0 ? nil : .reading, startedAt: clock.addingTimeInterval(-300), observedAt: clock.addingTimeInterval(-300),
+                        expiresAt: campfireExpired ? clock.addingTimeInterval(-1) : clock.addingTimeInterval(1800), ended: false, revision: 1)
+                })
+        }
         self.party = party
         let defaults = UserDefaults(suiteName: "SlumberPartyNativeFixture.\(UUID())")!
         let model = NightFlockViewModel(featureEnabled: true, previewPhase: .ready, previewAccountState: .linked, defaults: defaults)
@@ -138,6 +148,11 @@ struct SlumberPartySharedFarmNativeFixture: View {
                 SlumberPartyMemberUpdatesView(viewModel: model, partyID: party.summary.partyID,
                     memberID: ["friend", "pending", "failed", "old-server"].contains(mode) ? SlumberPartySharedFarmFixtures.friend : SlumberPartySharedFarmFixtures.me,
                     showsSocialAvatar: true)
+            } else if mode == "campfire-settings" {
+                CampfireSharingSheet(social: model, partyID: party.summary.partyID)
+            } else if ProcessInfo.processInfo.arguments.contains("--campfire-direct") {
+                NavigationStack { SlumberPartyV4PartyDetailView(viewModel: model, summary: party.summary) }
+                    .environmentObject(appModel)
             } else if mode == "ollie-study" {
                 ScrollView {
                     SlumberPartyPastureView(party: party, visits: party.pasture?.visits ?? [], arrangement: party.pasture?.arrangement,

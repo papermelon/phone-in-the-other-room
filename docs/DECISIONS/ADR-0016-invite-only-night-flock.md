@@ -6,6 +6,19 @@
 - Supersedes: v1–v3 Slumber Party product contract; those schemas remain legacy compatibility only
 - Related: ADR-0003, ADR-0005, ADR-0006, ADR-0010, ADR-0015
 
+## Campfire direction — 13 September 2026
+
+The founder authorized implementing a free campfire in the existing shared meadow. The lantern
+remains an earned movable improvement, with its existing progress preserved. Customized Shepherds
+represent app-reported Wind Down/Phone Away sessions through a separately consented per-party
+campfire version 1 contract; private task text stays private. Temporary seats and visitor positions
+never overwrite deliberate arrangements. The default interval ends at planned wake for Wind Down
+and planned end for Phone Away; no sleep or actual offline-activity inference is made. Revisioned
+end/withdrawal, expiry and account/membership fences apply. This updates the prior lantern focal
+point, not reward rules, identity, sheep ownership or four-tab routing. See the
+[implemented source contract and rollout gates](../plans/campfire-implementation-2026-09-13.md).
+Hosted activation is not implied by source implementation.
+
 ## Founder redesign direction — shared pasture and body doubling (12 September 2026)
 
 Founder correction during implementation (12 September 2026): retain the existing shared

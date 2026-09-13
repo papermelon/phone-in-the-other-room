@@ -5,20 +5,23 @@ struct NightJourneyView: View {
     let run: FocusRun?
     let morning: MorningQuietOccurrence?
     let reduceMotion: Bool
+    var accessoryItemID: String?
     var fixedDate: Date?
 
-    init(run: FocusRun, reduceMotion: Bool, fixedDate: Date? = nil) {
+    init(run: FocusRun, reduceMotion: Bool, fixedDate: Date? = nil, accessoryItemID: String? = nil) {
         self.run = run
         self.morning = nil
         self.reduceMotion = reduceMotion
         self.fixedDate = fixedDate
+        self.accessoryItemID = accessoryItemID
     }
 
-    init(morning: MorningQuietOccurrence, reduceMotion: Bool, fixedDate: Date? = nil) {
+    init(morning: MorningQuietOccurrence, reduceMotion: Bool, fixedDate: Date? = nil, accessoryItemID: String? = nil) {
         self.run = nil
         self.morning = morning
         self.reduceMotion = reduceMotion
         self.fixedDate = fixedDate
+        self.accessoryItemID = accessoryItemID
     }
 
     @ViewBuilder
@@ -83,7 +86,8 @@ struct NightJourneyView: View {
             OllieWalkCycleView(
                 state: ollieState(for: journey.segment),
                 frame: frame,
-                size: ollieSize
+                size: ollieSize,
+                accessoryItemID: accessoryItemID
             )
             .rotationEffect(
                 .degrees(rotation),
@@ -282,9 +286,10 @@ private struct OllieWalkCycleView: View {
     let state: OllieRitualState
     let frame: Int
     let size: CGFloat
+    let accessoryItemID: String?
 
     var body: some View {
-        JourneyAssetImage(name: NightJourneyAssets.ollieRunFrames[frame])
+        OllieDressedSprite(assetName: NightJourneyAssets.ollieRunFrames[frame], accessoryItemID: accessoryItemID)
             .frame(width: size, height: size)
             .accessibilityHidden(true)
     }

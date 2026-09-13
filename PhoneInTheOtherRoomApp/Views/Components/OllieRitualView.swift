@@ -128,15 +128,11 @@ struct HomeOllieIdleView: View {
                 size: presentation.canvasSize,
                 actionCapabilities: $actionCapabilities,
                 capabilityRevision: $capabilityRevision
-            ) { motionOverlayName in
-                ZStack {
-                    PixelAssetImage(name: NightJourneyAssets.ollieHomeIdleFrames[0])
-                    if let motionOverlayName {
-                        PixelAssetImage(name: motionOverlayName)
-                    } else if let legacyOverlayName = ollieNeutralAccessoryOverlayAssetName(for: renderedAccessoryItemID) {
-                        PixelAssetImage(name: legacyOverlayName)
-                    }
-                }
+            ) {
+                OllieDressedSprite(
+                    assetName: NightJourneyAssets.ollieHomeIdleFrames[0],
+                    accessoryItemID: renderedAccessoryItemID
+                )
             }
         }
         .frame(width: presentation.canvasSize, height: presentation.canvasSize)
