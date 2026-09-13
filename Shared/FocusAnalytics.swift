@@ -178,7 +178,7 @@ enum FocusAnalyticsEngine {
         [
             AnalyticsCorrelation(
                 title: "Quiet time vs Screen Time",
-                xLabel: "Phone-free minutes around sleep",
+                xLabel: "Recorded timer minutes around sleep",
                 yLabel: "Screen time minutes",
                 coefficient: pearson(records.compactMap { pair($0.focusMinutes, $0.screenTimeMinutes) }),
                 sampleSize: records.filter { $0.screenTimeMinutes != nil }.count,
@@ -186,7 +186,7 @@ enum FocusAnalyticsEngine {
             ),
             AnalyticsCorrelation(
                 title: "Quiet time vs Sleep",
-                xLabel: "Phone-free minutes around sleep",
+                xLabel: "Recorded timer minutes around sleep",
                 yLabel: "Sleep minutes",
                 coefficient: pearson(records.compactMap { pair($0.focusMinutes, $0.sleepMinutes) }),
                 sampleSize: records.filter { $0.sleepMinutes != nil }.count,

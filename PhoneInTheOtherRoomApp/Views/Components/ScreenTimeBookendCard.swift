@@ -41,8 +41,10 @@ struct ScreenTimeBookendCard: View {
         DisclosureGroup(isExpanded: $reportsExpanded) {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
-                    Text("Choose the apps or categories you want included in both reports in Settings.")
+                    Text("Choose the apps or categories you want included in both reports.")
                         .font(AppTypography.body)
+                    Button("Choose apps and categories", action: { showAppPicker = true })
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 } else {
                     windowPicker
                     reportSection(
@@ -62,7 +64,7 @@ struct ScreenTimeBookendCard: View {
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text("Screen Time context")
                         .font(AppTypography.headline)
-                    Text(viewModel.bedtimeActivitySelection.phoneOtherIsEmpty ? "Choose apps to limit in Settings" : "Optional · one window at a time")
+                    Text(viewModel.bedtimeActivitySelection.phoneOtherIsEmpty ? "Choose apps and categories" : "Optional · one window at a time")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }
@@ -73,18 +75,14 @@ struct ScreenTimeBookendCard: View {
 
     private var settingsContent: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            Label("Selected apps and Screen Time", systemImage: "iphone.slash")
+            Label("Screen Time report windows", systemImage: "iphone.slash")
                 .font(AppTypography.headline)
                 .foregroundStyle(AppColors.ink)
             if viewModel.bedtimeActivitySelection.phoneOtherIsEmpty {
-                Text("Choose the apps or categories you want included in both reports.")
+                Text("Choose apps and categories above before configuring report windows.")
                     .font(AppTypography.body)
-                Button("Choose apps to limit", action: { showAppPicker = true })
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
             } else {
                 reportWindowSettings
-                Divider()
-                selectedAppsSection
             }
         }
     }
@@ -171,40 +169,6 @@ struct ScreenTimeBookendCard: View {
         )
         .font(AppTypography.caption)
         .frame(maxWidth: .infinity)
-    }
-
-    private var selectedAppsSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Apps included in both reports")
-                .font(AppTypography.headline)
-            Text("Every app and category below is counted. You can add, remove, or replace them whenever you like.")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-            selectionLabels
-            Button("Change apps and categories", action: { showAppPicker = true })
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.grass)
-                .buttonStyle(.plain)
-                .frame(minHeight: 44, alignment: .leading)
-        }
-    }
-
-    @ViewBuilder
-    private var selectionLabels: some View {
-        let selection = viewModel.bedtimeActivitySelection
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            ForEach(Array(selection.applicationTokens), id: \.self) { token in
-                Label(token)
-                    .font(AppTypography.body)
-            }
-            ForEach(Array(selection.categoryTokens), id: \.self) { token in
-                Label(token)
-                    .font(AppTypography.body)
-            }
-        }
-        .padding(AppSpacing.sm)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColors.surfaceMuted.opacity(0.45), in: PixelPanelShape(cut: 4))
     }
 
     private func screenTimeFilter(

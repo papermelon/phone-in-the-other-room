@@ -31,7 +31,7 @@ final class NightFlockTests: XCTestCase {
             positiveCount: 1,
             memberCount: 2
         )
-        XCTAssertEqual(presentation.title, "Someone in the flock has tucked in.")
+        XCTAssertEqual(presentation.title, "Someone in the flock shared a Wind Down or Phone Away update.")
         XCTAssertFalse(presentation.title.contains("1"))
         XCTAssertFalse(presentation.detail.contains("missing"))
     }
@@ -51,7 +51,7 @@ final class NightFlockTests: XCTestCase {
             positiveCount: 4,
             memberCount: 6
         )
-        XCTAssertEqual(presentation.title, "4 quiet mornings reached the pasture.")
+        XCTAssertEqual(presentation.title, "4 Screen-Free Morning updates reached the pasture.")
         XCTAssertFalse(presentation.title.contains("2"))
     }
 
@@ -80,6 +80,13 @@ final class NightFlockTests: XCTestCase {
         XCTAssertEqual(
             NightFlockPrivacyPresentation.pastureEntries(entries, memberCount: 4).count,
             3
+        )
+    }
+
+    func testLegacyMorningQuietWireCasePresentsAsQualifyingWindDown() {
+        XCTAssertEqual(
+            NightFlockMemberNightStatus.morningQuietCompleted.title,
+            "Qualifying Wind Down completed"
         )
     }
 

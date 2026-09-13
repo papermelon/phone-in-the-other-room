@@ -50,6 +50,9 @@ struct NotificationMessageEditorView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Live preview")
                 .font(AppTypography.headline)
+            Text("Notification text may appear on your Lock Screen and in previews while the iPhone is locked. Leave out anything private.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.muted)
             PixelCard {
                 HStack(alignment: .top, spacing: AppSpacing.sm) {
                     Image(systemName: "bell.fill")

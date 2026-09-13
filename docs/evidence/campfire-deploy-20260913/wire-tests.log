@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: bounded intentions and terminal revision accepted
+ok 1 - bounded intentions and terminal revision accepted
+  ---
+  duration_ms: 1.830792
+  type: 'test'
+  ...
+# Subtest: rejects private content, invalid timestamps, oversized intervals and mismatched terminal revision
+ok 2 - rejects private content, invalid timestamps, oversized intervals and mismatched terminal revision
+  ---
+  duration_ms: 0.272208
+  type: 'test'
+  ...
+# Subtest: separate versioned consent and revision required
+ok 3 - separate versioned consent and revision required
+  ---
+  duration_ms: 0.235375
+  type: 'test'
+  ...
+# Subtest: accepts normalized placements for people, sheep and earned lantern
+ok 4 - accepts normalized placements for people, sheep and earned lantern
+  ---
+  duration_ms: 0.985709
+  type: 'test'
+  ...
+# Subtest: rejects invalid ground, future revisions and private payload fields
+ok 5 - rejects invalid ground, future revisions and private payload fields
+  ---
+  duration_ms: 0.255125
+  type: 'test'
+  ...
+# Subtest: visits require explicit consent and owned ID, no uploaded appearance
+ok 6 - visits require explicit consent and owned ID, no uploaded appearance
+  ---
+  duration_ms: 0.105375
+  type: 'test'
+  ...
+# Subtest: recall accepts only a bounded visit reference and stable retry key
+ok 7 - recall accepts only a bounded visit reference and stable retry key
+  ---
+  duration_ms: 0.649
+  type: 'test'
+  ...
+# Subtest: ownership failures are actionable and never blindly retried
+ok 8 - ownership failures are actionable and never blindly retried
+  ---
+  duration_ms: 0.462916
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 132.210291

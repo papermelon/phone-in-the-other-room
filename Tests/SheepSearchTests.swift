@@ -255,7 +255,7 @@ final class SheepSearchTests: XCTestCase {
         let presentation = try XCTUnwrap(
             SheepTrailMapPresentation.home(pendingMappedMinutes: SheepTrailMapState.maximumMappedMinutes)
         )
-        XCTAssertEqual(presentation.title, "Phone Away gift progress · 100 / 100 minutes")
+        XCTAssertEqual(presentation.title, "Phone Away search progress · 100 / 100 minutes")
         XCTAssertTrue(presentation.detail.contains("Complete another Phone Away"))
     }
 

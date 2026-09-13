@@ -1,0 +1,44 @@
+diff --git a/PhoneInTheOtherRoom.xcodeproj/project.pbxproj b/PhoneInTheOtherRoom.xcodeproj/project.pbxproj
+index f33589c..ce39905 100644
+--- a/PhoneInTheOtherRoom.xcodeproj/project.pbxproj
++++ b/PhoneInTheOtherRoom.xcodeproj/project.pbxproj
+@@ -3892,7 +3892,7 @@
+ 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				COPY_PHASE_STRIP = NO;
+-				CURRENT_PROJECT_VERSION = 48;
++				CURRENT_PROJECT_VERSION = 49;
+ 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+ 				DEVELOPMENT_TEAM = 4KZQPZR47B;
+ 				ENABLE_NS_ASSERTIONS = NO;
+@@ -3969,7 +3969,7 @@
+ 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				COPY_PHASE_STRIP = NO;
+-				CURRENT_PROJECT_VERSION = 48;
++				CURRENT_PROJECT_VERSION = 49;
+ 				DEBUG_INFORMATION_FORMAT = dwarf;
+ 				DEVELOPMENT_TEAM = 4KZQPZR47B;
+ 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+@@ -4124,7 +4124,7 @@
+ 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				COPY_PHASE_STRIP = NO;
+-				CURRENT_PROJECT_VERSION = 48;
++				CURRENT_PROJECT_VERSION = 49;
+ 				DEBUG_INFORMATION_FORMAT = dwarf;
+ 				DEVELOPMENT_TEAM = 4KZQPZR47B;
+ 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+diff --git a/project.yml b/project.yml
+index 4b3cfe7..35f8757 100644
+--- a/project.yml
++++ b/project.yml
+@@ -23,7 +23,7 @@ settings:
+     DEVELOPMENT_TEAM: 4KZQPZR47B
+     CODE_SIGN_STYLE: Automatic
+     MARKETING_VERSION: 1.0
+-    CURRENT_PROJECT_VERSION: 48
++    CURRENT_PROJECT_VERSION: 49
+ packages:
+   Supabase:
+     url: https://github.com/supabase/supabase-swift.git

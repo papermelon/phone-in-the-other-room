@@ -1,0 +1,25 @@
+{
+  "before": {
+    "_shared/http.ts": "27169114d41d4d4d99ce5a646ab37ca01d64da6764fa40ccdc11c840312da332",
+    "_shared/night-flock-errors.ts": "5f0e198a6c52a345be58412132512159f9cbb92b904bb56746a37844f92b5886",
+    "_shared/night-flock-handlers.ts": "a8727aa8caf5ba0872c74c0b6639b836d0381abe42ed37068df7014beb6b2d74",
+    "_shared/night-flock-invites.ts": "024201340601c849ab1c34896c4778e8c8f45d1d722588871ce75696292d481a",
+    "_shared/night-flock-shared-habits-wire.ts": "c5b20e155c26dfb160b77a8bd407cdbce6318777afc5c1cb71ef9573f240470b",
+    "_shared/night-flock.ts": "2248683a59df5679de65dafcffd7d0472ba2bf671a5ecb8f854a360e60729d74",
+    "_shared/supabase.ts": "4f79280f455e9f5039cf7a9bcfb5d10ba7678226ca7b774f66d9b0a4b0cf8e89",
+    "night-flock-command/index.ts": "7fa1a6429244f1b347e4c164269e82e44fb15513e0850f6f2c562b359a4040cc"
+  },
+  "deploy": {
+    "_shared/http.ts": "27169114d41d4d4d99ce5a646ab37ca01d64da6764fa40ccdc11c840312da332",
+    "_shared/night-flock-activity-wire.ts": "e78aea0651d51a61eaec78efa4588d4cb85cfa268e544569fe868958d9fded49",
+    "_shared/night-flock-errors.ts": "5f0e198a6c52a345be58412132512159f9cbb92b904bb56746a37844f92b5886",
+    "_shared/night-flock-handlers.ts": "9f7db8908b8efaed0954bc1ca243cb8611a72938aabe06c14fda6d93f12d11ab",
+    "_shared/night-flock-invites.ts": "024201340601c849ab1c34896c4778e8c8f45d1d722588871ce75696292d481a",
+    "_shared/night-flock-shared-habits-wire.ts": "c5b20e155c26dfb160b77a8bd407cdbce6318777afc5c1cb71ef9573f240470b",
+    "_shared/night-flock.ts": "60f00ae8c921da37d051227fc5a594b1a4769bb8f9f2c04d3267e31d3fc7d5dd",
+    "_shared/supabase.ts": "4f79280f455e9f5039cf7a9bcfb5d10ba7678226ca7b774f66d9b0a4b0cf8e89",
+    "night-flock-command/index.ts": "7fa1a6429244f1b347e4c164269e82e44fb15513e0850f6f2c562b359a4040cc",
+    "night-flock-state/index.ts": "5785ba39916abf96f6fb0a24d87a9c2fcb88d42d67e9f7423a05af7333c33e56"
+  },
+  "migration_sha256": "8ecc5c6a3aad89e85c152795535b1c1e71446728c475996127e9b097cb3110b5"
+}

@@ -50,7 +50,7 @@ struct NightFlockSharedPastureView: View {
     private func pastureEntry(_ entry: NightFlockPastureEntry) -> some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Label("A group member shared morning quiet", systemImage: "sun.max.fill")
+                Label("A group member shared a qualifying Wind Down update", systemImage: "moon.stars.fill")
                     .font(AppTypography.headline)
                     .foregroundStyle(AppColors.ink)
                 Text("Send encouragement without sharing an exact time or duration.")

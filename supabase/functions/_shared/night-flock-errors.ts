@@ -2,6 +2,8 @@ export type NightFlockErrorCode =
   | "unauthorized"
   | "linked_account_required"
   | "method_not_allowed"
+  | "pasture_sheep_not_owned"
+  | "pasture_sheep_already_visiting"
   | "invalid_request"
   | "unsupported_schema"
   | "active_membership_exists"
@@ -22,7 +24,21 @@ export type NightFlockErrorCode =
   | "host_cannot_leave"
   | "stale_revision"
   | "name_change_limit"
-  | "client_upgrade_required";
+  | "client_upgrade_required"
+  | "shared_history_deleted"
+  | "publication_before_agreement"
+  | "agreement_timezone_mismatch"
+  | "publication_outside_plan_window"
+  | "publication_outside_receipt_window"
+  | "invalid_shared_night_payload"
+  | "invalid_plan_chronology"
+  | "invalid_receipt_chronology"
+  | "invalid_plan_binding"
+  | "invalid_receipt_source"
+  | "receipt_plan_mismatch"
+  | "shared_night_plan_frozen"
+  | "shared_night_plan_cancelled"
+  | "receipt_actual_start_required";
 
 export type NightFlockRecovery = "reconcileMembership" | "reconcile" | "retry" | "fallbackSchema" | "linkAccount" | "authenticate" | null;
 
@@ -40,6 +56,8 @@ const safeMessages: Record<NightFlockErrorCode, string> = {
   unauthorized: "Unauthorized",
   linked_account_required: "Linked account required",
   method_not_allowed: "Method not allowed",
+  pasture_sheep_not_owned: "Save this sheep to your account before sending it to visit.",
+  pasture_sheep_already_visiting: "This sheep is already visiting another party. Bring it home first.",
   invalid_request: "Invalid request",
   unsupported_schema: "Unsupported schema",
   active_membership_exists: "You already belong to this Slumber Party.",
@@ -61,6 +79,20 @@ const safeMessages: Record<NightFlockErrorCode, string> = {
   stale_revision: "That change is out of date. Please refresh your Slumber Party.",
   name_change_limit: "You can change your display name twice every 14 days.",
   client_upgrade_required: "Update Counting Sheep to use multiple Slumber Parties.",
+  shared_history_deleted: "That shared history was deleted and will not be sent again.",
+  publication_before_agreement: "That update was recorded before this party agreement.",
+  agreement_timezone_mismatch: "That sleep summary belongs to a different agreement time zone.",
+  publication_outside_plan_window: "That plan is outside this party’s next-seven-night window.",
+  publication_outside_receipt_window: "That nightly result is outside this party’s current window.",
+  invalid_shared_night_payload: "That shared-night update could not be used.",
+  invalid_plan_chronology: "That shared plan’s timing did not fit its night.",
+  invalid_receipt_chronology: "That nightly result’s timing did not fit its night.",
+  invalid_plan_binding: "That nightly result no longer matches its saved plan.",
+  invalid_receipt_source: "That nightly result needs its saved night identity.",
+  receipt_plan_mismatch: "That nightly result no longer matches its saved plan.",
+  shared_night_plan_frozen: "That shared plan has already begun and will stay as it was.",
+  shared_night_plan_cancelled: "That shared night is no longer available and will not be sent.",
+  receipt_actual_start_required: "That factual nightly result needs its recorded start time.",
 };
 
 export function requestIDFor(value: string | null | undefined): string {
@@ -83,6 +115,20 @@ export function nightFlockError(code: NightFlockErrorCode): NightFlockErrorDescr
     case "stale_revision": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
     case "name_change_limit": return { status: 429, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
     case "client_upgrade_required": return { status: 426, code, error: safeMessages[code], retryable: false, recovery: "fallbackSchema" };
+    case "shared_history_deleted": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+    case "publication_before_agreement": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+    case "agreement_timezone_mismatch": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+    case "publication_outside_plan_window":
+    case "publication_outside_receipt_window":
+    case "invalid_shared_night_payload":
+    case "invalid_plan_chronology":
+    case "invalid_receipt_chronology":
+    case "invalid_plan_binding":
+    case "invalid_receipt_source":
+    case "receipt_plan_mismatch": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+    case "shared_night_plan_frozen": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+    case "shared_night_plan_cancelled": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+    case "receipt_actual_start_required": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
     case "alias_conflict": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: null };
     case "invite_member_constraint": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
     case "active_invite_exists": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
@@ -93,6 +139,8 @@ export function nightFlockError(code: NightFlockErrorCode): NightFlockErrorDescr
     case "host_permission_required": return { status: 403, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
     case "snapshot_construction_failed": return { status: 500, code, error: safeMessages[code], retryable: true, recovery: "retry" };
     case "service_unavailable": return { status: 503, code, error: safeMessages[code], retryable: true, recovery: "retry" };
+    case "pasture_sheep_not_owned":
+    case "pasture_sheep_already_visiting": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: null };
     case "invalid_request": return { status: 400, code, error: safeMessages[code], retryable: false, recovery: null };
     case "internal_error": return { status: 500, code, error: safeMessages[code], retryable: true, recovery: "retry" };
   }
@@ -100,12 +148,28 @@ export function nightFlockError(code: NightFlockErrorCode): NightFlockErrorDescr
 
 export function classifyNightFlockError(error: unknown): NightFlockErrorDescriptor {
   const detail = safeClassificationDetail(error);
+  if (detail.includes("pasture_sheep_not_owned")) return nightFlockError("pasture_sheep_not_owned");
+  if (detail.includes("pasture_sheep_already_visiting")) return nightFlockError("pasture_sheep_already_visiting");
   if (detail.includes("unauthorized") || detail.includes("invalid jwt")) return nightFlockError("unauthorized");
   if (detail.includes("apple-linked account") || detail.includes("linked account required")) return nightFlockError("linked_account_required");
   if (detail.includes("one active slumber party")) return nightFlockError("active_membership_exists");
   if (detail.includes("max_parties")) return nightFlockError("max_parties");
   if (detail.includes("host_cannot_leave")) return nightFlockError("host_cannot_leave");
   if (detail.includes("stale_revision")) return nightFlockError("stale_revision");
+  if (detail.includes("shared_history_deleted")) return nightFlockError("shared_history_deleted");
+  if (detail.includes("publication_before_agreement")) return nightFlockError("publication_before_agreement");
+  if (detail.includes("agreement_timezone_mismatch")) return nightFlockError("agreement_timezone_mismatch");
+  if (detail.includes("publication_outside_plan_window")) return nightFlockError("publication_outside_plan_window");
+  if (detail.includes("publication_outside_receipt_window")) return nightFlockError("publication_outside_receipt_window");
+  if (detail.includes("invalid_shared_night_payload")) return nightFlockError("invalid_shared_night_payload");
+  if (detail.includes("invalid_plan_chronology")) return nightFlockError("invalid_plan_chronology");
+  if (detail.includes("invalid_receipt_chronology")) return nightFlockError("invalid_receipt_chronology");
+  if (detail.includes("invalid_plan_binding")) return nightFlockError("invalid_plan_binding");
+  if (detail.includes("invalid_receipt_source")) return nightFlockError("invalid_receipt_source");
+  if (detail.includes("receipt_plan_mismatch")) return nightFlockError("receipt_plan_mismatch");
+  if (detail.includes("shared_night_plan_frozen")) return nightFlockError("shared_night_plan_frozen");
+  if (detail.includes("shared_night_plan_cancelled")) return nightFlockError("shared_night_plan_cancelled");
+  if (detail.includes("receipt_actual_start_required")) return nightFlockError("receipt_actual_start_required");
   if (detail.includes("name_change_limit")) return nightFlockError("name_change_limit");
   if (detail.includes("client_upgrade_required")) return nightFlockError("client_upgrade_required");
   if (detail.includes("night_flock_members_one_active_flock_per_user") || detail.includes("night_flock_members_one_active_record_per_flock")) return nightFlockError("active_membership_exists");

@@ -50,18 +50,24 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             sectionHeader("Your Wind Down", icon: "moon.stars.fill")
             NavigationLink { FocusRunSetupView().environmentObject(viewModel) } label: {
-                settingsRow("Plan & routine", icon: "slider.horizontal.3", detail: "Schedule, quiet windows, and private ideas")
+                settingsRow("Plan & routine", icon: "slider.horizontal.3", detail: "Bedtime, wake time, and routine ideas")
             }.buttonStyle(.plain).orientationTourTarget(.settingsWindDown)
+            NavigationLink { RitualPersonalisationView() } label: {
+                settingsRow("What I’m working toward", icon: "leaf", detail: "An optional goal, small plan and private reflections")
+            }.buttonStyle(.plain)
             NavigationLink { SettingsProtectionTagsView().environmentObject(viewModel) } label: {
                 settingsRow("Protection & tags", icon: "lock.shield.fill", detail: protectionSummary)
             }.buttonStyle(.plain)
             NavigationLink { SettingsRemindersLockScreenView().environmentObject(viewModel) } label: {
-                settingsRow("Reminders & Lock Screen", icon: "bell.fill", detail: "Cues, Live Activity, and Quiet Note")
+                settingsRow("Reminders & Lock Screen", icon: "bell.fill", detail: "Notifications, countdowns, and your Quiet Note")
             }.buttonStyle(.plain)
             NavigationLink { SettingsAppearanceView().environmentObject(viewModel) } label: {
                 settingsRow("Appearance", icon: "circle.lefthalf.filled", detail: "Choose a comfortable evening display")
             }.buttonStyle(.plain)
             sectionHeader("Connections", icon: "link")
+            NavigationLink { FarmBackupView(account: viewModel.nightFlockViewModel, model: viewModel.farmBackupViewModel) } label: {
+                settingsRow("Profile", icon: "person.crop.circle", detail: "Your name, sign-in and Farm sync")
+            }.buttonStyle(.plain)
             NavigationLink { SettingsConnectionsView().environmentObject(viewModel) } label: {
                 settingsRow("Connections", icon: "link", detail: connectionsSummary)
             }.buttonStyle(.plain)
@@ -81,7 +87,14 @@ struct SettingsView: View {
     }
 
     private var connectionsSummary: String {
-        viewModel.screenTimeAuthorization == .approved ? "Screen Time connected" : "Apple Health and Screen Time options"
+        switch viewModel.shieldingReadiness {
+        case .ready:
+            return "Required Screen Time protection ready · Health optional"
+        case .noSelection where viewModel.screenTimeAuthorization == .approved:
+            return "Choose apps for required Screen Time protection · Health optional"
+        case .authorizationRequired, .denied, .revoked, .noSelection, .unavailable, .runtimeFailure:
+            return "Screen Time protection required for new starts · Health optional"
+        }
     }
 
 #if DEBUG

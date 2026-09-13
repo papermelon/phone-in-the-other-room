@@ -1,0 +1,102 @@
+--- a/supabase/functions/_shared/night-flock-errors.ts
++++ b/supabase/functions/_shared/night-flock-errors.ts
+@@ -2,6 +2,8 @@
+   | "unauthorized"
+   | "linked_account_required"
+   | "method_not_allowed"
++  | "pasture_sheep_not_owned"
++  | "pasture_sheep_already_visiting"
+   | "invalid_request"
+   | "unsupported_schema"
+   | "active_membership_exists"
+@@ -43,6 +45,8 @@
+   unauthorized: "Unauthorized",
+   linked_account_required: "Linked account required",
+   method_not_allowed: "Method not allowed",
++  pasture_sheep_not_owned: "Save this sheep to your account before sending it to visit.",
++  pasture_sheep_already_visiting: "This sheep is already visiting another party. Bring it home first.",
+   invalid_request: "Invalid request",
+   unsupported_schema: "Unsupported schema",
+   active_membership_exists: "You already belong to this Slumber Party.",
+@@ -102,6 +106,8 @@
+     case "host_permission_required": return { status: 403, code, error: safeMessages[code], retryable: false, recovery: "reconcile" };
+     case "snapshot_construction_failed": return { status: 500, code, error: safeMessages[code], retryable: true, recovery: "retry" };
+     case "service_unavailable": return { status: 503, code, error: safeMessages[code], retryable: true, recovery: "retry" };
++    case "pasture_sheep_not_owned":
++    case "pasture_sheep_already_visiting": return { status: 409, code, error: safeMessages[code], retryable: false, recovery: null };
+     case "invalid_request": return { status: 400, code, error: safeMessages[code], retryable: false, recovery: null };
+     case "internal_error": return { status: 500, code, error: safeMessages[code], retryable: true, recovery: "retry" };
+   }
+@@ -109,6 +115,8 @@
+ 
+ export function classifyNightFlockError(error: unknown): NightFlockErrorDescriptor {
+   const detail = safeClassificationDetail(error);
++  if (detail.includes("pasture_sheep_not_owned")) return nightFlockError("pasture_sheep_not_owned");
++  if (detail.includes("pasture_sheep_already_visiting")) return nightFlockError("pasture_sheep_already_visiting");
+   if (detail.includes("unauthorized") || detail.includes("invalid jwt")) return nightFlockError("unauthorized");
+   if (detail.includes("apple-linked account") || detail.includes("linked account required")) return nightFlockError("linked_account_required");
+   if (detail.includes("one active slumber party")) return nightFlockError("active_membership_exists");
+--- a/supabase/functions/_shared/night-flock-handlers.ts
++++ b/supabase/functions/_shared/night-flock-handlers.ts
+@@ -44,6 +44,7 @@
+   "publishProgress", "publishNightMetrics", "acknowledgeUpdateCheer", "acknowledgeGrant", "replaceInvite", "renameParty", "startRound",
+   "retrieveInvite", "leaveParty", "deleteParty", "updatePublicProfile", "publishActivity", "completeBackfill", "publishStatus",
+   "blockMember", "reportMember", "cheerMember",
++  "movePastureEntity", "contributePastureSheep", "recallPastureSheep", "setCampfireSharing", "publishCampfireSession",
+   "acceptSharedHabitsAgreement", "publishSharedHabit", "deleteSharedHabitHistory", "migrateSharedHabits",
+ ]);
+ 
+--- a/supabase/functions/_shared/night-flock.ts
++++ b/supabase/functions/_shared/night-flock.ts
+@@ -43,6 +43,11 @@
+ };
+ 
+ const v4CommandFields: Record<string, string[]> = {
++  setCampfireSharing: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","expectedRevision","consentVersion","enabled","idempotencyKey"],
++  publishCampfireSession: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","kind","activity","startedAt","observedAt","expiresAt","ended","revision","idempotencyKey"],
++  movePastureEntity: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","entityID","expectedRevision","x","y","idempotencyKey"],
++  contributePastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","sheepID","consentVersion","idempotencyKey"],
++  recallPastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","visitID","idempotencyKey"],
+   createParty: ["schemaVersion", "command", "name", "timeZoneIdentifier", "idempotencyKey"],
+   renameParty: ["schemaVersion", "command", "partyID", "name", "idempotencyKey"],
+   startRound: ["schemaVersion", "command", "partyID", "timeZoneIdentifier", "idempotencyKey"],
+@@ -194,6 +199,39 @@
+ }
+ 
+ function validateV4Command(body: Record<string, unknown>, command: string): void {
++  if (["setCampfireSharing", "publishCampfireSession"].includes(command)) {
++    requireUUID(body, "partyID"); requireUUID(body, "memberEpochID");
++    if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
++    if (command === "setCampfireSharing") {
++      if (body.consentVersion !== 1 || typeof body.enabled !== "boolean"
++        || !Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0
++        || Number(body.expectedRevision) > 2147483646) throw new Error("Invalid campfire consent");
++    } else {
++      requireUUID(body, "agreementID"); requireUUID(body, "sourceID");
++      for (const key of ["startedAt", "observedAt", "expiresAt"]) body[key] = normalizeActivityTimestamp(body[key], key);
++      const start = Date.parse(String(body.startedAt)), end = Date.parse(String(body.expiresAt));
++      if (![start, end, Date.parse(String(body.observedAt))].every(Number.isFinite) || !["windDown","phoneAway"].includes(String(body.kind)) || typeof body.ended !== "boolean"
++        || body.revision !== (body.ended ? 2 : 1) || end <= start || end - start > 86400000
++        || Date.parse(String(body.observedAt)) < start) throw new Error("Invalid campfire session");
++      if (body.activity !== undefined && (body.kind !== "phoneAway" || !["phoneAway","reading","studying","making","chores","resting"].includes(String(body.activity)))) throw new Error("Invalid campfire activity");
++    }
++    return;
++  }
++  if (["movePastureEntity", "contributePastureSheep", "recallPastureSheep"].includes(command)) {
++    requireUUID(body, "partyID"); requireUUID(body, "memberEpochID");
++    if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
++    if (command === "movePastureEntity") {
++      const id = requireString(body, "entityID");
++      if (!/^(member|visitor|lantern)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error("Invalid entityID");
++      if (!Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0 || Number(body.expectedRevision) > 2147483646) throw new Error("Invalid expectedRevision");
++      const x = body.x, y = body.y;
++      if (typeof x !== "number" || typeof y !== "number" || !Number.isFinite(x) || !Number.isFinite(y)
++        || x < 0.08 || x > 0.92 || y < 0.43 || y > 0.89 || (x < 0.28 && y > 0.80)) throw new Error("Invalid pasture anchor");
++    } else if (command === "contributePastureSheep") {
++      requireUUID(body, "sheepID"); if (body.consentVersion !== 1) throw new Error("Invalid consentVersion");
++    } else requireUUID(body, "visitID");
++    return;
++  }
+   const partyCommands = new Set([
+     "renameParty", "startRound", "createInvite", "replaceInvite", "revokeInvite", "retrieveInvite",
+     "leaveParty", "deleteParty", "completeBackfill", "react", "blockMember", "reportMember", "cheerMember",

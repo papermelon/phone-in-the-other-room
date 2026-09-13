@@ -1,5 +1,7 @@
 # ADR-0018: First-Run Wind Down Starting Point and Welcome Rewards
 
+New-run Farm accounting is superseded by [ADR-0020](ADR-0020-cumulative-farm-credit.md): cumulative credit survives early endings and excludes Brief Access. Legacy settled outcomes remain intact.
+
 - Status: Accepted
 - Date: 2026-08-16
 - Decider: Founder
@@ -10,16 +12,16 @@ never consumes a welcome, Wind Down, or Phone Away guarantee.
 
 ## Context
 
-The shipping Farm currently begins empty. Search guarantees are tied to completed protected
-nights and a separate Phone Away meter, and the five-minute onboarding practice is a real
+The shipping Farm currently begins empty. Search guarantees are tied to qualifying completed Wind
+Downs and separate Screen-Free Morning and Phone Away meters, and the five-minute onboarding practice is a real
 recorded run that awards no sheep. Workshop and first-run copy therefore had no honest early
-Farm payoff without consuming a protected-night guarantee.
+Farm payoff without consuming a Wind Down guarantee.
 
 The founder directed a universal first-run journey: every new Farm starts with one sheep, an
 optional local questionnaire produces a non-clinical Wind Down starting point, every person can
 independently choose and immediately claim one finished Shepherd welcome wearable, and the first successful practice grants a
-second sheep. Search guarantees stay independent of that practice gift. A qualifying
-protected-night search also requires a 420-minute protected span.
+second sheep. Search guarantees stay independent of that practice gift. A qualifying Wind Down
+search also requires a 420-minute eligible span.
 
 ## Decision
 
@@ -56,16 +58,17 @@ protected-night search also requires a 420-minute protected span.
   and catalogue discovery, but only on a first-run Farm. Existing farms with search history,
   discoveries, or owned sheep do not receive a leftover-`lastRun` practice gift on upgrade.
   Replay of an already persisted practice outcome remains idempotent. The sheep occupies Barn
-  capacity and can later be sheared or traded. It consumes neither protected-night nor Phone
+  capacity and can later be sheared or traded. It consumes neither Wind Down nor Phone
   Away guarantee counters, and it neither credits nor spends the 100-minute Phone Away meter.
   Incomplete or early-ended practice grants nothing. Settlement is idempotent by practice run
   identity, and only the first successful practice on a new Farm grants a sheep.
-- The first three qualifying protected Wind Down searches guarantee a sheep. Independently,
-  the first three completed 100-minute Phone Away meter searches also guarantee a sheep.
+- The first three qualifying Wind Down searches guarantee a sheep. Independently, the first three
+  completed 100-minute Screen-Free Morning searches and the first three completed 100-minute Phone
+  Away meter searches also guarantee a sheep.
   After each track’s first three searches, that track uses its normal chance ladder and
   bad-luck protection.
-- A qualifying protected-night search requires a successfully completed primary Wind Down
-  whose protected span from eligible Wind Down start through morning-quiet completion is at
+- A qualifying Wind Down search requires a successfully completed primary Wind Down
+  whose eligible span from Wind Down start through planned Screen-Free Morning completion is at
   least 420 minutes. This is a product progression rule. Copy must not call it seven hours
   asleep. The former two-bookend credit clause is superseded by ADR-0019: Wind Down reward,
   progress, and shared Wind Down metrics use its factual wind-down bookend; Screen-Free
@@ -87,7 +90,8 @@ protected-night search also requires a 420-minute protected span.
 - Short completed nights can still retain their factual Wind Down bookend without opening a
   Wind Down find; Screen-Free Morning remains an independent Sunrise Trail occurrence under
   ADR-0019.
-- The optional questionnaire/result and independent explicit wear-or-keep gift stage ship in
-  first-run onboarding. Phase-2 notification/Live-Activity routine projection and remote privacy
+- The optional questionnaire/result and independent explicit wear-or-keep gift remain available
+  after saving the initial plan under the [8 September first-run direction](../PRODUCT_DIRECTION.md#first-run-and-guidance).
+  Legacy interrupted drafts retain their original stages. Phase-2 notification/Live-Activity routine projection and remote privacy
   cleanup are not completed by this decision.
   This ADR does not change `project.yml`, entitlements, tabs, or hosted backends.

@@ -2,7 +2,12 @@ import SwiftUI
 
 struct NightFlockHomeCard: View {
     let summary: NightFlockHomeSummary
+    var context: NightFlockHomeCardContext = .home
     let action: () -> Void
+
+    private var presentation: NightFlockV4BridgePresentation {
+        .make(from: summary, context: context)
+    }
 
     var body: some View {
         Button(action: action) {
@@ -13,12 +18,12 @@ struct NightFlockHomeCard: View {
                     .frame(width: 32, height: 32)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(summary.challengeDay.map { "SLUMBER PARTY · DAY \($0) OF 7" } ?? "SLUMBER PARTY")
+                    Text(presentation.eyebrow)
                         .font(pixelFont(.caption2))
                         .foregroundStyle(AppColors.grass)
-                    Text(summary.title)
+                    Text(presentation.title)
                         .font(AppTypography.body)
-                    Text(summary.detail)
+                    Text(presentation.detail)
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
@@ -39,6 +44,6 @@ struct NightFlockHomeCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityHint("Opens Slumber Party under Farm")
+        .accessibilityHint(context == .home ? "Opens Slumber Party" : "Opens Slumber Party from your Farm")
     }
 }

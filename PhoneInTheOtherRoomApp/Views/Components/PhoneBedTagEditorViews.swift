@@ -224,6 +224,19 @@ struct LostPhoneBedTagWizard: View {
             }
             .background(AppColors.paper.ignoresSafeArea()).navigationTitle("Replace lost tag").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } } }
+            .confirmationDialog(
+                "Reset and pair this tag?",
+                isPresented: Binding(
+                    get: { viewModel.pendingNFCTagReset != nil },
+                    set: { if !$0 { viewModel.cancelResetAndPairNFCTag() } }
+                ),
+                presenting: viewModel.pendingNFCTagReset
+            ) { _ in
+                Button("Reset and pair this tag") { viewModel.confirmResetAndPairNFCTag() }
+                Button("Cancel", role: .cancel) { viewModel.cancelResetAndPairNFCTag() }
+            } message: { _ in
+                Text("This tag has an old Counting Sheep pairing. Confirm, then scan the same tag again to replace it. Your current tag stays paired until the write succeeds.")
+            }
         }.onAppear(perform: loadSelection)
     }
     private var roleSelection: some View {

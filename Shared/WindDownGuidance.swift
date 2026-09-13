@@ -20,6 +20,17 @@ enum WindDownGuidanceTopic: String, Codable, CaseIterable, Identifiable {
         case .environment: return "A calmer room"
         }
     }
+
+    var detail: String {
+        switch self {
+        case .screenBoundary: return "Make a little distance from the screen."
+        case .lightAndTiming: return "Small cues around the shape of a day."
+        case .sleepCues: return "Let the bedroom feel more like a place to rest."
+        case .morning: return "Meet the morning before the phone does."
+        case .settle: return "Gentle ways to take the pressure out of rest."
+        case .environment: return "A few comforts for a calmer room."
+        }
+    }
 }
 
 struct WindDownGuidanceItem: Codable, Equatable, Identifiable {
@@ -62,6 +73,14 @@ enum WindDownGuidanceLibrary {
             topic: .lightAndTiming,
             title: "Try an earlier caffeine cutoff",
             body: "Caffeine can linger for hours. Try an earlier personal cutoff and notice how the evening feels.",
+            phase: .windDown,
+            sourceIDs: ["nhlbi-healthy-sleep"]
+        ),
+        WindDownGuidanceItem(
+            id: "exercise-timing-experiment",
+            topic: .lightAndTiming,
+            title: "Notice when movement suits you",
+            body: "Daytime movement can give the day shape. If intense exercise near bed feels activating, try it earlier and notice what fits you.",
             phase: .windDown,
             sourceIDs: ["nhlbi-healthy-sleep"]
         ),
@@ -122,6 +141,16 @@ enum WindDownGuidanceLibrary {
     static func items(for phase: NightWatchPhase) -> [WindDownGuidanceItem] {
         // Unphased ideas belong in the source-linked guide, never in an active-night cue.
         items.filter { $0.phase == phase }
+    }
+
+    static func items(for group: WindDownGuidanceGroup) -> [WindDownGuidanceItem] {
+        items.filter { $0.group == group }
+    }
+
+    /// The source registry is bundled locally, so this relationship remains
+    /// available offline for the source detail screen.
+    static func items(referencingSourceID sourceID: String) -> [WindDownGuidanceItem] {
+        items.filter { $0.sourceIDs.contains(sourceID) }
     }
 
     /// Returns one stable Home idea from the person's selected routines. The

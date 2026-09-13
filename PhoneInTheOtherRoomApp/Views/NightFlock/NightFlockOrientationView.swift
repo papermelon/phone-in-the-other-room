@@ -13,39 +13,36 @@ struct NightFlockOrientationView: View {
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            Text("Slumber Party").font(AppTypography.display(30))
-            Text("A small guide before you begin").font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
-            Spacer(minLength: 0)
-            Text(steps[step].0).font(AppTypography.title)
-            Text(steps[step].1).font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: AppSpacing.xs) {
-                ForEach(steps.indices, id: \.self) { index in
-                    Circle().fill(index == step ? AppColors.grass : AppColors.stroke).frame(width: 8, height: 8)
-                }
-            }
-            HStack {
-                Button("Dismiss") {
-                    viewModel.dismissNightFlockOrientation()
-                    dismiss()
-                }
-                .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                Spacer()
-                Button(step == steps.count - 1 ? "Got it" : "Next") {
-                    if step == steps.count - 1 {
-                        viewModel.finishNightFlockOrientation()
-                        dismiss()
-                    } else {
-                        step += 1
+        ContentFittingGuideSheet {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                Text("Slumber Party").font(AppTypography.display(30))
+                Text("A small guide before you begin").font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
+                Text(steps[step].0).font(AppTypography.title)
+                Text(steps[step].1).font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: AppSpacing.xs) {
+                    ForEach(steps.indices, id: \.self) { index in
+                        Circle().fill(index == step ? AppColors.grass : AppColors.stroke).frame(width: 8, height: 8)
                     }
                 }
-                .buttonStyle(PixelPrimaryButtonStyle())
+                HStack {
+                    Button("Dismiss") {
+                        viewModel.dismissNightFlockOrientation()
+                        dismiss()
+                    }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    Spacer()
+                    Button(step == steps.count - 1 ? "Got it" : "Next") {
+                        if step == steps.count - 1 {
+                            viewModel.finishNightFlockOrientation()
+                            dismiss()
+                        } else {
+                            step += 1
+                        }
+                    }
+                    .buttonStyle(PixelPrimaryButtonStyle())
+                }
             }
         }
-        .padding(AppSpacing.lg)
-        .background(AppColors.paper.ignoresSafeArea())
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
     }
 }

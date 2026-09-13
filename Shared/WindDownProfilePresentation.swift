@@ -3,11 +3,11 @@ import Foundation
 extension WindDownProfileQuestion {
     var title: String {
         switch self {
-        case .usualSchedule: return "When does the night usually begin and end?"
+        case .usualSchedule: return "When do you usually go to bed and wake up?"
         case .phoneUsePattern: return "When does the phone tend to stay nearby?"
         case .awayFriction: return "What most often keeps you on your phone when you’d rather stop?"
-        case .eveningActivities: return "What might the evening quiet hold?"
-        case .morningActivities: return "What might the morning quiet hold?"
+        case .eveningActivities: return "What would you like to do before bed?"
+        case .morningActivities: return "What would you like to do before checking your phone?"
         case .desiredWindDownLength: return "How long should the quiet before bed be?"
         case .bedtimeDelay: return "Does your phone ever keep you up later than you meant?"
         case .automaticReaching: return "How often do you reach for it without really deciding to?"
@@ -20,15 +20,15 @@ extension WindDownProfileQuestion {
     var detail: String {
         switch self {
         case .usualSchedule:
-            return "A familiar bedtime and wake time give Wind Down a shape. You can change this later."
+            return "These times set your evening and morning countdowns. You can change them later."
         case .phoneUsePattern:
-            return "Choose the closest fit. This is not a diagnosis."
+            return "Choose the answer that sounds most like your usual day."
         case .awayFriction:
-            return "Choose the closest fit for the moment that keeps going."
+            return "Choose what most often makes it hard to put your phone down."
         case .eveningActivities:
-            return "Pick up to three ideas. They stay private and optional."
+            return "Pick up to three ideas for before bed. You can skip any of them."
         case .morningActivities:
-            return "Pick up to two ideas. They stay private and optional."
+            return "Pick up to two ideas for your morning. You can skip any of them."
         case .desiredWindDownLength:
             return "Thirty minutes is a gentle place to begin."
         case .bedtimeDelay, .automaticReaching, .morningChecking, .overnightLocation:
@@ -44,7 +44,7 @@ extension WindDownPhoneUsePattern {
         switch self {
         case .beforeBed: return "Mostly before bed"
         case .afterWaking: return "Mostly after waking"
-        case .bothEdges: return "Both edges of sleep"
+        case .bothEdges: return "Before bed and after waking"
         case .irregular: return "It changes from night to night"
         }
     }
@@ -177,15 +177,8 @@ extension WindDownProfileKind {
 
 enum WindDownGuidanceSourcePresentation {
     static func title(for sourceID: String) -> String? {
-        switch sourceID {
-        case "nhlbi-healthy-sleep": return "NHLBI healthy sleep habits"
-        case "nhlbi-sleep-wake-cycle": return "NHLBI sleep/wake cycle"
-        case "nhlbi-circadian-treatment": return "NHLBI circadian guidance"
-        case "va-stimulus-control": return "VA stimulus-control guidance"
-        case "aasm-cbt-i": return "AASM behavioral sleep guidance"
-        case "counting-sheep-principles": return "Counting Sheep product principles"
-        case "counting-sheep-booklet": return "Counting Sheep wellness booklet"
-        default: return nil
+        WindDownGuidanceSourceRegistry.source(for: sourceID).map {
+            $0.organization == "Counting Sheep" ? $0.title : "\($0.organization) · \($0.title)"
         }
     }
 

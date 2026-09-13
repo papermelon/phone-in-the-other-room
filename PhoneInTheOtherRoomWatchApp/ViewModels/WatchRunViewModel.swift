@@ -146,7 +146,15 @@ final class WatchRunViewModel: ObservableObject {
         startNearbyInteraction(with: nil)
     }
 
-    private func handle(_ message: WatchMessage) {
+    private func handle(_ incomingMessage: WatchMessage) {
+        guard let message = incomingMessage.routedForCurrentRelease else {
+            if let run = incomingMessage.normalizedForCurrentRelease.run { self.run = run }
+            stopNearbyInteraction()
+            connectionText = isAdditionalQuiet
+                ? "Phone Away is keeping time on iPhone"
+                : "Wind Down is keeping time on iPhone"
+            return
+        }
         // The iPhone is authoritative. A nil-run state always clears any
         // previous Wind Down, while a bounded Morning projection remains the
         // current phone-authoritative surface.
@@ -231,7 +239,7 @@ final class WatchRunViewModel: ObservableObject {
 
     private func startNearbyInteraction(with peerTokenData: Data?) {
         guard nearby.isSupported else {
-            connectionText = "Watch placement isn't available here"
+            connectionText = "Distance checks aren't part of this release"
             return
         }
 

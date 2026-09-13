@@ -26,15 +26,15 @@ enum NotificationTemplateID: String, Codable, CaseIterable, Identifiable {
         case .windDownLeadIn10: return "Ten minutes before Wind Down"
         case .windDownStart: return "Wind Down starts"
         case .windDownMidpoint: return "Wind Down midpoint"
-        case .sleepTime: return "Bedtime"
-        case .phoneFreeMorning: return "Morning quiet starts"
-        case .morningMidpoint: return "Morning quiet midpoint"
-        case .complete: return "Wind Down completes"
+        case .sleepTime: return "Overnight phase"
+        case .phoneFreeMorning: return "Screen-Free Morning begins"
+        case .morningMidpoint: return "Screen-Free Morning midpoint"
+        case .complete: return "Wind Down timer ends"
         case .morningReflection: return "Morning reflection"
         case .usageWindDown: return "Wind Down usage cue"
         case .usageOvernight: return "Overnight usage cue"
-        case .usageMorningQuiet: return "Morning quiet usage cue"
-        case .quietPeriodComplete: return "Phone Away completes"
+        case .usageMorningQuiet: return "Screen-Free Morning usage cue"
+        case .quietPeriodComplete: return "Phone Away timer ends"
         case .shieldingFailed: return "Shielding failure"
         }
     }
@@ -42,18 +42,19 @@ enum NotificationTemplateID: String, Codable, CaseIterable, Identifiable {
     var detail: String {
         switch self {
         case .windDownLeadIn60, .windDownLeadIn30, .windDownLeadIn10:
-            return "A gentle lead-in before the phone rests."
+            return "A gentle lead-in before the planned Wind Down."
         case .windDownStart: return "The beginning of the before-bed quiet window."
         case .windDownMidpoint: return "A cue inside the before-bed quiet window."
         case .sleepTime: return "The transition into the overnight period."
         case .phoneFreeMorning: return "The beginning of the after-waking quiet window."
-        case .morningMidpoint: return "A cue inside the morning quiet window."
-        case .complete: return "The end of the phone-away ritual."
+        case .morningMidpoint: return "A cue during Screen-Free Morning."
+        case .complete: return "The end of the Wind Down timer."
         case .morningReflection: return "An optional private morning reflection prompt."
         case .usageWindDown, .usageOvernight, .usageMorningQuiet:
             return "An optional cue after selected-app activity."
-        case .quietPeriodComplete: return "Your Phone Away time is saved in Nights."
-        case .shieldingFailed: return "Kept fixed so the protection status stays accurate."
+        case .quietPeriodComplete: return "The end of the Phone Away timer."
+        case .shieldingFailed:
+            return "Kept fixed so selected-app-limit failure copy stays accurate."
         }
     }
 

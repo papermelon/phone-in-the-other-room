@@ -1,8 +1,10 @@
 #if DEBUG
 import SwiftUI
+import ActivityKit
 
 struct ScreenbookRootView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
+    @Environment(\.dynamicTypeSize) private var preferredTextSize
     @State private var didReportReadiness = false
     let request: ScreenbookLaunchRequest
 
@@ -16,6 +18,7 @@ struct ScreenbookRootView: View {
                 errorSurface
             }
         }
+        .environment(\.dynamicTypeSize, ProcessInfo.processInfo.arguments.contains("-screenbook-habit-accessibility") ? .accessibility3 : preferredTextSize)
         .environment(\.locale, Locale(identifier: "en_SG"))
         .environment(\.calendar, ScreenbookFixtures.calendar)
         .environment(\.timeZone, ScreenbookFixtures.timeZone)
@@ -29,7 +32,17 @@ struct ScreenbookRootView: View {
             await Task.yield()
             try? await Task.sleep(for: .milliseconds(350))
             do {
-                if request.exportsManifest || request.kind != nil {
+                if ProcessInfo.processInfo.arguments.contains("-screenbook-live-activity") {
+                    try startLiveActivityDisplayProbe()
+                }
+                if let habitPassed = try await ScreenbookHabitLoopProbe.runIfRequested(), !habitPassed {
+                    try ScreenbookCaptureReadiness.reportFailure(request, message: "Habit probe failed; inspect Documents/screenbook/habit-probe.json")
+                } else if let probePassed = try ScreenbookRecoveryProbe.runIfRequested(), !probePassed {
+                    try ScreenbookCaptureReadiness.reportFailure(
+                        request,
+                        message: "Recovery probe failed; inspect Documents/screenbook/recovery-probe.json"
+                    )
+                } else if request.exportsManifest || request.kind != nil || request.runsRecoveryProbe {
                     try ScreenbookCaptureReadiness.reportReady(request)
                 } else {
                     try ScreenbookCaptureReadiness.reportFailure(
@@ -38,9 +51,33 @@ struct ScreenbookRootView: View {
                     )
                 }
             } catch {
-                assertionFailure("Screenbook readiness write failed: \(error)")
+                do {
+                    try ScreenbookCaptureReadiness.reportFailure(
+                        request,
+                        message: "Recovery probe/readiness error: \(error.localizedDescription)"
+                    )
+                } catch {
+                    assertionFailure("Screenbook readiness write failed: \(error)")
+                }
             }
         }
+    }
+
+    /// An isolated, local-only system-rendering probe. No session, Farm or
+    /// shielding state is created, and no APNs token is requested.
+    private func startLiveActivityDisplayProbe() throws {
+        let now = Date()
+        let state = FocusRunLiveActivityAttributes.ContentState(
+            plannedEndAt: now.addingTimeInterval(600), isComplete: false, phase: .windDown,
+            bedtimeAt: now.addingTimeInterval(45), wakeAt: now.addingTimeInterval(600),
+            morningQuietEndsAt: now.addingTimeInterval(900),
+            eveningRoutineTitles: [PhoneFreeActivity.sleepwear, .brushTeeth, .relaxation].map(\.title)
+        )
+        _ = try Activity.request(
+            attributes: FocusRunLiveActivityAttributes(runID: UUID(), plannedDurationSeconds: 600),
+            content: ActivityContent(state: state, staleDate: state.nextContentRefreshDate(at: now)),
+            pushType: nil
+        )
     }
 
     @ViewBuilder
@@ -49,9 +86,31 @@ struct ScreenbookRootView: View {
         case .onboardingWelcome:
             OnboardingFlowView(initialDraft: onboardingDraft, presentationMode: .fixture, onComplete: {})
         case .configuredHome:
+            if ProcessInfo.processInfo.arguments.contains("-screenbook-personalisation") {
+                ScreenbookPersonalisationView()
+            } else if ProcessInfo.processInfo.arguments.contains("-screenbook-habit-plan") {
+                NavigationStack { FocusRunSetupView(initialHabitFocus: .access) }
+            } else if ProcessInfo.processInfo.arguments.contains("-screenbook-habit-reflection") {
+                NavigationStack { ScrollView { WindDownHabitReflectionCard(day: ScreenbookFixtures.now(for: kind)).padding(AppSpacing.md) } }
+            } else if ProcessInfo.processInfo.arguments.contains("-screenbook-protection-repair") {
+                NavigationStack { ScreenTimeProtectionRepairView(repairsAutomaticStart: true) }
+            } else if ProcessInfo.processInfo.arguments.contains("-screenbook-slumber-entry") {
+                NavigationStack { NightFlockHubView(viewModel: viewModel.nightFlockViewModel) }
+            } else if ProcessInfo.processInfo.arguments.contains("-screenbook-account") {
+                AccountScreenbookView(model: viewModel.farmBackupViewModel, account: viewModel.nightFlockViewModel)
+            } else {
+                HomeView(
+                    initialTab: .home,
+                    farmVisitSeed: 41,
+                    activeRunNow: ScreenbookFixtures.now(for: kind),
+                    dashboardWatch: viewModel.coordinator.watch,
+                    allowsLaunchRouting: false
+                )
+            }
+        case .interactiveHome:
             HomeView(
                 initialTab: .home,
-                farmVisitSeed: 41,
+                farmVisitSeed: 46,
                 activeRunNow: ScreenbookFixtures.now(for: kind),
                 dashboardWatch: viewModel.coordinator.watch,
                 allowsLaunchRouting: false
@@ -64,6 +123,27 @@ struct ScreenbookRootView: View {
                 dashboardWatch: viewModel.coordinator.watch,
                 allowsLaunchRouting: false
             )
+        case .activePhoneAway:
+            HomeView(
+                initialTab: .home,
+                farmVisitSeed: 45,
+                activeRunNow: ScreenbookFixtures.now(for: kind),
+                dashboardWatch: viewModel.coordinator.watch,
+                allowsLaunchRouting: false
+            )
+        case .slumberPartyNoRound, .slumberPartyBetweenRounds:
+            slumberPartyHomeScenario
+        case .slumberPartySharedHabitsSummary, .slumberPartySharedHabitsConsent:
+            if let summary = viewModel.nightFlockViewModel.v4ListState?.parties.first {
+                NavigationStack {
+                    SlumberPartyV4PartyDetailView(
+                        viewModel: viewModel.nightFlockViewModel,
+                        summary: summary
+                    )
+                }
+            } else {
+                Text("Shared habit fixture unavailable")
+            }
         case .earlyEnd:
             HomeView(
                 initialTab: .home,
@@ -80,6 +160,27 @@ struct ScreenbookRootView: View {
                 dashboardWatch: viewModel.coordinator.watch,
                 allowsLaunchRouting: false
             )
+        }
+    }
+
+    /// These fixtures exercise Home's production social component directly.
+    /// A full unscrolled Home capture can hide the card below the fold and
+    /// make distinct round states produce the same screenshot.
+    private var slumberPartyHomeScenario: some View {
+        ZStack {
+            AppColors.paper.ignoresSafeArea()
+            ScrollView {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    Text("HOME · SLUMBER PARTY")
+                        .font(pixelFont(.caption))
+                        .foregroundStyle(AppColors.muted)
+                    SlumberPartyHomeSection(
+                        viewModel: viewModel.nightFlockViewModel,
+                        openParty: { _ in }
+                    )
+                }
+                .padding(AppSpacing.md)
+            }
         }
     }
 
@@ -162,7 +263,8 @@ private extension ProcessInfo {
     ScreenbookRootView(request: ScreenbookLaunchRequest(
         scenarioID: kind.rawValue,
         runID: "preview-welcome",
-        exportsManifest: false
+        exportsManifest: false,
+        runsRecoveryProbe: false
     ))
     .environmentObject(ScreenbookFixtures.makeViewModel(for: kind))
 }
@@ -171,7 +273,8 @@ private extension ProcessInfo {
     ScreenbookRootView(request: ScreenbookLaunchRequest(
         scenarioID: "iphone.unknown.default",
         runID: "preview-unknown",
-        exportsManifest: false
+        exportsManifest: false,
+        runsRecoveryProbe: false
     ))
     .environmentObject(ScreenbookFixtures.makeViewModel(for: nil))
 }

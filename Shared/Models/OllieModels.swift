@@ -121,6 +121,8 @@ struct FocusRun: Codable, Identifiable, Equatable {
     var placementStatus: PlacementStatus
     var placementEvidence: PlacementEvidence
     var nightWatchPlan: NightWatchPlan?
+    var farmCreditVersion: Int
+    var briefAccessIntervals: [DateInterval]
     var briefAccessUseCount: Int
     /// The optional five-minute orientation practice is a real recorded run,
     /// but it must never earn Phone Away search credit.
@@ -160,6 +162,8 @@ struct FocusRun: Codable, Identifiable, Equatable {
         self.placementStatus = guardKind.needsPlacementConfirmation ? .awaitingConfirmation : .notRequired
         self.placementEvidence = .notRequired(for: guardKind)
         self.nightWatchPlan = nightWatchPlan
+        self.farmCreditVersion = 1
+        self.briefAccessIntervals = []
         self.briefAccessUseCount = 0
         self.isPractice = false
         self.appShieldingRequested = appShieldingRequested
@@ -170,6 +174,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         case id, plannedDurationSeconds, actualDurationSeconds, startedAt, plannedEndAt, endedAt
         case state, phoneAwayValidatedAt, proximityHistory, warningCount, completedSuccessfully
         case endedEarlyReason, earnedRewardIDs, guardKind, placementStatus, placementEvidence, nightWatchPlan
+        case farmCreditVersion, briefAccessIntervals
         case briefAccessUseCount, isPractice, appShieldingRequested, liveActivityRequested
     }
 
@@ -194,6 +199,8 @@ struct FocusRun: Codable, Identifiable, Equatable {
         placementEvidence = try container.decodeIfPresent(PlacementEvidence.self, forKey: .placementEvidence)
             ?? .notRequired(for: guardKind)
         nightWatchPlan = try container.decodeIfPresent(NightWatchPlan.self, forKey: .nightWatchPlan)
+        farmCreditVersion = try container.decodeIfPresent(Int.self, forKey: .farmCreditVersion) ?? 0
+        briefAccessIntervals = try container.decodeIfPresent([DateInterval].self, forKey: .briefAccessIntervals) ?? []
         briefAccessUseCount = max(0, try container.decodeIfPresent(Int.self, forKey: .briefAccessUseCount) ?? 0)
         isPractice = try container.decodeIfPresent(Bool.self, forKey: .isPractice) ?? false
         appShieldingRequested = try container.decodeIfPresent(Bool.self, forKey: .appShieldingRequested) ?? true
@@ -296,15 +303,18 @@ enum OllieDailyStatus: String, Codable, CaseIterable {
     var label: String {
         switch self {
         case .waiting: return "Ollie is ready for tonight's Wind Down."
-        case .warmedUp: return "Ollie is warmed up by a little phone-free time."
+        case .warmedUp: return "Ollie is warmed up by a little recorded quiet time."
         case .steady: return "Ollie is steady after a quiet night."
-        case .bright: return "Ollie is bright after a phone-free night."
+        case .bright: return "Ollie is bright after a long recorded quiet stretch."
         }
     }
 }
 
 struct UserProgress: Codable, Equatable {
     var totalCompletedRuns: Int
+    /// Farm continuity can come from another phone; dated Nights evidence cannot.
+    var restoredFarmCompletedRuns: Int? = nil
+    var farmCompletedRuns: Int { restoredFarmCompletedRuns ?? totalCompletedRuns }
     var totalFocusMinutes: Int
     var currentStreak: Int
     var longestStreak: Int
@@ -333,12 +343,14 @@ struct UserProgress: Codable, Equatable {
     }
 
     enum CodingKeys: String, CodingKey {
+        case restoredFarmCompletedRuns
         case totalCompletedRuns, totalFocusMinutes, currentStreak, longestStreak, rewardsCollected, ollieLevel, dailyFocusRecords, sheepBalance, coinBalance, totalSheepEarned, totalCoinsEarned
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         totalCompletedRuns = try container.decodeIfPresent(Int.self, forKey: .totalCompletedRuns) ?? 0
+        restoredFarmCompletedRuns = try container.decodeIfPresent(Int.self, forKey: .restoredFarmCompletedRuns)
         totalFocusMinutes = try container.decodeIfPresent(Int.self, forKey: .totalFocusMinutes) ?? 0
         currentStreak = try container.decodeIfPresent(Int.self, forKey: .currentStreak) ?? 0
         longestStreak = try container.decodeIfPresent(Int.self, forKey: .longestStreak) ?? 0
@@ -355,6 +367,7 @@ struct UserProgress: Codable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(totalCompletedRuns, forKey: .totalCompletedRuns)
+        try container.encodeIfPresent(restoredFarmCompletedRuns, forKey: .restoredFarmCompletedRuns)
         try container.encode(totalFocusMinutes, forKey: .totalFocusMinutes)
         try container.encode(currentStreak, forKey: .currentStreak)
         try container.encode(longestStreak, forKey: .longestStreak)

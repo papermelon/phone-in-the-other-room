@@ -44,9 +44,7 @@ struct FocusStatsView: View {
                 focusRecord(using: proxy)
             }
             .task {
-                if viewModel.sleepAuthorization == .requested {
-                    viewModel.refreshSleepSummary()
-                }
+                viewModel.refreshHealthConnectionIfNeeded(maximumAge: 0)
             }
             .contextualGuideOverlay(
                 tip: $contextualTip,

@@ -36,6 +36,19 @@ final class FarmShopExpansionTests: XCTestCase {
         XCTAssertTrue(tier3.isSatisfied(by: progress(permanentlyUnlockedTier: 3)))
     }
 
+    func testMossWorkCoatIsAvailableWithoutWindDownsOrDiscoveries() throws {
+        let coat = try XCTUnwrap(FarmShopCatalog.item(for: "shepherd_moss_coat"))
+
+        XCTAssertEqual(coat.unlockRequirement, .immediate)
+        XCTAssertTrue(coat.isUnlocked(for: .newFarm))
+
+        var state = FarmState.empty
+        state.woolBalance = coat.woolCost
+        try state.purchase(itemID: coat.id)
+
+        XCTAssertTrue(state.ownedShopItemIDs.contains(coat.id))
+    }
+
     func testAllDiscoveriesRequirementInterpolatesItsCount() {
         let requirement = FarmShopUnlockRequirement.milestone(
             tier: 3,

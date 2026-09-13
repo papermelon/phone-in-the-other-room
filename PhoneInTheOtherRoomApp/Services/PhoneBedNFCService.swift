@@ -321,7 +321,10 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                     session.alertMessage = "Counting Sheep tag found."
                     session.invalidate()
                 case .abort:
-                    let message = "This tag could not be used safely. Try another writable Counting Sheep tag."
+                    let message = PhoneBedTagProvisionPolicy.rejectionMessage(
+                        for: result.isCountingSheepCredential ? .credential(digest: result.digest) : .foreign,
+                        expectedDigest: expectedCredentialDigest
+                    )
                     guard self.finishProvision(.unavailable(message), for: session) else { return }
                     session.invalidate(errorMessage: message)
                 case .mayProceed where intent == .settingsRetiredTagResync || intent == .settingsResetAndPair:
@@ -439,7 +442,9 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                     ) {
                     case .abort:
                         Task { @MainActor in
-                            let message = "This tag could not be read safely. Try again. Nothing changed."
+                            let message = PhoneBedTagProvisionPolicy.rejectionMessage(
+                                for: inspection, expectedDigest: expectedCredentialDigest
+                            )
                             guard self.finishProvision(
                                 .unavailable(message),
                                 for: context.session

@@ -5,7 +5,7 @@ struct AppRootView: View {
     @State private var showQuietNoteEditor = false
 
     var body: some View {
-        Group {
+        AccountAccessGate(model: viewModel.farmBackupViewModel) {
             switch viewModel.rootRoute {
             case .freshOnboarding:
                 OnboardingFlowView(startsFresh: true, onComplete: {})

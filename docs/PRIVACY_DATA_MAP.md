@@ -1,5 +1,7 @@
 # Privacy and Data Map — App Store 1.0
 
+Cumulative Farm accounting (ADR-0020) retains local run IDs, consumed timer interval unions, meter balances and reward outcomes beyond the 90-day detailed history, until local data reset. Access intervals also travel with the local persisted run and bounded App Group handoff ledger. No new upload or social fields are introduced.
+
 This is the implementation-facing data inventory for Counting Sheep 1.0. It is not a
 substitute for the public privacy policy or App Store Connect answers; those must match the
 production configuration and this map before submission.
@@ -9,13 +11,56 @@ The publication draft is `docs/PUBLIC_PRIVACY_POLICY.md`; App Store field guidan
 
 ## Default local data
 
+**Local-source capability, not deployed collection (2026-08-30):** the founder selected a single
+join-time Slumber Party sharing agreement, including the next reviewed habit-data contract,
+rather than per-field toggles. Exact app accountability for Singapore/SEA and sleep week/month
+summaries are requirements, not implemented exports. New fields require actual participant
+consent, permitted platform access, existing-member migration and withdrawal/deletion rules.
+Adults can join without Health data. The requested future archive lets later members see earlier
+group history and retains approved contributions after ordinary leave. This changes the planned
+recipient/retention contract, not existing collection: contributor re-consent, archive duration,
+and enforceable privacy withdrawal/deletion need review before rollout. Leaving stops new sends
+and access; a deletion request is a distinct operation, not defeated by consent copy.
+System permission denial or unavailable data must remain truthful. Do not change the current
+inventory below to claim these uploads already occur. See ADR-0016 and
+`plans/slumber-party-shared-habits-and-guide.md`; public-policy publication remains held.
+
+### Shared-habits local-source inventory (28–30 August; not yet deployed)
+
+The additive `sharedHabitsVersion: 1` archive and version-2/version-1 shared-night-plan capability
+are implemented in local source separately from the old V4 stream. Deployment, migration execution,
+and physical multi-account verification remain open. These rows describe the local contract, not a
+claim that the live service currently collects them:
+
+| Record | Stored fields | Audience / lifecycle |
+|---|---|---|
+| Agreement | Party, account and membership epoch, version, acceptance time, contributor timezone, first eligible sleep night | Private authorization receipt; explicit acceptance per party |
+| Shared habit | Author/member, kind, derived minutes, known local date/zone, factual completion outcome, optional app-recorded protection minutes, revision | Current and future agreed party members; no raw Health, exact intervals, stages, app identities or tokens |
+| Shared night plan (v2) | Immutable rounded next-seven-local-night instance, revision, Wind Down timing, bedtime/wake bookends, ordered bundled idea IDs | Current and future v2-agreed members; recurrence rule and custom routine text stay private; earlier versions remain only for frozen receipt correlation |
+| Shared night receipt (v2) | Frozen plan/version reference, factual start/result/protection dimensions and explicit unknown evidence | Current and future v2-agreed members; no app identity, per-app use, raw Screen Time or Health data; ideas remain planned context only |
+| Attribution snapshot | Chosen name and bounded character appearance at publication/migration | Retained for former-member contributions; not full Farm state |
+| Private publication identity | Contributor source UUID, agreement/epoch, idempotency key | Update/delete authority; peers receive public archive record IDs, not private source IDs |
+| Archive | Consented contributions and coarse previously group-shared migration | Local-source candidate only; retention, withdrawal, deletion, and dissolution behavior remain review gates and are not promised by current product copy |
+| Deletion marker | Party/account/source identity and deletion time, without retained habit metrics | Prevents retry/rejoin from resurrecting deleted contributions |
+| Local privacy journal | Account-scoped pending leave/withdraw/dissolution and publication authority | Blocks local reads/sends before remote completion; never displayed as a successful remote action while pending |
+
+Sleep uses completed contributor-local noon-to-noon windows and available-night arithmetic means;
+missing nights are not zero. Wind Down quiet minutes remain distinct from sleep and from Phone
+Away. App-recorded protection is not continuous attestation or proof of physical separation.
+There is no supported automatic exact-app export for Singapore customers in this candidate.
+The live website was inspected on 28 August and still shows the 30 July policy; reconcile and
+publish the reviewed policy before exposing new sensitive collection.
+
 | Data | Purpose | Location / retention | Leaves device by default? |
 |---|---|---|---|
 | Wind Down / Phone Away plan and active run | Run the requested phone-away session and restore it | Standard UserDefaults; latest state | No |
 | Ritual records and events | Receipts, quiet-minute history, reliability/evidence | Standard UserDefaults; 90 days | No |
-| Morning reflection | Optional personal context | Standard UserDefaults; 45 days | No |
+| Morning reflection | Optional personal context | Account-local transaction values on this device; 45 days | No |
+| Wind Down routine support | Optional evening/morning cue, preparation, smaller activity, placement, and next-use choice | Account-local transaction values in Application Support (`ollie.windDown.habitPlan`); until revised/reset | No |
+| Wind Down / morning habit reflection | Optional starting ease (evening), obstacle, intended-experience answer, bounded personal context, selected plan revision and civil day/zone; no inferred occurrence | Account-local transaction values (`ollie.windDown.habitReflections`); newest 45 mode/day entries, individually deletable | No |
+| Meaningful personalisation | One confirmed goal, plan snapshots, exact suggestion evidence IDs, responses and reviewed adjustments; no inferred motivation | Account/guest-local `ollie.windDown.personalisation`; 90-day details on load/mutation, up to 90 plans plus current goal/plan; rejection mask until goal change/clear. Existing local recovery generations and OS backups follow their own lifecycle. | No new transport. Goal/reflection data excluded from Farm sync and Slumber Party. Accepted activity wording uses existing Watch/Live Activity paths, including enabled remote updates. No AI processing. |
 | HealthKit `sleepAnalysis` | Sleep interval, duration, core/deep/REM/unspecified/awake where present | Read on demand; derived summaries in memory | No |
-| Screen Time selection | Reports and optional shield | App Group, opaque Apple tokens | No |
+| Screen Time selection | Required start readiness, requested selected-app/category barrier, and optional private reports | App Group, opaque Apple tokens | No |
 | Settlement journal | Hidden Wind Down outcome, terminal delivery/reveal markers, linked Screen-Free Morning occurrences, and Sunrise replay markers | Standard UserDefaults (`ollie.windDownMorning.settlementJournal`) | No |
 | Shield schedule/status evidence | Derived multi-window schedule, bounded purpose cue, Brief Access state, and observed apply/clear evidence | App Group; revisioned/tombstoned bounded entries | No |
 | NFC phone-bed registration | Confirm the chosen physical tag | Standard UserDefaults; SHA-256 digest only | No |
@@ -25,8 +70,10 @@ The publication draft is `docs/PUBLIC_PRIVACY_POLICY.md`; App Store field guidan
 | Slumber Party reward ledger | Applied backend grant IDs for shared-night Farm gifts | Standard UserDefaults (`ollie.nightFlock.rewards`) | No |
 
 Wind Down routine suggestions are a private ordered sequence: up to three evening suggestions
-and two morning suggestions, with putting the phone away fixed first. They are not checklists and
-carry no verification, reward, score, streak, or completion claim. The Wind Down starting-point
+and two morning suggestions, with the chosen phone-placement invitation first. Another-room and accessible-nearby intentions use the same selected-app protection requirements. They are not checklists and
+carry no verification, reward, score, streak, or completion claim. Habit support and reflections stay outside the private Farm cloud payload and all Slumber Party projections. They switch with the local account, and neither saving them nor choosing a smaller activity creates session evidence or rewards.
+
+The Wind Down starting-point
 questionnaire is local by default and is not a clinical assessment.
 
 Counting Sheep requests **read access only** to HealthKit
@@ -103,7 +150,46 @@ the separately configured Live Activity transport is enabled. Raw push tokens ar
 credentials, excluded from logs, and governed by ADR-0005. This transport does not receive
 HealthKit data.
 
-## Optional invite-only Slumber Party
+## Current v4 membership-sharing contract — local candidate, 2026-08-28
+
+This section supersedes the historical v2/v3 mapping below for the new local candidate; it does not assert that the new migration or app has been deployed. V4 already uses Apple-linked accounts, named persistent groups, curated profile snapshots, factual Wind Down/Phone Away source records, fixed cheers and independent per-party grants. The membership-sharing extension changes timing: new activity can be shared from joining, before and between seven-night rounds. Joining discloses that behavior; rounds remain progress/reward boundaries, not general-sharing prerequisites.
+
+Private backend source/idempotency records include the already-uploaded source-event UUID, source timestamps and factual quiet-minute values. Current members receive the bounded recent shared projection, rounded minutes, activity occurrence time, expiring status, curated look and fixed cheer counts. They do not receive another person's local source UUID. `mySourceEventID` echoes only the requesting owner's existing source UUID to correlate passive feedback with their current run; `roundActivityID` references an already-public round row to avoid duplicate cards.
+
+New stream records use membership epochs so leaving/rejoining does not revive old activity or cheers. The projection is the latest 100 moments within 90 days; service-only cleanup removes aged stream rows and their related reactions. Live status display expires separately, without deleting durable received cheers at the 30-minute status boundary. Existing round/source/grant ledgers are not deleted by this new stream cleanup. Their broader retention and hosted operational scheduling still require release review.
+
+The extension adds no upload of Purpose, private routine choices, exact planned schedules, selected apps/tokens, Health data, full Farm inventory or impact records. No new reward comes from joining, viewing or cheering; outside-round activity does not receive a round grant. Local sessions, protection and Farm settlement do not wait for social transport.
+
+See `plans/slumber-party-membership-sharing.md` for compatibility, verification and rollout gates. The public policy must be reconciled before distribution; the historical description below is not a statement that v2 sharing toggles or Health sharing remain part of v4.
+
+## Shared Farm and update cheer receipts — 9 September 2026 source candidate
+
+The public curated appearance gains optional `headShapeID` (pear, round, boxy, triangular),
+advertised by `profileHeadShapeVersion: 1`. It is projected from the chosen Shepherd look;
+no private Farm document, ownership ledger or inventory is copied. The social-avatar agreement
+and capability gate remains unchanged. Older writes preserve the new field; older servers
+receive no head-shape field.
+
+`updateCheerReceiptVersion: 1` adds participant-only reaction IDs, original public update IDs,
+sender/recipient membership IDs, fixed cheer type, server acceptance time and optional app-receipt
+time. The optional acknowledgement means a recipient app received the update's cheer record;
+it never proves human attention. No seen/read timestamp, push entitlement or new reward is added.
+Current membership epochs and blocking fence both participants. Existing reaction deletion
+cascades the private acknowledgement row. Existing 90-day stream retention applies; no
+party-lifetime archive of these receipt records is introduced. No third member receives a pair's
+delivery metadata.
+
+The `memberUpdates` projection keeps each current member's latest eligible update and the
+original updates behind that viewer's cheers accessible beyond the global latest-100 feed.
+It uses the same existing allowlisted stream fields, current membership/block checks and
+90-day limit. Account/membership-fenced local pending cheer intent is stored through the existing
+outbox service and cleared with social account reset or loss of party membership.
+
+This migration is **not deployed by this task**. See
+[implementation and validation](plans/slumber-party-shared-farm-and-cheers.md).
+
+## Historical Slumber Party mapping (v2/v3 compatibility)
+
 
 Slumber Party is independently controlled by `SUPABASE_NIGHT_FLOCK_ENABLED` and is hidden and
 network-silent when the flag is off (ordinary Debug). TestFlight/Release archives compile it on. Entering it can create an anonymous Supabase session; before
@@ -137,8 +223,9 @@ apps in Apple's picker and confirms that Instagram is included. The token and se
 never reach Supabase. The app may share only not requested, unavailable, partial, or observed
 shielding evidence; the server does not claim it verified Instagram by name.
 
-Slumber Party never receives exact bedtime, wake time, early-ending reason, private routine
-steps, raw HealthKit samples, raw Screen Time reports, selected-app tokens/lists, NFC
+Except for the separately agreed rounded v2 plan bookends above, Slumber Party never receives an
+exact recurrence schedule, early-ending reason, private routine text, raw HealthKit samples, raw
+Screen Time reports, selected-app tokens/lists, per-app use, NFC
 information, Screen-Free Morning occurrence/choice/minutes, Sunrise Trail, purpose/cue text,
 Brief Access state, notification state, or `impact_nights`. Optional minimized
 impact/research sharing is a separate setting and record; neither consent enables the other.
@@ -181,11 +268,12 @@ flag remains off and the form uses the person's Mail app instead.
 Review the exact App Privacy taxonomy shown by App Store Connect at submission time. For
 the 1.0 implementation, expect at least:
 
-- Health & Fitness → Health (optional impact sharing);
+- Health & Fitness → Health (separately consented impact sharing and Slumber Party duration summaries);
 - Usage Data → Product Interaction (quiet/completion/shield evidence);
 - Identifiers → User ID (anonymous Supabase identity);
-- User Content → Other User Content (Slumber Party shared-goal progress, optional routine ideas,
-  fixed reactions, blocks, and fixed-enum safety reports when Slumber Party is enabled);
+- User Content → Other User Content (Slumber Party display name/character, shared habit records,
+  fixed cheers, blocks, and fixed-enum safety reports when Slumber Party is enabled; private
+  routine text is not part of the current V4 shared-habits contract);
 - Identifiers → Device ID (app installation ID and ActivityKit delivery identity);
 - Contact Info → Email Address (optional feedback replies);
 - User Content → Customer Support and Other User Content (feedback text);
@@ -198,8 +286,8 @@ across other companies' apps/sites and must never be used for advertising or dat
 
 ## HealthKit and ethical boundaries
 
-- HealthKit-derived data is used to show the person their own context and, only with
-  separate consent, evaluate Counting Sheep's impact.
+- HealthKit-derived data is used to show the person their own context and, only with the relevant
+  separate agreement, evaluate Counting Sheep's impact or share derived party sleep summaries.
 - It is never used for advertising, eligibility, sale, or disclosure to data brokers.
 - Insights report sample sizes and associations. They do not diagnose, score sleep quality,
   or claim the ritual caused an improvement.
@@ -207,3 +295,36 @@ across other companies' apps/sites and must never be used for advertising or dat
 - HealthKit is optional. Current release Wind Down starts use required selected-app shielding
   with either the timer guard or NFC + app shielding; legacy honor-timer, QR, and Watch guard
   values remain local decode compatibility only and are not release-facing paths.
+
+## Private Farm backup candidate — 5 September 2026
+
+ADR-0021 authorizes a separate opt-in Farm payload, including private sheep names,
+Farm event dates and cumulative-credit accounting intervals. See the candidate
+backup section in `PUBLIC_PRIVACY_POLICY.md`, `FarmBackupPayload` and
+`farm_save_v1`. The endpoint verifies Apple-linked Auth identity and exposes no
+private table to client roles. Account deletion cascades through every Farm table.
+Deployment/physical QA and public policy publication must be reported separately.
+
+
+## Account-owned Farm and credentials — 7 September 2026 candidate
+
+ADR-0023 replaces separate backup enrollment for new account use. The private Farm
+payload above is unchanged. The additive `farm_account_sync_v1` acceptance/capability
+supports verified Apple and verified email accounts; old RPC semantics remain available.
+Existing declined/paused uploads require migration acceptance. No private history fields
+are added to the cloud payload.
+
+| Data | Purpose and boundary |
+|---|---|
+| Immutable Auth UUID | Sole Farm and social-account owner; credential changes do not move ownership. |
+| Verified email, linked provider identities | Supabase Auth credentials and recovery; Apple requests no additional name/email scopes. |
+| Normalized username | Private unique server registry, claimed only after verification; login lookup never returns email to an unauthenticated caller. |
+| Password | Sent to Supabase Auth for verification; neither app defaults nor the username registry stores it. |
+| Keyed IP/identifier digests and attempt counts | Server-only login throttling, with stale windows cleaned by the rate-limit function. |
+| Pending email verification/change metadata | Device-local email/username/phase without password or code; removed on explicit logout/deletion. |
+| Account-scoped local archives | Farm, profile, private Nights/reflections and other scoped local context; inaccessible after logout and visible only to matching verified owner. Never uploaded as a document. |
+
+Account deletion purges that owner’s local recovery and redundant pre-migration copies,
+in addition to the existing server cascades. Guest scopes remain separate. Local source
+and tests do not imply hosted deployment, policy publication or physical-device acceptance;
+see `plans/account-owned-farm-sync.md` and `ACCOUNT_AUTH_DEPLOYMENT.md`.

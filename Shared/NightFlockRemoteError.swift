@@ -4,6 +4,8 @@ enum NightFlockRemoteErrorCode: String, Codable, Equatable, Sendable {
     case unauthorized
     case linkedAccountRequired = "linked_account_required"
     case methodNotAllowed = "method_not_allowed"
+    case pastureSheepNotOwned = "pasture_sheep_not_owned"
+    case pastureSheepAlreadyVisiting = "pasture_sheep_already_visiting"
     case invalidRequest = "invalid_request"
     case unsupportedSchema = "unsupported_schema"
     case activeMembershipExists = "active_membership_exists"
@@ -17,7 +19,22 @@ enum NightFlockRemoteErrorCode: String, Codable, Equatable, Sendable {
     case blockedMembership = "blocked_membership"
     case hostPermissionRequired = "host_permission_required"
     case accountUnavailable = "account_unavailable"
+    case staleRevision = "stale_revision"
     case snapshotConstructionFailed = "snapshot_construction_failed"
+    case sharedHistoryDeleted = "shared_history_deleted"
+    case publicationBeforeAgreement = "publication_before_agreement"
+    case agreementTimezoneMismatch = "agreement_timezone_mismatch"
+    case publicationOutsidePlanWindow = "publication_outside_plan_window"
+    case publicationOutsideReceiptWindow = "publication_outside_receipt_window"
+    case invalidSharedNightPayload = "invalid_shared_night_payload"
+    case invalidPlanChronology = "invalid_plan_chronology"
+    case invalidReceiptChronology = "invalid_receipt_chronology"
+    case invalidPlanBinding = "invalid_plan_binding"
+    case invalidReceiptSource = "invalid_receipt_source"
+    case receiptPlanMismatch = "receipt_plan_mismatch"
+    case sharedNightPlanFrozen = "shared_night_plan_frozen"
+    case sharedNightPlanCancelled = "shared_night_plan_cancelled"
+    case receiptActualStartRequired = "receipt_actual_start_required"
     case serviceUnavailable = "service_unavailable"
     case internalError = "internal_error"
 }
@@ -79,7 +96,42 @@ enum NightFlockObservedAccountSession: Equatable, Sendable {
     case missing
     case anonymous
     case appleLinked(UUID)
+    case passwordLinked(UUID)
     case unsupported
+}
+
+/// Supabase can omit the expanded `identities` collection from a session
+/// payload even though its server-controlled app metadata already records the
+/// linked provider. Treat either representation as evidence, but never allow
+/// stale provider metadata to turn an anonymous session into a linked one.
+enum NightFlockAppleIdentityEvidence {
+    static func isLinked(
+        isAnonymous: Bool,
+        identityProviders: [String],
+        primaryProvider: String?,
+        providers: [String]
+    ) -> Bool {
+        guard !isAnonymous else { return false }
+        return identityProviders.contains("apple")
+            || primaryProvider == "apple"
+            || providers.contains("apple")
+    }
+
+    static func preservesOriginalAccount(
+        originalUserID: UUID,
+        recoveredUserID: UUID,
+        hasAppleIdentity: Bool
+    ) -> Bool {
+        originalUserID == recoveredUserID && hasAppleIdentity
+    }
+
+    /// An unbound installation may discover that Apple already owns a
+    /// Counting Sheep account. Apple authentication is sufficient to reopen
+    /// that account, but the caller must quarantine account-scoped local
+    /// transport before using the returned session.
+    static func permitsExistingAccountSignIn(hasAppleIdentity: Bool) -> Bool {
+        hasAppleIdentity
+    }
 }
 
 enum NightFlockAccountSessionTransition: Equatable, Sendable {
@@ -115,7 +167,7 @@ enum NightFlockAccountSessionPolicy {
             case .invalid:
                 return .failClosed(signOutLocalSession: true)
             }
-        case let .appleLinked(id):
+        case let .appleLinked(id), let .passwordLinked(id):
             switch expectedIdentity {
             case .absent:
                 return .returnLinked(adopting: id)
@@ -571,6 +623,10 @@ enum NightFlockRelaunchReconciliationPolicy {
 /// be a server-side deletion whose response was lost, so no transport or
 /// account inspection can safely occur and the command is never replayed.
 enum NightFlockAccountDeletionIntentPolicy {
+    static func permitsFarmTransport(restored: Bool, deleting: Bool, phase: Phase) -> Bool {
+        restored && !deleting && permitsAdmission(phase: phase)
+    }
+
     enum Phase: Equatable, Sendable {
         case complete
         case pendingPreflight
@@ -724,9 +780,11 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
 
     var errorDescription: String? {
         switch code {
-        case .unauthorized: return "Please link your Apple account to continue."
-        case .linkedAccountRequired: return "Link your Apple account to join Slumber Party."
-        case .methodNotAllowed, .invalidRequest: return "Slumber Party could not understand that request."
+        case .unauthorized: return "Reconnect the Apple account already linked to Slumber Party."
+        case .linkedAccountRequired: return "Use Apple sign-in to link this account or reopen an existing Counting Sheep account."
+        case .pastureSheepNotOwned: return "Save this sheep to your account before sending it to visit."
+        case .pastureSheepAlreadyVisiting: return "This sheep is already visiting another party. Bring it home first."
+        case .methodNotAllowed, .invalidRequest: return "Slumber Party couldn’t accept the app’s request."
         case .unsupportedSchema: return "Slumber Party needs a newer connection."
         case .activeMembershipExists: return "You already have a Slumber Party."
         case .aliasConflict: return "Ollie couldn’t choose a unique alias for this lobby."
@@ -739,7 +797,21 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         case .blockedMembership: return "This Slumber Party is unavailable for this account."
         case .hostPermissionRequired: return "Only the host can do that."
         case .accountUnavailable: return "Slumber Party is unavailable for this account."
+        case .staleRevision: return "That shared update is already up to date."
         case .snapshotConstructionFailed: return "Slumber Party could not load your lobby. Please try again."
+        case .sharedHistoryDeleted: return "That shared record was removed and will not be sent again."
+        case .publicationBeforeAgreement: return "That shared record began before this group agreement and will not be sent."
+        case .agreementTimezoneMismatch: return "That sleep summary uses a different saved group time zone and will refresh."
+        case .publicationOutsidePlanWindow: return "That shared plan is outside this group’s next-seven-night window."
+        case .publicationOutsideReceiptWindow: return "That nightly result is outside this group’s current window."
+        case .invalidSharedNightPayload: return "That shared-night update could not be used."
+        case .invalidPlanChronology: return "That shared plan’s timing did not fit its night."
+        case .invalidReceiptChronology: return "That nightly result’s timing did not fit its night."
+        case .invalidPlanBinding, .receiptPlanMismatch: return "That nightly result no longer matches its saved plan."
+        case .invalidReceiptSource: return "That nightly result needs its saved night identity."
+        case .sharedNightPlanFrozen: return "That shared plan has already begun and will stay as it was."
+        case .sharedNightPlanCancelled: return "That shared night is no longer available and will not be sent."
+        case .receiptActualStartRequired: return "That factual nightly result needs its recorded start time."
         case .serviceUnavailable: return "Slumber Party is resting offline. Please try again."
         case .internalError: return "Slumber Party could not complete that request."
         }
@@ -810,10 +882,11 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         case .unauthorized: return (false, .authenticate)
         case .linkedAccountRequired: return (false, .linkAccount)
         case .activeMembershipExists, .currentMembershipRequired: return (false, .reconcileMembership)
-        case .inviteMemberConstraint, .activeInviteExists: return (false, .reconcile)
+        case .inviteMemberConstraint, .activeInviteExists, .staleRevision: return (false, .reconcile)
         case .unsupportedSchema: return (false, .fallbackSchema)
         case .lobbyStarted, .hostPermissionRequired: return (false, .reconcile)
         case .serviceUnavailable, .internalError, .snapshotConstructionFailed: return (true, .retry)
+        case .sharedHistoryDeleted, .publicationBeforeAgreement, .agreementTimezoneMismatch: return (false, .reconcile)
         default: return (false, nil)
         }
     }
@@ -821,6 +894,52 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
     private static func canonicalRequestID(_ value: String?) -> String? {
         guard let value, value.range(of: #"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89a-fA-F][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"#, options: .regularExpression) != nil else { return nil }
         return value.lowercased()
+    }
+}
+
+/// A read failure belongs to its section, not the last command or another party.
+struct NightFlockRefreshFailure: Equatable {
+    let detail: String
+    let requestReference: String?
+    let canRetry: Bool
+
+    static func actionTitle(for command: NightFlockV4Command, accepted: Bool) -> String {
+        // A failed follow-up read must not invite repetition of a saved action.
+        if accepted { return "Your change was saved. The latest view couldn’t be loaded." }
+        switch command {
+        case .updatePublicProfile: return "Your Slumber Party profile couldn’t be updated"
+        case .createParty: return "Your Slumber Party couldn’t be created"
+        case .renameParty: return "The party name couldn’t be changed"
+        case .startRound: return "The next round couldn’t be started"
+        case .createInvite, .replaceInvite, .revokeInvite, .retrieveInvite:
+            return "The invitation couldn’t be updated"
+        case .previewInvite: return "The invitation couldn’t be checked"
+        case .redeemInvite: return "You couldn’t join this party yet"
+        case .leaveParty: return "Your request to leave couldn’t be completed"
+        case .deleteParty: return "The party couldn’t be deleted"
+        case .blockMember: return "The member couldn’t be blocked"
+        case .reportMember: return "Your report couldn’t be sent"
+        case .deleteAccount: return "Your account couldn’t be deleted"
+        case .cheerMember, .cheerMembershipMember, .react, .reactMembership:
+            return "Your cheer couldn’t be sent"
+        case .publishActivity, .completeBackfill: return "Your shared moment couldn’t be sent"
+        case .publishStatus, .publishMembershipStatus: return "Your session update couldn’t be shared"
+        case .acknowledgeUpdateCheer: return "App receipt couldn’t be confirmed"
+        case .acknowledgeGrant: return "Your party reward couldn’t be confirmed"
+        }
+    }
+
+    init(remote: NightFlockRemoteError?) {
+        requestReference = NightFlockSupportReference.format(requestID: remote?.requestID)
+        canRetry = remote?.retryable ?? true
+        switch remote?.code {
+        case .invalidRequest, .methodNotAllowed, .unsupportedSchema:
+            detail = "The app and Slumber Party couldn’t complete this request. Trying again may not help."
+        case .none:
+            detail = "The latest update couldn’t be reached. Check your connection and try again."
+        default:
+            detail = remote?.errorDescription ?? "The latest update couldn’t be loaded."
+        }
     }
 }
 

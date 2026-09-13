@@ -17,7 +17,7 @@ final class ActiveRunPresentationTests: XCTestCase {
         )
 
         XCTAssertEqual(presentation.eyebrow, "PHONE AWAY")
-        XCTAssertEqual(presentation.headline, "A little room away from the screen.")
+        XCTAssertEqual(presentation.headline, "Phone Away timer is running.")
         XCTAssertEqual(presentation.transitionCaption, "Ends at \(end.formatted(date: .omitted, time: .shortened))")
         XCTAssertEqual(presentation.returnBarTitle, "Phone Away")
         XCTAssertEqual(
@@ -40,17 +40,17 @@ final class ActiveRunPresentationTests: XCTestCase {
             presentation.exit.cancelTitle,
             presentation.exit.confirmTitle
         ].joined(separator: " ").lowercased()
-        for forbidden in ["bedtime", "sleep time", "morning quiet", "protected-night", "next wind down step"] {
+        for forbidden in ["bedtime", "sleep time", "morning quiet", "protected-night", "next wind down step", "tucked away"] {
             XCTAssertFalse(copy.contains(forbidden), "Unexpected Phone Break copy: \(forbidden)")
         }
     }
 
     func testPrimaryPhaseMappingsStayDistinct() {
         let cases: [(NightWatchPhase, String, String)] = [
-            (.windDown, "PHONE-FREE WIND-DOWN", "Bedtime at"),
-            (.overnight, "SLEEP TIME", "Phone-free morning begins at"),
-            (.morningQuiet, "PHONE-FREE MORNING", "Your phone wakes at"),
-            (.complete, "NIGHT COMPLETE", "Wind Down is complete")
+            (.windDown, "WIND DOWN · EVENING", "Bedtime at"),
+            (.overnight, "WIND DOWN · OVERNIGHT", "Screen-Free Morning begins at"),
+            (.morningQuiet, "SCREEN-FREE MORNING", "Screen-Free Morning ends at"),
+            (.complete, "WIND DOWN TIMER ENDED", "Wind Down timer ended")
         ]
 
         for (phase, eyebrow, captionPrefix) in cases {
@@ -132,12 +132,12 @@ final class ActiveRunPresentationTests: XCTestCase {
     func testShieldingBannerMapsEveryStatusAndRetryOnlyForMonitoringFailure() {
         let states: [(ActiveRunShieldingState, String?, String?)] = [
             (.notRequested, nil, nil),
-            (.scheduled, "Selected apps will be limited until", nil),
-            (.active, "Selected apps are limited until", nil),
-            (.failed(.noSelection), "App protection did not start. Phone Away remains factual; repair protection before another start.", nil),
-            (.failed(.unavailable), "App protection did not stay active. Phone Away remains factual; repair protection before another start.", nil),
-            (.failed(.other), "App protection did not stay active. Phone Away remains factual; repair protection before another start.", nil),
-            (.failed(.monitoring), "App protection did not stay active. Phone Away remains factual; repair protection before another start.", "Try app limits again")
+            (.scheduled, "Selected-app limits are scheduled to end at", nil),
+            (.active, "Selected-app limits are active now and scheduled to end at", nil),
+            (.failed(.noSelection), "Selected-app limits did not start. The Phone Away timer continues; repair protection before another start.", nil),
+            (.failed(.unavailable), "Selected-app limits did not stay active. The Phone Away timer continues; repair protection before another start.", nil),
+            (.failed(.other), "Selected-app limits did not stay active. The Phone Away timer continues; repair protection before another start.", nil),
+            (.failed(.monitoring), "Selected-app limits did not stay active. The Phone Away timer continues; repair protection before another start.", "Try app limits again")
         ]
 
         for (state, message, retryTitle) in states {
@@ -172,8 +172,8 @@ final class ActiveRunPresentationTests: XCTestCase {
         )
         let endTime = end.formatted(date: .omitted, time: .shortened)
 
-        XCTAssertEqual(primary.shieldingBanner?.message, "Selected apps are limited until \(endTime).")
-        XCTAssertEqual(additional.shieldingBanner?.message, "Selected apps are limited until \(endTime).")
+        XCTAssertEqual(primary.shieldingBanner?.message, "Selected-app limits are active now and scheduled to end at \(endTime).")
+        XCTAssertEqual(additional.shieldingBanner?.message, "Selected-app limits are active now and scheduled to end at \(endTime).")
     }
 
     func testExitPresentationMapsPrimaryAndAdditionalActions() {
@@ -185,7 +185,7 @@ final class ActiveRunPresentationTests: XCTestCase {
         ).exit
         XCTAssertEqual(additional.actionTitle, "End Phone Away early")
         XCTAssertEqual(additional.confirmationTitle, "End Phone Away early?")
-        XCTAssertEqual(additional.confirmationBody, "This ends the timer and removes any app limits.")
+        XCTAssertEqual(additional.confirmationBody, "This ends the timer and lifts selected-app limits.")
         XCTAssertEqual(additional.cancelTitle, "Keep Phone Away running")
         XCTAssertEqual(additional.confirmTitle, "End Phone Away")
 
@@ -221,6 +221,36 @@ final class ActiveRunPresentationTests: XCTestCase {
         XCTAssertEqual(windDown.nfcExitActionTitle, "Tap tag to end Wind Down")
         XCTAssertEqual(windDown.emergencyExit.actionTitle, "End Wind Down without the tag")
         XCTAssertTrue(windDown.emergencyExit.confirmationBody.contains("without the registered tag"))
+    }
+
+    func testTerminalCopyIsRoleAwareAndLimitedToTimerFacts() {
+        let windDown = RunTerminalPresentation(
+            role: .primarySleepBookend,
+            completedSuccessfully: true,
+            elapsedSeconds: 8.5 * 60 * 60
+        )
+        let phoneAway = RunTerminalPresentation(
+            role: .additionalQuiet,
+            completedSuccessfully: false,
+            elapsedSeconds: 12 * 60
+        )
+
+        XCTAssertEqual(windDown.eyebrow, "WIND DOWN TIMER ENDED")
+        XCTAssertEqual(windDown.timerSummary, "8h 30m on the Wind Down timer.")
+        XCTAssertEqual(phoneAway.eyebrow, "PHONE AWAY TIME SAVED")
+        XCTAssertEqual(phoneAway.timerSummary, "12 min on the Phone Away timer.")
+
+        let copy = [
+            windDown.headline,
+            windDown.timerSummary,
+            windDown.accessibilityLabel,
+            phoneAway.headline,
+            phoneAway.timerSummary,
+            phoneAway.accessibilityLabel
+        ].joined(separator: " ").lowercased()
+        for forbidden in ["tucked", "slept", "sleep", "screen-free", "search journal", "sheep"] {
+            XCTAssertFalse(copy.contains(forbidden), "Unexpected terminal claim: \(forbidden)")
+        }
     }
 }
 

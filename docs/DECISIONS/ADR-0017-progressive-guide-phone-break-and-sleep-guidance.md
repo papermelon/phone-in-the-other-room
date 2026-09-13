@@ -17,22 +17,25 @@ chapter or contextual destination and never performs Farm mutations.
 
 **Wind Down** is the capitalized nightly sleep-bookends ritual. **Phone Away** is the capitalized
 secondary start-now, scheduled, or repeating phone-away mode. Its actions are **Put phone away**,
-**Start now**, and **Plan**; the mode name is not forced into awkward verbs. It records factual minutes, can use
-the existing optional shielding, and does not create protected nights, streaks, Slumber Party state,
+**Start now**, and **Plan**; the mode name is not forced into awkward verbs. It records eligible
+elapsed minutes, requires the same Screen Time readiness as other new starts, and does not create
+Wind Down completion, streaks, Slumber Party state,
 sleep claims, automatic wool, or an overnight phase.
 
 Phone Away minutes feed a separate, centrally configured 100-minute meter. Eligible completed runs
 credit at least 15 minutes and at most the configured 100-minute amount per run; practice and early
-endings earn none. After three protected Wind Downs, the next eligible completed Phone Away resolves one deterministic bonus search at 20%, 30%,
+endings earn none. After three qualifying Wind Down searches, the next eligible completed Phone Away resolves one deterministic bonus search at 20%, 30%,
 40%, 50%, then guaranteed after four consecutive clue-only results. Remainders carry, and this
 counter never changes Wind Down odds or starter guarantees. Legacy persisted names and fields decode.
 
 The locally bundled guidance library adds cautious NHLBI-sourced cards about leaving personally
-suitable room after a heavy meal and trying an earlier personal caffeine cutoff. Guidance appears
+suitable room after a heavy meal, trying an earlier personal caffeine cutoff, and optionally
+noticing whether intense exercise feels better earlier in the day. Guidance appears
 beside private routine choices, on Home, and in phase-appropriate moments; the full source library
 is reached through **“About these ideas and sources.”** “Finite guide” is never user-facing copy.
 Routine steps are suggestions with no checkmarks, verification, reward, score, streak, or claim
-that they were completed. This is general sleep-health education, not insomnia treatment; no fixed
+that they were completed. Exercise timing is a qualified personal experiment, not a rule. This is
+general sleep-health education, not insomnia treatment; no fixed
 universal cutoff, score, reward, or treatment claim is shipped, and this ADR does not claim that
 qualified clinical review has occurred. A later optional seven-night experiment may combine passive
 HealthKit wake-time context with one chosen topic (morning light, late meals, or caffeine timing),
@@ -40,6 +43,15 @@ one end reflection, and no sharing or reward; qualified sleep/CBT-I review is a 
 that future slice.
 
 ## Consequences
+
+### Home refinement accepted 2026-08-27
+
+The founder approved retaining the personal ritual with one prominent Slumber Party bridge on
+Home, and occasional contextual guidance with dismissal backed by a browsable library. This
+replaces a permanent explanatory Home card as the intended presentation. Implementation remains
+pending; see `docs/plans/home-phone-away-and-guidance-review.md` for the Phone Away protection
+repair, current-session Purpose refresh fix and proposed Home/Active hierarchy changes. Approval
+of this direction does not establish a family account model or approve every visual proposal.
 
 The app teaches the interface near the moment it matters without turning first launch into a tour of
 every screen or adding tutorial cards that look like permanent features. Phone Away remains legible

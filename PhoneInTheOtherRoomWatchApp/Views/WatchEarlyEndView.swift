@@ -9,8 +9,8 @@ struct WatchEarlyEndView: View {
                 HStack(spacing: 4) {
                     WatchOllieIconView(mood: .happy, size: usesCompactLayout ? 56 : 82)
                     VStack(alignment: .leading, spacing: 5) {
-                        WatchStatusPill(title: "Ended", systemImage: "leaf.fill", tint: WatchTheme.mist)
-                        Text("Ollie kept your spot warm")
+                        WatchStatusPill(title: "Ended early", systemImage: "timer", tint: WatchTheme.mist)
+                        Text(presentation?.headline ?? "The timer ended early")
                             .font((usesCompactLayout ? Font.caption : Font.body).weight(.semibold))
                             .foregroundStyle(WatchTheme.cream)
                             .lineLimit(3)
@@ -32,9 +32,12 @@ struct WatchEarlyEndView: View {
     }
 
     private var summary: String {
-        guard let run = viewModel.run else { return "Tonight can be a fresh start." }
-        let minutes = run.isNightWatch ? run.creditedQuietMinutes : Int(run.actualDurationSeconds / 60)
-        return minutes > 1 ? "\(minutes) quiet minutes are recorded." : "Every tuck-in is practice."
+        presentation?.timerSummary ?? "The elapsed timer record is on iPhone."
+    }
+
+    private var presentation: RunTerminalPresentation? {
+        guard let run = viewModel.run else { return nil }
+        return RunTerminalPresentation(run: run)
     }
 }
 

@@ -27,16 +27,16 @@ struct OnboardingReadyStep: View {
         VStack(spacing: AppSpacing.lg) {
             OllieRitualView(state: .ready, presentation: .inline)
             onboardingTitle(
-                eyebrow: summary.isLaterToday ? "READY FOR TONIGHT" : "YOUR NEXT WIND DOWN",
-                title: "Your next Wind Down is ready.",
-                detail: "Here is the actual plan saved on this iPhone. You can edit it later in Settings."
+                eyebrow: "REVIEW YOUR PLAN",
+                title: "A little room for your evening.",
+                detail: "Save this plan to see it on Home. You can change it whenever you need."
             )
 
             OnboardingTimeline(draft: draft)
 
             PixelCard {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    summaryRow("Wind Down starts", value: timeLabel(summary.nextWindDownStart))
+                    summaryRow("Planned Wind Down", value: timeLabel(summary.nextWindDownStart))
                     summaryRow("Intended bedtime", value: timeLabel(summary.intendedBedtime))
                     summaryRow(
                         "Phone away overnight",
@@ -69,7 +69,9 @@ struct OnboardingReadyStep: View {
                 }
             }
 
-            Text("When it is time, open Counting Sheep and put your phone away to begin.")
+            Text(summary.appProtectionReady
+                 ? "When it is time, open Counting Sheep to begin. Your plan does not start a session."
+                 : "Before starting a session, allow Screen Time access and choose apps to limit. You can do that from Home.")
                 .font(AppTypography.body.weight(.semibold))
                 .foregroundStyle(AppColors.ink)
                 .multilineTextAlignment(.center)
@@ -84,13 +86,13 @@ struct OnboardingReadyStep: View {
 
     private var handoffMessage: String {
         if showsTourHandoff {
-            return "Next: Home will show your saved plan, followed by a short three-step tour of the real app."
+            return "Go to Home saves your plan. The short Home tour is optional."
         }
-        return "Your saved changes will appear on Home."
+        return "Save changes to update the plan on Home."
     }
 
     private var shieldingSummary: String {
-        summary.appProtectionReady ? "App protection ready" : "App protection needs setup"
+        summary.appProtectionReady ? "Setup ready · session not started" : "Needs setup before starting"
     }
 
     private var reminderSummary: String {
@@ -137,7 +139,7 @@ struct OnboardingReadyStep: View {
             Text(title)
                 .font(AppTypography.body.weight(.semibold))
             if steps.isEmpty {
-                Text("No ideas saved")
+                Text("Leave this open for now")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             } else {

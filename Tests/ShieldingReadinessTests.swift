@@ -10,7 +10,8 @@ final class ShieldingReadinessTests: XCTestCase {
     }
     func testReadyExplainsSelectedApps() {
         XCTAssertEqual(ShieldingReadiness.ready.title, "App protection is ready")
-        XCTAssertTrue(ShieldingReadiness.ready.detail.contains("chosen apps and categories"))
+        XCTAssertTrue(ShieldingReadiness.ready.detail.contains("selected apps and categories"))
+        XCTAssertTrue(ShieldingReadiness.ready.detail.contains("including overnight"))
     }
 
     func testMissingShieldingIntentDefaultsOnButExplicitFalseStaysOff() {
@@ -27,6 +28,15 @@ final class ShieldingReadinessTests: XCTestCase {
     func testDeniedRequiresRepairInsteadOfFallback() {
         XCTAssertFalse(ShieldingReadiness.denied.canStartProtectedSession)
         XCTAssertFalse(ScreenTimeProtectionStartPolicy.canStart(.denied))
+    }
+
+    func testReadinessStatesUseSpecificTruthfulTitles() {
+        XCTAssertEqual(ShieldingReadiness.authorizationRequired.title, "Allow Screen Time access")
+        XCTAssertEqual(ShieldingReadiness.noSelection.title, "Choose apps or categories")
+        XCTAssertEqual(ShieldingReadiness.runtimeFailure.title, "Repair app protection")
+        XCTAssertTrue(ShieldingReadiness.runtimeFailure.detail.contains("timer"))
+        XCTAssertTrue(ShieldingReadiness.runtimeFailure.detail.contains("does not claim"))
+        XCTAssertFalse(ShieldingReadiness.runtimeFailure.detail.contains("remains factual"))
     }
 
     func testEveryUnavailableOrRuntimeStateBlocksNewProtectedStarts() {
@@ -52,12 +62,12 @@ final class ShieldingReadinessTests: XCTestCase {
                 readiness: .noSelection,
                 selectionSummary: "None selected"
             ),
-            .repair(title: "Choose apps to pause", detail: ShieldingReadiness.noSelection.detail)
+            .repair(title: ShieldingReadiness.noSelection.title, detail: ShieldingReadiness.noSelection.detail)
         )
         for readiness in [ShieldingReadiness.authorizationRequired, .denied, .revoked, .unavailable, .runtimeFailure] {
             XCTAssertEqual(
                 HomeProtectionStartPresentation.resolve(readiness: readiness, selectionSummary: "2 apps"),
-                .repair(title: "Set up app protection", detail: readiness.detail)
+                .repair(title: readiness.title, detail: readiness.detail)
             )
         }
     }
@@ -108,6 +118,40 @@ final class ShieldingReadinessTests: XCTestCase {
         XCTAssertEqual(QuietPurposeCueState.load(from: defaults), cue)
         QuietPurposeCueState.clear(occurrenceID: occurrence, revision: 3, epoch: 7, from: defaults)
         XCTAssertNil(QuietPurposeCueState.load(from: defaults))
+    }
+
+    func testPurposeCueLoadRequiresTheCurrentRegistryIdentity() {
+        let suiteName = "ShieldingReadinessTests.identity.\(UUID().uuidString)"
+        guard let defaults = UserDefaults(suiteName: suiteName) else { return XCTFail("Expected defaults suite") }
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let occurrence = UUID()
+        let cue = QuietPurposeCueState(occurrenceID: occurrence, revision: 4, epoch: 9, cue: .read)
+        QuietPurposeCueState.save(cue, to: defaults)
+
+        XCTAssertEqual(
+            QuietPurposeCueState.load(
+                matching: occurrence,
+                revision: 4,
+                epoch: 9,
+                from: defaults
+            ),
+            cue
+        )
+        XCTAssertNil(
+            QuietPurposeCueState.load(
+                matching: occurrence,
+                revision: 5,
+                epoch: 9,
+                from: defaults
+            )
+        )
+    }
+
+    func testPurposeCueHasShortActiveSessionLabels() {
+        XCTAssertEqual(QuietPurposeCue.prepareForSleep.appFacingTitle, "Rest")
+        XCTAssertEqual(QuietPurposeCue.read.appFacingTitle, "Reading")
+        XCTAssertEqual(QuietPurposeCue.focusOnWork.appFacingTitle, "Work")
+        XCTAssertEqual(QuietPurposeCue.somethingOffline.appFacingTitle, "Time offline")
     }
 
     func testRunRequestIsTheShieldingPolicyNotMutableFutureIntent() {

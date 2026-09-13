@@ -7,6 +7,7 @@ struct NightsSevenDaySection: View {
     private var summary: NightsHistoryRange {
         NightsHistoryAggregator.weekSummary(
             from: viewModel.nightWatchRecords,
+            morningOccurrences: viewModel.screenFreeMorningOccurrences,
             endingAt: now
         )
     }
@@ -28,7 +29,10 @@ struct NightsWeekBoard: View {
                     Label("THIS WEEK", systemImage: "calendar")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.grass)
-                    Text("\(summary.protectedNightCount) of 7 protected · \(summary.recordedQuietMinutes) min recorded quiet")
+                    Text("\(summary.completedWindDownCount) of 7 Wind Downs · \(summary.windDownMinutes) min before bed")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                    Text("Screen-Free Morning \(summary.screenFreeMorningMinutes) min · Phone Away \(summary.phoneAwayMinutes) min")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                 }
@@ -70,10 +74,15 @@ struct NightsWeekBoard: View {
     }
 
     private var legend: some View {
-        HStack(spacing: AppSpacing.sm) {
-            legendItem("Wind Down", systemImage: "shield.fill", color: AppColors.grass)
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: AppSpacing.xxl * 3), alignment: .leading)],
+            alignment: .leading,
+            spacing: AppSpacing.xs
+        ) {
+            legendItem("Wind Down", systemImage: "checkmark.circle.fill", color: AppColors.grass)
+            legendItem("Screen-Free Morning", systemImage: "sun.max.fill", color: AppColors.amber)
             legendItem("Ended early", systemImage: "moon.stars.fill", color: AppColors.warning)
-            legendItem("One-time", systemImage: "sparkles", color: AppColors.lavender)
+            legendItem("Phone Away", systemImage: "sparkles", color: AppColors.lavender)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -136,9 +145,10 @@ private struct NightsWeekDayCell: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.65)
 
-            NightsMiniBookendRail(
-                windDownMinutes: day.protectedWindDownMinutes,
-                morningMinutes: day.protectedMorningQuietMinutes
+            NightsMiniSourceRail(
+                windDownMinutes: day.windDownMinutes,
+                morningMinutes: day.screenFreeMorningMinutes,
+                phoneAwayMinutes: day.phoneAwayMinutes
             )
         }
         .padding(.horizontal, AppSpacing.xxs)
@@ -147,41 +157,40 @@ private struct NightsWeekDayCell: View {
         .frame(minHeight: AppSpacing.xxl * 3)
         .background(AppColors.surfaceMuted.opacity(0.48), in: RoundedRectangle(cornerRadius: AppRadius.sm))
         .overlay(alignment: .topTrailing) {
-            if day.additionalCount > 0, day.primaryOutcome != nil {
-                Text("+\(day.additionalCount)")
+            if day.totalOccurrenceCount > 1 {
+                Text("\(day.totalOccurrenceCount)×")
                     .font(AppTypography.monoCaption)
-                    .foregroundStyle(AppColors.lavender)
+                    .foregroundStyle(AppColors.muted)
                     .padding(AppSpacing.xxs)
             }
         }
     }
 
     private var statusMarks: some View {
-        HStack(spacing: AppSpacing.xxs) {
-            switch day.primaryOutcome {
-            case .protected:
-                Image(systemName: "shield.fill")
-                    .foregroundStyle(AppColors.grass)
-                if day.earlyEndedPrimaryCount > 0 {
-                    Image(systemName: "moon.stars.fill")
-                        .font(AppTypography.monoCaption)
-                        .foregroundStyle(AppColors.warning)
-                }
-            case .endedEarly:
-                Image(systemName: "moon.stars.fill")
-                    .foregroundStyle(AppColors.warning)
-            case nil:
-                if day.additionalCount > 0 {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(AppColors.lavender)
-                } else {
-                    Image(systemName: "minus")
-                        .foregroundStyle(AppColors.muted)
-                }
-            }
-        }
+        Image(systemName: statusSystemImage)
+            .foregroundStyle(statusColor)
         .font(AppTypography.headline)
         .accessibilityHidden(true)
+    }
+
+    private var statusSystemImage: String {
+        switch day.primaryOutcome {
+        case .completed: return "checkmark.circle.fill"
+        case .endedEarly: return "moon.stars.fill"
+        case nil:
+            if day.screenFreeMorningCount > 0 { return "sun.max.fill" }
+            return day.additionalCount > 0 ? "sparkles" : "minus"
+        }
+    }
+
+    private var statusColor: Color {
+        switch day.primaryOutcome {
+        case .completed: return AppColors.grass
+        case .endedEarly: return AppColors.warning
+        case nil:
+            if day.screenFreeMorningCount > 0 { return AppColors.amber }
+            return day.additionalCount > 0 ? AppColors.lavender : AppColors.muted
+        }
     }
 
     private var weekdayLabel: String {
@@ -193,18 +202,21 @@ private struct NightsWeekDayCell: View {
 
     private var valueLabel: String {
         switch day.primaryOutcome {
-        case .protected: return "\(day.protectedQuietMinutes)m"
+        case .completed: return "\(day.windDownMinutes)m"
         case .endedEarly: return "Early"
         case nil:
-            return day.additionalCount > 0 ? "\(day.additionalQuietMinutes)m" : "—"
+            if day.screenFreeMorningCount > 0 { return "\(day.screenFreeMorningMinutes)m" }
+            return day.additionalCount > 0 ? "\(day.phoneAwayMinutes)m" : "—"
         }
     }
 
     private var valueColor: Color {
         switch day.primaryOutcome {
-        case .protected: return AppColors.grass
+        case .completed: return AppColors.grass
         case .endedEarly: return AppColors.warning
-        case nil: return day.additionalCount > 0 ? AppColors.lavender : AppColors.muted
+        case nil:
+            if day.screenFreeMorningCount > 0 { return AppColors.amber }
+            return day.additionalCount > 0 ? AppColors.lavender : AppColors.muted
         }
     }
 
@@ -212,47 +224,48 @@ private struct NightsWeekDayCell: View {
         guard day.hasRecords else { return "No recorded quiet" }
         var parts: [String] = []
         switch day.primaryOutcome {
-        case .protected:
-            parts.append("Wind Down completed, \(day.protectedQuietMinutes) quiet minutes")
+        case .completed:
+            parts.append("Wind Down completed, \(day.windDownMinutes) minutes before bed")
         case .endedEarly:
             parts.append("\(day.earlyEndedPrimaryCount) early-ended Wind Down\(day.earlyEndedPrimaryCount == 1 ? "" : "s")")
         case nil:
             break
         }
-        if day.primaryOutcome == .protected, day.earlyEndedPrimaryCount > 0 {
+        if day.primaryOutcome == .completed, day.earlyEndedPrimaryCount > 0 {
             parts.append("\(day.earlyEndedPrimaryCount) other usual Wind Down attempt\(day.earlyEndedPrimaryCount == 1 ? "" : "s") ended early")
         }
+        if day.screenFreeMorningCount > 0 {
+            parts.append("\(day.screenFreeMorningCount) Screen-Free Morning record\(day.screenFreeMorningCount == 1 ? "" : "s"), \(day.screenFreeMorningMinutes) eligible elapsed minutes")
+        }
         if day.additionalCount > 0 {
-            parts.append("\(day.additionalCount) Phone Away period\(day.additionalCount == 1 ? "" : "s"), \(day.additionalQuietMinutes) minutes")
+            parts.append("\(day.additionalCount) Phone Away period\(day.additionalCount == 1 ? "" : "s"), \(day.phoneAwayMinutes) minutes")
+        }
+        if day.legacyMorningQuietMinutes > 0 {
+            parts.append("earlier app record contains \(day.legacyMorningQuietMinutes) stored after-waking minutes kept separate")
         }
         return parts.joined(separator: ", ")
     }
 }
 
-private struct NightsMiniBookendRail: View {
+private struct NightsMiniSourceRail: View {
     let windDownMinutes: Int
     let morningMinutes: Int
-
-    private var total: Int {
-        windDownMinutes + morningMinutes
-    }
+    let phoneAwayMinutes: Int
 
     var body: some View {
-        GeometryReader { proxy in
-            let availableWidth = proxy.size.width
-            let windDownWidth = total > 0
-                ? availableWidth * CGFloat(windDownMinutes) / CGFloat(total)
-                : 0
-            HStack(spacing: AppSpacing.xxs) {
-                Capsule()
-                    .fill(total > 0 ? AppColors.grass : AppColors.muted.opacity(0.25))
-                    .frame(width: max(0, windDownWidth - AppSpacing.xxs / 2))
-                Capsule()
-                    .fill(total > 0 ? AppColors.grassLight : AppColors.muted.opacity(0.25))
-            }
+        HStack(spacing: AppSpacing.xxs) {
+            sourceMark(color: AppColors.grass, isPresent: windDownMinutes > 0)
+            sourceMark(color: AppColors.amber, isPresent: morningMinutes > 0)
+            sourceMark(color: AppColors.lavender, isPresent: phoneAwayMinutes > 0)
         }
         .frame(height: AppSpacing.xxs)
         .accessibilityHidden(true)
+    }
+
+    private func sourceMark(color: Color, isPresent: Bool) -> some View {
+        Capsule()
+            .fill(isPresent ? color : AppColors.muted.opacity(0.2))
+            .frame(maxWidth: .infinity)
     }
 }
 
@@ -319,19 +332,24 @@ private enum NightsWeekPreviewData {
         case 1:
             return summary(day: day, outcome: .endedEarly, primary: 1, early: 1)
         case 2:
-            return summary(day: day, outcome: .protected, primary: 1, windDown: 45, morning: 30)
+            return summary(day: day, outcome: .completed, primary: 1, windDown: 45, morning: 30)
         case 4:
             return summary(day: day, additional: 2, additionalMinutes: 29)
         case 5:
-            return summary(day: day, outcome: .protected, primary: 1, windDown: 60, morning: 45, additional: 1, additionalMinutes: 15)
+            return summary(day: day, outcome: .completed, primary: 1, windDown: 60, morning: 45, additional: 1, additionalMinutes: 15)
         default:
             return summary(day: day)
         }
     }
     static let summary = NightsHistoryRange(
         days: days,
-        protectedNightCount: days.reduce(0) { $0 + $1.protectedNightCount },
-        recordedQuietMinutes: days.reduce(0) { $0 + $1.recordedQuietMinutes },
+        completedWindDownCount: days.reduce(0) { $0 + $1.completedWindDownCount },
+        windDownMinutes: days.reduce(0) { $0 + $1.windDownMinutes },
+        screenFreeMorningCount: days.reduce(0) { $0 + $1.screenFreeMorningCount },
+        completedScreenFreeMorningCount: days.reduce(0) { $0 + $1.completedScreenFreeMorningCount },
+        screenFreeMorningMinutes: days.reduce(0) { $0 + $1.screenFreeMorningMinutes },
+        phoneAwayMinutes: days.reduce(0) { $0 + $1.phoneAwayMinutes },
+        legacyMorningQuietMinutes: days.reduce(0) { $0 + $1.legacyMorningQuietMinutes },
         totalOccurrenceCount: days.reduce(0) { $0 + $1.totalOccurrenceCount }
     )
 
@@ -349,15 +367,19 @@ private enum NightsWeekPreviewData {
             day: day,
             primaryOutcome: outcome,
             primaryAttemptCount: primary,
-            protectedNightCount: outcome == .protected ? 1 : 0,
-            protectedWindDownMinutes: windDown,
-            protectedMorningQuietMinutes: morning,
-            primaryQuietMinutes: windDown + morning,
+            completedWindDownCount: outcome == .completed ? 1 : 0,
+            windDownMinutes: windDown,
             earlyEndedPrimaryCount: early,
+            screenFreeMorningCount: morning > 0 ? 1 : 0,
+            completedScreenFreeMorningCount: morning > 0 ? 1 : 0,
+            skippedScreenFreeMorningCount: 0,
+            screenFreeMorningMinutes: morning,
+            legacyMorningQuietMinutes: 0,
+            legacyMorningRecordCount: 0,
             additionalCount: additional,
-            additionalQuietMinutes: additionalMinutes,
-            recordedQuietMinutes: windDown + morning + additionalMinutes,
+            phoneAwayMinutes: additionalMinutes,
             primaryRecordIDs: [],
+            screenFreeMorningOccurrenceIDs: [],
             additionalRecordIDs: []
         )
     }

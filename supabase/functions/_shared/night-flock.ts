@@ -1,3 +1,6 @@
+import { normalizeActivityTimestamp } from "./night-flock-activity-wire.ts";
+import { normalizeSharedHabitsLocalDate } from "./night-flock-shared-habits-wire.ts";
+
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const idempotencyPattern = /^[0-9a-f]{64}$/;
 
@@ -40,6 +43,11 @@ export type NightFlockCommandPayload = Record<string, unknown> & {
 };
 
 const v4CommandFields: Record<string, string[]> = {
+  setCampfireSharing: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","expectedRevision","consentVersion","enabled","idempotencyKey"],
+  publishCampfireSession: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","kind","activity","startedAt","observedAt","expiresAt","ended","revision","idempotencyKey"],
+  movePastureEntity: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","entityID","expectedRevision","x","y","idempotencyKey"],
+  contributePastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","sheepID","consentVersion","idempotencyKey"],
+  recallPastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","visitID","idempotencyKey"],
   createParty: ["schemaVersion", "command", "name", "timeZoneIdentifier", "idempotencyKey"],
   renameParty: ["schemaVersion", "command", "partyID", "name", "idempotencyKey"],
   startRound: ["schemaVersion", "command", "partyID", "timeZoneIdentifier", "idempotencyKey"],
@@ -55,16 +63,24 @@ const v4CommandFields: Record<string, string[]> = {
   reportMember: ["schemaVersion", "command", "partyID", "memberID", "reason", "idempotencyKey"],
   deleteAccount: ["schemaVersion", "command", "idempotencyKey"],
   updatePublicProfile: [
-    "schemaVersion", "command", "expectedRevision", "displayName", "nameSelectionKind", "skinToneID", "hairStyleID", "shepherdOutfitID", "shepherdAccessoryID", "ollieOrnamentID", "featuredSheepDefinitionID", "pastureThemeID", "idempotencyKey",
+    "schemaVersion", "command", "expectedRevision", "displayName", "nameSelectionKind", "skinToneID", "hairStyleID", "shepherdOutfitID", "shepherdAccessoryID", "ollieOrnamentID", "featuredSheepDefinitionID", "pastureThemeID", "headShapeID", "idempotencyKey",
   ],
   publishActivity: [
-    "schemaVersion", "command", "sourceEventID", "kind", "outcome", "startedAt", "endedAt", "windDownMinutes", "phoneAwayMinutes", "statusRevision", "idempotencyKey",
+    "schemaVersion", "command", "sourceEventID", "kind", "outcome", "startedAt", "endedAt", "windDownMinutes", "phoneAwayMinutes", "statusRevision", "sharingScope", "idempotencyKey",
   ],
   completeBackfill: ["schemaVersion", "command", "partyID", "roundID", "cursor", "idempotencyKey"],
-  publishStatus: ["schemaVersion", "command", "sourceEventID", "status", "revision", "observedAt", "idempotencyKey"],
-  react: ["schemaVersion", "command", "partyID", "activityID", "cheer", "idempotencyKey"],
-  cheerMember: ["schemaVersion", "command", "partyID", "memberID", "cheer", "idempotencyKey"],
+  publishStatus: ["schemaVersion", "command", "sourceEventID", "status", "revision", "observedAt", "sharingScope", "idempotencyKey"],
+  react: ["schemaVersion", "command", "partyID", "activityID", "cheer", "sharingScope", "idempotencyKey"],
+  cheerMember: ["schemaVersion", "command", "partyID", "memberID", "cheer", "statusID", "idempotencyKey"],
+  acknowledgeUpdateCheer: ["schemaVersion", "command", "partyID", "reactionID", "idempotencyKey"],
   acknowledgeGrant: ["schemaVersion", "command", "grantID", "idempotencyKey"],
+  acceptSharedHabitsAgreement: ["schemaVersion", "command", "partyID", "agreementVersion", "timeZoneIdentifier", "idempotencyKey"],
+  publishSharedHabit: ["schemaVersion", "command", "partyID", "agreementID", "memberEpochID", "sourceID", "revision", "kind", "localDate", "timeZoneIdentifier", "minutes", "outcome", "protectionMinutes", "evidence", "idempotencyKey"],
+  deleteSharedHabitHistory: ["schemaVersion", "command", "partyID", "sourceID", "allSources", "idempotencyKey"],
+  migrateSharedHabits: ["schemaVersion", "command", "partyID", "agreementID", "idempotencyKey"],
+  publishSharedNightPlan: ["schemaVersion", "command", "partyID", "planID", "memberEpochID", "agreementID", "revision", "nightEndingDate", "timeZoneIdentifier", "plannedWindDownStart", "intendedBedtime", "intendedWakeTime", "morningQuietEnd", "beforeBedMinutes", "afterWakingMinutes", "eveningSuggestionIDs", "morningSuggestionIDs", "idempotencyKey"],
+  cancelSharedNightPlan: ["schemaVersion", "command", "partyID", "memberEpochID", "agreementID", "revision", "nightEndingDate", "timeZoneIdentifier", "cancellationAuthority", "idempotencyKey"],
+  publishSharedNightReceipt: ["schemaVersion", "command", "partyID", "receiptID", "memberEpochID", "agreementID", "planID", "planRevision", "sourceID", "revision", "nightEndingDate", "timeZoneIdentifier", "actualStart", "terminalAt", "outcome", "windDownMinutes", "protectionMinutes", "protectionEvidence", "emergencyExitUsed", "idempotencyKey"],
 };
 
 const socialCommandFields: Record<string, string[]> = {
@@ -79,6 +95,7 @@ const socialCommandFields: Record<string, string[]> = {
     "windDownMinutes", "phoneAwayMinutes", "sleepDurationMinutes", "restfulness",
     "idempotencyKey",
   ],
+  acknowledgeUpdateCheer: ["schemaVersion", "command", "partyID", "reactionID", "idempotencyKey"],
   acknowledgeGrant: ["schemaVersion", "command", "grantID", "idempotencyKey"],
 };
 
@@ -101,6 +118,8 @@ export function validateNightFlockCommand(
   const exactFields = body.schemaVersion === 2 && command === "createInvite" &&
       (body.inviteID !== undefined || body.inviteDigest !== undefined)
     ? [...allowedFields, "inviteID", "inviteDigest"]
+    : body.schemaVersion === 4 && command === "updatePublicProfile" && body.avatarID !== undefined
+    ? [...allowedFields, "avatarID"]
     : allowedFields;
   requireExactFields(body, exactFields);
   const idempotencyKey = requireString(body, "idempotencyKey").toLowerCase();
@@ -162,14 +181,14 @@ export function validateNightFlockCommand(
 }
 
 export type NightFlockStateContract = { schemaVersion: 1 | 2 | 3 } | {
-  schemaVersion: 4; scope: "list" | "party"; partyID?: string; cursor?: string;
+  schemaVersion: 4; scope: "list" | "party" | "habits" | "sharedNights"; partyID?: string; cursor?: string;
 };
 
 export function validateNightFlockState(body: Record<string, unknown>): NightFlockStateContract {
   if (body.schemaVersion === 4) {
     requireExactFields(body, ["schemaVersion", "scope", "partyID", "cursor"]);
-    const scope = requireEnum(body, "scope", ["list", "party"]) as "list" | "party";
-    if (scope === "party") requireUUID(body, "partyID");
+    const scope = requireEnum(body, "scope", ["list", "party", "habits", "sharedNights"]) as "list" | "party" | "habits" | "sharedNights";
+    if (scope === "party" || scope === "habits" || scope === "sharedNights") requireUUID(body, "partyID");
     if (scope === "list" && body.partyID !== undefined) throw new Error("Invalid partyID");
     if (body.cursor !== undefined && (typeof body.cursor !== "string" || body.cursor.length < 1 || body.cursor.length > 128)) {
       throw new Error("Invalid cursor");
@@ -184,9 +203,43 @@ export function validateNightFlockState(body: Record<string, unknown>): NightFlo
 }
 
 function validateV4Command(body: Record<string, unknown>, command: string): void {
+  if (["setCampfireSharing", "publishCampfireSession"].includes(command)) {
+    requireUUID(body, "partyID"); requireUUID(body, "memberEpochID");
+    if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
+    if (command === "setCampfireSharing") {
+      if (body.consentVersion !== 1 || typeof body.enabled !== "boolean"
+        || !Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0
+        || Number(body.expectedRevision) > 2147483646) throw new Error("Invalid campfire consent");
+    } else {
+      requireUUID(body, "agreementID"); requireUUID(body, "sourceID");
+      for (const key of ["startedAt", "observedAt", "expiresAt"]) body[key] = normalizeActivityTimestamp(body[key], key);
+      const start = Date.parse(String(body.startedAt)), end = Date.parse(String(body.expiresAt));
+      if (![start, end, Date.parse(String(body.observedAt))].every(Number.isFinite) || !["windDown","phoneAway"].includes(String(body.kind)) || typeof body.ended !== "boolean"
+        || body.revision !== (body.ended ? 2 : 1) || end <= start || end - start > 86400000
+        || Date.parse(String(body.observedAt)) < start) throw new Error("Invalid campfire session");
+      if (body.activity !== undefined && (body.kind !== "phoneAway" || !["phoneAway","reading","studying","making","chores","resting"].includes(String(body.activity)))) throw new Error("Invalid campfire activity");
+    }
+    return;
+  }
+  if (["movePastureEntity", "contributePastureSheep", "recallPastureSheep"].includes(command)) {
+    requireUUID(body, "partyID"); requireUUID(body, "memberEpochID");
+    if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
+    if (command === "movePastureEntity") {
+      const id = requireString(body, "entityID");
+      if (!/^(member|visitor|lantern)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error("Invalid entityID");
+      if (!Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0 || Number(body.expectedRevision) > 2147483646) throw new Error("Invalid expectedRevision");
+      const x = body.x, y = body.y;
+      if (typeof x !== "number" || typeof y !== "number" || !Number.isFinite(x) || !Number.isFinite(y)
+        || x < 0.08 || x > 0.92 || y < 0.43 || y > 0.89 || (x < 0.28 && y > 0.80)) throw new Error("Invalid pasture anchor");
+    } else if (command === "contributePastureSheep") {
+      requireUUID(body, "sheepID"); if (body.consentVersion !== 1) throw new Error("Invalid consentVersion");
+    } else requireUUID(body, "visitID");
+    return;
+  }
   const partyCommands = new Set([
     "renameParty", "startRound", "createInvite", "replaceInvite", "revokeInvite", "retrieveInvite",
     "leaveParty", "deleteParty", "completeBackfill", "react", "blockMember", "reportMember", "cheerMember",
+    "acceptSharedHabitsAgreement", "publishSharedHabit", "deleteSharedHabitHistory", "migrateSharedHabits", "publishSharedNightPlan", "cancelSharedNightPlan", "publishSharedNightReceipt",
   ]);
   if (partyCommands.has(command)) requireUUID(body, "partyID");
   switch (command) {
@@ -202,37 +255,131 @@ function validateV4Command(body: Record<string, unknown>, command: string): void
     case "redeemInvite":
       if (!/^[A-HJ-NP-Z2-9]{12}$/.test(requireString(body, "inviteCode").toUpperCase())) throw new Error("Invalid inviteCode");
       body.inviteCode = requireString(body, "inviteCode").toUpperCase();
+      if ((body.sharedHabitsAgreementVersion === undefined) !== (body.sharedHabitsAgreementID === undefined) || (body.sharedHabitsAgreementVersion === undefined) !== (body.sharedHabitsTimeZoneIdentifier === undefined)) throw new Error("Invalid shared habits agreement");
+      if (body.sharedHabitsAgreementVersion !== undefined) { if (body.sharedHabitsAgreementVersion !== 1) throw new Error("Unsupported shared habits agreement"); requireUUID(body, "sharedHabitsAgreementID"); if (!isTimeZoneIdentifier(requireString(body, "sharedHabitsTimeZoneIdentifier"))) throw new Error("Invalid shared habits agreement"); }
       break;
     case "updatePublicProfile":
       if (typeof body.expectedRevision !== "number" || !Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0) throw new Error("Invalid expectedRevision");
       validateDisplayName(body);
       requireEnum(body, "nameSelectionKind", ["initial", "migration", "change"]);
       validateFlatPresentation(body);
+      if (body.avatarID !== undefined) validateAvatarID(body);
+      if (body.headShapeID !== undefined) requireEnum(body, "headShapeID", ["pear", "round", "boxy", "triangular"]);
       break;
     case "publishActivity":
+      for (const field of ["startedAt", "endedAt"]) body[field] = normalizeActivityTimestamp(body[field], field);
       requireUUID(body, "sourceEventID");
       requireEnum(body, "kind", ["windDown", "phoneAway"]);
       requireEnum(body,"outcome",["completed","partlyCompleted"]); for(const field of ["startedAt","endedAt"]){if(typeof body[field]!=="string"||Number.isNaN(Date.parse(body[field])))throw new Error(`Invalid ${field}`);} if(Date.parse(body.endedAt as string)<Date.parse(body.startedAt as string))throw new Error("Invalid activity interval"); for(const field of ["windDownMinutes","phoneAwayMinutes","statusRevision"]){if(typeof body[field]!=="number"||!Number.isSafeInteger(body[field])||(body[field] as number)<0)throw new Error(`Invalid ${field}`);} if((body.windDownMinutes as number)>180||(body.phoneAwayMinutes as number)>240)throw new Error("Values outside bounds");
+      validateMembershipSharingScope(body);
       break;
-    case "publishStatus": requireUUID(body,"sourceEventID"); requireEnum(body,"status",["windDownStarting","phoneAwayActive","windDownCompleted","phoneAwayCompleted"]); if(typeof body.revision!=="number"||!Number.isSafeInteger(body.revision)||body.revision<0)throw new Error("Invalid revision"); if(typeof body.observedAt!=="string"||Number.isNaN(Date.parse(body.observedAt)))throw new Error("Invalid observedAt"); break;
+    case "publishStatus": body.observedAt = normalizeActivityTimestamp(body.observedAt, "observedAt"); requireUUID(body,"sourceEventID"); requireEnum(body,"status",["windDownStarting","phoneAwayActive","windDownCompleted","phoneAwayCompleted"]); if(typeof body.revision!=="number"||!Number.isSafeInteger(body.revision)||body.revision<0)throw new Error("Invalid revision"); if(typeof body.observedAt!=="string"||Number.isNaN(Date.parse(body.observedAt)))throw new Error("Invalid observedAt"); validateMembershipSharingScope(body); break;
     case "completeBackfill":
       requireUUID(body, "roundID");
       requireBoundedText(body, "cursor", 1, 128);
       break;
     case "react":
-      requireUUID(body, "activityID"); requireEnum(body, "cheer", ["warmWave", "moonGlow", "pawPrint"]);
+      requireUUID(body, "activityID"); requireEnum(body, "cheer", ["warmWave", "moonGlow", "pawPrint"]); validateMembershipSharingScope(body);
       break;
     case "blockMember": requireUUID(body, "memberID"); break;
     case "reportMember": requireUUID(body, "memberID"); requireEnum(body, "reason", ["unwantedContact", "harmfulConduct", "impersonation", "otherSafetyConcern"]); break;
-    case "cheerMember": requireUUID(body, "memberID"); requireEnum(body, "cheer", ["warmWave", "moonGlow", "pawPrint"]); break;
+    case "acknowledgeUpdateCheer": requireUUID(body, "partyID"); requireUUID(body, "reactionID"); break;
+    case "cheerMember": requireUUID(body, "memberID"); requireEnum(body, "cheer", ["warmWave", "moonGlow", "pawPrint"]); if(body.statusID!==undefined) requireUUID(body,"statusID"); break;
     case "acknowledgeGrant": requireUUID(body, "grantID"); break;
+    case "acceptSharedHabitsAgreement":
+      if ((body.agreementVersion !== 1 && body.agreementVersion !== 2) || !isTimeZoneIdentifier(requireString(body, "timeZoneIdentifier"))) throw new Error("Invalid shared habits agreement");
+      break;
+    case "publishSharedHabit":
+      requireUUID(body, "agreementID"); requireUUID(body, "memberEpochID"); requireUUID(body, "sourceID");
+      if (typeof body.revision !== "number" || !Number.isSafeInteger(body.revision) || body.revision < 0) throw new Error("Invalid revision");
+      requireEnum(body, "kind", ["sleep", "windDown", "phoneAway"]);
+      body.localDate = normalizeSharedHabitsLocalDate(body.localDate);
+      if (!isTimeZoneIdentifier(requireString(body, "timeZoneIdentifier"))) throw new Error("Invalid timeZoneIdentifier");
+      if (typeof body.minutes !== "number" || !Number.isSafeInteger(body.minutes) || body.minutes < 0) throw new Error("Values outside bounds");
+      const maximumMinutes = body.kind === "windDown" ? 180 : 1_500;
+      if (body.minutes > maximumMinutes) throw new Error("Values outside bounds");
+      if (body.outcome !== undefined && body.outcome !== null) requireEnum(body, "outcome", ["completed", "partlyCompleted"]);
+      if (body.protectionMinutes !== undefined && body.protectionMinutes !== null && (typeof body.protectionMinutes !== "number" || !Number.isSafeInteger(body.protectionMinutes) || body.protectionMinutes < 0 || body.protectionMinutes > body.minutes)) throw new Error("Values outside bounds");
+      requireEnum(body, "evidence", ["none", "appRecorded"]);
+      if (body.protectionMinutes !== undefined && body.protectionMinutes !== null && body.evidence !== "appRecorded") throw new Error("Invalid protection evidence");
+      if (body.kind === "sleep" && (body.outcome !== undefined || body.protectionMinutes !== undefined || body.evidence !== "none")) throw new Error("Invalid sleep payload");
+      break;
+    case "deleteSharedHabitHistory":
+      if ((body.sourceID === undefined) === (body.allSources === undefined)) throw new Error("Invalid deletion target");
+      if (body.sourceID !== undefined) requireUUID(body, "sourceID");
+      if (body.allSources !== undefined && body.allSources !== true) throw new Error("Invalid deletion target");
+      break;
+    case "migrateSharedHabits": requireUUID(body, "agreementID"); break;
+    case "publishSharedNightPlan":
+      requireUUID(body, "planID"); requireUUID(body, "memberEpochID"); requireUUID(body, "agreementID");
+      validateSharedNightRevision(body); body.nightEndingDate = normalizeSharedHabitsLocalDate(body.nightEndingDate);
+      validateSharedNightMinutes(body, "beforeBedMinutes"); validateSharedNightMinutes(body, "afterWakingMinutes");
+      validateSharedNightTimes(body, ["plannedWindDownStart", "intendedBedtime", "intendedWakeTime", "morningQuietEnd"]);
+      validatePlanChronology(body);
+      if (!isTimeZoneIdentifier(requireString(body, "timeZoneIdentifier"))) throw new Error("Invalid timeZoneIdentifier");
+      validateSuggestionIDs(body, "eveningSuggestionIDs", 3); validateSuggestionIDs(body, "morningSuggestionIDs", 2);
+      break;
+    case "cancelSharedNightPlan":
+      requireUUID(body, "memberEpochID"); requireUUID(body, "agreementID");
+      validateSharedNightRevision(body); body.nightEndingDate = normalizeSharedHabitsLocalDate(body.nightEndingDate);
+      if (!isTimeZoneIdentifier(requireString(body, "timeZoneIdentifier"))) throw new Error("Invalid timeZoneIdentifier");
+      requireEnum(body, "cancellationAuthority", ["schedule", "privacy"]);
+      break;
+    case "publishSharedNightReceipt":
+      requireUUID(body, "receiptID"); requireUUID(body, "memberEpochID"); requireUUID(body, "agreementID");
+      if ((body.planID === undefined) !== (body.planRevision === undefined)) throw new Error("Invalid plan binding");
+      if (body.planID !== undefined) requireUUID(body, "planID"); requireUUID(body, "sourceID");
+      validateSharedNightRevision(body); if (body.planRevision !== undefined && (!Number.isSafeInteger(body.planRevision) || (body.planRevision as number) < 0)) throw new Error("Invalid planRevision");
+      body.nightEndingDate = normalizeSharedHabitsLocalDate(body.nightEndingDate); if (!isTimeZoneIdentifier(requireString(body, "timeZoneIdentifier"))) throw new Error("Invalid timeZoneIdentifier");
+      validateOptionalTimes(body, ["actualStart", "terminalAt"]); validateReceiptChronology(body); requireEnum(body, "outcome", ["completed", "partlyCompleted", "unknown"]);
+      if ((body.outcome === "completed" || body.outcome === "partlyCompleted") && body.actualStart === undefined) throw new Error("Actual start required");
+      if (body.windDownMinutes !== undefined) validateSharedNightMinutes(body, "windDownMinutes");
+      if (body.protectionMinutes !== undefined) validateSharedNightMinutes(body, "protectionMinutes");
+      requireEnum(body, "protectionEvidence", ["observed", "partial", "unavailable", "failedOpen", "unknown"]);
+      if (body.protectionMinutes !== undefined && body.protectionEvidence !== "observed" && body.protectionEvidence !== "partial") throw new Error("Invalid protection evidence");
+      if (body.emergencyExitUsed !== undefined && typeof body.emergencyExitUsed !== "boolean") throw new Error("Invalid emergencyExitUsed");
+      break;
+  }
+}
+
+function validateSharedNightRevision(body: Record<string, unknown>): void { if (!Number.isSafeInteger(body.revision) || (body.revision as number) < 0) throw new Error("Invalid revision"); }
+function validateSharedNightTimes(body: Record<string, unknown>, keys: string[]): void { for (const key of keys) { const instant = typeof body[key] === "string" ? Date.parse(body[key] as string) : Number.NaN; if (Number.isNaN(instant) || instant % 300_000 !== 0) throw new Error(`Invalid ${key}`); } }
+function validateOptionalTimes(body: Record<string, unknown>, keys: string[]): void { for (const key of keys) if (body[key] !== undefined) { const instant = typeof body[key] === "string" ? Date.parse(body[key] as string) : Number.NaN; if (Number.isNaN(instant) || instant % 300_000 !== 0) throw new Error(`Invalid ${key}`); } }
+function validateSharedNightMinutes(body: Record<string, unknown>, key: string): void { if (!Number.isSafeInteger(body[key]) || (body[key] as number) < 0 || (body[key] as number) > 180) throw new Error("Values outside bounds"); }
+function validatePlanChronology(body: Record<string, unknown>): void {
+  const start = Date.parse(body.plannedWindDownStart as string);
+  const bedtime = Date.parse(body.intendedBedtime as string);
+  const wake = Date.parse(body.intendedWakeTime as string);
+  const quietEnd = Date.parse(body.morningQuietEnd as string);
+  if (!(start <= bedtime && bedtime < wake && wake <= quietEnd)) throw new Error("Invalid plan chronology");
+  if (bedtime - start !== Number(body.beforeBedMinutes) * 60_000 ||
+      quietEnd - wake !== Number(body.afterWakingMinutes) * 60_000) {
+    throw new Error("Plan bookends do not match minutes");
+  }
+}
+function validateReceiptChronology(body: Record<string, unknown>): void {
+  if (body.actualStart === undefined || body.terminalAt === undefined) return;
+  if (Date.parse(body.terminalAt as string) < Date.parse(body.actualStart as string)) {
+    throw new Error("Invalid receipt chronology");
+  }
+}
+function validateSuggestionIDs(body: Record<string, unknown>, key: string, maximum: number): void { const value = body[key]; if (!Array.isArray(value) || value.length > maximum || new Set(value).size !== value.length || !value.every((entry) => typeof entry === "string" && ["read", "shower", "prepareTomorrow", "stretch", "journal", "makeTea", "openCurtains", "breakfast", "morningWalk", "getReady", "brushTeeth", "quietConversation", "makeBed", "brainDump", "sleepwear", "relaxation", "quietMusic", "calmHobby"].includes(entry))) throw new Error(`Invalid ${key}`); }
+
+function validateMembershipSharingScope(body: Record<string, unknown>): void {
+  if (body.sharingScope !== undefined && body.sharingScope !== "membership") {
+    throw new Error("Invalid sharingScope");
   }
 }
 
 function validateDisplayName(body: Record<string, unknown>): void { const value=requireString(body,"displayName").normalize("NFC").trim().replace(/\s+/gu," "); if(Array.from(value).length<2||Array.from(value).length>24||!/^[\p{L}\p{M}\p{N} '’\-‐‑]+$/u.test(value))throw new Error("Invalid displayName"); body.displayName=value; }
 function validateFlatPresentation(p: Record<string,unknown>): void { requireEnum(p,"skinToneID",["porcelain","warm","olive","brown","deep"]); requireEnum(p,"hairStyleID",["cropped","waves","curls","coils","long"]); requireEnum(p,"shepherdOutfitID",["none","shepherd_moss_coat","shepherd_moon_coat","shepherd_field_overalls","shepherd_star_keeper_cloak"]); requireEnum(p,"shepherdAccessoryID",["none","shepherd_wool_hat","shepherd_clover_headscarf","shepherd_moon_beanie"]); requireEnum(p,"ollieOrnamentID",["none","ollie_moss_bandana","ollie_moon_kerchief","ollie_brass_bell","ollie_clover_collar","ollie_sunrise_scarf","ollie_star_keeper_cape"]); requireEnum(p,"featuredSheepDefinitionID",["none","mabel","pippin","bramble","clementine","oat","midnight","juniper","hazel","ramsey","luna","marigold","wisp"]); requireEnum(p,"pastureThemeID",["pasture_meadow","pasture_moonlit","pasture_sunrise"]); }
+function validateAvatarID(body: Record<string, unknown>): void { requireEnum(body, "avatarID", ["shepherd", "ollie", "sheep:mabel", "sheep:pippin", "sheep:bramble", "sheep:clementine", "sheep:oat", "sheep:midnight", "sheep:juniper", "sheep:hazel", "sheep:ramsey", "sheep:luna", "sheep:marigold", "sheep:wisp"]); }
 
-function isTimeZoneIdentifier(value: string): boolean { return /^[A-Za-z0-9_+\-/]{1,64}$/.test(value); }
+function isTimeZoneIdentifier(value: string): boolean {
+  if (!/^[A-Za-z0-9_+\-/]{1,64}$/.test(value)) return false;
+  try { Intl.DateTimeFormat("en-US", { timeZone: value }).format(0); return true; }
+  catch { return false; }
+}
 function requireBoundedText(body: Record<string, unknown>, key: string, minimum: number, maximum: number): string {
   const value = requireString(body, key).trim();
   if (value.length < minimum || value.length > maximum || /[\u0000-\u001f\u007f]/.test(value)) throw new Error(`Invalid ${key}`);

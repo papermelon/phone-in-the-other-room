@@ -16,6 +16,7 @@ struct MonthlyNightsView: View {
     private var monthSummary: NightsHistoryRange {
         NightsHistoryAggregator.monthSummary(
             from: viewModel.nightWatchRecords,
+            morningOccurrences: viewModel.screenFreeMorningOccurrences,
             containing: month,
             calendar: calendar
         )
@@ -87,23 +88,37 @@ struct MonthlyNightsView: View {
 
     private var totalsCard: some View {
         PixelCard {
-            HStack(spacing: 0) {
-                totalMetric(value: "\(monthSummary.protectedNightCount)", label: "protected")
-                Divider()
-                    .frame(height: AppSpacing.xxl + AppSpacing.xs)
-                    .padding(.horizontal, AppSpacing.sm)
-                totalMetric(value: monthSummary.recordedQuietMinutes.formatted(), label: "recorded quiet")
-                Divider()
-                    .frame(height: AppSpacing.xxl + AppSpacing.xs)
-                    .padding(.horizontal, AppSpacing.sm)
-                totalMetric(
-                    value: "\(monthSummary.totalOccurrenceCount)",
-                    label: monthSummary.totalOccurrenceCount == 1 ? "period" : "periods"
-                )
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                LazyVGrid(
+                    columns: [GridItem(.flexible()), GridItem(.flexible())],
+                    spacing: AppSpacing.sm
+                ) {
+                    totalMetric(
+                        value: "\(monthSummary.completedWindDownCount)",
+                        label: "Wind Downs completed"
+                    )
+                    totalMetric(
+                        value: monthSummary.windDownMinutes.formatted(),
+                        label: "minutes before bed"
+                    )
+                    totalMetric(
+                        value: monthSummary.screenFreeMorningMinutes.formatted(),
+                        label: "Screen-Free Morning minutes"
+                    )
+                    totalMetric(
+                        value: monthSummary.phoneAwayMinutes.formatted(),
+                        label: "Phone Away minutes"
+                    )
+                }
+                if monthSummary.legacyMorningQuietMinutes > 0 {
+                    Text("Earlier app records also contain \(monthSummary.legacyMorningQuietMinutes) after-waking minutes. They stay separate from Screen-Free Morning.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
             }
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("\(monthSummary.protectedNightCount) Wind Downs completed, \(monthSummary.recordedQuietMinutes) recorded quiet minutes, \(monthSummary.totalOccurrenceCount) periods")
+            .accessibilityLabel(monthSummaryAccessibilityLabel)
         }
     }
 
@@ -120,10 +135,15 @@ struct MonthlyNightsView: View {
     }
 
     private var legend: some View {
-        HStack(spacing: AppSpacing.sm) {
-            legendItem("Wind Down", systemImage: "shield.fill", color: AppColors.grass)
+        LazyVGrid(
+            columns: [GridItem(.adaptive(minimum: AppSpacing.xxl * 3), alignment: .leading)],
+            alignment: .leading,
+            spacing: AppSpacing.xs
+        ) {
+            legendItem("Wind Down", systemImage: "checkmark.circle.fill", color: AppColors.grass)
+            legendItem("Screen-Free Morning", systemImage: "sun.max.fill", color: AppColors.amber)
             legendItem("Ended early", systemImage: "moon.stars.fill", color: AppColors.warning)
-            legendItem("One-time", systemImage: "sparkles", color: AppColors.lavender)
+            legendItem("Phone Away", systemImage: "sparkles", color: AppColors.lavender)
         }
     }
 
@@ -225,37 +245,37 @@ struct MonthlyNightsView: View {
     }
 
     private func dayMarkers(_ summary: NightsHistoryDay?) -> some View {
-        HStack(spacing: AppSpacing.xxs) {
+        Group {
             if let summary {
-                switch summary.primaryOutcome {
-                case .protected:
-                    Image(systemName: "shield.fill")
-                        .foregroundStyle(AppColors.grass)
-                    if summary.earlyEndedPrimaryCount > 0 {
-                        Image(systemName: "moon.stars.fill")
-                            .foregroundStyle(AppColors.warning)
-                    }
-                case .endedEarly:
-                    Image(systemName: "moon.stars.fill")
-                        .foregroundStyle(AppColors.warning)
-                case nil:
-                    if summary.additionalCount > 0 {
-                        Image(systemName: "sparkles")
-                            .foregroundStyle(AppColors.lavender)
-                    }
-                }
-                if summary.additionalCount > 0, summary.primaryOutcome != nil {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(AppColors.lavender)
-                }
+                Image(systemName: markerSystemImage(summary))
+                    .foregroundStyle(markerColor(summary))
             }
         }
         .font(AppTypography.monoCaption)
         .accessibilityHidden(true)
     }
 
+    private func markerSystemImage(_ summary: NightsHistoryDay) -> String {
+        switch summary.primaryOutcome {
+        case .completed: return "checkmark.circle.fill"
+        case .endedEarly: return "moon.stars.fill"
+        case nil:
+            if summary.screenFreeMorningCount > 0 { return "sun.max.fill" }
+            return "sparkles"
+        }
+    }
+
+    private func markerColor(_ summary: NightsHistoryDay) -> Color {
+        switch summary.primaryOutcome {
+        case .completed: return AppColors.grass
+        case .endedEarly: return AppColors.warning
+        case nil:
+            return summary.screenFreeMorningCount > 0 ? AppColors.amber : AppColors.lavender
+        }
+    }
+
     private var explanation: some View {
-        Text("Tap a recorded day for its periods. Recorded quiet counts overlapping time once.")
+        Text("Tap a day for its separate Wind Down, Screen-Free Morning, and Phone Away records.")
             .font(AppTypography.caption)
             .foregroundStyle(AppColors.muted)
             .padding(.horizontal, AppSpacing.xs)
@@ -322,20 +342,38 @@ struct MonthlyNightsView: View {
         guard let summary else { return "\(date), no recorded quiet" }
         var parts = ["\(date), \(summary.totalOccurrenceCount) period\(summary.totalOccurrenceCount == 1 ? "" : "s")"]
         switch summary.primaryOutcome {
-        case .protected:
-            parts.append("Wind Down completed")
+        case .completed:
+            parts.append("Wind Down completed, \(summary.windDownMinutes) minutes before bed")
         case .endedEarly:
             parts.append("ended early")
         case nil:
             break
         }
-        if summary.primaryOutcome == .protected, summary.earlyEndedPrimaryCount > 0 {
+        if summary.primaryOutcome == .completed, summary.earlyEndedPrimaryCount > 0 {
             parts.append("\(summary.earlyEndedPrimaryCount) other usual Wind Down attempt\(summary.earlyEndedPrimaryCount == 1 ? "" : "s") ended early")
         }
-        if summary.additionalCount > 0 {
-            parts.append("\(summary.additionalCount) one-time")
+        if summary.screenFreeMorningCount > 0 {
+            parts.append("\(summary.screenFreeMorningCount) Screen-Free Morning record\(summary.screenFreeMorningCount == 1 ? "" : "s"), \(summary.screenFreeMorningMinutes) eligible elapsed minutes")
         }
-        parts.append("\(summary.recordedQuietMinutes) recorded quiet minutes")
+        if summary.additionalCount > 0 {
+            parts.append("\(summary.additionalCount) Phone Away period\(summary.additionalCount == 1 ? "" : "s"), \(summary.phoneAwayMinutes) minutes")
+        }
+        if summary.legacyMorningQuietMinutes > 0 {
+            parts.append("earlier app record contains \(summary.legacyMorningQuietMinutes) stored after-waking minutes kept separate")
+        }
+        return parts.joined(separator: ", ")
+    }
+
+    private var monthSummaryAccessibilityLabel: String {
+        var parts = [
+            "\(monthSummary.completedWindDownCount) Wind Downs completed",
+            "\(monthSummary.windDownMinutes) minutes before bed",
+            "\(monthSummary.screenFreeMorningMinutes) Screen-Free Morning minutes",
+            "\(monthSummary.phoneAwayMinutes) Phone Away minutes"
+        ]
+        if monthSummary.legacyMorningQuietMinutes > 0 {
+            parts.append("\(monthSummary.legacyMorningQuietMinutes) earlier after-waking minutes kept separate")
+        }
         return parts.joined(separator: ", ")
     }
 }

@@ -158,6 +158,7 @@ final class LocalResetContractTests: XCTestCase {
             "ollie.phoneBedNFCTags.library",
             "ollie.screenTime.reportPreferences",
             "ollie.nightWatch.history",
+            "ollie.nightWatch.automaticProtectionRepair",
             "ollie.sheepSearch.state",
             "ollie.farm.state",
             "ollie.welcome.rewards",
@@ -167,10 +168,19 @@ final class LocalResetContractTests: XCTestCase {
             "ollie.nightFlock.pendingDestructiveIntent",
             "ollie.nightFlock.pendingAccountDeletionIntent",
             "ollie.nightFlock.acceptedAccountDeletion",
+            "ollie.nightFlock.sharedNightOutbox",
+            "ollie.nightFlock.sharedNightPlanRevisionLedger",
+            "ollie.nightFlock.sharedNightPlanBindingLedger",
+            "ollie.nightFlock.sharedNightPlanPrivacyFences",
+            "ollie.nightFlock.primaryRunSharingDecisions",
+            "ollie.nightFlock.primaryRunSharingRequiredAfter",
+            WindDownGuidanceDismissalStore.key,
+            WindDownGuidanceDisplayStore.key,
             "ollie.windDown.profile",
             AppAppearancePreference.key
         ]
         let requiredAppGroupKeys = [
+            QuietNoteText.storageKey,
             QuietTimeShieldSharedStorage.scheduleKey,
             QuietTimeShieldSharedStorage.statusKey,
             QuietTimeShieldSharedStorage.statusHistoryKey,
@@ -182,8 +192,19 @@ final class LocalResetContractTests: XCTestCase {
         XCTAssertTrue(requiredAppGroupKeys.allSatisfy(CountingSheepOwnedStorage.appGroupKeys.contains))
     }
 
+    func testResetExplicitlyClearsQuietNoteButNotUnrelatedWidgetState() {
+        let unrelatedWidgetKey = "another.widget.note"
+        appGroupDefaults.set("visible on Lock Screen", forKey: QuietNoteText.storageKey)
+        appGroupDefaults.set("keep", forKey: unrelatedWidgetKey)
+
+        CountingSheepOwnedStorage.clearAppGroupDefaults(appGroupDefaults)
+
+        XCTAssertNil(appGroupDefaults.object(forKey: QuietNoteText.storageKey))
+        XCTAssertEqual(appGroupDefaults.string(forKey: unrelatedWidgetKey), "keep")
+    }
+
     func testTransportIdentityIsAuditedButNotProductResetState() {
-        XCTAssertEqual(CountingSheepOwnedStorage.preservedTransportKeys, ["ollie.installationID"])
+        XCTAssertEqual(CountingSheepOwnedStorage.preservedTransportKeys, ["ollie.installationID", "ollie.farm.localStoreID"])
         XCTAssertFalse(CountingSheepOwnedStorage.standardKeys.contains("ollie.installationID"))
         XCTAssertEqual(
             CountingSheepOwnedStorage.dynamicStandardKeyPrefixes,

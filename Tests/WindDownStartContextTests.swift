@@ -79,6 +79,57 @@ final class WindDownStartContextTests: XCTestCase {
         XCTAssertEqual(repeating.kind, .repeatingQuiet)
     }
 
+    func testPhoneAwayPreflightPreservesManualIntentDuringProtectionRepair() {
+        let action = PhoneAwayStartAction.manual(durationMinutes: 30)
+
+        XCTAssertEqual(
+            PhoneAwayStartPolicy.preflight(
+                action: action,
+                isRunning: false,
+                readiness: .noSelection
+            ),
+            .needsProtectionRepair(action, .noSelection)
+        )
+        XCTAssertEqual(
+            PhoneAwayStartPolicy.preflight(
+                action: action,
+                isRunning: false,
+                readiness: .ready
+            ),
+            .ready(action)
+        )
+    }
+
+    func testPhoneAwayPreflightKeepsScheduledIntentSeparateFromManualStart() {
+        let scheduledID = UUID()
+        let action = PhoneAwayStartAction.scheduled(scheduledID)
+
+        XCTAssertEqual(
+            PhoneAwayStartPolicy.preflight(
+                action: action,
+                isRunning: false,
+                readiness: .denied
+            ).action,
+            action
+        )
+        XCTAssertEqual(
+            PhoneAwayStartPolicy.preflight(
+                action: action,
+                isRunning: true,
+                readiness: .ready
+            ),
+            .alreadyRunning
+        )
+    }
+
+    func testPhoneAwayDurationUsesExistingFiveToThirtyMinuteBounds() {
+        XCTAssertEqual(PhoneAwayDurationPolicy.defaultMinutes, 30)
+        XCTAssertEqual(PhoneAwayDurationPolicy.normalized(1), 5)
+        XCTAssertEqual(PhoneAwayDurationPolicy.normalized(30), 30)
+        XCTAssertEqual(PhoneAwayDurationPolicy.normalized(90), 30)
+        XCTAssertEqual(PhoneAwayDurationPolicy.options, [5, 10, 15, 20, 25, 30])
+    }
+
     func testLegacyRunDefaultsToRequestingShielding() throws {
         let run = FocusRun(
             plannedDurationSeconds: 300,

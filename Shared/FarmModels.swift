@@ -17,6 +17,7 @@ struct FlockSheep: Codable, Equatable, Identifiable {
     let rarity: SheepRarity
     var isFavorite: Bool
     var lastShearedProtectedNight: Int?
+    var regrowthSecondsRemaining: TimeInterval?
     var timesSheared: Int
     var status: FlockSheepStatus
     var equippedCosmeticIDs: [String]
@@ -177,11 +178,45 @@ enum ShepherdHairStyle: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum ShepherdHeadShape: String, CaseIterable, Identifiable {
+    case pear, round, boxy, triangular
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+}
+
 struct ShepherdProfile: Codable, Equatable {
     var skinTone: ShepherdSkinTone
     var hairStyle: ShepherdHairStyle
     var outfitItemID: String?
     var accessoryItemID: String?
+    // Preserve future IDs through a save round-trip; render a known shape until supported.
+    var headShapeID: String? = nil
+    var headShape: ShepherdHeadShape {
+        get { headShapeID.flatMap(ShepherdHeadShape.init(rawValue:)) ?? .pear }
+        set { headShapeID = newValue.rawValue }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case skinTone, hairStyle, outfitItemID, accessoryItemID, headShapeID
+    }
+
+    init(skinTone: ShepherdSkinTone, hairStyle: ShepherdHairStyle,
+         outfitItemID: String?, accessoryItemID: String?, headShapeID: String? = nil) {
+        self.skinTone = skinTone
+        self.hairStyle = hairStyle
+        self.outfitItemID = outfitItemID
+        self.accessoryItemID = accessoryItemID
+        self.headShapeID = headShapeID
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        skinTone = try c.decode(ShepherdSkinTone.self, forKey: .skinTone)
+        hairStyle = try c.decode(ShepherdHairStyle.self, forKey: .hairStyle)
+        outfitItemID = try c.decodeIfPresent(String.self, forKey: .outfitItemID)
+        accessoryItemID = try c.decodeIfPresent(String.self, forKey: .accessoryItemID)
+        headShapeID = try c.decodeIfPresent(String.self, forKey: .headShapeID)
+    }
 
     static let defaultProfile = ShepherdProfile(
         skinTone: .warm,
@@ -304,6 +339,7 @@ struct FarmState: Codable, Equatable {
     var equipment: FarmEquipment
     var shepherd: ShepherdProfile
     var transactions: [FarmTransaction]
+    var cumulativeCredit: CumulativeFarmCredit?
     var trackedSheepDefinitionID: String?
 
     static let empty = FarmState(
@@ -328,7 +364,7 @@ struct FarmState: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, sheep, discoveries, barnCapacityLevel, woolBalance, cashBalance
-        case unlockedShopTier
+        case unlockedShopTier, cumulativeCredit
         case ownedShopItemIDs, equipment, shepherd, transactions, trackedSheepDefinitionID
     }
 
@@ -378,6 +414,7 @@ struct FarmState: Codable, Equatable {
             transactions: try container.decodeIfPresent([FarmTransaction].self, forKey: .transactions) ?? [],
             trackedSheepDefinitionID: try container.decodeIfPresent(String.self, forKey: .trackedSheepDefinitionID)
         )
+        cumulativeCredit = try container.decodeIfPresent(CumulativeFarmCredit.self, forKey: .cumulativeCredit)
         if legacyCash > 0,
            !transactions.contains(where: { $0.idempotencyKey == Self.currencyConsolidationKey }) {
             appendTransaction(FarmTransaction(
@@ -396,6 +433,7 @@ struct FarmState: Codable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(Self.currentSchemaVersion, forKey: .schemaVersion)
+        try container.encodeIfPresent(cumulativeCredit, forKey: .cumulativeCredit)
         try container.encode(sheep, forKey: .sheep)
         try container.encode(discoveries, forKey: .discoveries)
         try container.encode(barnCapacityLevel, forKey: .barnCapacityLevel)

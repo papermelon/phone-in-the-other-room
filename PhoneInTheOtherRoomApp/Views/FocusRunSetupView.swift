@@ -8,8 +8,19 @@ struct FocusRunSetupView: View {
     @State private var customPurpose = ""
     @State private var includePurposeInNotifications = false
     @State private var expandedSection: PlanRoutineSection? = .schedule
+    @State private var showStartError = false
+    @State private var habitDraft = WindDownHabitPlan()
+    @State private var hasLoadedDraft = false
+    @State private var habitSaveFailed = false
+    private let initialHabitFocus: WindDownHabitEditFocus?
+
+    init(initialHabitFocus: WindDownHabitEditFocus? = nil) {
+        self.initialHabitFocus = initialHabitFocus
+        _expandedSection = State(initialValue: initialHabitFocus == nil ? .schedule : .routine)
+    }
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(spacing: AppSpacing.lg) {
                 hero
@@ -23,8 +34,11 @@ struct FocusRunSetupView: View {
                         .foregroundStyle(AppColors.muted)
                     }
                 }
+                NavigationLink("What I’m working toward") { RitualPersonalisationView() }
+                    .font(AppTypography.body).frame(minHeight: 44)
                 tonightPlanAccordion
                 privateRoutineAccordion
+                    .id("habit-routine")
                 NavigationLink {
                     SettingsProtectionTagsView()
                         .environmentObject(viewModel)
@@ -52,6 +66,14 @@ struct FocusRunSetupView: View {
             .padding(AppSpacing.md)
             .padding(.bottom, AppSpacing.sm)
         }
+        .onAppear {
+            guard initialHabitFocus != nil else { return }
+            Task { @MainActor in
+                await Task.yield()
+                proxy.scrollTo(initialHabitFocus == .activity ? "habit-routine" : "habit-\(initialHabitFocus?.rawValue ?? "routine")", anchor: .top)
+            }
+        }
+        }
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Wind Down")
         .navigationBarTitleDisplayMode(.inline)
@@ -60,8 +82,16 @@ struct FocusRunSetupView: View {
             setupActionBar
         }
         .onAppear(perform: loadPurpose)
+        .onChange(of: viewModel.habitEditingIdentity) { _, _ in dismiss() }
         .onChange(of: viewModel.isRunning) { _, isRunning in
             if isRunning { dismiss() }
+        }
+        .alert("Wind Down could not start", isPresented: $showStartError) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(viewModel.nightWatchStartStatus.isEmpty
+                ? "Please try again."
+                : viewModel.nightWatchStartStatus)
         }
     }
 
@@ -193,20 +223,27 @@ struct FocusRunSetupView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 setupSectionHeader(
                     title: "Private routine",
-                    detail: "A repeatable sequence of optional ideas around the phone-away ritual.",
+                    detail: "Choose a few things to do after putting your phone away.",
                     systemImage: "book.closed.fill"
                 )
                 WindDownRoutineEditor(
                     eveningSteps: routineBinding(for: .evening),
                     morningSteps: routineBinding(for: .morning),
+                    phonePlacement: habitDraft.phonePlacement,
                     onChange: saveRoutineChanges
                 )
+                Divider()
+                WindDownHabitSupportEditor(plan: $habitDraft, initialFocus: initialHabitFocus)
+                    .id(viewModel.habitEditingIdentity)
                 Text("Custom routine words stay inside Counting Sheep. A separate offline purpose appears in reminders only with your permission.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
                 Toggle("Allow offline-purpose words in reminders", isOn: $includePurposeInNotifications)
                     .font(AppTypography.caption)
                     .onChange(of: includePurposeInNotifications) { _, _ in savePurpose() }
+                Text("Reminder text may be visible on your Lock Screen and in notification previews while the iPhone is locked.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
             }
         }
     }
@@ -266,6 +303,11 @@ struct FocusRunSetupView: View {
 
     private var setupActionBar: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            if habitSaveFailed {
+                Text(viewModel.habitSaveMessage ?? "Your routine support couldn’t be saved. Please try again.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.warning)
+            }
             Text(viewModel.isRunning
                 ? "Next Wind Down · \(viewModel.nightWatchScheduleLabel)"
                 : "Bedtime to phone wake · \(viewModel.nightWatchScheduleLabel)")
@@ -295,21 +337,26 @@ struct FocusRunSetupView: View {
     }
 
     private var primaryActionTitle: String {
-        if viewModel.isRunning {
-            return "Save for next Wind Down"
-        }
-        return viewModel.canBeginNightWatchNow ? "Start Wind Down" : "Save Wind Down"
+        if initialHabitFocus != nil { return "Save plan" }
+        if viewModel.isRunning { return "Save plan" }
+        return viewModel.canBeginNightWatchNow ? "Put phone away" : "Save plan"
     }
 
     private var primaryActionHint: String {
-        viewModel.canBeginNightWatchNow && !viewModel.isRunning
-            ? "Starts tonight's phone-away ritual through the phone-free morning"
-            : "Saves the plan and asks Ollie to remind you at wind-down time"
+        if initialHabitFocus != nil { return "Saves your plan without starting a session" }
+        return viewModel.canBeginNightWatchNow && !viewModel.isRunning
+            ? "Starts tonight’s timer and requests selected-app limits through Screen-Free Morning, including overnight"
+            : "Saves your plan. Reminders follow your notification settings."
     }
 
     private func saveOrStart() {
-        if viewModel.canBeginNightWatchNow && !viewModel.isRunning {
-            viewModel.requestStartNightWatch()
+        guard viewModel.saveWindDownHabitPlan(habitDraft) else {
+            habitSaveFailed = true
+            return
+        }
+        habitSaveFailed = false
+        if initialHabitFocus == nil && viewModel.canBeginNightWatchNow && !viewModel.isRunning {
+            showStartError = !viewModel.requestStartNightWatch()
         } else {
             viewModel.saveNightWatchPlanForTonight()
             dismiss()
@@ -317,6 +364,9 @@ struct FocusRunSetupView: View {
     }
 
     private func loadPurpose() {
+        guard !hasLoadedDraft else { return }
+        hasLoadedDraft = true
+        habitDraft = viewModel.windDownHabitPlan
         purposeCategory = viewModel.offlinePurpose.category
         customPurpose = viewModel.offlinePurpose.customText ?? ""
         includePurposeInNotifications = viewModel.offlinePurpose.allowsCustomTextInNotifications

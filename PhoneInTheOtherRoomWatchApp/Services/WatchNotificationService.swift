@@ -17,10 +17,10 @@ final class WatchNotificationService: NSObject, UNUserNotificationCenterDelegate
             guard await requestAuthorizationIfNeeded() else { return }
 
             let content = UNMutableNotificationContent()
-            content.title = role == .additionalQuiet ? "Ollie is keeping quiet" : "Ollie is on Wind Down"
+            content.title = role == .additionalQuiet ? "Phone Away started" : "Wind Down started"
             content.body = role == .additionalQuiet
-                ? "Your Phone Away time is running."
-                : "Your phone is tucked in for the night."
+                ? "The Phone Away timer is running on your iPhone."
+                : "The Wind Down timer is running on your iPhone."
             content.sound = .default
 
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)

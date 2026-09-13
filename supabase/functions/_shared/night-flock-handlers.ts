@@ -11,6 +11,7 @@ import {
   validateNightFlockCommand,
   validateNightFlockState,
 } from "./night-flock.ts";
+import { adaptSharedHabitsStateWire } from "./night-flock-shared-habits-wire.ts";
 
 export type NightFlockCaller = { id: string; isAnonymous: boolean };
 export type NightFlockCommandResult = Record<string, unknown> & {
@@ -40,9 +41,12 @@ const knownCommands = new Set([
   "createFlock", "createInvite", "revokeInvite", "join", "leave", "setSharing", "block", "report",
   "publishCheckIn", "react", "deleteNightFlockData", "deleteAccount", "createParty", "previewInvite",
   "redeemInvite", "acceptGoal", "setLocalSetup", "setSharingPreferences", "setRoutineIdeas", "startChallenge",
-  "publishProgress", "publishNightMetrics", "acknowledgeGrant", "replaceInvite", "renameParty", "startRound",
+  "publishProgress", "publishNightMetrics", "acknowledgeUpdateCheer", "acknowledgeGrant", "replaceInvite", "renameParty", "startRound",
   "retrieveInvite", "leaveParty", "deleteParty", "updatePublicProfile", "publishActivity", "completeBackfill", "publishStatus",
   "blockMember", "reportMember", "cheerMember",
+  "movePastureEntity", "contributePastureSheep", "recallPastureSheep", "setCampfireSharing", "publishCampfireSession",
+  "acceptSharedHabitsAgreement", "publishSharedHabit", "deleteSharedHabitHistory", "migrateSharedHabits",
+  "publishSharedNightPlan", "cancelSharedNightPlan", "publishSharedNightReceipt",
 ]);
 
 function response(body: Record<string, unknown>, status: number, requestID: string): Response {
@@ -179,7 +183,10 @@ export async function handleNightFlockState(
     body = await parseBody(request);
     const stateContract = validateNightFlockState(body);
     const snapshot = await dependencies.read(caller.id, stateContract);
-    const output = response({ schemaVersion: stateContract.schemaVersion, snapshot }, 200, requestID);
+    const wireSnapshot = stateContract.schemaVersion === 4 && (stateContract.scope === "habits" || stateContract.scope === "sharedNights")
+      ? adaptSharedHabitsStateWire(snapshot)
+      : snapshot;
+    const output = response({ schemaVersion: stateContract.schemaVersion, snapshot: wireSnapshot }, 200, requestID);
     completionLog("night-flock-state", requestID, startedAt, body, 200, null);
     return output;
   } catch (error) {

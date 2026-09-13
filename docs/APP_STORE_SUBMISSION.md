@@ -59,7 +59,7 @@ Counting Sheep includes:
 • Required selected-app/category protection for every new Wind Down, Screen-Free Morning, and Phone Away start
 • NFC + app protection for people who pair a tag; no hardware is required for the app-protection path
 • A calm Lock Screen Live Activity while Wind Down is running
-• A private Sunrise Trail for eligible Screen-Free Morning minutes, separate from Wind Down and Phone Away
+• Private Screen-Free Morning progress, separate from Wind Down and Phone Away
 • Quiet-minute history, a factual seven-night record, and Ollie's persisted sheep-search Search Journal
 • Optional Apple Health sleep duration and available sleep stages
 • Private morning reflections and cautious sleep-context comparisons
@@ -67,7 +67,7 @@ Counting Sheep includes:
 
 Only if Slumber Party is enabled for this submission, append:
 
-`• An optional invite-only Slumber Party where 2–8 people choose one Wind Down goal and encourage one another for seven nights`
+`• Invite-only Slumber Parties for close friends and family, with private groups and seven-night rounds`
 
 NFC tags are optional. People can use the app-protection path without hardware. A paired tag is
 the normal way to close an NFC-protected Wind Down, and Counting Sheep retains a deliberate

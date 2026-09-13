@@ -1,0 +1,81 @@
+{
+  "sourceState": "Implemented locally; not deployed or distributed",
+  "build": {
+    "result": "passed",
+    "command": "xcodebuild build -project PhoneInTheOtherRoom.xcodeproj -scheme PhoneInTheOtherRoom -destination 'generic/platform=iOS Simulator' -derivedDataPath /private/tmp/cs-proto/DerivedData -disableAutomaticPackageResolution",
+    "log": "final-build.log"
+  },
+  "unitTests": {
+    "result": "passed",
+    "tests": 979,
+    "failures": 0,
+    "command": "xcodebuild test -project PhoneInTheOtherRoom.xcodeproj -scheme PhoneInTheOtherRoom -destination 'platform=iOS Simulator,id=A0DB65B8-F3FC-4961-8B0C-9689F51C9EA1' -derivedDataPath /private/tmp/cs-proto/DerivedData -disableAutomaticPackageResolution -resultBundlePath /private/tmp/pasture-tests-05.xcresult",
+    "log": "final-tests.log"
+  },
+  "sqlSuites": [
+    {
+      "suite": "shared_pasture_test.sql",
+      "exitCode": 0,
+      "legacyAuthAdapter": false
+    },
+    {
+      "suite": "night_flock_v4_test.sql",
+      "exitCode": 0,
+      "legacyAuthAdapter": true
+    },
+    {
+      "suite": "night_flock_membership_sharing_test.sql",
+      "exitCode": 0,
+      "legacyAuthAdapter": true
+    },
+    {
+      "suite": "night_flock_v4_social_avatar_test.sql",
+      "exitCode": 0,
+      "legacyAuthAdapter": true
+    },
+    {
+      "suite": "slumber_party_farm_cheer_receipts_test.sql",
+      "exitCode": 0,
+      "legacyAuthAdapter": false
+    },
+    {
+      "suite": "night_flock_shared_habits_test.sql",
+      "exitCode": 0,
+      "legacyAuthAdapter": true
+    },
+    {
+      "suite": "farm_save_test.sql",
+      "exitCode": 0,
+      "legacyAuthAdapter": false
+    },
+    {
+      "suite": "account_identity_test.sql",
+      "exitCode": 0,
+      "legacyAuthAdapter": false
+    }
+  ],
+  "concurrency": "Two PostgreSQL connections: one placement winner/one conflict; duplicate day grants contribute once while preserving both personal grants",
+  "edgeValidation": {
+    "tests": 5,
+    "result": "passed",
+    "command": "node --experimental-strip-types --test supabase/tests/shared_pasture_validation.mjs"
+  },
+  "native": [
+    "2/4/8-member scene and owner-labelled accessibility actions",
+    "near/far meadow panning",
+    "resident destinations, fetch returned, flock gathered",
+    "pinned Shepherd skin/hair update while scrolled",
+    "large-text party route",
+    "Home to party to running Home; explicit Nights tab retained",
+    "empty/stale/unsupported/retry/recipient/lantern states",
+    "light/dark appearance inspected in personal/shared scenes"
+  ],
+  "notValidated": [
+    "physical hold/drag/camera swipe and assistive technology",
+    "physical two-device transport, account switching and actual shielding",
+    "hosted migration/Edge activation and distribution"
+  ],
+  "unrelatedWork": "Starting dirty files preserved; changed/new/retired scope in source-manifest.json",
+  "gitDiffCheck": "passed",
+  "localPostgres": "Dedicated disposable cluster stopped after validation"
+}

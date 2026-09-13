@@ -34,6 +34,19 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
     ) {
         let registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults ?? .standard)
         let activeRegistryEntries = registry.activeEntries(at: date)
+        let callbackEntry = callback.flatMap { callback in
+            registry.entry(for: callback.occurrenceID).flatMap { entry in
+                entry.revision == callback.revision && entry.epoch == callback.epoch
+                    ? entry
+                    : nil
+            }
+        }
+        let recoveredActiveSnapshot = callbackEntry
+            .map { QuietTimeShieldRegistryCleanupPolicy.snapshot(for: $0) }
+            ?? activeRegistryEntries
+            .sorted { $0.updatedAt > $1.updatedAt }
+            .first
+            .map { QuietTimeShieldRegistryCleanupPolicy.snapshot(for: $0) }
         guard let snapshot = loadSchedule() else {
             // The registry is the desired-state authority. A cross-process
             // handoff may briefly replace the compatibility snapshot, but a
@@ -42,17 +55,45 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
                 registry: registry,
                 snapshotOccurrenceID: nil,
                 at: date
-            ),
-                  let selection = loadSelection(),
-                  !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
+            ), let recoveredActiveSnapshot else {
                 store.clearAllSettings()
+                if let callback {
+                    writeStatus(
+                        .cleared,
+                        runID: callback.occurrenceID,
+                        revision: callback.revision,
+                        window: nil,
+                        at: date
+                    )
+                }
                 archiveBriefAccessState()
                 stopBriefAccessRestore()
+                return
+            }
+            guard let selection = loadSelection(),
+                  !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
+                store.clearAllSettings()
+                writeStatus(
+                    .failed,
+                    snapshot: recoveredActiveSnapshot,
+                    window: .protectedSession,
+                    at: date,
+                    failureCode: "missingSelection"
+                )
+                archiveBriefAccessState()
+                stopBriefAccessRestore()
+                scheduleShieldingFailureNotification(role: recoveredActiveSnapshot.role)
                 return
             }
             store.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
             store.shield.applicationCategories = selection.categoryTokens.isEmpty
                 ? nil : .specific(selection.categoryTokens)
+            writeStatus(
+                .applied,
+                snapshot: recoveredActiveSnapshot,
+                window: .protectedSession,
+                at: date
+            )
             return
         }
         if let callback {
@@ -65,9 +106,25 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             ) {
             case .ignoreStale:
                 // A callback from an old DeviceActivity window must have no
-                // effect on another currently desired shield.
+                // effect on another currently desired shield. Its own clear
+                // observation is still retained for that occurrence.
+                writeStatus(
+                    .cleared,
+                    runID: callback.occurrenceID,
+                    revision: callback.revision,
+                    window: nil,
+                    at: date
+                )
                 return
-            case .apply, .clear:
+            case .clear:
+                writeStatus(
+                    .cleared,
+                    runID: callback.occurrenceID,
+                    revision: callback.revision,
+                    window: nil,
+                    at: date
+                )
+            case .apply:
                 break
             }
         }
@@ -82,9 +139,23 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             // terminal removal. Another registry entry is still authoritative
             // and active, so a callback must retain its barrier rather than
             // clearing ManagedSettings because the old snapshot was retired.
+            guard let recoveredSnapshot = recoveredActiveSnapshot else {
+                store.clearAllSettings()
+                archiveBriefAccessState()
+                stopBriefAccessRestore()
+                return
+            }
             guard let selection = loadSelection(),
                   !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
                 store.clearAllSettings()
+                writeStatus(
+                    .failed,
+                    snapshot: recoveredSnapshot,
+                    window: .protectedSession,
+                    at: date,
+                    failureCode: "missingSelection"
+                )
+                scheduleShieldingFailureNotification(role: recoveredSnapshot.role)
                 archiveBriefAccessState()
                 stopBriefAccessRestore()
                 return
@@ -95,12 +166,19 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             store.shield.applicationCategories = selection.categoryTokens.isEmpty
                 ? nil
                 : .specific(selection.categoryTokens)
+            writeStatus(
+                .applied,
+                snapshot: recoveredSnapshot,
+                window: .protectedSession,
+                at: date
+            )
             return
         }
         if snapshotIsStale {
             // A callback for an ended/replaced occurrence must not clear or
             // apply a different desired window.
             store.clearAllSettings()
+            writeStatus(.cleared, snapshot: snapshot, window: nil, at: date)
             archiveBriefAccessState()
             stopBriefAccessRestore()
             return
@@ -111,16 +189,22 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
               !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
             store.clearAllSettings()
             if activeWindow == nil && !hasActiveRegistryProtection {
-                writeStatus(.cleared, snapshot: snapshot, window: nil)
+                writeStatus(.cleared, snapshot: snapshot, window: nil, at: date)
             } else {
-                writeStatus(.failed, snapshot: snapshot, window: activeWindow, failureCode: "missingSelection")
-                scheduleShieldingFailureNotification()
+                writeStatus(
+                    .failed,
+                    snapshot: snapshot,
+                    window: activeWindow,
+                    at: date,
+                    failureCode: "missingSelection"
+                )
+                scheduleShieldingFailureNotification(role: snapshot.role)
             }
             return
         }
         guard activeWindow != nil || hasActiveRegistryProtection else {
             store.clearAllSettings()
-            writeStatus(.cleared, snapshot: snapshot, window: nil)
+            writeStatus(.cleared, snapshot: snapshot, window: nil, at: date)
             return
         }
 
@@ -131,6 +215,12 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
            activeRegistryEntries.count <= 1,
            grantMatchesCurrentIdentity(grant, state: state, identity: identity),
            date < grant.expiresAt {
+            writeStatus(
+                .cleared,
+                snapshot: snapshot,
+                window: activeWindow ?? .protectedSession,
+                at: date
+            )
             return
         }
 
@@ -140,7 +230,7 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         store.shield.applicationCategories = selection.categoryTokens.isEmpty
             ? nil
             : .specific(selection.categoryTokens)
-        writeStatus(.applied, snapshot: snapshot, window: activeWindow)
+        writeStatus(.applied, snapshot: snapshot, window: activeWindow, at: date)
     }
 
     override func intervalDidEnd(for activity: DeviceActivityName) {
@@ -159,8 +249,19 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
 
     override func intervalWillEndWarning(for activity: DeviceActivityName) {
         super.intervalWillEndWarning(for: activity)
-        guard activity == .ollieBriefAccessRestore else { return }
-        reconcileBriefAccessRestore()
+        if activity == .ollieBriefAccessRestore {
+            reconcileBriefAccessRestore()
+            return
+        }
+        guard QuietTimeShieldWindow(activityName: activity) != nil
+                || QuietTimeShieldRegistryActivity(deviceActivityName: activity) != nil else { return }
+        // Short sessions use a padded DeviceActivity interval. Reconcile at
+        // the warning boundary so the actual desired end, not the platform
+        // minimum, clears ManagedSettings.
+        reconcileCurrentProtection(
+            at: Date(),
+            callback: QuietTimeShieldRegistryActivity(deviceActivityName: activity)
+        )
     }
 
     override func eventDidReachThreshold(
@@ -184,8 +285,11 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         UNUserNotificationCenter.current().add(request)
     }
 
-    private func scheduleShieldingFailureNotification() {
-        let copy = NightWatchGuidance.notificationCopy(for: .shieldingFailed)
+    private func scheduleShieldingFailureNotification(role: QuietTimeShieldRole) {
+        let copy = NightWatchGuidance.notificationCopy(
+            for: .shieldingFailed,
+            role: role
+        )
         let content = UNMutableNotificationContent()
         content.title = copy.title
         content.body = copy.body
@@ -238,6 +342,14 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         case .keepShieldClear:
             // A start callback can arrive before the requested expiry. The shield
             // must remain clear only for the already scheduled grant, never longer.
+            if let schedule {
+                writeStatus(
+                    .cleared,
+                    snapshot: schedule,
+                    window: activeWindow(in: schedule, at: now),
+                    at: now
+                )
+            }
             return
         case .rejectPendingGrant:
             guard var state, let grant = state.activeGrant else { return }
@@ -256,6 +368,16 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
                       let selection = loadSelection(),
                       !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
                     store.clearAllSettings()
+                    if let schedule {
+                        writeStatus(
+                            .failed,
+                            snapshot: schedule,
+                            window: activeWindow(in: schedule, at: now),
+                            at: now,
+                            failureCode: "missingSelection"
+                        )
+                        scheduleShieldingFailureNotification(role: schedule.role)
+                    }
                     stopBriefAccessRestore()
                     archiveBriefAccessState()
                     return
@@ -269,10 +391,14 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
                 writeStatus(
                     .applied,
                     snapshot: schedule,
-                    window: activeWindow(in: schedule, at: now)
+                    window: activeWindow(in: schedule, at: now),
+                    at: now
                 )
             case .clearProtection:
                 store.clearAllSettings()
+                if let schedule {
+                    writeStatus(.cleared, snapshot: schedule, window: nil, at: now)
+                }
             }
             stopBriefAccessRestore()
             archiveBriefAccessState()
@@ -280,6 +406,16 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             guard let schedule, let selection = loadSelection(),
                   !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
                 store.clearAllSettings()
+                if let schedule {
+                    writeStatus(
+                        .failed,
+                        snapshot: schedule,
+                        window: activeWindow(in: schedule, at: now),
+                        at: now,
+                        failureCode: "missingSelection"
+                    )
+                    scheduleShieldingFailureNotification(role: schedule.role)
+                }
                 stopBriefAccessRestore()
                 archiveBriefAccessState()
                 return
@@ -295,7 +431,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             writeStatus(
                 .applied,
                 snapshot: schedule,
-                window: activeWindow(in: schedule, at: now)
+                window: activeWindow(in: schedule, at: now),
+                at: now
             )
         }
     }
@@ -304,10 +441,21 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         at date: Date,
         schedule: QuietTimeShieldScheduleSnapshot?
     ) {
-        guard let schedule,
-              let selection = loadSelection(),
+        guard let schedule else {
+            store.clearAllSettings()
+            return
+        }
+        guard let selection = loadSelection(),
               !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
             store.clearAllSettings()
+            writeStatus(
+                .failed,
+                snapshot: schedule,
+                window: activeWindow(in: schedule, at: date),
+                at: date,
+                failureCode: "missingSelection"
+            )
+            scheduleShieldingFailureNotification(role: schedule.role)
             return
         }
         let registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults ?? .standard)
@@ -315,13 +463,14 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         guard let window = QuietTimeShieldSchedulePolicy.activeWindow(in: schedule, at: date)
                 ?? (hasActiveRegistryProtection ? .protectedSession : nil) else {
             store.clearAllSettings()
+            writeStatus(.cleared, snapshot: schedule, window: nil, at: date)
             return
         }
         store.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
         store.shield.applicationCategories = selection.categoryTokens.isEmpty
             ? nil
             : .specific(selection.categoryTokens)
-        writeStatus(.applied, snapshot: schedule, window: window)
+        writeStatus(.applied, snapshot: schedule, window: window, at: date)
     }
 
     private func activeWindow(
@@ -398,15 +547,35 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         _ status: QuietTimeShieldStatus,
         snapshot: QuietTimeShieldScheduleSnapshot,
         window: QuietTimeShieldWindow?,
+        at date: Date = Date(),
+        failureCode: String? = nil
+    ) {
+        writeStatus(
+            status,
+            runID: snapshot.runID,
+            revision: snapshot.revision,
+            window: window,
+            at: date,
+            failureCode: failureCode
+        )
+    }
+
+    private func writeStatus(
+        _ status: QuietTimeShieldStatus,
+        runID: UUID,
+        revision: Int,
+        window: QuietTimeShieldWindow?,
+        at date: Date,
         failureCode: String? = nil
     ) {
         let value = QuietTimeShieldStatusSnapshot(
-            runID: snapshot.runID,
-            revision: snapshot.revision,
+            runID: runID,
+            revision: revision,
             status: status,
             window: window,
-            observedAt: Date(),
-            failureCode: failureCode
+            observedAt: date,
+            failureCode: failureCode,
+            provenance: .deviceActivityMonitor
         )
         guard let data = try? JSONEncoder().encode(value) else { return }
         sharedDefaults?.set(data, forKey: QuietTimeShieldSharedStorage.statusKey)

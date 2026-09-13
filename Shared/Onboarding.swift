@@ -23,14 +23,15 @@ enum OnboardingProtectionChoice: String, Codable, CaseIterable, Identifiable {
     var detail: String {
         switch self {
         case .appShielding:
-            return "Choose apps to pause for Wind Down and Screen-Free Morning. No tag needed. Counting Sheep stays available."
+            return "Choose apps or categories to limit from Wind Down start through Screen-Free Morning, including overnight, and during Phone Away. No tag needed. Counting Sheep stays available."
         case .nfcAndAppShielding:
-            return "A Wind Down tag starts app protection; selected apps are paused for Wind Down and Screen-Free Morning. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
+            return "A Wind Down tag confirms the start; Counting Sheep then requests limits for chosen apps or categories through Screen-Free Morning, including overnight. Phone Away uses the same selection. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
         }
     }
 }
 
 struct OnboardingDraft: Codable, Equatable {
+    var journeyRoute: OnboardingJourneyRoute = .planFirst
     var step: CountingSheepOnboardingStep = .welcome
     var welcomePage: OnboardingWelcomePage = .countingSheep
     var profileAnswers: WindDownProfileAnswer = .defaults
@@ -38,6 +39,12 @@ struct OnboardingDraft: Codable, Equatable {
     var profileQuestionIndex = 0
     var profileSkipped = false
     var selectedWelcomeGiftItemID: String?
+    /// Set only after a confirmed account-Farm restore. It keeps a returner in
+    /// this phone's setup without replaying the questionnaire or welcome gift.
+    var returningUserDeviceSetup = false
+    /// Settings replay changes this phone's existing ritual and never offers a
+    /// second account-enrollment step.
+    var accountInvitationSkipped = false
     var bedtimeHour = 23
     var bedtimeMinute = 0
     var wakeHour = 7
@@ -69,8 +76,9 @@ struct OnboardingDraft: Codable, Equatable {
     var morningReflectionReminderEnabled = false
 
     private enum CodingKeys: String, CodingKey {
+        case journeyRoute
         case step, welcomePage, profileAnswers, completedProfileQuestions, profileQuestionIndex
-        case profileSkipped, selectedWelcomeGiftItemID
+        case profileSkipped, selectedWelcomeGiftItemID, returningUserDeviceSetup, accountInvitationSkipped
         case bedtimeHour, bedtimeMinute, wakeHour, wakeMinute
         case windDownMinutes, morningQuietMinutes, eveningActivity, morningActivity
         case eveningCueText, morningCueText, eveningRoutine, morningRoutine
@@ -85,10 +93,14 @@ struct OnboardingDraft: Codable, Equatable {
     init(step: CountingSheepOnboardingStep) {
         self.init()
         self.step = step
+        if !CountingSheepOnboardingStep.visibleSteps.contains(step) {
+            journeyRoute = .legacy
+        }
     }
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        journeyRoute = try container.decodeIfPresent(OnboardingJourneyRoute.self, forKey: .journeyRoute) ?? .legacy
         step = try container.decodeIfPresent(CountingSheepOnboardingStep.self, forKey: .step) ?? .welcome
         welcomePage = try container.decodeIfPresent(OnboardingWelcomePage.self, forKey: .welcomePage) ?? .countingSheep
         profileAnswers = try container.decodeIfPresent(WindDownProfileAnswer.self, forKey: .profileAnswers) ?? .defaults
@@ -102,6 +114,8 @@ struct OnboardingDraft: Codable, Equatable {
         )
         profileSkipped = try container.decodeIfPresent(Bool.self, forKey: .profileSkipped) ?? false
         selectedWelcomeGiftItemID = try container.decodeIfPresent(String.self, forKey: .selectedWelcomeGiftItemID)
+        returningUserDeviceSetup = try container.decodeIfPresent(Bool.self, forKey: .returningUserDeviceSetup) ?? false
+        accountInvitationSkipped = try container.decodeIfPresent(Bool.self, forKey: .accountInvitationSkipped) ?? false
         bedtimeHour = try container.decodeIfPresent(Int.self, forKey: .bedtimeHour) ?? 23
         bedtimeMinute = try container.decodeIfPresent(Int.self, forKey: .bedtimeMinute) ?? 0
         wakeHour = try container.decodeIfPresent(Int.self, forKey: .wakeHour) ?? 7
@@ -175,12 +189,22 @@ struct OnboardingDraft: Codable, Equatable {
     var stageCount: Int { journeySteps.count }
 
     var journeySteps: [CountingSheepOnboardingStep] {
-        guard profileSkipped else { return CountingSheepOnboardingStep.visibleSteps }
-        return CountingSheepOnboardingStep.visibleSteps.filter { $0 != .recommendation }
+        if journeyRoute == .planFirst {
+            return returningUserDeviceSetup
+                ? [.schedule, .quiet, .ready]
+                : CountingSheepOnboardingStep.visibleSteps
+        }
+        if returningUserDeviceSetup {
+            return [.schedule, .quiet, .protection, .ready]
+        }
+        let profileSteps = profileSkipped
+            ? CountingSheepOnboardingStep.legacyVisibleSteps.filter { $0 != .recommendation }
+            : CountingSheepOnboardingStep.legacyVisibleSteps
+        return accountInvitationSkipped ? profileSteps.filter { $0 != .account } : profileSteps
     }
 
     var visiblePageCount: Int {
-        OnboardingWelcomePage.visiblePages.count + journeySteps.count - 1
+        journeySteps.count + (journeySteps.contains(.welcome) ? OnboardingWelcomePage.visiblePages.count - 1 : 0)
     }
 
     var visiblePageNumber: Int {
@@ -188,7 +212,7 @@ struct OnboardingDraft: Codable, Equatable {
             return welcomePage.normalizedForCurrentFlow.visibleIndex + 1
         }
         let stepIndex = journeySteps.firstIndex(of: step) ?? max(0, journeySteps.count - 1)
-        return OnboardingWelcomePage.visiblePages.count + stepIndex
+        return stepIndex + (journeySteps.contains(.welcome) ? OnboardingWelcomePage.visiblePages.count : 1)
     }
 
     mutating func applyRecommendation(_ recommendation: WindDownProfileRecommendation) {
@@ -230,7 +254,7 @@ struct OnboardingDraft: Codable, Equatable {
     mutating func skipVisibleStep() -> OnboardingVisibleStepEffect {
         switch step {
         case .welcome:
-            step = .profile
+            step = journeyRoute == .planFirst ? .schedule : .profile
             return .none
         case .profile:
             profileSkipped = true
@@ -240,8 +264,13 @@ struct OnboardingDraft: Codable, Equatable {
             // The questionnaire already completed; skip only the result screen.
             step = .gift
             return profileSkipped ? .skipQuestionnaire : .keepCompletedProfile
-        case .gift:
-            step = .schedule
+        case .protection:
+            // Deferring setup only advances plan review. It does not alter
+            // protection intent or admit a session without readiness.
+            moveToNextVisibleStep()
+            return .none
+        case .gift, .account:
+            moveToNextVisibleStep()
             return .none
         default:
             return .none
@@ -249,18 +278,17 @@ struct OnboardingDraft: Codable, Equatable {
     }
 
     mutating func moveToNextVisibleStep() {
-        guard let index = CountingSheepOnboardingStep.visibleSteps.firstIndex(of: step),
-              index + 1 < CountingSheepOnboardingStep.visibleSteps.count else {
+        let steps = journeySteps
+        guard let index = steps.firstIndex(of: step), index + 1 < steps.count else {
             return
         }
-        var next = CountingSheepOnboardingStep.visibleSteps[index + 1]
-        if profileSkipped, next == .recommendation {
-            next = CountingSheepOnboardingStep.visibleSteps
-                .dropFirst(index + 1)
-                .first { $0 != .recommendation }
-                ?? .gift
-        }
-        step = next
+        step = steps[index + 1]
+    }
+
+    mutating func beginReturningUserDeviceSetup() {
+        returningUserDeviceSetup = true
+        profileSkipped = true
+        step = .schedule
     }
 
     func makeNightWatchPreferences() -> NightWatchPreferences {
@@ -339,52 +367,11 @@ struct OnboardingDraft: Codable, Equatable {
 
     static func replay(from preferences: NightWatchPreferences) -> Self {
         var draft = defaults(from: preferences)
+        draft.journeyRoute = .legacy
+        draft.accountInvitationSkipped = true
         draft.protectionChoice = preferences.guardKind == .nfcTag
             ? .nfcAndAppShielding
             : .appShielding
         return draft
-    }
-}
-
-enum OnboardingReminderReadiness: Equatable {
-    case off
-    case enabledAndAuthorized
-    case enabledWithoutAuthorization
-}
-
-struct OnboardingReadinessSummary: Equatable {
-    let nextWindDownStart: Date
-    let intendedBedtime: Date
-    let intendedWakeTime: Date
-    let morningQuietEnd: Date
-    let isLaterToday: Bool
-    let eveningAnchors: [String]
-    let morningAnchors: [String]
-    let appProtectionReady: Bool
-    let reminderReadiness: OnboardingReminderReadiness
-    let startsAutomatically: Bool
-
-    init(
-        draft: OnboardingDraft,
-        appProtectionReady: Bool,
-        notificationAuthorized: Bool,
-        now: Date = Date(),
-        calendar: Calendar = .current
-    ) {
-        let preferences = draft.makeNightWatchPreferences()
-        let start = preferences.nextStart(after: now, calendar: calendar)
-        let plan = preferences.makePlan(startedAt: start, calendar: calendar)
-        nextWindDownStart = start
-        intendedBedtime = plan.intendedBedtime
-        intendedWakeTime = plan.wakeTime
-        morningQuietEnd = plan.protectedUntil
-        isLaterToday = calendar.isDate(start, inSameDayAs: now)
-        eveningAnchors = [WindDownRoutineStep.phoneAwayTitle] + draft.eveningRoutine.map(\.title)
-        morningAnchors = draft.morningRoutine.map(\.title)
-        self.appProtectionReady = appProtectionReady
-        reminderReadiness = !draft.remindersEnabled
-            ? .off
-            : (notificationAuthorized ? .enabledAndAuthorized : .enabledWithoutAuthorization)
-        startsAutomatically = draft.automaticStartEnabled
     }
 }

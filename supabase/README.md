@@ -47,6 +47,10 @@ Night Flock SQL tests after `db reset`. Production received all five Slumber Par
 both JWT-protected functions, and versioned invitation secrets with explicit founder approval on
 2026-08-25; updated app distribution and physical/operational release gates remain separate.
 
+Latest production rollout: [13 September shared pasture and campfire](../docs/evidence/campfire-deploy-20260913/deployment.md).
+Both exact migrations and Edge version 5 are deployed; shared-night plans/agreement-v2 remain
+withheld. App distribution and physical acceptance remain separate.
+
 ## Hosted development project
 
 Authenticate and link interactively. Never place the access token or database password in

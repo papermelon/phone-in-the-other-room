@@ -1,5 +1,7 @@
 # ADR-0015: Farm Lifecycle, Economy, Shop, and Customization
 
+Wool regrowth for migrated/new Farms now uses cumulative eligible session time under [ADR-0020](ADR-0020-cumulative-farm-credit.md), preserving existing growth. Earlier completed-night timing below describes the legacy contract.
+
 - Status: Accepted
 - Date: 2026-08-10; wool-only economy amendment accepted 2026-08-11
 - Decider: Founder

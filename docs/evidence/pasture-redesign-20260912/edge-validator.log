@@ -1,0 +1,40 @@
+TAP version 13
+# Subtest: accepts normalized placements for people, sheep and earned lantern
+ok 1 - accepts normalized placements for people, sheep and earned lantern
+  ---
+  duration_ms: 2.723292
+  type: 'test'
+  ...
+# Subtest: rejects invalid ground, future revisions and private payload fields
+ok 2 - rejects invalid ground, future revisions and private payload fields
+  ---
+  duration_ms: 0.451292
+  type: 'test'
+  ...
+# Subtest: visits require explicit consent and owned ID, no uploaded appearance
+ok 3 - visits require explicit consent and owned ID, no uploaded appearance
+  ---
+  duration_ms: 0.175209
+  type: 'test'
+  ...
+# Subtest: recall accepts only a bounded visit reference and stable retry key
+ok 4 - recall accepts only a bounded visit reference and stable retry key
+  ---
+  duration_ms: 0.703417
+  type: 'test'
+  ...
+# Subtest: ownership failures are actionable and never blindly retried
+ok 5 - ownership failures are actionable and never blindly retried
+  ---
+  duration_ms: 0.498458
+  type: 'test'
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 164.9535

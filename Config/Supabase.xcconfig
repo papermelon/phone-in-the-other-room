@@ -1,2 +1,5 @@
 #include "Supabase.example.xcconfig"
 #include? "Supabase.local.xcconfig"
+
+// Approved 12 September 2026: use the existing APNs phase and completion scheduler.
+SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED = YES

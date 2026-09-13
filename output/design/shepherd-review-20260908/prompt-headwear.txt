@@ -1,0 +1,14 @@
+Create ONE clean wardrobe on/off comparison board for Counting Sheep, using accepted B and C from attached reference, NEVER A. Same exact extremely simple cartoon cut-paper rendering with faint soft paper grain, giant head around half total height, tiny body, mitten hands, little plum boots, plum hair, tan skin. No realistic anatomy, extra face modeling, complex hair, fabric folds or detailed knitting. Keep face/head shape, eye construction and pose identical within each row. Wide landscape 1536x1024 ivory backdrop, two rows each with FOUR large full-body figures, clear readable labels. Title "Hats and finishing touches".
+TOP ROW uses B: tall pear head, half-lidded vertical oval eyes, sideways small protruding nose, single curved hair tuft. All four figures wear same approved moss coat with cream two-lobe collar, two mustard buttons, two large patch pockets, terracotta trousers.
+Top labels:
+"Hat off" — exact B from reference, no headwear, hair tuft visible.
+"Wool Field Hat" — add simple soft ochre wool field hat, rounded crown and small turned brim, properly fitted around B's head; hair visible beneath edges, tuft occluded naturally. No other change.
+"Moon Beanie" — replace field hat with dusk-blue rounded beanie, one folded band and tiny cream crescent; no other change.
+"Beanie + scarf" — exact same beanie version plus a simple warm berry neckerchief with a tiny side knot and short tail, visibly overlapping upper coat collar. Face fully unobscured.
+BOTTOM ROW uses C: broad round head, open oval eyes, circular outlined nose, scalloped hair. All four figures wear same "Moonlit Coat": a SIMPLE dusk-blue A-line coat, one small cream crescent patch near hem, pale round collar, two small cream buttons, terracotta trousers, plum boots; coat must be distinct garment, not whole-body tint.
+Bottom labels:
+"Hat off" — C with no headwear.
+"Wool Field Hat" — same ochre field hat fitted to wider C head.
+"Clover Headscarf" — simple moss-green head wrap, hairline still visible, small side knot, no detailed patterns.
+"Scarf off again" — exact initial C with headscarf removed, full scalloped hair restored. Same moonlit coat.
+Eight characters total, faces remain consistent, hats adapt to head shape and don't float. Garments and accessories remain simpler than children's book realism, approximately 15 broad shapes per character. No prices or invented app UI. Purpose: show independently applied clothing and headwear; removing headwear does not remove the coat or change identity. This is one review illustration, not production sprite sheet.
