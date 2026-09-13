@@ -16,18 +16,23 @@ enum CountingSheepOwnedStorage {
         "ollie.phoneBedNFCTags.library",
         "ollie.nightWatch.preferences",
         "ollie.nightWatch.automaticSchedule",
+        "ollie.nightWatch.automaticProtectionRepair",
         "ollie.nightWatch.schedule",
         "ollie.nightWatch.routines",
         "ollie.nightWatch.nextOverride",
         "ollie.offlinePurpose",
         "ollie.screenTime.reportPreferences",
         "ollie.morningCheckIns",
+        WindDownHabitPlan.storageKey,
+        WindDownHabitReflectionHistory.storageKey,
+        RitualPersonalisation.storageKey,
         "ollie.nightWatch.history",
         "ollie.windDownMorning.settlementJournal",
         "ollie.impactSharing.preferences",
         "ollie.impactSharing.records",
         "ollie.sheepSearch.state",
         "ollie.farm.state",
+        "ollie.farm.saveMigrated",
         "ollie.farm.pastureScene",
         "ollie.userProfile",
         "ollie.userProfile.socialAvatar.isExplicit",
@@ -52,11 +57,19 @@ enum CountingSheepOwnedStorage {
         "ollie.nightFlock.sharedHabitsJoinAgreementIntent",
         "ollie.nightFlock.sharedHabitsMigratedAgreementIDs",
         "ollie.nightFlock.sharedHabitsFormerParties",
+        "ollie.nightFlock.sharedNightOutbox",
+        "ollie.nightFlock.sharedNightPlanRevisionLedger",
+        "ollie.nightFlock.sharedNightPlanBindingLedger",
+        "ollie.nightFlock.sharedNightPlanPrivacyFences",
+        "ollie.nightFlock.primaryRunSharingDecisions",
+        "ollie.nightFlock.primaryRunSharingRequiredAfter",
         "ollie.nightFlock.orientation",
         "ollie.nightFlock.expectedLinkedUserID",
         "ollie.orientation.state",
         "ollie.onboarding.version",
         "ollie.onboarding.draft",
+        WindDownGuidanceDismissalStore.key,
+        WindDownGuidanceDisplayStore.key,
         "ollie.notifications.preferences",
         "ollie.notifications.remindersEnabled",
         "ollie.notifications.pendingDestination",
@@ -90,7 +103,7 @@ enum CountingSheepOwnedStorage {
     /// This identity is transport metadata rather than user product state. It
     /// remains stable so a local reset does not re-identify optional remote
     /// Live Activity delivery records; remote deletion is a separate operation.
-    static let preservedTransportKeys = ["ollie.installationID"]
+    static let preservedTransportKeys = ["ollie.installationID", "ollie.farm.localStoreID"]
 
     static func clearStandardDefaults(_ defaults: UserDefaults) {
         standardKeys.forEach { defaults.removeObject(forKey: $0) }

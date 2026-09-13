@@ -1,3 +1,4 @@
+import { normalizeActivityTimestamp } from "./night-flock-activity-wire.ts";
 import { normalizeSharedHabitsLocalDate } from "./night-flock-shared-habits-wire.ts";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -42,6 +43,9 @@ export type NightFlockCommandPayload = Record<string, unknown> & {
 };
 
 const v4CommandFields: Record<string, string[]> = {
+  movePastureEntity: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","entityID","expectedRevision","x","y","idempotencyKey"],
+  contributePastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","sheepID","consentVersion","idempotencyKey"],
+  recallPastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","visitID","idempotencyKey"],
   createParty: ["schemaVersion", "command", "name", "timeZoneIdentifier", "idempotencyKey"],
   renameParty: ["schemaVersion", "command", "partyID", "name", "idempotencyKey"],
   startRound: ["schemaVersion", "command", "partyID", "timeZoneIdentifier", "idempotencyKey"],
@@ -197,6 +201,21 @@ export function validateNightFlockState(body: Record<string, unknown>): NightFlo
 }
 
 function validateV4Command(body: Record<string, unknown>, command: string): void {
+  if (["movePastureEntity", "contributePastureSheep", "recallPastureSheep"].includes(command)) {
+    requireUUID(body, "partyID"); requireUUID(body, "memberEpochID");
+    if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
+    if (command === "movePastureEntity") {
+      const id = requireString(body, "entityID");
+      if (!/^(member|visitor|lantern)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new Error("Invalid entityID");
+      if (!Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0 || Number(body.expectedRevision) > 2147483646) throw new Error("Invalid expectedRevision");
+      const x = body.x, y = body.y;
+      if (typeof x !== "number" || typeof y !== "number" || !Number.isFinite(x) || !Number.isFinite(y)
+        || x < 0.08 || x > 0.92 || y < 0.43 || y > 0.89 || (x < 0.28 && y > 0.80)) throw new Error("Invalid pasture anchor");
+    } else if (command === "contributePastureSheep") {
+      requireUUID(body, "sheepID"); if (body.consentVersion !== 1) throw new Error("Invalid consentVersion");
+    } else requireUUID(body, "visitID");
+    return;
+  }
   const partyCommands = new Set([
     "renameParty", "startRound", "createInvite", "replaceInvite", "revokeInvite", "retrieveInvite",
     "leaveParty", "deleteParty", "completeBackfill", "react", "blockMember", "reportMember", "cheerMember",
@@ -228,12 +247,13 @@ function validateV4Command(body: Record<string, unknown>, command: string): void
       if (body.headShapeID !== undefined) requireEnum(body, "headShapeID", ["pear", "round", "boxy", "triangular"]);
       break;
     case "publishActivity":
+      for (const field of ["startedAt", "endedAt"]) body[field] = normalizeActivityTimestamp(body[field], field);
       requireUUID(body, "sourceEventID");
       requireEnum(body, "kind", ["windDown", "phoneAway"]);
       requireEnum(body,"outcome",["completed","partlyCompleted"]); for(const field of ["startedAt","endedAt"]){if(typeof body[field]!=="string"||Number.isNaN(Date.parse(body[field])))throw new Error(`Invalid ${field}`);} if(Date.parse(body.endedAt as string)<Date.parse(body.startedAt as string))throw new Error("Invalid activity interval"); for(const field of ["windDownMinutes","phoneAwayMinutes","statusRevision"]){if(typeof body[field]!=="number"||!Number.isSafeInteger(body[field])||(body[field] as number)<0)throw new Error(`Invalid ${field}`);} if((body.windDownMinutes as number)>180||(body.phoneAwayMinutes as number)>240)throw new Error("Values outside bounds");
       validateMembershipSharingScope(body);
       break;
-    case "publishStatus": requireUUID(body,"sourceEventID"); requireEnum(body,"status",["windDownStarting","phoneAwayActive","windDownCompleted","phoneAwayCompleted"]); if(typeof body.revision!=="number"||!Number.isSafeInteger(body.revision)||body.revision<0)throw new Error("Invalid revision"); if(typeof body.observedAt!=="string"||Number.isNaN(Date.parse(body.observedAt)))throw new Error("Invalid observedAt"); validateMembershipSharingScope(body); break;
+    case "publishStatus": body.observedAt = normalizeActivityTimestamp(body.observedAt, "observedAt"); requireUUID(body,"sourceEventID"); requireEnum(body,"status",["windDownStarting","phoneAwayActive","windDownCompleted","phoneAwayCompleted"]); if(typeof body.revision!=="number"||!Number.isSafeInteger(body.revision)||body.revision<0)throw new Error("Invalid revision"); if(typeof body.observedAt!=="string"||Number.isNaN(Date.parse(body.observedAt)))throw new Error("Invalid observedAt"); validateMembershipSharingScope(body); break;
     case "completeBackfill":
       requireUUID(body, "roundID");
       requireBoundedText(body, "cursor", 1, 128);

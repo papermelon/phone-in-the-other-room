@@ -161,15 +161,15 @@ struct ScreenTimeConnectionStatusCard: View {
     private var detail: String {
         switch presentation {
         case .unavailable:
-            return "Screen Time reports are unavailable on this iPhone."
+            return "Screen Time protection is unavailable on this iPhone, so new Wind Down, Screen-Free Morning, and Phone Away starts cannot begin."
         case .connect:
-            return "Choose optional app and category reports for late evening and after waking."
+            return "Screen Time access and a chosen app or category selection are required for new starts. Private usage reports are optional."
         case .needsAttention:
-            return "Screen Time access needs attention. Connecting does not change a current Wind Down or its emergency exit."
+            return "Screen Time access needs attention before another start. A current session timer and its emergency exit remain available."
         case .chooseSelection:
-            return "Screen Time is connected. Choose the apps and categories used for reports and future protection setup."
+            return "Screen Time access is granted. Choose apps or categories to limit before another Wind Down, Screen-Free Morning, or Phone Away start."
         case let .configured(selectionSummary):
-            return "Configured for \(selectionSummary). Reports stay separate from the current protection status."
+            return "Ready for \(selectionSummary). Private reports and observed protection evidence remain separate records."
         }
     }
 

@@ -9,6 +9,12 @@ enum HomeReceiptRoute: Equatable {
     case activeWindDown
     case unreadWindDownReceipt(UUID)
     case dashboard
+
+    /// The receipt replaces every tab, including a tab selected before completion.
+    var replacesTabShell: Bool {
+        if case .terminalWindDownReceipt = self { return true }
+        return false
+    }
 }
 
 enum HomeReceiptRouting {

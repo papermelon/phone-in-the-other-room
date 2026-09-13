@@ -58,7 +58,7 @@ enum ScreenbookScenarioRegistry {
                 title: "Configured Home",
                 description: "Home with a saved Wind Down, settled progress, and an upcoming start.",
                 surface: "iphone",
-                journey: "night-watch",
+                journey: "wind-down",
                 route: "home",
                 state: "configured",
                 tags: ["home", "configured", "upcoming"],
@@ -74,8 +74,7 @@ enum ScreenbookScenarioRegistry {
                 copy: [
                     .stable(AppCopy.ConfiguredHome.quietStatement, file: "PhoneInTheOtherRoomApp/Views/PixelHomeDashboard.swift", symbol: "PixelHomeDashboardContent"),
                     .stable(AppCopy.ConfiguredHome.startButton, file: "PhoneInTheOtherRoomApp/Views/PixelHomeDashboard.swift", symbol: "PixelHomeDashboardContent.primaryTitle"),
-                    .provisional(id: "iphone.home.configured.purpose.provisional", rendered: "Make room for a book", file: "Shared/OfflinePurpose.swift", symbol: "OfflinePurposeProfile.inAppDisplayPhrase"),
-                    .provisional(id: "iphone.home.configured.schedule.provisional", rendered: "Bed 11:00 PM · phone wakes 7:30 AM", file: "PhoneInTheOtherRoomApp/Views/PixelHomeDashboard.swift", symbol: "PixelHomeDashboardContent.scheduleLabel")
+                    .provisional(id: "iphone.home.configured.schedule.provisional", rendered: "Away 10:30 PM · wakes 7:30 AM", file: "PhoneInTheOtherRoomApp/Views/Components/HomeWindDownSummary.swift", symbol: "HomeWindDownSummary.collapsedTimingRow")
                 ],
                 warnings: coverageWarning
             )
@@ -110,7 +109,7 @@ enum ScreenbookScenarioRegistry {
                 journey: "night-watch",
                 route: "home",
                 state: "active-wind-down",
-                tags: ["active", "wind-down", "phone-free"],
+                tags: ["active", "wind-down", "phone-away"],
                 fixtureVersion: 1,
                 captureProfile: captureProfile,
                 captureProvenance: "automated-simulator",
@@ -123,8 +122,8 @@ enum ScreenbookScenarioRegistry {
                 ],
                 copy: [
                     .stable(AppCopy.ActiveWindDown.cueEyebrow, file: "PhoneInTheOtherRoomApp/Views/ActiveRunView.swift", symbol: "ActiveRunView.phoneFreeCue"),
-                    .provisional(id: "iphone.active.wind-down.headline.provisional", rendered: "The evening can get quieter now.", file: "Shared/ActiveRunPresentation.swift", symbol: "ActiveRunPresentation.headline"),
-                    .provisional(id: "iphone.active.wind-down.subheadline.provisional", rendered: "Phone-free time until bedtime.", file: "Shared/ActiveRunPresentation.swift", symbol: "ActiveRunPresentation.subheadline"),
+                    .provisional(id: "iphone.active.wind-down.headline.provisional", rendered: "Wind Down has begun.", file: "Shared/ActiveRunPresentation.swift", symbol: "ActiveRunPresentation.headline"),
+                    .provisional(id: "iphone.active.wind-down.subheadline.provisional", rendered: "The evening timer runs until bedtime.", file: "Shared/ActiveRunPresentation.swift", symbol: "ActiveRunPresentation.subheadline"),
                     .provisional(id: "iphone.active.wind-down.exit.provisional", rendered: "End Wind Down early", file: "Shared/ActiveRunPresentation.swift", symbol: "ActiveRunPresentation.exit")
                 ],
                 warnings: coverageWarning
@@ -152,20 +151,20 @@ enum ScreenbookScenarioRegistry {
         case .slumberPartyNoRound:
             return ScreenbookScenario(
                 id: kind.rawValue, title: "Slumber Party sharing before seven nights",
-                description: "Production Home with a synthetic transport fixture showing membership-sharing people and recent activity before any round.",
-                surface: "iphone", journey: "slumber-party", route: "home", state: "membership-no-round",
-                tags: ["slumber-party", "membership-sharing", "no-round"], fixtureVersion: 1,
+                description: "Home's production Slumber Party section with a synthetic transport fixture showing membership-sharing people and recent activity before any round.",
+                surface: "iphone", journey: "slumber-party", route: "home-social-section", state: "membership-no-round",
+                tags: ["slumber-party", "membership-sharing", "no-round"], fixtureVersion: 2,
                 captureProfile: captureProfile, captureProvenance: "synthetic-transport-fixture",
-                dependencies: commonDependencies + ["PhoneInTheOtherRoomApp/Views/Components/SlumberPartyHomeSection.swift", "PhoneInTheOtherRoomApp/Views/HomeView.swift"], copy: [], warnings: coverageWarning
+                dependencies: commonDependencies + ["PhoneInTheOtherRoomApp/Views/Components/SlumberPartyHomeSection.swift", "PhoneInTheOtherRoomApp/Screenbook/ScreenbookRootView.swift"], copy: [], warnings: coverageWarning
             )
         case .slumberPartyBetweenRounds:
             return ScreenbookScenario(
                 id: kind.rawValue, title: "Slumber Party sharing between seven-night rounds",
-                description: "Production Home with a synthetic transport fixture showing membership sharing after a completed round.",
-                surface: "iphone", journey: "slumber-party", route: "home", state: "membership-between-rounds",
-                tags: ["slumber-party", "membership-sharing", "between-rounds"], fixtureVersion: 1,
+                description: "Home's production Slumber Party section with a synthetic transport fixture showing membership sharing after a completed round.",
+                surface: "iphone", journey: "slumber-party", route: "home-social-section", state: "membership-between-rounds",
+                tags: ["slumber-party", "membership-sharing", "between-rounds"], fixtureVersion: 2,
                 captureProfile: captureProfile, captureProvenance: "synthetic-transport-fixture",
-                dependencies: commonDependencies + ["PhoneInTheOtherRoomApp/Views/Components/SlumberPartyHomeSection.swift", "PhoneInTheOtherRoomApp/Views/HomeView.swift"], copy: [], warnings: coverageWarning
+                dependencies: commonDependencies + ["PhoneInTheOtherRoomApp/Views/Components/SlumberPartyHomeSection.swift", "PhoneInTheOtherRoomApp/Screenbook/ScreenbookRootView.swift"], copy: [], warnings: coverageWarning
             )
         case .slumberPartySharedHabitsSummary:
             return ScreenbookScenario(
@@ -191,13 +190,13 @@ enum ScreenbookScenarioRegistry {
             return ScreenbookScenario(
                 id: kind.rawValue,
                 title: "Early Ending",
-                description: "The factual production receipt after a primary Wind Down ends early.",
+                description: "The production receipt after a 5h 38m Wind Down ends early, with cumulative Farm credit saved.",
                 surface: "iphone",
                 journey: "night-watch",
                 route: "home",
                 state: "early-end",
                 tags: ["receipt", "early-ending", "fresh-start"],
-                fixtureVersion: 1,
+                fixtureVersion: 2,
                 captureProfile: captureProfile,
                 captureProvenance: "automated-simulator",
                 dependencies: commonDependencies + [
@@ -206,10 +205,10 @@ enum ScreenbookScenarioRegistry {
                     "PhoneInTheOtherRoomApp/Views/Components/NightWatchReceiptCard.swift"
                 ],
                 copy: [
-                    .stable(AppCopy.EarlyEnd.eyebrow, file: "PhoneInTheOtherRoomApp/Views/EarlyEndView.swift", symbol: "EarlyEndView"),
-                    .stable(AppCopy.EarlyEnd.title, file: "PhoneInTheOtherRoomApp/Views/EarlyEndView.swift", symbol: "EarlyEndView"),
                     .stable(AppCopy.EarlyEnd.doneButton, file: "PhoneInTheOtherRoomApp/Views/EarlyEndView.swift", symbol: "EarlyEndView"),
-                    .provisional(id: "iphone.early-end.duration.provisional", rendered: "Your phone got a little time away. Tonight can simply be a fresh start.", authored: "{durationSummary} Tonight can simply be a fresh start.", file: "PhoneInTheOtherRoomApp/Views/EarlyEndView.swift", symbol: "EarlyEndView.minutesAwayText", parameters: ["durationSummary": "Your phone got a little time away."])
+                    .provisional(id: "iphone.early-end.eyebrow.provisional", rendered: "WIND DOWN ENDED EARLY", file: "Shared/ActiveRunPresentation.swift", symbol: "RunTerminalPresentation.eyebrow"),
+                    .provisional(id: "iphone.early-end.headline.provisional", rendered: "Wind Down ended early.", file: "Shared/ActiveRunPresentation.swift", symbol: "RunTerminalPresentation.headline"),
+                    .provisional(id: "iphone.early-end.duration.provisional", rendered: "20 min on the Wind Down timer.", file: "Shared/ActiveRunPresentation.swift", symbol: "RunTerminalPresentation.timerSummary")
                 ],
                 warnings: coverageWarning
             )

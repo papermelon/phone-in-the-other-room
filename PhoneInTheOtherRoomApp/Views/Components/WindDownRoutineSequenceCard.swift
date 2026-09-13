@@ -13,7 +13,7 @@ struct WindDownRoutineSequenceCard: View {
                 Text(eyebrow)
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Your optional ideas")
+                Text("A few ideas for this time")
                     .font(AppTypography.headline)
                     .foregroundStyle(AppColors.ink)
 
@@ -30,7 +30,7 @@ struct WindDownRoutineSequenceCard: View {
                     }
                 }
 
-                Text("An invitation, not a checklist.")
+                Text("Follow these at your own pace. You can skip any of them.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }

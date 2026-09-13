@@ -120,7 +120,7 @@ extension FocusSessionCoordinator {
         run.state = .running
         self.run = run
         ollieMessage = "The Watch check can rest. Ollie will keep the timer warm."
-        addEvent("Watch placement unavailable; timer continued.")
+        addEvent("Legacy distance check unavailable; timer continued.")
         persistActiveRun()
         reconcileShielding(for: run)
         stopWatchPlacement()
@@ -155,7 +155,10 @@ extension FocusSessionCoordinator {
     }
 
     func receiveNearbyToken(_ tokenData: Data?) {
-        guard let tokenData, tokenData != pairedWatchTokenData else { return }
+        guard run?.guardKind == .watchPlacement,
+              run?.placementStatus == .awaitingConfirmation,
+              let tokenData,
+              tokenData != pairedWatchTokenData else { return }
         pairedWatchTokenData = tokenData
         nearby.run(withTokenData: tokenData)
         watch.send(

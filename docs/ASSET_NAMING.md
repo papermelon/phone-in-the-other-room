@@ -61,11 +61,26 @@ Use the closest group for final PNG/SVG/PDF assets. If Xcode namespace lookup is
 
 ## Image Expectations
 
+Current Farm environment direction: paper-textured illustration for the personal and shared
+Farm, barns, meadows and related scenery. Preserve existing character renderers and fitted
+cosmetics. Pixel-art guidance below applies to assets intentionally retained in that style;
+it does not require new Farm scenery to remain pixel art. See the
+[scenery migration and retirement register](plans/farm-art-retirement-2026-09-12.md).
+
 - Use PNG for pixel art, textured illustrations, and sprite sheets.
 - Use single-scale vector PDF or SVG only for simple icons that must scale cleanly.
 - Keep transparent backgrounds for characters, sheep, props, icons, rewards, badges, and overlays.
 - Keep environment backgrounds opaque unless they are foreground/depth layers.
 - Export pixel art at exact integer scale. Avoid fractional scaling in source art.
+
+## Asset lifecycle
+
+Only approved runtime artwork belongs in the asset catalog. Put generation working files in
+ignored `tmp/imagegen/`; keep necessary masters/provenance outside runtime resources. Record
+superseded artwork as a retirement candidate, migrate consumers, check dynamic IDs/fallbacks and
+all affected targets, then remove the unused files once recovery is established. Do not retain
+every old version in the catalog or delete uncommitted work on the assumption Git has a copy.
+The [retirement register](plans/farm-art-retirement-2026-09-12.md) owns candidates and checks.
 
 ## Shop thumbnails and equipped render art
 

@@ -28,8 +28,8 @@ enum SettingsHelpTopic: String {
         case .protectionTags: return "App limits use only your consented Screen Time selection. A paired tag is the normal NFC start and early-end credential."
         case .remindersLockScreen: return "Reminders and Lock Screen choices are optional. They never start a run by themselves."
         case .appearance: return "Choose the display that feels most comfortable in the evening."
-        case .connections: return "Connections are optional. Counting Sheep still works when they are unavailable or declined."
-        case .privacyData: return "Detailed ritual history stays on this iPhone. Optional sharing uses a smaller, date-free record."
+        case .connections: return "Screen Time protection is required for new Wind Down, Screen-Free Morning, and Phone Away starts. Apple Health is optional. Slumber Party is invite-only."
+        case .privacyData: return "Detailed ritual history stays on this iPhone. Optional impact sharing omits calendar dates and times but keeps a night number relative to consent."
         case .helpGuide: return "The guide and practice are optional ways to get familiar with Counting Sheep."
         }
     }
@@ -45,17 +45,19 @@ struct SettingsHelpButton: View {
         }
         .accessibilityLabel("Help for \(topic.title)")
         .sheet(isPresented: $showsHelp) {
-            NavigationStack {
+            ContentFittingGuideSheet {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    Text(topic.title).font(AppTypography.display(28))
+                    HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                        Text(topic.title)
+                            .font(AppTypography.display(28))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Button("Done") { showsHelp = false }
+                            .font(AppTypography.body)
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
                     Text(topic.message).font(AppTypography.body).foregroundStyle(AppColors.muted)
-                    Spacer()
                 }
-                .padding(AppSpacing.lg)
-                .background(AppColors.paper.ignoresSafeArea())
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { showsHelp = false } } }
             }
-            .presentationDetents([.medium])
         }
     }
 }
@@ -79,11 +81,30 @@ struct SettingsProtectionTagsView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 SettingsDetailHeader(title: "Protection & tags", detail: "Choose app limits and manage the tags that start and end NFC runs.")
                 PixelCard {
-                    Toggle("Start Wind Down automatically", isOn: Binding(
-                        get: { viewModel.nightWatchPreferences.automaticStartEnabled },
-                        set: viewModel.setAutomaticStartEnabled
-                    ))
-                    .font(AppTypography.headline)
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Toggle("Start Wind Down automatically", isOn: Binding(
+                            get: { viewModel.nightWatchPreferences.automaticStartEnabled },
+                            set: viewModel.setAutomaticStartEnabled
+                        ))
+                        .font(AppTypography.headline)
+                        Text("When enabled, Counting Sheep schedules the timer and selected-app limits for the next eligible repeating Wind Down, even while the app is closed.")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.muted)
+                        Text(viewModel.automaticWindDownStatusPresentation.title)
+                            .font(AppTypography.body.weight(.semibold))
+                        Text(viewModel.automaticWindDownStatusPresentation.detail)
+                            .font(AppTypography.caption)
+                            .foregroundStyle(AppColors.secondaryText)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if viewModel.automaticWindDownStatusPresentation.needsRepair {
+                            NavigationLink {
+                                ScreenTimeProtectionRepairView(repairsAutomaticStart: true)
+                            } label: {
+                                Text("Review protection repair")
+                            }
+                                .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        }
+                    }
                 }
                 WindDownProtectionPicker(
                     selectedKind: viewModel.nightWatchPreferences.guardKind,
@@ -128,7 +149,12 @@ struct SettingsProtectionTagsView: View {
         .settingsHelp(.protectionTags)
         .sheet(isPresented: $showShieldInfo) { AppShieldExplainerSheet(onDone: { showShieldInfo = false }) }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
-        .familyActivityPicker(headerText: "Choose apps or categories to limit during Wind Down.", footerText: "Counting Sheep stays available.", isPresented: $showPicker, selection: $viewModel.bedtimeActivitySelection)
+        .familyActivityPicker(
+            headerText: "Choose apps or categories to limit from Wind Down start through Screen-Free Morning, including overnight, and during Phone Away.",
+            footerText: "Counting Sheep stays available.",
+            isPresented: $showPicker,
+            selection: $viewModel.bedtimeActivitySelection
+        )
         .onChange(of: viewModel.bedtimeActivitySelection) { _, _ in
             viewModel.saveScreenTimeSelection(.bedtime)
             selectionConfirmed = false
@@ -170,7 +196,7 @@ struct SettingsRemindersLockScreenView: View {
                         .font(AppTypography.caption).foregroundStyle(AppColors.muted)
                 }
                 NavigationLink { LockScreenQuietNoteGuideView() } label: {
-                    SettingsDetailRow(title: "Lock Screen Quiet Note", detail: "Set a small private reminder", icon: "text.bubble.fill")
+                    SettingsDetailRow(title: "Lock Screen Quiet Note", detail: "May be visible while your iPhone is locked", icon: "text.bubble.fill")
                 }.buttonStyle(.plain)
             }.padding(AppSpacing.md)
         }
@@ -205,7 +231,7 @@ struct SettingsConnectionsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                SettingsDetailHeader(title: "Connections", detail: "Optional Apple services add context without changing your local ritual.")
+                SettingsDetailHeader(title: "Connections", detail: "Screen Time protection is required for new starts. Apple Health is optional context. Slumber Party is invite-only.")
                 HealthConnectionStatusCard(
                     presentation: viewModel.healthSleepConnectionPresentation,
                     onConnect: viewModel.connectAppleHealthSleep,
@@ -236,7 +262,7 @@ struct SettingsConnectionsView: View {
         .settingsHelp(.connections)
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls)
         .familyActivityPicker(
-            headerText: "Choose apps or categories for reports and future Wind Down or Phone Away app protection.",
+            headerText: "Choose apps or categories for reports and limits from Wind Down start through Screen-Free Morning, including overnight, and during Phone Away.",
             footerText: "Changing this does not alter a current session. Your selection stays in Apple’s Screen Time system; website entries are ignored.",
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection
@@ -276,7 +302,7 @@ struct SettingsPrivacyDataView: View {
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("Optional impact data").font(AppTypography.headline)
-                        Text("Shared records omit exact dates, apps, source names, and raw Health samples.").font(AppTypography.caption).foregroundStyle(AppColors.muted)
+                        Text("Shared records omit calendar dates and clock times, apps, source names, and raw Health samples. Each record keeps a night number relative to consent.").font(AppTypography.caption).foregroundStyle(AppColors.muted)
                         if viewModel.impactSharingPreferences.isEnabled {
                             Text(impactSyncLabel).font(AppTypography.caption).foregroundStyle(AppColors.grass)
                             Button("Stop future sharing") { viewModel.setImpactSharingEnabled(false) }.buttonStyle(PixelChipButtonStyle(isSelected: false))
@@ -292,7 +318,7 @@ struct SettingsPrivacyDataView: View {
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("Local data").font(AppTypography.headline)
-                        Text("Erase this iPhone’s plan, history, Farm, local selection, and paired tag.").font(AppTypography.caption).foregroundStyle(AppColors.muted)
+                        Text("Erase this iPhone’s plan, Nights and morning notes, Farm, Quiet Note, Screen Time selection, local social queues, and registered tag details.").font(AppTypography.caption).foregroundStyle(AppColors.muted)
                         Button("Erase local data and start over", role: .destructive) { showReset = true }.buttonStyle(.bordered)
                     }
                 }
@@ -304,7 +330,7 @@ struct SettingsPrivacyDataView: View {
         .settingsHelp(.privacyData)
         .sheet(isPresented: $showConsent) { ImpactSharingConsentSheet { viewModel.setImpactSharingEnabled(true) } }
         .confirmationDialog("Delete shared impact data?", isPresented: $showDeletion, titleVisibility: .visible) { Button("Delete shared data", role: .destructive) { viewModel.deleteSharedImpactData() }; Button("Keep it", role: .cancel) {} } message: { Text("This removes optional impact records from Counting Sheep’s backend. Local history stays here.") }
-        .confirmationDialog("Start over from the beginning?", isPresented: $showReset, titleVisibility: .visible) { Button("Erase and start over", role: .destructive) { viewModel.eraseLocalDataAndStartOver() }; Button("Keep my data", role: .cancel) {} } message: { Text("System permissions already granted by iOS cannot be revoked here.") }
+        .confirmationDialog("Start over from the beginning?", isPresented: $showReset, titleVisibility: .visible) { Button("Erase local data and start over", role: .destructive) { viewModel.eraseLocalDataAndStartOver() }; Button("Keep my data", role: .cancel) {} } message: { Text("This erases the local plan, history, morning notes, Farm, Quiet Note, Screen Time selection, registered tag details, and queued social work. It does not revoke iOS permissions or rewrite a physical NFC tag. Remote impact records, Slumber Party history, and online account data remain until you delete them with their separate controls.") }
     }
 
     private var impactSyncLabel: String {

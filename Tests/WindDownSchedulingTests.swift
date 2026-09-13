@@ -363,6 +363,72 @@ final class WindDownSchedulingTests: XCTestCase {
         XCTAssertEqual(plan.windDownMinutes, 30)
     }
 
+    func testOneTimePrimaryOverridePreservesFullOrderedRoutineSnapshot() throws {
+        let preferences = preferencesWithOrderedRoutines()
+        let startedAt = try date(2026, 8, 3, 21, 0)
+        let bedtime = try date(2026, 8, 3, 22, 0)
+        let override = WindDownOneTimePeriod(
+            title: "Adjusted Wind Down",
+            role: .primarySleepBookend,
+            interval: DateInterval(start: startedAt, end: bedtime)
+        )
+        let period = try XCTUnwrap(
+            WindDownScheduleEngine.eligibleOccurrence(
+                in: WindDownScheduleState(oneTimePeriods: [override]),
+                at: startedAt,
+                calendar: calendar
+            )
+        )
+
+        let plan = WindDownScheduleEngine.plan(
+            for: period,
+            preferences: preferences,
+            startedAt: startedAt,
+            calendar: calendar
+        )
+
+        XCTAssertFalse(period.recurring)
+        XCTAssertEqual(plan.intendedBedtime, bedtime)
+        XCTAssertEqual(plan.eveningRoutine, preferences.eveningRoutine)
+        XCTAssertEqual(plan.morningRoutine, preferences.morningRoutine)
+        XCTAssertEqual(plan.eveningCueText, preferences.eveningCueText)
+        XCTAssertEqual(plan.morningCueText, preferences.morningCueText)
+
+        let restoredPlan = try JSONDecoder().decode(
+            NightWatchPlan.self,
+            from: JSONEncoder().encode(plan)
+        )
+        XCTAssertEqual(restoredPlan.eveningRoutine, preferences.eveningRoutine)
+        XCTAssertEqual(restoredPlan.morningRoutine, preferences.morningRoutine)
+    }
+
+    func testRecurringPrimaryPlanPreservesFullOrderedRoutineSnapshot() throws {
+        let preferences = preferencesWithOrderedRoutines()
+        let startedAt = try date(2026, 8, 3, 22, 30)
+        let routine = WindDownRoutine.primary(from: preferences)
+        let period = try XCTUnwrap(
+            WindDownScheduleEngine.eligibleOccurrence(
+                in: WindDownScheduleState(routines: [routine]),
+                at: startedAt,
+                calendar: calendar,
+                primaryExtensionMinutes: preferences.morningQuietMinutes
+            )
+        )
+
+        let plan = WindDownScheduleEngine.plan(
+            for: period,
+            preferences: preferences,
+            startedAt: startedAt,
+            calendar: calendar
+        )
+
+        XCTAssertTrue(period.recurring)
+        XCTAssertEqual(plan.eveningRoutine, preferences.eveningRoutine)
+        XCTAssertEqual(plan.morningRoutine, preferences.morningRoutine)
+        XCTAssertEqual(plan.eveningCueText, preferences.eveningCueText)
+        XCTAssertEqual(plan.morningCueText, preferences.morningCueText)
+    }
+
     func testLateOneTimePlanCountsOnlyFromConfirmationUntilItsSavedEnd() throws {
         let now = try date(2026, 8, 3, 20, 15)
         let period = WindDownSchedulePeriod(
@@ -747,6 +813,32 @@ final class WindDownSchedulingTests: XCTestCase {
         let legacyDecoded = try JSONDecoder().decode(AutomaticWindDownSchedule.self, from: legacyData)
         XCTAssertNil(legacyDecoded.sourceOccurrenceID)
         XCTAssertEqual(legacyDecoded.plan, plan)
+    }
+
+    private func preferencesWithOrderedRoutines() -> NightWatchPreferences {
+        NightWatchPreferences(
+            bedtimeHour: 23,
+            bedtimeMinute: 0,
+            wakeHour: 7,
+            wakeMinute: 0,
+            windDownMinutes: 30,
+            morningQuietMinutes: 30,
+            eveningActivity: .read,
+            morningActivity: .openCurtains,
+            eveningCueText: "Legacy evening idea",
+            morningCueText: "Legacy morning idea",
+            eveningRoutine: [
+                .suggested(.brushTeeth, phase: .evening),
+                .custom("Read the next chapter of my library book", phase: .evening),
+                .suggested(.stretch, phase: .evening)
+            ],
+            morningRoutine: [
+                .custom("Have breakfast with my partner", phase: .morning),
+                .suggested(.openCurtains, phase: .morning)
+            ],
+            guardKind: .honorTimer,
+            isConfigured: true
+        )
     }
 
     private func makePlan(startedAt: Date, bedtime: Date) -> NightWatchPlan {

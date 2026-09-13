@@ -1,5 +1,18 @@
 import Foundation
 
+enum NightFlockV4PartyObservationState: Equatable {
+    case notRequested
+    case refreshing(lastReceivedAt: Date?)
+    case current(lastReceivedAt: Date)
+    case stale(lastReceivedAt: Date?)
+
+    /// A routine refresh is not evidence that the cached update is unavailable.
+    var showsConnectionWarning: Bool {
+        if case .stale = self { return true }
+        return false
+    }
+}
+
 struct SlumberPartyUpdateCheerReceipt: Identifiable, Codable, Equatable, Sendable {
     var id: UUID { reactionID }
     var reactionID: UUID
@@ -13,6 +26,15 @@ struct SlumberPartyUpdateCheerReceipt: Identifiable, Codable, Equatable, Sendabl
 
 /// Only the existing visible update streams are eligible. No local history is scanned.
 enum SlumberPartySharedFarmRules {
+    static func groupUpdates(in party: NightFlockV4PartyDetail) -> [NightFlockV4SharedActivity] {
+        // Identity, never rounded text, determines whether two projections are
+        // the same update. Existing round aliases retain their cheer context.
+        var seen = Set<UUID>()
+        return party.memberships.flatMap { updates(for: $0.memberID, in: party) }
+            .filter { seen.insert($0.id).inserted }
+            .sorted { $0.occurredAt == $1.occurredAt ? $0.id.uuidString < $1.id.uuidString : $0.occurredAt > $1.occurredAt }
+    }
+
     static func members(in party: NightFlockV4PartyDetail) -> [NightFlockV4Membership] {
         party.memberships.sorted {
             $0.joinedAt == $1.joinedAt ? $0.memberID.uuidString < $1.memberID.uuidString : $0.joinedAt < $1.joinedAt

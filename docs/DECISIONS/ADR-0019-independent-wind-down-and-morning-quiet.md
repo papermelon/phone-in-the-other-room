@@ -1,5 +1,7 @@
 # ADR-0019 — Independent Wind Down and Screen-Free Morning settlement
 
+New-run Farm accounting is superseded by [ADR-0020](ADR-0020-cumulative-farm-credit.md): cumulative credit survives early endings and excludes Brief Access. Legacy settled outcomes remain intact.
+
 - Status: Accepted
 - Date: 2026-08-23
 - Decider: Founder
@@ -25,6 +27,12 @@ and a non-empty opaque app/category selection. Runtime failure remains fail-open
 The picker is not proof of a named-app selection. Screen-Free Morning data, purpose cues, and
 Brief Access remain local and never enter Slumber Party.
 
+Authorization and a non-empty selection establish readiness, not proof that limits ran. Runtime
+receipts distinguish observed apply/clear evidence, partial evidence, unavailable/legacy evidence,
+and protection that was not requested. Brief Access temporarily lifts the selected limits while
+the session timer and Screen-Free Morning eligible elapsed time continue, so those minutes are not
+described as verified no-screen time.
+
 ## Persistence and scheduling
 
 `ollie.windDownMorning.settlementJournal` is the domain authority for hidden outcomes, terminal
@@ -32,6 +40,11 @@ delivery/reveal markers, linked occurrences, Sunrise settlement, and replay-safe
 Search Journal, Nights history, and App Group values are projections. The App Group holds only
 derived shield schedule/presentation state, including a revisioned registry and tombstones so
 stale extension callbacks cannot replace a newer deferred window.
+
+Nights presents Wind Down's factual before-bed minutes, Screen-Free Morning's independent
+occurrence ledger, and Phone Away's elapsed record separately. A day containing only Screen-Free
+Morning is still a real day record. Legacy combined rows are labeled as legacy and never assigned
+shield evidence that was not stored.
 
 ## Consequences
 

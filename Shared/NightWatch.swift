@@ -8,10 +8,10 @@ enum NightWatchPhase: String, Codable, CaseIterable, Hashable {
 
     var title: String {
         switch self {
-        case .windDown: return "Phone-free wind-down"
-        case .overnight: return "Sleep time"
-        case .morningQuiet: return "Phone-free morning"
-        case .complete: return "Night complete"
+        case .windDown: return "Wind Down"
+        case .overnight: return "Overnight"
+        case .morningQuiet: return "Screen-Free Morning"
+        case .complete: return "Wind Down ended"
         }
     }
 }
@@ -52,21 +52,21 @@ enum PhoneFreeActivity: String, Codable, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .read: return "Read a paper book"
-        case .shower: return "Warm shower or bath"
+        case .shower: return "Take a warm shower or bath"
         case .prepareTomorrow: return "Prepare tomorrow’s clothes or bag"
         case .stretch: return "Stretch or move gently"
-        case .journal: return "Write tomorrow’s top 3"
+        case .journal: return "Write down three things for tomorrow"
         case .makeTea: return "Make a caffeine-free warm drink"
         case .openCurtains: return "Open the curtains"
         case .breakfast: return "Make breakfast"
         case .morningWalk: return "Step outside for a short walk"
         case .getReady: return "Shower and get dressed"
-        case .brushTeeth: return "Brush teeth or do skincare"
-        case .quietConversation: return "Chat with someone"
+        case .brushTeeth: return "Brush your teeth or do your skincare"
+        case .quietConversation: return "Have a quiet conversation"
         case .makeBed: return "Make the bed"
         case .brainDump: return "Jot down what’s still on your mind"
-        case .sleepwear: return "Change into sleepwear"
-        case .relaxation: return "Breathing or relaxation"
+        case .sleepwear: return "Change into your sleepwear"
+        case .relaxation: return "Take a few slow breaths"
         case .quietMusic: return "Listen to quiet music"
         case .calmHobby: return "Spend time on a calm hobby"
         }
@@ -74,12 +74,12 @@ enum PhoneFreeActivity: String, Codable, CaseIterable, Identifiable {
 
     var shortTitle: String {
         switch self {
-        case .read: return "Read"
+        case .read: return "Read a book"
         case .shower: return "Shower"
-        case .prepareTomorrow: return "Prepare tomorrow"
+        case .prepareTomorrow: return "Set out tomorrow’s things"
         case .stretch: return "Stretch"
-        case .journal: return "Write"
-        case .makeTea: return "Make a drink"
+        case .journal: return "Write down tomorrow’s plans"
+        case .makeTea: return "Make a warm drink"
         case .openCurtains: return "Open curtains"
         case .breakfast: return "Make breakfast"
         case .morningWalk: return "Take a walk"
@@ -87,11 +87,11 @@ enum PhoneFreeActivity: String, Codable, CaseIterable, Identifiable {
         case .brushTeeth: return "Brush teeth"
         case .quietConversation: return "Quiet conversation"
         case .makeBed: return "Make the bed"
-        case .brainDump: return "Jot it down"
-        case .sleepwear: return "Change clothes"
-        case .relaxation: return "Breathe"
-        case .quietMusic: return "Quiet music"
-        case .calmHobby: return "Calm hobby"
+        case .brainDump: return "Write down what’s on your mind"
+        case .sleepwear: return "Change into sleepwear"
+        case .relaxation: return "Take a few slow breaths"
+        case .quietMusic: return "Listen to quiet music"
+        case .calmHobby: return "Enjoy a quiet hobby"
         }
     }
 
@@ -688,16 +688,23 @@ struct NightWatchPlan: Codable, Equatable {
     var eveningRoutine: [WindDownRoutineStep]
     var morningRoutine: [WindDownRoutineStep]
     /// Primary plans span the sleep bookends. Additional plans are standalone
-    /// quiet intervals and must not advance protected-night progression.
+    /// quiet intervals and must not advance Wind Down progression.
     var role: WindDownOccurrenceRole
     /// Missing only for plans saved before immutable night attribution existed.
     /// Legacy plans deliberately remain unknown rather than using `Calendar.current`.
     var localDateAnchor: NightWatchLocalDateAnchor?
+    /// A snapshotted invitation, not evidence of where the phone remained.
+    var phonePlacement: WindDownPhonePlacement
+    /// Describes the evening invitation chosen at start; never a completion flag.
+    var usesSmallerRoutine: Bool
+    /// Matches one next-start choice so an admitted-run replay cannot consume a later choice.
+    var smallerRoutineSelectionID: UUID?
 
     private enum CodingKeys: String, CodingKey {
         case intendedBedtime, wakeTime, protectedUntil, windDownMinutes, morningQuietMinutes
         case eveningActivity, morningActivity, eveningCueText, morningCueText
         case eveningRoutine, morningRoutine, role, localDateAnchor
+        case phonePlacement, usesSmallerRoutine, smallerRoutineSelectionID
     }
 
     init(
@@ -714,6 +721,9 @@ struct NightWatchPlan: Codable, Equatable {
         morningRoutine: [WindDownRoutineStep]? = nil,
         role: WindDownOccurrenceRole = .primarySleepBookend,
         localDateAnchor: NightWatchLocalDateAnchor? = nil,
+        phonePlacement: WindDownPhonePlacement = .anotherRoom,
+        usesSmallerRoutine: Bool = false,
+        smallerRoutineSelectionID: UUID? = nil,
         calendar: Calendar = .current
     ) {
         self.intendedBedtime = intendedBedtime
@@ -747,6 +757,9 @@ struct NightWatchPlan: Codable, Equatable {
             wakeTime: wakeTime,
             calendar: calendar
         )
+        self.phonePlacement = phonePlacement
+        self.usesSmallerRoutine = usesSmallerRoutine
+        self.smallerRoutineSelectionID = smallerRoutineSelectionID
     }
 
     init(from decoder: Decoder) throws {
@@ -785,6 +798,9 @@ struct NightWatchPlan: Codable, Equatable {
             NightWatchLocalDateAnchor.self,
             forKey: .localDateAnchor
         )
+        phonePlacement = try container.decodeIfPresent(WindDownPhonePlacement.self, forKey: .phonePlacement) ?? .anotherRoom
+        usesSmallerRoutine = try container.decodeIfPresent(Bool.self, forKey: .usesSmallerRoutine) ?? false
+        smallerRoutineSelectionID = try container.decodeIfPresent(UUID.self, forKey: .smallerRoutineSelectionID)
     }
 
     static func additionalQuiet(
@@ -820,11 +836,11 @@ struct NightWatchPlan: Codable, Equatable {
     }
 
     var eveningActivityTitle: String {
-        eveningCueText ?? eveningActivity.shortTitle
+        eveningCueText ?? eveningActivity.title
     }
 
     var morningActivityTitle: String {
-        morningCueText ?? morningActivity.shortTitle
+        morningCueText ?? morningActivity.title
     }
 
     func eveningNotificationActivityTitle(allowsPersonalText: Bool) -> String? {
@@ -838,8 +854,11 @@ struct NightWatchPlan: Codable, Equatable {
     }
 
     func eveningRoutineSummary(allowsPersonalText: Bool) -> String {
-        guard allowsPersonalText else { return WindDownRoutineStep.phoneAwayTitle }
-        let titles = [WindDownRoutineStep.phoneAwayTitle] + eveningRoutine.map(\.title)
+        let placementCue = role == .primarySleepBookend
+            ? phonePlacement.actionCue
+            : WindDownRoutineStep.phoneAwayTitle
+        guard allowsPersonalText else { return placementCue }
+        let titles = [placementCue] + eveningRoutine.map(\.title)
         return titles.joined(separator: " · ")
     }
 

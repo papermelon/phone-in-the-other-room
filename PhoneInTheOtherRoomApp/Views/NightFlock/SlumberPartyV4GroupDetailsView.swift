@@ -12,6 +12,8 @@ struct SlumberPartyV4GroupDetailsView: View {
     @State private var copiedCodeNotice: String?
     @State private var showsLeaveConfirmation = false
     @State private var showsDeleteConfirmation = false
+    @State private var showsReplaceInvitationConfirmation = false
+    @State private var invitationAwaitingReplacement: NightFlockV4InvitationMetadata?
     @State private var showsSharedHistoryDeletionConfirmation = false
     @Environment(\.dismiss) private var dismiss
 
@@ -26,6 +28,38 @@ struct SlumberPartyV4GroupDetailsView: View {
 
     private var actionIsInFlight: Bool {
         viewModel.isRefreshingV4Party(party.summary.partyID) || viewModel.phase == .loading
+    }
+
+    private var sharedHabitsState: NightFlockSharedHabitsStateResponse? {
+        viewModel.sharedHabitsState(for: party.summary.partyID)
+    }
+
+    private var showsSharedHabits: Bool {
+        SlumberPartyReleasePresentationGate.showsSharedHabits(
+            listState: viewModel.v4ListState,
+            partyState: sharedHabitsState
+        )
+    }
+
+    private var showsSocialAvatar: Bool {
+        SlumberPartyReleasePresentationGate.showsSocialAvatar(
+            listState: viewModel.v4ListState,
+            partyState: sharedHabitsState
+        )
+    }
+
+    private var leaveConsequence: String {
+        if showsSharedHabits {
+            return "Leaving stops new sharing and removes your access. Earlier shared records may remain visible unless a separate removal request is accepted. Your local Wind Down and Farm stay on this iPhone."
+        }
+        return "Leaving stops new Slumber Party updates and removes your access. It does not close the party for other members. Your local Wind Down and Farm stay on this iPhone."
+    }
+
+    private var dissolveConsequence: String {
+        if showsSharedHabits {
+            return "Dissolving closes this party, its invitation, and every member’s access. Any shared-history change is confirmed separately. Earned rewards and each person’s local Wind Down and Farm records stay on their own phone."
+        }
+        return "Dissolving closes this party, its invitation, and every member’s access. Earned rewards and each person’s local Wind Down and Farm records stay on their own phone."
     }
 
     var body: some View {
@@ -43,11 +77,13 @@ struct SlumberPartyV4GroupDetailsView: View {
                 }
 
                 statusNotice
-                identitySection
+                if showsSocialAvatar {
+                    identitySection
+                }
                 peopleSection
                 invitationSection
                 managementSection
-                if party.summary.myRole != .host, viewModel.supportsSharedHabits {
+                if party.summary.myRole != .host, showsSharedHabits {
                     sharedHabitsPrivacySection
                 }
             }
@@ -73,7 +109,7 @@ struct SlumberPartyV4GroupDetailsView: View {
                 viewModel.leaveSlumberParty(party.summary.partyID)
             }
         } message: {
-            Text("Your local Wind Down and Farm will stay on this iPhone.")
+            Text(leaveConsequence)
         }
         .confirmationDialog("Leave and remove your shared history?", isPresented: $showsSharedHistoryDeletionConfirmation) {
             Button("Leave and remove my history", role: .destructive) {
@@ -89,7 +125,19 @@ struct SlumberPartyV4GroupDetailsView: View {
                 viewModel.deleteSlumberParty(party.summary.partyID)
             }
         } message: {
-            Text("This removes the group archive for its members and leaves it. Your local Wind Down and Farm will stay on this iPhone.")
+            Text(dissolveConsequence)
+        }
+        .confirmationDialog("Replace this invitation code?", isPresented: $showsReplaceInvitationConfirmation) {
+            Button("Replace code", role: .destructive) {
+                guard !actionIsInFlight, let invitationAwaitingReplacement else { return }
+                viewModel.replaceSlumberPartyInvite(
+                    party.summary.partyID,
+                    expectedInviteID: invitationAwaitingReplacement.inviteID
+                )
+                self.invitationAwaitingReplacement = nil
+            }
+        } message: {
+            Text("If accepted, the old code stops working and a new code replaces it. Current members stay in the party.")
         }
     }
 
@@ -99,6 +147,13 @@ struct SlumberPartyV4GroupDetailsView: View {
             Text("Updating group details…")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
+        }
+        if let warmNotice = viewModel.warmNotice {
+            NightFlockStatusCard(
+                symbol: "checkmark.seal.fill",
+                title: "Group update accepted",
+                detail: warmNotice
+            )
         }
         if case let .error(message) = viewModel.phase {
             SlumberPartyV4UnavailableCard(
@@ -153,11 +208,6 @@ struct SlumberPartyV4GroupDetailsView: View {
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
-        } else if !appViewModel.socialAvatarSharingAvailable {
-            Text("Group service does not yet acknowledge identity changes. Your local choice is shown here; members keep the current shared identity.")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.muted)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -171,7 +221,11 @@ struct SlumberPartyV4GroupDetailsView: View {
                     HStack(spacing: AppSpacing.sm) {
                         SlumberPartySocialAvatarView(
                             presentation: member.profile.presentation,
-                            avatarID: member.profile.presentation.avatarID,
+                            avatarID: SlumberPartyReleasePresentationGate.avatarID(
+                                requested: member.profile.presentation.avatarID,
+                                listState: viewModel.v4ListState,
+                                partyState: sharedHabitsState
+                            ),
                             size: 52
                         )
                         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
@@ -218,6 +272,12 @@ struct SlumberPartyV4GroupDetailsView: View {
                 .textSelection(.enabled)
                 .accessibilityLabel("Invitation code \(code)")
             invitationActions(code: code)
+            if party.summary.myRole == .host {
+                Text("Replacing or revoking a code stops that code from working. Current members stay in the party.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         } else if party.invitation?.status == .active {
             Text("An invitation is active for this group.")
                 .font(AppTypography.body)
@@ -258,10 +318,8 @@ struct SlumberPartyV4GroupDetailsView: View {
             .buttonStyle(PixelChipButtonStyle(isSelected: false))
             if party.summary.myRole == .host, let invitation = party.invitation {
                 Button("Replace code") {
-                viewModel.replaceSlumberPartyInvite(
-                        party.summary.partyID,
-                        expectedInviteID: invitation.inviteID
-                    )
+                    invitationAwaitingReplacement = invitation
+                    showsReplaceInvitationConfirmation = true
                 }
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
@@ -285,7 +343,7 @@ struct SlumberPartyV4GroupDetailsView: View {
                 Text("SHARED HABITS & PRIVACY")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Leaving stops new sharing and access. Earlier agreed summaries stay with this party for its lifetime unless you remove your own retained history or the host dissolves the group.")
+                Text("Leaving stops new sharing and access. Earlier shared records may remain visible. You can send a separate removal request before leaving; Counting Sheep confirms it separately.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -316,6 +374,10 @@ struct SlumberPartyV4GroupDetailsView: View {
                     .frame(maxWidth: .infinity, minHeight: 44)
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
                     .disabled(actionIsInFlight)
+                    Text("A host cannot leave alone. \(dissolveConsequence)")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                     Button("Dissolve party and leave", role: .destructive) {
                         showsDeleteConfirmation = true
                     }
@@ -323,6 +385,10 @@ struct SlumberPartyV4GroupDetailsView: View {
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))
                     .disabled(actionIsInFlight)
                 } else {
+                    Text(leaveConsequence)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
                     Button("Leave party", role: .destructive) {
                         showsLeaveConfirmation = true
                     }

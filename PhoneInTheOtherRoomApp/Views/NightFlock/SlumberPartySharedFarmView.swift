@@ -1,88 +1,14 @@
 import SwiftUI
 
-/// Stable slots share one approved meadow; no physics or motion can move a person's target.
+/// The release Farm and its accessible member list open the same update sheet.
 struct SlumberPartySharedFarmView: View {
     let party: NightFlockV4PartyDetail
     var showsSocialAvatar: Bool
     var selectedMemberID: UUID? = nil
     var onSelect: (UUID) -> Void
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
-    private var members: [NightFlockV4Membership] { SlumberPartySharedFarmRules.members(in: party) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("OUR FARM")
-                .font(pixelFont(.caption))
-                .foregroundStyle(AppColors.grass)
-            Text("Familiar faces, shared moments")
-                .font(AppTypography.headline)
-            Text("Tap a friend to open their latest shared update and leave a quiet cheer.")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: AppSpacing.sm),
-                                     count: dynamicTypeSize.isAccessibilitySize ? 1 : 2), spacing: AppSpacing.lg) {
-                ForEach(members) { member in
-                    Button { onSelect(member.memberID) } label: {
-                        VStack(spacing: AppSpacing.xxs) {
-                            SlumberPartySocialAvatarView(presentation: member.profile.presentation,
-                                avatarID: showsSocialAvatar ? member.profile.presentation.avatarID : "shepherd",
-                                size: 112, showsBackdrop: false)
-                            Text(member.profile.displayName + (member.memberID == party.myMemberID ? " · You" : ""))
-                                .font(AppTypography.body.weight(.semibold))
-                                .foregroundStyle(AppColors.ink)
-                                .multilineTextAlignment(.center)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.horizontal, AppSpacing.sm)
-                                .padding(.vertical, AppSpacing.xs)
-                                .background(AppColors.paper.opacity(0.94), in: RoundedRectangle(cornerRadius: AppRadius.sm))
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 156)
-                        .contentShape(Rectangle())
-                        .overlay {
-                            if selectedMemberID == member.memberID {
-                                RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.grass, lineWidth: 2)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityValue(selectedMemberID == member.memberID ? "Selected" : "")
-                    .accessibilityLabel("\(member.profile.displayName), \(SlumberPartySocialAvatarView.title(for: showsSocialAvatar ? member.profile.presentation.avatarID : "shepherd"))")
-                    .accessibilityHint("Opens their latest shared update and cheers")
-                }
-            }
-            .padding(AppSpacing.md)
-            .background {
-                GeometryReader { proxy in
-                    PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
-                        .frame(width: proxy.size.width, height: proxy.size.height)
-                        .clipped()
-                        .overlay(AppColors.paper.opacity(colorScheme == .dark ? 0.45 : 0))
-                        .accessibilityHidden(true)
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            DisclosureGroup("Members as a list") {
-                ForEach(members) { member in
-                    Button { onSelect(member.memberID) } label: {
-                        HStack {
-                            Text(member.profile.displayName).font(AppTypography.body)
-                            Spacer(minLength: AppSpacing.sm)
-                            Image(systemName: "chevron.right").accessibilityHidden(true)
-                        }
-                        .frame(minHeight: 48)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Opens their latest shared update and cheers")
-                }
-            }
-            .font(AppTypography.body)
-            .tint(AppColors.grass)
-        }
+        SlumberPartyPastureView(party: party, onSelect: onSelect)
     }
 }
 
@@ -92,15 +18,22 @@ struct SlumberPartyMemberUpdatesView: View {
     let memberID: UUID
     var showsSocialAvatar: Bool
     var initialActivityID: UUID? = nil
+    var memberContext: AnyView? = nil
     @Environment(\.dismiss) private var dismiss
 
     private var party: NightFlockV4PartyDetail? { viewModel.v4ObservedPartyDetail(for: partyID) }
     private var member: NightFlockV4Membership? { party?.memberships.first { $0.memberID == memberID } }
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var isStale: Bool {
-        if viewModel.partyRefreshFailures[partyID] != nil { return true }
-        if case .current = viewModel.v4ObservedPartyObservationState(for: partyID) { return false }
-        return true
+        viewModel.partyRefreshFailures[partyID] != nil
+            || viewModel.v4ObservedPartyObservationState(for: partyID).showsConnectionWarning
+    }
+
+    private var isRefreshing: Bool {
+        if case .refreshing = viewModel.v4ObservedPartyObservationState(for: partyID) { return true }
+        return false
     }
 
     var body: some View {
@@ -108,12 +41,24 @@ struct SlumberPartyMemberUpdatesView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     if let party, let member {
+                        if let memberContext { memberContext } else {
                         SlumberPartySocialAvatarView(presentation: member.profile.presentation,
-                            avatarID: showsSocialAvatar ? member.profile.presentation.avatarID : "shepherd", size: 112)
+                            avatarID: "shepherd", size: 112)
                             .frame(maxWidth: .infinity)
+                            .overlay(alignment: .topTrailing) {
+                                Group {
+                                    if reduceMotion { Image(systemName: "arrow.clockwise") }
+                                    else { ProgressView() }
+                                }
+                                .frame(width: 24, height: 24)
+                                .opacity(isRefreshing ? 1 : 0)
+                                .accessibilityLabel("Updating shared moments")
+                                .accessibilityHidden(!isRefreshing)
+                            }
+                        }
                         appearanceNote(member.profile.presentation)
                         if isStale {
-                            Text("Showing the last update received. Connect and refresh to check for newer moments.")
+                            Text("Couldn’t check for newer moments. Your last received update is shown.")
                                 .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                             Button("Refresh updates") { viewModel.selectSlumberParty(partyID) }
                                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
@@ -144,7 +89,9 @@ struct SlumberPartyMemberUpdatesView: View {
             .background(AppColors.paper.ignoresSafeArea())
             .navigationTitle(member?.profile.displayName ?? "Shared updates")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
         }
     }
 
@@ -152,9 +99,6 @@ struct SlumberPartyMemberUpdatesView: View {
         if !SocialAvatarRules.isKnownWireAvatar(appearance.avatarID) || !appearance.isAllowlisted()
             || (appearance.headShapeID.map { ShepherdHeadShape(rawValue: $0) == nil } ?? false) {
             Text("Some appearance details aren’t supported by this app. A familiar fallback is shown.")
-                .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
-        } else if appearance.headShapeID == nil && (!showsSocialAvatar || appearance.avatarID == "shepherd") {
-            Text("Head shape hasn’t been shared. The default shape is shown.")
                 .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
         }
     }

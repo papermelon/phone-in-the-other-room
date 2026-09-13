@@ -17,22 +17,19 @@ struct SlumberPartyV4MemberCard: View {
     var sharedWindDownSummary: NightFlockSharedHabitPeriodSummary? = nil
     var sharedSleepWeekSummary: NightFlockSharedHabitPeriodSummary? = nil
     var sharedSleepMonthSummary: NightFlockSharedHabitPeriodSummary? = nil
-    var sharedSleepUpdatesAfterNoon = false
     var showsSharedHabitMetrics = false
+    var showsSocialAvatar = false
+    var showsActivitySummary = true
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         PixelCard {
-            if dynamicTypeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(alignment: .center, spacing: AppSpacing.sm) {
                     identity
-                    factualContent
+                    memberHeading
                 }
-            } else {
-                HStack(alignment: .top, spacing: AppSpacing.sm) {
-                    identity
-                    factualContent
-                }
+                factualContent
             }
         }
         .accessibilityElement(children: .contain)
@@ -41,48 +38,50 @@ struct SlumberPartyV4MemberCard: View {
     private var identity: some View {
         SlumberPartySocialAvatarView(
             presentation: member.profile.presentation,
-            avatarID: member.profile.presentation.avatarID,
+            avatarID: SocialAvatarRules.shepherdID,
             size: dynamicTypeSize.isAccessibilitySize ? 72 : 68
         )
     }
 
+    private var memberHeading: some View {
+        HStack(alignment: .top, spacing: AppSpacing.xs) {
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text(member.profile.displayName.isEmpty ? "A group member" : member.profile.displayName)
+                    .font(AppTypography.headline)
+                    .fixedSize(horizontal: false, vertical: true)
+                memberBadges
+            }
+            Spacer(minLength: AppSpacing.xs)
+            if !isYou, onBlock != nil || onReport != nil {
+                memberSafetyMenu
+            }
+        }
+    }
+
     private var factualContent: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            HStack(alignment: .top, spacing: AppSpacing.xs) {
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text(member.profile.displayName.isEmpty ? "A group member" : member.profile.displayName)
-                        .font(AppTypography.headline)
-                        .fixedSize(horizontal: false, vertical: true)
-                    memberBadges
-                }
-                Spacer(minLength: AppSpacing.xs)
-                if !isYou, onBlock != nil || onReport != nil {
-                    memberSafetyMenu
-                }
-            }
-
             if let liveStatusTitle = presentation.liveStatusTitle {
                 Text(liveStatusTitle)
                     .font(AppTypography.caption.weight(.semibold))
                     .foregroundStyle(AppColors.ink)
             }
-            if let latestActivityLine = presentation.latestActivityLine {
+            if showsActivitySummary, let latestActivityLine = presentation.latestActivityLine {
                 Text(latestActivityLine)
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
-            } else if !presentation.hasSharedUpdate,
+            } else if showsActivitySummary, !presentation.hasSharedUpdate,
                       sharedSleepSummary == nil,
                       sharedWindDownSummary == nil {
-                Text("No recent session update")
+                Text("No shared moment yet")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }
-            if showsSharedHabitMetrics || sharedSleepSummary != nil || sharedWindDownSummary != nil {
+            if showsSharedHabitMetrics {
                 sharedHabitMetrics
-            }
-            if sharedSleepWeekSummary != nil || sharedSleepMonthSummary != nil {
-                sharedSleepHistory
+                if sharedSleepWeekSummary != nil || sharedSleepMonthSummary != nil {
+                    sharedSleepHistory
+                }
             }
             if presentation.liveCheerCount > 0 {
                 Text(presentation.liveCheerCount == 1
@@ -101,7 +100,16 @@ struct SlumberPartyV4MemberCard: View {
     @ViewBuilder
     private var sharedHabitMetrics: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-            if dynamicTypeSize.isAccessibilitySize {
+            if sharedSleepSummary == nil && sharedWindDownSummary == nil {
+                // One truthful line instead of two identical empty cells. When
+                // the card already says "No shared moment yet", say nothing more.
+                if showsActivitySummary && (presentation.latestActivityLine != nil || presentation.hasSharedUpdate) {
+                    Text("Sleep and Wind Down summaries not shared yet")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            } else if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     sleepMetric
                     windDownMetric
@@ -112,12 +120,7 @@ struct SlumberPartyV4MemberCard: View {
                     windDownMetric
                 }
             }
-            if sharedSleepUpdatesAfterNoon, sharedSleepSummary?.period == .lastNight {
-                Text("The next sleep summary updates after noon in this member’s saved time zone.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+
         }
         .accessibilityElement(children: .contain)
     }
@@ -126,7 +129,7 @@ struct SlumberPartyV4MemberCard: View {
         sharedMetric(
             title: "Sleep",
             summary: sharedSleepSummary,
-            emptyTitle: "No sleep data",
+            emptyTitle: "Not shared yet",
             showsNightEnding: true
         )
     }
@@ -135,12 +138,12 @@ struct SlumberPartyV4MemberCard: View {
         sharedMetric(
             title: "Wind Down",
             summary: sharedWindDownSummary,
-            emptyTitle: "No Wind Down data"
+            emptyTitle: "Not shared yet"
         )
     }
 
     private var sharedSleepHistory: some View {
-        DisclosureGroup("7- and 30-night sleep means") {
+        DisclosureGroup("Sleep averages") {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 sharedHistoryRow("7 nights", sharedSleepWeekSummary)
                 sharedHistoryRow("30 nights", sharedSleepMonthSummary)
@@ -197,11 +200,13 @@ struct SlumberPartyV4MemberCard: View {
                 .font(AppTypography.body.weight(.semibold))
                 .fixedSize(horizontal: false, vertical: true)
             if let summary {
-                Text("\(summary.coveredNights) of \(summary.availableNights) nights")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
+                if summary.period != .lastNight {
+                    Text("\(summary.coveredNights) of \(summary.availableNights) nights")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                }
                 if showsNightEnding, summary.period == .lastNight {
-                    Text("Last completed night · \(NightFlockSharedHabitPresentation.localDateText(summary.endingOn))")
+                    Text("Night ending \(NightFlockSharedHabitPresentation.localDateText(summary.endingOn))")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)

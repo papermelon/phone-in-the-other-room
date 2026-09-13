@@ -9,7 +9,7 @@ enum ScreenbookFixtures {
     static func now(for kind: ScreenbookScenarioKind?) -> Date {
         switch kind {
         case .activeWindDown: return date(hour: 22, minute: 15)
-        case .earlyEnd: return date(hour: 22, minute: 20)
+        case .earlyEnd: return date(hour: 22).addingTimeInterval(338 * 60)
         case .configuredHome: return date(hour: 22, minute: 40)
         case .interactiveHome: return date(hour: 20, minute: 0)
         default: return date(hour: 20, minute: 0)
@@ -37,6 +37,14 @@ enum ScreenbookFixtures {
             persistence.farmState = farmState
         }
 
+        if ProcessInfo.processInfo.arguments.contains("-screenbook-habit-support"),
+           let identity = try? persistence.windDownHabitIdentity() {
+            try? persistence.saveWindDownHabitPlan(WindDownHabitPlan(
+                cue: "After I brush my teeth", preparation: "Leave my book beside the chair",
+                smallerActivity: "Read one paragraph", phonePlacement: .accessibleNearby,
+                useSmallerVersionNextTime: true
+            ), identity: identity)
+        }
         let liveActivity = FocusRunLiveActivityService(
             installationID: uuid(990),
             enabled: true
@@ -59,7 +67,21 @@ enum ScreenbookFixtures {
             startsExternalServices: false,
             nightFlockViewModel: social
         )
-        viewModel.enableScreenbookStartReadiness()
+        if ProcessInfo.processInfo.arguments.contains("-screenbook-no-protection") {
+            viewModel.screenTimeAuthorization = .denied("Permission declined in this visual fixture")
+        } else {
+            viewModel.enableScreenbookStartReadiness()
+        }
+        if ProcessInfo.processInfo.arguments.contains("-screenbook-protection-repair") {
+            viewModel.nightWatchPreferences.automaticStartEnabled = true
+            persistence.automaticWindDownProtectionRepairNeeded = true
+        }
+        if ProcessInfo.processInfo.arguments.contains("-screenbook-slumber-entry") {
+            social.phase = .loading
+            if ProcessInfo.processInfo.arguments.contains("-screenbook-slumber-loading") {
+                social.sharedFarmAccount = nil
+            }
+        }
 
         if kind == .configuredHome || kind == .interactiveHome {
             // Social presentation deliberately uses its actual observation
@@ -81,6 +103,9 @@ enum ScreenbookFixtures {
                 sharedHabitsVersion: 1
             )
             social.sharedHabitsStates[fixture.detail.summary.partyID] = fixture.state
+        }
+        if ProcessInfo.processInfo.arguments.contains("-screenbook-slumber-entry") {
+            social.v4ListState = nil
         }
 
         switch kind {
@@ -108,9 +133,11 @@ enum ScreenbookFixtures {
             coordinator.reconcileSession(at: fixedNow)
         case .earlyEnd:
             var run = activeRun(state: .endedEarly, endedAt: fixedNow)
-            run.actualDurationSeconds = 20 * 60
+            run.actualDurationSeconds = 338 * 60
             run.completedSuccessfully = false
             run.endedEarlyReason = .userEnded
+            coordinator.farmState.settleCumulativeCredit(run: run, searchState: coordinator.sheepSearchState)
+            persistence.farmState = coordinator.farmState
             coordinator.run = run
         case .activePhoneAway:
             let template = phoneAwayRun()

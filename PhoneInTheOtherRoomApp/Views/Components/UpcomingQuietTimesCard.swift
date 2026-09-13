@@ -42,7 +42,7 @@ struct UpcomingQuietTimesCard: View {
 
             if let trailMapPresentation {
                 HStack(alignment: .top, spacing: AppSpacing.sm) {
-                    Image(systemName: "map.fill")
+                    Image(systemName: "binoculars.fill")
                         .foregroundStyle(AppColors.grass)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
@@ -78,7 +78,7 @@ struct UpcomingQuietTimesCard: View {
             case let .repair(title, detail):
                 return (title, "shield.lefthalf.filled", detail)
             case .ready:
-                return ("Start scheduled \(context.title)", "play.fill", "Starts the scheduled Phone Away period")
+                return ("Start now", "play.fill", "Starts the scheduled Phone Away period, \(context.title)")
             }
         }()
         Button {
@@ -95,7 +95,7 @@ struct UpcomingQuietTimesCard: View {
     private var summary: String {
         guard let nextPeriod else {
             return additionalCount == 0
-                ? "Start now or plan a Phone Away period outside your usual Wind Down."
+                ? "Start now or plan time beyond doomscrolling apps for reading, making, movement, cooking, conversation, rest, work, or anything else you value."
                 : "Your next Phone Away period is being tended by Ollie."
         }
         let start = nextPeriod.occurrence.interval.start.formatted(date: .abbreviated, time: .shortened)

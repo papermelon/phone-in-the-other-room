@@ -27,14 +27,14 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
             Text("RECENT SHARED MOMENTS")
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
-            Text("Factual Wind Down and Phone Away moments shared in this invited group. Up to 100 recent moments from the last 90 days are shown.")
+            Text("Wind Down and Phone Away, shared from each person’s app.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
             if membershipActivities.isEmpty {
                 SlumberPartyV4UnavailableCard(
-                    title: "No shared update yet.",
-                    detail: "People can share from the moment they join. No update does not tell you whether anyone took part."
+                    title: "The first shared moment is still to come",
+                    detail: "Moments appear here when they reach the party. There may be more happening than you can see."
                 )
             } else {
                 ForEach(membershipActivities.prefix(8)) { activity in
@@ -52,13 +52,21 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
                     .font(AppTypography.body)
                 }
             }
+            DisclosureGroup("About shared moments") {
+                Text("These are app-recorded updates, not independent verification. Up to 100 moments from the last 90 days are shown. Missing updates don’t tell you whether someone took part.")
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .font(AppTypography.caption)
+            .tint(AppColors.grass)
         }
     }
 
     private var legacyRoundHistory: some View {
         DisclosureGroup("Round history") {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("Earlier round-only records stay here while this party moves to membership sharing.")
+                Text("Shared moments from earlier rounds.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -126,7 +134,7 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text(memberName(for: memberID))
                     .font(AppTypography.headline)
-                Text(occurredAt, format: .dateTime.day().month().year())
+                Text(occurredAt, format: .dateTime.day().month().year().hour().minute())
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                 Text(presentation.cardSummary)
                     .font(AppTypography.caption)

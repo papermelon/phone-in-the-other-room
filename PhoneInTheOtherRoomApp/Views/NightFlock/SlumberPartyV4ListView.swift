@@ -6,10 +6,10 @@ struct SlumberPartyV4Header: View {
             Text("PRIVATE · INVITE-ONLY")
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
-            Text("Give your phones some time away — together.")
+            Text("Give your phones some time away—together.")
                 .font(AppTypography.title)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("A private group for family, a partner, or close friends. Share small moments together; seven-night rounds organize progress and rewards.")
+            Text("Invite family, a partner, or close friends. Share your sessions and send each other quiet cheers. Seven-night rounds bring shared progress and rewards.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -17,10 +17,58 @@ struct SlumberPartyV4Header: View {
     }
 }
 
+/// Baseline V4 disclosure. Additive fields remain in their separately
+/// capability-gated agreement so an old server never inherits newer claims.
+struct SlumberPartyV4BaselineDisclosure: View {
+    let actionTitle: String
+    let includesChosenCharacter: Bool
+    let showsAdditionalAgreement: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            Text("WHAT THIS PARTY SHARES")
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.grass)
+            Text("\(actionTitle) lets members see your Shepherd name, \(appearanceDescription), and Wind Down or Phone Away entries you share during a seven-night round. When a party supports sharing from membership, the same entries can also appear after you join, before and between rounds. Minutes are rounded for the group.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Members also see your party role, round participation, brief app status, and fixed cheers.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Entries and statuses are app-recorded on a member’s iPhone and self-reported to Slumber Party. They are not independently verified.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            DisclosureGroup("What stays private") {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text("The baseline party does not receive your full Farm or wool, recurrence rule, exact schedule, custom purpose, routine or reflection text, selected apps, Screen Time tokens or reports, raw Health samples, NFC or phone-bed credentials, or notification settings.")
+                    if showsAdditionalAgreement {
+                        Text("Any additional shared fields are named in the separate agreement below.")
+                    }
+                }
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, AppSpacing.xs)
+            }
+            .font(AppTypography.caption.weight(.semibold))
+        }
+    }
+
+    private var appearanceDescription: String {
+        includesChosenCharacter
+            ? "your chosen Shepherd, Ollie, or found-sheep identity with its curated appearance"
+            : "your curated Shepherd look, Ollie ornament, featured sheep, and pasture theme"
+    }
+}
+
 struct SlumberPartyV4UnavailableCard: View {
     let title: String
     let detail: String
     var requestID: String? = nil
+    var onRetry: (() -> Void)? = nil
 
     var body: some View {
         PixelCard {
@@ -32,6 +80,11 @@ struct SlumberPartyV4UnavailableCard: View {
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
+                if let onRetry {
+                    Button("Try again", action: onRetry)
+                        .frame(minHeight: 44)
+                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                }
                 if let requestID, !requestID.isEmpty {
                     DisclosureGroup("Support details") {
                         Text(requestID)
@@ -85,6 +138,11 @@ struct SlumberPartyV4ListView: View {
         appViewModel.userProfile.hasEstablishedDisplayName
     }
 
+    private var includesAgreementGatedCharacter: Bool {
+        viewModel.v4ListState?.supportsProfileAvatar == true
+            && viewModel.supportsSharedHabits
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             SlumberPartyV4Header()
@@ -92,7 +150,7 @@ struct SlumberPartyV4ListView: View {
                 SlumberPartyV4UnavailableCard(
                     title: "A privacy change is still pending.",
                     detail: notice,
-                    requestID: viewModel.v4RequestID ?? viewModel.requestReference
+                    requestID: viewModel.requestReference
                 )
                 Button("Retry privacy change") { viewModel.retrySharedHabitsPrivacyAction() }
                     .frame(maxWidth: .infinity, minHeight: 44)
@@ -115,9 +173,9 @@ struct SlumberPartyV4ListView: View {
             }
             if case let .error(message) = viewModel.phase {
                 SlumberPartyV4UnavailableCard(
-                    title: "One Slumber Party update needs another try.",
+                    title: viewModel.actionFailureTitle ?? "Slumber Party couldn’t complete this request",
                     detail: message,
-                    requestID: viewModel.v4RequestID ?? viewModel.requestReference
+                    requestID: viewModel.requestReference
                 )
             }
             if let warmNotice = viewModel.warmNotice {
@@ -163,12 +221,12 @@ struct SlumberPartyV4ListView: View {
         } message: {
             Text("This asks the group service to delete your retained shared-habits contributions. It does not restore access to the party or change your local Wind Down and Farm.")
         }
-        .confirmationDialog("Delete your online account?", isPresented: $showsAccountDeletionConfirmation) {
+        .confirmationDialog("Delete your Counting Sheep account?", isPresented: $showsAccountDeletionConfirmation) {
             Button("Delete online account", role: .destructive) {
                 viewModel.deleteOnlineAccount()
             }
         } message: {
-            Text("Your hosted groups will close and you will leave other groups. Your local Wind Down and Farm stay on this iPhone.")
+            Text("This deletes your online Farm copies and Slumber Party account. If accepted, parties you host dissolve and you leave other parties. Shared-history changes are confirmed separately, and limited non-content security and deletion records may remain. Your local Wind Down and Farm stay on this iPhone.")
         }
     }
 
@@ -244,7 +302,7 @@ struct SlumberPartyV4ListView: View {
                 Text("YOUR SLUMBER PARTIES")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Up to \(NightFlockV4Rules.maximumConcurrentParties) groups can keep their own seven-night windows.")
+                Text("Up to \(NightFlockV4Rules.maximumConcurrentParties) long-lived groups can each run fixed seven-night rounds.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
@@ -278,12 +336,18 @@ struct SlumberPartyV4ListView: View {
                     .focused($groupNameFocused)
                     .frame(minHeight: 44)
                     .accessibilityHint("Only the group name is needed to create an invite-only Slumber Party.")
+                SlumberPartyV4BaselineDisclosure(
+                    actionTitle: "Creating this party",
+                    includesChosenCharacter: includesAgreementGatedCharacter,
+                    showsAdditionalAgreement: viewModel.supportsSharedHabits
+                )
                 if viewModel.supportsSharedHabits {
                     SlumberPartySharedHabitsConsentDisclosure(
                         partyName: groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                             ? "this new Slumber Party"
                             : groupName.trimmingCharacters(in: .whitespacesAndNewlines),
-                        includesSharedNightPlans: viewModel.supportsSharedNightPlans
+                        includesSharedNightPlans: viewModel.supportsSharedNightPlans,
+                        actionLead: "Creating this party shares"
                     )
                 }
                 if isAtPartyLimit {
@@ -298,7 +362,6 @@ struct SlumberPartyV4ListView: View {
                 }
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .buttonStyle(PixelPrimaryButtonStyle())
-                .disabled(!hasShepherdName || isAtPartyLimit || groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 .disabled(
                     !hasShepherdName || isAtPartyLimit
                         || groupName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -355,19 +418,19 @@ struct SlumberPartyV4ListView: View {
             Text("\(preview.memberCount) of \(preview.capacity) places are filled.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
-            Text(viewModel.supportsSharedNightPlans
-                ? "Joining shares rounded Wind Down and Phone Away updates, your curated Farm look, and—after the v2 agreement—your bounded next-seven-night plan. Your recurrence rule and selected apps stay private."
-                : "Joining lets this group see shared Wind Down and Phone Away updates, rounded minutes, and your curated Farm look. Your schedule and selected apps stay private.")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
+            SlumberPartyV4BaselineDisclosure(
+                actionTitle: "Joining",
+                includesChosenCharacter: includesAgreementGatedCharacter,
+                showsAdditionalAgreement: viewModel.supportsSharedHabits
+            )
             if viewModel.supportsSharedHabits {
                 SlumberPartySharedHabitsConsentDisclosure(
                     partyName: preview.name,
-                    includesSharedNightPlans: viewModel.supportsSharedNightPlans
+                    includesSharedNightPlans: viewModel.supportsSharedNightPlans,
+                    actionLead: "Joining shares"
                 )
             }
-            Button("Join this party") {
+            Button(viewModel.supportsSharedHabits ? "Join & agree" : "Join this party") {
                 viewModel.redeemSlumberPartyInvite(code: invitationCode)
             }
             .frame(maxWidth: .infinity, minHeight: 44)
@@ -479,4 +542,28 @@ struct SlumberPartyV4PartyCard: View {
     .padding()
     .background(AppColors.paper)
     .preferredColorScheme(.dark)
+}
+
+#Preview("Summary refresh unavailable") {
+    SlumberPartyV4UnavailableCard(
+        title: "Summaries couldn’t be updated",
+        detail: "The latest update couldn’t be reached. Check your connection and try again.",
+        requestID: "Request ID: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        onRetry: {}
+    )
+    .padding(AppSpacing.md)
+    .background(AppColors.paper)
+}
+
+#Preview("Request rejected · large text") {
+    SlumberPartyV4UnavailableCard(
+        title: "Shared activity couldn’t be updated",
+        detail: NightFlockRefreshFailure(remote: .init(
+            statusCode: 400, code: .invalidRequest,
+            requestID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+        )).detail
+    )
+    .padding(AppSpacing.md)
+    .background(AppColors.paper)
+    .environment(\.dynamicTypeSize, .accessibility3)
 }

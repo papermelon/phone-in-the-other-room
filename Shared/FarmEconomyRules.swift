@@ -71,9 +71,21 @@ enum FarmEconomyRules {
         for sheep: FlockSheep,
         protectedNightCount: Int
     ) -> Int {
+        if let seconds = sheep.regrowthSecondsRemaining {
+            return Int(ceil(max(0, seconds) / CumulativeFarmCredit.windDownSearchSeconds))
+        }
         guard let lastSheared = sheep.lastShearedProtectedNight else { return 0 }
         let readyAt = lastSheared + regrowthNights(for: sheep.rarity)
         return max(0, readyAt - protectedNightCount)
+    }
+
+    static func regrowthLabel(for sheep: FlockSheep, protectedNightCount: Int) -> String {
+        if let seconds = sheep.regrowthSecondsRemaining {
+            if seconds <= 0 { return "Ready to shear" }
+            return "\(Int(ceil(seconds / 60))) more farm-credit minutes to regrow"
+        }
+        let nights = remainingRegrowthNights(for: sheep, protectedNightCount: protectedNightCount)
+        return nights == 0 ? "Ready to shear" : "\(nights) more Wind Downs to regrow"
     }
 
     static func isWoolReady(for sheep: FlockSheep, protectedNightCount: Int) -> Bool {
@@ -84,6 +96,10 @@ enum FarmEconomyRules {
         for sheep: FlockSheep,
         protectedNightCount: Int
     ) -> SheepWoolVisualState {
+        if let seconds = sheep.regrowthSecondsRemaining {
+            if seconds <= 0 { return .woolReady }
+            return seconds < Double(regrowthNights(for: sheep.rarity)) * CumulativeFarmCredit.windDownSearchSeconds ? .regrowing : .shorn
+        }
         let remaining = remainingRegrowthNights(
             for: sheep,
             protectedNightCount: protectedNightCount
@@ -123,6 +139,9 @@ extension FarmState {
 
         let yield = FarmEconomyRules.woolYield(for: sheep[index].rarity)
         sheep[index].lastShearedProtectedNight = max(0, protectedNightCount)
+        if cumulativeCredit != nil {
+            sheep[index].regrowthSecondsRemaining = Double(FarmEconomyRules.regrowthNights(for: sheep[index].rarity)) * CumulativeFarmCredit.windDownSearchSeconds
+        }
         sheep[index].timesSheared += 1
         woolBalance += yield
         appendTransaction(FarmTransaction(

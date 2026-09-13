@@ -1,9 +1,82 @@
 # Architecture Map — Counting Sheep
 
+## Account-owned Farm implementation — 7 September 2026
+
+ADR-0023 supersedes the optional-backup behavior described in older sections below.
+Schema-3 FarmSaveDocument stores guest/account/signed-out scopes and private owner archives
+inside the existing protected transaction store. A durable scope fence prevents fallback
+recovery across account transitions. FarmBackupViewModel coordinates activation and
+revision-aware automatic sync; AccountAccessGate removes the old navigation shell on
+explicit sign-out. The run coordinator still owns ritual execution and blocks ownership
+changes during active or unsettled runs.
+
+NightFlockAccountService shares one verified UUID across native Apple and email/password
+credentials. The server-side username adapter delegates password checks to Supabase Auth;
+new account-sync RPCs accept verified supported identities while old Farm RPCs remain
+Apple-only. Profile, local Nights/reflections and impact caches are scoped locally, with
+no enlargement of the private cloud Farm allowlist. Source and local test evidence are in
+`plans/account-owned-farm-sync.md`; production activation is not implied.
+
+## Onboarding account routing — 6 September 2026
+
+ADR-0022 adds one optional account invitation after the Shepherd gift and a separate
+returning-user entrance on the first welcome page. The onboarding draft records successful
+returner routing; Apple authentication alone cannot advance it. Restoration remains in the
+existing Farm backup service/view model with explicit choice and owner/recovery safeguards.
+Device schedule and protection setup stay local and remain required after restoration.
+Implementation details and acceptance status: `plans/onboarding-account-experience.md`.
+
+## Farm save foundation — 5 September 2026
+
+ADR-0021 introduces a Foundation JSON file store for the local Farm transaction:
+progress, rewards, inventory, searches, welcome/social ledgers and the private
+Wind Down/morning journal commit as one checksummed generation. Three valid
+generations and original legacy data support recovery; unsupported schemas are
+preserved. Other preferences and history remain in UserDefaults. Existing
+`PersistenceService` accessors delegate these keys to `FarmSaveStore`.
+This supersedes older descriptions of independently written Farm defaults below.
+The device-only document is not an upload contract. See
+`plans/farm-save-contract.md` and `plans/account-backed-farm-save.md` for the separate
+account backup implementation and validation sequence.
+
+## Account-backed Farm candidate — 5 September 2026
+
+`FarmBackupSync` extends local document schema 2 (schema 1 remains readable) with
+owner, backup-generation, base-revision, pending-operation and confirmation state.
+The shared Apple account service supplies a checked session; stateless PostgREST
+requests pin that session's token. The `farm_save_v1` capability exposes private
+conditional revisions and idempotent operation receipts. `farm_save_revision_v1`
+reads retained copies without changing the head. Both are deployed in production;
+see `FARM_BACKUP_DEPLOYMENT.md` for validation and physical-device gates.
+
+The backup payload stays distinct from the device-only settlement journal. Restore
+preserves the current local branch, blocks active/pending ritual work, restores
+claim identities and inventory together, and separates Farm's restored lifetime
+counter from device-local Nights history. Layout/appearance application uses a
+persisted retry marker. The committed Farm is published to the coordinator before
+appearance acknowledgement, so an acknowledgement write failure cannot leave the
+old Farm active in memory. Every account-deletion entry pauses Farm backup before
+staging deletion. The restored account-deletion journal gates Farm transport, and
+request authorization is checked again after session acquisition. No active timer, shielding selection or raw Health data is
+restored through this endpoint. Account backup is independently opt-in and does
+not depend on party membership or expose Farm inventory to party members.
+
+## Cumulative Farm credit — 5 September 2026
+
+The founder now requires cumulative Farm credit that survives early endings and
+excludes Brief Access. [ADR-0020](DECISIONS/ADR-0020-cumulative-farm-credit.md)
+supersedes the completion-only Farm/search and wool-regrowth rules below for new runs.
+Wind Down credits overnight timer time up to its actual/planned end, excluding the
+separately rewarded morning window; 420 cumulative minutes opens a search. Phone Away
+uses an independent 100-minute meter without the old three-night gate. Both grow wool.
+Factual before-bed minutes, completed-night counts, Health and social metrics remain
+separate. Old settled rewards are preserved and supported early history is backfilled.
+
+
 Practical architecture reference for humans and agents. Canonical rules live in
 [`AGENTS.md`](../AGENTS.md); this file goes deeper on structure, data flow, and risk.
 
-Last verified against code: 27 August 2026.
+Last verified against code: 31 August 2026.
 
 ## 1. Stack and build system
 
@@ -208,8 +281,8 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
 
 1. `PixelHomeDashboard` → `FocusRunSetupView` saves `NightWatchPreferences`: bedtime,
    wake time, quiet-window lengths, an ordered private sequence of up to three evening and two
-   morning suggestions (putting the phone away is fixed first in the evening), and the placement
-   guard. Suggestions have no checkmarks, verification, reward, score, streak, or completion claim.
+   morning suggestions (putting the phone away is fixed first in the evening), and the start/
+   protection method. Suggestions have no checkmarks, verification, reward, score, streak, or completion claim.
    Outside the start window, the app saves the plan and schedules a wind-down reminder only
    when the person has enabled and authorized reminders.
    The user-facing actions are **Put phone away**, **Start now**, and **Plan**. Guidance sits beside
@@ -233,7 +306,7 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    registrations pad short 5/10/15-minute requests to Apple's fifteen-minute monitoring minimum
    and use the actual desired end as the warning/clear boundary; the consented ManagedSettings
    barrier is never lengthened. The view model
-   schedules silent sleep-time and phone-free-morning transitions plus the audible completion
+   schedules neutral silent overnight and Screen-Free Morning transitions plus the audible completion
    the user requested. The coordinator persists and mirrors the run only at meaningful state
    and lifecycle events; when the optional ActivityKit delivery path is deployed, the backend
    sends phase updates at the same two boundaries so the Live Activity can advance while the
@@ -252,14 +325,16 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    being silently overwritten. Settings recovery also recognizes the established one-record
    Counting Sheep external type with any valid UUID, even when the current installation has no
    local pairing history; it offers explicit reset confirmation, re-reads the same old credential,
-   and commits the selected slot only after Core NFC confirms the fresh write. Blank tags still use
+   and commits the selected slot only after Core NFC confirms the fresh write. Idle pairing and
+   lost-tag replacement also offer this confirmation flow; active-run replacement remains blank-only.
+   Read failures and readable unrecognized formats produce distinct messages. Blank tags still use
    normal pairing, while unrelated, malformed, multi-record, unreadable, read-only, and undersized
    tags are rejected. No NFC locking or password-protection commands are used. Names and purposes
    remain local and are never written to NFC. When automatic
    Wind Down is enabled, the saved plan
    schedules the selected local notification cadence and future DeviceActivity shielding
    while the app is closed; optional usage-aware monitoring is installed independently for
-   wind-down, overnight, and morning quiet, with one generic three-minute cue per phase.
+   Wind Down, the overnight interval, and Screen-Free Morning, with one generic three-minute cue per phase.
    The next app activation reconstructs the local run.
    Notification copy is resolved by the shared `NotificationCopyResolver` from a stable
    template ID, the current plan context, and local overrides. Settings previews call the
@@ -275,13 +350,21 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    separate Screen Time state; changing the future preference cannot lift an active run's
    requested barrier. NFC authenticates start/end only and does not decide whether shielding is
    requested. After an eligible start (or the registered NFC tag confirmation),
-   ManagedSettings applies through wind-down, overnight, and morning quiet, then clears
-   on terminal/reset/replacement. A bounded App Group status history distinguishes observed
-   shield time from a requested schedule; legacy two-bookend snapshots remain decodable.
+   ManagedSettings applies through Wind Down, the overnight interval, and Screen-Free Morning, then clears
+   on terminal/reset/replacement. A bounded App Group status history distinguishes authorization
+   and a requested schedule from observed apply/clear evidence. Receipt classification reports
+   observed, partial, unavailable, or not requested without treating permission as runtime proof;
+   legacy evidence without sufficient provenance is labeled as legacy/unavailable rather than
+   upgraded into an observation. Because DeviceActivity callbacks arrive after their serialized
+   boundary, an observed pair starts at the monitor callback, requires no monitor-reported gap,
+   and ends with a monitor or authoritative main-app terminal clear. It is bounded callback
+   evidence, not continuous attestation or proof of the callback's preceding subsecond.
    The app/category-only Brief Access action stores a versioned pending/scheduled grant
    record with run ID, schedule revision, nonce, clamped expiry, and one-shot restore
    activity name. Its bounded per-run ledger survives extension-only cleanup until the
-   main app imports the factual count into the active run/history record. Restore callbacks
+   main app imports the factual count into the active run/history record. The session timer and
+   Screen-Free Morning eligible elapsed time continue through Brief Access, so neither is labeled
+   verified no-screen time. Restore callbacks
    accept a grant only for the same run/revision; a pending or stale callback instead
    reconciles the current schedule and reapplies its existing shield when that phase is
    still eligible. Web domains never advertise or receive Brief Access.
@@ -306,20 +389,25 @@ Sequence per Night Watch (persisted internally as `FocusRun` for data compatibil
    bedtime date, then `PersistenceService` saves and the Watch gets the terminal message. See
    `docs/REWARDS.md` and ADR-0015.
 8. `HomeView` routes to `CompletionView` / `EarlyEndView` based on `activeRun.state`.
-   Both outcomes show the same factual receipt: elapsed phone-away time, the Wind Down
-   bookend, and a separate Screen-Free Morning factual row where applicable, plus optional
-   Apple Health sleep context and an explicit Screen Time availability
-   state. The separate Nights tab stays finite and observational: seven-day results, monthly
+   Both outcomes show a role-aware factual receipt: Wind Down before-bed minutes or Phone Away
+   elapsed minutes, a separate Screen-Free Morning occurrence row where applicable, and the
+   classified observed shield evidence. Search Journal is mentioned only when a real resolved
+   outcome exists. Optional Apple Health sleep context and private Screen Time reports remain
+   separate from runtime protection evidence. The separate Nights tab stays finite and
+   observational: independent Wind Down, Screen-Free Morning, and Phone Away rows; seven-day results, monthly
    drill-down, reflection, Health context, and consented selected-app results. Farm owns the
    active flock, lifecycle, catalogue, Shop, and customization presentation; Settings owns plan
    and report configuration. Chosen report windows do not
    alter Wind Down or Phone Away. Missing data is never estimated.
    When ADR-0016's flag is enabled, the v4 surface leads from Home and Farm to
    Your Slumber Parties. When the feature and configuration are valid, a local create/join bridge
-   is visible before account linking or the first v4 list response; passive rendering starts no
+   is visible before account linking or the first v4 list response with the baseline sharing
+   disclosure; passive rendering starts no
    account or network work. Disabled or invalid configurations remain hidden. v1–v3's shared-goal
-   card is legacy only. Routines, schedules, absence explanations, Health data, and private details remain
-   unshared. Eligible activity can earn separately per party through server-authoritative fan-out.
+   card is legacy only. Base records are app-recorded on the member's iPhone and self-reported to
+   Slumber Party, not independently verified. Additional shared plans, social avatar, sleep
+   summaries, and archive UI require their exact capability and accepted agreement; unsupported UI
+   remains absent. Eligible activity can earn separately per party through server-authoritative fan-out.
 9. During an active Night Watch, Home is replaced by the live journey while Nights, Farm,
    and Settings remain mounted in the same four-tab shell. A persistent return strip resets
    nested navigation and returns to Home. Run start, app activation, and active-run notification
@@ -421,9 +509,9 @@ session coordinator. The locally implemented v4 contract adds one people-first
 invite, late factual backfill, and up to five concurrent memberships. It removes the v1–v3 goal,
 readiness, orientation, pasture-identity, per-party alias, and sharing-matrix flows from new
 presentation. Create and join stay visible on the list; the detail shows current members,
-factual records, revisioned expiring statuses, curated snapshots, and fixed cheers.
+   app-recorded/self-reported records, revisioned expiring statuses, curated snapshots, and fixed cheers.
 
-For v4, the coordinator persists a factual account activity record first. A transactional,
+For v4, the coordinator persists an app-recorded account activity record first. A transactional,
 idempotent party-fan-out path then evaluates each eligible current party and creates a
 per-party record/reward. A late joiner can idempotently self-report all factual current-round
 Wind Down and Phone Away records. The local iPhone never waits for this transport. An early end
@@ -442,7 +530,7 @@ support evidence. An ordinary member may leave; a host cannot leave and must del
 until a future transfer flow is approved.
 
 Base v4 party projections include only canonical display name, allowlisted/revisioned curated Farm
-look, factual round records rounded to five-minute buckets, statuses (`revision`, `observed_at`,
+look, app-recorded/self-reported round records rounded to five-minute buckets, statuses (`revision`, `observed_at`,
 `expires_at`), and fixed historical/live cheers. They exclude complete Farm state, inventory, wool,
 private recurrence schedules, private text, app tokens, Screen Time/Health data, NFC,
 notifications, and impact data. The additive v2 shared-night capability can additionally return
@@ -524,22 +612,30 @@ the run.
 The Live Activity uses the system timer for the current phase when explicitly enabled, so it remains glanceable on the
 Lock Screen and Dynamic Island while the app is backgrounded. Its Lock Screen layout gives
 the status/timer and message separate vertical regions: the person's selected offline
-activity is primary, followed by one stable phase-appropriate cue. It does not shrink or
-truncate a combined paragraph to create artificial compactness. ActivityKit does not execute a
-WidgetKit timeline for phase changes, so the optional backend sends bedtime and morning-quiet
-updates in addition to the final end event. It is requested with `pushType: .token`, and
+activity is primary, followed by the other chosen ideas. The 7 September copy revision removes
+unrelated educational paragraphs from that pairing. Local payload cues are UTF-8 bounded;
+visible line limits respect the system surface and VoiceOver receives the complete bounded cue.
+ActivityKit does not execute a WidgetKit timeline for phase changes. The widget resolves saved
+clock anchors and reacts to `isStale` at the first next boundary for the bedtime display handoff.
+The optional backend provides subsequent content updates and the final end event.
+When remote delivery is enabled it is requested with `pushType: .token`, and
 `FocusRunLiveActivityService` observes every token rotation, associates it with the run and
 ActivityKit activity IDs, and emits only a short SHA-256 fingerprint to diagnostics. The
 local Live Activity is enabled by default for new installs and can be turned off in Settings;
 DEBUG can force either state with `-ollie.debug.enableLiveActivity YES` or
-`-ollie.debug.disableLiveActivity YES`. The remote sink is also disabled in the local
-configurations. Without it, iOS can mark the activity stale at
-the planned end but cannot deliver an exact phase or terminal transition, end it, or dismiss
-it until the app next finishes or restores the run; `staleDate` alone is not an update
-mechanism. Exact background transitions require the existing optional `pushType: .token`
-ActivityKit path, including the remote sink, deployed functions, APNs credentials, and
-scheduler. The local completion notification and app-reopen reconciliation remain the
-completion fallbacks. See
+`-ollie.debug.disableLiveActivity YES`. Following 12 September founder approval, the remote sink is enabled in Debug and Release
+configurations and requests `pushType: .token` for opted-in runs. Run synchronization
+precedes token registration so the registration RPC cannot race creation of its run row. Freshness is set to the
+next clock boundary, not the entire run's end. `isStale` invalidation redraws the known schedule;
+it does not deliver a new content state, end or dismiss the activity, or settle the run.
+This supports the first bedtime display handoff; it is not a repeating timeline. Subsequent
+precise background content delivery and terminal dismissal require the optional APNs path,
+including the remote sink, deployed functions, credentials, and scheduler. The local completion notification and app-reopen reconciliation remain the
+completion fallbacks. Completion display uses the resolved phase for the checkmark and
+congratulatory message instead of leaving a zero countdown. Foreground and launch
+reconciliation immediately dismiss obsolete activities while retaining active linked Morning
+surfaces. Terminal receipts replace every tab at the shell root, so completion on Farm cannot
+hide navigation while leaving the Farm content stranded. See
 `ACTIVITYKIT_PUSH_BACKEND.md` for the server lifecycle contract.
 
 The same WidgetKit extension also exposes a static `QuietNoteWidget` in the
@@ -547,7 +643,8 @@ The same WidgetKit extension also exposes a static `QuietNoteWidget` in the
 editor value in the existing App Group, with the App Intent widget configuration retained
 as the first-install fallback. It is normalized to a short Unicode-safe value and is not
 copied from the private `OfflinePurposeProfile`. The widget uses a `.never` timeline and
-reloads after an in-app save; active phase and countdown state remain exclusive to the
+reloads after an in-app save; the editor warns that this text may be visible while the iPhone is
+locked. Active phase and countdown state remain exclusive to the
 Live Activity. Tapping it opens `countingsheep://quiet-note` in the app.
 
 Energy-specific implementation notes and the physical-device profiling matrix live in
@@ -624,7 +721,7 @@ by the iPhone.
 | `ollie.nightWatch.history` | `NightWatchHistory` | up to 90 days of aggregate records and idempotent observed/inferred/self-reported/system events |
 | `ollie.phoneBedNFCTags.library` | `PhoneBedTagLibrary` | only SHA-256 digests (including local retired-credential history) plus local name, purpose, and timestamps persist in defaults; the generated UUID bearer credential is written only to the physical NDEF tag; names and purposes are never written to NFC; the credential, name, and purpose are never transmitted |
 | `ollie.impactSharing.preferences` | `ImpactSharingPreferences` | explicit optional-sharing state and consent date |
-| `ollie.impactSharing.records` | `[ImpactUploadRecord]` | date-free retry cache for consented impact rows |
+| `ollie.impactSharing.records` | `[ImpactUploadRecord]` | consented impact retry cache without calendar dates/times; retains the disclosed night number relative to consent |
 | `ollie.nightFlock.outbox` | `[NightFlockOutboxRecord]` | bounded local retry queue containing only positive state contracts |
 | `ollie.nightFlock.runContexts` | `[NightFlockRunShareContext]` | up to 32 local consent/idempotency contexts; never uploaded as run IDs |
 | `ollie.nightFlock.stagedDestructiveEffect` | `NightFlockDestructiveLocalEffect` | local-only no-replay recovery journal for an accepted destructive command awaiting authoritative state; the outbox actor clears it last, after all v1/v2/v3/context lanes, so relaunch reconciles before any flush |
@@ -645,7 +742,8 @@ assigned to Wind Down and Phone Away, and both legacy keys are removed. Local re
 three keys.
 
 - No CoreData / SwiftData. Core state stays in standard defaults. The App Group is limited
-  to Screen Time selections plus shield schedule/status contracts needed by extensions;
+  to Screen Time selections, shield schedule/status contracts needed by extensions, and the
+  explicit Lock Screen Quiet Note value;
   legacy standard-default selection keys migrate forward without overwriting shared data.
 - Codable models are the schema. Changing them requires backwards-compatible decoding;
   a legacy-decode test exists in `Tests/` and must keep passing.
@@ -654,7 +752,8 @@ three keys.
 `FocusRunViewModel.eraseLocalDataAndStartOver()` is the scoped local reset boundary. It clears
 the explicit standard-default key list in `Shared/CountingSheepStorage.swift`, asks the owning
 notification, HealthKit, NFC, usage-monitoring, shielding, and Live Activity services to clear
-their runtime state, and clears the explicit Screen Time/Brief Access App Group keys. It resets
+their runtime state, and clears the explicit Screen Time/Brief Access App Group keys plus the
+Lock Screen Quiet Note value. It reloads the Quiet Note widget timeline, resets
 the coordinator and root route in memory, then opens a fresh Welcome draft in the same process.
 The installation transport identifier is intentionally retained so previously uploaded optional
 Live Activity delivery records are not re-identified by a local reset; remote impact records are
@@ -739,9 +838,10 @@ publication, updated app distribution, and physical QA remain separate unverifie
    extensions are embedded locally, but the three new shield bundle IDs still need Family
    Controls distribution assignment and continuous barrier transitions need physical proof.
    App/category shields use the iOS 26.4+ system submenu for Brief Access, with role-specific
-   protected-time-purpose choices serving as the five-minute confirmation; system Cancel is the
-   only no-op. The run-scoped pause/allotted-minute tracker appears on both the shield and active-
-   run UI. Older OS versions use the direct five-minute button, and web domains never advertise
+   purpose choices serving as confirmation; system Cancel is the only no-op. Access lasts no
+   longer than five minutes and is clamped to an earlier session end. The run-scoped pause/
+   allotted-minute tracker appears on both the shield and active-run UI. Older OS versions use
+   the direct version-neutral primary action, and web domains never advertise
    Brief Access. Continue Wind Down opens Counting Sheep on iOS 26.5+ and keeps the close fallback
    on older systems.
    Authorization, picker persistence, report rendering, empty states, and distribution
@@ -772,7 +872,7 @@ publication, updated app distribution, and physical QA remain separate unverifie
 
 - Keep MVVM + coordinator; it fits. Do not introduce new architecture patterns (TCA,
   Redux, etc.) — the codebase is small and the pattern works.
-- Keep wind-down, overnight, and morning quiet as phases of the same persisted run. New
+- Keep Wind Down, Overnight, and Screen-Free Morning as phases of the same persisted run. New
   morning features must extend `NightWatchPlan`, not introduce a parallel session model.
 - The session-guard seam retains `SessionGuardKind` (`.honorTimer`, `.watchPlacement`,
   `.qrCode`, `.nfcTag`) for persisted-data compatibility. Current release UI exposes only the
@@ -808,7 +908,7 @@ publication, updated app distribution, and physical QA remain separate unverifie
 
 - Splitting the oversized files (do opportunistically, not as a pre-TestFlight project)
 - Removing `GameComponents` / design-system convergence
-- Screen Time shielding (separate from the embedded read-only report; ADR-0004 gates apply)
+- Hosted-distribution and physical-device validation of the implemented Screen Time barrier
 - Physical-device proof for NFC-authenticated ending and terminated-app shielding
 - Coordinator dependency injection refactor
 - Any new persistence layer

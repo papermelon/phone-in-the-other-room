@@ -42,11 +42,14 @@ protocol QuietTimeShieldingProviding {
     func resetLocalState()
     func protectionSummary(for run: FocusRun, at date: Date) -> QuietTimeShieldProtectionSummary
     func briefAccessUseCount(for run: FocusRun) -> Int
+    func briefAccessIntervals(for run: FocusRun) -> [DateInterval]
     func briefAccessTrackerSummary(for run: FocusRun) -> QuietTimeBriefAccessTrackerSummary
     func briefAccessTrackerSummary(forOccurrenceID occurrenceID: UUID) -> QuietTimeBriefAccessTrackerSummary
 }
 
 extension QuietTimeShieldingProviding {
+    func briefAccessIntervals(for run: FocusRun) -> [DateInterval] { run.briefAccessIntervals }
+
     @discardableResult
     func scheduleAutomatic(for schedule: AutomaticWindDownSchedule) -> QuietTimeShieldingOutcome {
         scheduleAutomatic(for: schedule, at: Date())
@@ -306,13 +309,27 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
 
     func clear() {
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(ManagedSettings)
+        let clearedAt = Date()
+        let clearedSnapshot = loadSchedule()
         let preserveAutomaticSchedule = QuietTimeShieldingIntentPolicy.savedIntent(
             defaults.object(forKey: Self.enabledKey) as? Bool
         )
-            && loadSchedule()?.repeatsDaily == true
+            && clearedSnapshot?.repeatsDaily == true
         clearStore()
+        // The main app owns an authorized terminal clear. Recording that
+        // side effect after clearing ManagedSettings lets receipts pair an
+        // earlier monitor apply with the actual terminal cleanup without
+        // pretending the extension independently observed the whole span.
+        if let clearedSnapshot {
+            writeStatus(
+                for: clearedSnapshot,
+                status: .cleared,
+                window: nil,
+                at: clearedAt
+            )
+        }
         activityCenter.stopMonitoring([.ollieBriefAccessRestore])
-        archiveBriefAccessState(at: Date())
+        archiveBriefAccessState(at: clearedAt)
         guard !preserveAutomaticSchedule else { return }
         activityCenter.stopMonitoring([
             .ollieProtectedSession,
@@ -476,13 +493,27 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         sharedDefaults?.removeObject(forKey: QuietTimeShieldPresentationStorage.purposeCueKey)
     }
 
+    func briefAccessIntervals(for run: FocusRun) -> [DateInterval] {
+        var intervals = run.briefAccessIntervals
+        if let data = sharedDefaults?.data(forKey: QuietTimeShieldSharedStorage.briefAccessStateKey),
+           let state = try? JSONDecoder().decode(QuietTimeBriefAccessState.self, from: data) {
+            let uses = (state.runID == run.id ? state.successfulUses : [])
+                + (state.completedRunCounts.first(where: { $0.runID == run.id })?.uses ?? [])
+            for use in uses where use.expiresAt > use.requestedAt {
+                let interval = DateInterval(start: use.requestedAt, end: use.expiresAt)
+                if !intervals.contains(interval) { intervals.append(interval) }
+            }
+        }
+        return intervals
+    }
+
     func briefAccessUseCount(for run: FocusRun) -> Int {
         var count = run.briefAccessUseCount
         if let data = sharedDefaults?.data(forKey: QuietTimeShieldSharedStorage.briefAccessStateKey),
            let state = try? JSONDecoder().decode(QuietTimeBriefAccessState.self, from: data) {
             count = max(count, state.durableCount(for: run.id))
         }
-        return count
+        return max(count, briefAccessIntervals(for: run).count)
     }
 
     func briefAccessTrackerSummary(for run: FocusRun) -> QuietTimeBriefAccessTrackerSummary {
@@ -510,7 +541,9 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     ) -> QuietTimeShieldProtectionSummary {
         guard run.appShieldingRequested else { return .none }
         let automaticScheduleID = loadSchedule().flatMap { snapshot in
-            snapshot.repeatsDaily ? snapshot.runID : nil
+            snapshot.repeatsDaily && snapshot.runID == run.id
+                ? snapshot.runID
+                : nil
         }
         return QuietTimeShieldEvidenceMath.summary(
             for: run,
@@ -975,7 +1008,8 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             status: status,
             window: window,
             observedAt: date,
-            failureCode: failureCode
+            failureCode: failureCode,
+            provenance: .mainApp
         )
         guard let data = try? JSONEncoder().encode(statusSnapshot) else { return }
         sharedDefaults?.set(data, forKey: QuietTimeShieldSharedStorage.statusKey)

@@ -49,6 +49,7 @@ struct SlumberPartySharedHabitMemberIdentity: Identifiable {
 struct SlumberPartySharedHabitsSummaryGrid: View {
     let periods: [NightFlockSharedHabitPeriodSummary]
     var identities: [SlumberPartySharedHabitMemberIdentity] = []
+    var showsSocialAvatar = false
     @State private var selectedPeriod: NightFlockSharedHabitPeriodSummary.Period = .lastNight
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -126,7 +127,7 @@ struct SlumberPartySharedHabitsSummaryGrid: View {
         HStack(spacing: AppSpacing.sm) {
             SlumberPartySocialAvatarView(
                 presentation: identity.presentation,
-                avatarID: identity.avatarID,
+                avatarID: showsSocialAvatar ? identity.avatarID : SocialAvatarRules.shepherdID,
                 size: 48
             )
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {

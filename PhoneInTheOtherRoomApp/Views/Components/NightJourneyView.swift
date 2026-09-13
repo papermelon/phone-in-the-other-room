@@ -2,9 +2,24 @@ import SwiftUI
 import UIKit
 
 struct NightJourneyView: View {
-    let run: FocusRun
+    let run: FocusRun?
+    let morning: MorningQuietOccurrence?
     let reduceMotion: Bool
     var fixedDate: Date?
+
+    init(run: FocusRun, reduceMotion: Bool, fixedDate: Date? = nil) {
+        self.run = run
+        self.morning = nil
+        self.reduceMotion = reduceMotion
+        self.fixedDate = fixedDate
+    }
+
+    init(morning: MorningQuietOccurrence, reduceMotion: Bool, fixedDate: Date? = nil) {
+        self.run = nil
+        self.morning = morning
+        self.reduceMotion = reduceMotion
+        self.fixedDate = fixedDate
+    }
 
     @ViewBuilder
     var body: some View {
@@ -19,7 +34,8 @@ struct NightJourneyView: View {
 
     @ViewBuilder
     private func journey(at date: Date) -> some View {
-        if let journey = NightJourneyProgress.resolve(run: run, at: date) {
+        if let journey = morning.flatMap({ NightJourneyProgress.resolve(morning: $0, at: date) })
+            ?? run.flatMap({ NightJourneyProgress.resolve(run: $0, at: date) }) {
             GeometryReader { proxy in
                 scene(journey: journey, date: date, size: proxy.size)
             }
@@ -32,7 +48,7 @@ struct NightJourneyView: View {
     private func scene(journey: NightJourneyProgress, date: Date, size: CGSize) -> some View {
         let profile = NightJourneyTerrainProfile.profile(for: journey.segment)
         let tileWidth = max(320, size.width * 1.15)
-        let elapsedSinceStart = date.timeIntervalSince(run.startedAt)
+        let elapsedSinceStart = date.timeIntervalSince(morning?.actualStart ?? run?.startedAt ?? date)
         let travelled = reduceMotion
             ? 0
             : NightJourneyGait.foregroundDistance(elapsedSinceStart: elapsedSinceStart)
@@ -75,32 +91,34 @@ struct NightJourneyView: View {
             )
             .position(x: ollieX, y: groundY - ollieSize * (ollieGroundAnchor - 0.5))
 
-            VStack {
-                HStack(alignment: .top) {
-                    sceneBadge(
-                        title: journey.segment.title.uppercased(),
-                        detail: "OLLIE IS FOLLOWING THE TRAIL"
-                    )
+            if morning == nil {
+                VStack {
+                    HStack(alignment: .top) {
+                        sceneBadge(
+                            title: journey.segment.title.uppercased(),
+                            detail: "OLLIE IS KEEPING COMPANY"
+                        )
+                        Spacer()
+                        sceneBadge(
+                            title: run?.nightWatchPlan?.role == .additionalQuiet
+                                ? "PHONE AWAY"
+                                : journey.phase.title.uppercased(),
+                            detail: destinationText(for: journey)
+                        )
+                    }
                     Spacer()
-                    sceneBadge(
-                        title: run.nightWatchPlan?.role == .additionalQuiet
-                            ? "PHONE AWAY"
-                            : journey.phase.title.uppercased(),
-                        detail: destinationText(for: journey)
-                    )
+                    HStack {
+                        Text(narrativeText(for: journey))
+                            .font(AppTypography.caption)
+                            .foregroundStyle(.white.opacity(0.94))
+                            .padding(.horizontal, AppSpacing.sm)
+                            .padding(.vertical, AppSpacing.xs)
+                            .background(.black.opacity(0.32), in: Capsule())
+                        Spacer(minLength: 0)
+                    }
                 }
-                Spacer()
-                HStack {
-                    Text(narrativeText(for: journey))
-                        .font(AppTypography.caption)
-                        .foregroundStyle(.white.opacity(0.94))
-                        .padding(.horizontal, AppSpacing.sm)
-                        .padding(.vertical, AppSpacing.xs)
-                        .background(.black.opacity(0.32), in: Capsule())
-                    Spacer(minLength: 0)
-                }
+                .padding(AppSpacing.sm)
             }
-            .padding(AppSpacing.sm)
         }
         .frame(width: size.width, height: size.height)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
@@ -180,10 +198,10 @@ struct NightJourneyView: View {
     private func narrativeText(for journey: NightJourneyProgress) -> String {
         if journey.phaseFraction >= 0.82 { return "The gate is just ahead." }
         switch journey.phase {
-        case .windDown: return "Ollie follows a quiet trail, one step at a time."
+        case .windDown: return "Ollie stays beside you while the timer runs."
         case .overnight: return "The night can stay unhurried."
-        case .morningQuiet: return "The morning is yours before the phone returns."
-        case .complete: return "The quiet trail is complete."
+        case .morningQuiet: return "The Screen-Free Morning timer is running."
+        case .complete: return "This timer has ended."
         }
     }
 
@@ -197,15 +215,16 @@ struct NightJourneyView: View {
     }
 
     private func destinationText(for journey: NightJourneyProgress) -> String {
-        guard let plan = run.nightWatchPlan else { return "QUIET LEFT" }
+        if morning != nil { return "UNTIL THE MORNING TIMER ENDS" }
+        guard let plan = run?.nightWatchPlan else { return "QUIET LEFT" }
         // Phone Away already has one countdown and end time in its active
         // surface. A second "QUIET LEFT" scene label adds no duration and can
         // make the mode look like Wind Down.
         if plan.role == .additionalQuiet { return "" }
         switch journey.phase {
         case .windDown: return "TO BEDTIME"
-        case .overnight: return "TO MORNING"
-        case .morningQuiet: return "QUIET LEFT"
+        case .overnight: return "TO SCREEN-FREE MORNING"
+        case .morningQuiet: return "SCREEN-FREE MORNING LEFT"
         case .complete: return "SEARCH JOURNAL ENTRY READY"
         }
     }
@@ -245,10 +264,10 @@ struct NightJourneyView: View {
 
     private func accessibilityLabel(for journey: NightJourneyProgress, at date: Date) -> String {
         let remaining = remainingText(journey: journey, at: date)
-        if run.nightWatchPlan?.role == .additionalQuiet {
+        if run?.nightWatchPlan?.role == .additionalQuiet {
             return "Phone Away. \(Int(journey.phaseFraction * 100)) percent complete. \(remaining) remaining."
         }
-        return "Ollie is following \(journey.segment.title.lowercased()). \(journey.phase.title). \(Int(journey.phaseFraction * 100)) percent through this part. \(remaining) \(destinationText(for: journey).lowercased())."
+        return "Ollie is with you in the \(journey.segment.title.lowercased()) scene. \(journey.phase.title). \(Int(journey.phaseFraction * 100)) percent through this part. \(remaining) \(destinationText(for: journey).lowercased())."
     }
 }
 
@@ -313,5 +332,16 @@ private struct JourneyAssetImage: View {
         reduceMotion: true
     )
     .padding()
+    .background(AppColors.paper)
+}
+
+#Preview("Independent morning · Reduce Motion") {
+    let start = Date(timeIntervalSince1970: 1_800_000_000)
+    NightJourneyView(
+        morning: MorningQuietOccurrence(scheduledStart: start, scheduledEnd: start.addingTimeInterval(1800),
+            actualStart: start, outcome: .active),
+        reduceMotion: true, fixedDate: start.addingTimeInterval(900)
+    )
+    .padding(AppSpacing.md)
     .background(AppColors.paper)
 }

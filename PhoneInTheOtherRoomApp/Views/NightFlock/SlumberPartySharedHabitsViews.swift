@@ -21,22 +21,26 @@ struct SlumberPartySharedHabitsSection: View {
     }
 
     private var loadingOrRetryErrorDetail: String? {
-        if case let .error(message) = viewModel.phase { return message }
-        return nil
+        viewModel.sharedHabitsAgreementErrors[partyID]
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             if !viewModel.supportsSharedHabits {
-                unsupportedCard
+                EmptyView()
             } else if let state {
                 if state.agreement == nil {
                     agreementStateCard
-                } else {
+                } else if SlumberPartyReleasePresentationGate.showsSharedHabits(
+                    listState: viewModel.v4ListState,
+                    partyState: state
+                ) {
                     if viewModel.requiresSharedNightPlanAgreement(partyID: partyID) {
                         v2ReconsentCard
                     }
                     sharedArchive(state)
+                } else {
+                    EmptyView()
                 }
             } else {
                 loadingOrRetryCard
@@ -72,21 +76,6 @@ struct SlumberPartySharedHabitsSection: View {
             errorDetail: viewModel.sharedHabitsAgreementErrors[partyID],
             onConfirm: { viewModel.acceptSharedHabitsAgreement(partyID: partyID) }
         )
-    }
-
-    private var unsupportedCard: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Label("SHARED HABITS", systemImage: "clock.badge.questionmark")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                Text("This group service is not ready for shared habit summaries.")
-                    .font(AppTypography.body.weight(.semibold))
-                Text("Your local Wind Down and sleep context stay on this iPhone.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-            }
-        }
     }
 
     private var loadingOrRetryCard: some View {
@@ -147,31 +136,38 @@ struct SlumberPartySharedHabitsSection: View {
     private func sharedArchive(_ state: NightFlockSharedHabitsStateResponse) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("SHARED HABITS")
+                Text("HISTORY")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Quiet summaries, with coverage")
+                Text("Shared nights")
                     .font(AppTypography.title)
-                Text("Means use only nights with an observed eligible value. Coverage shows how many nights are included.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             if shouldOfferHealthAction, let healthActionTitle, let onHealthAction {
                 healthConnectionCard(title: healthActionTitle, action: onHealthAction)
             }
-            Text("Exact app-use sharing is unavailable for Singapore groups.")
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            DisclosureGroup("Archive and source details") {
+            if let failure = viewModel.sharedHabitsRefreshFailures[partyID] {
+                SlumberPartyV4UnavailableCard(
+                    title: "Summaries couldn’t be updated",
+                    detail: failure.detail,
+                    requestID: failure.requestReference,
+                    onRetry: failure.canRetry ? { viewModel.refreshSharedHabits(partyID: partyID) } : nil
+                )
+            }
+            DisclosureGroup("History and how summaries work") {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("Sleep duration is a consented Health summary when available. Wind Down and Phone Away are factual local app records.")
+                    Text("Averages include only nights with shared data. The night count shows how much data is available. Sleep summaries update after noon in each person’s time zone.")
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.secondaryText)
                         .fixedSize(horizontal: false, vertical: true)
-                    if state.agreement?.agreementVersion ?? 1 >= 2 {
-                        Text("The v2 archive can include bounded, rounded next-seven-night plan instances and factual nightly receipts. Your recurrence rule, custom routine text, exact app identity, per-app use, raw samples, Screen Time tokens, and phone-bed credentials are never shared.")
+                    Text("Sleep comes from Apple Health when shared. Wind Down and Phone Away come from each person’s app records, not independent verification.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if SlumberPartyReleasePresentationGate.showsSharedNightPlans(
+                        listState: viewModel.v4ListState,
+                        partyState: state
+                    ) {
+                        Text("This agreement can include bounded, rounded next-seven-night plan instances and app-recorded nightly receipts. Your recurrence rule, custom routine text, exact app identity, per-app use, raw samples, Screen Time tokens, and phone-bed credentials are never shared.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
@@ -195,12 +191,7 @@ struct SlumberPartySharedHabitsSection: View {
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 .disabled(isLoading)
             }
-            Button(isLoading ? "Refreshing…" : "Refresh summaries") {
-                viewModel.refreshSharedHabits(partyID: partyID)
-            }
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .buttonStyle(PixelChipButtonStyle(isSelected: false))
-            .disabled(isLoading)
+
         }
     }
 }
@@ -213,6 +204,7 @@ struct SlumberPartySharedNightLoopSection: View {
     let now: Date
     @ObservedObject var appViewModel: FocusRunViewModel
     @State private var borrowNotice: String?
+    @State private var showsRoutineReview = false
 
     private var activePlans: [SharedNightPlan] {
         state.sharedNightPlans.filter { $0.supersededAt == nil && !$0.isFormerMember }
@@ -292,7 +284,7 @@ struct SlumberPartySharedNightLoopSection: View {
                                 .font(AppTypography.headline)
                             Text("Planned " + planTimeText(plan))
                                 .font(AppTypography.body.weight(.semibold))
-                            Text(plan.eveningSuggestionIDs.isEmpty && plan.morningSuggestionIDs.isEmpty ? "No routine ideas shared." : "Ideas are planned context, not a checklist.")
+                            Text(plan.eveningSuggestionIDs.isEmpty && plan.morningSuggestionIDs.isEmpty ? "No routine ideas shared." : "Shared ideas don’t show which steps someone has done.")
                                 .font(AppTypography.caption)
                                 .foregroundStyle(AppColors.secondaryText)
                             routineButtons(plan)
@@ -300,7 +292,20 @@ struct SlumberPartySharedNightLoopSection: View {
                     }
                 }
             }
-            if let borrowNotice { Text(borrowNotice).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText) }
+            if let borrowNotice {
+                Text(borrowNotice)
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.secondaryText)
+                if showsRoutineReview {
+                    NavigationLink("Review my routine") {
+                        FocusRunSetupView(initialHabitFocus: .activity)
+                            .environmentObject(appViewModel)
+                    }
+                    .font(AppTypography.caption.weight(.semibold))
+                    .foregroundStyle(AppColors.grass)
+                    .frame(minHeight: 44)
+                }
+            }
         }
     }
 
@@ -310,7 +315,7 @@ struct SlumberPartySharedNightLoopSection: View {
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
             if state.sharedNightReceipts.isEmpty {
-                Text("No factual shared receipt yet. No update is not a missed night.")
+                Text("No app-recorded shared receipt yet. No update is not a missed night.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             } else {
@@ -348,12 +353,12 @@ struct SlumberPartySharedNightLoopSection: View {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("SEVEN-NIGHT TOGETHER")
                     .font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
-                Text("\(completed) completed Wind Downs from \(observed) factual receipts")
+                Text("\(completed) completed Wind Downs from \(observed) app-recorded receipts")
                     .font(AppTypography.body.weight(.semibold))
                 Text("Coverage: \(observed) of \(SharedNightMosaicPresentation.coverageSlotCount(for: mosaicPlans)) shared plan slots in this seven-night window. Unknown nights are not misses.")
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                 if planlessFactual > 0 {
-                    Text("\(planlessFactual) other factual receipt\(planlessFactual == 1 ? "" : "s") did not have a shared plan to compare.")
+                    Text("\(planlessFactual) other app-recorded receipt\(planlessFactual == 1 ? "" : "s") did not have a shared plan to compare.")
                         .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                 }
             }
@@ -366,11 +371,16 @@ struct SlumberPartySharedNightLoopSection: View {
         if !ideas.isEmpty && plan.memberID != party.myMemberID {
             ForEach(ideas, id: \.0) { idea in
                 Button("Add \(PhoneFreeActivity(rawValue: idea.0)?.shortTitle ?? "this idea") to my routine") {
+                    showsRoutineReview = false
                     switch appViewModel.borrowSharedRoutineIdea(idea.0, phase: idea.1) {
                     case .added: borrowNotice = "Added to your private routine. It does not change what anyone else did."
                     case .alreadyAdded: borrowNotice = "That idea is already in your private routine."
-                    case .needsReplacement: borrowNotice = "That part of your routine is full. Open Plan to choose what to replace."
-                    case .unavailable: borrowNotice = "Save a private Wind Down plan first, then you can borrow this idea."
+                    case .needsReplacement:
+                        borrowNotice = "That part of your routine is full. Review it to choose what to replace, then return to add this idea."
+                        showsRoutineReview = true
+                    case .unavailable:
+                        borrowNotice = "Save a private Wind Down plan first, then return to borrow this idea."
+                        showsRoutineReview = true
                     }
                 }
                 .frame(maxWidth: .infinity, minHeight: 44)
@@ -409,7 +419,7 @@ struct SlumberPartySharedNightLoopSection: View {
         switch receipt.protectionEvidence {
         case .observed: return receipt.protectionMinutes.map { "Protection recorded for \($0) min before bed." } ?? "Protection observation unavailable."
         case .partial: return "Protection was partly observed."
-        case .failedOpen: return "Protection could not stay on; the run remained factual."
+        case .failedOpen: return "Protection could not stay on; the app-recorded run entry stayed available."
         case .unavailable, .unknown: return "Protection evidence unavailable."
         }
     }

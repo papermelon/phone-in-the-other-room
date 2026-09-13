@@ -10,8 +10,12 @@ struct ShepherdStudyPainter {
         var surface = context
         surface.clip(to: path)
         surface.blendMode = .multiply
-        surface.opacity *= 0.13
-        surface.draw(Image(decorative: grain, scale: 1), in: CGRect(x: 0, y: 0, width: 240, height: 280))
+        surface.opacity *= 0.11
+        let canvas = CGRect(x: 0, y: 0, width: 240, height: 280)
+        surface.draw(Image(decorative: grain, scale: 1), in: canvas)
+        if let wash = Self.wash {
+            surface.draw(Image(decorative: wash, scale: 1), in: canvas)
+        }
     }
 
     func ellipse(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat, _ color: Color) {
@@ -39,6 +43,30 @@ struct ShepherdStudyPainter {
         return result
     }
 
+    /// Broad pigment variation complements the fine grain. Both stay attached to each part.
+    private static let wash: CGImage? = {
+        let size = 96
+        var seed: UInt32 = 481
+        var lattice = [Double](repeating: 0, count: 9 * 9)
+        for index in lattice.indices {
+            seed = 1_664_525 &* seed &+ 1_013_904_223
+            lattice[index] = Double(seed >> 24) / 255
+        }
+        var pixels = [UInt8](repeating: 0, count: size * size)
+        for y in 0..<size {
+            for x in 0..<size {
+                let gx = Double(x) / Double(size) * 8, gy = Double(y) / Double(size) * 8
+                let ix = Int(gx), iy = Int(gy)
+                let fx = gx - Double(ix), fy = gy - Double(iy)
+                let sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy)
+                let top = lattice[iy * 9 + ix] * (1 - sx) + lattice[iy * 9 + ix + 1] * sx
+                let bottom = lattice[(iy + 1) * 9 + ix] * (1 - sx) + lattice[(iy + 1) * 9 + ix + 1] * sx
+                pixels[y * size + x] = UInt8(65 + 190 * (top * (1 - sy) + bottom * sy))
+            }
+        }
+        return paperImage(pixels, size: size)
+    }()
+
     /// One cached texture, fixed seed and coordinates: paper must not crawl on every frame.
     private static let grain: CGImage? = {
         let size = 128
@@ -48,10 +76,14 @@ struct ShepherdStudyPainter {
             seed = 1_664_525 &* seed &+ 1_013_904_223
             pixels[index] = 110 + UInt8((seed >> 24) % 145)
         }
+        return paperImage(pixels, size: size)
+    }()
+
+    private static func paperImage(_ pixels: [UInt8], size: Int) -> CGImage? {
         guard let provider = CGDataProvider(data: Data(pixels) as CFData) else { return nil }
         return CGImage(width: size, height: size, bitsPerComponent: 8, bitsPerPixel: 8,
                        bytesPerRow: size, space: CGColorSpaceCreateDeviceGray(),
                        bitmapInfo: CGBitmapInfo(rawValue: 0), provider: provider,
                        decode: nil, shouldInterpolate: true, intent: .defaultIntent)
-    }()
+    }
 }

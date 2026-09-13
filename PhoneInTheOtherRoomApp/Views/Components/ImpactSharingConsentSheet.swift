@@ -23,7 +23,7 @@ struct ImpactSharingConsentSheet: View {
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
                             Text("What is shared")
                                 .font(AppTypography.headline)
-                            Text("Up to 30 recent eligible nights as a date-free baseline, then future nights: planned and completed phone-free minutes, start method, shielding status, sleep duration and available stages, optional restfulness, and app version.")
+                            Text("Up to 30 eligible nights before consent as a baseline, then future eligible nights. Records omit calendar dates and clock times but keep a night number relative to consent. They can include planned before-bed and after-waking quiet minutes, recorded Wind Down before-bed minutes, whether Wind Down ended normally or early, start method, shield-evidence category, sleep duration and available stages, your optional restfulness category, and app version.")
                                 .font(AppTypography.body)
                         }
                     }
@@ -32,7 +32,7 @@ struct ImpactSharingConsentSheet: View {
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
                             Text("What stays private")
                                 .font(AppTypography.headline)
-                            Text("Exact dates and times, raw Apple Health samples, selected apps, NFC tag identity, Health source names, and your own written reflections.")
+                            Text("Calendar dates and clock times, raw Apple Health samples, selected apps, NFC tag identity, Health source names, your sleep-onset and bedtime-sleepiness answers, the complete morning note, and Quiet Note text.")
                                 .font(AppTypography.body)
                         }
                     }

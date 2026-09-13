@@ -1,0 +1,28 @@
+[
+  {
+    "created_at": 1787616318011,
+    "entrypoint_path": "file:///tmp/user_fn_sxjlkcccsentmhowgoqe_01783105-20c1-4132-81a2-3ee21f15e6f0_4/source/supabase/functions/night-flock-command/index.ts",
+    "ezbr_sha256": "d8483cdc0fe3125dce03d7a99e2b9247a4414e5254e83e4ce3041128d322a4ec",
+    "id": "01783105-20c1-4132-81a2-3ee21f15e6f0",
+    "import_map": false,
+    "name": "night-flock-command",
+    "slug": "night-flock-command",
+    "status": "ACTIVE",
+    "updated_at": 1788975060731,
+    "verify_jwt": true,
+    "version": 4
+  },
+  {
+    "created_at": 1787616321686,
+    "entrypoint_path": "file:///tmp/user_fn_sxjlkcccsentmhowgoqe_bbdf3896-c813-4908-846c-238595c40d51_4/source/supabase/functions/night-flock-state/index.ts",
+    "ezbr_sha256": "772d7717f8800476c31ed1b8d1c46c952443ad9a001cf621d57999ada4c1d269",
+    "id": "bbdf3896-c813-4908-846c-238595c40d51",
+    "import_map": false,
+    "name": "night-flock-state",
+    "slug": "night-flock-state",
+    "status": "ACTIVE",
+    "updated_at": 1788975060731,
+    "verify_jwt": true,
+    "version": 4
+  }
+]

@@ -110,7 +110,7 @@ struct HomeWindDownSummary: View {
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
-                Button("Set up Wind Down", action: onSetup)
+                Button("Plan", action: onSetup)
                     .buttonStyle(PixelPrimaryButtonStyle())
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
@@ -303,8 +303,8 @@ struct HomeWindDownSummary: View {
 
     private func primaryTitle(for action: StartAction) -> String {
         switch action {
-        case .windDown: return "Start Wind Down"
-        case .scheduledPhoneAway, .immediatePhoneAway: return "Start Phone Away"
+        case .windDown: return "Put phone away"
+        case .scheduledPhoneAway, .immediatePhoneAway: return "Start now"
         }
     }
 
@@ -312,13 +312,13 @@ struct HomeWindDownSummary: View {
         switch action {
         case .windDown:
             if let phoneWake = primaryWindDownPlan?.plan.protectedUntil {
-                return "Phone wakes at \(OllieFormat.time(phoneWake))."
+                return "Timer ends at \(OllieFormat.time(phoneWake))."
             }
-            return "Start your Wind Down."
+            return "Begin tonight’s Wind Down."
         case let .scheduledPhoneAway(context):
-            return "Start \(context.title)."
+            return "Begin \(context.title). Make room beyond the screen."
         case let .immediatePhoneAway(minutes):
-            return "\(minutes) min of phone-away time."
+            return "\(minutes) min for anything you value beyond the screen."
         }
     }
 

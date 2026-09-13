@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -41,7 +42,7 @@ class ScreenbookTests(unittest.TestCase):
             "scenarios": self.scenarios,
         }
 
-    def test_registry_requires_the_nine_stable_unique_ids(self):
+    def test_registry_requires_the_eleven_stable_unique_ids(self):
         screenbook.validate_registry(self.registry)
         duplicate = json.loads(json.dumps(self.registry))
         duplicate["scenarios"][4]["id"] = duplicate["scenarios"][0]["id"]
@@ -57,6 +58,23 @@ class ScreenbookTests(unittest.TestCase):
         unexpected["scenarios"][-1]["id"] = "iphone.test.unapproved.default"
         with self.assertRaises(screenbook.ScreenbookError):
             screenbook.validate_registry(unexpected)
+
+    def test_project_generation_runs_only_when_the_project_is_missing_or_stale(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            specification = root / "project.yml"
+            specification.write_text("name: Counting Sheep\n")
+            self.assertTrue(screenbook.project_needs_generation(root))
+
+            generated = root / "PhoneInTheOtherRoom.xcodeproj" / "project.pbxproj"
+            generated.parent.mkdir()
+            generated.write_text("// generated\n")
+            source_time = specification.stat().st_mtime_ns
+            os.utime(generated, ns=(source_time + 1, source_time + 1))
+            self.assertFalse(screenbook.project_needs_generation(root))
+
+            os.utime(specification, ns=(source_time + 2, source_time + 2))
+            self.assertTrue(screenbook.project_needs_generation(root))
 
     def test_review_round_trip_accepts_current_stable_copy(self):
         item = self.scenarios[0]["copy"][0]
@@ -117,6 +135,18 @@ class ScreenbookTests(unittest.TestCase):
 
     def test_manifest_hash_is_key_order_independent(self):
         self.assertEqual(screenbook.stable_hash({"a": 1, "b": 2}), screenbook.stable_hash({"b": 2, "a": 1}))
+
+    def test_distinct_slumber_party_states_cannot_share_a_capture(self):
+        first_id, second_id = screenbook.DISTINCT_CAPTURE_PAIRS[0]
+        manifest = {
+            "scenarios": [
+                {"id": first_id, "screenshot": {"sha256": "same"}},
+                {"id": second_id, "screenshot": {"sha256": "same"}},
+            ]
+        }
+        self.assertTrue(screenbook.validate_distinct_capture_pairs(manifest))
+        manifest["scenarios"][1]["screenshot"]["sha256"] = "different"
+        self.assertEqual(screenbook.validate_distinct_capture_pairs(manifest), [])
 
     def test_schemas_are_valid_json_and_versioned(self):
         schema_dir = Path(__file__).resolve().parents[1] / "schema"

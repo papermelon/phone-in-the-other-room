@@ -204,8 +204,18 @@ enum QuietTimeShieldStatus: String, Codable, Equatable {
     case failed
 }
 
+/// Identifies which process reported a shielding transition. Only the Device
+/// Activity monitor can independently observe an apply, clear, or failure
+/// while the main app is suspended. Older values remain decodable but cannot
+/// be promoted to observed evidence because their writer is unknowable.
+enum QuietTimeShieldStatusProvenance: String, Codable, Equatable {
+    case legacyUnknown
+    case mainApp
+    case deviceActivityMonitor
+}
+
 struct QuietTimeShieldStatusSnapshot: Codable, Equatable {
-    static let currentSchemaVersion = 1
+    static let currentSchemaVersion = 2
 
     var schemaVersion: Int
     var runID: UUID
@@ -214,6 +224,7 @@ struct QuietTimeShieldStatusSnapshot: Codable, Equatable {
     var window: QuietTimeShieldWindow?
     var observedAt: Date
     var failureCode: String?
+    var provenance: QuietTimeShieldStatusProvenance
 
     init(
         schemaVersion: Int = currentSchemaVersion,
@@ -222,7 +233,8 @@ struct QuietTimeShieldStatusSnapshot: Codable, Equatable {
         status: QuietTimeShieldStatus,
         window: QuietTimeShieldWindow?,
         observedAt: Date,
-        failureCode: String? = nil
+        failureCode: String? = nil,
+        provenance: QuietTimeShieldStatusProvenance = .legacyUnknown
     ) {
         self.schemaVersion = schemaVersion
         self.runID = runID
@@ -231,6 +243,28 @@ struct QuietTimeShieldStatusSnapshot: Codable, Equatable {
         self.window = window
         self.observedAt = observedAt
         self.failureCode = failureCode
+        self.provenance = provenance
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case schemaVersion, runID, revision, status, window, observedAt, failureCode, provenance
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let storedSchemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion)
+            ?? Self.currentSchemaVersion
+        schemaVersion = max(storedSchemaVersion, Self.currentSchemaVersion)
+        runID = try container.decode(UUID.self, forKey: .runID)
+        revision = max(1, try container.decodeIfPresent(Int.self, forKey: .revision) ?? 1)
+        status = try container.decode(QuietTimeShieldStatus.self, forKey: .status)
+        window = try container.decodeIfPresent(QuietTimeShieldWindow.self, forKey: .window)
+        observedAt = try container.decode(Date.self, forKey: .observedAt)
+        failureCode = try container.decodeIfPresent(String.self, forKey: .failureCode)
+        provenance = try container.decodeIfPresent(
+            QuietTimeShieldStatusProvenance.self,
+            forKey: .provenance
+        ) ?? .legacyUnknown
     }
 }
 
@@ -254,7 +288,56 @@ struct QuietTimeShieldProtectionSummary: Equatable {
     )
 }
 
+/// Receipt copy is derived from the terminal history record, not current
+/// Family Controls authorization. Authorization says only whether access was
+/// granted when checked; it is not evidence that a barrier stayed applied.
+struct QuietTimeShieldReceiptPresentation: Equatable {
+    let value: String
+    let detail: String
+    let systemImage: String
+
+    static func make(
+        shieldingRequested: Bool,
+        record: NightWatchRecord?
+    ) -> Self {
+        guard shieldingRequested else {
+            return Self(
+                value: "Not requested",
+                detail: "Selected-app limits were not requested for this timer.",
+                systemImage: "minus.circle"
+            )
+        }
+
+        let evidence = record?.shieldProtectionEvidence
+        switch evidence {
+        case .observed:
+            return Self(
+                value: "Observed",
+                detail: "App limits were recorded starting and ending. This does not verify continuous screen avoidance.",
+                systemImage: "checkmark.shield.fill"
+            )
+        case .partial:
+            return Self(
+                value: "Partial",
+                detail: "Some app-limit events are missing or an interruption was recorded. Saved farm progress stays.",
+                systemImage: "shield.lefthalf.filled"
+            )
+        case .unavailable, .notRequested, nil:
+            return Self(
+                value: "Unavailable",
+                detail: "App-limit tracking is incomplete for this timer. Saved farm progress stays.",
+                systemImage: "questionmark.circle"
+            )
+        }
+    }
+}
+
 enum QuietTimeShieldEvidenceMath {
+    // A main-app clear is written immediately after an ordinary terminal
+    // transition. Keep a small delivery allowance without letting a later
+    // occurrence of a repeating schedule close an older occurrence.
+    private static let terminalClearAllowance: TimeInterval = 60
+
     static func summary(
         for run: FocusRun,
         statuses: [QuietTimeShieldStatusSnapshot],
@@ -266,19 +349,45 @@ enum QuietTimeShieldEvidenceMath {
             revision: 1,
             updatedAt: run.startedAt
         ) else { return .none }
+        let runIDs = additionalRunIDs.union([run.id])
+        let terminalBoundary = min(
+            endDate,
+            schedule.protectedSessionInterval?.end ?? endDate
+        )
+        let protectedStart = schedule.protectedSessionInterval?.start ?? run.startedAt
+        // Repeating DeviceActivity schedules reuse one schedule identity.
+        // Scope monitor callbacks to this factual occurrence so a prior day's
+        // apply cannot be clamped forward and paired with today's terminal
+        // main-app clear.
         let relevant = statuses
-            .filter { $0.runID == run.id || additionalRunIDs.contains($0.runID) }
+            .filter { runIDs.contains($0.runID) }
+            .filter { $0.provenance == .deviceActivityMonitor }
+            .filter { $0.observedAt >= protectedStart && $0.observedAt < terminalBoundary }
+            .sorted { $0.observedAt < $1.observedAt }
+        let terminalStatuses = statuses
+            .filter { runIDs.contains($0.runID) }
+            .filter {
+                $0.provenance == .deviceActivityMonitor || $0.provenance == .mainApp
+            }
+            .filter {
+                $0.observedAt >= protectedStart
+                    && $0.observedAt <= terminalBoundary.addingTimeInterval(terminalClearAllowance)
+            }
             .sorted { $0.observedAt < $1.observedAt }
         let windDown = protectedSeconds(
             in: schedule.windDownInterval,
             window: .windDown,
-            statuses: relevant.filter { $0.window == .windDown || $0.window == .protectedSession },
+            statuses: relevant.filter {
+                $0.window == .windDown || $0.window == .protectedSession || $0.window == nil
+            },
             endDate: endDate
         )
         let morning = protectedSeconds(
             in: schedule.morningQuietInterval,
             window: .morningQuiet,
-            statuses: relevant.filter { $0.window == .morningQuiet || $0.window == .protectedSession },
+            statuses: relevant.filter {
+                $0.window == .morningQuiet || $0.window == .protectedSession || $0.window == nil
+            },
             endDate: endDate
         )
         let appliedWindows = Set(
@@ -287,17 +396,37 @@ enum QuietTimeShieldEvidenceMath {
             }
         )
         let evidence: ShieldProtectionEvidence
-        let hasContinuousProtection = schedule.protectedSessionInterval != nil
-            && appliedWindows.contains(.protectedSession)
-        let hasLegacyBookendProtection = appliedWindows.isSuperset(of: [.windDown, .morningQuiet])
-        if hasContinuousProtection || hasLegacyBookendProtection {
+        let firstMonitorApply = relevant.first {
+            $0.window == .protectedSession
+                && $0.status == .applied
+                && $0.observedAt >= protectedStart
+                && $0.observedAt < terminalBoundary
+        }
+        let hasKnownInterruption = relevant.contains {
+            ($0.window == .protectedSession || $0.window == nil)
+                && ($0.status == .cleared || $0.status == .failed)
+                && $0.observedAt >= protectedStart
+                && $0.observedAt < terminalBoundary
+        }
+        let hasTerminalClear = terminalStatuses.contains {
+            ($0.window == .protectedSession || $0.window == nil)
+                && $0.status == .cleared
+                && $0.observedAt >= terminalBoundary
+                && $0.observedAt <= terminalBoundary.addingTimeInterval(terminalClearAllowance)
+        }
+        // DeviceActivity callbacks are delivered after their serialized
+        // boundary, so their Date() can never prove the first subsecond of a
+        // requested interval. "Observed" therefore means a monitor apply and
+        // a terminal clear with no observed interruption between them. It is
+        // bounded callback evidence, never continuous attestation.
+        if firstMonitorApply != nil && !hasKnownInterruption && hasTerminalClear {
             evidence = .observed
         } else if !appliedWindows.isEmpty {
             evidence = .partial
         } else if relevant.contains(where: { $0.status == .failed }) {
             evidence = .unavailable
         } else {
-            evidence = .notRequested
+            evidence = run.appShieldingRequested ? .unavailable : .notRequested
         }
         return QuietTimeShieldProtectionSummary(
             windDownMinutes: Int(windDown / 60),
@@ -314,7 +443,9 @@ enum QuietTimeShieldEvidenceMath {
     ) -> TimeInterval {
         guard let interval else { return 0 }
         let windowStatuses = statuses.filter {
-            $0.window == window || $0.window == .protectedSession
+            $0.window == window
+                || $0.window == .protectedSession
+                || ($0.window == nil && $0.status != .scheduled)
         }
         var start: Date?
         var protected: TimeInterval = 0

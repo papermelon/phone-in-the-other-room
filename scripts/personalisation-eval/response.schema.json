@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["status", "goal_kind", "action", "evidence_ids", "explanation", "clarification"],
+  "properties": {
+    "status": {"type": "string", "enum": ["suggestion", "no_suggestion", "needs_clarification"]},
+    "goal_kind": {"type": ["string", "null"], "enum": ["lessScrolling", "lessRushed", "timeForMe", "presence", "unwind", "beginOnTime", "personal", null]},
+    "action": {"type": ["string", "null"], "enum": ["simplify", "swapActivity", "cue", "preparation", null]},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "explanation": {"type": "string"},
+    "clarification": {"type": ["string", "null"]}
+  }
+}

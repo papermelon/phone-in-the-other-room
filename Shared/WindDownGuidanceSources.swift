@@ -184,6 +184,7 @@ extension WindDownGuidanceItem {
         case "quiet-hour": return "Try making the last hour before bed a little quieter."
         case "leave-room-after-heavy-meal": return "Notice whether leaving a little room after a large meal suits your evening."
         case "personal-caffeine-cutoff": return "Try noticing whether an earlier personal caffeine cutoff changes the feel of your evening."
+        case "exercise-timing-experiment": return "Notice whether moving intense exercise earlier suits your evening."
         case "steady-wake": return "Give the morning a familiar shape when your days allow it."
         case "morning-light": return "Let daylight be one of the first things your attention meets."
         case "rest-not-performance": return "Let resting comfortably be enough when sleep is slow."
@@ -202,6 +203,7 @@ extension WindDownGuidanceItem {
         case "quiet-hour": return "For example, trade the last part of scrolling for one familiar offline activity."
         case "leave-room-after-heavy-meal": return "For example, notice whether a little more time between a large meal and bed feels better for you."
         case "personal-caffeine-cutoff": return "For example, try a personal afternoon cutoff for a few days and notice how the evening feels."
+        case "exercise-timing-experiment": return "For example, if late intense exercise feels activating, try it earlier on a few days and compare how the evening feels."
         case "steady-wake": return "For example, choose a wake-time range that still gives the morning a familiar starting point."
         case "morning-light": return "For example, open the curtains before the phone comes back."
         case "rest-not-performance": return "For example, let lying comfortably be enough for a while instead of trying to make sleep happen."
@@ -239,7 +241,7 @@ extension WindDownGuidanceItem {
         case "quiet-hour", "bed-as-cue": return .read
         // These are useful background ideas, but neither is the routine action
         // it describes. Do not invent a substitute activity in Add-to-routine.
-        case "leave-room-after-heavy-meal", "personal-caffeine-cutoff": return nil
+        case "leave-room-after-heavy-meal", "personal-caffeine-cutoff", "exercise-timing-experiment": return nil
         case "steady-wake": return nil
         case "morning-light": return .openCurtains
         case "rest-not-performance": return .relaxation

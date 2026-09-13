@@ -44,7 +44,9 @@ experiment requires its own decision record.
 Allowed themes include quieter light and screens before bed, regular wake-time cues,
 daylight and movement during the day, a calm sleep environment, keeping the bed a sleep
 cue, relaxation, leaving personally suitable room after a heavy meal, and trying an earlier
-personal caffeine cutoff. The app must not implement sleep
+personal caffeine cutoff. Daytime movement may be suggested; exercise timing is framed as a
+personal experiment (“if intense exercise near bed feels activating, try it earlier”), never a
+universal cutoff or completed task. The app must not implement sleep
 restriction, sleep-efficiency targets, diagnosis, medication advice, PSQI scoring, or
 claims that Wind Down improves sleep.
 

@@ -28,7 +28,7 @@ enum OllieRitualState: String, CaseIterable, Identifiable {
         case .tuckingIn: return "Wind Down"
         case .guarding: return "Guarding"
         case .overnight: return "Overnight"
-        case .morningQuiet: return "Morning"
+        case .morningQuiet: return "Screen-Free Morning"
         case .completed: return "Complete"
         case .endedEarly: return "Fresh start"
         }

@@ -5,111 +5,96 @@ import SwiftUI
 struct ScreenFreeMorningView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     let occurrence: MorningQuietOccurrence
+    var fixedNow: Date? = nil
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showEmergencyExit = false
     @State private var emergencyReason = ""
     @State private var emergencyConfirmation = ""
 
     private var endDate: Date { occurrence.scheduledEnd }
-    private var actualMinutes: Int { occurrence.eligibleElapsedMinutes(at: Date()) }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("SCREEN-FREE MORNING")
-                            .font(pixelFont(.caption))
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
+                        NightJourneyView(morning: occurrence, reduceMotion: reduceMotion, fixedDate: fixedNow)
+                        Label("Screen-Free Morning", systemImage: "sun.max.fill")
+                            .font(AppTypography.headline)
                             .foregroundStyle(AppColors.grass)
-                        Text("Your phone is staying away for now.")
-                            .font(AppTypography.title)
-                            .foregroundStyle(AppColors.ink)
-                        Text("Until \(OllieFormat.time(endDate))")
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.secondaryText)
-                        Text("\(actualMinutes) actual minutes so far")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                            .accessibilityLabel("\(actualMinutes) actual Screen-Free Morning minutes so far")
+                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                            if let fixedNow {
+                                Text(OllieFormat.timer(max(0, endDate.timeIntervalSince(fixedNow))))
+                                    .font(pixelFont(.largeTitle))
+                            } else {
+                                Text(timerInterval: countdownInterval, countsDown: true, showsHours: true)
+                                    .font(pixelFont(.largeTitle))
+                            }
+                            Text("Remaining · until \(OllieFormat.time(endDate))")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.muted)
+                        }
+                        .accessibilityElement(children: .combine)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                if !morningSteps.isEmpty {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        Text("Your morning ideas")
+                            .font(AppTypography.headline)
+                        ForEach(morningSteps) { step in
+                            Label(step.title, systemImage: step.activity?.systemImage ?? "leaf.fill")
+                                .font(AppTypography.body)
+                        }
+                    }
+                    .foregroundStyle(AppColors.ink)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Optional morning ideas: \(morningSteps.map(\.title).joined(separator: ", "))")
                 }
 
                 let tracker = viewModel.briefAccessTrackerSummary(forScreenFreeMorning: occurrence)
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("BRIEF ACCESS")
-                            .font(pixelFont(.caption))
-                            .foregroundStyle(AppColors.grass)
-                        Text(tracker.subtitle)
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.secondaryText)
-                        Text("Brief Access does not reduce your Screen-Free Morning minutes.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
+                if tracker.pauseCount > 0 {
+                    Label("Brief Access · \(tracker.pauseCount) use\(tracker.pauseCount == 1 ? "" : "s")", systemImage: "arrow.triangle.2.circlepath")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                }
+
+                if viewModel.shieldingReadiness != .ready {
+                    NavigationLink {
+                        ScreenTimeProtectionRepairView()
+                    } label: {
+                        Label("Review app protection", systemImage: "exclamationmark.shield")
+                            .font(AppTypography.headline)
                     }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                    .accessibilityHint("Repair app protection before another start")
                 }
 
-                if let parent = linkedParentRun,
-                   let steps = parent.nightWatchPlan?.morningRoutine,
-                   !steps.isEmpty {
-                    WindDownRoutineSequenceCard(
-                        eyebrow: "BEFORE THE PHONE RETURNS",
-                        steps: steps
-                    )
-                }
-
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("THIS TIME IS FOR")
-                            .font(pixelFont(.caption))
-                            .foregroundStyle(AppColors.grass)
-                        Menu {
-                            ForEach(QuietPurposeCue.allCases, id: \.self) { cue in
-                                Button {
-                                    viewModel.setCurrentPurposeCue(cue)
-                                } label: {
-                                    if viewModel.currentPurposeCue == cue {
-                                        Label(cue.appFacingTitle, systemImage: "checkmark")
-                                    } else {
-                                        Text(cue.appFacingTitle)
-                                    }
-                                }
-                            }
-                        } label: {
-                            HStack {
-                                Label("Purpose", systemImage: "leaf.fill")
-                                Spacer()
-                                Text(viewModel.currentPurposeCue?.appFacingTitle ?? "Choose")
-                            }
-                            .font(AppTypography.body.weight(.semibold))
-                            .foregroundStyle(AppColors.ink)
-                        }
-                        .accessibilityLabel("Current purpose: \(viewModel.currentPurposeCue?.appFacingTitle ?? "not chosen")")
-                    }
-                }
-
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("APP PROTECTION")
-                            .font(pixelFont(.caption))
-                            .foregroundStyle(AppColors.grass)
-                        Text("Your consented app and category selection is used when protection is available.")
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.secondaryText)
+                DisclosureGroup("Timer & protection details") {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("\(occurrence.eligibleElapsedMinutes(at: fixedNow ?? Date())) timer minutes so far")
+                        Text(QuietTimeShieldRole.screenFreeMorning.briefAccessExplanation)
+                        Text("App protection uses your selected apps and categories. Websites and unselected apps remain available.")
                         if viewModel.shieldingReadiness != .ready {
-                            Text("Protection needs repair in Settings before another start.")
-                                .font(AppTypography.caption)
+                            Text(viewModel.shieldingReadiness.detail)
                                 .foregroundStyle(AppColors.warning)
                         }
                     }
+                    .font(AppTypography.caption)
+                    .foregroundStyle(AppColors.muted)
+                    .padding(.top, AppSpacing.xs)
                 }
+                .font(AppTypography.caption)
+                .tint(AppColors.grass)
 
                 if linkedParentRun?.guardKind == .nfcTag {
-                    Button("Tap tag to finish Wind Down") {
+                    Button("Tap tag to finish this morning timer") {
                         viewModel.requestEndWindDown()
                     }
                     .frame(maxWidth: .infinity)
                     .buttonStyle(PixelPrimaryButtonStyle())
-                    .accessibilityHint("Uses the registered Wind Down tag to finish this morning and its parent Wind Down")
+                    .accessibilityHint("Uses the registered tag to finish the Screen-Free Morning timer")
 
                     if !viewModel.nfcStatus.isEmpty {
                         Text(viewModel.nfcStatus)
@@ -134,7 +119,7 @@ struct ScreenFreeMorningView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .buttonStyle(PixelPrimaryButtonStyle())
-                    .accessibilityHint("Saves actual elapsed minutes and ends this Wind Down")
+                    .accessibilityHint("Saves elapsed timer minutes and ends Screen-Free Morning")
                 }
             }
             .padding(AppSpacing.md)
@@ -147,6 +132,17 @@ struct ScreenFreeMorningView: View {
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
+    }
+
+    private var countdownInterval: ClosedRange<Date> {
+        let now = Date()
+        return now...max(now, endDate)
+    }
+
+    private var morningSteps: [WindDownRoutineStep] {
+        if let plan = linkedParentRun?.nightWatchPlan { return plan.morningRoutine }
+        // A deferred morning may outlive the active run; use its frozen record.
+        return viewModel.nightWatchRecords.first { $0.id == occurrence.linkedWindDownRunID }?.plan.morningRoutine ?? []
     }
 
     private var linkedParentRun: FocusRun? {
@@ -171,7 +167,7 @@ struct ScreenFreeMorningView: View {
                         .font(AppTypography.display(30))
                     if challenge?.stage == .readyToConfirm,
                        let reason = challenge?.reason {
-                        Text("Type your reason again to end this Wind Down without the tag.")
+                        Text("Type your reason again to end Screen-Free Morning without the tag.")
                             .font(AppTypography.body)
                             .foregroundStyle(AppColors.muted)
                         Text(reason)
@@ -199,7 +195,7 @@ struct ScreenFreeMorningView: View {
                             .textFieldStyle(.roundedBorder)
                             .accessibilityLabel("What do you need your phone for?")
                     }
-                    Button(challenge?.stage == .readyToConfirm ? "End Wind Down" : "Continue") {
+                    Button(challenge?.stage == .readyToConfirm ? "End Screen-Free Morning" : "Continue") {
                         if challenge?.stage == .readyToConfirm {
                             guard viewModel.confirmEmergencyExit() else { return }
                             showEmergencyExit = false
@@ -211,7 +207,7 @@ struct ScreenFreeMorningView: View {
                     .disabled(challenge?.stage == .readyToConfirm
                         ? challenge?.canConfirm != true
                         : EmergencyExitChallenge.normalizedReason(emergencyReason).isEmpty)
-                    Button("Keep Wind Down running") {
+                    Button("Keep Screen-Free Morning running") {
                         showEmergencyExit = false
                     }
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))

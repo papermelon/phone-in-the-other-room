@@ -4,6 +4,7 @@ import Foundation
 /// Callers must not consume a schedule source or publish a start until this
 /// result says that the new run was actually admitted.
 enum FocusSessionStartRejection: Equatable {
+    case accountSignedOut
     case activeRun(UUID)
     case activeScreenFreeMorning(UUID)
 }

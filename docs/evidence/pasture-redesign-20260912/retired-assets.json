@@ -1,0 +1,26 @@
+[
+  {
+    "path": "Assets.xcassets/generated_sources/counting-sheep-sprite-sheet-gpt-image-2.png",
+    "bytes": 1489102,
+    "sha256": "303288e6b782121bb3ab0fbcbc1b21e0a3545067ef34ba81904e6eb5dd931d3d",
+    "recoverFrom": "HEAD:Assets.xcassets/generated_sources/counting-sheep-sprite-sheet-gpt-image-2.png"
+  },
+  {
+    "path": "Assets.xcassets/generated_sources/farm-background-day-gpt-image-2.png",
+    "bytes": 1790621,
+    "sha256": "1f880a42d48d46fdcf16a3f69fe2c0e85783c84bbebd820405efd8d26eb90bd3",
+    "recoverFrom": "HEAD:Assets.xcassets/generated_sources/farm-background-day-gpt-image-2.png"
+  },
+  {
+    "path": "Assets.xcassets/farm/farm_hills_side_scroll_test.imageset/farm_hills_side_scroll_test.png",
+    "bytes": 2281349,
+    "sha256": "6023a6d366eae9da083c155d3e06ad655567339f5556ea8cee7da49f835acb06",
+    "recoverFrom": "HEAD:Assets.xcassets/farm/farm_hills_side_scroll_test.imageset/farm_hills_side_scroll_test.png"
+  },
+  {
+    "path": "Assets.xcassets/farm/farm_hills_side_scroll_test.imageset/Contents.json",
+    "bytes": 199,
+    "sha256": "6f09dec299dbb8a6afe8fb5f9800a42a3284de318e3d74b332c213b728e93a03",
+    "recoverFrom": "HEAD:Assets.xcassets/farm/farm_hills_side_scroll_test.imageset/Contents.json"
+  }
+]

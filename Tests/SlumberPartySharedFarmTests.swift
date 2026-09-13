@@ -1,6 +1,18 @@
 import XCTest
 
 final class SlumberPartySharedFarmTests: XCTestCase {
+    func testBackgroundRefreshDoesNotShowConnectionWarning() {
+        let received = Date()
+        for _ in 0..<20 {
+            XCTAssertFalse(NightFlockV4PartyObservationState.current(lastReceivedAt: received).showsConnectionWarning)
+            XCTAssertFalse(NightFlockV4PartyObservationState.refreshing(lastReceivedAt: received).showsConnectionWarning)
+        }
+        XCTAssertFalse(NightFlockV4PartyObservationState.refreshing(lastReceivedAt: nil).showsConnectionWarning)
+        XCTAssertFalse(NightFlockV4PartyObservationState.notRequested.showsConnectionWarning)
+        XCTAssertTrue(NightFlockV4PartyObservationState.stale(lastReceivedAt: received).showsConnectionWarning)
+        XCTAssertTrue(NightFlockV4PartyObservationState.stale(lastReceivedAt: nil).showsConnectionWarning)
+    }
+
     private let now = Date(timeIntervalSince1970: 100_000)
     private func fixture() -> NightFlockV4PartyDetail {
         let partyID = UUID(), me = UUID(), friend = UUID()
@@ -40,6 +52,14 @@ final class SlumberPartySharedFarmTests: XCTestCase {
         p.memberUpdates = [newest, earlier]
         p.sharedActivities = [newest]
         XCTAssertEqual(SlumberPartySharedFarmRules.updates(for: p.memberships[1].id, in: p).map(\.id), [newest.id, earlier.id])
+    }
+
+    func testGroupStreamPreservesSeparateSessionsWithIdenticalRoundedText() {
+        var p = fixture()
+        let first = update(p), second = update(p)
+        p.sharedActivities = [first, second]
+        p.memberUpdates = [first]
+        XCTAssertEqual(Set(SlumberPartySharedFarmRules.groupUpdates(in: p).map(\.id)), Set([first.id, second.id]))
     }
 
     func testPlacementSurvivesNameChangeAndInputReordering() {

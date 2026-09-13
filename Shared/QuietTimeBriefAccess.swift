@@ -21,6 +21,7 @@ struct QuietTimeBriefAccessRunLedgerEntry: Codable, Equatable {
     let runID: UUID
     let successfulUseCount: Int
     let updatedAt: Date
+    var uses: [QuietTimeBriefAccessUse]? = nil
 }
 
 /// The identity carried by a Brief Access grant. A legacy snapshot has no
@@ -150,7 +151,7 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
         self.scheduleRevision = max(1, scheduleRevision)
         self.scheduleEpoch = max(1, scheduleEpoch)
         self.successfulUseCount = max(successfulUseCount, successfulUses.count)
-        self.successfulUses = Array(successfulUses.suffix(Self.maximumHistoryCount))
+        self.successfulUses = successfulUses
         self.activeGrant = activeGrant
         self.completedRunCounts = Self.normalizedLedger(completedRunCounts)
         self.rejectedGrantNonce = rejectedGrantNonce
@@ -180,10 +181,7 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
             0,
             try container.decodeIfPresent(Int.self, forKey: .successfulUseCount) ?? 0
         )
-        successfulUses = Array(
-            (try container.decodeIfPresent([QuietTimeBriefAccessUse].self, forKey: .successfulUses) ?? [])
-                .suffix(Self.maximumHistoryCount)
-        )
+        successfulUses = try container.decodeIfPresent([QuietTimeBriefAccessUse].self, forKey: .successfulUses) ?? []
         successfulUseCount = max(successfulUseCount, successfulUses.count)
         activeGrant = try container.decodeIfPresent(
             QuietTimeBriefAccessGrant.self,
@@ -235,7 +233,7 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
                 expiresAt: grant.expiresAt
             )
         )
-        successfulUses = Array(successfulUses.suffix(Self.maximumHistoryCount))
+        // Keep every current-run interval until its Farm settlement.
         rejectedGrantNonce = nil
         rejectedAt = nil
         archivedAt = nil
@@ -264,12 +262,20 @@ struct QuietTimeBriefAccessState: Codable, Equatable {
 
     mutating func archiveCurrentRun(at date: Date) {
         if successfulUseCount > 0 {
+            let prior = completedRunCounts.first { $0.runID == runID }
+            var uses = prior?.uses ?? []
+            for use in successfulUses where !uses.contains(where: { $0.nonce == use.nonce }) {
+                uses.append(use)
+            }
+            let missing = max(max(0, (prior?.successfulUseCount ?? 0) - (prior?.uses?.count ?? 0)),
+                              max(0, successfulUseCount - successfulUses.count))
             completedRunCounts.removeAll { $0.runID == runID }
             completedRunCounts.insert(
                 QuietTimeBriefAccessRunLedgerEntry(
                     runID: runID,
-                    successfulUseCount: successfulUseCount,
-                    updatedAt: date
+                    successfulUseCount: uses.count + missing,
+                    updatedAt: date,
+                    uses: uses
                 ),
                 at: 0
             )

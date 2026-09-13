@@ -66,7 +66,7 @@ struct NotificationMessageLibraryView: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             Text("Notification messages")
                 .font(AppTypography.title)
-            Text("Keep the words brief and kind. Fixed protection notices stay read-only.")
+            Text("Keep the words brief and kind. They may appear on your Lock Screen or in notification previews while the iPhone is locked. Fixed protection notices stay read-only.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.muted)
         }
@@ -214,7 +214,7 @@ private struct NotificationMessageCategory: Identifiable, CaseIterable, Equatabl
         Self(
             id: .morning,
             title: "Morning",
-            detail: "The gentle handoff into morning quiet and the receipt afterward.",
+            detail: "The gentle handoff into Screen-Free Morning and the receipt afterward.",
             systemImage: "sunrise.fill",
             templates: [.phoneFreeMorning, .morningMidpoint, .complete, .morningReflection]
         ),

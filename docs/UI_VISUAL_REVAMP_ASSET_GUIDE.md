@@ -1,5 +1,11 @@
 # UI Visual Revamp Asset Guide
 
+Historical implementation reference. The current Farm direction is paper-textured scenery;
+see [asset naming and lifecycle](ASSET_NAMING.md) and the
+[paper Farm migration and retirement register](plans/farm-art-retirement-2026-09-12.md).
+The pixel styling, MVP screen paths and raw-source catalog storage described below are not
+instructions for new release work.
+
 This pass treats the mockups as composition references, not literal screenshots. Home and Farm now use a small asset-backed design system so the product reads as a cozy pixel farm game while preserving responsive SwiftUI layout.
 
 ## File Map

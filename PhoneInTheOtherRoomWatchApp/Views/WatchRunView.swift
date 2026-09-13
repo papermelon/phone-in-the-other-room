@@ -54,20 +54,19 @@ struct WatchRunView: View {
                 }
 
                 if needsWatchPlacement {
-                    Button { viewModel.requestDistanceCheck() } label: {
-                        Label("Check placement", systemImage: "location.fill")
-                    }
-                    .buttonStyle(WatchPrimaryButtonStyle())
-                    .accessibilityHint("Makes one brief Apple Watch placement check")
+                    Label("Continue this older setup on iPhone", systemImage: "iphone")
+                        .font(.caption2)
+                        .foregroundStyle(WatchTheme.mist)
+                        .multilineTextAlignment(.center)
                 }
 
                 if let activity {
                     WatchDetailCard(title: activity.title, systemImage: activity.systemImage)
-                        .accessibilityLabel("Suggested phone-free activity: \(activity.title)")
+                        .accessibilityLabel("Suggested Wind Down idea: \(activity.title)")
                 }
 
                 if viewModel.run?.guardKind == .nfcTag {
-                    Label("End with your phone-bed tag on iPhone", systemImage: "dot.radiowaves.left.and.right")
+                    Label("End with your registered tag on iPhone", systemImage: "dot.radiowaves.left.and.right")
                         .font(.caption2)
                         .foregroundStyle(WatchTheme.mist)
                         .multilineTextAlignment(.center)
@@ -76,7 +75,7 @@ struct WatchRunView: View {
                         Label("End early", systemImage: "stop.circle")
                     }
                     .buttonStyle(WatchQuietButtonStyle())
-                    .accessibilityHint("Ends this Phone Away period early")
+                    .accessibilityHint("Ends the \(isAdditionalQuiet ? "Phone Away" : "Wind Down") timer early")
                 }
 
                 Button { viewModel.pingPhone() } label: {
@@ -104,27 +103,27 @@ struct WatchRunView: View {
     private var statusText: String {
         if let morning = viewModel.prioritizedScreenFreeMorning {
             switch morning.status {
-            case .active: return "Phone is staying away"
+            case .active: return "Timer is running"
             case .scheduled: return "Planned on iPhone"
             case .skipped: return "Skipped today"
-            case .finished: return "Finished on iPhone"
+            case .finished: return "Timer ended on iPhone"
             }
         }
         if isLegacyWarning {
-            return "Your phone wandered back"
+            return "Continue on iPhone"
         }
         if needsWatchPlacement {
-            return "Walk the phone to its bed"
+            return "Older setup"
         }
         if isAdditionalQuiet {
-            return "Phone Away"
+            return "Phone Away timer is running"
         }
         switch phase {
-        case .windDown: return "Let the evening get quieter"
-        case .overnight: return "Your phone is tucked away"
-        case .morningQuiet: return "Wake before your phone does"
-        case .complete: return "Both quiet bookends are protected"
-        case nil: return "Ollie is keeping watch"
+        case .windDown: return "Wind Down timer: evening phase"
+        case .overnight: return "Wind Down timer: overnight phase"
+        case .morningQuiet: return "Screen-Free Morning timer is running"
+        case .complete: return "Wind Down timer ended"
+        case nil: return "Wind Down timer is running"
         }
     }
 
@@ -132,44 +131,44 @@ struct WatchRunView: View {
         if let morning = viewModel.prioritizedScreenFreeMorning {
             return morning.isActive ? "until Screen-Free Morning ends" : "Screen-Free Morning"
         }
-        if needsWatchPlacement { return viewModel.connectionText }
+        if needsWatchPlacement { return "Continue on iPhone" }
         if isLegacyWarning { return "Open Counting Sheep on iPhone" }
         if isAdditionalQuiet { return "remaining" }
         switch phase {
         case .windDown: return "until bedtime"
-        case .overnight: return "until morning quiet"
-        case .morningQuiet: return "until your phone wakes"
-        case .complete, nil: return "Wind Down complete"
+        case .overnight: return "until Screen-Free Morning"
+        case .morningQuiet: return "until Wind Down ends"
+        case .complete, nil: return "Wind Down timer ended"
         }
     }
 
     private var phaseTitle: String {
         if let morning = viewModel.prioritizedScreenFreeMorning {
-            return morning.status == .active ? "Morning" : "Planned"
+            return morning.status == .active ? "Screen-Free Morning" : "Planned"
         }
-        if isLegacyWarning { return "Nearby" }
-        if needsWatchPlacement { return "Check" }
+        if isLegacyWarning { return "iPhone" }
+        if needsWatchPlacement { return "Older setup" }
         if isAdditionalQuiet { return "Phone Away" }
         switch phase {
         case .windDown: return "Evening"
-        case .overnight: return "Asleep"
-        case .morningQuiet: return "Morning"
-        case .complete: return "Protected"
+        case .overnight: return "Overnight"
+        case .morningQuiet: return "Screen-Free Morning"
+        case .complete: return "Ended"
         case nil: return "Wind Down"
         }
     }
 
     private var phaseSymbol: String {
         if viewModel.prioritizedScreenFreeMorning != nil { return "sunrise.fill" }
-        if isLegacyWarning { return "iphone.gen3.radiowaves.left.and.right" }
-        if needsWatchPlacement { return "location.fill" }
-        if isAdditionalQuiet { return "leaf.fill" }
+        if isLegacyWarning { return "iphone" }
+        if needsWatchPlacement { return "iphone" }
+        if isAdditionalQuiet { return "timer" }
         switch phase {
         case .windDown: return "moon.stars.fill"
-        case .overnight: return "bed.double.fill"
+        case .overnight: return "moon.fill"
         case .morningQuiet: return "sunrise.fill"
         case .complete: return "checkmark.seal.fill"
-        case nil: return "moon.fill"
+        case nil: return "timer"
         }
     }
 
@@ -253,8 +252,8 @@ struct WatchRunView: View {
         let destination: String
         switch phase {
         case .windDown: destination = "bedtime"
-        case .overnight: destination = "the phone-free morning"
-        case .morningQuiet: destination = "the phone's wake time"
+        case .overnight: destination = "Screen-Free Morning"
+        case .morningQuiet: destination = "the end of Wind Down"
         case .complete, nil: destination = "the end of Wind Down"
         }
         return "\(minutes) minutes until \(destination)"

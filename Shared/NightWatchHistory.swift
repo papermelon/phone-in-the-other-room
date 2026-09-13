@@ -9,6 +9,7 @@ enum RitualEvidenceSource: String, Codable, Equatable {
 
 enum RitualEventKind: String, Codable, Equatable {
     case sessionStarted
+    case credentialConfirmed
     case placementConfirmed
     case placementValidationFailed
     case fallbackSelected

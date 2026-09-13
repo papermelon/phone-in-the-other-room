@@ -379,6 +379,7 @@ struct WindDownMorningSettlementJournal: Codable, Equatable {
     var sunriseTrail: SunriseTrailState
     var deliveredEffectIDs: [String]
     var authorizedTerminalMorningDecisions: [AuthorizedTerminalMorningDecision]
+    var restoredDeliveredWindDownRunIDs: [UUID]?
 
     init(
         schemaVersion: Int = currentSchemaVersion,
@@ -386,7 +387,8 @@ struct WindDownMorningSettlementJournal: Codable, Equatable {
         morningOccurrences: [MorningQuietOccurrence] = [],
         sunriseTrail: SunriseTrailState = .empty,
         deliveredEffectIDs: [String] = [],
-        authorizedTerminalMorningDecisions: [AuthorizedTerminalMorningDecision] = []
+        authorizedTerminalMorningDecisions: [AuthorizedTerminalMorningDecision] = [],
+        restoredDeliveredWindDownRunIDs: [UUID]? = nil
     ) {
         self.schemaVersion = max(schemaVersion, Self.currentSchemaVersion)
         self.windDownBenefits = windDownBenefits
@@ -394,11 +396,13 @@ struct WindDownMorningSettlementJournal: Codable, Equatable {
         self.sunriseTrail = sunriseTrail
         self.deliveredEffectIDs = Array(Array(Set(deliveredEffectIDs)).suffix(Self.maximumEffectMarkers))
         self.authorizedTerminalMorningDecisions = authorizedTerminalMorningDecisions
+        self.restoredDeliveredWindDownRunIDs = restoredDeliveredWindDownRunIDs
     }
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, windDownBenefits, morningOccurrences, sunriseTrail, deliveredEffectIDs
         case authorizedTerminalMorningDecisions
+        case restoredDeliveredWindDownRunIDs
     }
 
     init(from decoder: Decoder) throws {
@@ -412,7 +416,8 @@ struct WindDownMorningSettlementJournal: Codable, Equatable {
             authorizedTerminalMorningDecisions: try container.decodeIfPresent(
                 [AuthorizedTerminalMorningDecision].self,
                 forKey: .authorizedTerminalMorningDecisions
-            ) ?? []
+            ) ?? [],
+            restoredDeliveredWindDownRunIDs: try container.decodeIfPresent([UUID].self, forKey: .restoredDeliveredWindDownRunIDs)
         )
     }
 
@@ -436,6 +441,7 @@ struct WindDownMorningSettlementJournal: Codable, Equatable {
         at date: Date
     ) -> WindDownBenefitSettlement? {
         guard run.isProgressionEligibleNightWatch,
+              restoredDeliveredWindDownRunIDs?.contains(run.id) != true,
               !run.isPractice,
               FocusRunRules.protectedSpanMinutes(for: run, at: date)
                 >= FocusRunRules.minimumProtectedNightSearchSpanMinutes else { return nil }

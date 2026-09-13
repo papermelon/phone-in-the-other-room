@@ -10,10 +10,10 @@ struct WatchCompletionView: View {
                     WatchOllieIconView(mood: .proud, size: usesCompactLayout ? 56 : 72)
                     VStack(alignment: .leading, spacing: 5) {
                         WatchStatusPill(
-                            title: viewModel.isAdditionalQuiet ? "Complete" : "Protected",
-                            systemImage: "checkmark.seal.fill"
+                            title: "Ended",
+                            systemImage: "checkmark.circle.fill"
                         )
-                        Text(viewModel.isAdditionalQuiet ? "Phone Away is complete" : "Your phone slept in the other room")
+                        Text(presentation?.headline ?? "The timer ended")
                             .font((usesCompactLayout ? Font.caption : Font.body).weight(.semibold))
                             .foregroundStyle(WatchTheme.cream)
                             .lineLimit(3)
@@ -27,13 +27,6 @@ struct WatchCompletionView: View {
                     .foregroundStyle(WatchTheme.mist)
                     .multilineTextAlignment(.center)
 
-                if !viewModel.isAdditionalQuiet {
-                    Text("Your Search Journal is waiting on iPhone.")
-                        .font(.caption2)
-                        .foregroundStyle(WatchTheme.mist)
-                        .multilineTextAlignment(.center)
-                }
-
                 Button { viewModel.clearRunSummary() } label: {
                     Text("Done")
                 }
@@ -44,8 +37,12 @@ struct WatchCompletionView: View {
     }
 
     private var completionSummary: String {
-        let minutes = viewModel.run?.creditedQuietMinutes ?? 0
-        return minutes == 1 ? "1 quiet minute recorded" : "\(minutes) quiet minutes recorded"
+        presentation?.timerSummary ?? "The elapsed timer record is on iPhone."
+    }
+
+    private var presentation: RunTerminalPresentation? {
+        guard let run = viewModel.run else { return nil }
+        return RunTerminalPresentation(run: run)
     }
 }
 

@@ -49,6 +49,7 @@ struct OptionalOrientationTarget: ViewModifier {
 struct GuidePresentationModifier<Panel: View>: ViewModifier {
     let target: OrientationTourTarget?
     @ViewBuilder let panel: () -> Panel
+    @State private var guideContentHeight: CGFloat = .infinity
 
     func body(content: Content) -> some View {
         GeometryReader { viewport in
@@ -72,7 +73,10 @@ struct GuidePresentationModifier<Panel: View>: ViewModifier {
                         }
                     if target != nil {
                         panel()
-                            .frame(height: viewport.size.height * 0.48)
+                            .frame(height: min(guideContentHeight, viewport.size.height * 0.48))
+                            .onPreferenceChange(GuideContentHeightPreferenceKey.self) { height in
+                                if height > 0 { guideContentHeight = height }
+                            }
                             .padding(.horizontal, AppSpacing.md)
                             .padding(.bottom, AppSpacing.sm)
                     }
@@ -86,6 +90,46 @@ struct GuidePresentationModifier<Panel: View>: ViewModifier {
                 }
             }
         }
+    }
+}
+
+struct GuideContentHeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// Short introductions fit their content; the system caps tall sheets and the
+/// scroll view keeps all text and actions reachable at larger text sizes.
+struct ContentFittingGuideSheet<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+    @State private var contentHeight: CGFloat = 0
+
+    var body: some View {
+        ScrollView {
+            content()
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(AppSpacing.lg)
+                .background {
+                    GeometryReader { proxy in
+                        Color.clear.preference(
+                            key: GuideContentHeightPreferenceKey.self,
+                            value: proxy.size.height
+                        )
+                    }
+                }
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .foregroundStyle(AppColors.ink)
+        .background(AppColors.paper.ignoresSafeArea())
+        .onPreferenceChange(GuideContentHeightPreferenceKey.self) { height in
+            if height > 0 { contentHeight = height }
+        }
+        .presentationDetents(contentHeight > 0 ? [.height(contentHeight)] : [.medium])
+        .presentationDragIndicator(.visible)
     }
 }
 
@@ -113,6 +157,16 @@ struct GuidePrimer<Actions: View>: View {
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(AppSpacing.md)
+            .background {
+                // Measure the padded content, not the scroll viewport, so short tips
+                // fit their content and longer tips keep a bounded scroll region.
+                GeometryReader { content in
+                    Color.clear.preference(
+                        key: GuideContentHeightPreferenceKey.self,
+                        value: content.size.height
+                    )
+                }
+            }
         }
         .scrollBounceBehavior(.basedOnSize)
         .foregroundStyle(AppColors.ink)

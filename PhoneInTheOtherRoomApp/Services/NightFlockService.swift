@@ -77,6 +77,13 @@ actor NightFlockService {
         } catch { throw mapError(error, operation: "command-v3") }
     }
 
+    func sendPasture(_ command: SharedPastureCommand) async throws -> SharedPastureCommandResponse {
+        do {
+            return try await invoke("night-flock-command", headers: commandHeaders(idempotencyKey: command.idempotencyKey),
+                                    body: command, operation: "command-pasture")
+        } catch { throw mapError(error, operation: "command-pasture") }
+    }
+
     func stateV4List() async throws -> NightFlockV4ListStateResponse {
         try await stateV4(request: NightFlockV4ListStateRequest(), operation: "state-v4-list")
     }

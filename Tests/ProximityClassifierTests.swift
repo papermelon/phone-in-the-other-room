@@ -68,28 +68,52 @@ final class ProximityClassifierTests: XCTestCase {
 
         XCTAssertTrue(WindDownStartGate.canBeginNFCRead(
             forPendingStart: true,
-            hasActiveRun: false,
+            activeRunState: nil,
             startInFlight: false,
             scanInFlight: false
         ))
         XCTAssertFalse(WindDownStartGate.canBeginNFCRead(
             forPendingStart: true,
-            hasActiveRun: false,
+            activeRunState: nil,
             startInFlight: false,
             scanInFlight: true
         ))
         XCTAssertFalse(WindDownStartGate.canBeginNFCRead(
             forPendingStart: true,
-            hasActiveRun: true,
+            activeRunState: .running,
             startInFlight: false,
             scanInFlight: false
         ))
         XCTAssertTrue(WindDownStartGate.canBeginNFCRead(
             forPendingStart: false,
-            hasActiveRun: true,
+            activeRunState: .running,
             startInFlight: false,
             scanInFlight: false
         ))
+    }
+
+    func testNFCCanStartAfterRetainedReceiptButCannotConfirmTerminalRun() {
+        for state in [FocusRunState.setup, .completed, .endedEarly] {
+            XCTAssertTrue(WindDownStartGate.canBeginNFCRead(forPendingStart: true,
+                activeRunState: state, startInFlight: false, scanInFlight: false))
+            XCTAssertFalse(WindDownStartGate.canBeginNFCRead(forPendingStart: false,
+                activeRunState: state, startInFlight: false, scanInFlight: false))
+        }
+        for state in FocusRunState.allCases where ![.setup, .completed, .endedEarly].contains(state) {
+            XCTAssertFalse(WindDownStartGate.canBeginNFCRead(forPendingStart: true,
+                activeRunState: state, startInFlight: false, scanInFlight: false))
+        }
+    }
+
+    func testPendingNFCPurposeOutranksThePreviousRunInBothDirections() {
+        XCTAssertEqual(WindDownStartGate.nfcPurpose(pendingRole: .primarySleepBookend,
+            activeRole: .additionalQuiet), .windDown)
+        XCTAssertEqual(WindDownStartGate.nfcPurpose(pendingRole: .additionalQuiet,
+            activeRole: .primarySleepBookend), .phoneAway)
+        XCTAssertEqual(WindDownStartGate.nfcPurpose(pendingRole: nil,
+            activeRole: .additionalQuiet), .phoneAway)
+        XCTAssertEqual(WindDownStartGate.nfcPurpose(pendingRole: nil,
+            activeRole: .primarySleepBookend), .windDown)
     }
 
     func testReleaseGuardCopyUsesWindDownBarrierLanguage() {

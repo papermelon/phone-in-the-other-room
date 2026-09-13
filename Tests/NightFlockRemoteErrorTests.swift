@@ -2,6 +2,53 @@ import Foundation
 import XCTest
 
 final class NightFlockRemoteErrorTests: XCTestCase {
+    func testAcceptedCommandWithFailedReadIsNotPresentedAsAFailedMutation() {
+        let command = NightFlockV4Command.renameParty(partyID: UUID(), name: "Family", idempotencyKey: "rename")
+        XCTAssertEqual(NightFlockRefreshFailure.actionTitle(for: command, accepted: false),
+                       "The party name couldn’t be changed")
+        XCTAssertEqual(NightFlockRefreshFailure.actionTitle(for: command, accepted: true),
+                       "Your change was saved. The latest view couldn’t be loaded.")
+        XCTAssertEqual(NightFlockRefreshFailure.actionTitle(
+            for: .cheerMember(partyID: UUID(), memberID: UUID(), cheer: .warmWave, idempotencyKey: "cheer"),
+            accepted: false), "Your cheer couldn’t be sent")
+    }
+
+    func testRefreshRejectionDoesNotOfferAnIneffectiveRetry() {
+        for code: NightFlockRemoteErrorCode in [.invalidRequest, .methodNotAllowed, .unsupportedSchema] {
+            let failure = NightFlockRefreshFailure(remote: .init(
+                statusCode: 400, code: code, requestID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+            ))
+            XCTAssertFalse(failure.canRetry)
+            XCTAssertEqual(failure.requestReference, "Request ID: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
+        }
+    }
+
+    func testTransientRefreshFailureOffersRetryWithTheFailingRequestReference() {
+        let failure = NightFlockRefreshFailure(remote: .init(
+            statusCode: 503, code: .serviceUnavailable,
+            requestID: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+        ))
+        XCTAssertTrue(failure.canRetry)
+        XCTAssertEqual(failure.requestReference, "Request ID: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+    }
+
+    func testLocalRefreshFailureDoesNotInventAServerSupportReference() {
+        let failure = NightFlockRefreshFailure(remote: nil)
+        XCTAssertTrue(failure.canRetry)
+        XCTAssertNil(failure.requestReference)
+    }
+
+    func testFarmTransportWaitsForDeletionRecoveryAndStopsDuringEveryDeletionPhase() {
+        typealias Policy = NightFlockAccountDeletionIntentPolicy
+        XCTAssertTrue(Policy.permitsFarmTransport(restored: true, deleting: false, phase: .complete))
+        for phase: Policy.Phase in [.complete, .pendingPreflight, .acceptedTombstone] {
+            XCTAssertFalse(Policy.permitsFarmTransport(restored: false, deleting: false, phase: phase))
+            XCTAssertFalse(Policy.permitsFarmTransport(restored: true, deleting: true, phase: phase))
+        }
+        XCTAssertFalse(Policy.permitsFarmTransport(restored: true, deleting: false, phase: .pendingPreflight))
+        XCTAssertFalse(Policy.permitsFarmTransport(restored: true, deleting: false, phase: .acceptedTombstone))
+    }
+
     func testRecoverableInviteCodeAndV2WireContract() throws {
         let code = NightFlockInviteCode.generate(randomByte: { 31 })
         XCTAssertEqual(code.count, 12)
@@ -158,10 +205,18 @@ final class NightFlockRemoteErrorTests: XCTestCase {
         let linked = NightFlockRemoteError.decode(statusCode: 403, data: Data(#"{"code":"linked_account_required"}"#.utf8))
         XCTAssertEqual(linked.recovery, .linkAccount)
         XCTAssertFalse(linked.shouldReconcileMembership)
+        XCTAssertEqual(
+            linked.errorDescription,
+            "Use Apple sign-in to link this account or reopen an existing Counting Sheep account."
+        )
 
         let unauthorized = NightFlockRemoteError.decode(statusCode: 401, data: Data(#"{"code":"unauthorized"}"#.utf8))
         XCTAssertEqual(unauthorized.recovery, .authenticate)
         XCTAssertFalse(unauthorized.shouldReconcileMembership)
+        XCTAssertEqual(
+            unauthorized.errorDescription,
+            "Reconnect the Apple account already linked to Slumber Party."
+        )
 
         let account = NightFlockRemoteError.decode(statusCode: 403, data: Data(#"{"code":"account_unavailable"}"#.utf8))
         XCTAssertNil(account.recovery)

@@ -301,7 +301,7 @@ final class PhoneAwaySettlementTests: XCTestCase {
         XCTAssertTrue(presentation.message.contains("Phone Away search progress was not added"))
         XCTAssertFalse(presentation.message.contains("protected"))
         XCTAssertFalse(presentation.message.contains("reward"))
-        XCTAssertEqual(presentation.accessibilityLabel, "Phone Away practice complete. This was practice. 5 completed minutes were saved in Nights. Phone Away search progress was not added.")
+        XCTAssertEqual(presentation.accessibilityLabel, "Phone Away practice timer ended. This was practice. 5 elapsed timer minutes were saved in Nights. Phone Away search progress was not added.")
     }
 
     func testBelowMinimumReceiptExplainsTheFifteenMinuteStartWithoutFailureLanguage() {
@@ -310,7 +310,7 @@ final class PhoneAwaySettlementTests: XCTestCase {
 
         XCTAssertEqual(presentation.state, .belowMinimum)
         XCTAssertTrue(presentation.message.contains("No Phone Away search progress was added"))
-        XCTAssertTrue(presentation.message.contains("15 completed minutes"))
+        XCTAssertTrue(presentation.message.contains("15 eligible elapsed minutes"))
         XCTAssertFalse(presentation.message.localizedCaseInsensitiveContains("failed"))
         XCTAssertNil(presentation.searchLinkTitle)
     }
@@ -361,7 +361,7 @@ final class PhoneAwaySettlementTests: XCTestCase {
         XCTAssertEqual(presentation.state, .endedEarly)
         XCTAssertTrue(presentation.title.contains("ended early"))
         XCTAssertTrue(presentation.message.contains("saved in Nights"))
-        XCTAssertTrue(presentation.message.contains("begins at 15 completed minutes"))
+        XCTAssertTrue(presentation.message.contains("begins after a completed Phone Away has at least 15 eligible elapsed minutes"))
         XCTAssertNil(presentation.searchLinkTitle)
     }
 

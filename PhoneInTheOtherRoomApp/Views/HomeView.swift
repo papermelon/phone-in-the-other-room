@@ -9,6 +9,8 @@ struct HomeView: View {
     @State private var selectedTab: MainAppTab
     @State private var farmVisitSeed: UInt64
     @State private var opensNightFlock = false
+    @State private var pendingPartyPresentation = false
+    @State private var partyOriginTab: MainAppTab?
     @State private var nightFlockPartyID: UUID?
     @State private var homeScrollViewportSize = CGSize.zero
     @State private var homeNavigationPath = NavigationPath()
@@ -41,7 +43,15 @@ struct HomeView: View {
         ZStack {
             shellBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                selectedTabNavigationStack
+                Group {
+                    if viewModel.homeReceiptRoute.replacesTabShell {
+                        // A separate receipt root cannot be obscured by a Farm
+                        // destination or leave that tab stranded without its bar.
+                        NavigationStack { homeContent }
+                    } else {
+                        selectedTabNavigationStack
+                    }
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if showChrome {
@@ -78,11 +88,21 @@ struct HomeView: View {
             select(.farm)
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNightFlock)) { notification in
-            guard !viewModel.isRunning else { return }
+            partyOriginTab = selectedTab
             viewModel.nightFlockViewModel.prefersJoinEntry = (notification.object as? String) == "join"
             nightFlockPartyID = notification.object as? UUID
-            select(.farm)
-            opensNightFlock = true
+            if selectedTab == .farm {
+                opensNightFlock = true
+            } else {
+                pendingPartyPresentation = true
+                select(.farm)
+            }
+        }
+        .onChange(of: opensNightFlock) { _, isOpen in
+            if !isOpen, !pendingPartyPresentation, let origin = partyOriginTab {
+                partyOriginTab = nil
+                if selectedTab == .farm { select(origin) }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNights)) { _ in
             if viewModel.activeRun?.state == .completed || viewModel.activeRun?.state == .endedEarly {
@@ -127,7 +147,11 @@ struct HomeView: View {
                 onCode: viewModel.acceptQRCode
             )
         }
-        .sheet(isPresented: $viewModel.showNightWatchStartPrompt) {
+        // A system NFC/picker overlay may cover the preflight. Only dismissal
+        // of the preflight itself cancels its pending start transaction.
+        .sheet(isPresented: $viewModel.showNightWatchStartPrompt, onDismiss: {
+            viewModel.cancelNightWatchStart()
+        }) {
             WindDownStartSheet()
                 .environmentObject(viewModel)
                 .presentationDetents([.medium, .large])
@@ -154,8 +178,6 @@ struct HomeView: View {
                     viewModel.dismissOrientation()
                 }
             )
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
         }
         .onChange(of: viewModel.orientationState.currentStep) { _, step in
             guard viewModel.orientationState.isGuideActive else { return }
@@ -231,9 +253,12 @@ struct HomeView: View {
         ZStack {
             VStack(spacing: 0) {
                 if showHeaderChrome {
-                    CountingSheepTopBar()
+                    HStack(spacing: AppSpacing.sm) {
+                        CountingSheepTopBar()
+                        FarmBackupStatusView(model: viewModel.farmBackupViewModel, account: viewModel.nightFlockViewModel)
+                    }
                         .padding(.horizontal, 18)
-                        .padding(.top, 10)
+                        .padding(.vertical, AppSpacing.xs)
                     if viewModel.orientationState.shouldShowContinueCard(
                         isCoachMarkPresented: isOrientationCoachPresented
                     ) {
@@ -247,7 +272,7 @@ struct HomeView: View {
                             onDismiss: viewModel.dismissFirstRunContinueCard
                         )
                         .padding(.horizontal, 16)
-                        .padding(.top, 10)
+                        .padding(.vertical, AppSpacing.xs)
                     }
                 }
 
@@ -431,6 +456,15 @@ struct HomeView: View {
                     nightFlockPartyID: $nightFlockPartyID
                 )
                     .environmentObject(viewModel)
+                    .task {
+                        // Mount Farm's navigation destination before presenting it.
+                        // Otherwise SwiftUI can dismiss a route during the tab swap.
+                        guard pendingPartyPresentation else { return }
+                        await Task.yield()
+                        guard !Task.isCancelled, selectedTab == .farm, pendingPartyPresentation else { return }
+                        pendingPartyPresentation = false
+                        opensNightFlock = true
+                    }
             case .settings:
                 SettingsView()
                     .environmentObject(viewModel)
@@ -473,6 +507,13 @@ struct HomeView: View {
             }
         case .activeWindDown:
             ActiveRunView(now: activeRunNow)
+                .safeAreaInset(edge: .bottom) {
+                    Button("Visit Slumber Party") {
+                        NotificationCenter.default.post(name: .countingSheepShowNightFlock,
+                            object: viewModel.nightFlockViewModel.homeSummary?.destinationPartyID)
+                    }.buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        .frame(minHeight: 44).padding(.horizontal, AppSpacing.md)
+                }
         case .unreadWindDownReceipt(let runID):
             HomeWindDownReceiptRecoveryCard(runID: runID)
         case .dashboard:
@@ -496,8 +537,7 @@ struct HomeView: View {
     }
 
     private var showChrome: Bool {
-        guard viewModel.activeRun?.state != .completed,
-              viewModel.activeRun?.state != .endedEarly else { return false }
+        guard !viewModel.homeReceiptRoute.replacesTabShell else { return false }
         return !viewModel.isRunning || viewModel.activeRun?.isNightWatch == true
     }
 
@@ -513,12 +553,17 @@ struct HomeView: View {
         // scroll. Wrapping them in the shell ScrollView makes the live journey
         // feel like a long document and can push the exit controls below the
         // viewport on smaller phones.
-        if viewModel.activeRun?.state == .completed || viewModel.activeRun?.state == .endedEarly { return true }
+        if viewModel.homeReceiptRoute.replacesTabShell { return true }
         if viewModel.isRunning && selectedTab == .home { return true }
         return selectedTab != .home
     }
 
     private func select(_ tab: MainAppTab, resetIfReselected: Bool = true) {
+        if tab != .farm {
+            pendingPartyPresentation = false
+            partyOriginTab = nil
+            opensNightFlock = false
+        }
         let isReselection = selectedTab == tab
         if tab == .farm, !isReselection {
             farmVisitSeed = UInt64.random(in: UInt64.min...UInt64.max)

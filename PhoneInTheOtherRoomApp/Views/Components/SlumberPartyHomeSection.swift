@@ -6,6 +6,7 @@ import SwiftUI
 struct SlumberPartyHomeSection: View {
     @ObservedObject var viewModel: NightFlockViewModel
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.sharedFarmPrototype) private var sharedFarmPrototype
     var openParty: (UUID?) -> Void
     @State private var selectedPartyID: UUID?
     @State private var selectedHighlightIDs: [UUID: SlumberPartyHomeHighlightID] = [:]
@@ -118,7 +119,7 @@ struct SlumberPartyHomeSection: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Start a private seven-night group, or join one with an invite code.")
+            Text("Start or join a private, long-lived group. Seven-night rounds organize progress and rewards.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -152,6 +153,9 @@ struct SlumberPartyHomeSection: View {
 
             if let detail {
                 memberMoments(in: detail, party: party)
+                if let sharedFarmPrototype, sharedFarmPrototype.partyID == party.partyID {
+                    SharedFarmHomeLine(store: sharedFarmPrototype)
+                }
                 tonightTogether(partyID: party.partyID)
                 highlight(in: detail)
                 observationLine(for: party.partyID)
@@ -169,13 +173,12 @@ struct SlumberPartyHomeSection: View {
 
     @ViewBuilder
     private func tonightTogether(partyID: UUID) -> some View {
-        if !viewModel.supportsSharedNightPlans {
-            EmptyView()
-        } else if let state = viewModel.sharedHabitsState(for: partyID) {
-            if state.agreement?.agreementVersion ?? 0 < 2 {
-                Text("Tonight together opens after you choose the updated sharing agreement.")
-                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
-            } else if let next = state.sharedNightPlans.filter({ $0.supersededAt == nil && $0.plannedWindDownStart >= displayDate.addingTimeInterval(-6 * 60 * 60) }).sorted(by: { $0.plannedWindDownStart < $1.plannedWindDownStart }).first {
+        if let state = viewModel.sharedHabitsState(for: partyID),
+           SlumberPartyReleasePresentationGate.showsSharedNightPlans(
+               listState: viewModel.v4ListState,
+               partyState: state
+           ) {
+            if let next = state.sharedNightPlans.filter({ $0.supersededAt == nil && $0.plannedWindDownStart >= displayDate.addingTimeInterval(-6 * 60 * 60) }).sorted(by: { $0.plannedWindDownStart < $1.plannedWindDownStart }).first {
                 Text("Tonight together · \(memberName(next.memberID, in: detail)) plans Wind Down at \(next.plannedWindDownStart.formatted(date: .omitted, time: .shortened)).")
                     .font(AppTypography.caption.weight(.semibold)).foregroundStyle(AppColors.ink)
             } else {
@@ -183,8 +186,7 @@ struct SlumberPartyHomeSection: View {
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
             }
         } else {
-            Text("Tonight together is waiting for the group’s saved summary.")
-                .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            EmptyView()
         }
     }
 
@@ -254,7 +256,7 @@ struct SlumberPartyHomeSection: View {
     ) -> some View {
         if let member = detail.memberships.first(where: { $0.memberID == preview.memberID }) {
             HStack(alignment: .top, spacing: AppSpacing.xs) {
-                memberAvatar(for: member)
+                memberAvatar(for: member, in: detail)
                 VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                     Text(preview.isCurrentUser ? "You" : preview.displayName)
                         .font(AppTypography.caption.weight(.semibold))
@@ -281,10 +283,18 @@ struct SlumberPartyHomeSection: View {
     }
 
     @ViewBuilder
-    private func memberAvatar(for member: NightFlockV4Membership) -> some View {
+    private func memberAvatar(
+        for member: NightFlockV4Membership,
+        in detail: NightFlockV4PartyDetail
+    ) -> some View {
+        let partyState = viewModel.sharedHabitsState(for: detail.summary.partyID)
         SlumberPartySocialAvatarView(
             presentation: member.profile.presentation,
-            avatarID: member.profile.presentation.avatarID,
+            avatarID: SlumberPartyReleasePresentationGate.avatarID(
+                requested: member.profile.presentation.avatarID,
+                listState: viewModel.v4ListState,
+                partyState: partyState
+            ),
             size: 32
         )
         .accessibilityHidden(true)
@@ -293,7 +303,7 @@ struct SlumberPartyHomeSection: View {
     private func roundLine(for party: NightFlockV4PartySummary) -> String {
         guard let round = party.currentRound else {
             return party.supportsMembershipSharing
-                ? "\(party.memberCount) people · Share Wind Down and Phone Away moments now"
+                ? "Sharing is open · no round running"
                 : "\(party.memberCount) people · Shared moments begin with the next seven nights"
         }
         switch round.status {
@@ -302,8 +312,8 @@ struct SlumberPartyHomeSection: View {
                 return "Night \(day) of 7 · \(party.memberCount) people"
             }
             return "Seven nights underway · \(party.memberCount) people"
-        case .pending: return party.supportsMembershipSharing ? "Sharing is open · seven nights are waiting" : "A seven-night round is waiting · \(party.memberCount) people"
-        case .completed: return party.supportsMembershipSharing ? "Sharing is open · these seven nights are complete" : "These seven nights are complete · \(party.memberCount) people"
+        case .pending: return party.supportsMembershipSharing ? "Sharing is open · no round running" : "No round running · \(party.memberCount) people"
+        case .completed: return party.supportsMembershipSharing ? "Sharing is open · last round complete" : "Last seven-night round complete · \(party.memberCount) people"
         }
     }
 
@@ -351,6 +361,10 @@ struct SlumberPartyHomeSection: View {
             Text(highlight.map { compactHighlightSentence($0) } ?? "No recent shared moments.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Shared moments and rounded minutes are app-recorded on a member’s iPhone and self-reported to Slumber Party, not independently verified.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.muted)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .accessibilityElement(children: .combine)

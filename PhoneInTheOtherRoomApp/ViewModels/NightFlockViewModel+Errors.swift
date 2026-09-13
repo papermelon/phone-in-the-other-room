@@ -2,6 +2,21 @@ import Foundation
 import Supabase
 
 extension NightFlockViewModel {
+    func refreshFailure(for error: Error) -> NightFlockRefreshFailure? {
+        let remote = Self.remoteError(from: error)
+        if let remote {
+            let presentation = configureAuthenticationRecovery(remote, lane: .snapshot(schema: 4))
+            guard presentation.shouldUpdatePresentation else { return nil }
+            if pendingAuthenticationRecovery != .none {
+                presentNightFlockError(error, lane: .snapshot(schema: 4))
+                return nil
+            }
+        } else if pendingAuthenticationRecovery != .none {
+            return nil
+        }
+        return NightFlockRefreshFailure(remote: remote)
+    }
+
     static func recoveryKind(for remote: NightFlockRemoteError) -> NightFlockRemoteRecovery? {
         switch remote.recovery {
         case .reconcileMembership, .reconcile, .retry:
@@ -13,11 +28,13 @@ extension NightFlockViewModel {
 
     func presentNightFlockError(
         _ error: Error,
-        lane: NightFlockRecoveryLane = .snapshot(schema: 3)
+        lane: NightFlockRecoveryLane = .snapshot(schema: 3),
+        actionTitle: String? = nil
     ) {
         if let remote = Self.remoteError(from: error) {
             let presentation = configureAuthenticationRecovery(remote, lane: lane)
             guard presentation.shouldUpdatePresentation else { return }
+            actionFailureTitle = actionTitle
             requestReference = NightFlockSupportReference.format(requestID: remote.requestID)
             pendingNightFlockRecovery = pendingAuthenticationRecovery == .none
                 ? Self.recoveryKind(for: remote)
@@ -29,6 +46,8 @@ extension NightFlockViewModel {
         // A non-auth error from an older request cannot replace an owned
         // Apple-recovery presentation or its support reference.
         guard pendingAuthenticationRecovery == .none else { return }
+        actionFailureTitle = actionTitle
+        requestReference = nil
         if error is FunctionsError || error is URLError {
             requestReference = NightFlockSupportReference.format(requestID: UUID().uuidString)
         }

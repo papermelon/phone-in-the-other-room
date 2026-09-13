@@ -36,10 +36,12 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
             date: now
         )
         let cue = purposeCue(for: snapshot)?.shieldText ?? defaultCue
-        let tracker = briefAccessTrackerSummary(for: snapshot?.runID)
-        let subtitleText = snapshot?.protectedEndDate.map {
-            "\(cue)\nEnds at \($0.formatted(date: .omitted, time: .shortened))\n\(tracker.subtitle)"
-        } ?? "\(cue)\n\(tracker.subtitle)"
+        let detailLines = [
+            cue,
+            snapshot?.protectedEndDate.map { "Selected apps blocked until \($0.formatted(date: .omitted, time: .shortened))." },
+            allowsBriefAccess ? "Brief access unlocks selected apps for up to 5 minutes. Your timer continues." : nil
+        ].compactMap { $0 }
+        let subtitleText = detailLines.joined(separator: "\n")
         let secondaryLabel = allowsBriefAccess
             ? ShieldConfiguration.Label(
                 text: secondaryButtonTitle,
@@ -47,7 +49,7 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
             )
             : nil
         let title = ShieldConfiguration.Label(
-            text: "Ollie is keeping the flock quiet.",
+            text: "\(role.timerName) is on",
             color: UIColor(red: 0.92, green: 0.89, blue: 0.79, alpha: 1)
         )
         let subtitle = ShieldConfiguration.Label(
@@ -138,38 +140,17 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
 
     private func primaryButtonTitle(for role: QuietTimeShieldRole) -> String {
         switch role {
-        case .primaryWindDown: return "Return to Wind Down"
-        case .additionalQuiet: return "Return to Phone Away"
-        case .screenFreeMorning: return "Return to Screen-Free Morning"
+        case .primaryWindDown: return "Keep winding down"
+        case .additionalQuiet: return "Keep phone away"
+        case .screenFreeMorning: return "Keep the morning quiet"
         }
     }
 
     private func secondarySubmenuItems(for role: QuietTimeShieldRole) -> [String] {
-        if role == .additionalQuiet {
-            return [
-                "Read a book · Use 5 min",
-                "Focus on work · Use 5 min",
-                "Something else · Use 5 min"
-            ]
-        }
-        if role == .screenFreeMorning {
-            return [
-                "Read a book · Use 5 min",
-                "Something offline · Use 5 min",
-                "Something else · Use 5 min"
-            ]
-        }
-        return [
-            "Prepare for sleep · Use 5 min",
-            "Something offline · Use 5 min",
-            "Something else · Use 5 min"
-        ]
+        ["Allow selected apps for 5 minutes"]
     }
 
     private var secondaryButtonTitle: String {
-        if #available(iOS 26.4, *) {
-            return "Use Briefly"
-        }
-        return "Use for 5 minutes"
+        "Get 5-minute access"
     }
 }

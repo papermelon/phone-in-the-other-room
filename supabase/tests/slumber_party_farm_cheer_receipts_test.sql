@@ -54,7 +54,7 @@ begin
  perform public.night_flock_v4_command(host_id,jsonb_build_object('command','acknowledgeUpdateCheer','partyID',party_id,'reactionID',reaction_id));
  select a.received_at into first_received from private.night_flock_v4_cheer_app_receipts a where a.reaction_id=reaction_id;
  perform public.night_flock_v4_command(host_id,jsonb_build_object('command','acknowledgeUpdateCheer','partyID',party_id,'reactionID',reaction_id));
- if (select count(*) from private.night_flock_v4_cheer_app_receipts)<>1 then raise exception 'duplicate acknowledgement'; end if;
+ if (select count(*) from private.night_flock_v4_cheer_app_receipts a where a.reaction_id=reaction_id)<>1 then raise exception 'duplicate acknowledgement'; end if;
  snapshot:=public.night_flock_v4_state(sender,'party',party_id,null);
  if snapshot#>>'{party,updateCheerReceipts,0,receivedByAppAt}' is null then raise exception 'sender cannot recover durable app confirmation'; end if;
  -- A busy member cannot displace another member's latest/cheered update.

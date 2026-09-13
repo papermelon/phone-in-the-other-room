@@ -161,9 +161,9 @@ struct PhoneAwayReceiptPresentation: Equatable {
             return PhoneAwayReceiptPresentation(
                 state: .practice,
                 eyebrow: "PHONE AWAY PRACTICE",
-                title: "Practice complete.",
-                message: "This was practice. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away search progress was not added.",
-                accessibilityLabel: "Phone Away practice complete. This was practice. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away search progress was not added.",
+                title: "Practice timer ended.",
+                message: "This was practice. \(record.creditedMinutes) elapsed timer minutes were saved in Nights. Phone Away search progress was not added.",
+                accessibilityLabel: "Phone Away practice timer ended. This was practice. \(record.creditedMinutes) elapsed timer minutes were saved in Nights. Phone Away search progress was not added.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -174,8 +174,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .endedEarly,
                 eyebrow: "PHONE AWAY ENDED",
                 title: "Phone Away ended early.",
-                message: "\(record.creditedMinutes) completed minutes were saved in Nights. Phone Away search progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
-                accessibilityLabel: "Phone Away ended early. \(record.creditedMinutes) completed minutes were saved in Nights. Phone Away search progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes after a completed session.",
+                message: "\(record.creditedMinutes) elapsed timer minutes were saved in Nights. Search progress begins after a completed Phone Away has at least \(PhoneAwaySearchMeter.minimumEligibleMinutes) eligible elapsed minutes.",
+                accessibilityLabel: "Phone Away ended early. \(record.creditedMinutes) elapsed timer minutes were saved in Nights. Search progress begins after a completed Phone Away has at least \(PhoneAwaySearchMeter.minimumEligibleMinutes) eligible elapsed minutes.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -186,8 +186,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .belowMinimum,
                 eyebrow: "PHONE AWAY RECEIPT",
                 title: "Phone Away time saved.",
-                message: "No Phone Away search progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
-                accessibilityLabel: "Phone Away time saved. No Phone Away search progress was added. Progress begins at \(PhoneAwaySearchMeter.minimumEligibleMinutes) completed minutes.",
+                message: "No Phone Away search progress was added. Progress begins after a completed Phone Away has at least \(PhoneAwaySearchMeter.minimumEligibleMinutes) eligible elapsed minutes.",
+                accessibilityLabel: "Phone Away time saved. No Phone Away search progress was added. Progress begins after a completed Phone Away has at least \(PhoneAwaySearchMeter.minimumEligibleMinutes) eligible elapsed minutes.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -221,8 +221,8 @@ struct PhoneAwayReceiptPresentation: Equatable {
                 state: .meterFullWhileLocked,
                 eyebrow: "PHONE AWAY METER",
                 title: "Your saved meter is waiting.",
-                message: "Your Phone Away meter is full at \(record.meterAfter) of \(SheepTrailMapState.maximumMappedMinutes) minutes. No additional minutes were added this time; the saved meter is waiting until three Wind Downs are complete.",
-                accessibilityLabel: "Your saved Phone Away meter is waiting. The meter is full at \(record.meterAfter) of \(SheepTrailMapState.maximumMappedMinutes) minutes. No additional minutes were added this time; it is waiting until three Wind Downs are complete.",
+                message: "Your Phone Away meter is full at \(record.meterAfter) of \(SheepTrailMapState.maximumMappedMinutes) minutes. No additional minutes were added this time; the saved meter is waiting until three qualifying Wind Downs are complete.",
+                accessibilityLabel: "Your saved Phone Away meter is waiting. The meter is full at \(record.meterAfter) of \(SheepTrailMapState.maximumMappedMinutes) minutes. No additional minutes were added this time; it is waiting until three qualifying Wind Downs are complete.",
                 searchLinkTitle: nil,
                 searchLinkHint: nil
             )
@@ -230,7 +230,7 @@ struct PhoneAwayReceiptPresentation: Equatable {
 
         let delta = record.appliedCreditDelta
         let bankingMessage = record.protectedWindDownCount < SheepSearchEngine.starterGuaranteeRuns
-            ? "The saved meter is locked until three Wind Downs are complete, so these minutes are banking there."
+            ? "The saved meter is locked until three qualifying Wind Downs are complete, so these minutes are banking there."
             : "A full meter is when Ollie looks for a missing sheep."
         return PhoneAwayReceiptPresentation(
             state: .credited,

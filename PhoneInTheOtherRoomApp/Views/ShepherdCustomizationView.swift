@@ -13,7 +13,6 @@ struct ShepherdCustomizationView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                avatarCard
                 ShepherdNameCard(
                     profile: viewModel.userProfile,
                     draftName: $nameDraft,
@@ -32,26 +31,13 @@ struct ShepherdCustomizationView: View {
             .padding(.top, AppSpacing.sm)
             .padding(.bottom, AppSpacing.xxl)
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            ShepherdLivePreview(profile: state.shepherd)
+        }
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Your Shepherd")
         .navigationBarTitleDisplayMode(.inline)
         .farmActionAlert(viewModel: viewModel)
-    }
-
-    private var avatarCard: some View {
-        PixelCard {
-            VStack(spacing: AppSpacing.sm) {
-                ShepherdAvatarView(profile: state.shepherd, size: 180)
-                Text("YOUR SHEPHERD")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                Text("This is your place beside Ollie at the Farm.")
-                    .font(AppTypography.body)
-                    .foregroundStyle(AppColors.secondaryText)
-                    .multilineTextAlignment(.center)
-            }
-            .frame(maxWidth: .infinity)
-        }
     }
 
     private var wardrobeSection: some View {
@@ -121,6 +107,23 @@ struct ShepherdCustomizationView: View {
         }
     }
 
+}
+
+/// Outside the options' scroll view, so every change stays visible on small phones.
+struct ShepherdLivePreview: View {
+    let profile: ShepherdProfile
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    var body: some View {
+        ShepherdAvatarView(profile: profile, size: verticalSizeClass == .compact ? 80 : 120)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, AppSpacing.xs)
+            .background(AppColors.surface)
+            .overlay(alignment: .bottom) { Divider() }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Your Shepherd preview")
+            .accessibilityValue("\(profile.headShape.title) head, \(profile.skinTone.title) skin, \(profile.hairStyle.title) hair")
+    }
 }
 
 struct ShepherdAppearanceControls: View {

@@ -41,14 +41,14 @@ focus timer.
 - `FocusSessionCoordinator` remains the only iPhone run state machine. It moves through
   phases by wall clock and restores the same persisted run after backgrounding or relaunch.
 - iPhone, Watch, and Live Activity derive their phase and next transition from the plan.
-- `RewardEngine` credits only elapsed wind-down and morning-quiet minutes; overnight time is
-  deliberately excluded from economy and progress.
+- `RewardEngine` credits Wind Down from the factual before-bed bookend only. Screen-Free
+  Morning settles through its separate ledger; overnight time enters neither total.
 
 New plans default to the NFC phone-bed guard. The honor timer remains an available fallback;
-Watch/UWB and QR confirm only the initial phone-bed ritual. Automatic Wind Down can send
-lead-in reminders and schedule selected-app shielding while the app is closed. Continuous
-distance warnings are legacy-only states retained for decoding compatibility, not active
-product behavior.
+legacy Watch/UWB and QR values normalize to the timer and cannot confirm placement. Automatic
+Wind Down can send lead-in reminders and schedule selected-app shielding while the app is
+closed. Continuous distance warnings are legacy-only states retained for decoding
+compatibility, not active product behavior.
 
 ## Design and reusable components
 

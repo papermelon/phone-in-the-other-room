@@ -1,0 +1,3 @@
+PASS: simultaneous peer moves produce one winner, one conflict; retries keep revision 1
+PASS: simultaneous daily grants add one project contribution and preserve both personal grants
+Fixtures remain only in disposable pasture_release, never in hosted Supabase

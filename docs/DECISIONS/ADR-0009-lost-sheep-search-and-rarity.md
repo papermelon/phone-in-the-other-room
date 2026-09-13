@@ -1,5 +1,7 @@
 # ADR-0009: Lost Sheep Search, Wanted Posters, and Rarity
 
+New-run Farm accounting is superseded by [ADR-0020](ADR-0020-cumulative-farm-credit.md): cumulative credit survives early endings and excludes Brief Access. Legacy settled outcomes remain intact.
+
 - Status: Accepted; Farm lifecycle and economy amended by ADR-0015; presentation amended 2026-08-30
 - Date: 2026-08-01
 - Decider: Founder
@@ -7,10 +9,10 @@
 
 ## Context
 
-Counting Sheep now has a farm, a flock, and Ollie the border collie shepherd. The nightly
-Wind Down should give Ollie a clear job: follow the trail of sheep that have wandered from the
-pasture and bring them home. Anticipation, rarity, and visible search progress are intentional
-habit-forming mechanics, not incidental decoration.
+Counting Sheep now has a farm, a flock, a person tending it as the Shepherd, and Ollie as their
+capable border collie sheep dog. The nightly Wind Down should give Ollie a clear job: follow the
+trail of sheep that have wandered from the pasture and bring them home. Anticipation, rarity, and
+visible search progress are intentional habit-forming mechanics, not incidental decoration.
 
 ## Decision
 
@@ -25,11 +27,17 @@ no-find outcome as a source-specific clue. Internal `trailDistance`, `trailStren
 `pendingMappedMinutes`, `encounterOdds`, `showExactOdds`, and `SunriseTrail*` names remain stable for
 Codable and migration compatibility.
 
+The three ways Ollie searches have independent guarantees, chances, and clue protection. The first
+three qualifying Wind Down searches, first three completed 100-minute Screen-Free Morning
+searches, and first three completed 100-minute Phone Away meter searches each guarantee a sheep.
+Later searches follow their source's own chance ladder and bad-luck rules. Favouring a missing
+sheep changes likely identity only after a successful find; it never raises the chance of a find.
+
 The paragraphs below record the original mechanic rationale. Their trail/distance language is not
 the current release-facing presentation contract.
 
-The first three completed protected Wind Downs guarantee a sheep from the starter wanted-poster
-board. After that, every completed Wind Down resolves exactly once into either a sheep encounter
+The first three qualifying Wind Downs guarantee a sheep from the starter wanted-poster
+board. After that, every qualifying Wind Down resolves exactly once into either a sheep encounter
 or a trail-only result. Trail-only results increase distance, strengthen future odds, and advance
 bad-luck protection. A configured threshold guarantees a future encounter after repeated
 successful no-find nights.

@@ -31,10 +31,10 @@ from foreground distance. Deterministic, non-interactive environmental clues app
 progress thresholds and do not participate in reward resolution. Reduce Motion displays a
 static aligned scene with reached evidence. The scene reports real time to the next phase.
 
-Completed Phone Away runs credit their actual quiet minutes to a versioned, compatibility-named search map in
+Completed Phone Away runs credit their eligible elapsed minutes to a versioned, compatibility-named search map in
 `SheepSearchState`, with a centrally configured 100-minute meter and up to one carried remainder.
 Credit starts at 15 minutes, caps at the configured 100-minute meter per run, and never comes from
-practice or early endings. After three protected Wind Downs, the next eligible completed Phone Away resolves one separate
+practice or early endings. After three qualifying Wind Down searches, the next eligible completed Phone Away resolves one separate
 bonus search on a deterministic 20/30/40/50/100 ladder. Its clue counter and outcomes are
 isolated from Wind Down odds and bad-luck protection. Legacy map-bonus fields remain decodable.
 The release UI calls the meter Phone Away search progress and does not describe it as mapped
@@ -55,7 +55,7 @@ update immediately; notification changes rebuild only still-future alerts for th
 
 - The active journey remains honest and non-interactive: no collectible, found, or owned sheep
   appears before the persisted protected-night Search Journal entry is opened.
-- Phone Away has positive, capped narrative value without becoming an alternate protected-night
+- Phone Away has positive, capped narrative value without becoming an alternate Wind Down
   progression system; a found sheep still uses the ordinary Farm arrival flow.
 - Tab access is a deliberate exception to the normal “status, not destination” principle and
   may not be expanded into engagement feeds or nighttime reveal hooks.

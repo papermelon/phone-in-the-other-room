@@ -17,6 +17,7 @@ struct FlockSheep: Codable, Equatable, Identifiable {
     let rarity: SheepRarity
     var isFavorite: Bool
     var lastShearedProtectedNight: Int?
+    var regrowthSecondsRemaining: TimeInterval?
     var timesSheared: Int
     var status: FlockSheepStatus
     var equippedCosmeticIDs: [String]
@@ -338,6 +339,7 @@ struct FarmState: Codable, Equatable {
     var equipment: FarmEquipment
     var shepherd: ShepherdProfile
     var transactions: [FarmTransaction]
+    var cumulativeCredit: CumulativeFarmCredit?
     var trackedSheepDefinitionID: String?
 
     static let empty = FarmState(
@@ -362,7 +364,7 @@ struct FarmState: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, sheep, discoveries, barnCapacityLevel, woolBalance, cashBalance
-        case unlockedShopTier
+        case unlockedShopTier, cumulativeCredit
         case ownedShopItemIDs, equipment, shepherd, transactions, trackedSheepDefinitionID
     }
 
@@ -412,6 +414,7 @@ struct FarmState: Codable, Equatable {
             transactions: try container.decodeIfPresent([FarmTransaction].self, forKey: .transactions) ?? [],
             trackedSheepDefinitionID: try container.decodeIfPresent(String.self, forKey: .trackedSheepDefinitionID)
         )
+        cumulativeCredit = try container.decodeIfPresent(CumulativeFarmCredit.self, forKey: .cumulativeCredit)
         if legacyCash > 0,
            !transactions.contains(where: { $0.idempotencyKey == Self.currencyConsolidationKey }) {
             appendTransaction(FarmTransaction(
@@ -430,6 +433,7 @@ struct FarmState: Codable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(Self.currentSchemaVersion, forKey: .schemaVersion)
+        try container.encodeIfPresent(cumulativeCredit, forKey: .cumulativeCredit)
         try container.encode(sheep, forKey: .sheep)
         try container.encode(discoveries, forKey: .discoveries)
         try container.encode(barnCapacityLevel, forKey: .barnCapacityLevel)

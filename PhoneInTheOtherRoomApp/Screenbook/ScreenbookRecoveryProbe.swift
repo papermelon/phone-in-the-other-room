@@ -57,10 +57,18 @@ enum ScreenbookRecoveryProbe {
         )
         let restored = restore(fixture)
         let occurrence = restored.persistence.windDownMorningSettlementJournal.morningOccurrences.first
+        let clearIndex = restored.shielding.events.firstIndex(of: "clearAll")
+        let evidenceIndex = restored.shielding.events.firstIndex(
+            of: "protectionSummary:\(fixture.terminal.id.uuidString)"
+        )
         return evaluate("ordinary-prewake-intent-only", [
             check(restored.coordinator.run?.id == fixture.terminal.id, "terminal run was not restored"),
             check(occurrence?.outcome == .skipped, "ordinary Morning was not skipped before wake"),
             check(restored.shielding.clearAllCount > 0, "parent shielding was not cleared"),
+            check(
+                clearIndex != nil && evidenceIndex != nil && clearIndex! < evidenceIndex!,
+                "terminal protection evidence was read before the authorized clear"
+            ),
             check(restored.shielding.clearedOccurrenceIDs.contains(fixture.occurrence.id), "ordinary Morning registry was not cleared"),
             check(restored.persistence.windDownMorningSettlementJournal.pendingAuthorizedTerminalMorningDecisions.isEmpty, "decision remained pending"),
             check(!restored.coordinator.rewards.isEmpty, "terminal reward projection was not replayed")
@@ -428,6 +436,8 @@ enum ScreenbookRecoveryProbe {
         terminal.endedEarlyReason = .userEnded
         terminal.endedAt = terminalAt
         terminal.actualDurationSeconds = terminalAt.timeIntervalSince(active.startedAt)
+        terminal.briefAccessUseCount = 1
+        terminal.briefAccessIntervals = [DateInterval(start: active.startedAt.addingTimeInterval(60), duration: 5 * 60)]
         let reward = RewardItem(
             id: UUID(), type: .muddyPaw, rarity: .consolation,
             title: "A small paw print", description: "Saved before the crash.",
@@ -466,6 +476,8 @@ enum ScreenbookRecoveryProbe {
             notificationEffectsEnabled: false
         )
         return evaluate("short-primary-terminal-projection", [
+            check(first.persistence.farmState.cumulativeCredit?.receipts[terminal.id]?.creditedSeconds == 395 * 60, "recovery did not subtract persisted access from early-ended Farm credit"),
+            check(second.farmState.cumulativeCredit == first.coordinator.farmState.cumulativeCredit, "second recovery changed cumulative Farm credit"),
             check(first.persistence.rewards == [reward], "short primary recovery changed the saved reward projection"),
             check(first.persistence.progress == projectedProgress, "short primary recovery changed rewards/progress projection"),
             check(first.persistence.windDownMorningSettlementJournal.pendingAuthorizedTerminalMorningDecisions.isEmpty, "short primary decision remained pending"),
@@ -704,7 +716,10 @@ enum ScreenbookRecoveryProbe {
             return .scheduled
         }
 
-        func clear() { clearAllCount += 1 }
+        func clear() {
+            clearAllCount += 1
+            events.append("clearAll")
+        }
         func clear(occurrenceID: UUID) { clearedOccurrenceIDs.append(occurrenceID) }
         func scheduleAutomatic(for schedule: AutomaticWindDownSchedule, at date: Date) -> QuietTimeShieldingOutcome {
             events.append("scheduleAutomatic")
@@ -712,7 +727,10 @@ enum ScreenbookRecoveryProbe {
         }
         func cancelAutomaticSchedule() { events.append("cancelAutomatic") }
         func resetLocalState() { events.append("resetLocalState") }
-        func protectionSummary(for run: FocusRun, at date: Date) -> QuietTimeShieldProtectionSummary { .none }
+        func protectionSummary(for run: FocusRun, at date: Date) -> QuietTimeShieldProtectionSummary {
+            events.append("protectionSummary:\(run.id.uuidString)")
+            return .none
+        }
         func briefAccessUseCount(for run: FocusRun) -> Int { 0 }
         func briefAccessTrackerSummary(for run: FocusRun) -> QuietTimeBriefAccessTrackerSummary { .init() }
         func briefAccessTrackerSummary(forOccurrenceID occurrenceID: UUID) -> QuietTimeBriefAccessTrackerSummary { .init() }

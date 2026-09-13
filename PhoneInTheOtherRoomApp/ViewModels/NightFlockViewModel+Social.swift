@@ -116,7 +116,7 @@ extension NightFlockViewModel {
     }
 
     func applyPendingGrantsIfPossible() {
-        guard let grants = snapshot?.pendingGrants, !grants.isEmpty else { return }
+        guard permitsFarmOwnerScopedSocialEffects, let grants = snapshot?.pendingGrants, !grants.isEmpty else { return }
         onApplyRewardGrants?(grants)
     }
 

@@ -53,7 +53,7 @@ struct OnboardingWelcomeStep: View {
 
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 storyRow(icon: "moon.zzz.fill", title: "Wind down without the scroll")
-                storyRow(icon: "door.left.hand.open", title: "Keep your phone out of reach overnight")
+                storyRow(icon: "door.left.hand.open", title: "Give your phone a resting place overnight")
                 storyRow(icon: "sunrise.fill", title: "Start your morning before your feed does")
             }
         }
@@ -113,31 +113,34 @@ struct OnboardingWelcomeStep: View {
 
             onboardingTitle(
                 eyebrow: visiblePage.eyebrow,
-                title: visiblePage.title
+                title: visiblePage.title,
+                detail: visiblePage.detail
             )
 
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 storyBeat(
                     number: 1,
-                    icon: "shield.lefthalf.filled",
-                    text: Text("Ollie helps guard your screen time when it might get in the way of rest."),
-                    accessibilityText: "Ollie helps guard your screen time when it might get in the way of rest."
+                    icon: "person.fill",
+                    text: Text("You are the ")
+                        + Text("shepherd").bold()
+                        + Text(" tending this Farm. Ollie is your capable sheepdog."),
+                    accessibilityText: "You are the shepherd tending this Farm. Ollie is your capable sheepdog."
                 )
                 storyBeat(
                     number: 2,
                     icon: "pawprint.fill",
-                    text: Text("Each night you complete a ")
+                    text: Text("Seven hours of ")
                         + Text("Wind Down").bold()
-                        + Text(", he’ll search for lost sheep to bring back to your Farm."),
-                    accessibilityText: "Each night you complete a Wind Down, he’ll search for lost sheep to bring back to your Farm."
+                        + Text(" credit opens a missing-sheep search. Shorter sessions carry forward."),
+                    accessibilityText: "Seven hours of Wind Down credit opens a missing-sheep search. Shorter sessions carry forward."
                 )
                 storyBeat(
                     number: 3,
                     icon: "timer",
-                    text: Text("Need some space from your phone during the day? ")
+                    text: Text("Want a break from your phone during the day? ")
                         + Text("Phone Away").bold()
                         + Text(" is there for that, too."),
-                    accessibilityText: "Need some space from your phone during the day? Phone Away is there for that, too."
+                    accessibilityText: "Want a break from your phone during the day? Phone Away is there for that, too."
                 )
             }
         }

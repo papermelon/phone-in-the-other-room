@@ -68,13 +68,18 @@ extension NightFlockViewModel {
         let transportEpoch = transportRecoveryEpoch
         let fenceGeneration = sharedHabitsFenceGeneration
         let agreementAttemptID = sharedHabitsAgreementAttemptIDs[partyID]
+        let attemptID = UUID()
+        sharedHabitsRefreshAttemptIDs[partyID] = attemptID
         sharedHabitsLoadingPartyIDs.insert(partyID)
         var restartWithoutCursor = false
         Task { [weak self] in
             defer {
-                self?.sharedHabitsLoadingPartyIDs.remove(partyID)
-                if restartWithoutCursor {
-                    self?.refreshSharedHabits(partyID: partyID)
+                if self?.sharedHabitsRefreshAttemptIDs[partyID] == attemptID {
+                    self?.sharedHabitsRefreshAttemptIDs.removeValue(forKey: partyID)
+                    self?.sharedHabitsLoadingPartyIDs.remove(partyID)
+                    if restartWithoutCursor {
+                        self?.refreshSharedHabits(partyID: partyID)
+                    }
                 }
             }
             do {
@@ -103,6 +108,7 @@ extension NightFlockViewModel {
                     restartWithoutCursor = true
                     return
                 }
+                self.sharedHabitsRefreshFailures.removeValue(forKey: partyID)
                 self.sharedHabitsAgreementErrors.removeValue(forKey: partyID)
                 let previousAgreement = self.sharedHabitsStates[partyID]?.agreement
                 if cursor != nil, let existing = self.sharedHabitsStates[partyID] {
@@ -154,7 +160,7 @@ extension NightFlockViewModel {
                     self.presentSharedHabitsAgreementError(error, partyID: partyID,
                         lane: .snapshot(schema: NightFlockV4Rules.schemaVersion), isReceiptLookup: true)
                 } else {
-                    self.presentNightFlockError(error, lane: .snapshot(schema: NightFlockV4Rules.schemaVersion))
+                    self.sharedHabitsRefreshFailures[partyID] = self.refreshFailure(for: error)
                 }
             }
         }

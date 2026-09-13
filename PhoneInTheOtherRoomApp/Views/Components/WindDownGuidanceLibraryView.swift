@@ -57,7 +57,7 @@ struct WindDownGuideView: View {
                 .foregroundStyle(AppColors.grass)
             Text("Small ideas for a kinder relationship with screens and sleep.")
                 .font(AppTypography.display(30))
-            Text("Try what suits you. These are invitations, not a checklist.")
+            Text("Pick an idea to read more. Keep what fits your evening or morning.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.secondaryText)
         }

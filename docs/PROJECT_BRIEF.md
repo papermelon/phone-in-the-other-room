@@ -1,21 +1,35 @@
 # Counting Sheep — Project Brief
 
+## Cumulative Farm credit — 5 September 2026
+
+The founder now requires cumulative Farm credit that survives early endings and
+excludes Brief Access. [ADR-0020](DECISIONS/ADR-0020-cumulative-farm-credit.md)
+supersedes the completion-only Farm/search and wool-regrowth rules below for new runs.
+Wind Down credits overnight timer time up to its actual/planned end, excluding the
+separately rewarded morning window; 420 cumulative minutes opens a search. Phone Away
+uses an independent 100-minute meter without the old three-night gate. Both grow wool.
+Factual before-bed minutes, completed-night counts, Health and social metrics remain
+separate. Old settled rewards are preserved and supported early history is backfilled.
+
+
 *(Repo/code name: "Phone in the Other Room". Canonical agent guide: [`AGENTS.md`](../AGENTS.md).)*
 
 ## One-paragraph summary
 
-Counting Sheep is an iOS + watchOS app that protects phone-free time around sleep. Before
-bed, the user starts Wind Down and physically puts the phone in another room; it
-stays tucked away overnight and through a chosen morning-quiet window. An Apple Watch can make
-the phone-authoritative timer glanceable, while the current release starts protection with
-either the timer or an optional NFC tag. Ollie, a pixel-art border collie,
-guards the ritual and offers a private sequence of up to three evening and two morning
+Counting Sheep is an iOS + watchOS app for putting the phone in another room across the edges of
+sleep. Before bed, the person accepts that ritual invitation and starts Wind Down. The app records
+the phone-authoritative timer and separately classified observed selected-app/category shield
+evidence; it does not observe continuous placement, sleep, complete screen avoidance, or routine
+completion. An Apple Watch can make the timer glanceable. Current starts require Screen Time
+readiness and use either a no-hardware confirmation or an optional NFC tag. The person is the
+Farm's shepherd; Ollie, a capable pixel-art border-collie sheepdog beside them, watches the ritual,
+searches for missing sheep, and offers a private sequence of up to three evening and two morning
 suggestions. This is a Wind Down ritual, not a productivity tool or sleep-quality tracker. The established
 `NightWatch*` names remain internal for persisted-data compatibility.
 
 Slumber Party is a core feature and reason to return together, not a peripheral companion link
 (founder clarification, 2026-08-27). Friends, couples and families should recognize one another,
-see factual shared activity respond promptly, and encourage each other. Idle Home must express
+see app-recorded, self-reported shared activity, receive prompt updates, and encourage each other. Idle Home must express
 that value alongside a compact, reliable personal start flow. New sharing fields and any change
 to seven-night round eligibility remain explicit contract decisions.
 
@@ -72,9 +86,9 @@ Counting Sheep breaks the loop at "phone is within reach" and replaces the extra
 with a warmer loop:
 
 ```
-requested wind-down cue → open the app-access barrier →
-optional Wind Down check → private evening suggestions → Ollie keeps the quiet →
-private morning suggestions → the phone wakes later → Search Journal → Farm choices
+requested wind-down cue → put phone away → request the selected-app barrier →
+private evening suggestions → Ollie watches the ritual → linked Screen-Free Morning →
+factual receipts → resolved search outcome when eligible → Farm choices
 ```
 
 The product loop is deliberately closed but small: **Prompt → Protect → Observe → Learn**.
@@ -83,7 +97,7 @@ inside the app. Counting Sheep supports the bedtime ritual; it does not become t
 
 ## Desired emotional tone
 
-Warm. Cozy. Playful but calm. Like a children's-book farm at dusk. The user should feel
+Warm. Cozy. Playful but calm. Like an adult storybook farm at dusk. The user should feel
 *cared for*, never policed, judged, or hustled. Ending a run early gets a warm factual
 receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flashing, or loud.
 
@@ -91,8 +105,8 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
 
 1. Physical separation is the product. Everything else supports the ritual.
 2. The edges of sleep are the niche. Evening and morning screen time are the differentiator.
-3. Build the ritual through purposeful habit formation. Completed primary protected nights
-   resolve Ollie's search; found sheep join a finite, manageable flock with collection,
+3. Build the ritual through purposeful habit formation. Qualifying completed Wind Downs whose
+   eligible span reaches seven hours resolve Ollie's search; found sheep join a finite, manageable flock with collection,
    shearing, trading, and customization paths.
 4. Low friction wins. One tap to start. Setup is minutes, not a project.
 5. Sequence substantial systems into coherent vertical slices so the bedtime ritual stays legible.
@@ -102,8 +116,9 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
 **Shipped surface: four tabs — Home, Nights, Farm, and Settings.**
 
 - **Home**: one-time Wind Down plan → optional authorized reminder → one-tap Wind Down →
-  wind-down / overnight / morning-quiet phases → morning completion or kind early end.
-  Active runs label those phases as phone-free wind-down, sleep time, and phone-free morning.
+  Wind Down / Overnight / Screen-Free Morning phases → morning completion or kind early end.
+  Active runs label those phases as Wind Down, Overnight, and Screen-Free Morning without
+  claiming that sleep or continuous screen avoidance was observed.
   Silent phase-change notices support bedtime and waking, followed by the requested audible
   completion. Setup also offers a private, optional ordered sequence of up to three evening
   suggestions and two morning suggestions. Putting the phone away is always first. Suggestions
@@ -122,16 +137,22 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   a chosen Quiet, Balanced, or Supportive cadence and schedule selected-app shielding at the
   saved start time while the app is closed. Optional usage-aware reminders can send one
   generic cue after three minutes in selected apps in each phase, including overnight.
-  App protection limits only the selected apps from an eligible Wind Down start through
-  morning quiet; the barrier spans overnight and always has an early exit through the
+  App protection requests limits for the selected apps/categories from an eligible Wind Down
+  start through Screen-Free Morning, including overnight, and during Phone Away. Authorization
+  and the opaque selection are readiness; monitor apply/clear callbacks are separate observed
+  evidence. Brief Access temporarily lifts those limits while the session and Screen-Free Morning
+  eligible elapsed time continue. It is not verified no-screen time. The barrier always has an early exit through the
   registered Wind Down tag or Counting Sheep's emergency exit.
   Home stays focused on the saved plan and one-tap start; its schedule block opens the timing editor
   and a Phone Away schedule card opens a Once / Repeats editor for bounded phone-away breaks.
 - **Nights (one finite scroll)**: the latest primary night as the main result, consistently
   dated by the night-ending wake day; a newer Phone Away appears only as a compact
-  secondary row. A seven-day board keeps protected, ended-early, and additional-only states
-  distinct, while **View all nights** opens the shared calendar summary and grouped per-day
-  detail. Morning note, Apple Health, and Screen Time appear together as optional context for
+  secondary row. A seven-day board keeps completed Wind Down, ended-early, Screen-Free
+  Morning-only, and Phone Away-only states distinct, while **View all nights** opens the shared
+  calendar summary and grouped per-day detail. Wind Down shows only factual before-bed minutes;
+  Screen-Free Morning uses its independent occurrence ledger; Phone Away remains separate.
+  Legacy records are identified as legacy rather than assigned evidence they never stored.
+  Morning note, optional Apple Health, and private Screen Time reports appear as context for
   the relevant night. Apple Health includes sleep duration, available core/deep/REM stages and
   seven-night wake-time range, and separate consented Screen
   Time reports for selected apps in user-chosen evening and morning reporting windows. Health
@@ -144,7 +165,7 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   independent of Wind Down durations. Overnight hours are never credited as focus or quiet
   minutes. Apple's Sleep Score remains in the Health app because HealthKit does not expose it
   to third-party apps.
-  Once there are at least two protected and two other measured nights, a local comparison
+  Once there are at least two completed Wind Downs and two other measured nights, a local comparison
   shows how sleep duration differs between them, explicitly as association rather than
   causation. Detailed behavioural and HealthKit history stays on the phone.
 - **Farm**: a living paged pasture backed by the real active flock; one current narrative
@@ -159,10 +180,11 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   one long-lived, invite-only group of 2–8 people with a customizable name and fixed seven-night
   rounds. The host starts a round once there are at least two members; the same group, name, and
   members can start another round afterward. Members may join during an active round and backfill
-  their factual Wind Down and Phone Away records for that round. Everyone in the party sees its
+  their app-recorded Wind Down and Phone Away records for that round. Those records are
+  self-reported by the member's iPhone, not independently verified. Everyone in the party sees its
   current records, revisioned expiring statuses, curated profile snapshots, and fixed cheers.
   Founder clarification on 2026-08-27 makes Slumber Party a core social feature and reason to
-  return. Idle Home may show existing member-visible profiles, current statuses and factual
+  return. Idle Home may show existing member-visible profiles, current statuses and app-recorded
   shared moments from the same party detail cache; it is no longer restricted to a list-only
   bridge. Personal Wind Down and Phone Away remain easy to start. Neither Home nor detail
   infers inactivity from missing updates. Farm explains that the curated Farm look travels and
@@ -186,8 +208,9 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   bundled source library. There is no duplicate Review Wind Down setup route. Connections contains
   Apple Health, Screen Time, and Slumber Party when enabled and appropriate. Privacy & data contains the
   privacy policy, optional impact-sharing controls, and a destructive local reset that erases the saved Wind Down plan,
-  NFC pairing, selections, and local history before returning to Welcome; system permissions and remote impact
-  records remain outside that reset. Help & app guide contains the guide, practice, sources, feedback, support,
+  NFC pairing metadata, Screen Time selection, Quiet Note, local social queues, Farm, and local
+  history before returning to Welcome. It does not revoke iOS permissions, rewrite the physical
+  tag, or delete remote impact/social history and account data. Help & app guide contains the guide, practice, sources, feedback, support,
   and app details. Optional feedback
   can use private Supabase delivery only after its release gates pass, and otherwise uses a
   prefilled email fallback.
@@ -196,7 +219,8 @@ receipt, not a failure screen. Dark-room-friendly visuals; nothing urgent, flash
   Screen-Free Morning, and Phone Away start. Family Controls authorization and a non-empty opaque
   app/category selection are required; denial, revocation, unavailability, or an empty selection
   routes to repair rather than a timer-only run. A runtime apply/restore failure after a valid
-  start fails open and remains factual, but asks for repair before the next start. Routine examples
+  start fails open, records no false observed shield evidence, and says that the timer/elapsed
+  record remains accurate while selected-app limits are not claimed. It asks for repair before the next start. Routine examples
   are prompts rather than defaults; “Put phone away” remains the fixed first evening step, while
   Phone Away keeps its simple title-and-purpose editor.
 
@@ -227,15 +251,15 @@ breeding or seasonal migration. They are not required for the current Farm loop.
 
 1. **It ships**: signed build on TestFlight, installable by external testers, no P0 crashes
    in the first two weeks.
-2. **The ritual sticks**: testers complete Night Watch on 5+ of their first 14 nights.
+2. **The ritual sticks**: testers complete Wind Down on 5+ of their first 14 planned nights.
 3. **The tone lands**: qualitative feedback uses words like "cute", "calm", "gentle" — and
    nobody reports feeling guilted or nagged.
 4. **The pitch is legible**: a new tester can explain what the app does after one session
    ("it puts my phone to bed and helps me wake before it, and there's a dog").
 5. **The start choices are legible**: new plans clearly distinguish App Shielding from
    optional NFC + App Shielding; neither requires the Apple Watch.
-6. **Quiet behaviour and sleep outcomes are both observed honestly**: evaluate completed
-   quiet minutes and, only with HealthKit consent, changes in sleep duration/stages and
+6. **Ritual timing and sleep context are presented honestly**: evaluate independent Wind Down
+   before-bed, Screen-Free Morning eligible elapsed, and Phone Away elapsed minutes and, only with HealthKit consent, changes in sleep duration/stages and
    morning restfulness. Report sample sizes and associations; do not claim causation.
-7. **The payoff is legible**: testers can explain how Wind Down creates a Search Journal entry, how a
+7. **The payoff is legible**: testers can explain when a qualifying Wind Down resolves a search outcome and creates a Search Journal entry, how a
    sheep reaches The Barn, and how keeping, shearing, trading, and customization differ.

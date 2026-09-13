@@ -7,10 +7,11 @@
 
 > Put your phone to bed. Wake up before it does.
 
-Ollie, a border collie, keeps Night Watch while the phone rests in another room. One
-phone-away session spans a quiet wind-down, the overnight interval, and a short
-morning-quiet bookend. Counting Sheep records the quiet minutes at the two edges of sleep;
-it never counts overnight hours as focus, scores sleep quality, or promises a sleep outcome.
+Ollie, a border collie, keeps watch during Wind Down while the phone rests in another room.
+One phone-away session spans a quiet wind-down, the overnight interval, and a short
+Screen-Free Morning bookend. Counting Sheep records the eligible elapsed minutes at the two
+edges of sleep; it never counts overnight hours as focus, scores sleep quality, or promises
+a sleep outcome.
 
 The repository folder and target names still use the code name **Phone in the Other Room**.
 
@@ -20,34 +21,37 @@ The repository folder and target names still use the code name **Phone in the Ot
 2. Choose a modest quiet window before bed and after waking.
 3. Pick one gentle offline cue for each bookend, such as reading, stretching, breakfast,
    or opening the curtains.
-4. At wind-down, tuck the phone away and begin Night Watch.
-5. Use the default honor timer, an optional Apple Watch placement assist, QR phone bed, or
-   locally registered NFC phone-bed tag.
-6. Let the phone remain tucked away through morning quiet.
+4. At wind-down, tuck the phone away and begin Wind Down.
+5. Use App Shielding, or confirm an optional locally registered NFC phone-bed tag before
+   App Shielding begins.
+6. Let the Screen-Free Morning timer run to its planned end.
 7. Return to one calm completion receipt and open the Search Journal; a successful search
    welcomes an individual sheep to the Farm or its pending-arrival gate.
 
-The iPhone owns the wall-clock state and restoration path. The Watch is optional. Nearby
-Interaction is a one-time, time-boxed tuck-in assist; it never monitors the whole night,
-warns later, or ends Night Watch because distance changed.
+The iPhone owns the wall-clock state and restoration path. The optional Watch mirrors the
+iPhone-authoritative timer and can request an early end; it does not provide placement evidence
+or control protection.
 
 ## What ships in the first release
 
 - Home, Nights, Farm, and Settings tabs
-- Saved Night Watch schedule and requested wind-down reminder
-- Wind-down, overnight, and morning-quiet phases
-- App Shielding or NFC + App Shielding starts; legacy Watch/QR/timer values remain decodable
-- Optional selected-app shielding during wind-down and morning quiet only
+- Saved Wind Down schedule and requested wind-down reminder
+- Wind Down, Overnight, and Screen-Free Morning phases
+- App Shielding or NFC + App Shielding starts; legacy Watch/QR values remain decodable
+  and normalize to the timer path
+- Required selected-app/category shielding for new starts from Wind Down through
+  Screen-Free Morning, including overnight
 - Optional read-only Apple Health sleep duration/stages and local outcome comparison
 - Separately consented, minimised impact sharing with stop/delete controls
 - Local completion notification and phase-aware Live Activity
-- Watch companion for status, tuck-in placement, early end, and phone ping
-- One-night-one-sheep flock, local streak record, and quiet-bookend history
+- Watch companion for mirrored status, early-end requests, and phone ping
+- Source-specific sheep searches, local records, and separate quiet-bookend history
 - Optional private in-app feedback with a release-safe email fallback
 - Backwards-compatible decoding of earlier `FocusRun` and `UserProgress` data
 
-Farm, Friends, Shop, the legacy reward shelf, mock data, adaptive coaching, and social
-features remain gated from Release and ordinary Debug navigation. See
+Farm and Slumber Party are current product surfaces. Supabase-backed social transport remains
+configuration-gated, and hosted deployment plus physical multi-account validation are separate
+release gates. MVP mock screens remain excluded from ordinary navigation. See
 [ADR-0003](docs/DECISIONS/ADR-0003-gated-features.md),
 [ADR-0004](docs/DECISIONS/ADR-0004-watch-independent-sessions.md), and
 [ADR-0006](docs/DECISIONS/ADR-0006-sleep-bookends-positioning.md), and
@@ -55,8 +59,10 @@ features remain gated from Release and ordinary Debug navigation. See
 
 ## Screen Time and sleep data status
 
-Screen Time reports and selection are embedded. Optional ManagedSettings shields use that
-same selection only during the two quiet bookends and lift overnight. The new monitor,
+Screen Time reports and selection are embedded. New starts require Family Controls authorization
+and a non-empty app/category selection. ManagedSettings shields use that selection across the
+eligible Wind Down, overnight interval, and Screen-Free Morning. Monitor callbacks provide bounded
+apply/clear evidence, not proof of continuous protection. The monitor,
 shield-configuration, and shield-action targets exported with Apple Distribution profiles
 carrying Family Controls on 2026-07-30. Physical-device proof and App Store server
 validation are still required before submission.
@@ -72,7 +78,8 @@ causation or a sleep-quality score.
 - iOS 17.0+ and watchOS 10.0+
 - XcodeGen (`project.yml` is the project source of truth)
 - MVVM plus one iPhone-authoritative session coordinator
-- WatchConnectivity, NearbyInteraction, ActivityKit, WidgetKit, and local notifications
+- WatchConnectivity, Family Controls, ManagedSettings, DeviceActivity, ActivityKit, WidgetKit,
+  and local notifications
 - Codable JSON in `UserDefaults` using the `ollie.*` key prefix
 - No CoreData or SwiftData
 
@@ -119,21 +126,20 @@ Do not hand-edit `PhoneInTheOtherRoom.xcodeproj/project.pbxproj`; regenerate it 
 
 ## Permissions and hardware behavior
 
-- Notifications are requested in context when saving or starting Night Watch.
-- Camera access is used only for the optional QR phone-bed scan.
-- Nearby Interaction is used only for the optional Watch tuck-in assist and degrades to
-  the honor timer on unsupported or unreachable setups.
+- Notifications are requested in context when saving or starting Wind Down.
+- Current release flows do not request camera or Nearby Interaction access. Legacy QR and
+  Watch-placement values remain decodable but normalize to the timer path.
 - No GPS location permission is requested.
-- HealthKit reads only sleep analysis. Family Controls covers reports and optional shielding.
+- HealthKit reads only sleep analysis. Family Controls covers reports and required shielding.
   The matching production capabilities/profiles must exist for every embedded target.
 
 Use the same Apple Development Team for the iPhone, Watch, and embedded extensions on
-physical hardware. Real-device validation is still required for Nearby Interaction,
-overnight restoration, notifications, and ActivityKit transitions.
+physical hardware. Real-device validation is still required for NFC, Screen Time callbacks,
+overnight restoration, Watch mirroring, notifications, and ActivityKit transitions.
 
 ## Shortcuts
 
-The App Shortcut is named **Night Watch**. It opens Counting Sheep at the saved bedtime
+The App Shortcut is named **Put phone away**. It opens Counting Sheep at the saved bedtime
 ritual; it does not silently enable a system Focus or start an unseen timer.
 
 ## Privacy
