@@ -1,0 +1,9 @@
+{
+  "deployedSourceMatchesTestedBundle": true,
+  "migrationChecksumsMatch": true,
+  "newPrivateTablesProtected": 8,
+  "fixtureUsersRemaining": 0,
+  "edgeVersions": 5,
+  "unauthenticatedHTTP": 401,
+  "sharedNightMigrationRemainsWithheld": true
+}

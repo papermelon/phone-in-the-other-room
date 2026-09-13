@@ -1,0 +1,22 @@
+Deploying Function: night-flock-command
+Uploading asset (night-flock-command): supabase/functions/night-flock-command/index.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/supabase.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-invites.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-handlers.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-shared-habits-wire.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-activity-wire.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-errors.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/http.ts
+Deploying Function: night-flock-state
+Uploading asset (night-flock-state): supabase/functions/night-flock-state/index.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/supabase.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock-handlers.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock-shared-habits-wire.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock-activity-wire.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock-errors.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/http.ts
+{"project_ref":"sxjlkcccsentmhowgoqe","functions":["night-flock-command","night-flock-state"],"dashboard_url":"https://supabase.com/dashboard/project/sxjlkcccsentmhowgoqe/functions","message":"Deployed Functions."}
+A new version of Supabase CLI is available: v2.117.0 (currently installed v2.115.0)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

@@ -3,7 +3,9 @@
 Source implementation for the founder's 13 September request. No hosted deployment, release
 archive or upload. [Current contract](../../../docs/plans/campfire-implementation-2026-09-13.md).
 The preceding [Shop/Ollie changes](../shop-ollie-20260913/README.md) and pre-existing build 49
-configuration were preserved.
+configuration were preserved. The later founder-authorized
+[production rollout](../../../docs/evidence/campfire-deploy-20260913/deployment.md) completed on
+13 September; this directory remains the preceding local validation record.
 
 ## Delivered
 

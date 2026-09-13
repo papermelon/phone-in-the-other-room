@@ -1,0 +1,86 @@
+Check file:///private/tmp/campfire-deploy-20260913/bundle/supabase/functions/_shared/night-flock_test.ts
+Check file:///private/tmp/campfire-deploy-20260913/bundle/supabase/functions/_shared/night-flock-activity-wire_test.ts
+running 28 tests from ../../../../../private/tmp/campfire-deploy-20260913/bundle/supabase/functions/_shared/night-flock_test.ts
+Slumber Party payload rejects every unrecognized sensitive field ... ok (1ms)
+Slumber Party payload validates identifiers, enums, days, and invite shape ... ok (573µs)
+schema two accepts only bounded shared-goal and local setup fields ... ok (481µs)
+schema two validates recoverable create and compare-and-swap replacement ... ok (265µs)
+Slumber Party command rejects anonymous JWT callers ...
+------- output -------
+{"requestID":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","endpoint":"night-flock-command","schemaVersion":null,"command":"unknown","status":403,"code":"linked_account_required","outcome":"error","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+Slumber Party command rejects anonymous JWT callers ... ok (7ms)
+Night Flock envelopes echo a valid request ID in the body and header ...
+------- output -------
+{"requestID":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa","endpoint":"night-flock-command","schemaVersion":1,"command":"publishCheckIn","status":200,"code":"ok","outcome":"success","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+Night Flock envelopes echo a valid request ID in the body and header ... ok (1ms)
+invalid or missing request IDs are replaced with canonical UUIDs ... ok (564µs)
+known database details map to typed errors and unknown details are redacted ... ok (307µs)
+Slumber Party errors never mention lobbies or unavailable ownership transfer ... ok (538µs)
+completion logs have an exact allowlist and redact a comprehensive secret fixture ... ok (279µs)
+comprehensive PostgREST details never enter response or request-correlated envelope ...
+------- output -------
+{"requestID":"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee","endpoint":"night-flock-command","schemaVersion":1,"command":"publishCheckIn","status":409,"code":"alias_conflict","outcome":"error","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+comprehensive PostgREST details never enter response or request-correlated envelope ... ok (1ms)
+legacy error strings remain compatible without exposing backend details ...
+------- output -------
+{"requestID":"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb","endpoint":"night-flock-command","schemaVersion":1,"command":"publishCheckIn","status":500,"code":"internal_error","outcome":"error","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+legacy error strings remain compatible without exposing backend details ... ok (364µs)
+Slumber Party command derives caller and never accepts a body owner ...
+------- output -------
+{"requestID":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","endpoint":"night-flock-command","schemaVersion":1,"command":"publishCheckIn","status":200,"code":"ok","outcome":"success","elapsedDurationBucket":"0-49ms"}
+{"requestID":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","endpoint":"night-flock-command","schemaVersion":1,"command":"publishCheckIn","status":400,"code":"invalid_request","outcome":"error","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+Slumber Party command derives caller and never accepts a body owner ... ok (280µs)
+account deletion occurs only after the service command authorizes it ...
+------- output -------
+{"requestID":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","endpoint":"night-flock-command","schemaVersion":1,"command":"deleteAccount","status":200,"code":"ok","outcome":"success","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+account deletion occurs only after the service command authorizes it ... ok (130µs)
+state endpoint rejects anonymous callers without reading social state ...
+------- output -------
+{"requestID":"4c77ad01-052b-4afa-a0a4-ae247ebb3545","endpoint":"night-flock-state","schemaVersion":null,"command":"unknown","status":403,"code":"linked_account_required","outcome":"error","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+state endpoint rejects anonymous callers without reading social state ... ok (154µs)
+schema three rejects tokens, out-of-bounds minutes, and extra fields ... ok (243µs)
+schema four accepts only exact party contracts and scoped state ... ok (26ms)
+shared-habits validates real calendar days and IANA contributor zones ... ok (1ms)
+shared-habits accepts the installed local-date object and sends one canonical RPC payload ...
+------- output -------
+{"requestID":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","endpoint":"night-flock-command","schemaVersion":4,"command":"publishSharedHabit","status":200,"code":"ok","outcome":"success","elapsedDurationBucket":"0-49ms"}
+{"requestID":"cccccccc-cccc-4ccc-8ccc-cccccccccccc","endpoint":"night-flock-command","schemaVersion":4,"command":"publishSharedHabit","status":200,"code":"ok","outcome":"success","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+shared-habits accepts the installed local-date object and sends one canonical RPC payload ... ok (612µs)
+shared-habits rejects malformed local-date objects and requires a party for every shared-habits command ... ok (362µs)
+shared-habits state translates only SQL calendar-day fields for the installed Codable contract ...
+------- output -------
+{"requestID":"e325c096-33d7-48a8-8264-74c2856830fe","endpoint":"night-flock-state","schemaVersion":4,"command":"unknown","status":200,"code":"ok","outcome":"success","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+shared-habits state translates only SQL calendar-day fields for the installed Codable contract ... ok (293µs)
+legacy schemas and non-habits state snapshots pass through unchanged ...
+------- output -------
+{"requestID":"7d5114ac-f90a-4347-8414-1981d128ce13","endpoint":"night-flock-state","schemaVersion":4,"command":"unknown","status":200,"code":"ok","outcome":"success","elapsedDurationBucket":"0-49ms"}
+----- output end -----
+legacy schemas and non-habits state snapshots pass through unchanged ... ok (117µs)
+shared-habits keeps valid 25-hour sleep windows and bounds each kind ... ok (410µs)
+schema four membership sharing fields remain opt-in and exact ... ok (173µs)
+schema four profile avatar is additive and catalogue-bound ... ok (952µs)
+schema four invitation envelope round-trips and never survives response redaction ... ok (5ms)
+schema four typed failures and completion logging stay secret-free ... ok (78µs)
+public head shape and update cheer acknowledgement stay strictly allowlisted ... ok (1ms)
+running 4 tests from ../../../../../private/tmp/campfire-deploy-20260913/bundle/supabase/functions/_shared/night-flock-activity-wire_test.ts
+shipped Foundation dates reach SQL as ISO, identically across retries ...
+------- post-test output -------
+{"requestID":"7e1f5508-8633-4d83-9e89-db87fda53197","endpoint":"night-flock-command","schemaVersion":4,"command":"publishActivity","status":200,"code":"ok","outcome":"success","elapsedDurationBucket":"0-49ms"}
+{"requestID":"9e9c24a2-0863-4e3b-a354-41fc93b153a1","endpoint":"night-flock-command","schemaVersion":4,"command":"publishActivity","status":200,"code":"ok","outcome":"success","elapsedDurationBucket":"0-49ms"}
+----- post-test output end -----
+shipped Foundation dates reach SQL as ISO, identically across retries ... ok (6ms)
+ISO activity payloads and their idempotency hashes remain unchanged ... ok (43µs)
+status accepts Foundation reference seconds without changing scope ... ok (62µs)
+timestamp compatibility preserves chronology, type, privacy and duration checks ... ok (610µs)
+
+ok | 32 passed | 0 failed (95ms)
+

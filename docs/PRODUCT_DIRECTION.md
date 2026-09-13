@@ -218,7 +218,9 @@ Customized Shepherds gather for explicitly shared app-reported sessions. Optiona
 Away intentions require a separate per-party version 1 consent receipt and advertised capability;
 private task text never uploads. Default Wind Down validity ends at planned wake, Phone Away at
 its planned end, with terminal precedence and a 24-hour ceiling. Temporary gathering positions
-restore saved arrangements. Source is implemented; hosted activation remains pending. See
+restore saved arrangements. Source is implemented and the production backend was deployed on
+13 September; [rollout evidence](evidence/campfire-deploy-20260913/deployment.md). Device acceptance
+and updated app distribution remain pending. See
 [current campfire contract](plans/campfire-implementation-2026-09-13.md).
 
 
@@ -249,7 +251,7 @@ Recovery never creates an anonymous account. Bind identity and account-scoped so
 queues to the verified expected UUID; use ADR-0023 for provider-neutral account transitions.
 Do not carry another owner's pending work into the newly activated Farm.
 
-Current shared-pasture source contract (12 September; implemented locally, not deployed):
+Current shared-pasture contract (12 September; production backend deployed 13 September):
 Shepherds represent people, with owned sheep contributed separately until recalled while private
 ownership/progression persists. Visiting sheep appear together with their owners in the party's
 shared pasture. Accepted starting limits are one active sheep per member per party and one

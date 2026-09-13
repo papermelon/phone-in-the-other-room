@@ -17,7 +17,9 @@ and planned end for Phone Away; no sleep or actual offline-activity inference is
 end/withdrawal, expiry and account/membership fences apply. This updates the prior lantern focal
 point, not reward rules, identity, sheep ownership or four-tab routing. See the
 [implemented source contract and rollout gates](../plans/campfire-implementation-2026-09-13.md).
-Hosted activation is not implied by source implementation.
+The founder separately authorized production deployment on 13 September; both migrations and
+Edge version 5 are verified in [deployment evidence](../evidence/campfire-deploy-20260913/deployment.md).
+App distribution and physical acceptance remain outstanding.
 
 ## Founder redesign direction — shared pasture and body doubling (12 September 2026)
 
@@ -54,7 +56,9 @@ authorize new unsolicited notifications or reward for keeping the app open.
 Preserve account/membership isolation, agreements, compatible public appearance and truthful
 acknowledgements. The 12 September prototype's simulated backend, seven-night visits and local-only
 arrangement are not production contracts. See the [redesign plan and answered questions](../plans/slumber-party-pasture-redesign-2026-09-12.md)
-for visual batches, contracts and validation. [Implementation evidence](../evidence/pasture-redesign-20260912/README.md) distinguishes local source, isolated checks and outstanding device/rollout work. No deployment or distribution was performed.
+for visual batches, contracts and validation. [Implementation evidence](../evidence/pasture-redesign-20260912/README.md) distinguishes local source, isolated checks and outstanding device/rollout work. That implementation pass performed no deployment or distribution. The later
+[13 September backend rollout](../evidence/campfire-deploy-20260913/deployment.md) deployed pasture
+and campfire; app distribution remains separate.
 
 ## Earlier implementation decision — shared Farm and contextual cheers (9 September 2026)
 
