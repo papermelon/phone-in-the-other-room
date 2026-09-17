@@ -28,7 +28,7 @@ struct OnboardingScheduleStep: View {
             planSection(
                 number: 2,
                 title: "How much quiet I want",
-                detail: "A phone-free stretch before bed and after waking."
+                detail: "Time you want to set aside before bed and after waking."
             ) {
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     durationPicker("Quiet before bed", selection: $draft.windDownMinutes)

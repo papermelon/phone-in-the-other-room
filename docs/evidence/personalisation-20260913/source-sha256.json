@@ -1,0 +1,13 @@
+{
+  "Shared/RitualPersonalisation.swift": "692aff46c392b441d2ed683b06f268fd69e7aa31eb4f1c63718ddec392a1b489",
+  "Shared/RitualPersonalisationRules.swift": "93024cb218edc0f7f27a8b4b0cb49dcb9bb141cfb956d2be45e0e41e64d658c7",
+  "Tests/RitualPersonalisationPersistenceTests.swift": "c92f26e07656320035d28afebcbfc308315e3c883ce11161a5dea5bde44149ca",
+  "Tests/RitualPersonalisationTests.swift": "1236789206bc561e4e4807c4c181b815a74725ff86e67b7564075612e48cdb2a",
+  "Shared/WindDownHabit.swift": "01dfbf7afbf0b52c5fced48e5a8b254ada5a925cd93a87091d9db0afac16d946",
+  "PhoneInTheOtherRoomApp/Services/PersistenceService+Personalisation.swift": "9960601231c923d3c0459f0d24a9bfbaf367c70b8a6537db3228121c34ba7fe2",
+  "PhoneInTheOtherRoomApp/ViewModels/FocusRunViewModel+Personalisation.swift": "9c9937eae23c75403f86b3b4f44a9fe7fb410a73e2bf874b251d30e6a0346de9",
+  "PhoneInTheOtherRoomApp/Views/RitualPersonalisationView.swift": "1442b15b30516657373149dc026168b3703168e02593b08a4048711cb214fdea",
+  "PhoneInTheOtherRoomApp/Views/Components/RitualPlanEditors.swift": "4ff4305dd4667c07446845d4b4ee40ca55eb56ee1118a8292955fe198e672daa",
+  "PhoneInTheOtherRoomApp/Views/Components/WindDownHabitReflectionCard.swift": "5ffdeed2a50f8203e9c7e912b6ce69be4ac5a317b7cc0c852fca1c31178ef8e4",
+  "PhoneInTheOtherRoomApp/Views/Components/RitualReflectionInvitation.swift": "d51536ad7d053fe9ced460488ee8a40ec877f36ae31de33829c53258963f702b"
+}

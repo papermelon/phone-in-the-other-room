@@ -1,6 +1,18 @@
 import XCTest
 
 final class PhoneBedTagInspectionTests: XCTestCase {
+    func testIdleReplacementOffersRecoveryWhileActiveReplacementDoesNot() {
+        for isRunning in [false, true] {
+            let decision = PhoneBedTagProvisionPolicy.resolve(
+                intent: PhoneBedTagProvisionPolicy.pairingIntent(isRunning: isRunning),
+                inspection: .credential(digest: "lost-local-record"),
+                activeCredentialDigests: ["current"],
+                retiredCredentialDigests: []
+            )
+            XCTAssertEqual(decision, isRunning ? .abort : .resetRequired(digest: "lost-local-record"))
+        }
+    }
+
     func testUnreadableInspectionAbortsWithoutOverwriting() {
         XCTAssertEqual(
             PhoneBedTagProvisionPolicy.resolve(

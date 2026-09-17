@@ -316,11 +316,9 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         guard remindersEnabled, let endDate, endDate > Date() else { return }
         Task {
             guard await requestAuthorizationIfNeeded() else { return }
-            let copy = NotificationCopyResolver.resolve(
-                id: .complete,
-                moment: .complete,
-                context: NotificationCopyContext(date: endDate),
-                overrides: preferences.copyOverrides
+            let copy = NightWatchNotificationCopy(
+                title: "Timer ended",
+                body: "Open Counting Sheep to see the timer record."
             )
             let notification = PlannedNotification(
                 id: "focus-run-complete",
@@ -370,8 +368,8 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                         PlannedNotification(
                             id: base + ".start",
                             date: occurrence.scheduledStart,
-                            title: "Screen-Free Morning",
-                            body: "Your planned phone-away morning time can begin now.",
+                            title: "Screen-Free Morning can begin",
+                            body: "Tap to start the planned Screen-Free Morning timer when you are ready.",
                             phase: .morningQuiet,
                             importance: .active,
                             playsSound: preferences.soundsEnabled,
@@ -387,8 +385,8 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
                         PlannedNotification(
                             id: base + ".end",
                             date: occurrence.scheduledEnd,
-                            title: "Screen-Free Morning",
-                            body: "Your planned phone-away morning time has ended.",
+                            title: "Screen-Free Morning timer ended",
+                            body: "Open Counting Sheep to see the timer record.",
                             phase: .morningQuiet,
                             importance: .active,
                             playsSound: preferences.soundsEnabled,
@@ -424,9 +422,12 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         }
     }
 
-    func scheduleShieldingFailure(at date: Date = Date()) {
+    func scheduleShieldingFailure(
+        at date: Date = Date(),
+        role: QuietTimeShieldRole = .primaryWindDown
+    ) {
         guard preferences.remindersEnabled else { return }
-        let copy = NightWatchGuidance.notificationCopy(for: .shieldingFailed)
+        let copy = NightWatchGuidance.notificationCopy(for: .shieldingFailed, role: role)
         let notification = PlannedNotification(
             id: "night-watch-shielding-failed",
             date: date,

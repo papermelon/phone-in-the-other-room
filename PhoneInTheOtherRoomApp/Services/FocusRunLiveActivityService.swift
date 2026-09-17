@@ -2,6 +2,7 @@ import Foundation
 
 #if canImport(ActivityKit)
 import ActivityKit
+import UIKit
 #if DEBUG
 import CryptoKit
 #endif
@@ -31,8 +32,12 @@ final class FocusRunLiveActivityService {
     private var enabled: Bool
     private var tokenObservationTasks: [String: Task<Void, Never>] = [:]
     private var cheerDismissalTasks: [UUID: Task<Void, Never>] = [:]
+    // Ended activities can remain on the Lock Screen after Activity.activities
+    // stops returning them. Keep their handles until foreground dismissal.
+    private var retainedCompletions: [String: Activity<FocusRunLiveActivityAttributes>] = [:]
     private var latestTokens: [String: Data] = [:]
     private var tokenGenerations: [String: Int] = [:]
+    private var runSyncTasks: [UUID: Task<Void, Never>] = [:]
     private let installationID: UUID
     private let remotePushEnabled: Bool
     private let logger = Logger(subsystem: "com.ngawangchime.countingsheep", category: "LiveActivity")
@@ -132,7 +137,7 @@ final class FocusRunLiveActivityService {
         do {
             let activity = try Activity.request(
                 attributes: attributes,
-                content: ActivityContent(state: content, staleDate: run.plannedEndAt),
+                content: ActivityContent(state: content, staleDate: content.nextContentRefreshDate(at: Date())),
                 // A local Live Activity does not need an APNs token. Requesting
                 // token delivery while the backend flag is off exercised a
                 // separate extension/entitlement path and regressed Build 9.
@@ -152,6 +157,7 @@ final class FocusRunLiveActivityService {
     }
 
     func finish(for run: FocusRun) {
+        cheerDismissalTasks.removeValue(forKey: run.id)?.cancel()
 #if DEBUG
         if liveActivitiesDisabledForEnergyProfiling {
             endAll(reason: run.completedSuccessfully ? .completed : .endedEarly)
@@ -171,10 +177,11 @@ final class FocusRunLiveActivityService {
         let activities = Activity<FocusRunLiveActivityAttributes>.activities
             .filter { $0.attributes.runID == run.id }
         let reason: FocusRunLiveActivityCancellationReason = run.completedSuccessfully ? .completed : .endedEarly
-        let dismissalPolicy: ActivityUIDismissalPolicy = reason == .completed
+        let dismissalPolicy: ActivityUIDismissalPolicy = reason == .completed && UIApplication.shared.applicationState != .active
             ? .after(Date().addingTimeInterval(Self.completionDismissalInterval))
             : .immediate
 
+        for activity in activities { retainedCompletions[activity.id] = activity }
         Task {
             for activity in activities {
                 await activity.end(content, dismissalPolicy: dismissalPolicy)
@@ -203,7 +210,7 @@ final class FocusRunLiveActivityService {
         logActivityUpdate(reason: "phase transition")
 #endif
         Task {
-            await activity.update(ActivityContent(state: state, staleDate: run.plannedEndAt))
+            await activity.update(ActivityContent(state: state, staleDate: state.nextContentRefreshDate(at: Date())))
         }
     }
 
@@ -220,7 +227,7 @@ final class FocusRunLiveActivityService {
         var state = contentState(for: run, terminalStatus: nil)
         state.slumberPartyCheer = feedback
         Task {
-            await activity.update(ActivityContent(state: state, staleDate: run.plannedEndAt))
+            await activity.update(ActivityContent(state: state, staleDate: state.nextContentRefreshDate(at: Date())))
         }
         cheerDismissalTasks[run.id] = Task { [weak self] in
             try? await Task.sleep(for: .seconds(12))
@@ -228,7 +235,7 @@ final class FocusRunLiveActivityService {
                   let currentActivity = self.activeActivity(for: run.id) else { return }
             let restoredState = self.contentState(for: run, terminalStatus: nil)
             await currentActivity.update(
-                ActivityContent(state: restoredState, staleDate: run.plannedEndAt)
+                ActivityContent(state: restoredState, staleDate: restoredState.nextContentRefreshDate(at: Date()))
             )
             self.cheerDismissalTasks.removeValue(forKey: run.id)
         }
@@ -269,25 +276,58 @@ final class FocusRunLiveActivityService {
 
     func finishScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {
         let runID = occurrence.linkedWindDownRunID ?? occurrence.id
+        cheerDismissalTasks.removeValue(forKey: runID)?.cancel()
         let state = FocusRunLiveActivityAttributes.ContentState(
             plannedEndAt: occurrence.scheduledEnd,
             isComplete: true,
             screenFreeMorning: ScreenFreeMorningPresentation(occurrence: occurrence)
         )
+        let activities = Activity<FocusRunLiveActivityAttributes>.activities.filter { $0.attributes.runID == runID }
+        for activity in activities { retainedCompletions[activity.id] = activity }
+        let dismissalPolicy: ActivityUIDismissalPolicy = UIApplication.shared.applicationState == .active
+            ? .immediate : .after(Date().addingTimeInterval(60))
         Task {
-            for activity in Activity<FocusRunLiveActivityAttributes>.activities where activity.attributes.runID == runID {
-                await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: .after(Date().addingTimeInterval(60)))
+            for activity in activities {
+                await activity.end(ActivityContent(state: state, staleDate: nil), dismissalPolicy: dismissalPolicy)
+                stopObserving(activityID: activity.id)
+                await cancelRemoteSchedule(for: activity, reason: .completed)
             }
         }
+    }
+
+    func reconcileOnForeground(run: FocusRun?, mornings: [MorningQuietOccurrence], at date: Date = Date()) {
+        let retainedIDs = enabled
+            ? FocusRunLiveActivityLifecycle.retainedRunIDs(run: run, mornings: mornings, at: date)
+            : []
+        let obsolete = knownActivities.filter { !retainedIDs.contains($0.attributes.runID) }
+        for activity in obsolete {
+            cheerDismissalTasks.removeValue(forKey: activity.attributes.runID)?.cancel()
+            stopObserving(activityID: activity.id)
+        }
+        Task {
+            for activity in obsolete {
+                await activity.end(nil, dismissalPolicy: .immediate)
+                retainedCompletions.removeValue(forKey: activity.id)
+            }
+            // A slow/offline backend must not delay removal of another local card.
+            for activity in obsolete { await cancelRemoteSchedule(for: activity, reason: .reset) }
+        }
+    }
+
+    private var knownActivities: [Activity<FocusRunLiveActivityAttributes>] {
+        var activities = retainedCompletions
+        for activity in Activity<FocusRunLiveActivityAttributes>.activities { activities[activity.id] = activity }
+        return Array(activities.values)
     }
 
     func endAll(reason: FocusRunLiveActivityCancellationReason = .reset) {
         for task in cheerDismissalTasks.values { task.cancel() }
         cheerDismissalTasks.removeAll()
-        let activities = Activity<FocusRunLiveActivityAttributes>.activities
+        let activities = knownActivities
         Task {
             for activity in activities {
                 await activity.end(nil, dismissalPolicy: .immediate)
+                retainedCompletions.removeValue(forKey: activity.id)
 #if DEBUG
                 self.debugEndCount += 1
                 self.logger.debug(
@@ -309,7 +349,7 @@ final class FocusRunLiveActivityService {
         logActivityUpdate(reason: "reconciliation")
 #endif
         Task {
-            await activity.update(ActivityContent(state: state, staleDate: run.plannedEndAt))
+            await activity.update(ActivityContent(state: state, staleDate: state.nextContentRefreshDate(at: Date())))
             if let token = latestTokens[activity.id] {
                 await sendRegistration(token: token, activity: activity, run: run)
             }
@@ -347,6 +387,10 @@ final class FocusRunLiveActivityService {
         activity: Activity<FocusRunLiveActivityAttributes>,
         run: FocusRun
     ) async {
+        // The registration RPC requires the run row. Token delivery can arrive
+        // while the first sync is still awaiting the network.
+        await runSyncTasks[run.id]?.value
+        guard !Task.isCancelled, activeActivity(for: run.id)?.id == activity.id else { return }
         let registration = FocusRunLiveActivityPushRegistration(
             runID: run.id,
             activityID: activity.id,
@@ -370,6 +414,7 @@ final class FocusRunLiveActivityService {
     }
 
     private func syncRun(_ run: FocusRun, status: FocusRunCloudStatus) {
+        guard remotePushEnabled, run.liveActivityRequested else { return }
         let revision = status == .active ? 1 : 2
         let sync = FocusRunCloudSync(
             runID: run.id,
@@ -386,7 +431,11 @@ final class FocusRunLiveActivityService {
             "Remote run sync enqueued run=\(run.id.uuidString, privacy: .public) status=\(status.rawValue, privacy: .public)"
         )
 #endif
-        Task { await remoteSink.sync(sync) }
+        let previous = runSyncTasks[run.id]
+        runSyncTasks[run.id] = Task {
+            await previous?.value
+            await remoteSink.sync(sync)
+        }
     }
 
     private func cancelRemoteSchedule(
@@ -454,7 +503,9 @@ final class FocusRunLiveActivityService {
     }
 
     private func activeActivity(for runID: UUID) -> Activity<FocusRunLiveActivityAttributes>? {
-        Activity<FocusRunLiveActivityAttributes>.activities.first { $0.attributes.runID == runID }
+        Activity<FocusRunLiveActivityAttributes>.activities.first {
+            $0.attributes.runID == runID && ($0.activityState == .active || $0.activityState == .stale)
+        }
     }
 
     private func contentState(
@@ -479,8 +530,10 @@ final class FocusRunLiveActivityService {
             bedtimeAt: run.nightWatchPlan?.intendedBedtime,
             wakeAt: run.nightWatchPlan?.wakeTime,
             morningQuietEndsAt: run.nightWatchPlan?.protectedUntil,
-            eveningActivityTitle: run.nightWatchPlan?.eveningActivityTitle,
-            morningActivityTitle: run.nightWatchPlan?.morningActivityTitle
+            eveningActivityTitle: run.nightWatchPlan.map { FocusRunLiveActivityCue.bounded($0.eveningActivityTitle) },
+            morningActivityTitle: run.nightWatchPlan.map { FocusRunLiveActivityCue.bounded($0.morningActivityTitle) },
+            eveningRoutineTitles: run.nightWatchPlan?.eveningRoutine.map { FocusRunLiveActivityCue.bounded($0.title) },
+            morningRoutineTitles: run.nightWatchPlan?.morningRoutine.map { FocusRunLiveActivityCue.bounded($0.title) }
         )
     }
 }
@@ -497,6 +550,7 @@ final class FocusRunLiveActivityService {
     func finish(for run: FocusRun) {}
     func startScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {}
     func finishScreenFreeMorning(_ occurrence: MorningQuietOccurrence) {}
+    func reconcileOnForeground(run: FocusRun?, mornings: [MorningQuietOccurrence], at date: Date = Date()) {}
     func endAll(reason: FocusRunLiveActivityCancellationReason = .reset) {}
 }
 #endif

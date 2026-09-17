@@ -1,3 +1,6 @@
 #include "Supabase.release.example.xcconfig"
 #include? "Supabase.release.local.xcconfig"
 SUPABASE_NIGHT_FLOCK_ENABLED = YES
+
+// Approved 12 September 2026: use the existing APNs phase and completion scheduler.
+SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED = YES

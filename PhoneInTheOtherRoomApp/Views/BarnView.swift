@@ -29,7 +29,7 @@ struct FarmBarnView: View {
     }
 
     private var state: FarmState { viewModel.farmState }
-    private var protectedNights: Int { viewModel.coordinator.progress.totalCompletedRuns }
+    private var protectedNights: Int { viewModel.coordinator.progress.farmCompletedRuns }
 
     private var filteredSheep: [FlockSheep] {
         state.activeSheep.filter { sheep in
@@ -184,7 +184,7 @@ struct FarmBarnView: View {
                         NavigationLink {
                             BarnSheepDetailView(sheepID: sheep.id)
                         } label: {
-                            BarnSheepCard(sheep: sheep, protectedNightCount: protectedNights)
+                            BarnSheepCard(sheep: sheep, protectedNightCount: protectedNights, isVisiting: viewModel.nightFlockViewModel.visitingSheepIDs.contains(sheep.id))
                         }
                         .buttonStyle(.plain)
                     }
@@ -197,6 +197,7 @@ struct FarmBarnView: View {
 struct BarnSheepCard: View {
     let sheep: FlockSheep
     let protectedNightCount: Int
+    var isVisiting = false
 
     var body: some View {
         VStack(spacing: AppSpacing.xs) {
@@ -210,6 +211,7 @@ struct BarnSheepCard: View {
                     Image(systemName: "heart.fill").foregroundStyle(AppColors.berry)
                 }
             }
+            if isVisiting { Label("Visiting", systemImage: "person.2").font(AppTypography.caption).foregroundStyle(AppColors.grass) }
             Text(woolLabel)
                 .font(AppTypography.caption)
                 .foregroundStyle(woolReady ? AppColors.grass : AppColors.secondaryText)
@@ -229,11 +231,7 @@ struct BarnSheepCard: View {
     }
 
     private var woolLabel: String {
-        let remaining = FarmEconomyRules.remainingRegrowthNights(
-            for: sheep,
-            protectedNightCount: protectedNightCount
-        )
-        return woolReady ? "Ready to shear" : "Ready after \(remaining) more \(remaining == 1 ? "night" : "nights")"
+        FarmEconomyRules.regrowthLabel(for: sheep, protectedNightCount: protectedNightCount)
     }
 }
 
@@ -243,13 +241,17 @@ struct BarnSheepDetailView: View {
     @State private var showTradeConfirmation = false
 
     private var sheep: FlockSheep? { viewModel.farmState.sheep.first { $0.id == sheepID } }
-    private var protectedNights: Int { viewModel.coordinator.progress.totalCompletedRuns }
+    private var protectedNights: Int { viewModel.coordinator.progress.farmCompletedRuns }
 
     var body: some View {
         ScrollView {
             if let sheep {
                 VStack(alignment: .leading, spacing: AppSpacing.lg) {
                     sheepHeader(sheep)
+                    if viewModel.nightFlockViewModel.visitingSheepIDs.contains(sheep.id) {
+                        Label("Visiting your Slumber Party", systemImage: "person.2")
+                            .font(AppTypography.body).foregroundStyle(AppColors.grass)
+                    }
                     lifecycleCard(sheep)
                     actionCard(sheep)
                 }
@@ -313,7 +315,7 @@ struct BarnSheepDetailView: View {
                 detail("Arrived", sheep.arrivedAt.formatted(date: .abbreviated, time: .omitted))
                 detail("How they arrived", arrivalLabel(for: sheep))
                 detail("Times sheared", "\(sheep.timesSheared)")
-                detail("Wool", remaining == 0 ? "Ready to shear" : "Ready after \(remaining) more \(remaining == 1 ? "Wind Down" : "Wind Downs")")
+                detail("Wool", FarmEconomyRules.regrowthLabel(for: sheep, protectedNightCount: protectedNights))
                 detail("Trade value now", "\(FarmEconomyRules.tradeWoolValue(for: sheep, protectedNightCount: protectedNights)) wool")
             }
         }
@@ -337,7 +339,7 @@ struct BarnSheepDetailView: View {
                             protectedNightCount: protectedNights
                         )
                         Label(
-                            "Wool ready after \(remaining) more \(remaining == 1 ? "Wind Down" : "Wind Downs")",
+                            FarmEconomyRules.regrowthLabel(for: sheep, protectedNightCount: protectedNights),
                             systemImage: "leaf.fill"
                         )
                         .font(AppTypography.body)

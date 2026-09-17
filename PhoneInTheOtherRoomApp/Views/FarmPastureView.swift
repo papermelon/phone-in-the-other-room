@@ -1,5 +1,7 @@
 import SwiftUI
 
+enum FarmPasturePlayAction { case fetch, gather }
+
 struct FarmPastureView: View {
     let state: FarmState
     let protectedNightCount: Int
@@ -11,58 +13,117 @@ struct FarmPastureView: View {
     var onPersistScene: (PastureSceneSnapshot) -> Void = { _ in }
     var onSelectOllie: () -> Void = {}
     var onSelectShepherd: () -> Void = {}
+    var scrollViewportSize = CGSize.zero
+    var tracksScrollViewport = false
+    var visitingSheepIDs: Set<UUID> = []
+    var playRequest: Binding<FarmPasturePlayAction?> = .constant(nil)
+    private var residentSheep: [FlockSheep] { state.activeSheep.filter { !visitingSheepIDs.contains($0.id) } }
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @State private var sceneController = PastureSceneController()
     @State private var selectedPasture = 0
-    @State private var selectedCharacter: PastureSceneEntityID?
+    @State private var isInScrollViewport = false
+    @State private var pastureFrame = CGRect.null
+    @State private var isPresented = false
 
     private var pastureCount: Int { max(1, state.activeCapacity / 12) }
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView(selection: $selectedPasture) {
-                ForEach(0..<pastureCount, id: \.self) { pasture in
-                    pasturePage(pasture)
-                        .padding(.horizontal, 1)
-                        .tag(pasture)
+            if pastureCount == 1 {
+                pasturePage(0)
+            } else {
+                TabView(selection: $selectedPasture) {
+                    ForEach(0..<pastureCount, id: \.self) { pasture in
+                        pasturePage(pasture)
+                            .padding(.horizontal, 1)
+                            .tag(pasture)
+                    }
                 }
+                .tabViewStyle(.page(indexDisplayMode: .always))
             }
-            .tabViewStyle(.page(indexDisplayMode: pastureCount > 1 ? .always : .never))
         }
-        .frame(height: sceneController.isPlayMode ? 420 : 280)
+        .overlay(alignment: .topLeading) {
+            Menu {
+                Button("Ollie", action: onSelectOllie)
+                Button("Your Shepherd", action: onSelectShepherd)
+                ForEach(residentSheep) { sheep in
+                    Button(sheep.displayName) { onSelectSheep(sheep) }
+                }
+            } label: {
+                Label("Residents", systemImage: "person.2").font(AppTypography.caption).foregroundStyle(AppColors.ink)
+                    .padding(.horizontal, AppSpacing.sm).frame(minHeight: 44)
+                    .background(AppColors.paper.opacity(0.9), in: Capsule())
+            }.padding(AppSpacing.xs).accessibilityHint("Open a resident’s details and actions")
+        }
+        .overlay(alignment: .topTrailing) {
+            Menu {
+                Button("Fetch with Ollie") { sceneController.fetch() }
+                Button("Gather the sheep") { sceneController.gather() }
+            } label: {
+                Label("Play", systemImage: "tennisball").font(AppTypography.caption).foregroundStyle(AppColors.ink)
+                    .padding(.horizontal, AppSpacing.sm).frame(minHeight: 44)
+                    .background(AppColors.paper.opacity(0.9), in: Capsule())
+            }.padding(AppSpacing.xs).accessibilityLabel("Play with Ollie").accessibilityValue(sceneController.playMessage ?? "Choose fetch or gather")
+        }
+        .frame(height: 280)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .stroke(AppColors.stroke.opacity(0.28), lineWidth: 1)
         }
-        .accessibilityLabel("Farm pasture, \(state.activeSheep.count) active sheep across \(pastureCount) pastures")
-        .onAppear(perform: configureScene)
+        .background {
+            if tracksScrollViewport, !scrollViewportSize.equalTo(.zero) {
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear {
+                            updateScrollVisibility(
+                                with: proxy.frame(in: .named(FarmScrollViewportCoordinateSpace.name))
+                            )
+                        }
+                        .onChange(of: proxy.frame(in: .named(FarmScrollViewportCoordinateSpace.name))) { _, frame in
+                            updateScrollVisibility(with: frame)
+                        }
+                }
+            }
+        }
+        .accessibilityElement(children: .contain)
+        .onAppear {
+            isPresented = true
+            configureScene()
+            performRequestedPlay()
+        }
+        .onChange(of: playRequest.wrappedValue) { _, _ in performRequestedPlay() }
+        .onChange(of: visitingSheepIDs) { _, _ in configureScene() }
         .onChange(of: state) { _, _ in configureScene() }
         .onChange(of: layoutSeed) { _, _ in configureScene() }
         .onChange(of: reduceMotion) { _, _ in configureScene() }
         .onChange(of: selectedPasture) { _, _ in
-            selectedCharacter = nil
             sceneController.cancelInteraction()
             configureScene()
         }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { configureScene() } else { sceneController.stop() }
+        }
         .onChange(of: isWindDownActive) { _, active in
             if active {
-                selectedCharacter = nil
-                sceneController.setPlayMode(false)
                 sceneController.cancelInteraction()
             }
             configureScene()
         }
+        .onChange(of: scrollViewportSize) { _, _ in
+            updateScrollVisibility()
+        }
         .onDisappear {
-            selectedCharacter = nil
+            isPresented = false
+            isInScrollViewport = false
             sceneController.stop()
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: sceneController.feedbackTick)
     }
 
     private func pasturePage(_ pasture: Int) -> some View {
-        let pageSheep = Array(state.activeSheep.dropFirst(pasture * 12).prefix(12))
+        let pageSheep = Array(residentSheep.dropFirst(pasture * 12).prefix(12))
         return GeometryReader { proxy in
             ZStack {
                 PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
@@ -73,6 +134,11 @@ struct FarmPastureView: View {
                     endPoint: .bottom
                 )
                 if pasture == 0 { decorations(in: proxy.size) }
+                if let toy = sceneController.toyPosition, selectedPasture == pasture {
+                    Circle().fill(AppColors.amber).frame(width: 12, height: 12)
+                        .position(x: proxy.size.width * toy.x, y: proxy.size.height * toy.y)
+                        .accessibilityLabel("Ollie’s toy")
+                }
 
                 ForEach(pageSheep) { sheep in
                     let entity = PastureSceneEntityID.sheep(sheep.id, pastureIndex: pasture)
@@ -82,10 +148,8 @@ struct FarmPastureView: View {
                         coordinateSpace: coordinateSpace(for: pasture),
                         label: sheepAccessibilityLabel(sheep),
                         normalHint: "Double tap to open \(sheep.displayName) in The Barn. Long press and drag to place them in the pasture.",
-                        playHint: "Play with \(sheep.displayName), then use the pasture card to open their Barn details.",
                         openActionTitle: "Open \(sheep.displayName) in The Barn",
-                        normalAction: { onSelectSheep(sheep) },
-                        playAction: { selectedCharacter = entity }
+                        normalAction: { onSelectSheep(sheep) }
                     ) {
                         FarmSheepSprite(
                             sheep: sheep,
@@ -96,17 +160,27 @@ struct FarmPastureView: View {
                     }
                 }
 
+                let ollieEntity = PastureSceneEntityID.ollie(pastureIndex: pasture)
                 character(
-                    entity: .ollie(pastureIndex: pasture),
+                    entity: ollieEntity,
                     in: proxy.size,
                     coordinateSpace: coordinateSpace(for: pasture),
                     label: "Ollie in the pasture",
-                    normalHint: "Double tap to open Ollie’s Farm Shop items. Long press and drag to place Ollie in the pasture.",
-                    playHint: "Play with Ollie, then use the pasture card to open Ollie’s Shop.",
-                    openActionTitle: "Open Ollie’s Shop",
-                    normalAction: onSelectOllie,
-                    playAction: { selectedCharacter = .ollie(pastureIndex: pasture) }
-                ) { OllieFarmAvatar(accessoryItemID: state.equipment.ollieAccessoryItemID, size: 72) }
+                    normalHint: "Open Ollie’s details, play and accessories. Long press and drag to place Ollie in the pasture.",
+                    openActionTitle: "Open Ollie",
+                    normalAction: onSelectOllie
+                ) {
+                    OllieFarmAvatar(
+                        accessoryItemID: state.equipment.ollieAccessoryItemID,
+                        size: 72,
+                        motionEnabled: selectedPasture == pasture
+                            && pastureIsVisibleForMotion
+                            && scenePhase == .active
+                            && !reduceMotion
+                            && !isWindDownActive
+                            && sceneController.behavior(for: ollieEntity) != .dragging
+                    )
+                }
 
                 let shepherdEntity = PastureSceneEntityID.shepherd(pastureIndex: pasture)
                 let shepherdPoint = sceneController.position(for: shepherdEntity)
@@ -116,29 +190,14 @@ struct FarmPastureView: View {
                     coordinateSpace: coordinateSpace(for: pasture),
                     label: shepherdAccessibilityLabel,
                     normalHint: "Double tap to customize Your Shepherd. Long press and drag to place Your Shepherd in the pasture.",
-                    playHint: "Double tap to customize Your Shepherd.",
                     openActionTitle: "Open customization",
-                    normalAction: onSelectShepherd,
-                    playAction: onSelectShepherd
+                    normalAction: onSelectShepherd
                 ) { ShepherdAvatarView(profile: state.shepherd, size: 72) }
                 shepherdNameplate(at: shepherdPoint, in: proxy.size)
 
-                PastureSceneEffectsLayer(
-                    effects: sceneController.effects,
-                    pasture: pasture,
-                    size: proxy.size,
-                    reduceMotion: reduceMotion
-                )
-
-                if sceneController.isPlayMode, let ball = sceneController.ball {
-                    PastureBallView(ball: ball, size: proxy.size, reduceMotion: reduceMotion) {
-                        sceneController.tossBall()
-                    }
-                }
-
                 if pageSheep.isEmpty { emptyPastureMessage(pasture, in: proxy.size) }
 
-                Text("PASTURE \(pasture + 1)")
+                if pastureCount > 1 { Text("PASTURE \(pasture + 1)")
                     .font(pixelFont(.caption2))
                     .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
                     .foregroundStyle(AppColors.bark)
@@ -147,14 +206,10 @@ struct FarmPastureView: View {
                     .background(AppColors.paper.opacity(0.84), in: Capsule())
                     .padding(.leading, AppSpacing.lg)
                     .padding(.top, AppSpacing.sm)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
                     .accessibilityHidden(true)
+                }
 
-                pastureChrome(for: pasture, sheep: pageSheep)
-                    .padding(.leading, 96)
-                    .padding(.trailing, AppSpacing.sm)
-                    .padding(.top, AppSpacing.sm)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
             .coordinateSpace(name: coordinateSpace(for: pasture))
         }
@@ -166,90 +221,46 @@ struct FarmPastureView: View {
         coordinateSpace: String,
         label: String,
         normalHint: String,
-        playHint: String,
         openActionTitle: String,
         normalAction: @escaping () -> Void,
-        playAction: @escaping () -> Void,
         @ViewBuilder content: @escaping () -> Content
     ) -> some View {
         let point = sceneController.position(for: entity)
         let behavior = sceneController.behavior(for: entity)
-        return PastureCharacterHitTarget(
+        return ZStack {
+            Ellipse().fill(AppColors.farmContactShadow.opacity(0.3))
+                .frame(width: entity.kind == .sheep ? 26 : 35, height: 7).offset(y: entity.kind == .sheep ? 20 : 32)
+                .allowsHitTesting(false).accessibilityHidden(true)
+            PastureCharacterHitTarget(
             entity: entity,
             controller: sceneController,
             canvasSize: size,
             coordinateSpace: coordinateSpace,
             reduceMotion: reduceMotion,
-            isPlayMode: sceneController.isPlayMode,
             label: label,
-            normalHint: normalHint,
-            playHint: playHint,
-            openActionTitle: openActionTitle,
-            normalAction: normalAction,
-            playAction: playAction,
+            hint: normalHint,
+            actionTitle: openActionTitle,
+            action: normalAction,
             content: content
         )
+        }
+        .frame(width: entity.kind == .sheep ? 60 : 72, height: entity.kind == .sheep ? 60 : 72)
         .position(x: size.width * point.x, y: size.height * point.y)
         .animation(spatialAnimation(for: behavior), value: point)
         .zIndex(point.y)
     }
 
-    @ViewBuilder
-    private func pastureChrome(for pasture: Int, sheep: [FlockSheep]) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            if sceneController.isPlayMode, let selectedCharacter, selectedCharacter.pastureIndex == pasture {
-                selectedCharacterChip(for: selectedCharacter, sheep: sheep)
-            }
-            PasturePlayControls(
-                isPlayMode: sceneController.isPlayMode,
-                isWindDownActive: isWindDownActive,
-                hasBall: sceneController.ball != nil,
-                onTogglePlay: togglePlayMode,
-                onFetch: { sceneController.tossBall() }
-            )
-        }
-        .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
+    private var pastureIsVisibleForMotion: Bool {
+        !tracksScrollViewport || isInScrollViewport
     }
 
-    @ViewBuilder
-    private func selectedCharacterChip(for entity: PastureSceneEntityID, sheep: [FlockSheep]) -> some View {
-        switch entity.kind {
-        case .sheep:
-            if let sheepID = entity.sheepID, let sheep = sheep.first(where: { $0.id == sheepID }) {
-                PastureSelectedCharacterChip(
-                    title: sheep.displayName,
-                    detail: personalityDetail(for: entity),
-                    actionTitle: "Open in The Barn",
-                    action: { onSelectSheep(sheep) }
-                )
-            }
-        case .ollie:
-            PastureSelectedCharacterChip(
-                title: "Ollie",
-                detail: "A wag and a gentle play bow. Fetch stays just for fun.",
-                actionTitle: "Ollie’s Shop",
-                action: onSelectOllie
-            )
-        case .shepherd:
-            EmptyView()
+    private func updateScrollVisibility(with measuredPastureFrame: CGRect? = nil) {
+        if let measuredPastureFrame {
+            pastureFrame = measuredPastureFrame
         }
-    }
-
-    private func personalityDetail(for entity: PastureSceneEntityID) -> String {
-        switch sceneController.personality(for: entity) {
-        case .gentle: return "Gentle today — small scratches bring a soft hop."
-        case .curious: return "Curious today — Ollie may come over to see."
-        case .bouncy: return "Bouncy today — a little squish earns a happy hop."
-        case .brave: return "Brave today — ready for a careful toss and landing."
-        case .dreamy: return "Dreamy today — quiet pets suit them best."
-        }
-    }
-
-    private func togglePlayMode() {
-        guard !isWindDownActive else { return }
-        selectedCharacter = nil
-        sceneController.cancelInteraction()
-        sceneController.setPlayMode(!sceneController.isPlayMode)
+        let viewport = CGRect(origin: .zero, size: scrollViewportSize)
+        isInScrollViewport = !scrollViewportSize.equalTo(.zero)
+            && pastureFrame.intersects(viewport)
     }
 
     @ViewBuilder
@@ -268,7 +279,7 @@ struct FarmPastureView: View {
         VStack(spacing: AppSpacing.xs) {
             Text(pasture == 0 ? "The pasture is quiet." : "This pasture is open.")
                 .font(AppTypography.headline)
-            Text(pasture == 0 ? "A completed Wind Down gives Ollie a trail to follow." : "New arrivals can settle here when they come home.")
+            Text(pasture == 0 ? "A completed Wind Down can help Ollie find a missing sheep." : "New arrivals can settle here when they come home.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
                 .multilineTextAlignment(.center)
@@ -281,7 +292,7 @@ struct FarmPastureView: View {
 
     private func configureScene() {
         sceneController.configure(
-            activeSheep: state.activeSheep,
+            activeSheep: residentSheep,
             pastureCount: pastureCount,
             layoutSeed: layoutSeed,
             activePastureIndex: selectedPasture,
@@ -290,6 +301,16 @@ struct FarmPastureView: View {
             isWindDownActive: isWindDownActive,
             onPersist: onPersistScene
         )
+    }
+
+    private func performRequestedPlay() {
+        // A profile action plays in the visible pasture after navigation returns.
+        guard isPresented, let request = playRequest.wrappedValue else { return }
+        playRequest.wrappedValue = nil
+        switch request {
+        case .fetch: sceneController.fetch()
+        case .gather: sceneController.gather()
+        }
     }
 
     private func coordinateSpace(for pasture: Int) -> String { "FarmPasturePage-\(pasture)" }
@@ -301,7 +322,7 @@ struct FarmPastureView: View {
     }
 
     private func spatialAnimation(for behavior: PastureSceneBehavior) -> Animation? {
-        guard !reduceMotion, behavior != .dragging, behavior != .squishing else { return nil }
+        guard !reduceMotion, behavior != .dragging else { return nil }
         return AppMotion.settle
     }
 

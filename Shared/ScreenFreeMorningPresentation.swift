@@ -23,7 +23,7 @@ struct ScreenFreeMorningPresentation: Codable, Hashable, Identifiable {
             case .scheduled: return "Screen-Free Morning planned"
             case .active: return "Screen-Free Morning"
             case .skipped: return "Screen-Free Morning skipped"
-            case .finished: return "Screen-Free Morning finished"
+            case .finished: return "Screen-Free Morning timer ended"
             }
         }
     }
@@ -47,6 +47,11 @@ struct ScreenFreeMorningPresentation: Codable, Hashable, Identifiable {
 }
 
 enum ScreenFreeMorningPresentationRouting {
+    static func latestLinked(to runID: UUID, occurrences: [MorningQuietOccurrence]) -> MorningQuietOccurrence? {
+        occurrences.filter { $0.linkedWindDownRunID == runID }
+            .max { $0.scheduledStart < $1.scheduledStart }
+    }
+
     static func current(
         occurrences: [MorningQuietOccurrence],
         at date: Date = Date()

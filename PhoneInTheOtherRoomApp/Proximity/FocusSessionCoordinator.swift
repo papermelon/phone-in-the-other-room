@@ -14,9 +14,14 @@ final class FocusSessionCoordinator: ObservableObject {
     @Published var ollieMessage = "Ollie is ready when your phone is."
     @Published var backgroundReturnMessage: String?
     @Published var shieldingState: ActiveRunShieldingState = .notRequested
+    /// Failure disclosure belongs to the resource that failed. A later,
+    /// unrelated run or Screen-Free Morning reconcile must not hide it.
+    private var shieldingFailureIdentity: ShieldingResourceIdentity?
     @Published var sheepSearchState: SheepSearchState
     @Published var latestSheepSearchOutcome: SheepSearchOutcome?
     @Published var farmState: FarmState
+    @Published var farmSaveMessage: String?
+    @Published var farmSaveUnavailable = false
     @Published private(set) var lastOnboardingPracticeGrantedSheep = false
     @Published private(set) var emergencyExitChallenge: EmergencyExitChallenge?
 
@@ -25,6 +30,10 @@ final class FocusSessionCoordinator: ObservableObject {
     let watch: WatchConnectivityManager
     private let ping = PingService()
     private let notifications = PhoneNotificationService.shared
+    /// DEBUG fixture seam: production keeps notification effects enabled. It
+    /// lets Screenbook exercise coordinator admission without prompting for a
+    /// system notification permission.
+    private let notificationEffectsEnabled: Bool
     private let liveActivity: FocusRunLiveActivityService
     private let shielding: QuietTimeShieldingProviding
     let nearby = NearbyInteractionDistanceProvider()
@@ -46,6 +55,9 @@ final class FocusSessionCoordinator: ObservableObject {
     /// The view model owns notification and usage-monitor dependencies. It is
     /// invoked only after a terminal exit has passed coordinator authorization.
     var onAuthorizedEarlyExit: ((Bool) -> Void)?
+    /// Fires after a persisted run/morning identity transition. The view model
+    /// uses this narrow boundary to refresh occurrence-scoped presentation state.
+    var onStateReconciled: (() -> Void)?
     private var emergencyExitChallengeMachine = EmergencyExitChallengeMachine()
 #if DEBUG
     let energyLogger = Logger(
@@ -59,12 +71,14 @@ final class FocusSessionCoordinator: ObservableObject {
         persistence: PersistenceService = .shared,
         liveActivity: FocusRunLiveActivityService? = nil,
         shielding: QuietTimeShieldingProviding? = nil,
-        watch: WatchConnectivityManager = .shared
+        watch: WatchConnectivityManager = .shared,
+        notificationEffectsEnabled: Bool = true
     ) {
         self.persistence = persistence
         self.liveActivity = liveActivity ?? FocusRunLiveActivityService()
         self.shielding = shielding ?? QuietTimeShieldingService()
         self.watch = watch
+        self.notificationEffectsEnabled = notificationEffectsEnabled
         self.progress = persistence.progress
         self.rewards = persistence.rewards
         self.farmState = persistence.farmState
@@ -72,6 +86,7 @@ final class FocusSessionCoordinator: ObservableObject {
         self.sheepSearchState = savedSearchState
         self.latestSheepSearchOutcome = savedSearchState.lastOutcome
         watch.onMessage = { [weak self] message in
+            guard let message = message.routedForCurrentRelease else { return }
             Task { @MainActor in self?.handle(message) }
         }
         watch.currentStateProvider = { [weak self] in
@@ -82,6 +97,12 @@ final class FocusSessionCoordinator: ObservableObject {
                 proximity: self.proximityState,
                 screenFreeMorning: self.currentScreenFreeMorningPresentation()
             )
+        }
+        commitFarmChanges(using: persistence) {
+            farmState.migrateCumulativeCredit(records: persistence.nightWatchHistory.records,
+                searchState: sheepSearchState, protectedNightCount: progress.farmCompletedRuns)
+            persistence.farmState = farmState
+            projectCumulativeFarmOutcomes()
         }
         restoreActiveRunIfNeeded()
     }
@@ -111,6 +132,7 @@ final class FocusSessionCoordinator: ObservableObject {
     /// delivery is deliberately best-effort and can never start or alter a run.
     func showSlumberPartyCheer(_ feedback: SlumberPartyCheerFeedback) {
         guard let run else { return }
+        guard SlumberPartyCheerFeedbackApplicability.accepts(feedback, currentRunID: run.id) else { return }
         switch run.state {
         case .placementGrace, .waitingForPhoneAway, .running,
              .warningPhoneTooClose, .signalLost, .unsupported, .demo:
@@ -136,12 +158,28 @@ final class FocusSessionCoordinator: ObservableObject {
         autoConfirmPlacement: Bool = false,
         appShieldingRequested: Bool = true,
         liveActivityRequested: Bool = true,
+        replacesAutomaticSchedule: Bool = false,
         runID: UUID? = nil
-    ) {
+    ) -> FocusSessionStartResult {
+        guard let savedFarm = try? persistence.farmSaveStore.snapshot(), savedFarm.effectiveScope != .signedOut else {
+            return .rejected(.accountSignedOut)
+        }
         cancelEmergencyExitChallenge()
-        guard !persistence.windDownMorningSettlementJournal.morningOccurrences.contains(where: {
+        if let activeRun = run,
+           ![.setup, .completed, .endedEarly].contains(activeRun.state) {
+            return .rejected(.activeRun(activeRun.id))
+        }
+        if let activeMorning = persistence.windDownMorningSettlementJournal.morningOccurrences.first(where: {
             $0.outcome == .active
-        }) else { return }
+        }) {
+            return .rejected(.activeScreenFreeMorning(activeMorning.id))
+        }
+        // Manual admission owns removal of a prior automatic monitor. This
+        // happens only after the final active-run/Morning rejection gates and
+        // before the new run publishes its shield registry.
+        if replacesAutomaticSchedule {
+            shielding.cancelAutomaticSchedule()
+        }
         resetToSetup(clearPersistedRun: false, liveActivityCancellationReason: .replaced)
         let plannedDuration = configuration.nightWatchPlan.map {
             max(FocusRunRules.minimumMeaningfulDurationSeconds, $0.protectedUntil.timeIntervalSince(startedAt))
@@ -199,10 +237,10 @@ final class FocusSessionCoordinator: ObservableObject {
             )
             if autoConfirmPlacement && newRun.guardKind == .nfcTag {
                 recordRitualEvent(
-                    .placementConfirmed,
+                    .credentialConfirmed,
                     for: newRun,
                     at: startedAt,
-                    idempotencyKey: "\(newRun.id.uuidString):placement-confirmed",
+                    idempotencyKey: "\(newRun.id.uuidString):credential-confirmed",
                     payload: ["method": "nfcTag"]
                 )
             }
@@ -246,9 +284,9 @@ final class FocusSessionCoordinator: ObservableObject {
         case .nfcTag:
             let protectionDetail: String
             if isAdditionalQuiet {
-                protectionDetail = "Selected apps are limited until \(OllieFormat.time(newRun.plannedEndAt))."
+                protectionDetail = "Selected-app limits were requested until \(OllieFormat.time(newRun.plannedEndAt))."
             } else {
-                protectionDetail = "Selected apps are limited until \(OllieFormat.time(newRun.plannedEndAt)) or you use the emergency exit."
+                protectionDetail = "Selected-app limits were requested until \(OllieFormat.time(newRun.plannedEndAt)) or you use the emergency exit."
             }
             addEvent(
                 isAdditionalQuiet
@@ -265,6 +303,7 @@ final class FocusSessionCoordinator: ObservableObject {
         case .honorTimer:
             break
         }
+        return .started(newRun)
     }
 
     func confirmQRCode(_ code: String, expectedCode: String?) -> Bool {
@@ -283,9 +322,9 @@ final class FocusSessionCoordinator: ObservableObject {
                 : "Wind Down code confirmed"
         )
         recordRitualEvent(
-            .placementConfirmed,
+            .credentialConfirmed,
             for: run,
-            idempotencyKey: "\(run.id.uuidString):placement-confirmed",
+            idempotencyKey: "\(run.id.uuidString):credential-confirmed",
             payload: ["method": "qrCode"]
         )
         return true
@@ -307,9 +346,9 @@ final class FocusSessionCoordinator: ObservableObject {
                 : "Wind Down tag tapped"
         )
         recordRitualEvent(
-            .placementConfirmed,
+            .credentialConfirmed,
             for: run,
-            idempotencyKey: "\(run.id.uuidString):placement-confirmed",
+            idempotencyKey: "\(run.id.uuidString):credential-confirmed",
             payload: ["method": "nfcTag"]
         )
         return true
@@ -457,7 +496,8 @@ final class FocusSessionCoordinator: ObservableObject {
 
     private func completeAuthorizedEarlyExit(
         with terminalRun: FocusRun,
-        preservingShieldForLinkedMorning: Bool = false
+        preservingShieldForLinkedMorning: Bool = false,
+        preserveLinkedMorningOccurrence: Bool = false
     ) {
         // This is the last authorization boundary before any resource cleanup.
         // It keeps rejected scans and Watch requests from lifting app limits.
@@ -469,7 +509,8 @@ final class FocusSessionCoordinator: ObservableObject {
         finish(
             run: terminalRun,
             clearShielding: !preservingShieldForLinkedMorning,
-            linkedMorningHandoff: preservingShieldForLinkedMorning
+            linkedMorningHandoff: preservingShieldForLinkedMorning,
+            preserveLinkedMorningOccurrence: preserveLinkedMorningOccurrence
         )
     }
 
@@ -515,6 +556,8 @@ final class FocusSessionCoordinator: ObservableObject {
     }
 
     func applicationDidBecomeActive() {
+        defer { reconcileLiveActivitiesOnForeground() }
+        recoverAuthorizedTerminalMorningDecisionsIfNeeded()
         reconcileMorningQuietOccurrences()
         scheduleNextMorningOccurrenceBoundaryTimer()
         guard let currentRun = run,
@@ -542,10 +585,21 @@ final class FocusSessionCoordinator: ObservableObject {
         latestReward = nil
         proximityState = .initial
         backgroundReturnMessage = nil
-        shieldingState = .notRequested
+        let preservesActiveMorningFailure: Bool
+        if case let .morning(occurrenceID)? = shieldingFailureIdentity {
+            preservesActiveMorningFailure = persistence.windDownMorningSettlementJournal.morningOccurrences.contains {
+                $0.id == occurrenceID && $0.outcome == .active
+            }
+        } else {
+            preservesActiveMorningFailure = false
+        }
+        if !preservesActiveMorningFailure {
+            shieldingState = .notRequested
+            shieldingFailureIdentity = nil
+        }
         lastLiveActivityPhase = nil
         ollieMessage = "Ollie is ready when your phone is."
-        notifications.cancelRunCompletion()
+        cancelRunNotifications()
         let preservedMorning = currentScreenFreeMorningPresentation()
         if preservedMorning?.isActive != true {
             liveActivity.endAll(reason: liveActivityCancellationReason)
@@ -567,14 +621,24 @@ final class FocusSessionCoordinator: ObservableObject {
         liveActivity.resetToFreshInstallDefaults()
     }
 
+    private func cancelRunNotifications() {
+        guard notificationEffectsEnabled else { return }
+        notifications.cancelRunCompletion()
+    }
+
+    private func reconcileMorningNotifications(
+        _ occurrences: [MorningQuietOccurrence],
+        now: Date
+    ) {
+        guard notificationEffectsEnabled else { return }
+        notifications.reconcileScreenFreeMorningNotifications(occurrences: occurrences, now: now)
+    }
+
     func revealDeliveredWindDownBenefit(for runID: UUID, at date: Date = Date()) {
         var journal = persistence.windDownMorningSettlementJournal
         guard journal.markRevealed(runID: runID, at: date) != nil else { return }
         persistence.windDownMorningSettlementJournal = journal
-        notifications.reconcileScreenFreeMorningNotifications(
-            occurrences: journal.morningOccurrences,
-            now: date
-        )
+        reconcileMorningNotifications(journal.morningOccurrences, now: date)
     }
 
     /// Ends only an overnight Wind Down after the same authorization that
@@ -621,12 +685,6 @@ final class FocusSessionCoordinator: ObservableObject {
             journal.appendOccurrence(occurrence)
             guard journal.morningOccurrences.count == count + 1 else { return nil }
         }
-        persistence.windDownMorningSettlementJournal = journal
-        notifications.reconcileScreenFreeMorningNotifications(
-            occurrences: journal.morningOccurrences,
-            now: date
-        )
-
         var terminalRun = currentRun
         terminalRun.endedAt = date
         terminalRun.actualDurationSeconds = min(
@@ -638,14 +696,21 @@ final class FocusSessionCoordinator: ObservableObject {
         terminalRun.state = eligible ? .completed : .endedEarly
         terminalRun.completedSuccessfully = eligible
         terminalRun.endedEarlyReason = eligible ? nil : reason
+        // The occurrence replacement and the explicit-preserve decision must
+        // cross the persistence boundary together. The ordinary occurrence ID
+        // is intentionally reused, so restore cannot infer this intent later.
+        guard journal.recordAuthorizedTerminalMorningDecision(
+            for: terminalRun,
+            disposition: .preserveExplicitIntent,
+            at: date
+        ) != nil else { return nil }
+        persistence.windDownMorningSettlementJournal = journal
+        reconcileMorningNotifications(journal.morningOccurrences, now: date)
         completeAuthorizedEarlyExit(
             with: terminalRun,
-            preservingShieldForLinkedMorning: occurrence.outcome == .active
+            preservingShieldForLinkedMorning: occurrence.outcome == .active,
+            preserveLinkedMorningOccurrence: true
         )
-        _ = shielding.reconcile(for: occurrence, at: date)
-        // Publish/apply the linked Morning first, then tombstone the terminal
-        // Wind Down entry so a stale callback cannot clear the new window.
-        shielding.clear(occurrenceID: currentRun.id)
         reconcileMorningQuietOccurrences(at: date)
         return occurrence
     }
@@ -661,19 +726,46 @@ final class FocusSessionCoordinator: ObservableObject {
         }
         var occurrence = journal.morningOccurrences[index]
         guard occurrence.outcome == .active else { return nil }
+
+        // An ordinary Screen-Free Morning is the live continuation of its
+        // parent Wind Down. Ending it is also an authorized terminal action on
+        // that parent; NFC still requires the tag and the emergency path still
+        // requires its existing challenge.
+        if let currentRun = run,
+           currentRun.id == occurrence.linkedWindDownRunID,
+           ![.completed, .endedEarly, .setup].contains(currentRun.state) {
+            guard let terminalRun = SessionExitTransition.ending(
+                currentRun,
+                requestedReason: .userEnded,
+                source: .phone,
+                at: date
+            ) else {
+                rejectUnauthorizedExit(for: currentRun, source: .phone)
+                return nil
+            }
+            var adjustedTerminalRun = terminalRun
+            let eligible = FocusRunRules.protectedSpanMinutes(for: terminalRun, at: date)
+                >= FocusRunRules.minimumProtectedNightSearchSpanMinutes
+            adjustedTerminalRun.state = eligible ? .completed : .endedEarly
+            adjustedTerminalRun.completedSuccessfully = eligible
+            adjustedTerminalRun.endedEarlyReason = eligible ? nil : .userEnded
+            completeAuthorizedEarlyExit(with: adjustedTerminalRun)
+            return persistence.windDownMorningSettlementJournal.morningOccurrences.first(where: {
+                $0.id == occurrenceID
+            })
+        }
+
         occurrence.endedAt = min(max(date, occurrence.scheduledStart), occurrence.scheduledEnd)
         occurrence.outcome = .finished
         journal.morningOccurrences[index] = occurrence
         settleFinishedMorningOccurrences(&journal, at: occurrence.endedAt ?? date)
         persistence.windDownMorningSettlementJournal = journal
-        notifications.reconcileScreenFreeMorningNotifications(
-            occurrences: journal.morningOccurrences,
-            now: date
-        )
+        reconcileMorningNotifications(journal.morningOccurrences, now: date)
         shielding.clear(occurrenceID: occurrence.id)
         liveActivity.finishScreenFreeMorning(occurrence)
         sendWatchState()
         scheduleNextMorningOccurrenceBoundaryTimer()
+        onStateReconciled?()
         return occurrence
     }
 
@@ -689,12 +781,22 @@ final class FocusSessionCoordinator: ObservableObject {
             var occurrence = journal.morningOccurrences[index]
             if occurrence.outcome == .scheduled, date >= occurrence.scheduledStart {
                 occurrence.actualStart = occurrence.scheduledStart
-                occurrence.outcome = .active
-                journal.morningOccurrences[index] = occurrence
-                _ = shielding.reconcile(for: occurrence, at: date)
-                changed = true
                 if date < occurrence.scheduledEnd {
+                    occurrence.outcome = .active
+                    journal.morningOccurrences[index] = occurrence
+                    reconcileShielding(for: occurrence, at: date)
+                    changed = true
                     startedOccurrences.append(occurrence)
+                } else {
+                    // A relaunch after the whole window must settle the
+                    // factual occurrence directly. Briefly projecting it as
+                    // active would reapply shielding after it has expired.
+                    occurrence.endedAt = occurrence.scheduledEnd
+                    occurrence.outcome = .finished
+                    journal.morningOccurrences[index] = occurrence
+                    shielding.clear(occurrenceID: occurrence.id)
+                    changed = true
+                    finishedOccurrences.append(occurrence)
                 }
             }
             if occurrence.outcome == .active, date >= occurrence.scheduledEnd {
@@ -706,11 +808,16 @@ final class FocusSessionCoordinator: ObservableObject {
                 finishedOccurrences.append(occurrence)
             }
         }
-        if changed {
-            settleFinishedMorningOccurrences(&journal, at: date)
-        }
+        // Previously finished occurrences may still need delivery after a
+        // failed local save. Stable fill IDs make this safe on every reconcile.
+        settleFinishedMorningOccurrences(&journal, at: date)
         guard changed else {
             if let active = journal.morningOccurrences.first(where: { $0.outcome == .active }) {
+                // A cold restore can find an already-active independent
+                // Morning with no boundary transition to trigger a reconcile.
+                // Reapply/republish its own shielding state without changing
+                // the factual occurrence or projecting an expired window.
+                reconcileShielding(for: active, at: date)
                 liveActivity.startScreenFreeMorning(active)
                 sendWatchState()
             }
@@ -720,14 +827,12 @@ final class FocusSessionCoordinator: ObservableObject {
         persistence.windDownMorningSettlementJournal = journal
         persistence.sheepSearchState = sheepSearchState
         persistence.farmState = farmState
-        notifications.reconcileScreenFreeMorningNotifications(
-            occurrences: journal.morningOccurrences,
-            now: date
-        )
+        reconcileMorningNotifications(journal.morningOccurrences, now: date)
         startedOccurrences.forEach(liveActivity.startScreenFreeMorning)
         finishedOccurrences.forEach(liveActivity.finishScreenFreeMorning)
         sendWatchState()
         scheduleNextMorningOccurrenceBoundaryTimer()
+        onStateReconciled?()
     }
 
     @discardableResult
@@ -744,38 +849,41 @@ final class FocusSessionCoordinator: ObservableObject {
         _ journal: inout WindDownMorningSettlementJournal,
         at date: Date
     ) {
-        for occurrence in journal.morningOccurrences where occurrence.outcome == .finished {
-            let settlement = SunriseTrailSettlementEngine.settle(
-                occurrence: occurrence,
-                at: occurrence.endedAt ?? date,
-                state: journal.sunriseTrail,
-                protectedWindDownCount: progress.totalCompletedRuns,
-                trackedSheepID: farmState.trackedSheepDefinitionID
-            )
-            journal.sunriseTrail = settlement.state
-            // Commit deterministic Sunrise state before any projection. A
-            // crash now reuses the exact fills/outcomes instead of resolving
-            // mutable odds or losing a wool/search effect.
-            persistence.windDownMorningSettlementJournal = journal
-            let fills = journal.sunriseTrail.fills.filter { $0.occurrenceID == occurrence.id }
-            for fill in fills {
-                let marker = "sunrise:\(occurrence.id.uuidString):fill:\(fill.id.uuidString):projection"
-                guard !journal.deliveredEffectIDs.contains(marker) else { continue }
-                sheepSearchState.append(fill.outcome)
-                farmState.applySunriseTrailFill(fill)
-                // Projection stores are independently non-atomic. Persist both
-                // before committing this replay marker so a crash retries the
-                // same deterministic fill and repairs either missing store.
-                persistence.sheepSearchState = sheepSearchState
-                persistence.farmState = farmState
-                _ = journal.markEffectDelivered(marker)
+        let original = persistence.windDownMorningSettlementJournal
+        if !commitFarmChanges(using: persistence, {
+            for occurrence in journal.morningOccurrences where occurrence.outcome == .finished {
+                let settlement = SunriseTrailSettlementEngine.settle(
+                    occurrence: occurrence,
+                    at: occurrence.endedAt ?? date,
+                    state: journal.sunriseTrail,
+                    protectedWindDownCount: progress.farmCompletedRuns,
+                    trackedSheepID: farmState.trackedSheepDefinitionID
+                )
+                journal.sunriseTrail = settlement.state
+                // Stage immutable results with their inventory effects. The
+                // outer save publishes one complete generation.
+                persistence.windDownMorningSettlementJournal = journal
+                let fills = journal.sunriseTrail.fills.filter { $0.occurrenceID == occurrence.id }
+                for fill in fills {
+                    let marker = "sunrise:\(occurrence.id.uuidString):fill:\(fill.id.uuidString):projection"
+                    guard !journal.deliveredEffectIDs.contains(marker) else { continue }
+                    sheepSearchState.append(fill.outcome)
+                    farmState.applySunriseTrailFill(fill)
+                    // Stage inventory and the replay marker together so neither
+                    // can be published without the other.
+                    persistence.sheepSearchState = sheepSearchState
+                    persistence.farmState = farmState
+                    _ = journal.markEffectDelivered(marker)
+                    persistence.windDownMorningSettlementJournal = journal
+                }
+                _ = journal.markEffectDelivered("sunrise:\(occurrence.id.uuidString):settled")
                 persistence.windDownMorningSettlementJournal = journal
             }
-            _ = journal.markEffectDelivered("sunrise:\(occurrence.id.uuidString):settled")
-            persistence.windDownMorningSettlementJournal = journal
+            persistence.sheepSearchState = sheepSearchState
+            persistence.farmState = farmState
+        }) {
+            journal = original
         }
-        persistence.sheepSearchState = sheepSearchState
-        persistence.farmState = farmState
     }
 
     private func currentScreenFreeMorningPresentation(
@@ -798,14 +906,31 @@ final class FocusSessionCoordinator: ObservableObject {
         )
     }
 
+    func retryFarmSave() {
+        guard commitFarmChanges(using: persistence, {
+            progress = persistence.progress
+            rewards = persistence.rewards
+            farmState = persistence.farmState
+            sheepSearchState = persistence.sheepSearchState
+            farmState.migrateCumulativeCredit(records: persistence.nightWatchHistory.records,
+                searchState: sheepSearchState, protectedNightCount: progress.farmCompletedRuns)
+            persistence.farmState = farmState
+            projectCumulativeFarmOutcomes()
+        }) else { return }
+        restoreActiveRunIfNeeded()
+    }
+
     private func restoreActiveRunIfNeeded() {
+        defer { reconcileLiveActivitiesOnForeground() }
         cancelEmergencyExitChallenge()
+        recoverAuthorizedTerminalMorningDecisionsIfNeeded()
         reconcileMorningQuietOccurrences()
         guard var storedRun = persistence.lastRun else { return }
         guard ![.completed, .endedEarly, .setup].contains(storedRun.state) else {
             // A terminal lastRun is deliberately persisted before its Phone
             // Away settlement. If termination happened in that small window,
             // settle it now before returning the receipt to the UI.
+            settleCumulativeFarmIfNeeded(for: storedRun)
             settlePhoneAwayIfNeeded(for: storedRun)
             settleOnboardingPracticeIfNeeded(for: storedRun)
             resolveHiddenWindDownBenefitIfEligible(for: storedRun, at: storedRun.endedAt ?? Date())
@@ -814,11 +939,15 @@ final class FocusSessionCoordinator: ObservableObject {
             run = storedRun
             return
         }
-        // Older builds could leave a timed-out Watch placement run in a waiting state.
-        // It is an optional assist, so restore it as a normal timer rather than trapping it.
-        if storedRun.guardKind == .watchPlacement,
-           storedRun.placementStatus == .unavailable {
-            storedRun.state = .running
+        // Retired Watch/QR guards are never resumed as release features. Their
+        // saved timer remains usable, but no camera, UWB, or placement evidence
+        // is inferred during migration.
+        if storedRun.guardKind.releaseCompatibleKind != storedRun.guardKind {
+            storedRun = storedRun.normalizedForCurrentRelease
+            persistence.lastRun = storedRun
+        }
+        if persistence.windDownMorningSettlementJournal.benefit(for: storedRun.id) == nil {
+            storedRun.farmCreditVersion = 1
             persistence.lastRun = storedRun
         }
         run = storedRun
@@ -909,7 +1038,7 @@ final class FocusSessionCoordinator: ObservableObject {
     }
 
     func reconcileSession(at now: Date = Date()) {
-        guard var run else { return }
+        guard var run, ![.completed, .endedEarly, .setup].contains(run.state) else { return }
         run.actualDurationSeconds = min(run.plannedDurationSeconds, now.timeIntervalSince(run.startedAt))
         resolveHiddenWindDownBenefitIfEligible(for: run, at: now)
         if now >= run.plannedEndAt,
@@ -941,6 +1070,13 @@ final class FocusSessionCoordinator: ObservableObject {
         scheduleNextBoundaryTimer()
     }
 
+    private func reconcileLiveActivitiesOnForeground() {
+        liveActivity.reconcileOnForeground(
+            run: run,
+            mornings: persistence.windDownMorningSettlementJournal.morningOccurrences
+        )
+    }
+
     /// Persist the usual Morning at run creation so background termination
     /// cannot manufacture a second occurrence on foreground restore.
     private func ensureOrdinaryScreenFreeMorningOccurrence(for run: FocusRun, at date: Date) {
@@ -962,11 +1098,8 @@ final class FocusSessionCoordinator: ObservableObject {
         journal.appendOccurrence(occurrence)
         guard journal.morningOccurrences.count == count + 1 else { return }
         persistence.windDownMorningSettlementJournal = journal
-        _ = shielding.reconcile(for: occurrence, at: date)
-        notifications.reconcileScreenFreeMorningNotifications(
-            occurrences: journal.morningOccurrences,
-            now: date
-        )
+        reconcileShielding(for: occurrence, at: date)
+        reconcileMorningNotifications(journal.morningOccurrences, now: date)
         scheduleNextMorningOccurrenceBoundaryTimer()
     }
 
@@ -984,6 +1117,7 @@ final class FocusSessionCoordinator: ObservableObject {
         }) else { return }
         var occurrence = journal.morningOccurrences[index]
         guard occurrence.outcome == .scheduled || occurrence.outcome == .active else { return }
+        let previousOccurrence = occurrence
         if occurrence.outcome == .scheduled {
             occurrence.actualStart = occurrence.scheduledStart
             occurrence.outcome = date >= occurrence.scheduledEnd ? .finished : .active
@@ -997,13 +1131,10 @@ final class FocusSessionCoordinator: ObservableObject {
             settleFinishedMorningOccurrences(&journal, at: occurrence.endedAt ?? date)
             shielding.clear(occurrenceID: occurrence.id)
         } else {
-            _ = shielding.reconcile(for: occurrence, at: date)
+            reconcileShielding(for: occurrence, at: date)
         }
         persistence.windDownMorningSettlementJournal = journal
-        notifications.reconcileScreenFreeMorningNotifications(
-            occurrences: journal.morningOccurrences,
-            now: date
-        )
+        reconcileMorningNotifications(journal.morningOccurrences, now: date)
         if occurrence.outcome == .active {
             liveActivity.startScreenFreeMorning(occurrence)
         } else {
@@ -1011,11 +1142,15 @@ final class FocusSessionCoordinator: ObservableObject {
         }
         sendWatchState()
         scheduleNextMorningOccurrenceBoundaryTimer()
+        if occurrence != previousOccurrence {
+            onStateReconciled?()
+        }
     }
 
     /// Materializes an automatic Wind Down that completed while the app was closed.
     /// DeviceActivity can enforce the shield without the app, so the next activation
     /// needs to create the local run and receipt without replaying the full UI flow.
+    @discardableResult
     func reconcileExpiredAutomaticNightWatch(
         plan: NightWatchPlan,
         guardKind: SessionGuardKind,
@@ -1024,15 +1159,15 @@ final class FocusSessionCoordinator: ObservableObject {
         appShieldingRequested: Bool = true,
         liveActivityRequested: Bool = true,
         runID: UUID? = nil
-    ) {
-        guard endedAt > startedAt else { return }
+    ) -> FocusSessionStartResult? {
+        guard endedAt > startedAt else { return nil }
         if let run, ![.setup, .completed, .endedEarly].contains(run.state) {
-            return
+            return .rejected(.activeRun(run.id))
         }
         if run != nil {
             resetToSetup(clearPersistedRun: false, liveActivityCancellationReason: .replaced)
         }
-        start(
+        let result = start(
             configuration: FocusRunConfiguration(
                 nightWatchPlan: plan,
                 guardKind: guardKind
@@ -1044,7 +1179,10 @@ final class FocusSessionCoordinator: ObservableObject {
             liveActivityRequested: liveActivityRequested,
             runID: runID
         )
-        reconcileSession(at: endedAt)
+        if case .started = result {
+            reconcileSession(at: endedAt)
+        }
+        return result
     }
 
     private func updateElapsedTime(at date: Date) {
@@ -1056,7 +1194,8 @@ final class FocusSessionCoordinator: ObservableObject {
     private func finish(
         run: FocusRun,
         clearShielding: Bool = true,
-        linkedMorningHandoff: Bool = false
+        linkedMorningHandoff: Bool = false,
+        preserveLinkedMorningOccurrence: Bool = false
     ) {
         // A scene-activation callback, a boundary timer, or a repeated exit can
         // converge on the same terminal run. Persisted rewards and sheep-search
@@ -1064,86 +1203,138 @@ final class FocusSessionCoordinator: ObservableObject {
         guard let currentRun = self.run,
               currentRun.id == run.id,
               ![.completed, .endedEarly, .setup].contains(currentRun.state) else { return }
+        var run = run
+        run.briefAccessIntervals = shielding.briefAccessIntervals(for: run)
+        run.briefAccessUseCount = max(run.briefAccessUseCount, shielding.briefAccessUseCount(for: run))
+        persistAuthorizedTerminalMorningDecision(
+            for: run,
+            disposition: preserveLinkedMorningOccurrence ? .preserveExplicitIntent : .finalizeOrdinary
+        )
+        persistence.lastRun = run
         cancelEmergencyExitChallenge()
         cancelBoundaryTimer(reason: "finish")
         stopWatchPlacement()
         UIApplication.shared.isIdleTimerDisabled = false
-        notifications.cancelRunCompletion()
+        cancelRunNotifications()
         // An immediate linked Morning reuses this surface below; ending the
         // Wind Down activity first would race an asynchronous terminal end
         // against the Morning update and can briefly leave both surfaces.
         if !linkedMorningHandoff {
             liveActivity.finish(for: run)
         }
-        var finalRun = run
-        resolveHiddenWindDownBenefitIfEligible(for: finalRun, at: finalRun.endedAt ?? Date())
-        let windDownBenefit = persistence.windDownMorningSettlementJournal.benefit(for: finalRun.id)
-        finalRun.briefAccessUseCount = max(
-            finalRun.briefAccessUseCount,
-            shielding.briefAccessUseCount(for: finalRun)
-        )
-        let protection = shielding.protectionSummary(
-            for: finalRun,
-            at: finalRun.endedAt ?? Date()
-        )
         if clearShielding { shielding.clear() }
-        // The factual early-ending receipt remains early, while a previously
-        // entitled Wind Down receives the same settlement exactly once.
-        if windDownBenefit != nil {
-            // The threshold is factual and monotonic. Once the journal has
-            // entitled this run, an authorized terminal path cannot recast it
-            // as an early-ended Wind Down in history, receipts, or sharing.
-            finalRun.state = .completed
-            finalRun.completedSuccessfully = true
-            finalRun.endedEarlyReason = nil
-        }
-        let settlementRun = finalRun
-        let reward: RewardItem?
-        let nextProgress: UserProgress
-        if windDownBenefit != nil {
-            var journal = persistence.windDownMorningSettlementJournal
-            if journal.benefit(for: finalRun.id)?.deliveredProgress == nil {
-                let plannedReward = rewardEngine.generateReward(for: settlementRun, progress: progress)
-                let plannedProgress = rewardEngine.updatedProgress(
-                    after: settlementRun,
-                    current: progress,
-                    reward: plannedReward
-                )
-                _ = journal.persistTerminalProjections(
-                    for: finalRun.id,
-                    reward: plannedReward,
-                    progress: plannedProgress
-                )
-                persistence.windDownMorningSettlementJournal = journal
+        var finalRun = run
+        let savedFarm = commitFarmChanges(using: persistence) {
+            resolveHiddenWindDownBenefitIfEligible(for: finalRun, at: finalRun.endedAt ?? Date())
+            let windDownBenefit = persistence.windDownMorningSettlementJournal.benefit(for: finalRun.id)
+            finalRun.briefAccessUseCount = max(
+                finalRun.briefAccessUseCount,
+                shielding.briefAccessUseCount(for: finalRun)
+            )
+            // Terminal cleanup is part of the evidence pair. Read the bounded
+            // apply/clear history only after the authorized clear has been
+            // recorded; otherwise a normally finished run can never distinguish
+            // a complete callback pair from a still-active barrier.
+            let protection = shielding.protectionSummary(
+                for: finalRun,
+                at: finalRun.endedAt ?? Date()
+            )
+            // The factual early-ending receipt remains early, while a previously
+            // entitled Wind Down receives the same settlement exactly once.
+            if windDownBenefit != nil {
+                // The threshold is factual and monotonic. Once the journal has
+                // entitled this run, an authorized terminal path cannot recast it
+                // as an early-ended Wind Down in history, receipts, or sharing.
+                finalRun.state = .completed
+                finalRun.completedSuccessfully = true
+                finalRun.endedEarlyReason = nil
             }
-            let planned = persistence.windDownMorningSettlementJournal.benefit(for: finalRun.id)
-            reward = planned?.deliveredReward
-            nextProgress = planned?.deliveredProgress ?? progress
-        } else {
-            reward = rewardEngine.generateReward(for: settlementRun, progress: progress)
-            nextProgress = rewardEngine.updatedProgress(after: settlementRun, current: progress, reward: reward)
-        }
-        if let reward {
-            if !finalRun.earnedRewardIDs.contains(reward.id) {
-                finalRun.earnedRewardIDs.append(reward.id)
+            let settlementRun = finalRun
+            let reward: RewardItem?
+            let nextProgress: UserProgress
+            if windDownBenefit != nil {
+                var journal = persistence.windDownMorningSettlementJournal
+                if journal.benefit(for: finalRun.id)?.deliveredProgress == nil {
+                    let plannedReward = rewardEngine.generateReward(for: settlementRun, progress: progress)
+                    let plannedProgress = rewardEngine.updatedProgress(
+                        after: settlementRun,
+                        current: progress,
+                        reward: plannedReward
+                    )
+                    _ = journal.persistTerminalProjections(
+                        for: finalRun.id,
+                        reward: plannedReward,
+                        progress: plannedProgress
+                    )
+                    persistence.windDownMorningSettlementJournal = journal
+                }
+                let planned = persistence.windDownMorningSettlementJournal.benefit(for: finalRun.id)
+                reward = planned?.deliveredReward
+                nextProgress = planned?.deliveredProgress ?? progress
+            } else if finalRun.isProgressionEligibleNightWatch {
+                // A primary Wind Down has a durable terminal decision even when it
+                // fell short of the qualifying search span. Persist its whole
+                // projection before writing progress/rewards so recovery cannot
+                // draw another consolation result after a crash in that gap.
+                var journal = persistence.windDownMorningSettlementJournal
+                if journal.terminalProjection(for: finalRun.id) == nil {
+                    let plannedReward = rewardEngine.generateReward(for: settlementRun, progress: progress)
+                    let plannedProgress = rewardEngine.updatedProgress(
+                        after: settlementRun,
+                        current: progress,
+                        reward: plannedReward
+                    )
+                    _ = journal.persistTerminalProjection(
+                        for: finalRun.id,
+                        reward: plannedReward,
+                        progress: plannedProgress
+                    )
+                    persistence.windDownMorningSettlementJournal = journal
+                }
+                let planned = persistence.windDownMorningSettlementJournal.terminalProjection(for: finalRun.id)
+                reward = planned?.reward
+                nextProgress = planned?.progress ?? progress
+            } else {
+                reward = rewardEngine.generateReward(for: settlementRun, progress: progress)
+                nextProgress = rewardEngine.updatedProgress(after: settlementRun, current: progress, reward: reward)
             }
-            if !rewards.contains(where: { $0.id == reward.id }) {
-                rewards.insert(reward, at: 0)
+            if let reward {
+                if !finalRun.earnedRewardIDs.contains(reward.id) {
+                    finalRun.earnedRewardIDs.append(reward.id)
+                }
+                if !rewards.contains(where: { $0.id == reward.id }) {
+                    rewards.insert(reward, at: 0)
+                }
+                latestReward = reward
             }
-            latestReward = reward
+            progress = nextProgress
+            persistence.progress = progress
+            persistence.rewards = rewards
+            if !preserveLinkedMorningOccurrence {
+                finalizeLinkedMorning(for: finalRun, at: finalRun.endedAt ?? Date())
+            }
+            // Search state is the settlement journal. Write it, including the
+            // consumed meter and any outcome, before projecting Farm arrivals.
+            // Launch recovery calls the same idempotent helper if termination
+            // happened after lastRun but before this write.
+            settleCumulativeFarmIfNeeded(for: finalRun)
+            settlePhoneAwayIfNeeded(for: finalRun)
+            settleOnboardingPracticeIfNeeded(for: finalRun)
+            deliverHiddenWindDownBenefitIfNeeded(for: finalRun, at: finalRun.endedAt ?? Date())
+            replayTerminalHistory(for: finalRun, protection: protection, at: finalRun.endedAt ?? Date())
+            if preserveLinkedMorningOccurrence {
+                completePreservedLinkedMorningHandoff(for: finalRun)
+            }
+            markAuthorizedTerminalMorningDecisionCompletedIfNeeded(
+                for: finalRun,
+                at: finalRun.endedAt ?? Date()
+            )
         }
-        progress = nextProgress
-        persistence.progress = progress
-        persistence.rewards = rewards
+        if !savedFarm {
+            finalRun.earnedRewardIDs = run.earnedRewardIDs
+            lastOnboardingPracticeGrantedSheep = false
+        }
         persistence.lastRun = finalRun
-        // Search state is the settlement journal. Write it, including the
-        // consumed meter and any outcome, before projecting Farm arrivals.
-        // Launch recovery calls the same idempotent helper if termination
-        // happened after lastRun but before this write.
-        settlePhoneAwayIfNeeded(for: finalRun)
-        settleOnboardingPracticeIfNeeded(for: finalRun)
-        deliverHiddenWindDownBenefitIfNeeded(for: finalRun, at: finalRun.endedAt ?? Date())
-        replayTerminalHistory(for: finalRun, protection: protection, at: finalRun.endedAt ?? Date())
         self.run = finalRun
         if finalRun.nightWatchPlan?.role == .additionalQuiet {
             ollieMessage = finalRun.completedSuccessfully
@@ -1165,9 +1356,139 @@ final class FocusSessionCoordinator: ObservableObject {
             )
         )
         onRunFinished?(finalRun, linkedMorningHandoff)
+        onStateReconciled?()
 #if DEBUG
         logResourceState(event: "finish complete")
 #endif
+    }
+
+    /// Ordinary early exits must not accidentally turn the saved Morning into
+    /// a user-selected defer. A scheduled occurrence is skipped before wake;
+    /// once its window has begun, the actual elapsed interval is settled.
+    private func finalizeLinkedMorning(for terminalRun: FocusRun, at date: Date) {
+        var journal = persistence.windDownMorningSettlementJournal
+        guard let index = journal.morningOccurrences.firstIndex(where: {
+            $0.linkedWindDownRunID == terminalRun.id
+                && ($0.outcome == .scheduled || $0.outcome == .active)
+        }) else { return }
+
+        guard let occurrence = OrdinaryMorningTerminalFinalizationPolicy.finalized(
+            occurrence: journal.morningOccurrences[index],
+            at: date
+        ) else { return }
+        journal.morningOccurrences[index] = occurrence
+        if occurrence.outcome == .finished {
+            settleFinishedMorningOccurrences(&journal, at: occurrence.endedAt ?? date)
+        }
+        persistence.windDownMorningSettlementJournal = journal
+        reconcileMorningNotifications(journal.morningOccurrences, now: date)
+        shielding.clear(occurrenceID: occurrence.id)
+        liveActivity.finishScreenFreeMorning(occurrence)
+        scheduleNextMorningOccurrenceBoundaryTimer()
+    }
+
+    /// The explicit early-wake choice has already been committed in the
+    /// journal. Its historical terminal timestamp remains the receipt fact,
+    /// while its external resources must use the current wall clock. Keeping
+    /// this inside the terminal transaction closes the post-`finish` crash gap.
+    private func completePreservedLinkedMorningHandoff(for terminalRun: FocusRun) {
+        let resourceNow = Date()
+        var journal = persistence.windDownMorningSettlementJournal
+        guard let index = journal.morningOccurrences.firstIndex(where: {
+            $0.linkedWindDownRunID == terminalRun.id
+                && ($0.outcome == .scheduled || $0.outcome == .active)
+        }) else { return }
+        var occurrence = journal.morningOccurrences[index]
+
+        if resourceNow >= occurrence.scheduledEnd {
+            occurrence.actualStart = occurrence.actualStart ?? occurrence.scheduledStart
+            occurrence.endedAt = occurrence.scheduledEnd
+            occurrence.outcome = .finished
+            journal.morningOccurrences[index] = occurrence
+            settleFinishedMorningOccurrences(&journal, at: occurrence.endedAt ?? resourceNow)
+            persistence.windDownMorningSettlementJournal = journal
+            shielding.clear(occurrenceID: occurrence.id)
+            shielding.clear(occurrenceID: terminalRun.id)
+            reconcileMorningNotifications(journal.morningOccurrences, now: resourceNow)
+            liveActivity.finishScreenFreeMorning(occurrence)
+            scheduleNextMorningOccurrenceBoundaryTimer()
+            return
+        }
+
+        if occurrence.outcome == .scheduled, resourceNow >= occurrence.scheduledStart {
+            occurrence.actualStart = occurrence.scheduledStart
+            occurrence.outcome = .active
+            journal.morningOccurrences[index] = occurrence
+            persistence.windDownMorningSettlementJournal = journal
+        }
+        reconcileShielding(for: occurrence, at: resourceNow)
+        // The replacement entry must exist before tombstoning the parent, so
+        // an extension callback never sees an unprotected handoff gap.
+        shielding.clear(occurrenceID: terminalRun.id)
+        reconcileMorningNotifications(journal.morningOccurrences, now: resourceNow)
+        if occurrence.outcome == .active {
+            liveActivity.startScreenFreeMorning(occurrence)
+        }
+        scheduleNextMorningOccurrenceBoundaryTimer()
+    }
+
+    /// Writes the authorized terminal disposition before any cleanup, reward,
+    /// or `lastRun` projection. A termination at any later write can replay
+    /// the same immutable run and settle only an ordinary linked Morning.
+    private func persistAuthorizedTerminalMorningDecision(
+        for terminalRun: FocusRun,
+        disposition: AuthorizedTerminalMorningDisposition
+    ) {
+        var journal = persistence.windDownMorningSettlementJournal
+        guard journal.recordAuthorizedTerminalMorningDecision(
+            for: terminalRun,
+            disposition: disposition,
+            at: terminalRun.endedAt ?? Date()
+        ) != nil else { return }
+        persistence.windDownMorningSettlementJournal = journal
+    }
+
+    /// Must run before generic morning advancement. An older journal carries
+    /// no decision, so it deliberately keeps historic/unknown behavior rather
+    /// than guessing that a scheduled occurrence was an explicit defer.
+    private func recoverAuthorizedTerminalMorningDecisionsIfNeeded() {
+        let journal = persistence.windDownMorningSettlementJournal
+        for decision in journal.pendingAuthorizedTerminalMorningDecisions {
+            guard let terminalRun = AuthorizedTerminalMorningRecoveryPolicy.terminalRunForRecovery(
+                storedRun: persistence.lastRun,
+                decision: decision
+            ) else { continue }
+            let preservesExplicitMorning = decision.disposition == .preserveExplicitIntent
+            let linkedMorningIsActive = persistence.windDownMorningSettlementJournal.morningOccurrences.contains {
+                $0.linkedWindDownRunID == terminalRun.id && $0.outcome == .active
+            }
+            // Re-enter the normal terminal transaction with a non-terminal
+            // in-memory source. It performs the exact shielding/notification/
+            // Live Activity cleanup, settlement, history replay, and only then
+            // marks this durable decision complete.
+            var recoverySource = persistence.lastRun ?? terminalRun
+            recoverySource.state = .running
+            recoverySource.completedSuccessfully = false
+            recoverySource.endedAt = nil
+            self.run = recoverySource
+            finish(
+                run: terminalRun,
+                clearShielding: !(preservesExplicitMorning && linkedMorningIsActive),
+                linkedMorningHandoff: preservesExplicitMorning && linkedMorningIsActive,
+                preserveLinkedMorningOccurrence: preservesExplicitMorning
+            )
+        }
+    }
+
+    private func markAuthorizedTerminalMorningDecisionCompletedIfNeeded(
+        for terminalRun: FocusRun,
+        at date: Date
+    ) {
+        var journal = persistence.windDownMorningSettlementJournal
+        guard journal.markAuthorizedTerminalMorningDecisionCompleted(for: terminalRun.id, at: date) != nil else {
+            return
+        }
+        persistence.windDownMorningSettlementJournal = journal
     }
 
     /// `lastRun` is intentionally written before the projections that can
@@ -1198,6 +1519,7 @@ final class FocusSessionCoordinator: ObservableObject {
     /// Resolves the deterministic search at the factual 420-minute boundary,
     /// but leaves every visible projection untouched until terminal delivery.
     private func resolveHiddenWindDownBenefitIfEligible(for run: FocusRun, at date: Date) {
+        guard run.farmCreditVersion == 0 else { return }
         var journal = persistence.windDownMorningSettlementJournal
         guard let settlement = journal.resolveWindDown(run: run, at: date) else { return }
         if settlement.hiddenSearchOutcome == nil {
@@ -1211,14 +1533,15 @@ final class FocusSessionCoordinator: ObservableObject {
                     abs(run.startedAt.timeIntervalSince($0.intendedBedtime)) <= 30 * 60
                 } ?? false,
                 shieldingObserved: false,
-                placementConfirmed: run.placementStatus == .confirmed,
+                placementConfirmed: run.guardKind == .watchPlacement
+                    && run.placementStatus == .confirmed,
                 recentProtectedNights: min(12, sheepSearchState.outcomes.suffix(7).filter { $0.result == .found }.count),
                 optionalBonusPoints: optionalSheepSearchBonusProvider?() ?? 0,
                 trailMapBonusPercentagePoints: 0
             )
             let calculation = SheepSearchEngine.calculate(
                 runID: run.id,
-                protectedNightNumber: progress.totalCompletedRuns + 1,
+                protectedNightNumber: progress.farmCompletedRuns + 1,
                 evidence: evidence,
                 state: sheepSearchState,
                 trackedSheepID: farmState.trackedSheepDefinitionID,
@@ -1233,70 +1556,96 @@ final class FocusSessionCoordinator: ObservableObject {
     /// terminal authorization. Replays cannot append another search or Farm
     /// arrival because both the journal marker and projections are idempotent.
     private func deliverHiddenWindDownBenefitIfNeeded(for run: FocusRun, at date: Date) {
-        var journal = persistence.windDownMorningSettlementJournal
-        guard let settlement = journal.benefit(for: run.id),
-              let outcome = settlement.hiddenSearchOutcome else { return }
-        if let projectedProgress = settlement.deliveredProgress {
-            progress = projectedProgress
-            persistence.progress = projectedProgress
+        commitFarmChanges(using: persistence) {
+            var journal = persistence.windDownMorningSettlementJournal
+            guard let settlement = journal.benefit(for: run.id),
+                  let outcome = settlement.hiddenSearchOutcome else { return }
+            if let projectedProgress = settlement.deliveredProgress {
+                progress = projectedProgress
+                persistence.progress = projectedProgress
+            }
+            if let projectedReward = settlement.deliveredReward,
+               !rewards.contains(where: { $0.id == projectedReward.id }) {
+                rewards.insert(projectedReward, at: 0)
+                latestReward = projectedReward
+                persistence.rewards = rewards
+            }
+            let marker = "windDown:\(run.id.uuidString):projection"
+            if journal.markEffectDelivered(marker) {
+                sheepSearchState.append(outcome)
+                persistence.sheepSearchState = sheepSearchState
+                farmState.recordArrival(outcome)
+                persistence.farmState = farmState
+                latestSheepSearchOutcome = outcome
+            }
+            _ = journal.markDelivered(runID: run.id, at: date)
+            persistence.windDownMorningSettlementJournal = journal
         }
-        if let projectedReward = settlement.deliveredReward,
-           !rewards.contains(where: { $0.id == projectedReward.id }) {
-            rewards.insert(projectedReward, at: 0)
-            latestReward = projectedReward
-            persistence.rewards = rewards
-        }
-        let marker = "windDown:\(run.id.uuidString):projection"
-        if journal.markEffectDelivered(marker) {
-            sheepSearchState.append(outcome)
-            persistence.sheepSearchState = sheepSearchState
-            farmState.recordArrival(outcome)
+    }
+
+    private func settleCumulativeFarmIfNeeded(for terminalRun: FocusRun) {
+        commitFarmChanges(using: persistence) {
+            guard terminalRun.farmCreditVersion > 0 else { return }
+            farmState.settleCumulativeCredit(run: terminalRun, searchState: sheepSearchState)
             persistence.farmState = farmState
-            latestSheepSearchOutcome = outcome
+            projectCumulativeFarmOutcomes()
+            if let outcomeID = farmState.cumulativeCredit?.receipts[terminalRun.id]?.outcomeIDs.last {
+                latestSheepSearchOutcome = sheepSearchState.outcomes.first { $0.id == outcomeID }
+            }
         }
-        _ = journal.markDelivered(runID: run.id, at: date)
-        persistence.windDownMorningSettlementJournal = journal
+    }
+
+    private func projectCumulativeFarmOutcomes() {
+        for outcome in farmState.cumulativeCredit?.outcomes ?? [] { sheepSearchState.append(outcome) }
+        persistence.sheepSearchState = sheepSearchState
     }
 
     private func settlePhoneAwayIfNeeded(for terminalRun: FocusRun) {
-        guard let input = PhoneAwaySearchSettlementInput.terminalRun(
-            terminalRun,
-            protectedWindDownCount: progress.totalCompletedRuns,
-            trackedSheepID: farmState.trackedSheepDefinitionID
-        ) else { return }
+        commitFarmChanges(using: persistence) {
+            guard terminalRun.farmCreditVersion == 0 else { return }
+            guard let input = PhoneAwaySearchSettlementInput.terminalRun(
+                terminalRun,
+                protectedWindDownCount: progress.farmCompletedRuns,
+                trackedSheepID: farmState.trackedSheepDefinitionID
+            ) else { return }
 
-        let settlement = PhoneAwaySearchSettlementEngine.settle(
-            input: input,
-            state: sheepSearchState
-        )
-        sheepSearchState = settlement.state
-        persistence.sheepSearchState = sheepSearchState
+            let settlement = PhoneAwaySearchSettlementEngine.settle(
+                input: input,
+                state: sheepSearchState
+            )
+            sheepSearchState = settlement.state
+            persistence.sheepSearchState = sheepSearchState
 
-        if let outcome = settlement.outcome {
-            farmState.recordArrival(outcome)
-            persistence.farmState = farmState
-            latestSheepSearchOutcome = outcome
+            if let outcome = settlement.outcome {
+                farmState.recordArrival(outcome)
+                persistence.farmState = farmState
+                latestSheepSearchOutcome = outcome
+            }
         }
     }
 
     private func settleOnboardingPracticeIfNeeded(for terminalRun: FocusRun) {
-        guard terminalRun.isPractice else { return }
-        let result = WelcomeRewardEngine.settlePractice(
-            run: terminalRun,
-            farm: farmState,
-            search: sheepSearchState,
-            ledger: persistence.welcomeRewardLedger,
-            now: terminalRun.endedAt ?? Date()
-        )
-        sheepSearchState = result.search
-        farmState = result.farm
-        persistence.sheepSearchState = result.search
-        persistence.farmState = result.farm
-        persistence.welcomeRewardLedger = result.ledger
-        lastOnboardingPracticeGrantedSheep = result.outcome != nil
-        if let outcome = result.outcome {
-            latestSheepSearchOutcome = outcome
+        let previouslyGranted = lastOnboardingPracticeGrantedSheep
+        let saved = commitFarmChanges(using: persistence) {
+            guard terminalRun.isPractice else { return }
+            let result = WelcomeRewardEngine.settlePractice(
+                run: terminalRun,
+                farm: farmState,
+                search: sheepSearchState,
+                ledger: persistence.welcomeRewardLedger,
+                now: terminalRun.endedAt ?? Date()
+            )
+            sheepSearchState = result.search
+            farmState = result.farm
+            persistence.sheepSearchState = result.search
+            persistence.farmState = result.farm
+            persistence.welcomeRewardLedger = result.ledger
+            lastOnboardingPracticeGrantedSheep = result.outcome != nil
+            if let outcome = result.outcome {
+                latestSheepSearchOutcome = outcome
+            }
         }
+        if !saved { lastOnboardingPracticeGrantedSheep = previouslyGranted }
     }
 
 
@@ -1338,12 +1687,66 @@ final class FocusSessionCoordinator: ObservableObject {
         )
     }
 
+    private enum ShieldingResourceIdentity: Equatable {
+        case run(UUID)
+        case morning(UUID)
+    }
+
+    /// Only the active resource's failure blocks a subsequent start/repair
+    /// route. Stale failures remain available for the existing receipt but do
+    /// not poison a later, unrelated session.
+    var hasActiveShieldingFailure: Bool {
+        guard case .failed = shieldingState,
+              let shieldingFailureIdentity else { return false }
+        return isActiveShieldingResource(shieldingFailureIdentity)
+    }
+
+    private func isActiveShieldingResource(_ identity: ShieldingResourceIdentity) -> Bool {
+        switch identity {
+        case .run(let runID):
+            return run?.id == runID
+                && run.map { ![.setup, .completed, .endedEarly].contains($0.state) } == true
+        case .morning(let occurrenceID):
+            return persistence.windDownMorningSettlementJournal.morningOccurrences.contains {
+                $0.id == occurrenceID && $0.outcome == .active
+            }
+        }
+    }
+
+    private func recordShieldingOutcome(
+        _ outcome: QuietTimeShieldingOutcome,
+        identity: ShieldingResourceIdentity
+    ) {
+        switch outcome {
+        case .failed:
+            shieldingFailureIdentity = identity
+            shieldingState = .from(outcome)
+        default:
+            // A repair only resolves its own failure. Leave a failure for a
+            // currently active sibling resource visible and actionable.
+            guard shieldingFailureIdentity == nil || shieldingFailureIdentity == identity else { return }
+            shieldingFailureIdentity = nil
+            shieldingState = .from(outcome)
+        }
+    }
+
+    private func reconcileShielding(for occurrence: MorningQuietOccurrence, at date: Date) {
+        recordShieldingOutcome(
+            shielding.reconcile(for: occurrence, at: date),
+            identity: .morning(occurrence.id)
+        )
+    }
+
+    func reconcileShieldingNow(for occurrence: MorningQuietOccurrence) {
+        reconcileShielding(for: occurrence, at: Date())
+    }
+
     private func recordShieldingOutcome(
         _ outcome: QuietTimeShieldingOutcome,
         for run: FocusRun,
         at date: Date = Date()
     ) {
-        shieldingState = .from(outcome)
+        recordShieldingOutcome(outcome, identity: .run(run.id))
         switch outcome {
         case .disabled:
             break
@@ -1404,7 +1807,9 @@ final class FocusSessionCoordinator: ObservableObject {
             reconciledRun.briefAccessUseCount,
             shielding.briefAccessUseCount(for: reconciledRun)
         )
-        if reconciledRun.briefAccessUseCount != run.briefAccessUseCount {
+        reconciledRun.briefAccessIntervals = shielding.briefAccessIntervals(for: reconciledRun)
+        if reconciledRun.briefAccessUseCount != run.briefAccessUseCount
+            || reconciledRun.briefAccessIntervals != run.briefAccessIntervals {
             self.run = reconciledRun
             persistence.lastRun = reconciledRun
         }
@@ -1449,6 +1854,7 @@ final class FocusSessionCoordinator: ObservableObject {
     }
 
     private func handle(_ message: WatchMessage) {
+        guard !message.isRetiredNearbyInteractionMessage else { return }
         switch message.type {
         case .nearbyDiscoveryToken:
             receiveNearbyToken(message.tokenData)

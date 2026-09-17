@@ -1,72 +1,47 @@
-# Skill: TestFlight Readiness Review
+---
+name: testflight-review
+description: Assess Counting Sheep TestFlight readiness or verify requested release-blocker fixes against the current release contract. Not a general code-review workflow.
+---
 
-## Description
+# TestFlight readiness
 
-Audit the current state of the Counting Sheep repo/build against the TestFlight
-readiness requirements and produce a blocker report with a clear ship/no-ship verdict.
-This is a **read-only review skill** — it reports; it does not fix.
+For an audit request, inspect and report without editing product/configuration files.
+For an explicit request to fix blockers, complete authorized repairs and revalidate;
+this skill does not require stopping at the report. Upload, deployment, signing/capability
+changes, and destructive device/account tests retain the authorization boundaries in
+[AGENTS.md](../../AGENTS.md#authority-and-completion).
 
-## When to use
+## Evidence and criteria
 
-- Before any planned TestFlight upload
-- After large merges that might have regressed release readiness
-- When the human asks "how far are we from TestFlight?"
+Start with [final-build acceptance](../../docs/PLAYBOOKS/final-build-acceptance.md).
+Use [TestFlight readiness](../../docs/PLAYBOOKS/testflight-readiness.md) for its detailed
+platform/device matrices. Consult the current topic ADR/plan where a checklist is stale;
+flag the discrepancy rather than enforcing a superseded rule. In particular, account
+ownership and automatic sync follow ADR-0023, not prior optional-backup controls.
 
-## Inputs expected
+Inspect the source/configuration/artifact that supports each applicable criterion:
+project.yml, relevant entitlements/plists, release routing, mock reachability, privacy
+strings, enabled backend capabilities, and exact build/test evidence. Inspect relevant
+assets and UI when a presentation or packaging criterion calls for it. A full release
+review covers all acceptance areas, but does not require reading every repository file.
 
-- The full repo (must inspect, not assume): `project.yml`, all `*.entitlements` files,
-  `Assets.xcassets`, release-reachable views, `Info.plist` settings in `project.yml`
-- Reference docs: `AGENTS.md` (esp. §15), `docs/PLAYBOOKS/testflight-readiness.md`
-  (the authoritative checklist), `docs/PROJECT_BRIEF.md` (MVP scope), ADR-0003/0004 (gates)
-- If available: output of `xcodebuild archive` / `xcodebuild test`, and the current
-  App Store Connect state as reported by the human
+Use [the shared validation policy](../../AGENTS.md#validation). Run applicable available
+checks, reuse evidence only for matching source/configuration, and record unavailable
+checks. Generate the project only when its inputs require it. Local build/test output,
+signed archive evidence, production state, and physical-device results are distinct.
+Do not erase the founder's Farm or treat production as a disposable test environment.
 
-## Procedure
+## Report
 
-1. Read `docs/PLAYBOOKS/testflight-readiness.md` fully; it is the checklist you are
-   scoring against. Do not invent your own criteria; do flag gaps in the playbook itself.
-2. **Verify, don't trust:** for each checklist item, find the evidence in code/config
-   (e.g. open `project.yml` to check signing keys; grep for `MVPMockData` references in
-   release paths; read the entitlement files). Several legacy docs contain drift
-   (`AGENTS.md` §16) — never cite them as evidence.
-3. Walk the playbook sections in order (account prerequisites → signing → identity →
-   scope/mocks → onboarding → permissions/privacy → crash risks → polish). Mark each
-   item: PASS / FAIL / NEEDS-HUMAN (e.g. portal state you cannot see) / NOT-APPLICABLE.
-4. Run what you can run: `xcodegen generate`, a Release-configuration build, the test
-   suite. Paste real output for anything you claim.
-5. Check scope compliance explicitly: two tabs in Release, gated features unreachable,
-   no mock data, bedtime-framed stats copy.
-6. Rate each FAIL: **Blocker** (upload/review will fail or users hit broken flows) /
-   **High** (review-rejection or embarrassment risk) / **Polish**.
+Give SHIP / DO NOT SHIP with the scope and exact candidate identified. For each material
+finding, include evidence (file/line, artifact, or command result), consequence, severity,
+and next action/owner. A table is useful for multiple findings, not mandatory for one.
 
-## Output format
+Classify criteria as PASS / FAIL / UNVERIFIED / NOT APPLICABLE. Unverified required
+acceptance prevents SHIP; lack of access is not evidence that a feature fails. Distinguish
+an agent-executable missing check from a check requiring unavailable hardware, credentials,
+authorization, or human observation. Report relevant differences from prior review if known.
 
-```
-# TestFlight Readiness Review — <date>
-
-Verdict: SHIP / DO NOT SHIP (N blockers)
-
-## Blockers
-| # | Item | Evidence (file:line or command output) | Fix owner (agent/human) |
-
-## High risks
-(same table)
-
-## Polish
-(short list)
-
-## Needs human verification
-(portal/account items an agent cannot see)
-
-## What changed since last review (if a prior review exists)
-```
-
-## Acceptance criteria
-
-- Every playbook section is covered; every FAIL cites concrete evidence (file path,
-  config key, or command output) — no vibes.
-- Verdict is honest: one blocker means DO NOT SHIP, regardless of momentum.
-- Human-only items (Apple account, portal capabilities, App Store Connect) are clearly
-  separated from agent-fixable items.
-- The review changed nothing in the repo (read-only), except optionally filing follow-up
-  tasks in `docs/FUTURE_AGENT_TASKS.md`.
+Preserve the current release surface defined in AGENTS.md. Current production Farm/Shop
+features are not the quarantined MVP screens. Neither local source nor older deployment
+records prove acceptance of newly enabled capabilities.

@@ -4,6 +4,28 @@ import Foundation
 import DeviceActivity
 import FamilyControls
 import ManagedSettings
+
+private struct MonitoringClient {
+    var activities: () -> [DeviceActivityName]
+    var start: (DeviceActivityName, DeviceActivitySchedule) throws -> Void
+    var stop: ([DeviceActivityName]) -> Void
+
+    init(center: DeviceActivityCenter) {
+        activities = { center.activities }
+        start = { name, schedule in try center.startMonitoring(name, during: schedule) }
+        stop = { names in center.stopMonitoring(names) }
+    }
+
+    init(
+        activities: @escaping () -> [DeviceActivityName],
+        start: @escaping (DeviceActivityName, DeviceActivitySchedule) throws -> Void,
+        stop: @escaping ([DeviceActivityName]) -> Void
+    ) {
+        self.activities = activities
+        self.start = start
+        self.stop = stop
+    }
+}
 #endif
 
 @MainActor
@@ -14,11 +36,24 @@ protocol QuietTimeShieldingProviding {
     func reconcile(for occurrence: MorningQuietOccurrence, at date: Date) -> QuietTimeShieldingOutcome
     func clear()
     func clear(occurrenceID: UUID)
+    @discardableResult
+    func scheduleAutomatic(for schedule: AutomaticWindDownSchedule, at date: Date) -> QuietTimeShieldingOutcome
     func cancelAutomaticSchedule()
+    func resetLocalState()
     func protectionSummary(for run: FocusRun, at date: Date) -> QuietTimeShieldProtectionSummary
     func briefAccessUseCount(for run: FocusRun) -> Int
+    func briefAccessIntervals(for run: FocusRun) -> [DateInterval]
     func briefAccessTrackerSummary(for run: FocusRun) -> QuietTimeBriefAccessTrackerSummary
     func briefAccessTrackerSummary(forOccurrenceID occurrenceID: UUID) -> QuietTimeBriefAccessTrackerSummary
+}
+
+extension QuietTimeShieldingProviding {
+    func briefAccessIntervals(for run: FocusRun) -> [DateInterval] { run.briefAccessIntervals }
+
+    @discardableResult
+    func scheduleAutomatic(for schedule: AutomaticWindDownSchedule) -> QuietTimeShieldingOutcome {
+        scheduleAutomatic(for: schedule, at: Date())
+    }
 }
 
 @MainActor
@@ -30,7 +65,8 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
     private let store = ManagedSettingsStore(named: .init("ollie.quietTime"))
     private let selections = ScreenTimeSelectionService.shared
-    private let activityCenter = DeviceActivityCenter()
+    private let activityCenter: DeviceActivityCenter
+    private let monitoring: MonitoringClient
 #endif
 
     init(
@@ -41,7 +77,100 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     ) {
         self.defaults = defaults
         self.sharedDefaults = sharedDefaults
+#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
+        let center = DeviceActivityCenter()
+        self.activityCenter = center
+        self.monitoring = MonitoringClient(center: center)
+#endif
     }
+
+#if DEBUG && SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
+    private init(defaults: UserDefaults, sharedDefaults: UserDefaults, monitoring: MonitoringClient) {
+        self.defaults = defaults
+        self.sharedDefaults = sharedDefaults
+        self.activityCenter = DeviceActivityCenter()
+        self.monitoring = monitoring
+    }
+
+    /// Screenbook can call this without touching a real Screen Time selection
+    /// or ManagedSettings. It runs the production installer and rollback.
+    static func debugRollbackProbe() -> Bool {
+        let suite = "ollie.shielding.rollback-probe.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let now = Date()
+        let unrelatedID = UUID()
+        var registry = QuietTimeShieldScheduleRegistry()
+        _ = registry.upsert(
+            occurrenceID: unrelatedID,
+            interval: DateInterval(start: now.addingTimeInterval(-60), end: now.addingTimeInterval(600)),
+            role: .screenFreeMorning,
+            at: now
+        )
+        QuietTimeShieldScheduleRegistryStorage.save(registry, to: defaults)
+        let unrelatedActivity = QuietTimeShieldRegistryActivity(
+            occurrenceID: unrelatedID,
+            revision: registry.entry(for: unrelatedID)!.revision,
+            epoch: registry.entry(for: unrelatedID)!.epoch
+        ).deviceActivityName
+        var stopped: [DeviceActivityName] = []
+        var startedNames: [DeviceActivityName] = []
+        var starts = 0
+        let client = MonitoringClient(
+            activities: { [] },
+            start: { name, _ in startedNames.append(name); starts += 1; if starts > 1 { throw QuietTimeShieldingError.encodingFailed } },
+            stop: { stopped.append(contentsOf: $0) }
+        )
+        let service = QuietTimeShieldingService(defaults: defaults, sharedDefaults: defaults, monitoring: client)
+        let failedID = UUID()
+        let snapshot = QuietTimeShieldScheduleSnapshot(
+            runID: failedID, revision: 1, role: .primaryWindDown,
+            protectedSessionInterval: DateInterval(start: now, end: now.addingTimeInterval(600)),
+            windDownInterval: nil,
+            morningQuietInterval: DateInterval(start: now, end: now.addingTimeInterval(600)),
+            updatedAt: now
+        )
+        do { try service.installMonitoringIfNeeded(snapshot, at: now, preservingActiveBarrier: true) } catch {}
+        let result = QuietTimeShieldScheduleRegistryStorage.load(from: defaults)
+        let fractionalNow = Date(timeIntervalSince1970: floor(now.timeIntervalSince1970) + 0.75)
+        let preflightID = UUID()
+        let preflight = QuietTimeShieldScheduleSnapshot(
+            runID: preflightID, revision: 1, role: .primaryWindDown,
+            protectedSessionInterval: DateInterval(start: fractionalNow, end: fractionalNow.addingTimeInterval(0.1)),
+            windDownInterval: nil,
+            morningQuietInterval: DateInterval(start: fractionalNow, end: fractionalNow.addingTimeInterval(0.1)),
+            updatedAt: fractionalNow
+        )
+        var seeded = QuietTimeShieldScheduleRegistryStorage.load(from: defaults)
+        guard let preflightInterval = preflight.protectedSessionInterval else { return false }
+        _ = seeded.upsert(
+            occurrenceID: preflightID,
+            interval: preflightInterval,
+            role: preflight.role,
+            at: fractionalNow
+        )
+        QuietTimeShieldScheduleRegistryStorage.save(seeded, to: defaults)
+        if let preflightData = try? JSONEncoder().encode(preflight) {
+            defaults.set(preflightData, forKey: QuietTimeShieldSharedStorage.scheduleKey)
+        }
+        let startsBeforePreflight = starts
+        do { try service.installMonitoringIfNeeded(preflight, at: fractionalNow, preservingActiveBarrier: true) } catch {}
+        let afterPreflight = QuietTimeShieldScheduleRegistryStorage.load(from: defaults)
+        return starts >= 2
+            && starts == startsBeforePreflight
+            && !stopped.isEmpty
+            && startedNames.first.map { stopped.contains($0) } == true
+            && !stopped.contains(unrelatedActivity)
+            && result.entry(for: failedID) == nil
+            && result.entry(for: unrelatedID) != nil
+            && !result.accepts(occurrenceID: failedID, revision: 1, epoch: 1)
+            && QuietTimeShieldRegistryCleanupPolicy.snapshot(for: result.entry(for: unrelatedID)!).runID == (service.loadSchedule()?.runID)
+            && afterPreflight.entry(for: unrelatedID) != nil
+            && afterPreflight.entry(for: preflightID) == nil
+            && !afterPreflight.accepts(occurrenceID: preflightID, revision: 1, epoch: 1)
+            && service.loadSchedule()?.runID == unrelatedID
+    }
+#endif
 
     @discardableResult
     func reconcile(for run: FocusRun?, at date: Date = Date()) -> QuietTimeShieldingOutcome {
@@ -96,7 +225,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
                 at: date,
                 failureCode: "monitoring"
             )
-            clearStore()
+            preserveUnrelatedBarrierOrClear(selection, at: date)
             return .failed("monitoring")
         }
 
@@ -169,7 +298,8 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             }
             return .scheduled
         } catch {
-            clear()
+            writeStatus(for: snapshot, status: .failed, window: nil, at: date, failureCode: "monitoring")
+            preserveUnrelatedBarrierOrClear(selection, at: date)
             return .failed("monitoring")
         }
 #else
@@ -179,13 +309,27 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
 
     func clear() {
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(ManagedSettings)
+        let clearedAt = Date()
+        let clearedSnapshot = loadSchedule()
         let preserveAutomaticSchedule = QuietTimeShieldingIntentPolicy.savedIntent(
             defaults.object(forKey: Self.enabledKey) as? Bool
         )
-            && loadSchedule()?.repeatsDaily == true
+            && clearedSnapshot?.repeatsDaily == true
         clearStore()
+        // The main app owns an authorized terminal clear. Recording that
+        // side effect after clearing ManagedSettings lets receipts pair an
+        // earlier monitor apply with the actual terminal cleanup without
+        // pretending the extension independently observed the whole span.
+        if let clearedSnapshot {
+            writeStatus(
+                for: clearedSnapshot,
+                status: .cleared,
+                window: nil,
+                at: clearedAt
+            )
+        }
         activityCenter.stopMonitoring([.ollieBriefAccessRestore])
-        archiveBriefAccessState(at: Date())
+        archiveBriefAccessState(at: clearedAt)
         guard !preserveAutomaticSchedule else { return }
         activityCenter.stopMonitoring([
             .ollieProtectedSession,
@@ -303,7 +447,8 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             writeStatus(for: snapshot, status: .scheduled, window: nil, at: date)
             return .scheduled
         } catch {
-            clear(occurrenceID: occurrence.id)
+            writeStatus(for: snapshot, status: .failed, window: .morningQuiet, at: date, failureCode: "monitoring")
+            preserveUnrelatedBarrierOrClear(selection, at: date)
             return .failed("monitoring")
         }
 #else
@@ -348,13 +493,27 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         sharedDefaults?.removeObject(forKey: QuietTimeShieldPresentationStorage.purposeCueKey)
     }
 
+    func briefAccessIntervals(for run: FocusRun) -> [DateInterval] {
+        var intervals = run.briefAccessIntervals
+        if let data = sharedDefaults?.data(forKey: QuietTimeShieldSharedStorage.briefAccessStateKey),
+           let state = try? JSONDecoder().decode(QuietTimeBriefAccessState.self, from: data) {
+            let uses = (state.runID == run.id ? state.successfulUses : [])
+                + (state.completedRunCounts.first(where: { $0.runID == run.id })?.uses ?? [])
+            for use in uses where use.expiresAt > use.requestedAt {
+                let interval = DateInterval(start: use.requestedAt, end: use.expiresAt)
+                if !intervals.contains(interval) { intervals.append(interval) }
+            }
+        }
+        return intervals
+    }
+
     func briefAccessUseCount(for run: FocusRun) -> Int {
         var count = run.briefAccessUseCount
         if let data = sharedDefaults?.data(forKey: QuietTimeShieldSharedStorage.briefAccessStateKey),
            let state = try? JSONDecoder().decode(QuietTimeBriefAccessState.self, from: data) {
             count = max(count, state.durableCount(for: run.id))
         }
-        return count
+        return max(count, briefAccessIntervals(for: run).count)
     }
 
     func briefAccessTrackerSummary(for run: FocusRun) -> QuietTimeBriefAccessTrackerSummary {
@@ -382,7 +541,9 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     ) -> QuietTimeShieldProtectionSummary {
         guard run.appShieldingRequested else { return .none }
         let automaticScheduleID = loadSchedule().flatMap { snapshot in
-            snapshot.repeatsDaily ? snapshot.runID : nil
+            snapshot.repeatsDaily && snapshot.runID == run.id
+                ? snapshot.runID
+                : nil
         }
         return QuietTimeShieldEvidenceMath.summary(
             for: run,
@@ -636,12 +797,25 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             }
         )
         if loadSchedule() == snapshot,
-           expectedActivities.isSubset(of: Set(activityCenter.activities)) {
+           expectedActivities.isSubset(of: Set(monitoring.activities())) {
             return
         }
 
+        var attemptActivities: [DeviceActivityName] = []
+        do {
+        // Do this before publishing either cross-process schedule source. If
+        // less than one whole second remains, DeviceActivity cannot receive a
+        // monitor that will end this desired window. Silently skipping it
+        // could leave an already applied shield with no clearing callback.
+        for window in windows {
+            guard let interval = snapshot.interval(for: window), interval.end > date else { continue }
+            guard QuietTimeShieldMonitoringPolicy.window(for: interval, requestedAt: date) != nil else {
+                throw QuietTimeShieldingError.monitoringWindowUnavailable
+            }
+        }
+
         if !preservingActiveBarrier {
-            activityCenter.stopMonitoring([
+            monitoring.stop([
                 .ollieProtectedSession,
                 .ollieWindDown,
                 .ollieMorningQuiet,
@@ -660,7 +834,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         let registryDiff = publishRegistry(for: snapshot, at: date)
 
         if let registryDiff {
-            activityCenter.stopMonitoring(registryDiff.stop.map(\.deviceActivityName))
+            monitoring.stop(registryDiff.stop.map(\.deviceActivityName))
             let registry = QuietTimeShieldScheduleRegistryStorage.load(
                 from: sharedDefaults ?? .standard
             )
@@ -676,37 +850,93 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
                 guard let entry = registry.entry(for: activity.occurrenceID), entry.interval.end > date else {
                     continue
                 }
-                let effectiveStart = max(entry.interval.start, date.addingTimeInterval(1))
-                guard effectiveStart < entry.interval.end else { continue }
+                guard let monitorWindow = QuietTimeShieldMonitoringPolicy.window(
+                    for: entry.interval,
+                    requestedAt: date
+                ) else {
+                    throw QuietTimeShieldingError.monitoringWindowUnavailable
+                }
                 let schedule = DeviceActivitySchedule(
-                    intervalStart: dateComponents(for: effectiveStart),
-                    intervalEnd: dateComponents(for: entry.interval.end),
-                    repeats: false
+                    intervalStart: dateComponents(for: monitorWindow.monitoring.start),
+                    intervalEnd: dateComponents(for: monitorWindow.monitoring.end),
+                    repeats: false,
+                    warningTime: monitorWindow.warningTime
                 )
-                try activityCenter.startMonitoring(activity.deviceActivityName, during: schedule)
+                try self.monitoring.start(activity.deviceActivityName, schedule)
+                attemptActivities.append(activity.deviceActivityName)
             }
         }
 
         for window in windows {
             guard let interval = snapshot.interval(for: window),
                   interval.end > date else { continue }
-            let effectiveStart = max(
-                interval.start,
-                date.addingTimeInterval(1)
-            )
-            guard effectiveStart < interval.end else { continue }
+            guard let monitorWindow = QuietTimeShieldMonitoringPolicy.window(
+                for: interval,
+                requestedAt: date
+            ) else {
+                throw QuietTimeShieldingError.monitoringWindowUnavailable
+            }
             let schedule = DeviceActivitySchedule(
                 intervalStart: snapshot.repeatsDaily
-                    ? dailyDateComponents(for: effectiveStart)
-                    : dateComponents(for: effectiveStart),
+                    ? dailyDateComponents(for: monitorWindow.monitoring.start)
+                    : dateComponents(for: monitorWindow.monitoring.start),
                 intervalEnd: snapshot.repeatsDaily
-                    ? dailyDateComponents(for: interval.end)
-                    : dateComponents(for: interval.end),
-                repeats: snapshot.repeatsDaily
+                    ? dailyDateComponents(for: monitorWindow.monitoring.end)
+                    : dateComponents(for: monitorWindow.monitoring.end),
+                repeats: snapshot.repeatsDaily,
+                warningTime: monitorWindow.warningTime
             )
-            try activityCenter.startMonitoring(window.activityName, during: schedule)
+            try self.monitoring.start(window.activityName, schedule)
+            attemptActivities.append(window.activityName)
         }
         writeStatus(for: snapshot, status: .scheduled, window: nil, at: Date())
+        } catch {
+            // A partial registration is not a schedule. Remove only the
+            // names this attempt started and tombstone this occurrence so a
+            // delayed extension callback cannot reapply it. Other registry
+            // entries remain authoritative and untouched.
+            monitoring.stop(attemptActivities)
+            rollbackFailedMonitoringInstallation(for: snapshot, at: date)
+            throw error
+        }
+    }
+
+    private func rollbackFailedMonitoringInstallation(
+        for snapshot: QuietTimeShieldScheduleSnapshot,
+        at date: Date
+    ) {
+        guard let sharedDefaults else { return }
+        var registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults)
+        registry.remove(occurrenceID: snapshot.runID, at: date)
+        QuietTimeShieldScheduleRegistryStorage.save(registry, to: sharedDefaults)
+        if let remaining = registry.activeEntries(at: date)
+            .sorted(by: { $0.updatedAt > $1.updatedAt })
+            .first,
+           let data = try? JSONEncoder().encode(
+                QuietTimeShieldRegistryCleanupPolicy.snapshot(for: remaining)
+           ) {
+            sharedDefaults.set(data, forKey: QuietTimeShieldSharedStorage.scheduleKey)
+        } else if loadSchedule()?.runID == snapshot.runID {
+            sharedDefaults.removeObject(forKey: QuietTimeShieldSharedStorage.scheduleKey)
+        }
+        QuietPurposeCueState.clear(
+            occurrenceID: snapshot.runID,
+            revision: snapshot.registryRevision,
+            epoch: snapshot.registryEpoch,
+            from: sharedDefaults
+        )
+    }
+
+    private func preserveUnrelatedBarrierOrClear(
+        _ selection: FamilyActivitySelection,
+        at date: Date
+    ) {
+        let registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults ?? .standard)
+        if !registry.activeEntries(at: date).isEmpty {
+            apply(selection)
+        } else {
+            clearStore()
+        }
     }
 
     private func dateComponents(for date: Date) -> DateComponents {
@@ -778,7 +1008,8 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             status: status,
             window: window,
             observedAt: date,
-            failureCode: failureCode
+            failureCode: failureCode,
+            provenance: .mainApp
         )
         guard let data = try? JSONEncoder().encode(statusSnapshot) else { return }
         sharedDefaults?.set(data, forKey: QuietTimeShieldSharedStorage.statusKey)
@@ -809,6 +1040,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
 
 private enum QuietTimeShieldingError: Error {
     case encodingFailed
+    case monitoringWindowUnavailable
 }
 
 private extension NightWatchPhase {

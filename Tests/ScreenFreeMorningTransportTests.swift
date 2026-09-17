@@ -32,4 +32,68 @@ final class ScreenFreeMorningTransportTests: XCTestCase {
         XCTAssertEqual(message.screenFreeMorning?.endsAt, occurrence.scheduledEnd)
         XCTAssertNil(message.reward)
     }
+
+    func testLegacyWatchPlacementPayloadNormalizesToTimerBeforePresentation() {
+        let startedAt = Date(timeIntervalSince1970: 4_000)
+        let legacyRun = FocusRun(
+            plannedDurationSeconds: 30 * 60,
+            startedAt: startedAt,
+            state: .waitingForPhoneAway,
+            guardKind: .watchPlacement
+        )
+        let message = WatchMessage(
+            type: .startFocusRun,
+            run: legacyRun,
+            tokenData: Data([1, 2, 3])
+        )
+
+        let normalized = message.normalizedForCurrentRelease
+
+        XCTAssertEqual(normalized.run?.guardKind, .honorTimer)
+        XCTAssertEqual(normalized.run?.placementStatus, .notRequired)
+        XCTAssertEqual(normalized.run?.phoneAwayValidatedAt, startedAt)
+        XCTAssertEqual(normalized.run?.state, .running)
+        XCTAssertFalse(normalized.isRetiredNearbyInteractionMessage)
+    }
+
+    func testPhoneAndWatchRoutingRejectDecodedNearbyInteractionMessageKinds() {
+        let retiredTypes: [WatchMessageType] = [
+            .nearbyDiscoveryToken,
+            .nearbyDiscoveryTokenAcknowledged,
+            .distanceCheckRequest,
+            .distanceCheckEnded,
+            .watchDistanceReading,
+            .proximityStateUpdate,
+            .calibrationUpdate
+        ]
+
+        for type in retiredTypes {
+            let message = WatchMessage(type: type)
+            XCTAssertTrue(
+                message.isRetiredNearbyInteractionMessage,
+                "Expected \(type.rawValue) to remain decode-only"
+            )
+            XCTAssertNil(
+                message.routedForCurrentRelease,
+                "Expected phone and Watch routing to reject \(type.rawValue)"
+            )
+        }
+    }
+
+    func testCurrentReleaseRoutingNormalizesLegacyRunBeforeDelivery() throws {
+        let startedAt = Date(timeIntervalSince1970: 5_000)
+        let legacyRun = FocusRun(
+            plannedDurationSeconds: 30 * 60,
+            startedAt: startedAt,
+            state: .waitingForPhoneAway,
+            guardKind: .watchPlacement
+        )
+
+        let routed = try XCTUnwrap(
+            WatchMessage(type: .startFocusRun, run: legacyRun).routedForCurrentRelease
+        )
+
+        XCTAssertEqual(routed.run?.guardKind, .honorTimer)
+        XCTAssertEqual(routed.run?.state, .running)
+    }
 }

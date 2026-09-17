@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-07-07
+- Updated: 2026-09-07 — founder authorized the instruction-audit recommendations.
 - Deciders: Founder
 - Related: `AGENTS.md`, `docs/PLAYBOOKS/`, `skills/`, `.cursor/rules/counting-sheep.mdc`
 
@@ -20,24 +21,24 @@ Project knowledge lives **in the repository**, structured in four layers by dura
 
 | Layer | Location | Role | Changes when |
 |---|---|---|---|
-| 1. Canonical memory | `AGENTS.md` | Single source of truth: mission, architecture, conventions, checklists, gates | Conventions or architecture change |
+| 1. Canonical memory | `AGENTS.md` | Concise authority, invariants, task routes and validation | Conventions or architecture change |
 | 2. Durable context | `docs/` (brief, architecture, principles, `DECISIONS/`) | Deep background, product boundaries, decision history | Decisions are made or reversed |
-| 3. Reusable workflows | `docs/PLAYBOOKS/` + `skills/` | Step-by-step procedures for recurring task types | Procedures improve |
+| 3. Reusable workflows | `docs/PLAYBOOKS/` + `skills/` | Outcomes and applicable checks for recurring task types | Procedures improve |
 | 4. Tool adapters | `.cursor/rules/` (and future per-tool config) | Thin pointers back to layers 1–3; never duplicate content | Tools change |
 
 Rules of operation:
 
 1. **`AGENTS.md` is canonical.** Codex reads it natively; every other agent must read it
-   before editing code. Where any document disagrees with it, `AGENTS.md` wins, and the
-   drift should be reported or fixed.
+   once before editing code. Explicit current founder instructions control; consult
+   only task-relevant references. Fix conflicting current rules rather than appending exceptions.
 2. **Docs are durable context, not session notes.** `docs/` files describe what is true
    and decided. Session-specific plans and scratch work do not get committed there.
 3. **Skills and playbooks are the reusable workflows.** Recurring task types (TestFlight
    review, SwiftUI features, copy review, pre-merge checks, git operations) have written
-   procedures. Agents follow them rather than improvising, and improve them in place when
-   they find better procedures.
+   guidance. They specify required outcomes and real constraints, leaving implementation
+   order to the task. Existing authorization includes inspection and repair of introduced failures.
 4. **Tool adapters stay thin.** `.cursor/rules/counting-sheep.mdc` (and any future
-   `CLAUDE.md`-style file) contains pointers and hard constraints only. Duplicating
+   `CLAUDE.md`-style file) contains pointers only; the root owns hard constraints. Duplicating
    content across adapters is how drift starts — don't.
 5. **Decisions get ADRs.** Anything that constrains future work (positioning, gated
    features, architectural direction) is recorded in `docs/DECISIONS/` with status,
@@ -62,13 +63,18 @@ Rules of operation:
 ### Update discipline
 
 - Whoever changes behavior updates the docs in the same change set.
-- `AGENTS.md` §16 tracks known drift in legacy docs until they are aligned.
+- `AGENTS.md` and `docs/PRODUCT_DIRECTION.md` identify current superseding decisions;
+  dated snapshots preserve history without becoming mandatory context.
 - Adapters and skills are reviewed whenever a new tool joins the workflow.
 
 ## Consequences
 
 - New sessions in any tool reach working context in one file read instead of a repo crawl.
-- Over-eager changes are constrained by written gates (ADR-0003/0004, feature-creep table)
-  that agents can cite when refusing work.
+- Current topic decisions preserve real authorization/privacy/platform boundaries;
+  older product preferences do not veto explicit founder direction.
 - Cost: docs must be maintained. Mitigated by keeping one canonical file, thin adapters,
-  and folding doc updates into the definition of done (`AGENTS.md` §12).
+  and folding doc updates into the definition of done (`AGENTS.md`, Documentation maintenance).
+
+The shared validation policy lives in AGENTS.md. Documentation-only edits do not require
+app builds, and a linked checklist does not require repeating matching successful tests.
+See [the cleanup record](../agent-instruction-cleanup-2026-09-07.md) for migration evidence.

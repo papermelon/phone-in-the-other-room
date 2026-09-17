@@ -98,12 +98,6 @@ enum PastureSceneBehavior: Equatable {
     case dragging
     case chasing
     case reacting
-    case greeting
-    case petting
-    case squishing
-    case landing
-    case fetching
-    case observing
     case ambient(PastureSceneAmbientAction)
 }
 
@@ -148,32 +142,92 @@ enum PastureSceneLayout {
         for entity: PastureSceneEntityID,
         among positions: [PastureSceneEntityID: PastureScenePoint]
     ) -> PastureScenePoint {
-        let entityFootprint = footprint(for: entity)
-        var settled = clamped(proposed, footprint: entityFootprint)
+        let neighbours = positions.keys
+            .filter { $0 != entity && $0.pastureIndex == entity.pastureIndex }
+            .sorted { $0.id < $1.id }
+            .compactMap { other in
+                positions[other].map { PastureSceneNeighbour(key: other.id, point: $0, footprint: footprint(for: other)) }
+            }
+        return settledPosition(
+            proposed: proposed,
+            footprint: footprint(for: entity),
+            entityKey: entity.id,
+            among: neighbours
+        )
+    }
 
-        for other in positions.keys.sorted(by: { $0.id < $1.id })
-            where other != entity && other.pastureIndex == entity.pastureIndex {
-            guard let otherPoint = positions[other] else { continue }
-            let otherFootprint = footprint(for: other)
-            let minimum = min(0.19, max(0.075, entityFootprint.halfWidth + otherFootprint.halfWidth))
-            let distance = settled.distance(to: otherPoint)
+    /// Renderer-agnostic settling. The personal pasture and the shared meadow
+    /// use the same spacing rule so characters feel the same everywhere.
+    static func settledPosition(
+        proposed: PastureScenePoint,
+        footprint entityFootprint: PastureSceneFootprint,
+        entityKey: String,
+        among neighbours: [PastureSceneNeighbour]
+    ) -> PastureScenePoint {
+        var settled = clamped(proposed, footprint: entityFootprint)
+        for other in neighbours where other.key != entityKey {
+            let minimum = minimumSpacing(entityFootprint, other.footprint)
+            let distance = settled.distance(to: other.point)
             guard distance < minimum else { continue }
 
             let angle: Double
             if distance > 0.000_1 {
-                angle = atan2(settled.y - otherPoint.y, settled.x - otherPoint.x)
+                angle = atan2(settled.y - other.point.y, settled.x - other.point.x)
             } else {
-                angle = deterministicUnit(seed: stableHash(for: entity) ^ stableHash(for: other))
+                angle = deterministicUnit(seed: stableHash(forKey: entityKey) ^ stableHash(forKey: other.key))
             }
             settled = clamped(
                 PastureScenePoint(
-                    x: otherPoint.x + cos(angle) * minimum,
-                    y: otherPoint.y + sin(angle) * minimum
+                    x: other.point.x + cos(angle) * minimum,
+                    y: other.point.y + sin(angle) * minimum
                 ),
                 footprint: entityFootprint
             )
         }
         return settled
+    }
+
+    static func minimumSpacing(_ lhs: PastureSceneFootprint, _ rhs: PastureSceneFootprint) -> Double {
+        min(0.19, max(0.075, lhs.halfWidth + rhs.halfWidth))
+    }
+
+    /// A dropped character that lands on a neighbour gently nudges that
+    /// neighbour aside instead of being bounced away itself. The nudge is a
+    /// local, presentation-only reaction: it never changes who owns what.
+    static func nudgePlan(
+        dropped entityKey: String,
+        footprint entityFootprint: PastureSceneFootprint,
+        at point: PastureScenePoint,
+        among neighbours: [PastureSceneNeighbour],
+        seed: UInt64
+    ) -> PastureSceneNudgePlan {
+        let landing = clamped(point, footprint: entityFootprint)
+        var displaced: [PastureSceneNudge] = []
+        var occupied = neighbours
+        for other in neighbours.sorted(by: { $0.key < $1.key }) where other.key != entityKey {
+            let minimum = minimumSpacing(entityFootprint, other.footprint)
+            guard landing.distance(to: other.point) < minimum * 0.9 else { continue }
+            let direction: Double
+            let distance = other.point.distance(to: landing)
+            if distance > 0.000_1 {
+                direction = atan2(other.point.y - landing.y, other.point.x - landing.x)
+            } else {
+                direction = deterministicUnit(seed: seed ^ stableHash(forKey: other.key))
+            }
+            let hop = minimum + 0.02 + Double((seed >> 7) % 17) / 1_000
+            let proposed = PastureScenePoint(
+                x: landing.x + cos(direction) * hop,
+                y: landing.y + sin(direction) * hop
+            )
+            let others = occupied.filter { $0.key != other.key }
+                + [PastureSceneNeighbour(key: entityKey, point: landing, footprint: entityFootprint)]
+            let target = settledPosition(proposed: proposed, footprint: other.footprint, entityKey: other.key, among: others)
+            displaced.append(PastureSceneNudge(key: other.key, target: target))
+            if let index = occupied.firstIndex(where: { $0.key == other.key }) {
+                occupied[index].point = target
+            }
+        }
+        return PastureSceneNudgePlan(landing: landing, displaced: displaced)
     }
 
     static func pruned(
@@ -271,12 +325,32 @@ enum PastureSceneLayout {
     }
 
     static func stableHash(for entity: PastureSceneEntityID) -> UInt64 {
-        entity.id.utf8.reduce(UInt64(14_695_981_039_346_656_037)) { partial, byte in
+        stableHash(forKey: entity.id)
+    }
+
+    static func stableHash(forKey key: String) -> UInt64 {
+        key.utf8.reduce(UInt64(14_695_981_039_346_656_037)) { partial, byte in
             (partial ^ UInt64(byte)) &* 1_099_511_628_211
         }
     }
 
-    private static func deterministicUnit(seed: UInt64) -> Double {
+    static func deterministicUnit(seed: UInt64) -> Double {
         Double(seed % 6_283) / 1_000
     }
+}
+
+struct PastureSceneNeighbour: Equatable {
+    var key: String
+    var point: PastureScenePoint
+    var footprint: PastureSceneFootprint
+}
+
+struct PastureSceneNudge: Equatable {
+    var key: String
+    var target: PastureScenePoint
+}
+
+struct PastureSceneNudgePlan: Equatable {
+    var landing: PastureScenePoint
+    var displaced: [PastureSceneNudge]
 }

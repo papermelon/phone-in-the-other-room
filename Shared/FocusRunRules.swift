@@ -1,7 +1,7 @@
 import Foundation
 
 enum FocusRunRules {
-    /// Product progression threshold for a qualifying protected-night search.
+    /// Product progression threshold for a qualifying protected Wind Down search.
     /// This is a phone-away span, not a claim about hours asleep.
     static let minimumProtectedNightSearchSpanMinutes = 420
     /// The coordinator never creates a run with less than one meaningful
@@ -21,11 +21,11 @@ enum FocusRunRules {
     static func canCompleteSuccessfully(_ run: FocusRun, demoMode: Bool) -> Bool {
         if demoMode { return true }
         guard run.guardKind.needsPlacementConfirmation else { return true }
-        // Watch placement is a convenience, never a gate that can strand a timer at zero.
+        // Retained placement guards are compatibility-only and can never strand a timer at zero.
         return run.placementStatus == .confirmed || run.placementStatus == .unavailable
     }
 
-    /// Minutes from the eligible Wind Down start through morning-quiet completion.
+    /// Minutes from the eligible Wind Down start through Screen-Free Morning completion.
     /// Overnight time is included in this span for search eligibility only; quiet
     /// credit remains the two bookends.
     static func protectedSpanMinutes(for run: FocusRun) -> Int {

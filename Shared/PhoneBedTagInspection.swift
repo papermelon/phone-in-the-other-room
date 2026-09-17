@@ -70,6 +70,25 @@ enum PhoneBedTagProvisionIntent: Equatable {
 }
 
 enum PhoneBedTagProvisionPolicy {
+    static func pairingIntent(isRunning: Bool) -> PhoneBedTagProvisionIntent {
+        isRunning ? .normalPairing : .settingsResetAndPair
+    }
+
+    static func rejectionMessage(for inspection: PhoneBedTagInspection, expectedDigest: String?) -> String {
+        switch inspection {
+        case .unreadable:
+            return "The tag could not be read. Hold one tag steady near the top of your iPhone and try again. Nothing changed."
+        case .foreign:
+            return "This tag was read, but its format is not recognized as a Counting Sheep tag. It may use an older format or contain other data. Nothing changed."
+        case .credential:
+            return expectedDigest == nil
+                ? "This tag has an old pairing. When your session ends, use Reset and pair this tag in Settings. Nothing changed."
+                : "This is a different tag. Scan the same tag you chose to reset. Nothing changed."
+        case .empty:
+            return "This tag is blank. Scan the same tag you chose to reset, or cancel and pair this blank tag. Nothing changed."
+        }
+    }
+
     static func resolve(
         intent: PhoneBedTagProvisionIntent,
         inspection: PhoneBedTagInspection,

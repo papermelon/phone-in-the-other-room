@@ -2,6 +2,53 @@ import Foundation
 import XCTest
 
 final class NightFlockRemoteErrorTests: XCTestCase {
+    func testAcceptedCommandWithFailedReadIsNotPresentedAsAFailedMutation() {
+        let command = NightFlockV4Command.renameParty(partyID: UUID(), name: "Family", idempotencyKey: "rename")
+        XCTAssertEqual(NightFlockRefreshFailure.actionTitle(for: command, accepted: false),
+                       "The party name couldn’t be changed")
+        XCTAssertEqual(NightFlockRefreshFailure.actionTitle(for: command, accepted: true),
+                       "Your change was saved. The latest view couldn’t be loaded.")
+        XCTAssertEqual(NightFlockRefreshFailure.actionTitle(
+            for: .cheerMember(partyID: UUID(), memberID: UUID(), cheer: .warmWave, idempotencyKey: "cheer"),
+            accepted: false), "Your cheer couldn’t be sent")
+    }
+
+    func testRefreshRejectionDoesNotOfferAnIneffectiveRetry() {
+        for code: NightFlockRemoteErrorCode in [.invalidRequest, .methodNotAllowed, .unsupportedSchema] {
+            let failure = NightFlockRefreshFailure(remote: .init(
+                statusCode: 400, code: code, requestID: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+            ))
+            XCTAssertFalse(failure.canRetry)
+            XCTAssertEqual(failure.requestReference, "Request ID: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
+        }
+    }
+
+    func testTransientRefreshFailureOffersRetryWithTheFailingRequestReference() {
+        let failure = NightFlockRefreshFailure(remote: .init(
+            statusCode: 503, code: .serviceUnavailable,
+            requestID: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+        ))
+        XCTAssertTrue(failure.canRetry)
+        XCTAssertEqual(failure.requestReference, "Request ID: bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
+    }
+
+    func testLocalRefreshFailureDoesNotInventAServerSupportReference() {
+        let failure = NightFlockRefreshFailure(remote: nil)
+        XCTAssertTrue(failure.canRetry)
+        XCTAssertNil(failure.requestReference)
+    }
+
+    func testFarmTransportWaitsForDeletionRecoveryAndStopsDuringEveryDeletionPhase() {
+        typealias Policy = NightFlockAccountDeletionIntentPolicy
+        XCTAssertTrue(Policy.permitsFarmTransport(restored: true, deleting: false, phase: .complete))
+        for phase: Policy.Phase in [.complete, .pendingPreflight, .acceptedTombstone] {
+            XCTAssertFalse(Policy.permitsFarmTransport(restored: false, deleting: false, phase: phase))
+            XCTAssertFalse(Policy.permitsFarmTransport(restored: true, deleting: true, phase: phase))
+        }
+        XCTAssertFalse(Policy.permitsFarmTransport(restored: true, deleting: false, phase: .pendingPreflight))
+        XCTAssertFalse(Policy.permitsFarmTransport(restored: true, deleting: false, phase: .acceptedTombstone))
+    }
+
     func testRecoverableInviteCodeAndV2WireContract() throws {
         let code = NightFlockInviteCode.generate(randomByte: { 31 })
         XCTAssertEqual(code.count, 12)
@@ -158,10 +205,18 @@ final class NightFlockRemoteErrorTests: XCTestCase {
         let linked = NightFlockRemoteError.decode(statusCode: 403, data: Data(#"{"code":"linked_account_required"}"#.utf8))
         XCTAssertEqual(linked.recovery, .linkAccount)
         XCTAssertFalse(linked.shouldReconcileMembership)
+        XCTAssertEqual(
+            linked.errorDescription,
+            "Use Apple sign-in to link this account or reopen an existing Counting Sheep account."
+        )
 
         let unauthorized = NightFlockRemoteError.decode(statusCode: 401, data: Data(#"{"code":"unauthorized"}"#.utf8))
         XCTAssertEqual(unauthorized.recovery, .authenticate)
         XCTAssertFalse(unauthorized.shouldReconcileMembership)
+        XCTAssertEqual(
+            unauthorized.errorDescription,
+            "Reconnect the Apple account already linked to Slumber Party."
+        )
 
         let account = NightFlockRemoteError.decode(statusCode: 403, data: Data(#"{"code":"account_unavailable"}"#.utf8))
         XCTAssertNil(account.recovery)
@@ -217,6 +272,51 @@ final class NightFlockRemoteErrorTests: XCTestCase {
                 session: .missing, expectedIdentity: .absent
             ).action,
             .failClosed
+        )
+    }
+
+    func testSharedHabitsTerminalCodesDecodeAndChooseScopedOutboxDispositions() {
+        let deleted = NightFlockRemoteError.decode(
+            statusCode: 410,
+            data: Data(#"{"code":"shared_history_deleted"}"#.utf8)
+        )
+        XCTAssertEqual(deleted.code, .sharedHistoryDeleted)
+        XCTAssertFalse(deleted.retryable)
+        XCTAssertEqual(
+            NightFlockSharedHabitsOutboxFailurePolicy.disposition(for: deleted.code),
+            .dropSourceAndReconcile
+        )
+
+        let beforeAgreement = NightFlockRemoteError.decode(
+            statusCode: 409,
+            data: Data(#"{"code":"publication_before_agreement"}"#.utf8)
+        )
+        XCTAssertEqual(beforeAgreement.code, .publicationBeforeAgreement)
+        XCTAssertEqual(
+            NightFlockSharedHabitsOutboxFailurePolicy.disposition(for: beforeAgreement.code),
+            .dropRecordAndReconcile
+        )
+
+        let mismatch = NightFlockRemoteError.decode(
+            statusCode: 409,
+            data: Data(#"{"code":"agreement_timezone_mismatch"}"#.utf8)
+        )
+        XCTAssertEqual(mismatch.code, .agreementTimezoneMismatch)
+        XCTAssertEqual(
+            NightFlockSharedHabitsOutboxFailurePolicy.disposition(for: mismatch.code),
+            .dropRecordAndReconcile
+        )
+
+        let stale = NightFlockRemoteError.decode(
+            statusCode: 409,
+            data: Data(#"{"code":"stale_revision"}"#.utf8)
+        )
+        XCTAssertEqual(stale.code, .staleRevision)
+        XCTAssertFalse(stale.retryable)
+        XCTAssertEqual(stale.recovery, .reconcile)
+        XCTAssertEqual(
+            NightFlockSharedHabitsOutboxFailurePolicy.disposition(for: stale.code),
+            .dropRecordAndReconcile
         )
     }
 
@@ -657,6 +757,58 @@ final class NightFlockRemoteErrorTests: XCTestCase {
                 expectedIdentity: .invalid
             )
         )
+    }
+
+    func testAppleIdentityEvidenceAcceptsServerMetadataWhenExpandedIdentitiesAreMissing() {
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.isLinked(
+            isAnonymous: false,
+            identityProviders: [],
+            primaryProvider: "apple",
+            providers: []
+        ))
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.isLinked(
+            isAnonymous: false,
+            identityProviders: [],
+            primaryProvider: nil,
+            providers: ["apple"]
+        ))
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.isLinked(
+            isAnonymous: false,
+            identityProviders: ["apple"],
+            primaryProvider: nil,
+            providers: []
+        ))
+    }
+
+    func testAppleIdentityEvidenceNeverUpgradesAnonymousOrDifferentAccount() {
+        let original = UUID()
+        XCTAssertFalse(NightFlockAppleIdentityEvidence.isLinked(
+            isAnonymous: true,
+            identityProviders: ["apple"],
+            primaryProvider: "apple",
+            providers: ["apple"]
+        ))
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.preservesOriginalAccount(
+            originalUserID: original,
+            recoveredUserID: original,
+            hasAppleIdentity: true
+        ))
+        XCTAssertFalse(NightFlockAppleIdentityEvidence.preservesOriginalAccount(
+            originalUserID: original,
+            recoveredUserID: UUID(),
+            hasAppleIdentity: true
+        ))
+        XCTAssertFalse(NightFlockAppleIdentityEvidence.preservesOriginalAccount(
+            originalUserID: original,
+            recoveredUserID: original,
+            hasAppleIdentity: false
+        ))
+        XCTAssertTrue(NightFlockAppleIdentityEvidence.permitsExistingAccountSignIn(
+            hasAppleIdentity: true
+        ))
+        XCTAssertFalse(NightFlockAppleIdentityEvidence.permitsExistingAccountSignIn(
+            hasAppleIdentity: false
+        ))
     }
 
     func testAppleRecoveryIdentityFailuresAreFailClosedAndDoNotAuthorizeOverwrite() {

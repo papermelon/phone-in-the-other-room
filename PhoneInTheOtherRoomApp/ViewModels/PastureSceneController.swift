@@ -9,15 +9,12 @@ final class PastureSceneController {
     private(set) var positions: [PastureSceneEntityID: PastureScenePoint] = [:]
     private(set) var behaviors: [PastureSceneEntityID: PastureSceneBehavior] = [:]
     private(set) var isInteractionActive = false
-    private(set) var isPlayMode = false
-    private(set) var effects: [PastureSceneEffect] = []
-    private(set) var ball: PastureSceneBall?
-    private(set) var feedbackTick = 0
+    private(set) var toyPosition: PastureScenePoint?
+    private(set) var playMessage: String?
 
     private var settledPositions: [PastureSceneEntityID: PastureScenePoint] = [:]
     private var entityIDs = Set<PastureSceneEntityID>()
     private var slotByEntity: [PastureSceneEntityID: Int] = [:]
-    private var definitionIDBySheepID: [UUID: String] = [:]
     private var sceneSeed: UInt64 = 0
     private var activePastureIndex = 0
     private var reduceMotion = false
@@ -28,9 +25,6 @@ final class PastureSceneController {
     private var suppressedTapUntil: Date?
     private var schedulerTask: Task<Void, Never>?
     private var schedulerGeneration = 0
-    private var playTask: Task<Void, Never>?
-    private var playGeneration = 0
-    private var lastPetFeedbackAt: Date?
     private var eventCount: UInt64 = 0
     private var persistSnapshot: ((PastureSceneSnapshot) -> Void)?
 
@@ -52,15 +46,12 @@ final class PastureSceneController {
         if sceneChanged || activePastureChanged || windDownBegan {
             stopAutonomyAndSettle()
             cancelInteraction(restartAutonomy: false)
-            clearPlayPresentation()
         }
         sceneSeed = layoutSeed
         self.activePastureIndex = activePastureIndex
         self.reduceMotion = reduceMotion
         self.isWindDownActive = isWindDownActive
-        if isWindDownActive { isPlayMode = false }
         persistSnapshot = onPersist
-        definitionIDBySheepID = Dictionary(uniqueKeysWithValues: activeSheep.map { ($0.id, $0.definitionID) })
 
         if !loadedSnapshot {
             settledPositions = PastureSceneLayout.pruned(persistedSnapshot, keeping: newIDs)
@@ -104,117 +95,8 @@ final class PastureSceneController {
         behaviors[entity] ?? .idle
     }
 
-    func setPlayMode(_ enabled: Bool) {
-        let allowed = enabled && !isWindDownActive
-        guard isPlayMode != allowed else { return }
-        isPlayMode = allowed
-        if !allowed {
-            cancelInteraction(restartAutonomy: false)
-            clearPlayPresentation()
-            if !reduceMotion && !isWindDownActive { startSchedulerIfNeeded() }
-        }
-    }
-
-    func personality(for entity: PastureSceneEntityID) -> PastureScenePersonality {
-        switch entity.kind {
-        case .sheep:
-            return PastureSceneInteractionRules.personality(
-                for: entity.sheepID.flatMap { definitionIDBySheepID[$0] } ?? ""
-            )
-        case .ollie:
-            return .curious
-        case .shepherd:
-            return .gentle
-        }
-    }
-
-    func reactToTap(_ entity: PastureSceneEntityID) {
-        guard canPlay(with: entity), interaction == nil else { return }
-        clearPlayPresentation()
-        stopAutonomyAndSettle()
-        let reaction: PastureSceneBehavior = personality(for: entity) == .bouncy ? .greeting : .reacting
-        behaviors[entity] = reaction
-        addEffect(personality(for: entity) == .dreamy ? .sparkle : .heart, for: entity)
-        if let ollie = ollieNear(entity), ollie != entity {
-            behaviors[ollie] = .observing
-            addEffect(.pawprint, for: ollie)
-        }
-        schedulePlayReset(after: 750_000_000)
-    }
-
-    func beginPress(_ entity: PastureSceneEntityID) {
-        guard canPlay(with: entity), interaction == nil else { return }
-        clearPlayPresentation()
-        stopAutonomyAndSettle()
-        isInteractionActive = true
-        behaviors[entity] = .squishing
-        if entity.kind == .sheep { addEffect(.woolPuff, for: entity) }
-    }
-
-    func pet(_ entity: PastureSceneEntityID) {
-        guard canPlay(with: entity), interaction == nil else { return }
-        let continuingPet = isInteractionActive && behaviors[entity] == .petting
-        if !continuingPet {
-            clearPlayPresentation()
-            stopAutonomyAndSettle()
-        }
-        isInteractionActive = true
-        behaviors[entity] = .petting
-        let now = Date()
-        if lastPetFeedbackAt.map({ now.timeIntervalSince($0) >= 0.18 }) ?? true {
-            lastPetFeedbackAt = now
-            addEffect(.heart, for: entity)
-        }
-        if let ollie = ollieNear(entity), ollie != entity {
-            behaviors[ollie] = .observing
-        }
-    }
-
-    func endPress(_ entity: PastureSceneEntityID) {
-        guard entityIDs.contains(entity), interaction == nil else { return }
-        isInteractionActive = false
-        lastPetFeedbackAt = nil
-        guard isPlayMode, !isWindDownActive else {
-            settleSceneBehaviors()
-            if !reduceMotion && !isWindDownActive { startSchedulerIfNeeded() }
-            return
-        }
-        behaviors[entity] = .greeting
-        schedulePlayReset(after: reduceMotion ? 180_000_000 : 480_000_000)
-    }
-
-    func tossBall(toward point: PastureScenePoint? = nil) {
-        guard isPlayMode, !isWindDownActive, interaction == nil,
-              let ollie = entityIDs.first(where: { $0.kind == .ollie && $0.pastureIndex == activePastureIndex }) else { return }
-        clearPlayPresentation()
-        stopAutonomyAndSettle()
-        let origin = position(for: ollie)
-        if reduceMotion {
-            ball = PastureSceneBall(position: origin, isCarried: false)
-            behaviors[ollie] = .greeting
-            addEffect(.sparkle, point: origin, entityID: ollie)
-            schedulePlayReset(after: 420_000_000)
-            return
-        }
-        let target = PastureSceneInteractionRules.tossTarget(
-            for: ollie,
-            from: point ?? PastureScenePoint(x: 0.54, y: 0.70),
-            predictedTranslation: .zero,
-            among: settledPositions
-        )
-        ball = PastureSceneBall(position: target, isCarried: false)
-        behaviors[ollie] = .fetching
-        positions[ollie] = target
-        addEffect(.pawprint, point: origin, entityID: ollie)
-        if let sheep = nearestSheep(to: target) {
-            behaviors[sheep] = .observing
-        }
-        scheduleFetchReturn(ollie: ollie, target: target, returningTo: origin)
-    }
-
     func beginDrag(_ entity: PastureSceneEntityID) {
         guard entityIDs.contains(entity), interaction == nil else { return }
-        clearPlayPresentation()
         stopAutonomyAndSettle()
         interaction = DragInteraction(entity: entity, start: position(for: entity))
         isInteractionActive = true
@@ -234,63 +116,57 @@ final class PastureSceneController {
         )
     }
 
-    func finishDrag(
-        _ entity: PastureSceneEntityID,
-        predictedTranslation: PastureScenePoint = .zero
-    ) {
+    func finishDrag(_ entity: PastureSceneEntityID) {
         guard let interaction, interaction.entity == entity else {
             cancelInteraction()
             return
         }
         self.interaction = nil
         isInteractionActive = false
-        lastPetFeedbackAt = nil
         suppressedTapEntity = entity
         suppressedTapUntil = Date().addingTimeInterval(0.18)
         let proposed = position(for: entity)
-        let shouldToss = isPlayMode
-            && !isWindDownActive
-            && !reduceMotion
-            && predictedTranslation.x.isFinite
-            && predictedTranslation.y.isFinite
-            && hypot(predictedTranslation.x, predictedTranslation.y) > 0.006
-        let settled: PastureScenePoint
-        if shouldToss {
-            settled = PastureSceneInteractionRules.tossTarget(
-                for: entity,
-                from: proposed,
-                predictedTranslation: predictedTranslation,
-                among: settledPositions
-            )
-        } else {
-            settled = PastureSceneLayout.settledPosition(
-                proposed: proposed,
-                for: entity,
-                among: settledPositions
-            )
+        // The dropped character lands where it was put; anyone standing there
+        // steps aside instead. Same-pasture neighbours only.
+        let neighbours = settledPositions
+            .filter { $0.key != entity && $0.key.pastureIndex == entity.pastureIndex }
+            .map { PastureSceneNeighbour(key: $0.key.id, point: $0.value, footprint: PastureSceneLayout.footprint(for: $0.key)) }
+        let plan = PastureSceneLayout.nudgePlan(
+            dropped: entity.id,
+            footprint: PastureSceneLayout.footprint(for: entity),
+            at: proposed,
+            among: neighbours,
+            seed: sceneSeed ^ PastureSceneLayout.stableHash(forKey: entity.id)
+        )
+        let moved = plan.landing.distance(to: interaction.start) > 0.001
+        settledPositions[entity] = plan.landing
+        positions[entity] = plan.landing
+        settleSceneBehaviors()
+        var nudged: [PastureSceneEntityID] = []
+        for nudge in plan.displaced {
+            guard let other = entityIDs.first(where: { $0.id == nudge.key }) else { continue }
+            settledPositions[other] = nudge.target
+            positions[other] = nudge.target
+            behaviors[other] = .reacting
+            nudged.append(other)
         }
-        let moved = settled.distance(to: interaction.start) > 0.001
-        settledPositions[entity] = settled
-        positions[entity] = settled
-        if moved { persistCurrentSnapshot() }
-        if shouldToss {
-            behaviors[entity] = .landing
-            addEffect(.woolPuff, for: entity)
-            if let ollie = ollieNear(entity), ollie != entity { behaviors[ollie] = .observing }
-            schedulePlayReset(after: 560_000_000)
-        } else {
-            settleSceneBehaviors()
-            if !reduceMotion && !isWindDownActive { startSchedulerIfNeeded() }
+        if moved || !nudged.isEmpty { persistCurrentSnapshot() }
+        if !nudged.isEmpty {
+            let settleDelay: UInt64 = reduceMotion ? 10_000_000 : 900_000_000
+            Task { [weak self] in
+                try? await Task.sleep(nanoseconds: settleDelay)
+                guard let self else { return }
+                for other in nudged where self.behaviors[other] == .reacting {
+                    self.behaviors[other] = .idle
+                }
+            }
         }
+        if !reduceMotion && !isWindDownActive { startSchedulerIfNeeded() }
     }
 
     func cancelInteraction(restartAutonomy: Bool = true) {
         self.interaction = nil
         isInteractionActive = false
-        lastPetFeedbackAt = nil
-        cancelPlayTask()
-        effects = []
-        ball = nil
         settleSceneBehaviors()
         if restartAutonomy, !reduceMotion, !isWindDownActive { startSchedulerIfNeeded() }
     }
@@ -309,97 +185,6 @@ final class PastureSceneController {
     func stop() {
         stopAutonomyAndSettle()
         cancelInteraction(restartAutonomy: false)
-        clearPlayPresentation()
-    }
-
-    private func canPlay(with entity: PastureSceneEntityID) -> Bool {
-        entityIDs.contains(entity) && isPlayMode && !isWindDownActive
-    }
-
-    private func ollieNear(_ entity: PastureSceneEntityID) -> PastureSceneEntityID? {
-        entityIDs.first { $0.kind == .ollie && $0.pastureIndex == entity.pastureIndex }
-    }
-
-    private func nearestSheep(to point: PastureScenePoint) -> PastureSceneEntityID? {
-        entityIDs
-            .filter { $0.kind == .sheep && $0.pastureIndex == activePastureIndex }
-            .min { position(for: $0).distance(to: point) < position(for: $1).distance(to: point) }
-    }
-
-    private func addEffect(_ kind: PastureSceneEffectKind, for entity: PastureSceneEntityID) {
-        addEffect(kind, point: position(for: entity), entityID: entity)
-    }
-
-    private func addEffect(
-        _ kind: PastureSceneEffectKind,
-        point: PastureScenePoint,
-        entityID: PastureSceneEntityID?
-    ) {
-        guard point.x.isFinite, point.y.isFinite else { return }
-        effects.append(PastureSceneEffect(kind: kind, point: point, entityID: entityID))
-        if effects.count > 6 { effects.removeFirst(effects.count - 6) }
-        feedbackTick &+= 1
-    }
-
-    private func schedulePlayReset(after nanoseconds: UInt64) {
-        cancelPlayTask()
-        let generation = playGeneration
-        playTask = Task { [weak self] in
-            do {
-                try await Task.sleep(nanoseconds: nanoseconds)
-            } catch {
-                return
-            }
-            guard let self, generation == self.playGeneration, !self.isWindDownActive else { return }
-            self.effects = []
-            self.ball = nil
-            self.settleSceneBehaviors()
-            self.playTask = nil
-            if !self.reduceMotion { self.startSchedulerIfNeeded() }
-        }
-    }
-
-    private func scheduleFetchReturn(
-        ollie: PastureSceneEntityID,
-        target: PastureScenePoint,
-        returningTo origin: PastureScenePoint
-    ) {
-        cancelPlayTask()
-        let generation = playGeneration
-        playTask = Task { [weak self] in
-            do {
-                try await Task.sleep(nanoseconds: 650_000_000)
-            } catch {
-                return
-            }
-            guard let self, generation == self.playGeneration, !self.isWindDownActive else { return }
-            self.ball = PastureSceneBall(position: origin, isCarried: true)
-            self.positions[ollie] = origin
-            self.addEffect(.sparkle, point: target, entityID: ollie)
-            do {
-                try await Task.sleep(nanoseconds: 520_000_000)
-            } catch {
-                return
-            }
-            guard generation == self.playGeneration, !self.isWindDownActive else { return }
-            self.ball = nil
-            self.effects = []
-            self.settleSceneBehaviors()
-            self.playTask = nil
-            self.startSchedulerIfNeeded()
-        }
-    }
-
-    private func cancelPlayTask() {
-        playGeneration &+= 1
-        playTask?.cancel()
-        playTask = nil
-    }
-
-    private func clearPlayPresentation() {
-        cancelPlayTask()
-        effects = []
-        ball = nil
     }
 
     private func persistCurrentSnapshot() {
@@ -419,6 +204,7 @@ final class PastureSceneController {
 
     private func stopAutonomyAndSettle() {
         schedulerGeneration &+= 1
+        toyPosition = nil
         schedulerTask?.cancel()
         schedulerTask = nil
         settleSceneBehaviors(preservingDrag: true)
@@ -507,6 +293,62 @@ final class PastureSceneController {
             return
         }
         guard generation == schedulerGeneration, !isWindDownActive else { return }
+    }
+
+    /// Explicit play stays local and never settles session or reward state.
+    func fetch() {
+        guard let ollie = entityIDs.first(where: { $0.kind == .ollie && $0.pastureIndex == activePastureIndex }), !isInteractionActive else { return }
+        stopAutonomyAndSettle()
+        let generation = schedulerGeneration
+        let origin = position(for: ollie)
+        let target = PasturePlay.fetchTarget(from: origin)
+        toyPosition = target
+        playMessage = "Ollie is fetching the toy"
+        behaviors[ollie] = .chasing
+        positions[ollie] = target
+        Task { [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: .milliseconds(self.reduceMotion ? 20 : 850))
+            guard generation == self.schedulerGeneration, !self.isInteractionActive else { return }
+            self.toyPosition = nil
+            self.positions[ollie] = origin
+            try? await Task.sleep(for: .milliseconds(self.reduceMotion ? 20 : 850))
+            guard generation == self.schedulerGeneration, !self.isInteractionActive else { return }
+            self.behaviors[ollie] = .idle
+            self.playMessage = "Ollie brought the toy back"
+            self.startSchedulerIfNeeded()
+        }
+    }
+
+    func gather() {
+        guard !isInteractionActive,
+              let shepherd = entityIDs.first(where: { $0.kind == .shepherd && $0.pastureIndex == activePastureIndex }),
+              let ollie = entityIDs.first(where: { $0.kind == .ollie && $0.pastureIndex == activePastureIndex }) else { return }
+        stopAutonomyAndSettle()
+        let generation = schedulerGeneration
+        let sheep = entityIDs.filter { $0.kind == .sheep && $0.pastureIndex == activePastureIndex }.sorted { $0.id < $1.id }
+        let targets = PasturePlay.gatheringPoints(around: position(for: shepherd), count: sheep.count)
+        playMessage = "Ollie is gathering the sheep"
+        behaviors[ollie] = .chasing
+        positions[ollie] = .init(x: 0.75, y: 0.7)
+        Task { [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: .milliseconds(self.reduceMotion ? 20 : 650))
+            guard generation == self.schedulerGeneration, !self.isInteractionActive else { return }
+            for (entity, target) in zip(sheep, targets) {
+                let settled = PastureSceneLayout.settledPosition(proposed: target, for: entity, among: self.settledPositions)
+                self.positions[entity] = settled
+                self.settledPositions[entity] = settled
+                self.behaviors[entity] = .reacting
+            }
+            self.persistSnapshot?(PastureSceneSnapshot(positions: self.settledPositions.map { .init(entityID: $0.key, point: $0.value) }))
+            try? await Task.sleep(for: .milliseconds(self.reduceMotion ? 20 : 700))
+            guard generation == self.schedulerGeneration, !self.isInteractionActive else { return }
+            self.positions = self.settledPositions
+            for entity in sheep + [ollie] { self.behaviors[entity] = .idle }
+            self.playMessage = "The flock has gathered"
+            self.startSchedulerIfNeeded()
+        }
     }
 
     private static func membership(

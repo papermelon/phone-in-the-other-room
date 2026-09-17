@@ -43,7 +43,6 @@ struct TrailNotesArchiveView: View {
                             NavigationLink {
                                 WindDownRevealView(
                                     outcome: outcome,
-                                    showExactOdds: viewModel.sheepSearchState.showExactOdds,
                                     farmState: viewModel.farmState
                                 )
                             } label: {
@@ -95,7 +94,7 @@ struct TrailNotesArchiveView: View {
                     .foregroundStyle(AppColors.grass)
                 Text("No Search Journal entry saved.")
                     .font(AppTypography.headline)
-                Text("Wind Down, Sunrise Trail, and Phone Away can each leave a homecoming or clue here.")
+                Text("Wind Down, Screen-Free Morning, and Phone Away can each leave a homecoming or clue here.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }
@@ -160,7 +159,7 @@ private struct TrailNoteRow: View {
 
     private var statusLine: String {
         switch (outcome.result, ownedStatus) {
-        case (.trailOnly, _): return "Clue saved for another night"
+        case (.trailOnly, _): return SheepSearchPresentation.clueStatusLine(for: outcome.origin)
         case (.found, .pending): return "Waiting at The Barn gate"
         case (.found, .sold): return "Discovery kept · sheep moved on"
         case (.found, .active): return "Living in the active flock"

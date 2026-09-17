@@ -6,6 +6,23 @@ enum QuietTimeShieldRole: String, Codable, Equatable, Hashable {
     case primaryWindDown
     case additionalQuiet
     case screenFreeMorning
+
+    var timerName: String {
+        switch self {
+        case .primaryWindDown: return "Wind Down"
+        case .additionalQuiet: return "Phone Away"
+        case .screenFreeMorning: return "Screen-Free Morning"
+        }
+    }
+
+    /// Shared verbatim by the shield and active-run surfaces so Brief Access
+    /// cannot be mistaken for ending or shortening the underlying timer.
+    var briefAccessExplanation: String {
+        if self == .screenFreeMorning {
+            return "Selected apps unlock for up to 5 minutes. The morning timer continues."
+        }
+        return "Selected apps unlock for up to 5 minutes. The \(timerName) timer continues. Farm growth pauses during access; saved progress stays."
+    }
 }
 
 enum QuietTimeShieldCueGroup: String, Codable, CaseIterable, Equatable, Hashable {
@@ -31,6 +48,18 @@ enum QuietPurposeCue: String, Codable, CaseIterable, Equatable {
     case somethingOffline
     case somethingElse
 
+    /// Short copy for the in-app active session. Shield copy remains a little
+    /// more descriptive because it is shown at the intervention point.
+    var appFacingTitle: String {
+        switch self {
+        case .prepareForSleep: return "Rest"
+        case .read: return "Reading"
+        case .focusOnWork: return "Work"
+        case .somethingOffline: return "Time offline"
+        case .somethingElse: return "Something else"
+        }
+    }
+
     var shieldText: String {
         switch self {
         case .prepareForSleep: return "Prepare for sleep"
@@ -53,9 +82,28 @@ struct QuietPurposeCueState: Codable, Equatable {
         return try? JSONDecoder().decode(Self.self, from: data)
     }
 
+    static func load(
+        matching occurrenceID: UUID,
+        revision: Int,
+        epoch: Int,
+        from defaults: UserDefaults
+    ) -> Self? {
+        guard let state = load(from: defaults),
+              state.occurrenceID == occurrenceID,
+              state.revision == revision,
+              state.epoch == epoch else {
+            return nil
+        }
+        return state
+    }
+
     static func save(_ value: Self, to defaults: UserDefaults) {
         guard let data = try? JSONEncoder().encode(value) else { return }
         defaults.set(data, forKey: QuietTimeShieldPresentationStorage.purposeCueKey)
+    }
+
+    static func clear(from defaults: UserDefaults) {
+        defaults.removeObject(forKey: QuietTimeShieldPresentationStorage.purposeCueKey)
     }
 
     static func clear(
@@ -302,7 +350,7 @@ enum ShieldCueCatalog {
     ]
 
     static let overnight = [
-        "Your phone is tucked away. There is nothing else to do here."
+        "The overnight phase is running. Leave this check for later."
     ]
 
     static let morningQuiet = [

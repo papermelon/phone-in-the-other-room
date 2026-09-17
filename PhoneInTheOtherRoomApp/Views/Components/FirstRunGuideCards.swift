@@ -51,42 +51,41 @@ struct CountingSheepPracticeOfferSheet: View {
     let onMaybeLater: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.lg) {
-            Label("A SHORT PRACTICE", systemImage: "timer")
-                .font(pixelFont(.caption))
-                .foregroundStyle(AppColors.grass)
+        ContentFittingGuideSheet {
+            VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                Label("A SHORT PRACTICE", systemImage: "timer")
+                    .font(pixelFont(.caption))
+                    .foregroundStyle(AppColors.grass)
 
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(FirstRunGuideCopy.practiceOfferTitle)
-                    .font(AppTypography.title)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text(FirstRunGuideCopy.message(for: .practiceOffer))
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    Text(FirstRunGuideCopy.practiceOfferTitle)
+                        .font(AppTypography.title)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(FirstRunGuideCopy.message(for: .practiceOffer))
+                        .font(AppTypography.body)
+                        .foregroundStyle(AppColors.secondaryText)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button(action: onStartPractice) {
+                    Label(FirstRunGuideCopy.practiceStart, systemImage: "timer")
+                        .frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(PixelPrimaryButtonStyle())
+
+                Button(FirstRunGuideCopy.skipForNow, action: onSkip)
                     .font(AppTypography.body)
-                    .foregroundStyle(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+                    .foregroundStyle(AppColors.ink)
+                    .frame(maxWidth: .infinity, minHeight: 44)
 
-            Button(action: onStartPractice) {
-                Label(FirstRunGuideCopy.practiceStart, systemImage: "timer")
+                Button(FirstRunGuideCopy.doThisLater, action: onMaybeLater)
+                    .font(AppTypography.body)
+                    .foregroundStyle(AppColors.muted)
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
-            .buttonStyle(PixelPrimaryButtonStyle())
-
-            Button(FirstRunGuideCopy.skipForNow, action: onSkip)
-                .font(AppTypography.body)
-                .foregroundStyle(AppColors.ink)
-                .frame(maxWidth: .infinity, minHeight: 44)
-
-            Button(FirstRunGuideCopy.doThisLater, action: onMaybeLater)
-                .font(AppTypography.body)
-                .foregroundStyle(AppColors.muted)
-                .frame(maxWidth: .infinity, minHeight: 44)
+            .foregroundStyle(AppColors.ink)
+            .accessibilityElement(children: .contain)
         }
-        .foregroundStyle(AppColors.ink)
-        .padding(AppSpacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(AppColors.paper.ignoresSafeArea())
-        .accessibilityElement(children: .contain)
     }
 }
 
@@ -107,7 +106,7 @@ struct FirstRunPracticeRewardCard: View {
                 Text(
                     grantedNewSheep
                         ? FirstRunGuideCopy.message(for: .practiceReward)
-                        : "The five-minute introduction is in Nights. It is not a protected night."
+                        : "The five-minute introduction is in Nights. It does not count toward Wind Down search progress or the Phone Away meter."
                 )
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
@@ -258,7 +257,7 @@ struct OrientationRecordPrompt: View {
                 Label("YOUR PRACTICE RECORD", systemImage: "book.closed.fill")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Five minutes of quiet, recorded plainly.")
+                Text("Your five-minute practice is complete.")
                     .font(AppTypography.headline)
                     .fixedSize(horizontal: false, vertical: true)
                 Text("It appears in Nights. Completing it can bring a welcome gift sheep home, without counting as a Wind Down.")
@@ -280,7 +279,16 @@ struct OrientationRecordPrompt: View {
 }
 
 #Preview("Practice offer") {
-    CountingSheepPracticeOfferSheet(onStartPractice: {}, onSkip: {}, onMaybeLater: {})
+    Color.clear.sheet(isPresented: .constant(true)) {
+        CountingSheepPracticeOfferSheet(onStartPractice: {}, onSkip: {}, onMaybeLater: {})
+    }
+}
+
+#Preview("Practice offer · largest text") {
+    Color.clear.sheet(isPresented: .constant(true)) {
+        CountingSheepPracticeOfferSheet(onStartPractice: {}, onSkip: {}, onMaybeLater: {})
+            .environment(\.dynamicTypeSize, .accessibility5)
+    }
 }
 
 #Preview("Practice reward") {

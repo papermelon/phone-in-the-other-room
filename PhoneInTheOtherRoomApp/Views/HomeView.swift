@@ -9,7 +9,15 @@ struct HomeView: View {
     @State private var selectedTab: MainAppTab
     @State private var farmVisitSeed: UInt64
     @State private var opensNightFlock = false
+    @State private var pendingPartyPresentation = false
+    @State private var partyOriginTab: MainAppTab?
+    @State private var nightFlockPartyID: UUID?
+    @State private var homeScrollViewportSize = CGSize.zero
     @State private var homeNavigationPath = NavigationPath()
+    /// Dashboard destinations belong to the persistent Home shell, so a
+    /// successful admission can dismiss the exact pushed route before the
+    /// dashboard is replaced by the active session surface.
+    @State private var homeDashboardDestination: PixelHomeDashboardDestination?
     @State private var nightsNavigationPath = NavigationPath()
     @State private var farmNavigationPath = NavigationPath()
     @State private var settingsNavigationPath = NavigationPath()
@@ -35,14 +43,21 @@ struct HomeView: View {
         ZStack {
             shellBackground.ignoresSafeArea()
             VStack(spacing: 0) {
-                selectedTabNavigationStack
+                Group {
+                    if viewModel.homeReceiptRoute.replacesTabShell {
+                        // A separate receipt root cannot be obscured by a Farm
+                        // destination or leave that tab stranded without its bar.
+                        NavigationStack { homeContent }
+                    } else {
+                        selectedTabNavigationStack
+                    }
+                }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
                 if showChrome {
                     shellFooter
                 }
             }
-            .accessibilityHidden(isOrientationCoachPresented)
         }
         .alert("Turn on Sleep Focus?", isPresented: $viewModel.showFocusModePrompt) {
             Button("Skip", role: .cancel) {
@@ -73,10 +88,21 @@ struct HomeView: View {
             select(.farm)
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNightFlock)) { notification in
-            guard !viewModel.isRunning else { return }
+            partyOriginTab = selectedTab
             viewModel.nightFlockViewModel.prefersJoinEntry = (notification.object as? String) == "join"
-            select(.farm)
-            opensNightFlock = true
+            nightFlockPartyID = notification.object as? UUID
+            if selectedTab == .farm {
+                opensNightFlock = true
+            } else {
+                pendingPartyPresentation = true
+                select(.farm)
+            }
+        }
+        .onChange(of: opensNightFlock) { _, isOpen in
+            if !isOpen, !pendingPartyPresentation, let origin = partyOriginTab {
+                partyOriginTab = nil
+                if selectedTab == .farm { select(origin) }
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNights)) { _ in
             if viewModel.activeRun?.state == .completed || viewModel.activeRun?.state == .endedEarly {
@@ -90,12 +116,25 @@ struct HomeView: View {
         .onChange(of: viewModel.isRunning) { _, isRunning in
             if isRunning {
                 opensNightFlock = false
+                nightFlockPartyID = nil
                 resetNavigation(for: .farm)
                 routeToHome()
             }
         }
+        .onChange(of: viewModel.homeStartAdmission) { _, admission in
+            guard let admission,
+                  HomeStartRoutingPolicy.shouldRoute(
+                    admission: admission,
+                    activeRunID: viewModel.activeRun?.id
+                  ) else { return }
+            routeToHome()
+            viewModel.consumeHomeStartAdmission(admission)
+        }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active, viewModel.isRunning { routeToHome() }
+            guard phase == .active else { return }
+            viewModel.refreshConnectionsAfterForeground()
+            viewModel.reloadCurrentPurposeCue()
+            if viewModel.isRunning { routeToHome() }
         }
         .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
             guard count > 0 else { return }
@@ -108,28 +147,25 @@ struct HomeView: View {
                 onCode: viewModel.acceptQRCode
             )
         }
-        .sheet(isPresented: $viewModel.showNightWatchStartPrompt) {
+        // A system NFC/picker overlay may cover the preflight. Only dismissal
+        // of the preflight itself cancels its pending start transaction.
+        .sheet(isPresented: $viewModel.showNightWatchStartPrompt, onDismiss: {
+            viewModel.cancelNightWatchStart()
+        }) {
             WindDownStartSheet()
                 .environmentObject(viewModel)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
-        .overlayPreferenceValue(OrientationTourTargetPreferenceKey.self) { targets in
-            GeometryReader { proxy in
-                if shouldPresentOrientationCoach {
-                    let frame = targets[activeOrientationTarget].map { proxy[$0] }
-                    CountingSheepOrientationTourOverlay(
-                        step: viewModel.orientationState.currentStep,
-                        targetFrame: frame,
-                        context: viewModel.firstRunAdvanceContext,
-                        onBack: viewModel.moveBackInOrientationTour,
-                        onNext: advanceOrientationTour,
-                        onSkip: viewModel.skipOrientationLesson
-                    )
-                    .zIndex(50)
-                }
-            }
-        }
+        .modifier(GuidePresentationModifier(target: shouldPresentOrientationCoach ? activeOrientationTarget : nil) {
+            CountingSheepOrientationTourOverlay(
+                step: viewModel.orientationState.currentStep,
+                context: viewModel.firstRunAdvanceContext,
+                onBack: viewModel.moveBackInOrientationTour,
+                onNext: advanceOrientationTour,
+                onSkip: viewModel.skipOrientationLesson
+            )
+        })
         .sheet(isPresented: $showOrientationPracticeOffer) {
             CountingSheepPracticeOfferSheet(
                 onStartPractice: startOrientationPractice,
@@ -142,8 +178,6 @@ struct HomeView: View {
                     viewModel.dismissOrientation()
                 }
             )
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
         }
         .onChange(of: viewModel.orientationState.currentStep) { _, step in
             guard viewModel.orientationState.isGuideActive else { return }
@@ -172,17 +206,59 @@ struct HomeView: View {
     private func tabNavigationStack(path: Binding<NavigationPath>) -> some View {
         NavigationStack(path: path) {
             tabContent
+                .navigationDestination(isPresented: dashboardDestinationBinding(for: .setup)) {
+                    FocusRunSetupView()
+                        .environmentObject(viewModel)
+                }
+                .navigationDestination(isPresented: dashboardDestinationBinding(for: .timing)) {
+                    WindDownTimingView()
+                        .environmentObject(viewModel)
+                }
+                .navigationDestination(isPresented: dashboardDestinationBinding(for: .quietTimeSchedule)) {
+                    WindDownScheduleView()
+                        .environmentObject(viewModel)
+                }
+                .navigationDestination(isPresented: dashboardDestinationBinding(for: .protectionRepair)) {
+                    ScreenTimeProtectionRepairView()
+                        .environmentObject(viewModel)
+                }
+                .alert("The session could not start", isPresented: dashboardDestinationBinding(for: .quickStartError)) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(viewModel.windDownScheduleError
+                        ?? (viewModel.nightWatchStartStatus.isEmpty
+                            ? "Please try again."
+                            : viewModel.nightWatchStartStatus))
+                }
         }
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private func dashboardDestinationBinding(
+        for route: PixelHomeDashboardDestination
+    ) -> Binding<Bool> {
+        Binding(
+            get: { homeDashboardDestination == route },
+            set: { isPresented in
+                if isPresented {
+                    homeDashboardDestination = route
+                } else if homeDashboardDestination == route {
+                    homeDashboardDestination = nil
+                }
+            }
+        )
     }
 
     private var tabContent: some View {
         ZStack {
             VStack(spacing: 0) {
                 if showHeaderChrome {
-                    CountingSheepTopBar()
+                    HStack(spacing: AppSpacing.sm) {
+                        CountingSheepTopBar()
+                        FarmBackupStatusView(model: viewModel.farmBackupViewModel, account: viewModel.nightFlockViewModel)
+                    }
                         .padding(.horizontal, 18)
-                        .padding(.top, 10)
+                        .padding(.vertical, AppSpacing.xs)
                     if viewModel.orientationState.shouldShowContinueCard(
                         isCoachMarkPresented: isOrientationCoachPresented
                     ) {
@@ -196,12 +272,28 @@ struct HomeView: View {
                             onDismiss: viewModel.dismissFirstRunContinueCard
                         )
                         .padding(.horizontal, 16)
-                        .padding(.top, 10)
+                        .padding(.vertical, AppSpacing.xs)
                     }
                 }
 
                 if contentUsesOwnScroll {
                     content
+                } else if selectedTab == .home {
+                    GeometryReader { viewportProxy in
+                        ScrollView {
+                            VStack(spacing: 18) {
+                                content
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.top, showChrome ? 20 : 12)
+                            .padding(.bottom, 18)
+                        }
+                        .coordinateSpace(name: HomeScrollViewportCoordinateSpace.name)
+                        .onAppear { homeScrollViewportSize = viewportProxy.size }
+                        .onChange(of: viewportProxy.size) { _, size in
+                            homeScrollViewportSize = size
+                        }
+                    }
                 } else {
                     ScrollView {
                         VStack(spacing: 18) {
@@ -360,9 +452,19 @@ struct HomeView: View {
             case .farm:
                 FarmView(
                     pastureVisitSeed: farmVisitSeed,
-                    opensNightFlock: $opensNightFlock
+                    opensNightFlock: $opensNightFlock,
+                    nightFlockPartyID: $nightFlockPartyID
                 )
                     .environmentObject(viewModel)
+                    .task {
+                        // Mount Farm's navigation destination before presenting it.
+                        // Otherwise SwiftUI can dismiss a route during the tab swap.
+                        guard pendingPartyPresentation else { return }
+                        await Task.yield()
+                        guard !Task.isCancelled, selectedTab == .farm, pendingPartyPresentation else { return }
+                        pendingPartyPresentation = false
+                        opensNightFlock = true
+                    }
             case .settings:
                 SettingsView()
                     .environmentObject(viewModel)
@@ -377,7 +479,12 @@ struct HomeView: View {
             if let occurrence = viewModel.screenFreeMorningOccurrences.first(where: { $0.id == occurrenceID }) {
                 ScreenFreeMorningView(occurrence: occurrence)
             } else {
-                PixelHomeDashboard(watch: dashboardWatch).environmentObject(viewModel)
+                PixelHomeDashboard(
+                    watch: dashboardWatch,
+                    destination: $homeDashboardDestination,
+                    homeScrollViewportSize: homeScrollViewportSize
+                )
+                .environmentObject(viewModel)
             }
         case .deferredScreenFreeMorning(let occurrenceID, let unreadRunID):
             VStack(spacing: AppSpacing.md) {
@@ -385,7 +492,12 @@ struct HomeView: View {
                     HomeDeferredScreenFreeMorningCard(occurrence: occurrence)
                 }
                 if let unreadRunID { HomeWindDownReceiptRecoveryCard(runID: unreadRunID) }
-                PixelHomeDashboard(watch: dashboardWatch).environmentObject(viewModel)
+                PixelHomeDashboard(
+                    watch: dashboardWatch,
+                    destination: $homeDashboardDestination,
+                    homeScrollViewportSize: homeScrollViewportSize
+                )
+                .environmentObject(viewModel)
             }
         case .terminalWindDownReceipt:
             if viewModel.activeRun?.state == .completed {
@@ -395,6 +507,13 @@ struct HomeView: View {
             }
         case .activeWindDown:
             ActiveRunView(now: activeRunNow)
+                .safeAreaInset(edge: .bottom) {
+                    Button("Visit Slumber Party") {
+                        NotificationCenter.default.post(name: .countingSheepShowNightFlock,
+                            object: viewModel.nightFlockViewModel.homeSummary?.destinationPartyID)
+                    }.buttonStyle(PixelChipButtonStyle(isSelected: false))
+                        .frame(minHeight: 44).padding(.horizontal, AppSpacing.md)
+                }
         case .unreadWindDownReceipt(let runID):
             HomeWindDownReceiptRecoveryCard(runID: runID)
         case .dashboard:
@@ -407,14 +526,18 @@ struct HomeView: View {
                         onPractice: { showOrientationPracticeOffer = true }
                     )
                 }
-                PixelHomeDashboard(watch: dashboardWatch).environmentObject(viewModel)
+                PixelHomeDashboard(
+                    watch: dashboardWatch,
+                    destination: $homeDashboardDestination,
+                    homeScrollViewportSize: homeScrollViewportSize
+                )
+                .environmentObject(viewModel)
             }
         }
     }
 
     private var showChrome: Bool {
-        guard viewModel.activeRun?.state != .completed,
-              viewModel.activeRun?.state != .endedEarly else { return false }
+        guard !viewModel.homeReceiptRoute.replacesTabShell else { return false }
         return !viewModel.isRunning || viewModel.activeRun?.isNightWatch == true
     }
 
@@ -430,12 +553,17 @@ struct HomeView: View {
         // scroll. Wrapping them in the shell ScrollView makes the live journey
         // feel like a long document and can push the exit controls below the
         // viewport on smaller phones.
-        if viewModel.activeRun?.state == .completed || viewModel.activeRun?.state == .endedEarly { return true }
+        if viewModel.homeReceiptRoute.replacesTabShell { return true }
         if viewModel.isRunning && selectedTab == .home { return true }
         return selectedTab != .home
     }
 
     private func select(_ tab: MainAppTab, resetIfReselected: Bool = true) {
+        if tab != .farm {
+            pendingPartyPresentation = false
+            partyOriginTab = nil
+            opensNightFlock = false
+        }
         let isReselection = selectedTab == tab
         if tab == .farm, !isReselection {
             farmVisitSeed = UInt64.random(in: UInt64.min...UInt64.max)
@@ -450,6 +578,10 @@ struct HomeView: View {
 
     private func routeToHome() {
         guard viewModel.isRunning else { return }
+        // Clear the Home-owned presentation first. The active surface removes
+        // PixelHomeDashboard immediately, so a dashboard-local binding cannot
+        // reliably dismiss an already-pushed schedule route.
+        homeDashboardDestination = nil
         selectedTab = .home
         resetNavigation(for: .home)
     }

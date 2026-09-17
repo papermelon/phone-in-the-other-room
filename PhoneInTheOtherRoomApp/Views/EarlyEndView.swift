@@ -14,11 +14,22 @@ struct EarlyEndView: View {
                     run: viewModel.activeRun,
                     sleepSummary: viewModel.lastNightSleep,
                     sleepAuthorization: viewModel.sleepAuthorization,
-                    screenTimeAuthorization: viewModel.screenTimeAuthorization
+                    screenTimeAuthorization: viewModel.screenTimeAuthorization,
+                    record: terminalRecord,
+                    farmCredit: viewModel.activeRun.flatMap { viewModel.farmState.cumulativeCredit?.receipts[$0.id] }
                 )
-                Button(AppCopy.EarlyEnd.doneButton.value) { viewModel.resetSetup() }
+                if let run = viewModel.activeRun,
+                   let credit = viewModel.farmState.cumulativeCredit?.receipts[run.id], credit.creditedSeconds > 0 {
+                    Button("View farm") {
+                        NotificationCenter.default.post(name: .countingSheepShowFarm, object: nil)
+                        viewModel.resetSetup()
+                    }
                     .frame(maxWidth: .infinity)
                     .buttonStyle(PixelPrimaryButtonStyle())
+                }
+                Button(AppCopy.EarlyEnd.doneButton.value) { viewModel.resetSetup() }
+                    .frame(maxWidth: .infinity)
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
             }
             .padding(16)
         }
@@ -33,7 +44,7 @@ struct EarlyEndView: View {
         } else {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: 14) {
-                    OllieRitualView(state: .endedEarly, presentation: .cardCompanion)
+                    OllieRitualView(state: .completed, presentation: .cardCompanion)
                     receiptMessage
                         .frame(width: 176, alignment: .leading)
                         .layoutPriority(1)
@@ -47,7 +58,7 @@ struct EarlyEndView: View {
 
     private var stackedReceiptHeader: some View {
         VStack(alignment: .leading, spacing: 12) {
-            OllieRitualView(state: .endedEarly, presentation: .cardCompanion)
+            OllieRitualView(state: .completed, presentation: .cardCompanion)
                 .frame(maxWidth: .infinity)
             receiptMessage
         }
@@ -55,46 +66,25 @@ struct EarlyEndView: View {
 
     private var receiptMessage: some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text(phoneAwayReceipt?.eyebrow ?? (viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet ? "PHONE AWAY ENDED" : AppCopy.EarlyEnd.eyebrow.value))
+            Text(terminalPresentation?.eyebrow ?? "TIMER ENDED EARLY")
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.secondaryText)
-            Text(phoneAwayReceipt?.title ?? (viewModel.activeRun?.nightWatchPlan?.role == .additionalQuiet
-                ? "Phone Away ended early. The time you completed is saved in Nights."
-                : AppCopy.EarlyEnd.title.value))
+            Text(terminalPresentation?.headline ?? "The timer ended early.")
                 .font(pixelFont(.title3))
-            Text(phoneAwayReceipt?.message ?? (minutesAwayText + " Tonight can simply be a fresh start."))
+            Text(terminalPresentation?.timerSummary ?? "Your session summary is below.")
                 .font(pixelFont(.body))
                 .foregroundStyle(AppColors.secondaryText)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(phoneAwayReceipt?.accessibilityLabel ?? minutesAwayText + " Tonight can simply be a fresh start.")
+        .accessibilityLabel(terminalPresentation?.accessibilityLabel ?? "The timer ended early. Your session summary is below.")
     }
 
-    private var phoneAwayReceipt: PhoneAwayReceiptPresentation? {
-        guard let run = viewModel.activeRun,
-              run.nightWatchPlan?.role == .additionalQuiet,
-              let record = viewModel.phoneAwaySearchSettlement(for: run.id) else {
-            return nil
-        }
-        return .make(record: record)
+    private var terminalPresentation: RunTerminalPresentation? {
+        viewModel.activeRun.map { RunTerminalPresentation(run: $0) }
     }
 
-    private var minutesAwayText: String {
-        let run = viewModel.activeRun
-        let minutes: Int
-        if let run, run.isProgressionEligibleNightWatch {
-            // Screen-Free Morning remains an independent factual occurrence;
-            // this terminal Wind Down receipt must not combine it again.
-            minutes = run.creditedWindDownMinutes
-        } else if run?.isNightWatch == true {
-            minutes = run?.creditedQuietMinutes ?? 0
-        } else {
-            minutes = Int((run?.actualDurationSeconds ?? 0) / 60)
-        }
-        switch minutes {
-        case 0: return "Your phone got a little time away."
-        case 1: return "Your phone was away for a minute."
-        default: return "Your phone was away for \(minutes) minutes."
-        }
+    private var terminalRecord: NightWatchRecord? {
+        guard let run = viewModel.activeRun else { return nil }
+        return viewModel.nightWatchRecords.first { $0.id == run.id }
     }
 }

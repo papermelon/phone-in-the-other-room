@@ -76,9 +76,9 @@ enum WindDownProtectionChoice: String, CaseIterable, Identifiable, Equatable {
     var detail: String {
         switch self {
         case .appShielding:
-            return "App protection supports Wind Down and Screen-Free Morning. Counting Sheep stays available, with an emergency exit if you need your phone back sooner."
+            return "Counting Sheep requests limits for chosen apps or categories from Wind Down start through Screen-Free Morning, including overnight, and during Phone Away. Counting Sheep and its emergency exit stay available."
         case .nfcAndAppShielding:
-            return "Tap your Wind Down tag to start app protection. The same tag is used for the normal end; Screen-Free Morning is protected as its linked plan begins."
+            return "Tap your Wind Down tag to confirm the start. Counting Sheep then requests limits for chosen apps or categories through Screen-Free Morning, including overnight; the same tag is the normal early end."
         }
     }
 
@@ -101,6 +101,29 @@ extension SessionGuardKind {
     }
 }
 
+extension FocusRun {
+    /// A decoded Watch/phone payload can outlive the release that created it.
+    /// Retired Watch-placement and QR guards keep their factual timer, but
+    /// never revive UWB, camera, or placement-confirmation behavior.
+    var normalizedForCurrentRelease: Self {
+        guard guardKind.releaseCompatibleKind != guardKind else { return self }
+        var normalized = self
+        let legacyKind = guardKind
+        normalized.guardKind = .honorTimer
+        normalized.placementStatus = .notRequired
+        normalized.placementEvidence = PlacementEvidence(
+            guardKind: .honorTimer,
+            confirmedAt: nil,
+            note: "Legacy \(legacyKind.rawValue) start restored as a timer"
+        )
+        normalized.phoneAwayValidatedAt = phoneAwayValidatedAt ?? startedAt
+        if ![.setup, .completed, .endedEarly].contains(state) {
+            normalized.state = .running
+        }
+        return normalized
+    }
+}
+
 /// Keeps manual Wind Down start actions idempotent while an NFC reader session
 /// is already in flight. The decision is pure so the UI start path can be tested
 /// without Core NFC or SwiftUI.
@@ -111,12 +134,21 @@ enum WindDownStartGate {
 
     static func canBeginNFCRead(
         forPendingStart: Bool,
-        hasActiveRun: Bool,
+        activeRunState: FocusRunState?,
         startInFlight: Bool,
         scanInFlight: Bool
     ) -> Bool {
         guard !startInFlight, !scanInFlight else { return false }
-        return forPendingStart ? !hasActiveRun : hasActiveRun
+        let hasRunningSession = activeRunState.map { ![.setup, .completed, .endedEarly].contains($0) } ?? false
+        return forPendingStart ? !hasRunningSession : hasRunningSession
+    }
+
+    static func nfcPurpose(
+        pendingRole: WindDownOccurrenceRole?,
+        activeRole: WindDownOccurrenceRole?
+    ) -> PhoneBedTagPurpose {
+        // A new preflight owns its tag purpose even while an older receipt is retained.
+        (pendingRole ?? activeRole) == .additionalQuiet ? .phoneAway : .windDown
     }
 }
 

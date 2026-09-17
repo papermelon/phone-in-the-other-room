@@ -42,7 +42,7 @@ struct ShepherdNameCard: View {
             Text("\(profile.displayName)’s Shepherd")
                 .font(AppTypography.headline)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Ollie will use this name around the Farm.")
+            Text("Ollie uses this name around the Farm. People in every Slumber Party you join can see it. After your first choice, you can make up to two successful changes in any rolling 14 days.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
@@ -58,7 +58,7 @@ struct ShepherdNameCard: View {
                 }
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 .frame(minHeight: 44)
-                .accessibilityHint("You can change your name up to twice in a rolling fourteen days.")
+                .accessibilityHint("People in every Slumber Party can see this name. You can make up to two successful changes in any rolling fourteen days.")
             }
         }
     }
@@ -68,7 +68,7 @@ struct ShepherdNameCard: View {
             Text("What should Ollie call you?")
                 .font(AppTypography.headline)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Choose a name for your Shepherd. You can update it later.")
+            Text("Choose a name for your Shepherd. People in every Slumber Party you join can see it. Your first choice is free; after that, you can make up to two successful changes in any rolling 14 days.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)

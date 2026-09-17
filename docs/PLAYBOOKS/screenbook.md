@@ -1,6 +1,12 @@
 # Playbook: Local Screenbook technical spike
 
-The Screenbook is a private, generated review surface for five deterministic production iPhone
+**Shelved — founder confirmation, 8 September 2026.** Do not use Screenbook as the default
+preview, art-review, or implementation workflow, and do not expand its registry. The material
+below describes retained legacy tooling only. Use ordinary SwiftUI previews or a narrowly
+scoped local Debug harness for current native studies unless the founder explicitly restarts
+Screenbook work.
+
+The Screenbook is a private, generated review surface for eleven deterministic production iPhone
 states. Swift and the production models remain authoritative. The gallery displays simulator
 screenshots and metadata; it never rebuilds the product UI in HTML and never edits Swift.
 
@@ -35,7 +41,7 @@ python3 scripts/screenbook/screenbook.py capture --scenario iphone.farm.populate
 # Dependency and fixture fingerprints select the affected scenario union.
 python3 scripts/screenbook/screenbook.py capture --changed
 
-# Rebuild and capture the exact five-state technical spike.
+# Rebuild and capture the current eleven-state local catalogue.
 python3 scripts/screenbook/screenbook.py capture --all
 
 # Rebuild HTML/CSS/JavaScript from valid local artifacts without a simulator.
@@ -81,7 +87,7 @@ the resolved `tmp/screenbook/` directory. Browser annotations require their sepa
 
 ## Phase boundary
 
-The registry must list exactly the five approved Phase 1 identifiers. Do not add catalogue states,
+The registry currently lists exactly eleven approved identifiers. Do not add catalogue states,
 localization, Watch, Live Activity, notification, report-extension, shield, deployment, hosting,
 or copy-application behavior here. Those are later separately approved phases in
 `docs/SCREENBOOK_IMPLEMENTATION_PLAN.md`.

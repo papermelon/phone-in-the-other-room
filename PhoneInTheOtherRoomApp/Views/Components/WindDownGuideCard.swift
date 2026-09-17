@@ -3,6 +3,7 @@ import SwiftUI
 struct WindDownGuideCard: View {
     let item: WindDownGuidanceItem
     var compact = false
+    var onDismiss: (() -> Void)? = nil
 
     var body: some View {
         PixelCard {
@@ -11,7 +12,7 @@ struct WindDownGuideCard: View {
                     Image(systemName: "sparkles")
                         .foregroundStyle(AppColors.grass)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("WHY THIS MAY HELP")
+                        Text(compact ? "OPTIONAL IDEA" : "WHY THIS MAY HELP")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.grass)
                         Text(item.title)
@@ -19,18 +20,24 @@ struct WindDownGuideCard: View {
                     }
                     Spacer(minLength: 0)
                 }
-                Text(item.body)
+                Text(compact ? item.suggestion : item.body)
                     .font(AppTypography.body)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("Optional. Keep what feels useful.")
+                Text(compact ? "A small invitation. Keep what feels useful." : "Optional. Keep what feels useful.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
-                NavigationLink("About these ideas and sources") {
-                    WindDownGuideView()
+                NavigationLink("Read this idea") {
+                    WindDownGuidanceDetailView(item: item)
                 }
                 .font(AppTypography.caption.weight(.semibold))
                 .foregroundStyle(AppColors.grass)
+                if let onDismiss {
+                    Button("Not now", action: onDismiss)
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.muted)
+                        .accessibilityHint("Hides this Home idea for a while")
+                }
             }
         }
         .accessibilityElement(children: .contain)
@@ -41,6 +48,7 @@ struct WindDownGuideCard: View {
 struct WindDownRoutineEditor: View {
     @Binding var eveningSteps: [WindDownRoutineStep]
     @Binding var morningSteps: [WindDownRoutineStep]
+    var phonePlacement: WindDownPhonePlacement = .anotherRoom
     var onChange: () -> Void = {}
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
@@ -51,7 +59,7 @@ struct WindDownRoutineEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             routineSection(
-                title: "After the phone goes away",
+                title: "Make room for your evening",
                 detail: "Choose up to three familiar evening ideas, in the order you want them.",
                 phase: .evening,
                 steps: $eveningSteps
@@ -62,7 +70,7 @@ struct WindDownRoutineEditor: View {
                 phase: .morning,
                 steps: $morningSteps
             )
-            Text("Ideas are invitations. Counting Sheep does not track whether you do them.")
+            Text("Your chosen ideas appear together during the session and on the Lock Screen when Live Activity is on. They have no individual timers or check-offs.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.muted)
         }
@@ -248,9 +256,9 @@ struct WindDownRoutineEditor: View {
                 .frame(width: 24)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                Text(WindDownRoutineStep.phoneAwayTitle)
+                Text(phonePlacement.actionCue)
                     .font(AppTypography.body.weight(.semibold))
-                Text("Always first")
+                Text(phonePlacement == .accessibleNearby ? "Keep needed access within reach" : "Your first invitation")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.muted)
             }
@@ -263,7 +271,7 @@ struct WindDownRoutineEditor: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Put phone away, always first")
+        .accessibilityLabel(phonePlacement.actionCue)
     }
 
     @ViewBuilder
@@ -444,72 +452,6 @@ private enum EveningRoutineGroup: String, CaseIterable, Identifiable {
     }
 }
 
-struct WindDownGuideView: View {
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text("WIND DOWN GUIDE")
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(AppColors.grass)
-                    Text("Small ideas for a kinder relationship with screens and sleep.")
-                        .font(AppTypography.display(30))
-                    Text("These are gentle ideas, not a treatment plan. Keep what feels useful and leave the rest.")
-                        .font(AppTypography.body)
-                        .foregroundStyle(AppColors.muted)
-                }
-
-                ForEach(WindDownGuidanceTopic.allCases) { topic in
-                    let topicItems = WindDownGuidanceLibrary.items(for: topic)
-                    if !topicItems.isEmpty {
-                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text(topic.title)
-                                .font(AppTypography.headline)
-                            ForEach(topicItems) { item in
-                                guideItem(item)
-                            }
-                        }
-                    }
-                }
-
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("A note about sleep support")
-                            .font(AppTypography.headline)
-                        Text("Counting Sheep is not a sleep clinic or an insomnia treatment. If sleep difficulties keep affecting your days, a healthcare professional or CBT-I provider can help you find the right support.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    }
-                }
-            }
-            .padding(AppSpacing.md)
-        }
-        .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("About these ideas and sources")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func guideItem(_ item: WindDownGuidanceItem) -> some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text(item.title)
-                    .font(AppTypography.headline)
-                Text(item.body)
-                    .font(AppTypography.body)
-                    .foregroundStyle(AppColors.secondaryText)
-                Text(sourceLabel(for: item))
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.muted)
-            }
-        }
-    }
-
-    private func sourceLabel(for item: WindDownGuidanceItem) -> String {
-        let label = WindDownGuidanceSourcePresentation.combinedLabel(for: item)
-        return label == "Counting Sheep guidance" ? label : "Sources: " + label
-    }
-}
-
 struct WindDownHowItWorksView: View {
     var body: some View {
         ScrollView {
@@ -522,7 +464,7 @@ struct WindDownHowItWorksView: View {
                         .foregroundStyle(AppColors.grass)
                     Text("One small ritual around sleep.")
                         .font(AppTypography.display(30))
-                    Text("Counting Sheep helps you make the phone-away choice, fill the quiet with something offline, and keep the first part of morning phone-free.")
+                    Text("Put your phone in another room, get ready for bed, and leave a little time in the morning before picking it up.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.muted)
                 }
@@ -530,7 +472,7 @@ struct WindDownHowItWorksView: View {
                 howCard(
                     icon: "iphone.slash",
                     title: "Protect",
-                    detail: "Selected apps can be limited from Wind Down start through morning quiet. Counting Sheep stays available."
+                    detail: "Selected apps can be limited from Wind Down start through Screen-Free Morning. Counting Sheep stays available."
                 )
                 howCard(
                     icon: "book.closed.fill",
@@ -588,10 +530,4 @@ struct WindDownHowItWorksView: View {
     .padding(AppSpacing.md)
     .background(AppColors.paper)
     .environment(\.dynamicTypeSize, .accessibility3)
-}
-
-#Preview("Guide") {
-    NavigationStack {
-        WindDownGuideView()
-    }
 }

@@ -46,6 +46,10 @@ Screen-Free Morning; older `NightWatch*`/guard values remain compatibility inter
    set for app protection. Runtime failures fail open to repair after a valid start.
 8. HealthKit remains optional context. Counting Sheep does not score sleep, diagnose a
    condition, or claim that a Night Watch caused better sleep.
+9. Copy treats putting the phone in another room as the primary invitation and ritual action.
+   A completed timer, authorization, selected apps/categories, NFC confirmation, Watch state,
+   notification, or history row does not prove continuous placement, sleep, complete screen
+   avoidance, or routine completion. Runtime shield apply/clear evidence is classified separately.
 
 ## Consequences
 
@@ -56,8 +60,9 @@ Screen-Free Morning; older `NightWatch*`/guard values remain compatibility inter
   by ADR-0019's Wind Down plus Screen-Free Morning model.
 - The setup UI changes from duration selection to a saved schedule and two quiet bookends.
 - A requested wind-down reminder is appropriate; generic re-engagement notifications are not.
-- Product analytics should prioritize completed protected nights and screen time in the two
-  windows rather than daily opens, total session length, or all-day focus minutes.
+- Product analytics should keep Wind Down before-bed minutes, Screen-Free Morning eligible
+  elapsed minutes, Phone Away elapsed minutes, and observed shield evidence separate rather than
+  combining them into a protected-night or all-day-focus total.
 - Independent morning timers, habit checklists, productivity templates, and broad daily app
   blocking remain out of scope.
 

@@ -1,0 +1,1 @@
+PASS: pixels below y=750 are identical in current and refreshing captures (1206 x 2622).

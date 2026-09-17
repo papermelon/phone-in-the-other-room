@@ -62,6 +62,8 @@ enum AppColors {
         light: UIColor(red: 0.92, green: 0.90, blue: 0.82, alpha: 1),
         dark: UIColor(red: 0.78, green: 0.74, blue: 0.64, alpha: 1)
     )
+    /// Contact shadows stay dark on the illustrated ground in either appearance.
+    static let farmContactShadow = Color(red: 0.10, green: 0.16, blue: 0.09)
     static let coin = Color(red: 0.96, green: 0.72, blue: 0.18)
     static let clay = adaptive(
         light: UIColor(red: 0.70, green: 0.39, blue: 0.24, alpha: 1),
@@ -80,9 +82,17 @@ enum AppColors {
         light: UIColor(red: 0.48, green: 0.45, blue: 0.68, alpha: 1),
         dark: UIColor(red: 0.68, green: 0.64, blue: 0.88, alpha: 1)
     )
+    /// Home's clock window depicts local time, so its night sky stays dark in
+    /// either system appearance instead of inheriting adaptive surface colors.
+    static let homeWindowNightSkyTop = Color(red: 0.13, green: 0.11, blue: 0.29)
+    static let homeWindowNightSkyBottom = Color(red: 0.25, green: 0.20, blue: 0.48)
     static let success = adaptive(
         light: UIColor(red: 0.22, green: 0.57, blue: 0.36, alpha: 1),
         dark: UIColor(red: 0.38, green: 0.72, blue: 0.48, alpha: 1)
+    )
+    static let destructive = adaptive(
+        light: UIColor(red: 0.65, green: 0.12, blue: 0.10, alpha: 1),
+        dark: UIColor(red: 1.0, green: 0.48, blue: 0.43, alpha: 1)
     )
     static let warning = adaptive(
         light: UIColor(red: 0.91, green: 0.53, blue: 0.21, alpha: 1),
@@ -216,6 +226,7 @@ enum AssetSlot {
 
     enum Farm {
         static let backgroundDay = "farm/farm_background_day"
+        static let sharedMeadowDusk = "farm/farm_shared_meadow_dusk"
         static let barn = "farm/farm_barn"
         static let fence = "farm/farm_fence"
         static let windmill = "farm/farm_windmill"
@@ -282,4 +293,15 @@ func focusStarColor(for tier: FocusStarTier) -> Color {
     case .diamond: return Color(red: 0.38, green: 0.82, blue: 0.95)
     case .rainbow: return AppColors.amber
     }
+}
+
+/// Shared-meadow composition: a fixed ground line keeps refreshes and name lengths
+/// from moving feet. Names sit on the paper below the landscape.
+enum SharedFarmLayout {
+    static let sceneHeight: CGFloat = 212
+    static let groundInset: CGFloat = 22
+    static let shepherdSize: CGFloat = 124
+    static let companionSize: CGFloat = 100
+    static let shadowWidth: CGFloat = 52
+    static let shadowHeight: CGFloat = 9
 }

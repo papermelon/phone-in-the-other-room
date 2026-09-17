@@ -157,20 +157,24 @@ enum ShieldingReadiness: Equatable {
     var title: String {
         switch self {
         case .ready: return "App protection is ready"
-        case .authorizationRequired, .denied, .revoked, .noSelection, .unavailable, .runtimeFailure:
-            return "Set up app protection"
+        case .authorizationRequired: return "Allow Screen Time access"
+        case .denied: return "Screen Time access is off"
+        case .revoked: return "Screen Time access changed"
+        case .noSelection: return "Choose apps or categories"
+        case .unavailable: return "App protection is unavailable"
+        case .runtimeFailure: return "Repair app protection"
         }
     }
 
     var detail: String {
         switch self {
-        case .ready: return "Your chosen apps and categories will pause during protected time. Counting Sheep stays available."
+        case .ready: return "Your selected apps and categories are ready to be limited from Wind Down start through Screen-Free Morning, including overnight, or during Phone Away. Counting Sheep stays available."
         case .authorizationRequired: return "Allow Screen Time access, then choose at least one app or category to continue."
         case .denied: return "Screen Time access is off. Restore it and choose at least one app or category to continue."
         case .revoked: return "Screen Time access changed. Restore it and review your selected apps or categories before another start."
         case .noSelection: return "Choose at least one app or category to continue. Counting Sheep cannot verify the names you chose."
         case .unavailable: return "This device cannot set up app protection right now."
-        case .runtimeFailure: return "App protection did not stay active. This run remains factual; repair protection before another start."
+        case .runtimeFailure: return "App protection did not stay active, so Counting Sheep does not claim the selected-app limits held. The session timer and recorded elapsed minutes remain accurate. Repair protection before another start."
         }
     }
 
@@ -243,10 +247,7 @@ enum HomeProtectionStartPresentation: Equatable {
         selectionSummary: String
     ) -> Self {
         guard readiness == .ready else {
-            let title = readiness == .noSelection
-                ? "Choose apps to pause"
-                : "Set up app protection"
-            return .repair(title: title, detail: readiness.detail)
+            return .repair(title: readiness.title, detail: readiness.detail)
         }
         return .ready(selectionSummary: selectionSummary)
     }

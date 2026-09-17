@@ -23,11 +23,11 @@ struct RewardEngine {
                 earnedAt: earnedAt,
                 runDurationMinutes: minutes,
                 isDemoReward: true,
-                context: rewardContext(for: run, protectedNightNumber: progress.totalCompletedRuns + 1)
+                context: rewardContext(for: run, protectedNightNumber: progress.farmCompletedRuns + 1)
             )
         }
 
-        let protectedNightNumber = progress.totalCompletedRuns + 1
+        let protectedNightNumber = progress.farmCompletedRuns + 1
         let context = rewardContext(for: run, protectedNightNumber: protectedNightNumber)
         let type: RewardType
         let rarity: RewardRarity
@@ -78,6 +78,7 @@ struct RewardEngine {
         if run.completedSuccessfully && (run.isProgressionEligibleNightWatch || !run.isNightWatch) {
             let minutes = windDownProgressMinutes(for: run)
             progress.totalCompletedRuns += 1
+            if let restored = progress.restoredFarmCompletedRuns { progress.restoredFarmCompletedRuns = restored + 1 }
             progress.totalFocusMinutes += minutes
             progress.currentStreak += 1
             progress.longestStreak = max(progress.longestStreak, progress.currentStreak)
@@ -85,7 +86,7 @@ struct RewardEngine {
             progress.addFocusEconomy(forCompletedMinutes: minutes)
         }
         if reward != nil { progress.rewardsCollected += 1 }
-        progress.ollieLevel = min(5, 1 + progress.totalCompletedRuns / 3)
+        progress.ollieLevel = min(5, 1 + progress.farmCompletedRuns / 3)
         return progress
     }
 
@@ -160,9 +161,9 @@ struct RewardEngine {
         case .trophy: return "A tiny marker for quiet nights gathered over time."
         case .tennisBall: return "A bright ball from the quiet side of the pasture."
         case .stick: return "A good stick from the other room. Possibly the best stick."
-        case .postcard: return "A postcard from the place where the phone slept."
+        case .postcard: return "A postcard Ollie carried in after Wind Down."
         case .sheepBadge: return "A small badge for a phone-away night with Ollie."
-        case .fieldMap: return "A map of Ollie's Wind Down path."
+        case .fieldMap: return "A keepsake map from Ollie's Farm rounds."
         case .muddyPaw: return "A soft reminder that shorter runs are allowed."
         }
     }

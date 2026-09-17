@@ -1,0 +1,9 @@
+{
+  "omittedUndeployedSharedNightTests": [
+    "\"completion logs identify shared-night publications without retaining their payload\", () => {",
+    "\"shared-night plan and receipt require the v2-safe allowlist\", () => {",
+    "\"shared-habits agreement accepts the separately consented v2 contract\", () => {",
+    "\"shared-night state scope is additive and keeps its date adaptation\", async () => {"
+  ],
+  "omittedUndeployedErrorAssertions": 4
+}

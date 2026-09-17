@@ -131,12 +131,25 @@ struct FarmShopItemImage: View {
     var size: CGFloat = 64
 
     var body: some View {
-        FarmCatalogAssetImage(
-            assetName: item.inventoryAssetName,
-            fallbackSymbol: item.symbolName,
-            fallbackColor: farmVisualColor(item.visualStyle),
-            size: size
-        )
+        Group {
+            if item.effect == .ollieAccessory {
+                OllieFarmAvatar(accessoryItemID: item.id, size: size)
+            } else if PaperFarmObjectView.supportedIDs.contains(item.id) {
+                PaperFarmObjectView(itemID: item.id).frame(width: size, height: size)
+            } else if item.effect == .shepherdOutfit || item.effect == .shepherdAccessory {
+                ShepherdAvatarView(profile: ShepherdProfile(
+                    skinTone: .warm, hairStyle: .waves,
+                    outfitItemID: item.effect == .shepherdOutfit ? item.id : nil,
+                    accessoryItemID: item.effect == .shepherdAccessory ? item.id : nil
+                ), size: size)
+            } else {
+                FarmCatalogAssetImage(
+                    assetName: item.inventoryAssetName,
+                    fallbackSymbol: item.symbolName,
+                    fallbackColor: farmVisualColor(item.visualStyle), size: size
+                )
+            }
+        }
         .accessibilityHidden(true)
     }
 }
@@ -146,12 +159,14 @@ struct FarmDecorationSceneImage: View {
     let size: CGFloat
 
     var body: some View {
-        FarmCatalogAssetImage(
-            assetName: item.sceneAssetName,
-            fallbackSymbol: item.symbolName,
-            fallbackColor: farmVisualColor(item.visualStyle),
-            size: size
-        )
+        Group {
+            if PaperFarmObjectView.supportedIDs.contains(item.id) {
+                PaperFarmObjectView(itemID: item.id, anchoredToGround: true).frame(width: size, height: size)
+            } else {
+                FarmCatalogAssetImage(assetName: item.sceneAssetName, fallbackSymbol: item.symbolName,
+                                      fallbackColor: farmVisualColor(item.visualStyle), size: size)
+            }
+        }
         .accessibilityHidden(true)
     }
 }
@@ -195,53 +210,57 @@ struct FarmEquippedOverlayImage: View {
 struct OllieFarmAvatar: View {
     let accessoryItemID: String?
     var size: CGFloat = 72
-
-    private var equippedOverlayAssetName: String? {
-        guard let item = accessoryItemID.flatMap(FarmShopCatalog.item),
-              case .ollieAccessory(let assetName) = item.equippedRenderAsset else {
-            return nil
-        }
-        return UIImage(named: assetName) == nil ? nil : assetName
-    }
+    var motionEnabled = false
+    @State private var actionCapabilities: [OllieCompanionAction: Bool] = [:]
+    @State private var capabilityRevision = 0
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            ollieBase
-            if equippedOverlayAssetName != nil {
-                FarmEquippedOverlayImage(assetName: equippedOverlayAssetName, size: size)
-                    .shadow(color: AppShadows.cardColor, radius: 1, y: 1)
-
-                // Repaint Ollie's head and upper chest above the accessory. The
-                // feathered depth matte makes the collar opening disappear behind
-                // his chin and neck fur instead of reading as a flat sticker.
-                ollieBase
-                    .mask(accessoryDepthMask)
+        OllieCompanionAnimationView(
+            schedule: animationSchedule,
+            isMotionEnabled: motionEnabled,
+            detailRevision: capabilityRevision,
+            nextDetailFrameTransition: nextFrameChange(after:)
+        ) { animationFrame, _ in
+            OllieCompanionSpriteRenderer(
+                animationFrame: animationFrame,
+                accessoryItemID: renderedAccessoryItemID,
+                size: size,
+                actionCapabilities: $actionCapabilities,
+                capabilityRevision: $capabilityRevision
+            ) {
+                OllieDressedSprite(assetName: NightJourneyAssets.ollieHomeIdleFrames[0],
+                                   accessoryItemID: renderedAccessoryItemID)
             }
         }
+        .frame(width: size, height: size)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
     }
 
-    private var ollieBase: some View {
-        FarmCatalogAssetImage(
-            assetName: AssetSlot.Dog.farmNeutralIdle,
-            fallbackSymbol: "pawprint.fill",
-            fallbackColor: AppColors.grass,
-            size: size
-        )
+    private func nextFrameChange(after animationFrame: OllieCompanionAnimationFrame) -> TimeInterval? {
+        guard actionCapabilities[animationFrame.action] == true else { return nil }
+        return OllieCompanionSpriteManifest.production
+            .sequence(for: animationFrame.action)?
+            .nextFrameTransition(after: animationFrame.actionElapsed)
     }
 
-    private var accessoryDepthMask: some View {
-        LinearGradient(
-            stops: [
-                .init(color: .white, location: 0),
-                .init(color: .white, location: 0.54),
-                .init(color: .clear, location: 0.64)
-            ],
-            startPoint: .top,
-            endPoint: .bottom
-        )
-        .frame(width: size, height: size)
+    private var animationSchedule: OllieCompanionAnimationSchedule {
+        #if DEBUG
+        return ScreenbookOllieMotionReview.configuration?.schedule ?? .gentle
+        #else
+        return .gentle
+        #endif
+    }
+
+    private var renderedAccessoryItemID: String? {
+        #if DEBUG
+        if let configuration = ScreenbookOllieMotionReview.configuration {
+            return configuration.accessoryItemID(default: accessoryItemID)
+        }
+        return accessoryItemID
+        #else
+        return accessoryItemID
+        #endif
     }
 
     private var accessibilityLabel: String {
@@ -256,102 +275,23 @@ struct ShepherdAvatarView: View {
     let profile: ShepherdProfile
     var size: CGFloat = 84
 
-    private var outfit: FarmShopItem? {
-        profile.outfitItemID.flatMap(FarmShopCatalog.item)
-    }
-
-    private var accessoryRenderAssetName: String? {
-        guard let accessory = profile.accessoryItemID.flatMap(FarmShopCatalog.item),
-              let equippedRenderAsset = accessory.equippedRenderAsset,
-              let assetName = equippedRenderAsset.assetName(for: profile.hairStyle),
-              UIImage(named: assetName) != nil else {
-            return nil
-        }
-        return assetName
-    }
-
-    private var outfitRenderAssetName: String? {
-        guard let render = outfit?.equippedRenderAsset,
-              case let .shepherdOutfit(assetName) = render,
-              UIImage(named: assetName) != nil else { return nil }
-        return assetName
-    }
-
     var body: some View {
-        ZStack(alignment: .top) {
-            avatarImage(avatarAssets.base)
-
-            avatarMask(avatarAssets.skinMask)
-                .foregroundStyle(shepherdSkinColor(profile.skinTone))
-
-            if let outfit, outfitRenderAssetName == nil {
-                avatarMask(avatarAssets.outfitMask)
-                    .foregroundStyle(farmVisualColor(outfit.visualStyle))
-            }
-
-            FarmEquippedOverlayImage(assetName: outfitRenderAssetName, size: size)
-
-            FarmEquippedOverlayImage(assetName: accessoryRenderAssetName, size: size)
-        }
-        .frame(width: size, height: size)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Your Shepherd, \(profile.skinTone.title) skin, \(profile.hairStyle.title) hair")
-    }
-
-    private func avatarImage(_ name: String) -> some View {
-        Image(name)
-            .resizable()
-            .antialiased(true)
-            .scaledToFit()
+        ShepherdStudyCanvas(appearance: ShepherdStudyAppearance(profile: profile))
             .frame(width: size, height: size)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Your Shepherd, \(profile.headShape.title) head, \(profile.skinTone.title) skin, \(profile.hairStyle.title) hair")
+            .accessibilityValue(equipmentDescription)
     }
 
-    private func avatarMask(_ name: String) -> some View {
-        Image(name)
-            .renderingMode(.template)
-            .resizable()
-            .antialiased(true)
-            .scaledToFit()
-            .frame(width: size, height: size)
-    }
-
-    private var avatarAssets: (base: String, skinMask: String, outfitMask: String) {
-        switch profile.hairStyle {
-        case .cropped:
-            (
-                AssetSlot.Farm.shepherdDefault,
-                AssetSlot.Farm.shepherdSkinMask,
-                AssetSlot.Farm.shepherdOutfitMask
-            )
-        case .waves:
-            (
-                AssetSlot.Farm.shepherdHairWaves,
-                AssetSlot.Farm.shepherdHairWavesSkinMask,
-                AssetSlot.Farm.shepherdHairWavesOutfitMask
-            )
-        case .curls:
-            (
-                AssetSlot.Farm.shepherdHairCurls,
-                AssetSlot.Farm.shepherdHairCurlsSkinMask,
-                AssetSlot.Farm.shepherdHairCurlsOutfitMask
-            )
-        case .coils:
-            (
-                AssetSlot.Farm.shepherdHairCoils,
-                AssetSlot.Farm.shepherdHairCoilsSkinMask,
-                AssetSlot.Farm.shepherdHairCoilsOutfitMask
-            )
-        case .long:
-            (
-                AssetSlot.Farm.shepherdHairLong,
-                AssetSlot.Farm.shepherdHairLongSkinMask,
-                AssetSlot.Farm.shepherdHairLongOutfitMask
-            )
-        }
+    private var equipmentDescription: String {
+        [profile.outfitItemID, profile.accessoryItemID]
+            .compactMap { $0.flatMap(FarmShopCatalog.item)?.title }
+            .joined(separator: ", ")
     }
 }
 
 struct FarmKeepsakeDisplay: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let state: FarmState
 
     private var displayedItems: [FarmShopItem] {
@@ -376,7 +316,7 @@ struct FarmKeepsakeDisplay: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    LazyHGrid(rows: [GridItem(.fixed(100))], spacing: AppSpacing.sm) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: dynamicTypeSize.isAccessibilitySize ? 150 : 92), alignment: .top)], spacing: AppSpacing.sm) {
                         ForEach(displayedItems) { item in
                             VStack(spacing: AppSpacing.xxs) {
                                 FarmShopItemImage(item: item, size: 58)
@@ -387,7 +327,7 @@ struct FarmKeepsakeDisplay: View {
                                     .lineLimit(2)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .frame(width: 84)
+                            .frame(maxWidth: .infinity)
                             .accessibilityElement(children: .combine)
                             .accessibilityLabel("Displayed keepsake: \(item.title)")
                         }
@@ -400,13 +340,7 @@ struct FarmKeepsakeDisplay: View {
 }
 
 func shepherdSkinColor(_ tone: ShepherdSkinTone) -> Color {
-    switch tone {
-    case .porcelain: return Color(red: 0.95, green: 0.78, blue: 0.66)
-    case .warm: return Color(red: 0.82, green: 0.59, blue: 0.43)
-    case .olive: return Color(red: 0.68, green: 0.49, blue: 0.33)
-    case .brown: return Color(red: 0.47, green: 0.30, blue: 0.20)
-    case .deep: return Color(red: 0.29, green: 0.18, blue: 0.13)
-    }
+    ShepherdStudyPalette.skin(tone)
 }
 
 func farmVisualColor(_ style: String) -> Color {

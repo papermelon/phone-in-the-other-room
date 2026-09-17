@@ -1,47 +1,119 @@
 import XCTest
 
 final class OnboardingTests: XCTestCase {
-    func testFirstRunCountsEveryVisiblePageAndKeepsLegacyCasesDecodable() throws {
-        XCTAssertEqual(
-            CountingSheepOnboardingStep.visibleSteps,
-            [.welcome, .profile, .recommendation, .gift, .schedule, .quiet, .protection, .ready]
-        )
+    func testFirstRunSavesAPlanBeforeAnyPermissionAccountOrPersonalizationStage() {
+        var draft = OnboardingDraft.defaults()
+        XCTAssertEqual(draft.journeyRoute, .planFirst)
+        XCTAssertEqual(draft.journeySteps, [.welcome, .schedule, .quiet, .ready])
         XCTAssertEqual(OnboardingWelcomePage.visiblePages, [.countingSheep, .ollie])
-        XCTAssertEqual(CountingSheepOnboardingStep.ready.progress, 1)
+        XCTAssertEqual(draft.visiblePageNumber, 1)
+        XCTAssertEqual(draft.visiblePageCount, 5)
+        XCTAssertEqual(draft.continueVisibleStep(), .none)
+        XCTAssertEqual(draft.welcomePage, .ollie)
+        XCTAssertEqual(draft.continueVisibleStep(), .none)
+        XCTAssertEqual(draft.step, .schedule)
+        XCTAssertEqual(draft.visiblePageNumber, 3)
+        draft.continueVisibleStep()
+        XCTAssertEqual(draft.step, .quiet)
+        draft.continueVisibleStep()
+        XCTAssertEqual(draft.step, .ready)
+        XCTAssertEqual(draft.visiblePageNumber, 5)
+        XCTAssertTrue(draft.makeNightWatchPreferences().isConfigured)
+        XCTAssertFalse(draft.protectionSelectionSelfConfirmed)
+        XCTAssertFalse(draft.makeNightWatchPreferences().automaticStartEnabled)
+        XCTAssertNil(draft.selectedWelcomeGiftItemID)
+        XCTAssertFalse(draft.hasCompletedProfileQuestions)
+    }
+
+    func testLegacyDraftKeepsItsRouteAnswersAndGiftAcrossEveryInterruptedStage() throws {
         XCTAssertEqual(CountingSheepOnboardingStep.welcome.rawValue, 0)
         XCTAssertEqual(CountingSheepOnboardingStep.ready.rawValue, 5)
+        XCTAssertEqual(CountingSheepOnboardingStep.account.rawValue, 9)
+        for step in CountingSheepOnboardingStep.allCases {
+            var original = OnboardingDraft(step: step)
+            original.profileAnswers.bedtimeDelay = .sometimes
+            original.completedProfileQuestions.insert(.bedtimeDelay)
+            original.selectedWelcomeGiftItemID = "shepherd_moon_coat"
+            original.bedtimeHour = 22
+            original.eveningRoutine = [.custom("Finish my sketch", phase: .evening)]
+            var json = try XCTUnwrap(JSONSerialization.jsonObject(
+                with: JSONEncoder().encode(original)
+            ) as? [String: Any])
+            json.removeValue(forKey: "journeyRoute")
+            let decoded = try JSONDecoder().decode(
+                OnboardingDraft.self, from: JSONSerialization.data(withJSONObject: json)
+            )
+            XCTAssertEqual(decoded.journeyRoute, .legacy)
+            XCTAssertEqual(decoded.step, step)
+            XCTAssertEqual(decoded.profileAnswers, original.profileAnswers)
+            XCTAssertEqual(decoded.completedProfileQuestions, original.completedProfileQuestions)
+            XCTAssertEqual(decoded.selectedWelcomeGiftItemID, original.selectedWelcomeGiftItemID)
+            XCTAssertEqual(decoded.bedtimeHour, 22)
+            XCTAssertEqual(decoded.eveningRoutine, original.eveningRoutine)
+            XCTAssertEqual(decoded.journeySteps, CountingSheepOnboardingStep.legacyVisibleSteps)
+            XCTAssertEqual(decoded.visiblePageCount, 10)
+        }
+    }
 
-        var legacyDraft = OnboardingDraft()
-        legacyDraft.step = .automaticStart
-        let decoded = try JSONDecoder().decode(
-            OnboardingDraft.self,
-            from: JSONEncoder().encode(legacyDraft)
-        )
-        XCTAssertEqual(decoded.step, .automaticStart)
+    func testFreshInterruptedPlanResumesWithoutAddingLegacyStages() throws {
+        var draft = OnboardingDraft.defaults()
+        draft.step = .quiet
+        draft.eveningRoutine = [.custom("Read the next chapter", phase: .evening)]
+        let restored = try JSONDecoder().decode(OnboardingDraft.self, from: JSONEncoder().encode(draft))
+        XCTAssertEqual(restored, draft)
+        XCTAssertEqual(restored.journeySteps, [.welcome, .schedule, .quiet, .ready])
+        XCTAssertEqual(restored.visiblePageNumber, 4)
+    }
 
-        var draft = OnboardingDraft()
-        XCTAssertEqual(draft.visiblePageNumber, 1)
-        XCTAssertEqual(draft.visiblePageCount, 9)
-        draft.welcomePage = .ollie
-        XCTAssertEqual(draft.visiblePageNumber, 2)
-        draft.step = .profile
-        XCTAssertEqual(draft.visiblePageNumber, 3)
-        draft.step = .recommendation
-        XCTAssertEqual(draft.visiblePageNumber, 4)
-        draft.step = .ready
-        XCTAssertEqual(draft.visiblePageNumber, 9)
+    func testSkippingFreshIntroGoesStraightToThePlan() {
+        var draft = OnboardingDraft.defaults()
+        XCTAssertEqual(draft.skipVisibleStep(), .none)
+        XCTAssertEqual(draft.step, .schedule)
+        XCTAssertEqual(draft.journeyRoute, .planFirst)
+    }
+
+    func testLegacyAndReplayCanDeferDeclinedProtectionWithoutChangingTheirPlanOrAdmission() throws {
+        var replay = OnboardingDraft.replay(from: .defaults)
+        replay.step = .protection
+        for var draft in [OnboardingDraft(step: .protection), replay] {
+            draft.profileAnswers.bedtimeDelay = .sometimes
+            draft.completedProfileQuestions.insert(.bedtimeDelay)
+            draft.selectedWelcomeGiftItemID = "shepherd_moon_coat"
+            draft.eveningRoutine = [.custom("Finish my sketch", phase: .evening)]
+            draft.protectionChoice = .nfcAndAppShielding
+            draft.protectionSelectionSelfConfirmed = false
+            let preferences = draft.makeNightWatchPreferences()
+
+            XCTAssertEqual(draft.skipVisibleStep(), .none)
+            XCTAssertEqual(draft.step, .ready)
+            XCTAssertEqual(draft.makeNightWatchPreferences(), preferences)
+            XCTAssertEqual(draft.profileAnswers.bedtimeDelay, .sometimes)
+            XCTAssertEqual(draft.completedProfileQuestions, [.bedtimeDelay])
+            XCTAssertEqual(draft.selectedWelcomeGiftItemID, "shepherd_moon_coat")
+            XCTAssertTrue(draft.shieldingEnabled)
+            XCTAssertFalse(draft.protectionSelectionSelfConfirmed)
+            let restored = try JSONDecoder().decode(OnboardingDraft.self, from: JSONEncoder().encode(draft))
+            XCTAssertEqual(restored, draft)
+            XCTAssertFalse(OnboardingReadinessSummary(
+                draft: restored,
+                appProtectionReady: false,
+                notificationAuthorized: false
+            ).appProtectionReady)
+            XCTAssertFalse(ScreenTimeProtectionStartPolicy.canStart(.denied))
+            XCTAssertFalse(ScreenTimeProtectionStartPolicy.canStart(.noSelection))
+        }
     }
 
     func testSkippingQuestionnaireRemovesTheResultFromTheHonestPageCount() {
         var draft = OnboardingDraft(step: .profile)
 
         XCTAssertEqual(draft.visiblePageNumber, 3)
-        XCTAssertEqual(draft.visiblePageCount, 9)
+        XCTAssertEqual(draft.visiblePageCount, 10)
 
         XCTAssertEqual(draft.skipVisibleStep(), .skipQuestionnaire)
         XCTAssertEqual(draft.step, .gift)
         XCTAssertEqual(draft.visiblePageNumber, 4)
-        XCTAssertEqual(draft.visiblePageCount, 8)
+        XCTAssertEqual(draft.visiblePageCount, 9)
     }
 
     func testQuestionnaireRequiresSixExplicitMeaningfulAnswers() {
@@ -99,7 +171,7 @@ final class OnboardingTests: XCTestCase {
 
         XCTAssertEqual(restored.step, .gift)
         XCTAssertEqual(restored.selectedWelcomeGiftItemID, "shepherd_moon_coat")
-        XCTAssertEqual(restored.stageCount, CountingSheepOnboardingStep.visibleSteps.count)
+        XCTAssertEqual(restored.stageCount, CountingSheepOnboardingStep.legacyVisibleSteps.count)
     }
 
     func testQuestionProgressDoesNotCreateAdditionalOnboardingStages() {
@@ -110,7 +182,7 @@ final class OnboardingTests: XCTestCase {
 
         XCTAssertEqual(draft.stageCount, stageCount)
         XCTAssertEqual(draft.currentStageNumber, stageNumber)
-        XCTAssertEqual(draft.visiblePageCount, 9)
+        XCTAssertEqual(draft.visiblePageCount, 10)
     }
 
     func testPresentationModeSeparatesFixturesFromReplay() {
@@ -437,8 +509,9 @@ final class OnboardingTests: XCTestCase {
             isConfigured: true
         )
 
-        XCTAssertEqual(preferences.makePlan().eveningRoutineSummary(allowsPersonalText: false), "Put phone away")
-        XCTAssertEqual(preferences.makePlan().eveningRoutineSummary(allowsPersonalText: true), "Put phone away · My private note")
+        let placementCue = WindDownPhonePlacement.anotherRoom.actionCue
+        XCTAssertEqual(preferences.makePlan().eveningRoutineSummary(allowsPersonalText: false), placementCue)
+        XCTAssertEqual(preferences.makePlan().eveningRoutineSummary(allowsPersonalText: true), "\(placementCue) · My private note")
         XCTAssertNil(preferences.makePlan().morningRoutineSummary(allowsPersonalText: false))
         XCTAssertEqual(preferences.makePlan().morningRoutineSummary(allowsPersonalText: true), "My morning note")
     }

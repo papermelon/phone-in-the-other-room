@@ -11,11 +11,11 @@ final class NightsHistorySummaryTests: XCTestCase {
         self.calendar = calendar
     }
 
-    func testPrimaryNightUsesWakeDayAcrossMidnight() throws {
+    func testWindDownUsesWakeDayAcrossMidnight() throws {
         let record = try primaryRecord(
             bedtime: date(2026, 8, 10, 22, 30),
             wake: date(2026, 8, 11, 7, 0),
-            protectedUntil: date(2026, 8, 11, 7, 45)
+            morningEnd: date(2026, 8, 11, 7, 45)
         )
 
         XCTAssertEqual(
@@ -24,8 +24,8 @@ final class NightsHistorySummaryTests: XCTestCase {
         )
     }
 
-    func testAdditionalQuietUsesItsActualStartDayAcrossMidnight() throws {
-        let record = additionalRecord(
+    func testPhoneAwayUsesItsStartDayAcrossMidnight() {
+        let record = phoneAwayRecord(
             start: date(2026, 8, 10, 23, 45),
             end: date(2026, 8, 11, 0, 15)
         )
@@ -36,55 +36,75 @@ final class NightsHistorySummaryTests: XCTestCase {
         )
     }
 
-    func testMixedDayKeepsPrimaryAndAdditionalStateIndependent() throws {
-        let primary = try primaryRecord(
+    func testScreenFreeMorningUsesItsScheduledStartDay() {
+        let occurrence = morningOccurrence(
+            scheduledStart: date(2026, 8, 11, 23, 50),
+            scheduledEnd: date(2026, 8, 12, 0, 20),
+            actualStart: date(2026, 8, 11, 23, 55),
+            endedAt: date(2026, 8, 12, 0, 15)
+        )
+
+        XCTAssertEqual(
+            NightsHistoryAggregator.displayDay(for: occurrence, calendar: calendar),
+            date(2026, 8, 11)
+        )
+    }
+
+    func testMixedDayKeepsAllThreeCurrentSourcesIndependent() throws {
+        let windDown = try primaryRecord(
             bedtime: date(2026, 8, 10, 22, 0),
             wake: date(2026, 8, 11, 7, 0),
-            protectedUntil: date(2026, 8, 11, 7, 45),
-            windDownMinutes: 60,
-            morningMinutes: 45
+            morningEnd: date(2026, 8, 11, 7, 45),
+            windDownMinutes: 60
         )
-        let additional = additionalRecord(
+        let morning = morningOccurrence(
+            linkedRunID: windDown.id,
+            scheduledStart: date(2026, 8, 11, 7, 0),
+            scheduledEnd: date(2026, 8, 11, 7, 45),
+            actualStart: date(2026, 8, 11, 7, 0),
+            endedAt: date(2026, 8, 11, 7, 35)
+        )
+        let phoneAway = phoneAwayRecord(
             start: date(2026, 8, 11, 18, 0),
             end: date(2026, 8, 11, 18, 20)
         )
 
         let summary = NightsHistoryAggregator.summary(
             for: date(2026, 8, 11),
-            from: [primary, additional],
+            from: [windDown, phoneAway],
+            morningOccurrences: [morning],
             calendar: calendar
         )
 
-        XCTAssertEqual(summary.primaryOutcome, .protected)
-        XCTAssertEqual(summary.primaryAttemptCount, 1)
-        XCTAssertEqual(summary.protectedNightCount, 1)
-        XCTAssertEqual(summary.protectedWindDownMinutes, 60)
-        XCTAssertEqual(summary.protectedMorningQuietMinutes, 45)
+        XCTAssertEqual(summary.primaryOutcome, .completed)
+        XCTAssertEqual(summary.completedWindDownCount, 1)
+        XCTAssertEqual(summary.windDownMinutes, 60)
+        XCTAssertEqual(summary.completedScreenFreeMorningCount, 1)
+        XCTAssertEqual(summary.screenFreeMorningMinutes, 35)
         XCTAssertEqual(summary.additionalCount, 1)
-        XCTAssertEqual(summary.additionalQuietMinutes, 20)
-        XCTAssertEqual(summary.totalOccurrenceCount, 2)
-        XCTAssertEqual(summary.primaryRecordIDs, [primary.id])
-        XCTAssertEqual(summary.additionalRecordIDs, [additional.id])
+        XCTAssertEqual(summary.phoneAwayMinutes, 20)
+        XCTAssertEqual(summary.totalOccurrenceCount, 3)
+        XCTAssertEqual(summary.primaryRecordIDs, [windDown.id])
+        XCTAssertEqual(summary.screenFreeMorningOccurrenceIDs, [morning.id])
+        XCTAssertEqual(summary.additionalRecordIDs, [phoneAway.id])
     }
 
-    func testMultipleEarlyEndedPrimaryAttemptsRemainCounted() throws {
+    func testMultipleEarlyEndedWindDownAttemptsRemainCounted() throws {
         let first = try primaryRecord(
             bedtime: date(2026, 8, 10, 22, 0),
             wake: date(2026, 8, 11, 7, 0),
-            protectedUntil: date(2026, 8, 11, 7, 30),
+            morningEnd: date(2026, 8, 11, 7, 30),
             outcome: .endedEarly,
             endedAt: date(2026, 8, 10, 21, 35),
-            windDownMinutes: 0,
-            morningMinutes: 0
+            windDownMinutes: 0
         )
         let second = try primaryRecord(
             bedtime: date(2026, 8, 10, 22, 0),
             wake: date(2026, 8, 11, 7, 0),
-            protectedUntil: date(2026, 8, 11, 7, 30),
+            morningEnd: date(2026, 8, 11, 7, 30),
             outcome: .endedEarly,
             endedAt: date(2026, 8, 10, 21, 50),
-            windDownMinutes: 0,
-            morningMinutes: 0
+            windDownMinutes: 0
         )
 
         let summary = NightsHistoryAggregator.summary(
@@ -96,75 +116,174 @@ final class NightsHistorySummaryTests: XCTestCase {
         XCTAssertEqual(summary.primaryOutcome, .endedEarly)
         XCTAssertEqual(summary.primaryAttemptCount, 2)
         XCTAssertEqual(summary.earlyEndedPrimaryCount, 2)
-        XCTAssertEqual(summary.protectedNightCount, 0)
+        XCTAssertEqual(summary.completedWindDownCount, 0)
         XCTAssertEqual(summary.totalOccurrenceCount, 2)
     }
 
-    func testOccurrenceCountAndRecordIDsIncludeEveryMixedPeriod() throws {
-        let protected = try primaryRecord(
-            bedtime: date(2026, 8, 10, 22, 0),
-            wake: date(2026, 8, 11, 7, 0),
-            protectedUntil: date(2026, 8, 11, 7, 30)
-        )
-        let early = try primaryRecord(
-            bedtime: date(2026, 8, 10, 22, 0),
-            wake: date(2026, 8, 11, 7, 0),
-            protectedUntil: date(2026, 8, 11, 7, 30),
-            outcome: .endedEarly,
-            endedAt: date(2026, 8, 10, 21, 50),
-            windDownMinutes: 0,
-            morningMinutes: 0
-        )
-        let firstAdditional = additionalRecord(
-            start: date(2026, 8, 11, 12, 0),
-            end: date(2026, 8, 11, 12, 15)
-        )
-        let secondAdditional = additionalRecord(
-            start: date(2026, 8, 11, 18, 0),
-            end: date(2026, 8, 11, 18, 20)
-        )
-
-        let summary = NightsHistoryAggregator.summary(
-            for: date(2026, 8, 11),
-            from: [protected, early, firstAdditional, secondAdditional],
-            calendar: calendar
-        )
-
-        XCTAssertEqual(summary.primaryOutcome, .protected)
-        XCTAssertEqual(summary.earlyEndedPrimaryCount, 1)
-        XCTAssertEqual(summary.totalOccurrenceCount, 4)
-        XCTAssertEqual(Set(summary.primaryRecordIDs), Set([protected.id, early.id]))
-        XCTAssertEqual(
-            Set(summary.additionalRecordIDs),
-            Set([firstAdditional.id, secondAdditional.id])
-        )
-    }
-
-    func testAdditionalOnlyDayStaysVisible() {
-        let record = additionalRecord(
-            start: date(2026, 8, 11, 18, 0),
-            end: date(2026, 8, 11, 18, 29)
+    func testScreenFreeMorningOnlyDayStaysVisible() {
+        let morning = morningOccurrence(
+            scheduledStart: date(2026, 8, 11, 7, 0),
+            scheduledEnd: date(2026, 8, 11, 7, 45),
+            actualStart: date(2026, 8, 11, 7, 3),
+            endedAt: date(2026, 8, 11, 7, 32)
         )
 
         let summaries = NightsHistoryAggregator.month(
-            from: [record],
+            from: [],
+            morningOccurrences: [morning],
             containing: date(2026, 8, 1),
             calendar: calendar
         )
 
         XCTAssertEqual(summaries.count, 1)
         XCTAssertNil(summaries[0].primaryOutcome)
-        XCTAssertEqual(summaries[0].additionalCount, 1)
-        XCTAssertEqual(summaries[0].additionalQuietMinutes, 29)
+        XCTAssertEqual(summaries[0].screenFreeMorningCount, 1)
+        XCTAssertEqual(summaries[0].screenFreeMorningMinutes, 29)
         XCTAssertTrue(summaries[0].hasRecords)
     }
 
-    func testOverlappingAdditionalIntervalsAreCountedOnce() {
-        let first = additionalRecord(
+    func testSkippedMorningIsASettledRecordWithoutInventedMinutes() {
+        let morning = morningOccurrence(
+            scheduledStart: date(2026, 8, 11, 7, 0),
+            scheduledEnd: date(2026, 8, 11, 7, 30),
+            endedAt: date(2026, 8, 11, 6, 45),
+            outcome: .skipped
+        )
+
+        let summary = NightsHistoryAggregator.summary(
+            for: date(2026, 8, 11),
+            from: [],
+            morningOccurrences: [morning],
+            calendar: calendar
+        )
+
+        XCTAssertTrue(summary.hasRecords)
+        XCTAssertEqual(summary.screenFreeMorningCount, 1)
+        XCTAssertEqual(summary.skippedScreenFreeMorningCount, 1)
+        XCTAssertEqual(summary.completedScreenFreeMorningCount, 0)
+        XCTAssertEqual(summary.screenFreeMorningMinutes, 0)
+    }
+
+    func testPlannedAndActiveMorningsAreNotHistoricalRecords() {
+        let planned = morningOccurrence(
+            scheduledStart: date(2026, 8, 11, 7, 0),
+            scheduledEnd: date(2026, 8, 11, 7, 30),
+            outcome: .scheduled
+        )
+        let active = morningOccurrence(
+            scheduledStart: date(2026, 8, 12, 7, 0),
+            scheduledEnd: date(2026, 8, 12, 7, 30),
+            actualStart: date(2026, 8, 12, 7, 0),
+            outcome: .active
+        )
+
+        XCTAssertTrue(
+            NightsHistoryAggregator.daySummaries(
+                from: [],
+                morningOccurrences: [planned, active],
+                calendar: calendar
+            ).isEmpty
+        )
+    }
+
+    func testOverlappingScreenFreeMorningIntervalsCountOnce() {
+        let first = morningOccurrence(
+            scheduledStart: date(2026, 8, 11, 7, 0),
+            scheduledEnd: date(2026, 8, 11, 7, 45),
+            actualStart: date(2026, 8, 11, 7, 0),
+            endedAt: date(2026, 8, 11, 7, 30)
+        )
+        let second = morningOccurrence(
+            scheduledStart: date(2026, 8, 11, 7, 15),
+            scheduledEnd: date(2026, 8, 11, 8, 0),
+            actualStart: date(2026, 8, 11, 7, 15),
+            endedAt: date(2026, 8, 11, 7, 45)
+        )
+
+        let summary = NightsHistoryAggregator.summary(
+            for: date(2026, 8, 11),
+            from: [],
+            morningOccurrences: [first, second],
+            calendar: calendar
+        )
+
+        XCTAssertEqual(summary.screenFreeMorningCount, 2)
+        XCTAssertEqual(summary.screenFreeMorningMinutes, 45)
+    }
+
+    func testFinishedMorningWithoutActualStartDoesNotInferEvidence() {
+        let occurrence = morningOccurrence(
+            scheduledStart: date(2026, 8, 11, 7, 0),
+            scheduledEnd: date(2026, 8, 11, 7, 30),
+            endedAt: date(2026, 8, 11, 7, 30)
+        )
+
+        let summary = NightsHistoryAggregator.summary(
+            for: date(2026, 8, 11),
+            from: [],
+            morningOccurrences: [occurrence],
+            calendar: calendar
+        )
+
+        XCTAssertEqual(summary.completedScreenFreeMorningCount, 1)
+        XCTAssertEqual(summary.screenFreeMorningMinutes, 0)
+    }
+
+    func testScreenFreeMorningMinutesRespectConfiguredDurationCap() {
+        let occurrence = morningOccurrence(
+            scheduledStart: date(2026, 8, 11, 7, 0),
+            scheduledEnd: date(2026, 8, 11, 7, 30),
+            actualStart: date(2026, 8, 11, 6, 45),
+            endedAt: date(2026, 8, 11, 7, 30)
+        )
+
+        let summary = NightsHistoryAggregator.summary(
+            for: date(2026, 8, 11),
+            from: [],
+            morningOccurrences: [occurrence],
+            calendar: calendar
+        )
+
+        XCTAssertEqual(summary.screenFreeMorningMinutes, 30)
+    }
+
+    func testLegacyAfterWakingCreditStaysExplicitAndOutOfMorningTotal() throws {
+        let legacy = try primaryRecord(
+            bedtime: date(2026, 8, 10, 22, 0),
+            wake: date(2026, 8, 11, 7, 0),
+            morningEnd: date(2026, 8, 11, 7, 45),
+            windDownMinutes: 60,
+            legacyMorningMinutes: 45
+        )
+        let morning = morningOccurrence(
+            linkedRunID: legacy.id,
+            scheduledStart: date(2026, 8, 11, 7, 0),
+            scheduledEnd: date(2026, 8, 11, 7, 45),
+            actualStart: date(2026, 8, 11, 7, 0),
+            endedAt: date(2026, 8, 11, 7, 30)
+        )
+
+        let summary = NightsHistoryAggregator.summary(
+            for: date(2026, 8, 11),
+            from: [legacy],
+            morningOccurrences: [morning],
+            calendar: calendar
+        )
+
+        XCTAssertEqual(summary.windDownMinutes, 60)
+        XCTAssertEqual(summary.screenFreeMorningMinutes, 30)
+        XCTAssertEqual(summary.legacyMorningQuietMinutes, 45)
+        XCTAssertEqual(summary.legacyMorningRecordCount, 1)
+        XCTAssertEqual(summary.totalOccurrenceCount, 2)
+        XCTAssertEqual(summary.primaryQuietMinutes, 60)
+    }
+
+    func testOverlappingPhoneAwayPeriodsCountOnce() {
+        let first = phoneAwayRecord(
             start: date(2026, 8, 11, 8, 0),
             end: date(2026, 8, 11, 8, 30)
         )
-        let second = additionalRecord(
+        let second = phoneAwayRecord(
             start: date(2026, 8, 11, 8, 15),
             end: date(2026, 8, 11, 8, 45)
         )
@@ -176,40 +295,61 @@ final class NightsHistorySummaryTests: XCTestCase {
         )
 
         XCTAssertEqual(summary.additionalCount, 2)
-        XCTAssertEqual(summary.additionalQuietMinutes, 45)
-        XCTAssertEqual(summary.recordedQuietMinutes, 45)
+        XCTAssertEqual(summary.phoneAwayMinutes, 45)
         XCTAssertEqual(summary.totalOccurrenceCount, 2)
     }
 
-    func testMonthTotalsUnionOverlapsAcrossDifferentDisplayDays() throws {
-        let primary = try primaryRecord(
+    func testMonthRangeKeepsSourceTotalsSeparateAndUnionsEachSource() throws {
+        let windDown = try primaryRecord(
             bedtime: date(2026, 8, 10, 22, 0),
             wake: date(2026, 8, 11, 7, 0),
-            protectedUntil: date(2026, 8, 11, 7, 30),
+            morningEnd: date(2026, 8, 11, 7, 30),
             windDownMinutes: 60,
-            morningMinutes: 30
+            legacyMorningMinutes: 30
         )
-        let additional = additionalRecord(
-            start: date(2026, 8, 10, 21, 30),
-            end: date(2026, 8, 10, 22, 30)
+        let morning = morningOccurrence(
+            linkedRunID: windDown.id,
+            scheduledStart: date(2026, 8, 11, 7, 0),
+            scheduledEnd: date(2026, 8, 11, 7, 30),
+            actualStart: date(2026, 8, 11, 7, 0),
+            endedAt: date(2026, 8, 11, 7, 30)
+        )
+        let firstPhoneAway = phoneAwayRecord(
+            start: date(2026, 8, 10, 23, 45),
+            end: date(2026, 8, 11, 0, 30)
+        )
+        let secondPhoneAway = phoneAwayRecord(
+            start: date(2026, 8, 11, 0, 0),
+            end: date(2026, 8, 11, 0, 45)
         )
 
         let summary = NightsHistoryAggregator.monthSummary(
-            from: [primary, additional],
+            from: [windDown, firstPhoneAway, secondPhoneAway],
+            morningOccurrences: [morning],
             containing: date(2026, 8, 1),
             calendar: calendar
         )
 
-        XCTAssertEqual(summary.days.count, 2)
-        XCTAssertEqual(summary.totalOccurrenceCount, 2)
-        XCTAssertEqual(summary.recordedQuietMinutes, 120)
+        XCTAssertEqual(summary.completedWindDownCount, 1)
+        XCTAssertEqual(summary.windDownMinutes, 60)
+        XCTAssertEqual(summary.screenFreeMorningMinutes, 30)
+        XCTAssertEqual(summary.phoneAwayMinutes, 60)
+        XCTAssertEqual(summary.legacyMorningQuietMinutes, 30)
+        XCTAssertEqual(summary.totalOccurrenceCount, 4)
     }
 
-    func testWeekAlwaysContainsSevenOrderedDaysIncludingEmptyDays() {
+    func testWeekAlwaysContainsSevenDaysAndIncludesMorningOnlyDay() {
         let end = date(2026, 8, 11, 18, 0)
+        let morning = morningOccurrence(
+            scheduledStart: date(2026, 8, 9, 7, 0),
+            scheduledEnd: date(2026, 8, 9, 7, 30),
+            actualStart: date(2026, 8, 9, 7, 0),
+            endedAt: date(2026, 8, 9, 7, 20)
+        )
 
         let week = NightsHistoryAggregator.week(
             from: [],
+            morningOccurrences: [morning],
             endingAt: end,
             calendar: calendar
         )
@@ -217,7 +357,8 @@ final class NightsHistorySummaryTests: XCTestCase {
         XCTAssertEqual(week.count, 7)
         XCTAssertEqual(week.first?.day, date(2026, 8, 5))
         XCTAssertEqual(week.last?.day, date(2026, 8, 11))
-        XCTAssertTrue(week.allSatisfy { !$0.hasRecords })
+        XCTAssertEqual(week.filter(\.hasRecords).count, 1)
+        XCTAssertEqual(week.first { calendar.isDate($0.day, inSameDayAs: date(2026, 8, 9)) }?.screenFreeMorningMinutes, 20)
     }
 
     func testDisplayDayRespectsProvidedTimeZone() throws {
@@ -226,7 +367,7 @@ final class NightsHistorySummaryTests: XCTestCase {
         let record = try primaryRecord(
             bedtime: date(2026, 8, 10, 14, 0),
             wake: date(2026, 8, 10, 23, 30),
-            protectedUntil: date(2026, 8, 11, 0, 0)
+            morningEnd: date(2026, 8, 11, 0, 0)
         )
 
         let displayDay = NightsHistoryAggregator.displayDay(
@@ -240,68 +381,47 @@ final class NightsHistorySummaryTests: XCTestCase {
         )
     }
 
-    func testLatestPrimaryIsNotDisplacedByNewerAdditionalQuiet() throws {
-        let primary = try primaryRecord(
+    func testLatestWindDownIsNotDisplacedByNewerPhoneAway() throws {
+        let windDown = try primaryRecord(
             bedtime: date(2026, 8, 9, 22, 0),
             wake: date(2026, 8, 10, 7, 0),
-            protectedUntil: date(2026, 8, 10, 7, 30)
+            morningEnd: date(2026, 8, 10, 7, 30)
         )
-        let additional = additionalRecord(
+        let phoneAway = phoneAwayRecord(
             start: date(2026, 8, 11, 18, 0),
             end: date(2026, 8, 11, 18, 30)
         )
 
         XCTAssertEqual(
-            NightsHistoryAggregator.latestPrimaryRecord(from: [primary, additional])?.id,
-            primary.id
+            NightsHistoryAggregator.latestPrimaryRecord(from: [windDown, phoneAway])?.id,
+            windDown.id
         )
         XCTAssertEqual(
-            NightsHistoryAggregator.latestAdditionalRecord(from: [primary, additional])?.id,
-            additional.id
-        )
-    }
-
-    func testLatestPrimaryUsesNightEndingDayInsteadOfLateRecordUpdate() throws {
-        let olderNightUpdatedLate = try primaryRecord(
-            bedtime: date(2026, 8, 9, 22, 0),
-            wake: date(2026, 8, 10, 7, 0),
-            protectedUntil: date(2026, 8, 10, 7, 30),
-            endedAt: date(2026, 8, 12, 9, 0)
-        )
-        let newerNight = try primaryRecord(
-            bedtime: date(2026, 8, 10, 22, 0),
-            wake: date(2026, 8, 11, 7, 0),
-            protectedUntil: date(2026, 8, 11, 7, 30)
-        )
-
-        XCTAssertEqual(
-            NightsHistoryAggregator.latestPrimaryRecord(
-                from: [olderNightUpdatedLate, newerNight]
-            )?.id,
-            newerNight.id
+            NightsHistoryAggregator.latestAdditionalRecord(from: [windDown, phoneAway])?.id,
+            phoneAway.id
         )
     }
 
     private func primaryRecord(
         bedtime: Date,
         wake: Date,
-        protectedUntil: Date,
+        morningEnd: Date,
         outcome: NightWatchOutcome = .completed,
         endedAt: Date? = nil,
         windDownMinutes: Int = 30,
-        morningMinutes: Int = 30
+        legacyMorningMinutes: Int = 0
     ) throws -> NightWatchRecord {
         let plan = NightWatchPlan(
             intendedBedtime: bedtime,
             wakeTime: wake,
-            protectedUntil: protectedUntil,
+            protectedUntil: morningEnd,
             windDownMinutes: max(30, windDownMinutes),
-            morningQuietMinutes: max(30, morningMinutes),
+            morningQuietMinutes: max(30, Int(morningEnd.timeIntervalSince(wake) / 60)),
             eveningActivity: .read,
             morningActivity: .openCurtains
         )
         let start = bedtime.addingTimeInterval(TimeInterval(-windDownMinutes * 60))
-        let finish = endedAt ?? protectedUntil
+        let finish = endedAt ?? morningEnd
         return NightWatchRecord(
             id: UUID(),
             plan: plan,
@@ -310,29 +430,42 @@ final class NightsHistorySummaryTests: XCTestCase {
             startMethod: .honorTimer,
             outcome: outcome,
             creditedWindDownMinutes: windDownMinutes,
-            creditedMorningQuietMinutes: morningMinutes,
+            creditedMorningQuietMinutes: legacyMorningMinutes,
             role: .primarySleepBookend,
             updatedAt: finish
         )
     }
 
-    private func additionalRecord(
-        start: Date,
-        end: Date
-    ) -> NightWatchRecord {
+    private func phoneAwayRecord(start: Date, end: Date) -> NightWatchRecord {
         let minutes = Int(end.timeIntervalSince(start) / 60)
-        let plan = NightWatchPlan.additionalQuiet(start: start, end: end)
         return NightWatchRecord(
             id: UUID(),
-            plan: plan,
+            plan: NightWatchPlan.additionalQuiet(start: start, end: end),
             startedAt: start,
             endedAt: end,
             startMethod: .honorTimer,
             outcome: .completed,
             creditedWindDownMinutes: minutes,
-            creditedMorningQuietMinutes: 0,
             role: .additionalQuiet,
             updatedAt: end
+        )
+    }
+
+    private func morningOccurrence(
+        linkedRunID: UUID? = nil,
+        scheduledStart: Date,
+        scheduledEnd: Date,
+        actualStart: Date? = nil,
+        endedAt: Date? = nil,
+        outcome: MorningQuietOccurrenceOutcome = .finished
+    ) -> MorningQuietOccurrence {
+        MorningQuietOccurrence(
+            linkedWindDownRunID: linkedRunID,
+            scheduledStart: scheduledStart,
+            scheduledEnd: scheduledEnd,
+            actualStart: actualStart,
+            endedAt: endedAt,
+            outcome: outcome
         )
     }
 

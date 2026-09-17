@@ -18,7 +18,7 @@ struct TrailBoardView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var filter: TrailBoardFilter = .searching
 
-    private var protectedNights: Int { viewModel.coordinator.progress.totalCompletedRuns }
+    private var protectedNights: Int { max(viewModel.coordinator.progress.farmCompletedRuns, viewModel.sheepSearchState.completedWindDownSearchCount) }
     private var discoveredIDs: Set<String> {
         Set(viewModel.farmState.discoveries.map(\.definitionID))
     }
@@ -42,6 +42,9 @@ struct TrailBoardView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
+                if let credit = viewModel.farmState.cumulativeCredit, !viewModel.isRunning {
+                    CumulativeFarmProgressCard(credit: credit)
+                }
                 Picker("Ollie’s Search filter", selection: $filter) {
                     ForEach(TrailBoardFilter.allCases) { Text($0.title).tag($0) }
                 }
@@ -87,34 +90,27 @@ struct TrailBoardView: View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 HStack(alignment: .top, spacing: AppSpacing.sm) {
-                    Image(systemName: "map.fill")
+                    Image(systemName: "binoculars.fill")
                         .font(.title.weight(.bold))
                         .foregroundStyle(AppColors.grass)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                         Text("OLLIE’S SEARCH")
                             .font(pixelFont(.caption))
                             .foregroundStyle(AppColors.grass)
-                        Text("Choose one missing sheep for Ollie to favour.")
+                        Text("Choose one missing sheep for Ollie to watch for.")
                             .font(AppTypography.headline)
                             .fixedSize(horizontal: false, vertical: true)
-                        Text("Ollie may look more closely here after Wind Down, Sunrise Trail, or Phone Away. Choosing a sheep never guarantees who comes home.")
+                        Text("Favouring a sheep changes which eligible sheep Ollie is more likely to bring home after a successful find. It does not raise the chance of a find or guarantee the identity.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                HStack(spacing: AppSpacing.xs) {
-                    boardMetric(
-                        "\(viewModel.sheepSearchState.trailMap.pendingMappedMinutes) min",
-                        label: "Mapped",
-                        icon: "point.topleft.down.to.point.bottomright.curvepath"
-                    )
-                    boardMetric(
-                        "\(discoveredIDs.count) / \(SheepCatalog.all.count)",
-                        label: "Found",
-                        icon: "book.closed.fill"
-                    )
-                }
+                boardMetric(
+                    "\(discoveredIDs.count) / \(SheepCatalog.all.count)",
+                    label: "Found",
+                    icon: "book.closed.fill"
+                )
             }
         }
     }
@@ -145,8 +141,8 @@ struct TrailBoardView: View {
                 Text(filter == .searching ? "Ollie has no new missing sheep to look for yet." : "No sheep are recorded here yet.")
                     .font(AppTypography.headline)
                 Text(filter == .searching
-                    ? "More sheep become available as completed Wind Downs open new missing-sheep notes."
-                    : "Finish Wind Down to begin the Search Journal.")
+                    ? "More sheep become available as qualifying Wind Down searches grow the catalogue."
+                    : "Search Journal appears only after Ollie has a resolved find or clue to record.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }
@@ -210,6 +206,10 @@ private struct TrailBoardCard: View {
                 Button(isTracked ? "Search chosen" : "Choose for Ollie’s Search", action: onTrack)
                     .buttonStyle(PixelChipButtonStyle(isSelected: isTracked))
                     .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Favour \(definition.name) in Ollie’s Search")
+                    .accessibilityValue(isTracked ? "Selected" : "Not selected")
+                    .accessibilityHint("Changes the likely sheep identity after a successful find. It does not change the chance of a find.")
+                    .accessibilityAddTraits(isTracked ? .isSelected : [])
             } else if isDiscovered {
                 Label("Recorded in Search Journal", systemImage: "checkmark.seal.fill")
                     .font(AppTypography.caption)

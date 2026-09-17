@@ -17,37 +17,29 @@ enum AppCopy {
         )
         static let detail = AppCopyToken(
             id: "iphone.onboarding.welcome.detail",
-            value: "Counting Sheep helps you make a little space between your screen and your sleep — before bed, overnight, and after you wake."
+            value: "Make room for a quieter evening, overnight, and morning. Give your phone a place outside your bedroom, or keep it accessible nearby when you need it for communication or alerts."
         )
     }
 
     enum ConfiguredHome {
         static let quietStatement = AppCopyToken(
             id: "iphone.home.configured.quiet-statement",
-            value: "The quiet is the point. There is nothing to check off."
+            value: "Put your phone in its spot. Take this time for yourself."
         )
         static let startButton = AppCopyToken(
             id: "iphone.home.configured.start-button",
-            value: "Start Wind Down"
+            value: "Put phone away"
         )
     }
 
     enum ActiveWindDown {
         static let cueEyebrow = AppCopyToken(
             id: "iphone.active.wind-down.cue-eyebrow",
-            value: "PHONE-FREE WIND-DOWN"
+            value: "WIND DOWN"
         )
     }
 
     enum EarlyEnd {
-        static let eyebrow = AppCopyToken(
-            id: "iphone.early-end.receipt-eyebrow",
-            value: "WIND DOWN ENDED"
-        )
-        static let title = AppCopyToken(
-            id: "iphone.early-end.receipt-title",
-            value: "Welcome back. Ollie kept your spot warm."
-        )
         static let doneButton = AppCopyToken(
             id: "iphone.early-end.done-button",
             value: "Done for now"
@@ -65,7 +57,7 @@ enum AppCopy {
         )
         static let detail = AppCopyToken(
             id: "iphone.farm.header-detail",
-            value: "Wind Down grows the Farm. Choose what to do with your sheep, wool, and Ollie's next find."
+            value: "Tend your flock, gather wool, and help Ollie bring missing sheep home."
         )
     }
 }

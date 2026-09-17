@@ -1,0 +1,36 @@
+{
+  "boundary" : "Explicit disposable Simulator only. Shielding is simulated; Live Activity, Watch transport, remote services, and notification delivery are disabled. Existing VM paths may cancel this Simulator app’s local reminders.",
+  "cases" : [
+    {
+      "failures" : [
+
+      ],
+      "name" : "meaningful-personalisation",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "manual-primary-cancel-retry-snapshot",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "corrupt-plan-preserves-healthy-reflections",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "corrupt-reflections-preserve-healthy-plan",
+      "passed" : true
+    }
+  ],
+  "generatedAt" : "2026-09-13T02:15:57Z",
+  "passed" : true,
+  "schemaVersion" : 1
+}

@@ -20,7 +20,7 @@ struct OnboardingProtectionStep: View {
 
             OnboardingChoiceCard(
                 title: "App limits",
-                detail: "Choose social media or other distracting apps and categories to limit through the full Wind Down. Counting Sheep stays available.",
+                detail: "Choose social media or other distracting apps and categories to limit from Wind Down start through Screen-Free Morning, including overnight, and during Phone Away. Counting Sheep stays available.",
                 icon: "iphone.slash",
                 isSelected: draft.shieldingEnabled && draft.protectionChoice == .appShielding
             ) {

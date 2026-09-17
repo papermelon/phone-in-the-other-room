@@ -272,15 +272,6 @@ private struct FarmShopItemCard: View {
                 )
                 FarmShopItemImage(item: item, size: 108)
                     .padding(AppSpacing.xs)
-                    .saturation(isUnlocked ? 1 : 0)
-                    .opacity(isUnlocked ? 1 : 0.30)
-                if !isUnlocked {
-                    Image(systemName: "lock.fill")
-                        .font(.title2.weight(.bold))
-                        .foregroundStyle(AppColors.bark)
-                        .padding(AppSpacing.xs)
-                        .background(AppColors.paper.opacity(0.9), in: Circle())
-                }
             }
         }
         .buttonStyle(.plain)
@@ -398,7 +389,7 @@ private struct FarmShopItemCard: View {
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .multilineTextAlignment(.center)
         } else {
-            Button(canAfford ? "Bring home" : "Keep gathering wool") {
+            Button(canAfford ? "Bring home" : "Need \(item.woolCost - state.woolBalance) wool") {
                 viewModel.purchaseFarmShopItem(item.id)
             }
             .buttonStyle(PixelChipButtonStyle(isSelected: false))

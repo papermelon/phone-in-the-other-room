@@ -55,6 +55,68 @@ struct ActiveRunExitPresentation: Equatable {
     let confirmTitle: String
 }
 
+/// Cross-target terminal copy is limited to facts carried by the run itself:
+/// its role, terminal state, and elapsed timer interval. It deliberately says
+/// nothing about physical placement, sleep, selected-app use, or a search that
+/// may not have resolved yet.
+struct RunTerminalPresentation: Equatable {
+    let role: WindDownOccurrenceRole
+    let completedSuccessfully: Bool
+    let elapsedSeconds: TimeInterval
+
+    init(run: FocusRun) {
+        let datedElapsed = run.endedAt.map { max(0, $0.timeIntervalSince(run.startedAt)) } ?? 0
+        self.init(
+            role: run.nightWatchPlan?.role ?? .primarySleepBookend,
+            completedSuccessfully: run.completedSuccessfully,
+            elapsedSeconds: max(run.actualDurationSeconds, datedElapsed)
+        )
+    }
+
+    init(
+        role: WindDownOccurrenceRole,
+        completedSuccessfully: Bool,
+        elapsedSeconds: TimeInterval
+    ) {
+        self.role = role
+        self.completedSuccessfully = completedSuccessfully
+        self.elapsedSeconds = max(0, elapsedSeconds)
+    }
+
+    var modeName: String {
+        role == .additionalQuiet ? "Phone Away" : "Wind Down"
+    }
+
+    var eyebrow: String {
+        completedSuccessfully
+            ? "\(modeName.uppercased()) TIMER ENDED"
+            : "\(modeName.uppercased()) TIME SAVED"
+    }
+
+    var headline: String {
+        completedSuccessfully
+            ? "The \(modeName) timer ended."
+            : "Your \(modeName) time adds up."
+    }
+
+    var timerSummary: String {
+        "\(elapsedLabel) on the \(modeName) timer."
+    }
+
+    var accessibilityLabel: String {
+        "\(headline) \(timerSummary)"
+    }
+
+    private var elapsedLabel: String {
+        let minutes = Int(elapsedSeconds / 60)
+        guard minutes > 0 else { return "Under 1 minute" }
+        guard minutes >= 60 else { return "\(minutes) min" }
+        let hours = minutes / 60
+        let remainder = minutes % 60
+        return remainder == 0 ? "\(hours)h" : "\(hours)h \(remainder)m"
+    }
+}
+
 /// User-facing copy and affordances for an active phone-away run. This keeps
 /// additional quiet from borrowing the primary Wind Down story while leaving
 /// the persisted NightWatch phases and coordinator untouched.
@@ -118,39 +180,39 @@ struct ActiveRunPresentation: Equatable {
     var eyebrow: String {
         if isAdditionalQuiet { return "PHONE AWAY" }
         switch phase {
-        case .windDown: return "PHONE-FREE WIND-DOWN"
-        case .overnight: return "SLEEP TIME"
-        case .morningQuiet: return "PHONE-FREE MORNING"
-        case .complete: return "NIGHT COMPLETE"
-        case nil: return "OLLIE IS ON WATCH"
+        case .windDown: return "WIND DOWN · EVENING"
+        case .overnight: return "WIND DOWN · OVERNIGHT"
+        case .morningQuiet: return "SCREEN-FREE MORNING"
+        case .complete: return "WIND DOWN TIMER ENDED"
+        case nil: return "WIND DOWN"
         }
     }
 
     var headline: String {
-        if isAdditionalQuiet { return "A little room away from the screen." }
-        if placementStatus == .awaitingConfirmation { return "A calm start" }
+        if placementStatus == .awaitingConfirmation { return "Ready when you are." }
+        if isAdditionalQuiet { return "Phone Away timer is running." }
         switch phase {
-        case .windDown: return "The evening can get quieter now."
-        case .overnight: return "Phone resting. You can too."
-        case .morningQuiet: return "Wake up before your phone does."
-        case .complete: return "A quiet night kept."
-        case nil: return "Phone resting. You can too."
+        case .windDown: return "Wind Down has begun."
+        case .overnight: return "Settle in for the night."
+        case .morningQuiet: return "Screen-Free Morning timer is running."
+        case .complete: return "The Wind Down timer ended."
+        case nil: return "Wind Down timer is running."
         }
     }
 
     var subheadline: String {
         if isAdditionalQuiet {
             if placementStatus == .awaitingConfirmation {
-            return "Phone Away starts after the check."
+                return "Phone Away starts after the check."
             }
-            return "A little room away from the screen."
+            return "The timer continues to its planned end."
         }
         if placementStatus != .awaitingConfirmation {
             switch phase {
-            case .windDown: return "Phone-free time until bedtime."
-            case .overnight: return "Sleep time. Your phone stays tucked away."
-            case .morningQuiet: return "Phone-free time after waking."
-            case .complete: return "Your phone-free night is ready."
+            case .windDown: return "Leave your phone in its spot while you get ready for bed."
+            case .overnight: return "Your countdown now runs until morning."
+            case .morningQuiet: return "Begin your day before picking up your phone."
+            case .complete: return "Your session summary is ready."
             case nil: break
             }
         }
@@ -159,35 +221,34 @@ struct ActiveRunPresentation: Equatable {
 
     var transitionCaption: String {
         guard let transition = nextTransitionDate else {
-            return isAdditionalQuiet ? "Ends at \(OllieFormat.time(planEndDate))" : "Wind Down is complete"
+            return isAdditionalQuiet ? "Ends at \(OllieFormat.time(planEndDate))" : "Wind Down timer ended"
         }
         let time = OllieFormat.time(transition)
         if isAdditionalQuiet { return "Ends at \(OllieFormat.time(planEndDate))" }
         switch phase {
         case .windDown: return "Bedtime at \(time)"
-        case .overnight: return "Phone-free morning begins at \(time)"
-        case .morningQuiet: return "Your phone wakes at \(time)"
-        case .complete: return "Wind Down is complete"
-        case nil: return "Ollie will check in when the phone-away time is done."
+        case .overnight: return "Screen-Free Morning begins at \(time)"
+        case .morningQuiet: return "Screen-Free Morning ends at \(time)"
+        case .complete: return "Wind Down timer ended"
+        case nil: return "The Wind Down timer continues to its planned end."
         }
     }
 
     var phaseStatusText: String {
         if isAdditionalQuiet {
-            return phase == .complete ? "Phone Away is complete." : "Phone Away is running."
+            return phase == .complete ? "Phone Away timer ended." : "Phone Away timer is running."
         }
         switch phase {
-        case .windDown: return "Your phone is tucked away. Ollie is following the first trail."
-        case .overnight: return "Sleep time is keeping. There is nothing else to do here."
-        case .morningQuiet: return "This phone-free morning is yours. Ollie is taking the trail home."
-        case .complete: return "Both quiet windows were kept."
-        case nil: return "Your phone-away time is yours now. Ollie will check in when it is done."
+        case .windDown: return "Wind Down is in its evening phase."
+        case .overnight: return "Wind Down is in its overnight phase."
+        case .morningQuiet: return "Screen-Free Morning timer is running."
+        case .complete: return "Wind Down timer ended."
+        case nil: return "Wind Down timer is running."
         }
     }
 
     var statusSystemImage: String {
-        if isAdditionalQuiet { return "moon.stars.fill" }
-        return phase == .morningQuiet ? "sun.max.fill" : "moon.stars.fill"
+        "timer"
     }
 
     var returnBarTitle: String {
@@ -209,7 +270,7 @@ struct ActiveRunPresentation: Equatable {
             return ActiveRunExitPresentation(
                 actionTitle: "End Phone Away early",
                 confirmationTitle: "End Phone Away early?",
-                confirmationBody: "This ends the timer and removes any app limits.",
+                confirmationBody: "This ends the timer and lifts selected-app limits.",
                 cancelTitle: "Keep Phone Away running",
                 confirmTitle: "End Phone Away"
             )
@@ -217,7 +278,7 @@ struct ActiveRunPresentation: Equatable {
         return ActiveRunExitPresentation(
             actionTitle: "End Wind Down early",
             confirmationTitle: "End Wind Down early?",
-            confirmationBody: "This immediately lifts app limits and ends this Wind Down early.",
+            confirmationBody: "This immediately lifts selected-app limits and ends this Wind Down early.",
             cancelTitle: "Keep Wind Down running",
             confirmTitle: "End Wind Down"
         )
@@ -234,7 +295,7 @@ struct ActiveRunPresentation: Equatable {
         return ActiveRunExitPresentation(
             actionTitle: "End \(runName) without the tag",
             confirmationTitle: "End \(runName) without the tag?",
-            confirmationBody: "This ends \(runName) without the registered tag and immediately stops app limits.",
+            confirmationBody: "This ends \(runName) without the registered tag and immediately lifts selected-app limits.",
             cancelTitle: "Keep \(runName) running",
             confirmTitle: "End without tag"
         )
@@ -247,21 +308,19 @@ struct ActiveRunPresentation: Equatable {
         case .notRequested:
             return nil
         case .scheduled:
-            message = "Selected apps will be limited until \(endTime)."
+            message = "Selected-app limits are scheduled to end at \(endTime)."
         case .active:
-            message = isAdditionalQuiet
-                ? "Selected apps are limited until \(endTime)."
-                : "Selected apps are limited until \(endTime)."
+            message = "Selected-app limits are active now and scheduled to end at \(endTime)."
         case .failed(let failure):
             switch failure {
             case .noSelection:
                 message = isAdditionalQuiet
-                    ? "App protection did not start. Phone Away remains factual; repair protection before another start."
-                    : "App protection did not start. Wind Down remains factual; repair protection before another start."
+                    ? "Selected-app limits did not start. The Phone Away timer continues; repair protection before another start."
+                    : "Selected-app limits did not start. The Wind Down timer continues; repair protection before another start."
             case .monitoring, .unavailable, .other:
                 message = isAdditionalQuiet
-                    ? "App protection did not stay active. Phone Away remains factual; repair protection before another start."
-                    : "App protection did not stay active. Wind Down remains factual; repair protection before another start."
+                    ? "Selected-app limits did not stay active. The Phone Away timer continues; repair protection before another start."
+                    : "Selected-app limits did not stay active. The Wind Down timer continues; repair protection before another start."
             }
         }
         return ActiveRunShieldingBanner(
@@ -288,7 +347,7 @@ struct ActiveRunPresentation: Equatable {
         if remaining > 0 {
             return isAdditionalQuiet
                 ? "\(remaining) minutes until Phone Away ends"
-                : "\(remaining) minutes until the next Wind Down step"
+                : "\(remaining) minutes until the next Wind Down phase"
         }
         return "Less than a minute remaining"
     }

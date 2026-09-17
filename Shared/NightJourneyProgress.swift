@@ -8,10 +8,10 @@ enum NightJourneySegment: String, Codable, CaseIterable, Equatable {
 
     var title: String {
         switch self {
-        case .prairie: return "The prairie path"
-        case .mountain: return "The mountain pass"
-        case .moonlit: return "The moonlit trail"
-        case .sunrise: return "The way home"
+        case .prairie: return "Prairie evening"
+        case .mountain: return "Mountain dusk"
+        case .moonlit: return "Moonlit hills"
+        case .sunrise: return "Morning pasture"
         }
     }
 }
@@ -26,6 +26,20 @@ struct NightJourneyProgress: Equatable {
 
     /// Compatibility for existing callers while progress is now phase-aware.
     var fraction: Double { overallFraction }
+
+    /// The morning keeps its own clock; rendering never creates or settles a run.
+    static func resolve(morning: MorningQuietOccurrence, at date: Date) -> Self? {
+        guard morning.outcome == .active || morning.outcome == .finished,
+              let start = morning.actualStart else { return nil }
+        let displayedDate = min(date, morning.endedAt ?? date)
+        let fraction = normalized(displayedDate, from: start, to: morning.scheduledEnd)
+        let ended = morning.outcome == .finished || displayedDate >= morning.scheduledEnd
+        return Self(
+            overallFraction: fraction, phaseFraction: fraction, segmentFraction: fraction,
+            segment: .sunrise, phase: ended ? .complete : .morningQuiet,
+            nextTransition: ended ? nil : morning.scheduledEnd
+        )
+    }
 
     static func resolve(run: FocusRun, at date: Date) -> Self? {
         guard let plan = run.nightWatchPlan else { return nil }

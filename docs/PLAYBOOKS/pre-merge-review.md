@@ -1,20 +1,22 @@
 # Playbook: Pre-Merge Review
 
 Reusable checklist for reviewing any change to this repo — whether written by Codex,
-Cursor, another agent, or a human. Apply proportionally: a copy tweak needs §1 and §6;
-a coordinator change needs everything.
+Cursor, another agent, or a human. Apply only sections relevant to the change. A copy
+tweak needs product/copy and affected UI checks; a coordinator change needs state,
+compatibility and lifecycle checks. [AGENTS.md](../../AGENTS.md) owns authorization and validation.
 
 Output of a review: a verdict (approve / approve-with-nits / request changes), the
 checklist findings that matter, and a risk rating.
 
 ## 1. Product fit
 
-- [ ] Passes the belonging test (`docs/PRODUCT_PRINCIPLES.md`): ritual, bedtime,
-      kindness, subtraction, cost.
-- [ ] Does not touch gated features without their gates met (ADR-0003, ADR-0004).
-- [ ] No coercive-engagement violations: no loss-aversion streaks, rewards for app opens,
-      paid chance mechanics, guilt/shame states, or urgency pressure. Completion-only
-      intermittent reward variety follows `docs/PRODUCT_PRINCIPLES.md`.
+- [ ] Product tradeoffs are clear and follow current founder direction. The belonging
+      test is a decision aid, not an independent approval gate.
+- [ ] Relevant current ADR/capability boundaries are met; source implementation is
+      distinguished from hosted activation, consent, distribution and physical validation.
+- [ ] Evidence/privacy/medical claims are truthful. Pressure and anticipation are judged
+      in context using the copy skill. Farm credit follows ADR-0020; account ownership
+      and automatic sync follow ADR-0023.
 - [ ] Stays in scope: a bug fix is a bug fix — no bundled features or refactors.
 
 ## 2. Architecture fit
@@ -22,10 +24,10 @@ checklist findings that matter, and a risk rating.
 - [ ] Logic is in the right layer: pure/domain → `Shared/` (+ tests); side effects →
       `Services/`; UI state → view models; presentation → `Views/`.
 - [ ] Run state flows through `FocusSessionCoordinator` — no duplicate run state.
-- [ ] No new singletons, no new architecture patterns, no new dependencies without
-      explicit human approval.
-- [ ] `project.yml` edited (never `project.pbxproj`); `xcodegen generate` run if files
-      were added/moved.
+- [ ] Existing architecture is used; new singletons have a strong reason and dependency
+      injection was considered. New third-party dependencies have explicit approval.
+- [ ] Generated project changes come from XcodeGen inputs; regeneration follows the
+      root validation policy.
 - [ ] Persisted Codable models remain backwards-decodable; legacy-decode test still passes.
 - [ ] Watch protocol changes update both sides of `WatchMessage` and preserve the
       queue/fallback transport strategy.
@@ -60,26 +62,30 @@ checklist findings that matter, and a risk rating.
 ## 6. Copy tone
 
 - [ ] All new/changed user-facing strings pass `skills/product-copy-review/SKILL.md`:
-      warm, brief, Ollie-voiced; no guilt, urgency, medical claims, or productivity jargon.
+      warm, brief, Ollie-voiced; truthful claims, no guilt or medical promises, and
+      context-appropriate pressure rather than a blanket urgency ban.
 - [ ] Bedtime framing where stats are involved ("nights", not "output").
 
 ## 7. Edge cases (check the ones the change touches)
 
 - [ ] Watch unreachable / Bluetooth off mid-run
-- [ ] Non-UWB device (`unsupported` path)
+- [ ] Optional NFC unavailable/cancelled; legacy placement data normalizes safely
 - [ ] App backgrounded or killed mid-run; relaunch restore
-- [ ] Signal lost then recovered; repeated warnings
+- [ ] Shield apply/restore failure, Brief Access, permission revocation, and repair
 - [ ] Midnight rollover during a run; timezone/DST changes
-- [ ] Fresh install (empty UserDefaults) and legacy persisted JSON
-- [ ] Permission denied paths (notifications; later HealthKit/Screen Time)
+- [ ] Fresh install, legacy JSON, transaction-store recovery, and reward replay
+- [ ] Permission denied/no-data paths for notifications, HealthKit and Screen Time
+- [ ] Account switch/sign-out, owner-scoped caches/queues, declined-sync migration,
+      offline/reconnect, stale acknowledgements, conflicts and deletion fencing
 
 ## 8. Testing
 
 - [ ] `Shared/` logic changes have new/updated tests in `Tests/`.
-- [ ] Full suite passes locally:
-      `xcodebuild test -project PhoneInTheOtherRoom.xcodeproj -scheme PhoneInTheOtherRoom -destination 'platform=iOS Simulator,name=iPhone 15'`
-- [ ] Build succeeds for iOS + Watch (the shared scheme builds both).
-- [ ] Claims of "tested" are backed by pasted output, not assertion.
+- [ ] Applicable checks satisfy [the shared validation policy](../../AGENTS.md#validation),
+      including the full local app build/unit suite for code merge and release-specific
+      acceptance when requested. Documentation-only work needs no app build.
+- [ ] Results identify actual commands/outcomes and relevant source/configuration.
+      Matching evidence is reused; unavailable checks are reported, not called passed.
 
 ## 9. Risk rating (include in the review verdict)
 
@@ -89,6 +95,7 @@ checklist findings that matter, and a risk rating.
 | **M** | Touches shared state or multiple screens | view model changes, persistence fields, design components |
 | **L** | Core loop, protocol, or build config | coordinator, `WatchMessage`, `project.yml`, entitlements, tab structure |
 
-L-rated changes require a human in the loop before merge, and should get a Bugbot-style
-review pass. M-rated changes need the full checklist. S-rated changes need §1, §6, and a
-green build.
+L-rated changes require human review before merge, unless that review/merge action is
+already explicitly authorized; local implementation and validation continue meanwhile.
+Use relevant checklist sections for every size of change. A risk label does not by itself
+require repeating tests, escalating routine local edits, or building documentation changes.

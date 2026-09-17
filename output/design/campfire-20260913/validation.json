@@ -1,0 +1,12 @@
+{
+  "build": "passed",
+  "nativeTests": {
+    "total": 1014,
+    "failures": 0
+  },
+  "isolatedSQLSuites": 9,
+  "edgeValidationTests": 8,
+  "nativeInspection": "Simulator screenshots; taps and VoiceOver blocked by locked Mac",
+  "hostedDeployment": "not performed",
+  "physicalDeviceAcceptance": "outstanding"
+}

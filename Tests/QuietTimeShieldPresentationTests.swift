@@ -105,8 +105,16 @@ final class QuietTimeShieldPresentationTests: XCTestCase {
         )
         XCTAssertEqual(
             ShieldCueCatalog.overnight,
-            ["Your phone is tucked away. There is nothing else to do here."]
+            ["The overnight phase is running. Leave this check for later."]
         )
+
+        let allCopy = QuietTimeShieldCueGroup.allCases
+            .flatMap(ShieldCueCatalog.cues)
+            .joined(separator: " ")
+            .lowercased()
+        for forbidden in ["tucked away", "phone slept", "sleep completed"] {
+            XCTAssertFalse(allCopy.contains(forbidden))
+        }
     }
 
     func testMalformedOrMissingScheduleFallsBackWithoutAUserFacingQuote() {
@@ -198,5 +206,20 @@ final class QuietTimeShieldPresentationTests: XCTestCase {
 
         XCTAssertEqual(summary.pauseCount, 3)
         XCTAssertEqual(summary.allottedMinutes, 12)
+    }
+
+    func testBriefAccessCopyNamesTemporaryLimitLiftAndContinuingTimerForEveryRole() {
+        for role in [
+            QuietTimeShieldRole.primaryWindDown,
+            .additionalQuiet,
+            .screenFreeMorning
+        ] {
+            let copy = role.briefAccessExplanation
+            XCTAssertTrue(copy.contains("Selected apps unlock for up to 5 minutes"))
+            XCTAssertTrue(copy.contains("timer continues"))
+            XCTAssertFalse(copy.lowercased().contains("work"))
+            XCTAssertTrue(copy.contains("5 min"))
+            if role != .screenFreeMorning { XCTAssertTrue(copy.contains("saved progress stays")) }
+        }
     }
 }

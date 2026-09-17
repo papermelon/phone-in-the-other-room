@@ -7,6 +7,8 @@ import FamilyControls
 struct OnboardingFlowView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var draft: OnboardingDraft
+    @State private var showsReturningAccount = false
+    @State private var showsHomeTour = false
     #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
     @State private var showScreenTimePicker = false
     #endif
@@ -27,9 +29,17 @@ struct OnboardingFlowView: View {
             : (initialDraft ?? PersistenceService.shared.onboardingDraft ?? OnboardingDraft.defaults())
         var normalizedDraft = restoredDraft
         // Raw values are preserved for Codable compatibility with the previous flow.
-        // The removed advanced-reminders page now lands on the saved-plan screen.
+        // The removed advanced-reminders page now lands on plan review.
         if normalizedDraft.step == .automaticStart {
             normalizedDraft.step = .ready
+        }
+        if presentationMode.preservesExistingSettings {
+            normalizedDraft.journeyRoute = .legacy
+            normalizedDraft.accountInvitationSkipped = true
+        }
+        if presentationMode == .fixture,
+           !CountingSheepOnboardingStep.visibleSteps.contains(normalizedDraft.step) {
+            normalizedDraft.journeyRoute = .legacy
         }
         normalizedDraft.welcomePage = normalizedDraft.welcomePage.normalizedForCurrentFlow
         _draft = State(
@@ -59,12 +69,21 @@ struct OnboardingFlowView: View {
                 .padding(.bottom, AppSpacing.xl)
             }
             .id("\(draft.step.rawValue)-\(draft.welcomePage.rawValue)-\(draft.profileQuestionIndex)-\(draft.profileSkipped)")
-            .safeAreaInset(edge: .bottom, spacing: 0) { actionBar }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if draft.step != .account { actionBar }
+            }
             .background(AppColors.paper.ignoresSafeArea())
             .toolbar {
                 if let onCancel {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel", action: onCancel)
+                    }
+                }
+                if !isReplay,
+                   draft.step == .welcome,
+                   draft.welcomePage.normalizedForCurrentFlow == .countingSheep {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button("Sign in") { showsReturningAccount = true }
                     }
                 }
             }
@@ -74,10 +93,43 @@ struct OnboardingFlowView: View {
             viewModel.saveOnboardingDraft(updatedDraft)
         }
         .onAppear { viewModel.refreshNotificationAuthorization() }
+        .onReceive(viewModel.farmBackupViewModel.$restoreSuccess) { success in
+            guard success != nil,
+                  CountingSheepOnboarding.acceptsCommittedRestoreRoute(
+                    presentationMode: presentationMode,
+                    onboardingVersion: PersistenceService.shared.onboardingVersion
+                  ),
+                  !draft.returningUserDeviceSetup else { return }
+            draft.beginReturningUserDeviceSetup()
+            showsReturningAccount = false
+        }
+        .sheet(isPresented: $showsReturningAccount) {
+            NavigationStack {
+                ScrollView {
+                    OnboardingAccountStep(
+                        kind: .returning,
+                        model: viewModel.farmBackupViewModel,
+                        farmState: viewModel.farmState,
+                        protectedNightCount: viewModel.coordinator.progress.farmCompletedRuns,
+                        onContinue: {
+                            showsReturningAccount = false
+                            draft.returningUserDeviceSetup = false
+                            draft.step = draft.journeyRoute == .planFirst ? .schedule : .profile
+                        }
+                    )
+                    .padding(AppSpacing.md)
+                }
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Not now") { showsReturningAccount = false }
+                    }
+                }
+            }
+        }
 #if SCREEN_TIME_REPORTS && canImport(FamilyControls)
         .familyActivityPicker(
-            headerText: "Choose 1–3 apps or categories to pause for Wind Down and the linked Screen-Free Morning.",
-            footerText: "Counting Sheep limits this selection during Wind Down and always stays available. Websites are ignored.",
+            headerText: "Choose 1–3 apps or categories to limit from Wind Down start through Screen-Free Morning, including overnight.",
+            footerText: "The same selection is used during Phone Away. Counting Sheep stays available. Websites are ignored.",
             isPresented: $showScreenTimePicker,
             selection: $viewModel.bedtimeActivitySelection
         )
@@ -97,12 +149,13 @@ struct OnboardingFlowView: View {
                 starterSheep: viewModel.farmState.activeSheep.first {
                     $0.definitionID == WelcomeRewardCatalog.starterSheepID
                 },
-                protectedNightCount: viewModel.coordinator.progress.totalCompletedRuns
+                protectedNightCount: viewModel.coordinator.progress.farmCompletedRuns
             )
         case .profile:
             OnboardingProfileStep(draft: $draft)
         case .recommendation:
             OnboardingRecommendationStep(
+                draft: $draft,
                 answers: draft.profileAnswers,
                 recommendation: draft.profileRecommendation
             )
@@ -119,6 +172,14 @@ struct OnboardingFlowView: View {
             )
         case .gift:
             OnboardingShepherdGiftStep(draft: $draft)
+        case .account:
+            OnboardingAccountStep(
+                kind: .newUser,
+                model: viewModel.farmBackupViewModel,
+                farmState: viewModel.farmState,
+                protectedNightCount: viewModel.coordinator.progress.farmCompletedRuns,
+                onContinue: moveForward
+            )
         case .automaticStart, .ready:
             OnboardingReadyStep(
                 draft: draft,
@@ -133,7 +194,8 @@ struct OnboardingFlowView: View {
     private var primaryButtonTitle: String {
         switch draft.step {
         case .welcome:
-            return draft.welcomePage.normalizedForCurrentFlow == .ollie ? "Find my starting point" : "Meet Ollie"
+            if draft.welcomePage.normalizedForCurrentFlow != .ollie { return "Get started" }
+            return draft.journeyRoute == .planFirst ? "Make my evening plan" : "Find my starting point"
         case .profile:
             return draft.profileQuestionIndex + 1 == CountingSheepOnboarding.profileQuestions.count
                 ? "See my starting point"
@@ -142,17 +204,16 @@ struct OnboardingFlowView: View {
             return "Continue"
         case .gift:
             return viewModel.claimedWelcomeGiftItemID == nil ? "Wear now" : "Continue"
+        case .account:
+            return "Continue without an account"
         case .ready:
-            return isReplay ? "Save changes" : "Save and show me Home"
+            return isReplay ? "Save changes" : "Go to Home"
         default:
             return "Continue"
         }
     }
 
     private var skipButtonTitle: String? {
-        if draft.step == .ready, !isReplay {
-            return "Save and skip the tour"
-        }
         if draft.step == .welcome {
             return "Skip intro"
         }
@@ -160,10 +221,10 @@ struct OnboardingFlowView: View {
             return "Skip questions"
         }
         if draft.step == .gift, viewModel.claimedWelcomeGiftItemID == nil {
-            return "Keep for later"
+            return draft.selectedWelcomeGiftItemID == nil ? "Choose later" : "Keep for later"
         }
         if draft.step == .protection {
-            return nil
+            return "Set up protection later"
         }
         return nil
     }
@@ -172,7 +233,7 @@ struct OnboardingFlowView: View {
         if draft.step == .welcome {
             return draft.welcomePage.normalizedForCurrentFlow != .countingSheep
         }
-        return CountingSheepOnboardingStep.visibleSteps.firstIndex(of: draft.step) ?? 0 > 0
+        return draft.journeySteps.firstIndex(of: draft.step) ?? 0 > 0
     }
 
     private var canContinue: Bool {
@@ -198,14 +259,11 @@ struct OnboardingFlowView: View {
             draft.welcomePage = .countingSheep
             return
         }
-        guard let index = CountingSheepOnboardingStep.visibleSteps.firstIndex(of: draft.step), index > 0 else {
+        let steps = draft.journeySteps
+        guard let index = steps.firstIndex(of: draft.step), index > 0 else {
             return
         }
-        var previous = CountingSheepOnboardingStep.visibleSteps[index - 1]
-        if draft.profileSkipped, previous == .recommendation {
-            previous = .profile
-        }
-        draft.step = previous
+        draft.step = steps[index - 1]
         if draft.step == .welcome {
             draft.welcomePage = OnboardingWelcomePage.visiblePages.last ?? .ollie
         }
@@ -220,17 +278,13 @@ struct OnboardingFlowView: View {
             draft.shieldingEnabled = draft.shieldingEnabled && viewModel.hasSelectedShieldingApps
         }
         if draft.step == .ready {
-            finish(showTour: true)
+            finish(showTour: showsHomeTour)
             return
         }
         moveForward()
     }
 
     private func skipCurrent() {
-        if draft.step == .ready {
-            finish(showTour: false)
-            return
-        }
         if draft.step == .gift {
             claimGiftAndContinue(wearNow: false)
             return
@@ -253,8 +307,11 @@ struct OnboardingFlowView: View {
             draft.moveToNextVisibleStep()
             return
         }
-        guard let itemID = draft.selectedWelcomeGiftItemID,
-              viewModel.claimWelcomeGift(itemID, wearNow: wearNow) else { return }
+        guard let itemID = draft.selectedWelcomeGiftItemID else {
+            if !wearNow { draft.moveToNextVisibleStep() }
+            return
+        }
+        guard viewModel.claimWelcomeGift(itemID, wearNow: wearNow) else { return }
         draft.moveToNextVisibleStep()
     }
 
@@ -293,6 +350,12 @@ struct OnboardingFlowView: View {
 
     private var actionBar: some View {
         VStack(spacing: AppSpacing.xxs) {
+            if draft.step == .ready, !isReplay {
+                Toggle("Show a short Home tour", isOn: $showsHomeTour)
+                    .font(AppTypography.caption)
+                    .tint(AppColors.grass)
+                    .frame(minHeight: 44)
+            }
             OnboardingPrimaryButton(
                 title: primaryButtonTitle,
                 action: advance,

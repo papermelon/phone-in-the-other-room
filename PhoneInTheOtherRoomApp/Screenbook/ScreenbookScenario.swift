@@ -4,7 +4,13 @@ import Foundation
 enum ScreenbookScenarioKind: String, CaseIterable, Codable {
     case onboardingWelcome = "iphone.onboarding.welcome.default"
     case configuredHome = "iphone.home.configured.default"
+    case interactiveHome = "iphone.home.interactive.default"
     case activeWindDown = "iphone.home.active-wind-down.default"
+    case activePhoneAway = "iphone.home.active-phone-away.default"
+    case slumberPartyNoRound = "iphone.slumber-party.membership-no-round.default"
+    case slumberPartyBetweenRounds = "iphone.slumber-party.membership-between-rounds.default"
+    case slumberPartySharedHabitsSummary = "iphone.slumber-party.shared-habits-summary.default"
+    case slumberPartySharedHabitsConsent = "iphone.slumber-party.shared-habits-consent.default"
     case earlyEnd = "iphone.home.early-end.default"
     case populatedFarm = "iphone.farm.populated.default"
 }

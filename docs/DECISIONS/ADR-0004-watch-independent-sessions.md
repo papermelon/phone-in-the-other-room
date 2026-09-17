@@ -1,9 +1,19 @@
 # ADR-0004: Watch-Independent Bedtime Sessions (Foqos-Inspired NFC/QR)
 
-- Status: Accepted; NFC and optional sleep-bookend shielding implemented for App Store 1.0, distribution/physical QA pending
+- Status: Partially superseded by ADR-0012 and ADR-0019; historical compatibility rationale retained
 - Date: 2026-07-07
 - Deciders: Founder
 - Related: ADR-0001, ADR-0003 (which this outranks), ADR-0006 (sleep bookends), `docs/PROJECT_BRIEF.md`
+
+## Current release amendment (2026-08-31)
+
+ADR-0012 and ADR-0019 supersede this record wherever the historical body describes optional,
+two-bookend, QR, Watch-placement, or timer-only release behavior. New starts expose App Shielding
+or NFC + App Shielding, require Family Controls authorization plus a non-empty opaque app/category
+selection, and request one barrier from eligible Wind Down start through Screen-Free Morning,
+including overnight. Runtime failures fail open and never become false observed evidence. QR and
+Watch-placement values remain decodable compatibility data but are not release-facing choices.
+The older narrative below explains how the present seam evolved; it must not drive new UI.
 
 ## Context
 

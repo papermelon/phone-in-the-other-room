@@ -16,7 +16,6 @@ final class SheepSearchPresentationTests: XCTestCase {
         XCTAssertFalse(SheepSearchPresentation.originLine(for: starter).localizedCaseInsensitiveContains("wind down"))
         XCTAssertFalse(SheepSearchPresentation.originLine(for: starter).localizedCaseInsensitiveContains("protected"))
         XCTAssertFalse(SheepSearchPresentation.originLine(for: starter).localizedCaseInsensitiveContains("search"))
-        XCTAssertFalse(SheepSearchPresentation.showsTrailMetrics(for: .starter))
     }
 
     func testCompletedWindDownAndPhoneAwayNotesDescribeAFindNotASearch() {
@@ -28,12 +27,21 @@ final class SheepSearchPresentationTests: XCTestCase {
         XCTAssertFalse(SheepSearchPresentation.originLabel(for: .windDown).localizedCaseInsensitiveContains("protected"))
     }
 
-    func testSunriseOriginAndThreeSourceExplanationStaySeparate() {
-        XCTAssertEqual(SheepSearchPresentation.originLabel(for: .sunrise), "Sunrise Trail")
+    func testScreenFreeMorningOriginAndThreeSourceExplanationStaySeparate() {
+        XCTAssertEqual(SheepSearchPresentation.originLabel(for: .sunrise), "After Screen-Free Morning")
+        XCTAssertEqual(SheepSearchPresentation.openedByLine(for: .sunrise), "After 100 Screen-Free Morning minutes")
+        XCTAssertEqual(SheepSearchPresentation.trailHeadline(for: .sunrise), "Ollie kept a clue from Screen-Free Morning.")
+        XCTAssertEqual(SheepSearchPresentation.clueStatusLine(for: .sunrise), "Screen-Free Morning clue saved")
+        XCTAssertEqual(SheepSearchPresentation.clueStatusLine(for: .phoneBreak), "Phone Away clue saved")
         XCTAssertEqual(SheepSearchExplainerPresentation.sources.map(\.id), [.windDown, .sunrise, .phoneBreak])
-        XCTAssertTrue(SheepSearchExplainerPresentation.rulesDetail.contains("first three"))
-        XCTAssertTrue(SheepSearchExplainerPresentation.rulesDetail.contains("20%, 30%, 40%, then 50%"))
-        XCTAssertTrue(SheepSearchExplainerPresentation.sources[0].detail.contains("does not change"))
+        XCTAssertEqual(SheepSearchExplainerPresentation.sources[1].title, "Screen-Free Morning")
+        XCTAssertTrue(SheepSearchExplainerPresentation.sources.allSatisfy { $0.detail.contains("first three") })
+        XCTAssertTrue(SheepSearchExplainerPresentation.sources[1].detail.contains("20%, 30%, 40%, then 50%"))
+        XCTAssertTrue(SheepSearchExplainerPresentation.sources[2].detail.contains("carry forward"))
+        XCTAssertTrue(SheepSearchExplainerPresentation.sources[0].detail.contains("seven hours of Wind Down timer credit"))
+        XCTAssertTrue(SheepSearchExplainerPresentation.rulesDetail.contains("does not make a find more likely"))
+        XCTAssertEqual(SheepSearchExplainerPresentation.rulesTitle, "Three ways Ollie searches")
+        XCTAssertFalse(SheepSearchExplainerPresentation.rulesDetail.contains("Sunrise Trail"))
     }
 
     func testLegacySocialRawValueHasTruthfulWindDownPresentation() {

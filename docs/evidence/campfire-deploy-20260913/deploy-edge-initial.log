@@ -1,0 +1,1 @@
+{"_tag":"Error","error":{"code":"UnknownError","message":"Invalid config for auth.email.template.confirmation.content_path: ENOENT: no such file or directory, open '/private/tmp/campfire-deploy-20260913/bundle/supabase/templates/account-confirmation.html'"}}

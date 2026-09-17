@@ -1,0 +1,9 @@
+{
+  "Shared/SlumberPartySharedFarm.swift": "79c04407b7146f50359d93f934834c16891eae281b43045907f7ae75e3fdffca",
+  "Tests/SlumberPartySharedFarmTests.swift": "8bb2de633a51fc4503d468cd806a88606387f381576ce84228d516fe26763f2c",
+  "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmView.swift": "2bebda3779cf399329dd7db15f085cd755efac7547084d70ad7dd914c807c58a",
+  "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift": "d09f139fe116824d84c6ee63ae095bd725ae20ad0777626bf73ec0660f7884ca",
+  "PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+V4.swift": "6c79007e9524149db2f60a5eddaac87a3cfabe76d7550c4f475be5e5472a8bcd",
+  "PhoneInTheOtherRoomApp/Design/Theme.swift": "58a7e794ad8855455ce8fab188f70c12b7e0fe71d249c9b09ed731eb793cd15c",
+  "Assets.xcassets/farm/farm_shared_meadow_dusk.imageset/farm_shared_meadow_dusk.png": "a9990baa63389fb517176656934d475111985f9600557423925ea11e80c3650d"
+}

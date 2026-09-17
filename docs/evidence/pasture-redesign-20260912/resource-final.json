@@ -1,0 +1,46 @@
+{
+  "assetCatalogSourceBytes": {
+    "before": 62964191,
+    "after": 60158922,
+    "delta": -2805269
+  },
+  "compiledAssets": [
+    {
+      "path": "/private/tmp/cs-proto/DerivedData/Build/Products/Debug-iphonesimulator/Counting Sheep.app/Assets.car",
+      "beforeBytes": 45017928,
+      "afterBytes": 45299512,
+      "deltaBytes": 281584
+    },
+    {
+      "path": "/private/tmp/cs-proto/DerivedData/Build/Products/Debug-iphonesimulator/Counting Sheep Live Activity.appex/Assets.car",
+      "beforeBytes": 44669528,
+      "afterBytes": 44952168,
+      "deltaBytes": 282640
+    },
+    {
+      "path": "/private/tmp/cs-proto/DerivedData/Build/Products/Debug-iphonesimulator/Counting Sheep Wind Down Shield.appex/Assets.car",
+      "beforeBytes": 141896,
+      "afterBytes": 141896,
+      "deltaBytes": 0
+    },
+    {
+      "path": "/private/tmp/cs-proto/DerivedData/Build/Products/Debug-iphonesimulator/Counting Sheep.app/Watch/Counting Sheep Watch.app/Assets.car",
+      "beforeBytes": 45015384,
+      "afterBytes": 45298056,
+      "deltaBytes": 282672
+    },
+    {
+      "path": "/private/tmp/cs-proto/DerivedData/Build/Products/Debug-iphonesimulator/Counting Sheep.app/PlugIns/Counting Sheep Live Activity.appex/Assets.car",
+      "beforeBytes": 44669528,
+      "afterBytes": 44952168,
+      "deltaBytes": 282640
+    },
+    {
+      "path": "/private/tmp/cs-proto/DerivedData/Build/Products/Debug-iphonesimulator/Counting Sheep.app/PlugIns/Counting Sheep Wind Down Shield.appex/Assets.car",
+      "beforeBytes": 141896,
+      "afterBytes": 141896,
+      "deltaBytes": 0
+    }
+  ],
+  "note": "Local Simulator Assets.car comparison. Source sizes and compiled resources differ; not an App Store download-size estimate. Embedded app/extension copies are listed separately, not summed."
+}

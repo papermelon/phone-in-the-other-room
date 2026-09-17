@@ -1,0 +1,6 @@
+BEGIN
+INSERT 0 3
+INSERT 0 2
+psql:supabase/tests/farm_save_test.sql:66: NOTICE:  Farm save isolation, retries, conflicts, selection, deletion, stale generation and grants passed
+DO
+ROLLBACK

@@ -251,13 +251,13 @@ enum FirstRunGuideCopy {
     static func title(for step: CountingSheepOrientationStep) -> String {
         switch step.normalized {
         case .home: return "Tonight’s Wind Down"
-        case .start: return "Start what’s ready"
+        case .start: return "Begin your Wind Down"
         case .phoneAway: return "Phone Away"
-        case .rootTabs: return "Your four places to go"
+        case .rootTabs: return "Find your way around"
         case .practiceOffer: return "A five-minute practice"
         case .practiceReward: return "A welcome gift came home"
         case .farmMeetSheep: return "Meet the flock"
-        case .farmCapacity: return "The Barn has a size"
+        case .farmCapacity: return "Make room for your flock"
         case .farmWool: return "Sheep grow wool"
         case .farmShear: return "Shearing is a choice"
         case .farmCurrency: return "Wool is Farm currency"
@@ -265,7 +265,7 @@ enum FirstRunGuideCopy {
         case .farmEquipWearable: return "Put the gift on"
         case .farmShop: return "The Farm Shop"
         case .farmSearch: return "Ollie’s Search"
-        case .slumberParty: return "Choose a Wind Down goal together"
+        case .slumberParty: return "A shared ritual with people you know"
         case .settings: return "Your plan lives in Settings"
         case .nights: return "Nights keeps the record"
         case .completion: return "You’re ready"
@@ -278,43 +278,43 @@ enum FirstRunGuideCopy {
         case .home:
             return "Bedtime, wake time, and both quiet windows live here."
         case .start:
-            return "When Wind Down is eligible, this starts it. Putting the phone away is always first."
+            return "When your Wind Down is ready, tap Put phone away to start. Then leave your phone in its spot in another room."
         case .phoneAway:
-            return "A shorter phone-free stretch outside your usual Wind Down. It stays a separate record."
+            return "Use Phone Away for a break from your phone at any time of day. Read, cook, work, or spend time with someone. These minutes appear separately in Nights."
         case .rootTabs:
             return "Home, Nights, Farm, and Settings stay close at the bottom of every screen."
         case .practiceOffer:
-            return "This creates a real Nights record. It is not a protected night, and it does not add to the usual Phone Away search meter. Finishing this one-time introduction lets Ollie bring home the second starter sheep."
+            return "This creates a real Nights record without counting toward Wind Down search progress or the Phone Away meter. Finishing this one-time introduction lets Ollie bring home the second starter sheep."
         case .practiceReward:
             return "Practice brought a welcome gift home. The Farm is waiting."
         case .farmMeetSheep:
             return "A new Farm begins with one welcome-gift sheep. Practice can bring a second one home."
         case .farmCapacity:
-            return "The Barn holds a finite flock. If it fills, make room or open a new pasture. Discoveries stay in Search Journal."
+            return "Your Barn has room for a set number of sheep. When it fills, you can make room or open another pasture. Search Journal keeps every discovery."
         case .farmWool:
-            return "Sheep grow wool over completed Wind Downs. The current wool sits on this Farm bar."
+            return "Wind Down and Phone Away credit help your sheep grow wool. Shorter sessions count too; Brief Access time is left out."
         case .farmShear:
             return "Shearing gathers wool and keeps the sheep. Fleece grows back. You can skip this for now."
         case .farmCurrency:
             return "Wool is the Farm currency. Shear or trade for it, then spend it in the Shop."
         case .farmClaimWearable:
-            return "Your Wind Down starting point left a free shepherd wearable waiting here. Claiming it does not spend wool."
+            return "A free outfit for your shepherd is waiting here. Claim it without spending wool."
         case .farmEquipWearable:
             return "The gift is yours. Put it on the shepherd when you are ready."
         case .farmShop:
-            return "The Shop sells capacity, decoration, and clothes for wool. Welcome gifts stay free and already claimed."
+            return "Spend wool on more room for sheep, Farm decorations, and clothes. Your welcome gifts are free."
         case .farmSearch:
-            return "Ollie’s Search is the missing-sheep board. Search Journal keeps the history. Choose one missing sheep for Ollie to favour."
+            return "Ollie’s Search is the missing-sheep board. Search Journal keeps resolved finds and clues. Favouring a sheep changes likely identity after a find, not the chance of finding one."
         case .slumberParty:
-            return "Invite people you know, share what helps, and keep one another going for seven nights."
+            return "Invite people you know to a long-lived private group. Seven-night rounds organize shared progress, cheers, and Farm rewards."
         case .settings:
-            return "Edit Wind Down here. Screen Time covers the apps you choose. Apple Health can sit beside Nights as optional context. Sharing controls and this guide live here too."
+            return "Edit Wind Down here. Screen Time protection is required for new starts. Apple Health is optional context beside Nights. Slumber Party and this guide have their own controls."
         case .nights:
-            return "Practice, Phone Away, and Wind Down stay distinct. Health and Screen Time are optional context. Nights is a factual record, not a sleep score."
+            return "Wind Down before-bed minutes, Screen-Free Morning elapsed minutes, Phone Away, and practice stay distinct. Apple Health is optional context; Screen Time protection is required for new starts. Nights is a factual record, not a sleep score."
         case .completion:
             return "Wind Down, the Farm, and Nights are ready whenever you are. You can replay this guide in Settings."
         case .navigation:
-            return "A shorter phone-free stretch outside your usual Wind Down. It stays a separate record."
+            return "Take a break from your phone whenever you need one. Phone Away minutes appear separately from Wind Down."
         }
     }
 
@@ -346,10 +346,10 @@ enum FirstRunGuideCopy {
         "Slumber Party is not available in this copy of Counting Sheep. Wind Down, the Farm, and Nights are ready."
 
     static let screenTimePermission =
-        "App limits let Counting Sheep cover the apps you choose while Wind Down is active. Your selected apps stay in Apple’s Screen Time system, and Counting Sheep remains available."
+        "Screen Time protection is required for new starts. Counting Sheep requests limits for the apps and categories you choose from Wind Down start through Screen-Free Morning, including overnight, and during Phone Away. Your selection stays in Apple’s system, and Counting Sheep remains available."
     static let healthPermission =
         "Apple Health can place optional sleep duration and stages beside your Wind Down record in Nights. It does not decide whether Wind Down was completed or whether Ollie finds a sheep."
-    static let permissionCanDecline = "You can decline and come back to this later in Settings."
+    static let permissionCanDecline = "Apple Health is optional. Screen Time protection must be ready before a new Wind Down, Screen-Free Morning, or Phone Away can start."
 
     static let practiceOfferTitle = "A five-minute practice"
     static let practiceStart = "Try 5 minutes"

@@ -1,6 +1,13 @@
 import XCTest
 
 final class NightWatchTests: XCTestCase {
+    func testPhaseTitlesNameRitualStateWithoutClaimingSleepOrScreenAvoidance() {
+        XCTAssertEqual(NightWatchPhase.windDown.title, "Wind Down")
+        XCTAssertEqual(NightWatchPhase.overnight.title, "Overnight")
+        XCTAssertEqual(NightWatchPhase.morningQuiet.title, "Screen-Free Morning")
+        XCTAssertEqual(NightWatchPhase.complete.title, "Wind Down ended")
+    }
+
     func testQualifiedTerminalBeforeWakeKeepsFactualMorningCreditAtZero() {
         let start = Date(timeIntervalSince1970: 1_700_000_000)
         let plan = NightWatchPlan(
@@ -300,7 +307,7 @@ final class NightWatchTests: XCTestCase {
         XCTAssertEqual(plan.morningActivityTitle, "Sit by the window")
     }
 
-    func testLiveActivityGuidanceSeparatesTheChosenActivityFromTheTip() throws {
+    func testLiveActivityGuidanceUsesTheChosenActionWithoutAnUnrelatedTip() throws {
         let runID = try XCTUnwrap(UUID(uuidString: "00000000-0000-0000-0000-000000000042"))
         let guidance = NightWatchGuidance.liveActivityGuidance(
             for: .morningQuiet,
@@ -308,11 +315,11 @@ final class NightWatchTests: XCTestCase {
             seed: runID
         )
 
-        XCTAssertEqual(NightWatchPhase.windDown.title, "Phone-free wind-down")
-        XCTAssertEqual(NightWatchPhase.overnight.title, "Sleep time")
-        XCTAssertEqual(NightWatchPhase.morningQuiet.title, "Phone-free morning")
-        XCTAssertEqual(guidance.primary, "This morning: Open the curtains.")
-        XCTAssertFalse(try XCTUnwrap(guidance.secondary).isEmpty)
+        XCTAssertEqual(NightWatchPhase.windDown.title, "Wind Down")
+        XCTAssertEqual(NightWatchPhase.overnight.title, "Overnight")
+        XCTAssertEqual(NightWatchPhase.morningQuiet.title, "Screen-Free Morning")
+        XCTAssertEqual(guidance.primary, "Open the curtains.")
+        XCTAssertNil(guidance.secondary)
     }
 
     func testNotificationCopyExplainsEachNightWatchTransition() {
@@ -328,13 +335,13 @@ final class NightWatchTests: XCTestCase {
         )
         let complete = NightWatchGuidance.notificationCopy(for: .complete)
 
-        XCTAssertTrue(windDown.body.contains("phone-free wind-down"))
+        XCTAssertTrue(windDown.body.contains("planned Wind Down"))
         XCTAssertTrue(windDown.body.contains("paper book"))
-        XCTAssertTrue(sleepTime.title.contains("Sleep time"))
-        XCTAssertTrue(morning.body.contains("phone-free morning"))
-        XCTAssertTrue(morning.body.contains("open curtains"))
+        XCTAssertEqual(sleepTime.title, "Time for bed")
+        XCTAssertTrue(morning.body.contains("Screen-Free Morning timer"))
+        XCTAssertTrue(morning.body.contains("Open curtains"))
         XCTAssertTrue(morning.body.contains("Drink some water"))
-        XCTAssertTrue(complete.title.contains("wake"))
+        XCTAssertTrue(complete.title.contains("timer ended"))
     }
 
     func testPlanKeepsLocalWakeTimeAcrossSpringDSTChange() throws {
@@ -453,4 +460,31 @@ final class NightWatchTests: XCTestCase {
             minute: minute
         )))
     }
+    func testLiveActivityShowsAllChosenIdeasWithoutPretendingToAdvanceSteps() {
+        let titles = [PhoneFreeActivity.sleepwear, .brushTeeth, .relaxation].map(\.title)
+        let copy = NightWatchGuidance.liveActivityGuidance(
+            for: .windDown, activityTitle: "Old first label", seed: UUID(), routineTitles: titles
+        )
+        XCTAssertEqual(copy.primary, "Change into your sleepwear.")
+        XCTAssertTrue(copy.secondary?.contains(titles[1]) == true)
+        XCTAssertTrue(copy.secondary?.contains(titles[2]) == true)
+        XCTAssertFalse(copy.primary.contains("Tonight:"))
+    }
+
+    func testExplicitlyEmptyRoutineDoesNotReviveLegacyDefaultIdea() {
+        let copy = NightWatchGuidance.liveActivityGuidance(
+            for: .windDown, activityTitle: "Read", seed: UUID(), routineTitles: []
+        )
+        XCTAssertEqual(copy.primary, "Leave your phone in its spot.")
+        XCTAssertNil(copy.secondary)
+    }
+
+    func testCustomRoutineTextPreservesCaseAndPunctuation() {
+        let copy = NightWatchGuidance.liveActivityGuidance(
+            for: .windDown, activityTitle: nil, seed: UUID(), routineTitles: ["Read Dune!", "Draw Ollie"]
+        )
+        XCTAssertEqual(copy.primary, "Read Dune!")
+        XCTAssertEqual(copy.secondary, "Your other ideas: Draw Ollie")
+    }
+
 }

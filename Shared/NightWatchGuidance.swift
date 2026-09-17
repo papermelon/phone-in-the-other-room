@@ -48,43 +48,53 @@ struct NightWatchGuidance {
     static func liveActivityGuidance(
         for phase: NightWatchPhase?,
         activityTitle: String?,
-        seed: UUID
+        seed: UUID,
+        routineTitles: [String]? = nil
     ) -> NightWatchLiveActivityGuidance {
+        let titles = (routineTitles ?? activityTitle.map { [$0] } ?? [])
+            .compactMap(PhoneFreeCue.normalized)
         switch phase {
-        case .windDown:
+        case .windDown, .morningQuiet:
+            guard let first = titles.first else {
+                return NightWatchLiveActivityGuidance(
+                    primary: phase == .windDown ? "Leave your phone in its spot." : "Ease into your morning.",
+                    secondary: nil
+                )
+            }
             return NightWatchLiveActivityGuidance(
-                primary: activityTitle.map { "Tonight: \($0)." }
-                    ?? "Ollie is following tonight's trail.",
-                secondary: tip(for: .windDown, seed: seed)
+                primary: sentence(first),
+                secondary: titles.count > 1
+                    ? "Your other ideas: " + titles.dropFirst().joined(separator: " · ")
+                    : nil
             )
         case .overnight:
             return NightWatchLiveActivityGuidance(
-                primary: "Your phone is tucked away.",
-                secondary: "There is nothing else to do here."
-            )
-        case .morningQuiet:
-            return NightWatchLiveActivityGuidance(
-                primary: activityTitle.map { "This morning: \($0)." }
-                    ?? "Ollie is bringing the trail home.",
-                secondary: tip(for: .morningQuiet, seed: seed)
+                primary: "Settle in for the night.",
+                secondary: "Your countdown now runs until morning."
             )
         case .complete:
             return NightWatchLiveActivityGuidance(
-                primary: "Your phone-free night is ready.",
-                secondary: "Open Counting Sheep whenever you are ready."
+                primary: "Time to begin your day.",
+                secondary: "Your night’s summary will be waiting in Counting Sheep."
             )
         case nil:
             return NightWatchLiveActivityGuidance(
-                primary: "Ollie is keeping the quiet.",
+                primary: "Leave your phone in its spot.",
                 secondary: nil
             )
         }
     }
 
+    private static func sentence(_ text: String) -> String {
+        guard let last = text.last, !".!?…".contains(last) else { return text }
+        return text + "."
+    }
+
     static func notificationCopy(
         for moment: NightWatchNotificationMoment,
         activityTitle: String? = nil,
-        tip: String? = nil
+        tip: String? = nil,
+        role: QuietTimeShieldRole = .primaryWindDown
     ) -> NightWatchNotificationCopy {
         switch moment {
         case .windDownLeadIn(let minutes):
@@ -92,31 +102,30 @@ struct NightWatchGuidance {
             case 60:
                 return NightWatchNotificationCopy(
                     title: "Wind Down is coming",
-                    body: "In about an hour, Ollie will head out on the trail. Finish what you need, then tap into your Wind Down."
+                    body: "Your planned Wind Down begins in about an hour."
                 )
             case 30:
                 return NightWatchNotificationCopy(
                     title: "Wind Down in 30 minutes",
-                    body: "A little time before bed. Let the last scroll end gently, then send the phone to its bed."
+                    body: "Your planned Wind Down begins in 30 minutes."
                 )
             case 10:
                 return NightWatchNotificationCopy(
                     title: "Wind Down soon",
-                    body: "Ten minutes until the phone rests. Find its resting place and give Ollie a clear trail."
+                    body: "Your planned Wind Down begins in 10 minutes."
                 )
             default:
                 return NightWatchNotificationCopy(
                     title: "Wind Down starts now",
-                    body: "Your phone-free wind-down begins now. Put the phone to bed when you are ready."
+                    body: "Your planned Wind Down can begin now. Tap to start when you are ready."
                 )
             }
         case .windDownReminder:
             let cue = tip.map { $0.hasSuffix(".") ? $0 : "\($0)." }
             return NightWatchNotificationCopy(
-                title: "Ollie is ready to tuck the phone in",
+                title: "Wind Down can begin now",
                 body: [
-                    "Your phone-free wind-down begins now.",
-                    "Put the phone to bed when you're ready.",
+                    "Tap to start your planned Wind Down when you are ready.",
                     cue
                 ]
                     .compactMap { $0 }
@@ -124,38 +133,38 @@ struct NightWatchGuidance {
             )
         case .windDownMidpoint:
             return NightWatchNotificationCopy(
-                title: tip == nil ? "The quiet is underway" : "A small quiet cue",
+                title: tip == nil ? "Wind Down is underway" : "A Wind Down idea",
                 body: tip
-                    ?? activityTitle.map { "If you can, try \($0.lowercased()) while the phone stays in its bed." }
-                    ?? "If you can, let the phone stay in its bed while Ollie follows the trail."
+                    ?? activityTitle.map(sentence)
+                    ?? "Leave your phone in its spot and take a little time to settle in."
             )
         case .sleepTime:
             let cue = tip.map { $0.hasSuffix(".") ? $0 : "\($0)." }
             return NightWatchNotificationCopy(
-                title: "Sleep time has begun",
+                title: "Time for bed",
                 body: [
-                    "Your phone is tucked away. Ollie has the watch.",
+                    "Settle in for the night. Your next countdown runs until morning.",
                     cue
                 ]
                     .compactMap { $0 }
                     .joined(separator: " ")
             )
         case .phoneFreeMorning:
-            let activityCue = activityTitle.map { "Try \($0.lowercased())." }
+            let activityCue = activityTitle.map(sentence)
             let cue = [activityCue, tip]
                 .compactMap { $0 }
                 .map { $0.hasSuffix(".") ? $0 : "\($0)." }
                 .joined(separator: " ")
             return NightWatchNotificationCopy(
-                title: "Good morning from Ollie",
-                body: ["Your phone-free morning has begun.", cue]
+                title: "Screen-Free Morning began",
+                body: ["The Screen-Free Morning timer is running.", cue]
                     .filter { !$0.isEmpty }
                     .joined(separator: " ")
             )
         case .morningMidpoint:
             return NightWatchNotificationCopy(
-                title: "Your morning quiet is still here",
-                body: tip ?? "Let the phone sleep a little longer and make room for your morning cue."
+                title: "Screen-Free Morning continues",
+                body: tip ?? "A little room to begin the day at your own pace."
             )
         case .usageCue(let phase):
             switch phase {
@@ -167,23 +176,23 @@ struct NightWatchGuidance {
             case .overnight:
                 return NightWatchNotificationCopy(
                     title: "A late check can wait",
-                    body: "Ollie is still keeping the phone-free night. Let the phone rest again when you can."
+                    body: "The overnight phase is still running. Return to Wind Down when you are ready."
                 )
             case .morningQuiet:
                 return NightWatchNotificationCopy(
-                    title: "Your morning quiet is still here",
-                    body: "The phone can sleep a little longer. Return to your morning cue when you are ready."
+                    title: "Screen-Free Morning is still here",
+                    body: "Let your morning come before your phone. Return when you’re ready."
                 )
         case .complete:
             return NightWatchNotificationCopy(
-                title: "Wind Down is complete",
-                body: "Open Counting Sheep whenever you are ready."
+                title: "Wind Down timer ended",
+                body: "Your session summary is ready in Counting Sheep."
             )
             }
         case .complete:
             return NightWatchNotificationCopy(
-                title: "Your phone can wake now",
-                body: "Wind Down is complete. Your phone-free minutes are ready whenever you are."
+                title: "Wind Down timer ended",
+                body: "Your session summary is ready in Counting Sheep."
             )
         case .morningReflection:
             return NightWatchNotificationCopy(
@@ -192,19 +201,29 @@ struct NightWatchGuidance {
             )
         case .shieldingFailed:
             return NightWatchNotificationCopy(
-                title: "A quick protection note",
-                body: "Selected apps could not be limited this time. Your phone-away plan is still here."
+                title: "Selected-app limits need attention",
+                body: shieldingFailureBody(for: role)
             )
         case .quietPeriodComplete:
             return NightWatchNotificationCopy(
-                title: "Phone Away recorded",
-                body: "Ollie kept the phone tucked away. Your Phone Away time is saved in Nights."
+                title: "Phone Away timer ended",
+                body: "Your session summary is ready in Counting Sheep."
             )
         }
     }
 
+    private static func shieldingFailureBody(for role: QuietTimeShieldRole) -> String {
+        let mode: String
+        switch role {
+        case .primaryWindDown: mode = "Wind Down"
+        case .additionalQuiet: mode = "Phone Away"
+        case .screenFreeMorning: mode = "Screen-Free Morning"
+        }
+        return "Selected apps could not be limited for this \(mode). The timer continues."
+    }
+
     private static func joinedCue(prefix: String, activityTitle: String?, tip: String?) -> String {
-        let activityCue = activityTitle.map { "Try \($0.lowercased())." }
+        let activityCue = activityTitle.map(sentence)
         return [prefix, activityCue, tip]
             .compactMap { $0 }
             .joined(separator: " ")

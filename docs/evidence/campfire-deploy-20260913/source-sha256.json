@@ -1,0 +1,4 @@
+{
+  "supabase/migrations/20260912120000_shared_pasture.sql": "eaec5006588a8bb7e125cd740a9e732f4e874de0d3b42f40d7afec1dfdfd2f6a",
+  "supabase/migrations/20260913120000_campfire_sessions.sql": "7c6b6ed744bb89688bb0aba6c043b7fa6117ce0bbcad42ee940cd37e6be32b4a"
+}

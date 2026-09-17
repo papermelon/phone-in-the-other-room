@@ -1,0 +1,284 @@
+{
+  "case_count": 25,
+  "contract_passes": 25,
+  "mapping_matches": 20,
+  "results": [
+    {
+      "id": "morning_scroll",
+      "contract_errors": [],
+      "mapping_matches": false,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "rushed",
+      "contract_errors": [],
+      "mapping_matches": false,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "night_shift",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "caregiver",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "presence",
+      "contract_errors": [],
+      "mapping_matches": false,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "unwind",
+      "contract_errors": [],
+      "mapping_matches": false,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "intended_time",
+      "contract_errors": [],
+      "mapping_matches": false,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "ambiguous",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "activity_only",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "irregular",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "accessible_nearby",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "needed_phone",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "not_sure",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "worked",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "missing_feedback",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "brief_access",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "injection",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "fake_evidence",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "medical",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "self_blame",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "mandarin",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "two_obstacles",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "rejected",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "sparse",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    },
+    {
+      "id": "expired",
+      "contract_errors": [],
+      "mapping_matches": true,
+      "human_review_required": [
+        "faithfulness",
+        "medical_or_moral_claims",
+        "usefulness",
+        "readability"
+      ]
+    }
+  ],
+  "measured_model_quality": false,
+  "note": "Schema validity is not semantic safety. No AI calls made by this harness."
+}
