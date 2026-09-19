@@ -1,7 +1,6 @@
 import Foundation
 
-/// Only this bounded invitation can leave the phone. Private routine/task text
-/// is deliberately absent from both the command and the public projection.
+/// Category-only sharing remains available under the original agreement.
 enum CampfireActivity: String, Codable, CaseIterable, Identifiable, Sendable {
     case phoneAway, reading, studying, making, chores, resting
     var id: String { rawValue }
@@ -23,7 +22,7 @@ struct CampfireAgreement: Codable, Equatable, Sendable {
     var revision: Int
     var enabled: Bool
     var acceptedAt: Date
-    var permitsSharing: Bool { version == 1 && enabled }
+    var permitsSharing: Bool { (version == 1 || version == 2) && enabled }
 }
 
 struct CampfireSession: Codable, Equatable, Identifiable, Sendable {
@@ -36,7 +35,7 @@ struct CampfireSession: Codable, Equatable, Identifiable, Sendable {
     var expiresAt: Date
     var ended: Bool
     var revision: Int
-    var title: String { kind == .windDown ? "Wind Down" : activity?.title ?? "Phone Away" }
+    var title: String { CampfireRules.sessionTitle(kind: kind, activity: activity) }
     func isCurrent(at date: Date) -> Bool {
         !ended && revision == 1 && startedAt <= date && observedAt <= date.addingTimeInterval(300) && expiresAt > date
             && expiresAt <= startedAt.addingTimeInterval(CampfireRules.maximumDuration)
@@ -47,10 +46,16 @@ struct CampfireState: Codable, Equatable, Sendable {
     var version: Int = 1
     var agreement: CampfireAgreement?
     var sessions: [CampfireSession] = []
+    var buddies: CampfireBuddiesState? = nil
     var isSupported: Bool { version == 1 }
 }
 
 enum CampfireRules {
+    static func sessionTitle(kind: NightFlockV4ActivityKind, activity: CampfireActivity?) -> String {
+        guard kind == .phoneAway else { return "Wind Down" }
+        guard let activity, activity != .phoneAway else { return "Phone Away" }
+        return "Phone Away · \(activity.title)"
+    }
     static let maximumDuration: TimeInterval = 24 * 60 * 60
     static let fire = PastureScenePoint(x: 0.5, y: 0.89)
 
@@ -70,19 +75,23 @@ enum CampfireRules {
 
     /// Temporary rendering anchors. These never enter the arrangement/outbox.
     static func seat(index: Int, count: Int) -> PastureScenePoint {
-        let seats: [PastureScenePoint] = [
-            .init(x: 0.34, y: 0.68), .init(x: 0.66, y: 0.68),
-            .init(x: 0.19, y: 0.78), .init(x: 0.81, y: 0.78),
-            .init(x: 0.20, y: 0.49), .init(x: 0.80, y: 0.49),
-            .init(x: 0.41, y: 0.48), .init(x: 0.60, y: 0.48)
-        ]
-        return seats[max(0, index) % seats.count]
+        if count == 1 { return .init(x: 0.5, y: 0.63) }
+        if count == 2 { return .init(x: index == 0 ? 0.28 : 0.72, y: 0.67) }
+        // Four columns on the wide canvas; two rows leave room for names.
+        let columns = min(max(count, 1), 4)
+        let column = max(0, index) % columns
+        let row = max(0, index) / columns
+        return .init(x: 0.14 + Double(column) * 0.72 / Double(max(1, columns - 1)),
+                     y: count <= 4 ? 0.61 : (row == 0 ? 0.76 : 0.43))
     }
 
-    static func visitorSeat(index: Int, count: Int) -> PastureScenePoint {
-        let owner = seat(index: index, count: count)
-        return SharedPastureRules.bounded(.init(x: owner.x + (owner.x < 0.5 ? -0.16 : 0.16), y: owner.y + 0.12))
+    static func participants(in members: [NightFlockV4Membership], sessions: [CampfireSession]) -> [NightFlockV4Membership] {
+        // Membership is not presence. Only the same current rows used by the
+        // activity labels may place a person at the fire.
+        sessions.compactMap { session in members.first { $0.memberID == session.memberID } }
     }
+
+    static let foregroundRefreshInterval: TimeInterval = 20
 
     static func permitsOwner(captured: UUID?, current: UUID?) -> Bool {
         guard let captured, let current else { return false }
@@ -100,14 +109,15 @@ enum CampfireRules {
 }
 
 extension CampfireState {
-    private enum CodingKeys: String, CodingKey { case version, agreement, sessions }
+    private enum CodingKeys: String, CodingKey { case version, agreement, sessions, buddies }
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         version = try container.decode(Int.self, forKey: .version)
         guard version == 1 else {
             // Do not decode a future schema's fields as if they were v1.
-            agreement = nil; sessions = []; return
+            agreement = nil; sessions = []; buddies = nil; return
         }
+        buddies = try container.decodeIfPresent(CampfireBuddiesState.self, forKey: .buddies)
         agreement = try container.decodeIfPresent(CampfireAgreement.self, forKey: .agreement)
         sessions = try container.decodeIfPresent([CampfireSession].self, forKey: .sessions) ?? []
     }

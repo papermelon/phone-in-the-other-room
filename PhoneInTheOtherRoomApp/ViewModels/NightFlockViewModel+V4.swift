@@ -84,8 +84,9 @@ extension NightFlockViewModel {
         let attemptID = UUID()
         v4SelectedPartyRefreshAttemptIDs[partyID] = attemptID
         v4RefreshingPartyIDs.insert(partyID)
+        let wasUnavailable = v4ObservedPartyObservationStates[partyID]?.showsConnectionWarning == true
         v4ObservedPartyObservationStates[partyID] = .refreshing(
-            lastReceivedAt: v4ObservedPartyRefreshDates[partyID]
+            lastReceivedAt: wasUnavailable ? nil : v4ObservedPartyRefreshDates[partyID]
         )
         let requestSequence = beginV4PartyDetailRequest()
         Task {
@@ -1027,8 +1028,9 @@ extension NightFlockViewModel {
         let attemptID = UUID()
         let requestSequence = beginV4PartyDetailRequest()
         v4PartyObservationAttemptIDs[partyID] = attemptID
+        let wasUnavailable = v4ObservedPartyObservationStates[partyID]?.showsConnectionWarning == true
         v4ObservedPartyObservationStates[partyID] = .refreshing(
-            lastReceivedAt: v4ObservedPartyRefreshDates[partyID]
+            lastReceivedAt: wasUnavailable ? nil : v4ObservedPartyRefreshDates[partyID]
         )
         let task = Task { [weak self] in
             await Task.yield()

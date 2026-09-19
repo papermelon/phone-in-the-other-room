@@ -7,9 +7,6 @@ struct ScreenFreeMorningView: View {
     let occurrence: MorningQuietOccurrence
     var fixedNow: Date? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var showEmergencyExit = false
-    @State private var emergencyReason = ""
-    @State private var emergencyConfirmation = ""
 
     private var endDate: Date { occurrence.scheduledEnd }
 
@@ -40,19 +37,7 @@ struct ScreenFreeMorningView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
-                if !morningSteps.isEmpty {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("Your morning ideas")
-                            .font(AppTypography.headline)
-                        ForEach(morningSteps) { step in
-                            Label(step.title, systemImage: step.activity?.systemImage ?? "leaf.fill")
-                                .font(AppTypography.body)
-                        }
-                    }
-                    .foregroundStyle(AppColors.ink)
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Optional morning ideas: \(morningSteps.map(\.title).joined(separator: ", "))")
-                }
+                PersonalShieldActions()
 
                 let tracker = viewModel.briefAccessTrackerSummary(forScreenFreeMorning: occurrence)
                 if tracker.pauseCount > 0 {
@@ -104,19 +89,11 @@ struct ScreenFreeMorningView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    Button("Need an emergency exit?") {
-                        guard viewModel.beginEmergencyExitChallenge() else { return }
-                        emergencyReason = ""
-                        emergencyConfirmation = ""
-                        showEmergencyExit = true
-                    }
-                    .font(AppTypography.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.amber)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityHint("Opens the existing deliberate confirmation before ending without the tag")
+                    Button("End Screen-Free Morning") { viewModel.openPersonalShield(.endSession) }
+                        .font(AppTypography.body).foregroundStyle(AppColors.muted).frame(minHeight: 44)
                 } else {
-                    Button("Finish Screen-Free Morning") {
-                        viewModel.finishScreenFreeMorning(occurrence.id)
+                    Button("End Screen-Free Morning") {
+                        viewModel.openPersonalShield(.endSession)
                     }
                     .frame(maxWidth: .infinity)
                     .buttonStyle(PixelPrimaryButtonStyle())
@@ -128,22 +105,11 @@ struct ScreenFreeMorningView: View {
         .background(AppColors.paper.ignoresSafeArea())
         .navigationTitle("Screen-Free Morning")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showEmergencyExit, onDismiss: cancelEmergencyExit) {
-            emergencyExitSheet
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-        }
     }
 
     private var countdownInterval: ClosedRange<Date> {
         let now = Date()
         return now...max(now, endDate)
-    }
-
-    private var morningSteps: [WindDownRoutineStep] {
-        if let plan = linkedParentRun?.nightWatchPlan { return plan.morningRoutine }
-        // A deferred morning may outlive the active run; use its frozen record.
-        return viewModel.nightWatchRecords.first { $0.id == occurrence.linkedWindDownRunID }?.plan.morningRoutine ?? []
     }
 
     private var linkedParentRun: FocusRun? {
@@ -155,78 +121,6 @@ struct ScreenFreeMorningView: View {
         return run
     }
 
-    private var emergencyExitSheet: some View {
-        let challenge = viewModel.emergencyExitChallenge
-        return NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    Image(systemName: "exclamationmark.shield.fill")
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(AppColors.grass)
-                        .accessibilityHidden(true)
-                    Text("Emergency exit")
-                        .font(AppTypography.display(30))
-                    if challenge?.stage == .readyToConfirm,
-                       let reason = challenge?.reason {
-                        Text("Type your reason again to end Screen-Free Morning without the tag.")
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.muted)
-                        Text(reason)
-                            .font(AppTypography.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(AppSpacing.sm)
-                            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.sm))
-                        TextField("Type your reason again", text: $emergencyConfirmation)
-                            .textInputAutocapitalization(.sentences)
-                            .font(AppTypography.headline)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityLabel("Type your reason again")
-                            .onChange(of: emergencyConfirmation) { _, newValue in
-                                _ = viewModel.submitEmergencyExitConfirmation(newValue)
-                            }
-                    } else {
-                        Text("What do you need your phone for?")
-                            .font(AppTypography.title)
-                        Text("Take a moment to name what you’re reaching for.")
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.muted)
-                        TextField("e.g. Reply to a message", text: $emergencyReason)
-                            .textInputAutocapitalization(.sentences)
-                            .font(AppTypography.headline)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityLabel("What do you need your phone for?")
-                    }
-                    Button(challenge?.stage == .readyToConfirm ? "End Screen-Free Morning" : "Continue") {
-                        if challenge?.stage == .readyToConfirm {
-                            guard viewModel.confirmEmergencyExit() else { return }
-                            showEmergencyExit = false
-                        } else {
-                            _ = viewModel.submitEmergencyExitReason(emergencyReason)
-                        }
-                    }
-                    .buttonStyle(PixelPrimaryButtonStyle())
-                    .disabled(challenge?.stage == .readyToConfirm
-                        ? challenge?.canConfirm != true
-                        : EmergencyExitChallenge.normalizedReason(emergencyReason).isEmpty)
-                    Button("Keep Screen-Free Morning running") {
-                        showEmergencyExit = false
-                    }
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                }
-                .padding(AppSpacing.lg)
-            }
-            .background(AppColors.paper.ignoresSafeArea())
-            .navigationTitle("Emergency exit")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-
-    private func cancelEmergencyExit() {
-        emergencyReason = ""
-        emergencyConfirmation = ""
-        viewModel.cancelEmergencyExitChallenge()
-        showEmergencyExit = false
-    }
 }
 
 #Preview("Screen-Free Morning · repair needed") {

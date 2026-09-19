@@ -1,6 +1,28 @@
 import XCTest
 
 final class QuietTimeShieldScheduleTests: XCTestCase {
+    func testLinkedMorningKeepsContinuousAutomaticMonitorOnlyInsideItsParent() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let wake = start.addingTimeInterval(8 * 3600)
+        let plan = NightWatchPlan(intendedBedtime: start.addingTimeInterval(1800),
+            wakeTime: wake, protectedUntil: wake.addingTimeInterval(1800),
+            windDownMinutes: 30, morningQuietMinutes: 30, eveningActivity: .read, morningActivity: .openCurtains)
+        let schedule = AutomaticWindDownSchedule(startedAt: start, plan: plan)
+        let snapshot = QuietTimeShieldScheduleBuilder.snapshot(for: schedule, revision: 1)
+        var morning = MorningQuietOccurrence(linkedWindDownRunID: schedule.id,
+            scheduledStart: wake, scheduledEnd: plan.protectedUntil, outcome: .scheduled)
+        XCTAssertTrue(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+        morning.outcome = .active
+        XCTAssertTrue(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+        morning.scheduledEnd = plan.protectedUntil.addingTimeInterval(60)
+        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+        morning.scheduledEnd = plan.protectedUntil
+        morning.linkedWindDownRunID = UUID()
+        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+        morning.linkedWindDownRunID = nil
+        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+    }
+
     func testMonitoringPolicyKeepsShortSessionEndExactWithPlatformPadding() {
         let start = Date(timeIntervalSince1970: 10_000)
         for minutes in [5, 10, 15, 30] {

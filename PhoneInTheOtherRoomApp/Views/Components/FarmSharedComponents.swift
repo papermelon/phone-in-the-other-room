@@ -211,6 +211,7 @@ struct OllieFarmAvatar: View {
     let accessoryItemID: String?
     var size: CGFloat = 72
     var motionEnabled = false
+    var onPoseChanged: (String) -> Void = { _ in }
     @State private var actionCapabilities: [OllieCompanionAction: Bool] = [:]
     @State private var capabilityRevision = 0
 
@@ -226,7 +227,8 @@ struct OllieFarmAvatar: View {
                 accessoryItemID: renderedAccessoryItemID,
                 size: size,
                 actionCapabilities: $actionCapabilities,
-                capabilityRevision: $capabilityRevision
+                capabilityRevision: $capabilityRevision,
+                onSpriteChanged: { onPoseChanged($0 ?? NightJourneyAssets.ollieHomeIdleFrames[0]) }
             ) {
                 OllieDressedSprite(assetName: NightJourneyAssets.ollieHomeIdleFrames[0],
                                    accessoryItemID: renderedAccessoryItemID)
@@ -246,6 +248,9 @@ struct OllieFarmAvatar: View {
 
     private var animationSchedule: OllieCompanionAnimationSchedule {
         #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--fetch-resting") {
+            return .init(segments: [.init(.resting, duration: 60)])
+        }
         return ScreenbookOllieMotionReview.configuration?.schedule ?? .gentle
         #else
         return .gentle

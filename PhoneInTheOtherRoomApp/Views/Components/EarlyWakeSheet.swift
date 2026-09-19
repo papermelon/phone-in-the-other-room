@@ -6,6 +6,7 @@ import UIKit
 struct EarlyWakeSheet: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dismiss) private var dismiss
+    var onChoice: ((MorningQuietIntent) -> Void)? = nil
 
     var body: some View {
         NavigationStack {
@@ -71,7 +72,8 @@ struct EarlyWakeSheet: View {
 
     private func choice(title: String, detail: String, intent: MorningQuietIntent) -> some View {
         Button {
-            viewModel.chooseEarlyWake(intent)
+            if let onChoice { onChoice(intent) }
+            else { viewModel.chooseEarlyWake(intent) }
             // NFC may keep the run in place while its sheet is visible. The
             // result text remains available from the active journey after this
             // sheet closes, rather than implying an unverified transition.

@@ -404,36 +404,20 @@ final class FocusSessionCoordinator: ObservableObject {
     }
 
     @discardableResult
-    func beginEmergencyExitChallenge() -> Bool {
-        guard let run,
-              run.guardKind == .nfcTag,
-              ![.completed, .endedEarly, .setup].contains(run.state) else { return false }
-        emergencyExitChallenge = emergencyExitChallengeMachine.begin(for: run.id)
+    func beginPersonalExitChallenge(phrase: String, occurrenceID: UUID, earlyMorningIntent: MorningQuietIntent? = nil) -> Bool {
+        let activeRunMatches = run.map { $0.id == occurrenceID && ![.setup, .completed, .endedEarly].contains($0.state) } == true
+        let activeMorningMatches = persistence.windDownMorningSettlementJournal.morningOccurrences.contains {
+            $0.id == occurrenceID && $0.outcome == .active
+        }
+        guard (activeRunMatches || activeMorningMatches), !PersonalShieldPhrase.normalized(phrase).isEmpty else { return false }
+        emergencyExitChallenge = emergencyExitChallengeMachine.begin(for: occurrenceID, phrase: phrase, earlyMorningIntent: earlyMorningIntent)
         return true
     }
 
     @discardableResult
-    func submitEmergencyExitReason(_ reason: String) -> Bool {
-        guard let run else { return false }
-        let accepted = emergencyExitChallengeMachine.submitReason(reason, for: run.id)
-        emergencyExitChallenge = emergencyExitChallengeMachine.challenge
-        return accepted
-    }
-
-    @discardableResult
     func submitEmergencyExitConfirmation(_ reason: String) -> Bool {
-        guard let run else { return false }
-        let accepted = emergencyExitChallengeMachine.submitConfirmation(reason, for: run.id)
-        emergencyExitChallenge = emergencyExitChallengeMachine.challenge
-        return accepted
-    }
-
-    /// Compatibility entry point for older views. The challenge itself decides
-    /// whether this is the first reason or the reason-again step.
-    @discardableResult
-    func submitEmergencyExitWord(_ word: String) -> Bool {
-        guard let run else { return false }
-        let accepted = emergencyExitChallengeMachine.submit(word, for: run.id)
+        guard let challenge = emergencyExitChallengeMachine.challenge else { return false }
+        let accepted = emergencyExitChallengeMachine.submitConfirmation(reason, for: challenge.activeRunID)
         emergencyExitChallenge = emergencyExitChallengeMachine.challenge
         return accepted
     }
@@ -445,19 +429,32 @@ final class FocusSessionCoordinator: ObservableObject {
 
     @discardableResult
     func confirmEmergencyExit() -> Bool {
-        guard let run,
-              let challenge = emergencyExitChallengeMachine.challenge,
-              let reason = challenge.reason,
-              challenge.canConfirm,
-              emergencyExitChallengeMachine.consumeConfirmation(for: run.id) else {
-            emergencyExitChallenge = emergencyExitChallengeMachine.challenge
-            return false
+        guard let challenge = emergencyExitChallengeMachine.challenge, challenge.canConfirm else { return false }
+        if let run, run.id == challenge.activeRunID {
+            guard ![.setup, .completed, .endedEarly].contains(run.state),
+                  emergencyExitChallengeMachine.consumeConfirmation(for: run.id) else { return false }
+            emergencyExitChallenge = nil
+            if let intent = challenge.earlyMorningIntent {
+                return performEarlyMorningTransition(intent: intent, reason: .userEnded) != nil
+            }
+            if run.guardKind != .nfcTag,
+               let morning = persistence.windDownMorningSettlementJournal.morningOccurrences.first(where: {
+                   $0.linkedWindDownRunID == run.id && $0.outcome == .active
+               }) {
+                return finishScreenFreeMorning(occurrenceID: morning.id) != nil
+            }
+            let terminal = run.guardKind == .nfcTag ? emergencyTerminalRun(for: run)
+                : SessionExitTransition.ending(run, requestedReason: .userEnded, source: .phone)
+            guard let terminal else { return false }
+            completeAuthorizedEarlyExit(with: terminal)
+            return true
         }
+        guard challenge.isPersonalPhrase,
+              persistence.windDownMorningSettlementJournal.morningOccurrences.contains(where: {
+                  $0.id == challenge.activeRunID && $0.outcome == .active
+              }), emergencyExitChallengeMachine.consumeConfirmation(for: challenge.activeRunID) else { return false }
         emergencyExitChallenge = nil
-        guard let terminalRun = emergencyTerminalRun(for: run) else { return false }
-        persistence.saveEmergencyExitReason(reason, for: run.id)
-        completeAuthorizedEarlyExit(with: terminalRun)
-        return true
+        return finishScreenFreeMorning(occurrenceID: challenge.activeRunID) != nil
     }
 
     @discardableResult
@@ -466,6 +463,9 @@ final class FocusSessionCoordinator: ObservableObject {
         source: SessionExitSource = .phone
     ) -> Bool {
         guard let run else { return false }
+        // Intentional shielded exits require the one-use phone challenge. NFC
+        // authentication and technical failure transitions keep their own paths.
+        guard reason != .userEnded || !run.appShieldingRequested else { return false }
         guard let terminalRun = SessionExitTransition.ending(
             run,
             requestedReason: reason,
@@ -652,6 +652,16 @@ final class FocusSessionCoordinator: ObservableObject {
         source: SessionExitSource = .phone,
         at date: Date = Date()
     ) -> MorningQuietOccurrence? {
+        guard reason != .userEnded || run?.appShieldingRequested != true else { return nil }
+        return performEarlyMorningTransition(intent: intent, reason: reason, source: source, at: date)
+    }
+
+    private func performEarlyMorningTransition(
+        intent: MorningQuietIntent,
+        reason: EarlyEndReason,
+        source: SessionExitSource = .phone,
+        at date: Date = Date()
+    ) -> MorningQuietOccurrence? {
         guard intent != .keepWindDownRunning,
               let currentRun = run,
               MorningQuietIntentEngine.isAvailable(run: currentRun, at: date),
@@ -716,7 +726,7 @@ final class FocusSessionCoordinator: ObservableObject {
     }
 
     @discardableResult
-    func finishScreenFreeMorning(
+    private func finishScreenFreeMorning(
         occurrenceID: UUID,
         at date: Date = Date()
     ) -> MorningQuietOccurrence? {
@@ -962,10 +972,7 @@ final class FocusSessionCoordinator: ObservableObject {
         lastLiveActivityPhase = storedRun.nightWatchPhase()
         if Date() >= storedRun.plannedEndAt,
            FocusRunRules.canCompleteSuccessfully(storedRun, demoMode: false) {
-            storedRun.state = .completed
-            storedRun.completedSuccessfully = true
-            storedRun.actualDurationSeconds = storedRun.plannedDurationSeconds
-            storedRun.endedAt = Date()
+            storedRun = FocusRunRules.completedAtScheduledEnd(storedRun)
             finish(run: storedRun)
         } else {
             ollieMessage = storedRun.guardKind == .watchPlacement && storedRun.placementStatus == .awaitingConfirmation
@@ -1043,10 +1050,7 @@ final class FocusSessionCoordinator: ObservableObject {
         resolveHiddenWindDownBenefitIfEligible(for: run, at: now)
         if now >= run.plannedEndAt,
            FocusRunRules.canCompleteSuccessfully(run, demoMode: false) {
-            run.state = .completed
-            run.completedSuccessfully = true
-            run.actualDurationSeconds = run.plannedDurationSeconds
-            run.endedAt = now
+            run = FocusRunRules.completedAtScheduledEnd(run)
             finish(run: run)
             return
         }

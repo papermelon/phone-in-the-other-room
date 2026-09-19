@@ -77,6 +77,38 @@ actor NightFlockService {
         } catch { throw mapError(error, operation: "command-v3") }
     }
 
+    func registerCampfireDevice(_ registration: CampfireDeviceRegistration) async throws {
+        struct Result: Decodable { var accepted: Bool }
+        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
+        let result: Result = try await provider.client().functions.invoke("campfire-device", options: FunctionInvokeOptions(body: registration, encoder: encoder))
+        guard result.accepted else { throw NightFlockServiceError.unsupportedResponse }
+    }
+
+    func globalCampfireState(gathering: String = "all", cursor: UUID? = nil) async throws -> GlobalCampfireResponse {
+        struct Request: Encodable { var command = "state"; var gathering: String; var cursor: UUID? }
+        return try await provider.client().functions.invoke("campfire-global", options: FunctionInvokeOptions(body: Request(gathering: gathering, cursor: cursor)), decoder: Self.campfireDecoder())
+    }
+
+    func sendGlobalCampfire(_ command: GlobalCampfireCommand, ownerID: UUID) async throws -> GlobalCampfireResponse {
+        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
+        return try await provider.client().functions.invoke("campfire-global", options: FunctionInvokeOptions(
+            headers: ["X-Campfire-Owner": ownerID.uuidString.lowercased()], body: command, encoder: encoder), decoder: Self.campfireDecoder())
+    }
+
+    private static func campfireDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { value in
+            let text = try value.singleValueContainer().decode(String.self)
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = formatter.date(from: text) { return date }
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: text) { return date }
+            throw DecodingError.dataCorrupted(.init(codingPath: value.codingPath, debugDescription: "Invalid Campfire timestamp"))
+        }
+        return decoder
+    }
+
     func sendPasture(_ command: SharedPastureCommand) async throws -> SharedPastureCommandResponse {
         do {
             return try await invoke("night-flock-command", headers: commandHeaders(idempotencyKey: command.idempotencyKey),
@@ -268,11 +300,29 @@ actor NightFlockService {
         operation: String
     ) async throws -> Response {
         let client = try provider.client()
-        return try await client.functions.invoke(
-            function,
-            options: FunctionInvokeOptions(headers: headers, body: body),
-            decoder: decoder
-        )
+        do {
+            return try await client.functions.invoke(
+                function,
+                options: FunctionInvokeOptions(headers: headers, body: body),
+                decoder: decoder
+            )
+        } catch {
+            // Keep the actual outgoing ID even when the gateway/connection
+            // fails before our Edge handler can return its JSON envelope.
+            let requestID = headers["X-Request-ID"]
+            if let failure = error as? FunctionsError {
+                switch failure {
+                case .httpError(let status, let data):
+                    throw NightFlockRemoteError.decode(statusCode: status, data: data, headerRequestID: requestID)
+                case .relayError:
+                    throw NightFlockRemoteError.network(requestID: requestID ?? UUID().uuidString)
+                }
+            }
+            if error is URLError {
+                throw NightFlockRemoteError.network(requestID: requestID ?? UUID().uuidString)
+            }
+            throw error
+        }
     }
 
     private func commandHeaders(idempotencyKey: String) -> [String: String] {

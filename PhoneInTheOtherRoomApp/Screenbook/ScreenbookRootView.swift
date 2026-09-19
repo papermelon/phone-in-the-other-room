@@ -86,7 +86,9 @@ struct ScreenbookRootView: View {
         case .onboardingWelcome:
             OnboardingFlowView(initialDraft: onboardingDraft, presentationMode: .fixture, onComplete: {})
         case .configuredHome:
-            if ProcessInfo.processInfo.arguments.contains("-screenbook-personalisation") {
+            if ProcessInfo.processInfo.arguments.contains("-screenbook-personal-shield") {
+                ScreenbookPersonalShieldView()
+            } else if ProcessInfo.processInfo.arguments.contains("-screenbook-personalisation") {
                 ScreenbookPersonalisationView()
             } else if ProcessInfo.processInfo.arguments.contains("-screenbook-habit-plan") {
                 NavigationStack { FocusRunSetupView(initialHabitFocus: .access) }

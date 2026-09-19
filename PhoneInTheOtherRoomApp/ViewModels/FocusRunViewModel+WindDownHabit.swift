@@ -6,6 +6,10 @@ extension FocusRunViewModel {
         defer { isReloadingWindDownHabit = false }
         let identity = try? persistence.windDownHabitIdentity()
         if habitLocalIdentity != identity {
+            if habitLocalIdentity != nil || identity == nil, let defaults = purposeCueDefaults { PersonalShieldStorage.clear(from: defaults) }
+            personalShieldSession = nil
+            dismissPersonalShield()
+            nextPhoneAwayTasks = ["", "", ""]
             habitEditingIdentity = UUID()
             pendingHabitSupport = nil
             pendingHabitIdentity = nil

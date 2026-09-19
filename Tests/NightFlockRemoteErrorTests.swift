@@ -128,7 +128,7 @@ final class NightFlockRemoteErrorTests: XCTestCase {
         let data = Data((#"{"error":""# + secret + #""}"#).utf8)
         let error = NightFlockRemoteError.decode(statusCode: 500, data: data, headerRequestID: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
         XCTAssertEqual(error.code, .serviceUnavailable)
-        XCTAssertEqual(error.errorDescription, "Slumber Party is resting offline. Please try again.")
+        XCTAssertEqual(error.errorDescription, "Slumber Party couldn’t reach the server. Please try again.")
         XCTAssertFalse(error.errorDescription?.contains("apple-token") == true)
         XCTAssertFalse(error.errorDescription?.contains("selectedApps") == true)
     }
@@ -144,6 +144,15 @@ final class NightFlockRemoteErrorTests: XCTestCase {
         let server = NightFlockRemoteError.decode(statusCode: 503, data: Data(#"{"error":"retry","code":"service_unavailable"}"#.utf8))
         XCTAssertFalse(server.allowsSchemaFallback)
         XCTAssertTrue(server.retryable)
+    }
+
+    func testGatewayFailureRetainsOutgoingRequestIDWithoutAnEdgeEnvelope() {
+        let id = "6bb51f1b-a8f1-4014-afa9-0c15ca692cc5"
+        let error = NightFlockRemoteError.decode(statusCode: 504, data: Data("upstream timeout".utf8), headerRequestID: id)
+        XCTAssertEqual(error.requestID, id)
+        XCTAssertEqual(error.code, .serviceUnavailable)
+        XCTAssertTrue(error.retryable)
+        XCTAssertEqual(NightFlockRemoteError.network(requestID: id).requestID, id)
     }
 
     func testNetworkPolicyIsRetryable() {

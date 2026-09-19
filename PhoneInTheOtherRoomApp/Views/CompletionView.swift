@@ -49,6 +49,7 @@ struct CompletionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 CompletionRewardCard(presentation: rewardPresentation)
+                if let run { CampfireReturnCheckIns(social: viewModel.nightFlockViewModel, sourceID: run.id, partyIDs: run.nightWatchPlan?.campfireIntentions?.map(\.partyID) ?? []) }
 
                 NightWatchReceiptCard(
                     run: run,

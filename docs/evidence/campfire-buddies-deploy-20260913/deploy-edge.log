@@ -1,0 +1,31 @@
+Deploying Function: night-flock-command
+Uploading asset (night-flock-command): supabase/functions/night-flock-command/index.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/supabase.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-invites.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-handlers.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-shared-habits-wire.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-activity-wire.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/night-flock-errors.ts
+Uploading asset (night-flock-command): supabase/functions/_shared/http.ts
+Deploying Function: night-flock-state
+Uploading asset (night-flock-state): supabase/functions/night-flock-state/index.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/supabase.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock-handlers.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock-shared-habits-wire.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock-activity-wire.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/night-flock-errors.ts
+Uploading asset (night-flock-state): supabase/functions/_shared/http.ts
+Deploying Function: campfire-device
+Uploading asset (campfire-device): supabase/functions/campfire-device/index.ts
+Uploading asset (campfire-device): supabase/functions/_shared/campfire-alerts.ts
+Uploading asset (campfire-device): supabase/functions/_shared/http.ts
+Uploading asset (campfire-device): supabase/functions/_shared/supabase.ts
+Deploying Function: campfire-dispatch
+Uploading asset (campfire-dispatch): supabase/functions/campfire-dispatch/index.ts
+Uploading asset (campfire-dispatch): supabase/functions/_shared/http.ts
+Uploading asset (campfire-dispatch): supabase/functions/_shared/campfire-alerts.ts
+Uploading asset (campfire-dispatch): supabase/functions/_shared/apns.ts
+Uploading asset (campfire-dispatch): supabase/functions/_shared/supabase.ts
+{"project_ref":"sxjlkcccsentmhowgoqe","functions":["night-flock-command","night-flock-state","campfire-device","campfire-dispatch"],"dashboard_url":"https://supabase.com/dashboard/project/sxjlkcccsentmhowgoqe/functions","message":"Deployed Functions."}

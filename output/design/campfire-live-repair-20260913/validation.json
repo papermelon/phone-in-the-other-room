@@ -1,0 +1,11 @@
+{
+  "build": "passed",
+  "nativeTests": 1018,
+  "failures": 0,
+  "nativeCaptures": 7,
+  "productionRealtimePublication": "verified read-only; signals, statuses, reactions",
+  "specificScreenshotErrorCause": "unconfirmed",
+  "physicalInteractions": "blocked by locked Mac",
+  "backendDeployment": "not needed or performed",
+  "appDistribution": "not performed"
+}

@@ -23,7 +23,7 @@ settings:
     DEVELOPMENT_TEAM: 4KZQPZR47B
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: 1.0
-    CURRENT_PROJECT_VERSION: 48
+    CURRENT_PROJECT_VERSION: 52
 packages:
   Supabase:
     url: https://github.com/supabase/supabase-swift.git
@@ -157,6 +157,7 @@ targets:
     sources:
       - path: PhoneInTheOtherRoomShieldConfiguration
       - path: Shared/QuietTimeShieldPresentation.swift
+      - path: Shared/PersonalShield.swift
       - path: PhoneInTheOtherRoomShieldConfiguration/Assets.xcassets
         buildPhase: resources
     settings:
@@ -170,6 +171,8 @@ targets:
     platform: iOS
     sources:
       - path: PhoneInTheOtherRoomShieldAction
+      - path: Shared/QuietTimeShieldPresentation.swift
+      - path: Shared/PersonalShield.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.ShieldAction
@@ -184,6 +187,8 @@ targets:
       - path: Tests
       - path: PhoneInTheOtherRoomApp/Services/NightFlockOutboxService.swift
       - path: PhoneInTheOtherRoomApp/Services/SharedPastureOutboxService.swift
+      - path: PhoneInTheOtherRoomApp/Services/CampfireVisibilityStore.swift
+      - path: PhoneInTheOtherRoomApp/ViewModels/PastureFetchViewModel.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.ngawangchime.countingsheep.tests

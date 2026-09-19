@@ -12,6 +12,8 @@ struct HomeView: View {
     @State private var pendingPartyPresentation = false
     @State private var partyOriginTab: MainAppTab?
     @State private var nightFlockPartyID: UUID?
+    @State private var showsUnifiedCampfire = false
+    @State private var pendingCampfireStart: NightFlockV4ActivityKind?
     @State private var homeScrollViewportSize = CGSize.zero
     @State private var homeNavigationPath = NavigationPath()
     /// Dashboard destinations belong to the persistent Home shell, so a
@@ -74,6 +76,10 @@ struct HomeView: View {
                         viewModel.applyShortcutPreparationIfNeeded()
                         routePendingNotificationIfNeeded()
                         restoreFirstRunSurface()
+                        if let raw = UserDefaults.standard.string(forKey: CampfireNotificationService.pendingPartyKey), let party = UUID(uuidString: raw) {
+                            UserDefaults.standard.removeObject(forKey: CampfireNotificationService.pendingPartyKey)
+                            NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: party)
+                        }
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepNotificationDestination)) { notification in
             guard let destination = notification.object as? NotificationDestination else { return }
@@ -84,10 +90,25 @@ struct HomeView: View {
                 if viewModel.isRunning { select(.home) } else { select(.nights) }
             }
         }
+        .sheet(isPresented: $showsUnifiedCampfire, onDismiss: {
+            if let kind = pendingCampfireStart {
+                pendingCampfireStart = nil
+                select(.home)
+                _ = viewModel.requestCampfireSessionStart(kind)
+            }
+        }) {
+            CampfireView(social: viewModel.nightFlockViewModel) { kind in
+                pendingCampfireStart = kind; showsUnifiedCampfire = false
+            }.environmentObject(viewModel)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowCampfire)) { _ in
+            showsUnifiedCampfire = true
+        }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowFarm)) { _ in
             select(.farm)
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowNightFlock)) { notification in
+            UserDefaults.standard.removeObject(forKey: CampfireNotificationService.pendingPartyKey)
             partyOriginTab = selectedTab
             viewModel.nightFlockViewModel.prefersJoinEntry = (notification.object as? String) == "join"
             nightFlockPartyID = notification.object as? UUID
@@ -111,6 +132,7 @@ struct HomeView: View {
             select(.nights)
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowHome)) { _ in
+            showsUnifiedCampfire = false
             select(.home)
         }
         .onChange(of: viewModel.isRunning) { _, isRunning in
@@ -134,8 +156,12 @@ struct HomeView: View {
             guard phase == .active else { return }
             viewModel.refreshConnectionsAfterForeground()
             viewModel.reloadCurrentPurposeCue()
-            if viewModel.isRunning { routeToHome() }
+            if viewModel.isRunning || viewModel.activeScreenFreeMorning != nil { routeToHome() }
         }
+        .modifier(PersonalShieldPresentation {
+            showsUnifiedCampfire = false
+            routeToHome()
+        })
         .onChange(of: viewModel.coordinator.pingPulseCount) { _, count in
             guard count > 0 else { return }
             showPingBanner()
@@ -518,6 +544,7 @@ struct HomeView: View {
             HomeWindDownReceiptRecoveryCard(runID: runID)
         case .dashboard:
             VStack(spacing: AppSpacing.md) {
+                if !viewModel.isRunning { CampfirePendingCheckInCard(social: viewModel.nightFlockViewModel) }
                 if viewModel.orientationState.completedChapters.contains(.homeBasics),
                    !viewModel.orientationState.deferredChapters.contains(.homeBasics),
                    !viewModel.orientationState.completedChapters.contains(.farmTour) {
@@ -577,7 +604,7 @@ struct HomeView: View {
     }
 
     private func routeToHome() {
-        guard viewModel.isRunning else { return }
+        guard viewModel.isRunning || viewModel.activeScreenFreeMorning != nil else { return }
         // Clear the Home-owned presentation first. The active surface removes
         // PixelHomeDashboard immediately, so a dashboard-local binding cannot
         // reliably dismiss an already-pushed schedule route.
@@ -669,7 +696,8 @@ private struct HomeWindDownReceiptRecoveryCard: View {
     }
 }
 
-private struct ActiveWindDownReturnBar: View {
+struct ActiveWindDownReturnBar: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let run: FocusRun?
     let now: Date
     let action: () -> Void
@@ -699,24 +727,25 @@ private struct ActiveWindDownReturnBar: View {
             HStack(spacing: AppSpacing.xs) {
                 Image(systemName: "moon.stars.fill")
                     .foregroundStyle(AppColors.lavender)
-                Text(presentation?.returnBarTitle ?? fallbackTitle)
-                    .font(AppTypography.caption.weight(.bold))
-                if let presentation {
-                    let end = presentation.returnBarEndDate
-                    Text(timerInterval: now...max(now, end), countsDown: true, showsHours: true)
-                        .font(.system(.caption, design: .monospaced).weight(.bold))
-                        .monospacedDigit()
-                    Text("left")
-                        .font(AppTypography.caption)
+                if dynamicTypeSize >= .xxxLarge {
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                        sessionTitle
+                        remainingTime
+                    }
+                } else {
+                    sessionTitle
+                    remainingTime
                 }
                 Spacer()
-                Text("Return")
-                    .font(AppTypography.caption.weight(.bold))
+                if dynamicTypeSize < .xxxLarge {
+                    Text("Return").font(AppTypography.caption.weight(.bold))
+                }
                 Image(systemName: "arrow.right")
             }
             .foregroundStyle(AppColors.ink)
             .padding(.horizontal, AppSpacing.sm)
-            .frame(minHeight: 42)
+            .padding(.vertical, AppSpacing.xs)
+            .frame(minHeight: 44)
             .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
         }
         .buttonStyle(.plain)
@@ -726,5 +755,20 @@ private struct ActiveWindDownReturnBar: View {
         } ?? fallbackTitle
         )
         .accessibilityHint(presentation?.returnBarAccessibilityHint ?? fallbackAccessibilityHint)
+    }
+
+    private var sessionTitle: some View {
+        Text(presentation?.returnBarTitle ?? fallbackTitle)
+            .font(AppTypography.caption.weight(.bold)).fixedSize(horizontal: false, vertical: true)
+    }
+
+    @ViewBuilder private var remainingTime: some View {
+        if let presentation {
+            HStack(spacing: AppSpacing.xxs) {
+                Text(timerInterval: now...max(now, presentation.returnBarEndDate), countsDown: true, showsHours: true)
+                    .font(.system(.caption, design: .monospaced).weight(.bold)).monospacedDigit()
+                Text("left").font(AppTypography.caption)
+            }.fixedSize(horizontal: true, vertical: false)
+        }
     }
 }

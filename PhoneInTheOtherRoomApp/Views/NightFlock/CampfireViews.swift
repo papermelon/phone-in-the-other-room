@@ -46,21 +46,33 @@ struct CampfireSharingSheet: View {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     PaperCampfire().frame(width: 110, height: 110).frame(maxWidth: .infinity)
                     Text("A little company, phone away").font(AppTypography.title)
-                    Text("The campfire is here from your first day. Your Shepherd wears your chosen outfit here. Sheep visits and the earned lantern keep their own place in the meadow.").font(AppTypography.body)
+                    Text("The fire lights when someone shares an active session. Only those Shepherds gather here, in their chosen outfits. Everyone’s saved places, sheep visits and earned lantern are in Shared meadow.").font(AppTypography.body)
+                    Text("Joining a Slumber Party and sharing at its campfire are separate choices. Enabling Campfire sharing applies to sessions you start afterwards.")
+                        .font(AppTypography.body)
                     if state?.isSupported == true {
-                        Text("CAMPFIRE SHARING · VERSION 1").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+                        Text(state?.buddies?.isSupported == true ? "CAMPFIRE BUDDIES · VERSION 2" : "CAMPFIRE SHARING · VERSION 1").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
                         Text("When you enable sharing with this party, new Wind Down and Phone Away sessions bring your Shepherd to the fire. Members can see the session type, start and planned end, and an optional Phone Away intention.").font(AppTypography.body)
-                        Text("Wind Down stays until the planned wake time. A private Wind Down stays private. Custom task titles aren’t shared. Joining another party needs its own choice.").font(AppTypography.body)
+                        Text("Wind Down stays until the planned wake time. A private Wind Down stays private. Joining another party needs its own choice.").font(AppTypography.body)
+                        if state?.buddies?.isSupported == true {
+                            Text("Campfire Buddies lets you write a separate shared intention, invite a check-in buddy, and share a result or encouragement. Members who accept this agreement can see those details for up to seven days. Private task and routine text is never copied automatically.").font(AppTypography.body)
+                            Text("New automatic Wind Downs can invite the party; manual starts let you choose each time. Private Wind Downs stay private. This phone can register for party notifications and share a quiet-until time to avoid interrupting your sessions. Notification previews contain no task text. You can turn invitations off independently.").font(AppTypography.body)
+                            if state?.agreement?.version != 2 || state?.agreement?.enabled != true {
+                                Button("Enable Campfire Buddies with this party") { social.setCampfireSharing(true, partyID: partyID) }
+                                    .buttonStyle(PixelPrimaryButtonStyle())
+                            } else {
+                                CampfireInvitationSettings(social: social, partyID: partyID)
+                            }
+                        }
                         Text("These are app-reported sessions, not proof of sleep or offline activity. You can close the app. If an early end can’t sync, the last shared session may remain until its planned end.").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                         if state?.agreement?.permitsSharing == true {
                             Text("Sharing is enabled for new sessions.").font(AppTypography.body)
                             Button("Turn off campfire sharing") { social.setCampfireSharing(false, partyID: partyID) }
                                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                        } else {
+                        } else if state?.buddies?.isSupported != true {
                             Button("Enable sharing with this party") { social.setCampfireSharing(true, partyID: partyID) }
                                 .buttonStyle(PixelPrimaryButtonStyle())
                         }
-                        Text("Turning this off removes your campfire presence when the change syncs. Your timer and other agreed Slumber Party sharing continue.").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                        Text("Turning this off removes your campfire presence, shared intentions, check-ins and buddy commitments when the change syncs. Your timer and other agreed Slumber Party sharing continue.").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                         SharedPastureSaveFeedback(social: social, partyID: partyID)
                     } else {
                         Text("Live campfire sharing isn’t available on this server yet. The meadow and shared updates are still here.").font(AppTypography.body)
@@ -69,8 +81,30 @@ struct CampfireSharingSheet: View {
             }.background(AppColors.paper.ignoresSafeArea())
                 .navigationTitle("Campfire").navigationBarTitleDisplayMode(.inline)
                 .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+                .task { social.refreshV4PartyObservation(partyID, refreshListAfterward: false) }
         }
     }
+}
+
+struct CampfireParticipationNotice: View {
+    let message: String
+    var onReview: () -> Void
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text(message).font(AppTypography.body).fixedSize(horizontal: false, vertical: true)
+            Button("Review Campfire sharing", action: onReview)
+                .font(AppTypography.body).frame(minHeight: 44).tint(AppColors.grass)
+        }
+        .padding(AppSpacing.sm).frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.panel, in: RoundedRectangle(cornerRadius: AppRadius.md))
+    }
+}
+
+#Preview("Campfire · sharing setup · large text") {
+    ScrollView {
+        CampfireParticipationNotice(message: "Joining a Slumber Party doesn’t enable Campfire sharing. Review sharing before your next Wind Down or Phone Away to bring your Shepherd to the fire.", onReview: {})
+            .padding(AppSpacing.md)
+    }.dynamicTypeSize(.accessibility3).background(AppColors.paper)
 }
 
 #Preview("Campfire · paper illustration") { PaperCampfire().frame(width: 180, height: 180).padding().background(AppColors.paper) }

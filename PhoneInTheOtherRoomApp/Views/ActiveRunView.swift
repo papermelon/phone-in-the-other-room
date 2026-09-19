@@ -7,12 +7,9 @@ struct ActiveRunView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private let fixedNow: Date?
     @State private var emergencyExitExpanded = false
-    @State private var showEarlyEndConfirmation = false
-    @State private var showEmergencyExitSheet = false
-    @State private var emergencyExitReason = ""
-    @State private var emergencyExitConfirmation = ""
     @State private var showNFCTagReplacementConfirmation = false
     @State private var showEarlyWakeSheet = false
+    @State private var earlyWakeChoice: MorningQuietIntent?
 
     init(now: Date? = nil) {
         fixedNow = now
@@ -33,24 +30,6 @@ struct ActiveRunView: View {
 
     private var fallbackReturnBarTitle: String {
         run?.nightWatchPlan?.role == .additionalQuiet ? "Phone Away" : "Wind Down"
-    }
-
-    private var fallbackExit: ActiveRunExitPresentation {
-        run?.nightWatchPlan?.role == .additionalQuiet
-            ? ActiveRunExitPresentation(
-                actionTitle: "End Phone Away early",
-                confirmationTitle: "End Phone Away early?",
-                confirmationBody: "This ends the timer and lifts selected-app limits.",
-                cancelTitle: "Keep Phone Away running",
-                confirmTitle: "End Phone Away"
-            )
-            : ActiveRunExitPresentation(
-                actionTitle: "End Wind Down early",
-                confirmationTitle: "End Wind Down early?",
-                confirmationBody: "This ends the timer early and lifts selected-app limits.",
-                cancelTitle: "Keep Wind Down running",
-                confirmTitle: "Use emergency exit"
-            )
     }
 
     private var tagReplacementTitle: String {
@@ -85,6 +64,7 @@ struct ActiveRunView: View {
                         if let banner = presentation?.shieldingBanner {
                             shieldingBanner(banner)
                         }
+                        PersonalShieldActions()
                         actions
                     }
                     .padding(16)
@@ -108,24 +88,15 @@ struct ActiveRunView: View {
             for: .navigationBar
         )
         .toolbarBackground(.visible, for: .navigationBar)
-        .alert(
-            (presentation?.exit ?? fallbackExit).confirmationTitle,
-            isPresented: $showEarlyEndConfirmation
-        ) {
-            Button((presentation?.exit ?? fallbackExit).cancelTitle, role: .cancel) {}
-            Button((presentation?.exit ?? fallbackExit).confirmTitle, role: .destructive) {
-                viewModel.endWindDownEarly()
-            }
-        } message: {
-            Text((presentation?.exit ?? fallbackExit).confirmationBody)
-        }
-        .sheet(isPresented: $showEmergencyExitSheet, onDismiss: cancelEmergencyExit) {
-            emergencyExitSheet
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showEarlyWakeSheet) {
-            EarlyWakeSheet()
+        .sheet(isPresented: $showEarlyWakeSheet, onDismiss: {
+            guard let intent = earlyWakeChoice else { return }
+            earlyWakeChoice = nil
+            viewModel.chooseEarlyWake(intent)
+        }) {
+            EarlyWakeSheet(onChoice: { intent in
+                earlyWakeChoice = intent
+                showEarlyWakeSheet = false
+            })
                 .environmentObject(viewModel)
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
@@ -202,14 +173,7 @@ struct ActiveRunView: View {
                             .foregroundStyle(AppColors.muted)
                     }
                 }
-                if run.nightWatchPlan?.role == .primarySleepBookend,
-                   let routineSteps = activeRoutineSteps,
-                   !routineSteps.isEmpty {
-                    WindDownRoutineSequenceCard(
-                        eyebrow: routineEyebrow,
-                        steps: routineSteps
-                    )
-                }
+                PersonalShieldActions()
                 if run.placementStatus == .awaitingConfirmation {
                     ritualStatus
                 } else if let message = viewModel.coordinator.backgroundReturnMessage {
@@ -398,18 +362,6 @@ struct ActiveRunView: View {
         }
     }
 
-    private var activeRoutineSteps: [WindDownRoutineStep]? {
-        guard let plan = run?.nightWatchPlan else { return nil }
-        switch phase {
-        case .windDown: return plan.eveningRoutine
-        case .morningQuiet: return plan.morningRoutine
-        case .overnight, .complete, nil: return nil
-        }
-    }
-
-    private var routineEyebrow: String {
-        phase == .morningQuiet ? "MORNING IDEAS" : "EVENING IDEAS"
-    }
 
     private func activityCue(
         eyebrow: String,
@@ -476,7 +428,7 @@ struct ActiveRunView: View {
 
                 DisclosureGroup(isExpanded: $emergencyExitExpanded) {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Text("Pair a replacement if you can. Emergency exit ends without the tag.")
+                        Text("Pair a replacement, or confirm the session phrase to end without your tag.")
                             .font(AppTypography.caption)
                             .foregroundStyle(AppColors.secondaryText)
                         Button("Pair a replacement tag") {
@@ -485,14 +437,8 @@ struct ActiveRunView: View {
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
                         .accessibilityHint("Opens tag settings so you can pair a replacement without ending this session")
-                        Button(
-                            presentation?.emergencyExit.actionTitle
-                                ?? "End Wind Down without the tag"
-                        ) {
-                            guard viewModel.beginEmergencyExitChallenge() else { return }
-                            emergencyExitReason = ""
-                            emergencyExitConfirmation = ""
-                            showEmergencyExitSheet = true
+                        Button("End \(viewModel.activeRunIsAdditionalQuiet ? "Phone Away" : "Wind Down")") {
+                            viewModel.openPersonalShield(.endSession)
                         }
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.amber)
@@ -507,105 +453,15 @@ struct ActiveRunView: View {
                 }
                 .accessibilityLabel("Can’t use your tag?")
                 .accessibilityHint("Shows tag replacement and emergency exit options")
-            } else if presentation?.isAdditionalQuiet == true {
-                Button(presentation?.exit.actionTitle ?? "End Wind Down early") {
-                    showEarlyEndConfirmation = true
-                }
-                .font(pixelFont(.caption))
-                .foregroundStyle(AppColors.secondaryText)
             } else {
-                Button(run?.isNightWatch == true
-                    ? (presentation?.exit ?? fallbackExit).actionTitle
-                    : "End early"
-                ) {
-                    viewModel.endWindDownEarly()
+                Button("End \(viewModel.activeRunIsAdditionalQuiet ? "Phone Away" : "Wind Down")") {
+                    viewModel.openPersonalShield(.endSession)
                 }
-                .font(pixelFont(.caption))
-                .foregroundStyle(AppColors.secondaryText)
+                .font(AppTypography.body)
+                .foregroundStyle(AppColors.muted)
+                .frame(minHeight: 44)
             }
         }
-    }
-
-    private var emergencyExitSheet: some View {
-        let emergency = presentation?.emergencyExit ?? fallbackExit
-        let challenge = viewModel.emergencyExitChallenge
-        return NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                    Image(systemName: "exclamationmark.shield.fill")
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(AppColors.grass)
-                        .accessibilityHidden(true)
-                    Text("Emergency exit")
-                        .font(AppTypography.display(30))
-                    if challenge?.stage == .readyToConfirm,
-                       let reason = challenge?.reason {
-                        Text("Keep your reason in mind.")
-                            .font(AppTypography.body)
-                        Text("You said:")
-                            .font(AppTypography.caption.weight(.semibold))
-                            .foregroundStyle(AppColors.muted)
-                        Text(reason)
-                            .font(AppTypography.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(AppSpacing.sm)
-                            .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.sm))
-                        Text("Type your reason again to end this session without your tag.")
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.muted)
-                        TextField("Type your reason again", text: $emergencyExitConfirmation)
-                            .textInputAutocapitalization(.sentences)
-                            .font(AppTypography.headline)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityLabel("Type your reason again")
-                            .onChange(of: emergencyExitConfirmation) { _, newValue in
-                                _ = viewModel.submitEmergencyExitConfirmation(newValue)
-                            }
-                    } else {
-                        Text("What do you need your phone for?")
-                            .font(AppTypography.title)
-                        Text("Take a moment to name what you’re reaching for.")
-                            .font(AppTypography.body)
-                            .foregroundStyle(AppColors.muted)
-                        TextField("e.g. Reply to a message", text: $emergencyExitReason)
-                            .textInputAutocapitalization(.sentences)
-                            .font(AppTypography.headline)
-                            .textFieldStyle(.roundedBorder)
-                            .accessibilityLabel("What do you need your phone for?")
-                    }
-                    Button(challenge?.stage == .readyToConfirm ? emergency.confirmTitle : "Continue") {
-                        if challenge?.stage == .readyToConfirm {
-                            guard viewModel.confirmEmergencyExit() else { return }
-                            emergencyExitReason = ""
-                            emergencyExitConfirmation = ""
-                            showEmergencyExitSheet = false
-                        } else {
-                            _ = viewModel.submitEmergencyExitReason(emergencyExitReason)
-                        }
-                    }
-                    .buttonStyle(PixelPrimaryButtonStyle())
-                    .disabled(challenge?.stage == .readyToConfirm
-                        ? challenge?.canConfirm != true
-                        : EmergencyExitChallenge.normalizedReason(emergencyExitReason).isEmpty)
-                    .accessibilityHint("Continues to a second confirmation before ending without your tag")
-                    Button(emergency.cancelTitle) {
-                        showEmergencyExitSheet = false
-                    }
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                }
-                .padding(AppSpacing.lg)
-            }
-            .background(AppColors.paper.ignoresSafeArea())
-            .navigationTitle("Emergency exit")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-
-    private func cancelEmergencyExit() {
-        emergencyExitReason = ""
-        emergencyExitConfirmation = ""
-        viewModel.cancelEmergencyExitChallenge()
-        showEmergencyExitSheet = false
     }
 
     private var hasCompatibleRegisteredTag: Bool {

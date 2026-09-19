@@ -44,7 +44,7 @@ const knownCommands = new Set([
   "publishProgress", "publishNightMetrics", "acknowledgeUpdateCheer", "acknowledgeGrant", "replaceInvite", "renameParty", "startRound",
   "retrieveInvite", "leaveParty", "deleteParty", "updatePublicProfile", "publishActivity", "completeBackfill", "publishStatus",
   "blockMember", "reportMember", "cheerMember",
-  "movePastureEntity", "contributePastureSheep", "recallPastureSheep", "setCampfireSharing", "publishCampfireSession",
+  "movePastureEntity", "contributePastureSheep", "recallPastureSheep", "setCampfireSharing", "publishCampfireSession", "campfireBuddyAction", "setCampfireAlerts",
   "acceptSharedHabitsAgreement", "publishSharedHabit", "deleteSharedHabitHistory", "migrateSharedHabits",
   "publishSharedNightPlan", "cancelSharedNightPlan", "publishSharedNightReceipt",
 ]);

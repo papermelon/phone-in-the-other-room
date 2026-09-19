@@ -20,6 +20,22 @@ final class NightFlockViewModel: ObservableObject {
     @Published var pastureSending: Set<UUID> = []
     @Published var pastureRefreshTokens: [UUID: Int] = [:]
     @Published var cachedPastureVisits: [UUID: Set<UUID>] = [:]
+    @Published var campfirePushStatus = ""
+    @Published var campfireDocument = CampfireVisibilityDocument()
+    @Published var campfireVisibilityMessage: String?
+    @Published var globalCampfireState: GlobalCampfireState?
+    @Published var globalCampfireLoading = false
+    @Published var globalCampfireFailure: String?
+    let campfireVisibilityStore = CampfireVisibilityStore()
+    var campfireDocumentOwner: UUID?
+    var campfireStorageFailed = false
+    var globalCampfireRequestID: UUID?
+    var globalCampfireGathering = "all"
+    var globalCampfireSendID: UUID?
+    var globalCampfireAttempted: Set<String> = []
+    var campfireNotificationQuietUntil = Date.distantPast
+    var campfirePushNeedsSync = false
+    var campfirePushIsSyncing = false
     let pastureOutbox = SharedPastureOutboxService()
     var pastureAttempts: Set<String> = []
     @Published var phase: Phase
@@ -323,6 +339,7 @@ final class NightFlockViewModel: ObservableObject {
         v4RealtimePartyIDs = []
         v4RealtimeConnectedPartyIDs = []
         v4RefreshingPartyIDs = []
+        clearCampfireVisibilityContext()
         v4ObservedPartyDetails = [:]
         v4ObservedPartyRefreshDates = [:]
         v4ObservedPartyObservationStates = [:]
@@ -692,6 +709,7 @@ final class NightFlockViewModel: ObservableObject {
         snapshot = nil
         v4ListState = nil
         selectedV4Party = nil
+        clearCampfireVisibilityContext()
         v4ObservedPartyDetails = [:]
         v4InviteCodes = [:]
         v4InvitePreview = nil
@@ -733,6 +751,7 @@ final class NightFlockViewModel: ObservableObject {
         pendingAuthenticationRecovery = .none
         accountState = .linked
         phase = .idle
+        syncCampfirePush()
         entryAppeared()
     }
 
@@ -793,6 +812,7 @@ final class NightFlockViewModel: ObservableObject {
                         snapshot = nil
                         v4ListState = nil
                         selectedV4Party = nil
+                        clearCampfireVisibilityContext()
                         v4ObservedPartyDetails = [:]
                         v4InviteCodes = [:]
                         v4InvitePreview = nil
@@ -1202,6 +1222,7 @@ final class NightFlockViewModel: ObservableObject {
         sharedHabitsStagedJoinPartyIDs = []
         sharedHabitsDestructiveCommandPartyIDs = []
         selectedV4Party = nil
+        clearCampfireVisibilityContext()
         v4ObservedPartyDetails = [:]
         v4ObservedPartyRefreshDates = [:]
         v4ObservedPartyObservationStates = [:]

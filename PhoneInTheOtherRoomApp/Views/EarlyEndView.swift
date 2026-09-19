@@ -27,6 +27,10 @@ struct EarlyEndView: View {
                     .frame(maxWidth: .infinity)
                     .buttonStyle(PixelPrimaryButtonStyle())
                 }
+                if let run = viewModel.activeRun {
+                    CampfireReturnCheckIns(social: viewModel.nightFlockViewModel, sourceID: run.id,
+                        partyIDs: run.nightWatchPlan?.campfireIntentions?.map(\.partyID) ?? [])
+                }
                 Button(AppCopy.EarlyEnd.doneButton.value) { viewModel.resetSetup() }
                     .frame(maxWidth: .infinity)
                     .buttonStyle(PixelChipButtonStyle(isSelected: false))

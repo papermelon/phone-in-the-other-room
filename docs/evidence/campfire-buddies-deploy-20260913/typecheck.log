@@ -1,0 +1,4 @@
+Check supabase/functions/night-flock-command/index.ts
+Check supabase/functions/night-flock-state/index.ts
+Check supabase/functions/campfire-device/index.ts
+Check supabase/functions/campfire-dispatch/index.ts

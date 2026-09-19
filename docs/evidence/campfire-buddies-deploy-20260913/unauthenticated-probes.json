@@ -1,0 +1,42 @@
+[
+  {
+    "function": "night-flock-command",
+    "credential": "missing",
+    "httpStatus": 401
+  },
+  {
+    "function": "night-flock-command",
+    "credential": "invalid",
+    "httpStatus": 401
+  },
+  {
+    "function": "night-flock-state",
+    "credential": "missing",
+    "httpStatus": 401
+  },
+  {
+    "function": "night-flock-state",
+    "credential": "invalid",
+    "httpStatus": 401
+  },
+  {
+    "function": "campfire-device",
+    "credential": "missing",
+    "httpStatus": 401
+  },
+  {
+    "function": "campfire-device",
+    "credential": "invalid",
+    "httpStatus": 401
+  },
+  {
+    "function": "campfire-dispatch",
+    "credential": "missing",
+    "httpStatus": 401
+  },
+  {
+    "function": "campfire-dispatch",
+    "credential": "invalid",
+    "httpStatus": 401
+  }
+]

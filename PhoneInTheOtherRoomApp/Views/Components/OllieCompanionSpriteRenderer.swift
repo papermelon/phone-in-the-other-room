@@ -8,6 +8,7 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
     let animationFrame: OllieCompanionAnimationFrame
     let accessoryItemID: String?
     let size: CGFloat
+    let onSpriteChanged: ((String?) -> Void)?
     @Binding var actionCapabilities: [OllieCompanionAction: Bool]
     @Binding var capabilityRevision: Int
     @ViewBuilder let neutral: () -> Neutral
@@ -21,11 +22,13 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
         size: CGFloat,
         actionCapabilities: Binding<[OllieCompanionAction: Bool]>,
         capabilityRevision: Binding<Int>,
+        onSpriteChanged: ((String?) -> Void)? = nil,
         @ViewBuilder neutral: @escaping () -> Neutral
     ) {
         self.animationFrame = animationFrame
         self.accessoryItemID = accessoryItemID
         self.size = size
+        self.onSpriteChanged = onSpriteChanged
         _actionCapabilities = actionCapabilities
         _capabilityRevision = capabilityRevision
         self.neutral = neutral
@@ -41,6 +44,9 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
         }
         .frame(width: size, height: size)
         .transaction { $0.animation = nil }
+        .onChange(of: resolvedSpriteFrame?.assetName, initial: true) { _, assetName in
+            onSpriteChanged?(assetName)
+        }
         .task(id: capabilityKey) {
             refreshCapabilityIfNeeded()
         }

@@ -39,8 +39,8 @@ enum QuietTimeShieldPresentationStorage {
     static let purposeCueKey = "ollie.screenTime.purposeCue"
 }
 
-/// A bounded local prompt used at the shield intervention point. Free text is
-/// intentionally excluded from App Group storage and social/impact contracts.
+/// Legacy bounded cue. PersonalShieldProjection separately carries the explicitly
+/// chosen routine/tasks locally; neither contract adds social or impact fields.
 enum QuietPurposeCue: String, Codable, CaseIterable, Equatable {
     case prepareForSleep
     case read

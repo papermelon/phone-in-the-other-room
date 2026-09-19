@@ -25,6 +25,27 @@ enum FocusRunRules {
         return run.placementStatus == .confirmed || run.placementStatus == .unavailable
     }
 
+    /// Reconciliation may run hours after a boundary. The timer ends at that
+    /// boundary; the callback time is not additional session time.
+    static func completedAtScheduledEnd(_ run: FocusRun) -> FocusRun {
+        var completed = run
+        completed.state = .completed
+        completed.completedSuccessfully = true
+        completed.endedAt = run.plannedEndAt
+        completed.actualDurationSeconds = max(0, run.plannedEndAt.timeIntervalSince(run.startedAt))
+        return completed
+    }
+
+    /// Also bounds receipts from older builds which saved the reopen time as
+    /// endedAt. This is a read projection, so settled rewards remain untouched.
+    static func receiptDurationSeconds(for run: FocusRun) -> TimeInterval {
+        let maximum = max(0, run.plannedEndAt.timeIntervalSince(run.startedAt))
+        if let endedAt = run.endedAt {
+            return max(0, min(maximum, endedAt.timeIntervalSince(run.startedAt)))
+        }
+        return max(0, min(maximum, run.actualDurationSeconds))
+    }
+
     /// Minutes from the eligible Wind Down start through Screen-Free Morning completion.
     /// Overnight time is included in this span for search eligibility only; quiet
     /// credit remains the two bookends.

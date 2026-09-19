@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: device registration is caller bound and rejects unknown or malformed fields
+ok 1 - device registration is caller bound and rejects unknown or malformed fields
+  ---
+  duration_ms: 6.764
+  type: 'test'
+  ...
+# Subtest: notification contains only approved generic copy and opaque routing IDs
+ok 2 - notification contains only approved generic copy and opaque routing IDs
+  ---
+  duration_ms: 0.633375
+  type: 'test'
+  ...
+# Subtest: APNs alert uses the ordinary app topic and bounded retry policy without network
+ok 3 - APNs alert uses the ordinary app topic and bounded retry policy without network
+  ---
+  duration_ms: 45.414292
+  type: 'test'
+  ...
+# Subtest: bounded intentions and terminal revision accepted
+ok 4 - bounded intentions and terminal revision accepted
+  ---
+  duration_ms: 11.366541
+  type: 'test'
+  ...
+# Subtest: rejects private content, invalid timestamps, oversized intervals and mismatched terminal revision
+ok 5 - rejects private content, invalid timestamps, oversized intervals and mismatched terminal revision
+  ---
+  duration_ms: 0.298375
+  type: 'test'
+  ...
+# Subtest: separate versioned consent and revision required
+ok 6 - separate versioned consent and revision required
+  ---
+  duration_ms: 0.217583
+  type: 'test'
+  ...
+# Subtest: explicit public intentions require all v2 fields and strict bounds
+ok 7 - explicit public intentions require all v2 fields and strict bounds
+  ---
+  duration_ms: 0.225875
+  type: 'test'
+  ...
+# Subtest: buddy actions are scoped and reflections never ride an encouragement
+ok 8 - buddy actions are scoped and reflections never ride an encouragement
+  ---
+  duration_ms: 0.224458
+  type: 'test'
+  ...
+# Subtest: accepts normalized placements for people, sheep and earned lantern
+ok 9 - accepts normalized placements for people, sheep and earned lantern
+  ---
+  duration_ms: 1.9945
+  type: 'test'
+  ...
+# Subtest: rejects invalid ground, future revisions and private payload fields
+ok 10 - rejects invalid ground, future revisions and private payload fields
+  ---
+  duration_ms: 0.955208
+  type: 'test'
+  ...
+# Subtest: visits require explicit consent and owned ID, no uploaded appearance
+ok 11 - visits require explicit consent and owned ID, no uploaded appearance
+  ---
+  duration_ms: 0.30475
+  type: 'test'
+  ...
+# Subtest: recall accepts only a bounded visit reference and stable retry key
+ok 12 - recall accepts only a bounded visit reference and stable retry key
+  ---
+  duration_ms: 2.534875
+  type: 'test'
+  ...
+# Subtest: ownership failures are actionable and never blindly retried
+ok 13 - ownership failures are actionable and never blindly retried
+  ---
+  duration_ms: 0.316541
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 210.640375

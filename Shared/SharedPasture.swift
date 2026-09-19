@@ -112,6 +112,15 @@ struct SharedPastureCommand: Codable, Equatable, Identifiable, Sendable {
     var expiresAt: Date?
     var ended: Bool?
     var revision: Int?
+    var checkInAfter: Date?
+    var publicIntention: String?
+    var announceStart: Bool?
+    var asksForBuddy: Bool?
+    var targetMemberID: UUID?
+    var buddyAction: String?
+    var outcome: CampfireOutcome?
+    var reflection: String?
+    var startAlerts: Bool?
     var idempotencyKey: String
     var id: String { idempotencyKey }
 

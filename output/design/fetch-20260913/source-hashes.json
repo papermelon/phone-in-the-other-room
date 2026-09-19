@@ -1,0 +1,12 @@
+{
+  "Shared/PastureFetch.swift": "1f748b64ab87902b97a39daf055cddfb79a250752862a3e35b9d688164cf8dbc",
+  "PhoneInTheOtherRoomApp/ViewModels/PastureFetchViewModel.swift": "075c38598fa01ea4540e9e228b0d49ba0f88dffd15b42a84949abdeff4ef79ea",
+  "PhoneInTheOtherRoomApp/ViewModels/PastureSceneController.swift": "cf0fcbee24a780d7b9673d75fc2350ffc1a5cecd6509d07e95f7d3d5132bee37",
+  "PhoneInTheOtherRoomApp/Views/FarmPastureView.swift": "42e9ad43a30a06b60363922bd88cef602333b1eb8c9fd1512a194b3f3e8770b4",
+  "PhoneInTheOtherRoomApp/Views/Components/PastureFetchView.swift": "e742b8f99da461040e64f776b3d2229604e4ffb484fb23179ac4ff4824e7e34f",
+  "PhoneInTheOtherRoomApp/Views/Components/PastureFetchFixture.swift": "f328ac390a91cac858d6ee8f148e04726fe9337bad24a1464931064febae73db",
+  "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift": "857498acf7f33cefaca9e90514e08bd841ad6ffd50a0a93c99337f7b9a8c7f5d",
+  "Tests/PastureFetchTests.swift": "755b23f85fcffbe8dc1332376f65ce5559b4b4e9d1f44992951004db5b83a46f",
+  "Tests/PastureFetchViewModelTests.swift": "09e1f9ce930649bbe6bc76f4ffdc618e917b90a438d0c14bb594b71e2113c7e7",
+  "project.yml": "d6ac0e308583513ee50e13053f3ac74e4d11e024b6f088954328ac9bd3179d58"
+}

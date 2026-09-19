@@ -1,0 +1,453 @@
+--- a/supabase/functions/_shared/apns.ts
++++ b/supabase/functions/_shared/apns.ts
+@@ -0,0 +1,291 @@
++type Environment = "sandbox" | "production";
++export type APNsTerminalStatus = "completed" | "endedEarly";
++
++export const ACTIVITYKIT_REFERENCE_EPOCH_SECONDS = 978307200;
++export const COMPLETION_DISMISSAL_SECONDS = 15 * 60;
++
++export interface APNsEndEvent {
++  pushToken: string;
++  environment: Environment;
++  plannedEndAt: string;
++  phase: string | null;
++  bedtimeAt: string | null;
++  wakeAt: string | null;
++  morningQuietEndsAt: string | null;
++  eveningActivityTitle: string | null;
++  morningActivityTitle: string | null;
++  terminalStatus?: APNsTerminalStatus;
++}
++
++export interface APNsResult {
++  status: number;
++  reason: string;
++  outcome: "delivered" | "retry" | "terminal";
++}
++
++export interface APNsUpdateEvent {
++  pushToken: string;
++  environment: Environment;
++  plannedEndAt: string;
++  phase: string;
++  bedtimeAt: string | null;
++  wakeAt: string | null;
++  morningQuietEndsAt: string | null;
++  eveningActivityTitle: string | null;
++  morningActivityTitle: string | null;
++}
++
++let cachedProviderToken: { value: string; createdAt: number } | undefined;
++
++function requiredEnvironment(name: string): string {
++  const value = Deno.env.get(name);
++  if (!value) throw new Error(`Server configuration missing ${name}`);
++  return value;
++}
++
++function base64URL(data: Uint8Array | string): string {
++  const bytes = typeof data === "string"
++    ? new TextEncoder().encode(data)
++    : data;
++  let binary = "";
++  for (const byte of bytes) binary += String.fromCharCode(byte);
++  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll(
++    "=",
++    "",
++  );
++}
++
++function privateKeyBytes(pem: string): Uint8Array {
++  const normalized = pem.replaceAll("\\n", "\n");
++  const encoded = normalized
++    .replace("-----BEGIN PRIVATE KEY-----", "")
++    .replace("-----END PRIVATE KEY-----", "")
++    .replaceAll(/\s/g, "");
++  const binary = atob(encoded);
++  return Uint8Array.from(binary, (character) => character.charCodeAt(0));
++}
++
++export function activityKitReferenceSeconds(value: string): number {
++  const milliseconds = new Date(value).getTime();
++  if (!Number.isFinite(milliseconds)) throw new Error("Invalid ActivityKit date");
++  return milliseconds / 1000 - ACTIVITYKIT_REFERENCE_EPOCH_SECONDS;
++}
++
++function optionalActivityKitReferenceSeconds(value: string | null): number | null {
++  return value === null ? null : activityKitReferenceSeconds(value);
++}
++
++export function buildLiveActivityEndPayload(
++  event: Omit<APNsEndEvent, "pushToken" | "environment">,
++  now = new Date(),
++) {
++  const timestamp = Math.floor(now.getTime() / 1000);
++  if (!Number.isFinite(timestamp)) throw new Error("Invalid APNs timestamp");
++  const terminalStatus = event.terminalStatus ?? "completed";
++  const completed = terminalStatus === "completed";
++
++  return {
++    aps: {
++      timestamp,
++      event: "end" as const,
++      "dismissal-date": completed
++        ? timestamp + COMPLETION_DISMISSAL_SECONDS
++        : timestamp,
++      "content-state": {
++        plannedEndAt: activityKitReferenceSeconds(event.plannedEndAt),
++        isComplete: completed,
++        phase: completed ? "complete" : null,
++        terminalStatus,
++        bedtimeAt: optionalActivityKitReferenceSeconds(event.bedtimeAt),
++        wakeAt: optionalActivityKitReferenceSeconds(event.wakeAt),
++        morningQuietEndsAt: optionalActivityKitReferenceSeconds(
++          event.morningQuietEndsAt,
++        ),
++        eveningActivityTitle: event.eveningActivityTitle,
++        morningActivityTitle: event.morningActivityTitle,
++      },
++    },
++  };
++}
++
++async function providerToken(): Promise<string> {
++  const now = Math.floor(Date.now() / 1000);
++  if (cachedProviderToken && now - cachedProviderToken.createdAt < 45 * 60) {
++    return cachedProviderToken.value;
++  }
++
++  const header = base64URL(
++    JSON.stringify({ alg: "ES256", kid: requiredEnvironment("APNS_KEY_ID") }),
++  );
++  const payload = base64URL(
++    JSON.stringify({ iss: requiredEnvironment("APNS_TEAM_ID"), iat: now }),
++  );
++  const unsigned = `${header}.${payload}`;
++  const keyBytes = privateKeyBytes(requiredEnvironment("APNS_PRIVATE_KEY_P8"));
++  const keyData = keyBytes.buffer.slice(
++    keyBytes.byteOffset,
++    keyBytes.byteOffset + keyBytes.byteLength,
++  ) as ArrayBuffer;
++  const key = await crypto.subtle.importKey(
++    "pkcs8",
++    keyData,
++    { name: "ECDSA", namedCurve: "P-256" },
++    false,
++    ["sign"],
++  );
++  const signature = new Uint8Array(
++    await crypto.subtle.sign(
++      { name: "ECDSA", hash: "SHA-256" },
++      key,
++      new TextEncoder().encode(unsigned),
++    ),
++  );
++  const value = `${unsigned}.${base64URL(signature)}`;
++  cachedProviderToken = { value, createdAt: now };
++  return value;
++}
++
++export async function sendLiveActivityEnd(
++  event: APNsEndEvent,
++): Promise<APNsResult> {
++  const configuredEnvironment = requiredEnvironment("APNS_ENVIRONMENT");
++  if (
++    configuredEnvironment !== "sandbox" &&
++    configuredEnvironment !== "production"
++  ) {
++    throw new Error("Server configuration has invalid APNS_ENVIRONMENT");
++  }
++  if (event.environment !== configuredEnvironment) {
++    throw new Error(
++      "Claimed event does not match the configured APNs environment",
++    );
++  }
++  const host = requiredEnvironment("APNS_HOST").replace(/\/$/, "");
++  const expectedHost = configuredEnvironment === "sandbox"
++    ? "https://api.sandbox.push.apple.com"
++    : "https://api.push.apple.com";
++  if (host !== expectedHost) {
++    throw new Error("Server configuration has invalid APNS_HOST");
++  }
++  const response = await fetch(`${host}/3/device/${event.pushToken}`, {
++    method: "POST",
++    headers: {
++      authorization: `bearer ${await providerToken()}`,
++      "apns-push-type": "liveactivity",
++      "apns-topic": requiredEnvironment("APNS_LIVE_ACTIVITY_TOPIC"),
++      "apns-priority": "10",
++      "content-type": "application/json",
++    },
++    body: JSON.stringify(buildLiveActivityEndPayload(event)),
++  });
++
++  let reason = response.statusText || "Unknown";
++  try {
++    const body = await response.json() as { reason?: string };
++    if (body.reason) reason = body.reason;
++  } catch {
++    // APNs commonly returns an empty body for success.
++  }
++
++  if (response.ok) {
++    return { status: response.status, reason: "Success", outcome: "delivered" };
++  }
++  if (response.status === 429 || response.status >= 500) {
++    return { status: response.status, reason, outcome: "retry" };
++  }
++  return { status: response.status, reason, outcome: "terminal" };
++}
++
++export async function sendLiveActivityUpdate(
++  event: APNsUpdateEvent,
++): Promise<APNsResult> {
++  const configuredEnvironment = requiredEnvironment("APNS_ENVIRONMENT");
++  if (
++    configuredEnvironment !== "sandbox" &&
++    configuredEnvironment !== "production"
++  ) {
++    throw new Error("Server configuration has invalid APNS_ENVIRONMENT");
++  }
++  if (event.environment !== configuredEnvironment) {
++    throw new Error(
++      "Claimed event does not match the configured APNs environment",
++    );
++  }
++  const host = requiredEnvironment("APNS_HOST").replace(/\/$/, "");
++  const expectedHost = configuredEnvironment === "sandbox"
++    ? "https://api.sandbox.push.apple.com"
++    : "https://api.push.apple.com";
++  if (host !== expectedHost) {
++    throw new Error("Server configuration has invalid APNS_HOST");
++  }
++
++  const toReferenceSeconds = (value: string | null): number | null => {
++    if (!value) return null;
++    return new Date(value).getTime() / 1000 - 978307200;
++  };
++  const plannedEndReferenceSeconds = toReferenceSeconds(event.plannedEndAt);
++  if (plannedEndReferenceSeconds === null) {
++    throw new Error("Update event is missing planned end");
++  }
++
++  const now = Math.floor(Date.now() / 1000);
++  const response = await fetch(`${host}/3/device/${event.pushToken}`, {
++    method: "POST",
++    headers: {
++      authorization: `bearer ${await providerToken()}`,
++      "apns-push-type": "liveactivity",
++      "apns-topic": requiredEnvironment("APNS_LIVE_ACTIVITY_TOPIC"),
++      "apns-priority": "10",
++      "content-type": "application/json",
++    },
++    body: JSON.stringify({
++      aps: {
++        timestamp: now,
++        event: "update",
++        "content-state": {
++          plannedEndAt: plannedEndReferenceSeconds,
++          isComplete: false,
++          phase: event.phase,
++          bedtimeAt: toReferenceSeconds(event.bedtimeAt),
++          wakeAt: toReferenceSeconds(event.wakeAt),
++          morningQuietEndsAt: toReferenceSeconds(event.morningQuietEndsAt),
++          eveningActivityTitle: event.eveningActivityTitle,
++          morningActivityTitle: event.morningActivityTitle,
++        },
++      },
++    }),
++  });
++
++  let reason = response.statusText || "Unknown";
++  try {
++    const body = await response.json() as { reason?: string };
++    if (body.reason) reason = body.reason;
++  } catch {
++    // APNs commonly returns an empty body for success.
++  }
++
++  if (response.ok) {
++    return { status: response.status, reason: "Success", outcome: "delivered" };
++  }
++  if (response.status === 429 || response.status >= 500) {
++    return { status: response.status, reason, outcome: "retry" };
++  }
++  return { status: response.status, reason, outcome: "terminal" };
++}
++
++export async function sendCampfireAlert(event: {
++  token: string; environment: Environment; id: string; expiresAt: string; payload: unknown;
++}): Promise<APNsResult> {
++  const environment = requiredEnvironment("APNS_ENVIRONMENT");
++  if (event.environment !== environment) return { status: 400, reason: "EnvironmentMismatch", outcome: "terminal" };
++  const host = environment === "production" ? "https://api.push.apple.com" : "https://api.sandbox.push.apple.com";
++  const response = await fetch(`${host}/3/device/${event.token}`, {
++    method: "POST", signal: AbortSignal.timeout(8000),
++    headers: { authorization: `bearer ${await providerToken()}`, "apns-push-type": "alert",
++      "apns-topic": requiredEnvironment("APNS_ALERT_TOPIC"), "apns-priority": "5", "apns-collapse-id": event.id,
++      "apns-expiration": String(Math.floor(Date.parse(event.expiresAt) / 1000)), "content-type": "application/json" },
++    body: JSON.stringify(event.payload),
++  });
++  return { status: response.status, reason: response.ok ? "Accepted" : "APNs rejected alert",
++    outcome: response.ok ? "delivered" : response.status === 429 || response.status >= 500 ? "retry" : "terminal" };
++}
+--- a/supabase/functions/_shared/campfire-alerts.ts
++++ b/supabase/functions/_shared/campfire-alerts.ts
+@@ -0,0 +1,19 @@
++export function validateCampfireDevice(body: Record<string, unknown>, callerID: string): void {
++  const fields = body.unregister === true ? ["ownerID", "installationID", "unregister", "revision"]
++    : ["ownerID", "installationID", "token", "environment", "enabled", "quietUntil", "timeZone", "quietStart", "quietEnd", "revision"];
++  if (Object.keys(body).some(key => !fields.includes(key))) throw new Error("Unexpected device field");
++  if (String(body.ownerID).toLowerCase() !== callerID.toLowerCase()) throw new Error("Unauthorized");
++  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(body.installationID))) throw new Error("Invalid installation");
++  if (!Number.isSafeInteger(body.revision) || Number(body.revision) < 1) throw new Error("Invalid device revision");
++  if (body.unregister === true) return;
++  if (typeof body.token !== "string" || !/^[0-9a-f]{32,512}$/.test(body.token)
++    || !["sandbox", "production"].includes(String(body.environment)) || typeof body.enabled !== "boolean"
++    || typeof body.quietUntil !== "string" || !Number.isFinite(Date.parse(body.quietUntil))
++    || typeof body.timeZone !== "string" || body.timeZone.length > 100
++    || ![body.quietStart, body.quietEnd].every(value => Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 23)) throw new Error("Invalid device preferences");
++}
++
++export function campfireAlertPayload(event: { partyID: string; sourceID: string; title: string; body: string }) {
++  return { aps: { alert: { title: event.title, body: event.body }, "thread-id": `campfire-${event.partyID}`, "interruption-level": "active" },
++    campfirePartyID: event.partyID, campfireSourceID: event.sourceID };
++}
+--- a/supabase/functions/_shared/night-flock-handlers.ts
++++ b/supabase/functions/_shared/night-flock-handlers.ts
+@@ -44,7 +44,7 @@
+   "publishProgress", "publishNightMetrics", "acknowledgeUpdateCheer", "acknowledgeGrant", "replaceInvite", "renameParty", "startRound",
+   "retrieveInvite", "leaveParty", "deleteParty", "updatePublicProfile", "publishActivity", "completeBackfill", "publishStatus",
+   "blockMember", "reportMember", "cheerMember",
+-  "movePastureEntity", "contributePastureSheep", "recallPastureSheep", "setCampfireSharing", "publishCampfireSession",
++  "movePastureEntity", "contributePastureSheep", "recallPastureSheep", "setCampfireSharing", "publishCampfireSession", "campfireBuddyAction", "setCampfireAlerts",
+   "acceptSharedHabitsAgreement", "publishSharedHabit", "deleteSharedHabitHistory", "migrateSharedHabits",
+ ]);
+ 
+--- a/supabase/functions/_shared/night-flock.ts
++++ b/supabase/functions/_shared/night-flock.ts
+@@ -43,8 +43,10 @@
+ };
+ 
+ const v4CommandFields: Record<string, string[]> = {
++  campfireBuddyAction: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","targetMemberID","buddyAction","outcome","reflection","idempotencyKey"],
++  setCampfireAlerts: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","startAlerts","idempotencyKey"],
+   setCampfireSharing: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","expectedRevision","consentVersion","enabled","idempotencyKey"],
+-  publishCampfireSession: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","kind","activity","startedAt","observedAt","expiresAt","ended","revision","idempotencyKey"],
++  publishCampfireSession: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","kind","activity","startedAt","observedAt","expiresAt","ended","revision","publicIntention","asksForBuddy","announceStart","checkInAfter","idempotencyKey"],
+   movePastureEntity: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","entityID","expectedRevision","x","y","idempotencyKey"],
+   contributePastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","sheepID","consentVersion","idempotencyKey"],
+   recallPastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","visitID","idempotencyKey"],
+@@ -199,11 +201,26 @@
+ }
+ 
+ function validateV4Command(body: Record<string, unknown>, command: string): void {
++  if (["campfireBuddyAction", "setCampfireAlerts"].includes(command)) {
++    for (const key of ["partyID", "memberEpochID", "agreementID"]) requireUUID(body, key);
++    if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
++    if (command === "setCampfireAlerts") {
++      if (typeof body.startAlerts !== "boolean") throw new Error("Invalid startAlerts");
++    } else {
++      requireUUID(body, "sourceID"); requireUUID(body, "targetMemberID");
++      requireEnum(body, "buddyAction", ["accept", "encourage", "checkIn", "reflect"]);
++      if (body.buddyAction === "reflect") {
++        requireEnum(body, "outcome", ["didIt", "madeProgress", "changedPlans"]);
++        if (body.reflection !== undefined && (typeof body.reflection !== "string" || [...body.reflection].length > 160 || /[\u0000-\u001f\u007f]/.test(body.reflection))) throw new Error("Invalid reflection");
++      } else if (body.outcome !== undefined || body.reflection !== undefined) throw new Error("Unexpected reflection");
++    }
++    return;
++  }
+   if (["setCampfireSharing", "publishCampfireSession"].includes(command)) {
+     requireUUID(body, "partyID"); requireUUID(body, "memberEpochID");
+     if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
+     if (command === "setCampfireSharing") {
+-      if (body.consentVersion !== 1 || typeof body.enabled !== "boolean"
++      if (![1, 2].includes(Number(body.consentVersion)) || typeof body.consentVersion !== "number" || typeof body.enabled !== "boolean"
+         || !Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0
+         || Number(body.expectedRevision) > 2147483646) throw new Error("Invalid campfire consent");
+     } else {
+@@ -213,6 +230,13 @@
+       if (![start, end, Date.parse(String(body.observedAt))].every(Number.isFinite) || !["windDown","phoneAway"].includes(String(body.kind)) || typeof body.ended !== "boolean"
+         || body.revision !== (body.ended ? 2 : 1) || end <= start || end - start > 86400000
+         || Date.parse(String(body.observedAt)) < start) throw new Error("Invalid campfire session");
++      if (body.publicIntention !== undefined) {
++        if (typeof body.publicIntention !== "string" || [...body.publicIntention].length > 80 || /[\u0000-\u001f\u007f]/.test(body.publicIntention)
++          || typeof body.announceStart !== "boolean" || typeof body.asksForBuddy !== "boolean") throw new Error("Invalid public intention");
++        body.checkInAfter = normalizeActivityTimestamp(body.checkInAfter, "checkInAfter");
++        const after = Date.parse(String(body.checkInAfter));
++        if (!Number.isFinite(after) || after < end || after > end + 21600000) throw new Error("Invalid check-in time");
++      } else if (["announceStart", "asksForBuddy", "checkInAfter"].some(key => body[key] !== undefined)) throw new Error("Missing public intention");
+       if (body.activity !== undefined && (body.kind !== "phoneAway" || !["phoneAway","reading","studying","making","chores","resting"].includes(String(body.activity)))) throw new Error("Invalid campfire activity");
+     }
+     return;
+--- a/supabase/functions/campfire-device/index.ts
++++ b/supabase/functions/campfire-device/index.ts
+@@ -0,0 +1,24 @@
++import { authenticatedClient, serviceClient } from "../_shared/supabase.ts";
++import { errorResponse, json, parseJsonObject } from "../_shared/http.ts";
++import { validateCampfireDevice } from "../_shared/campfire-alerts.ts";
++
++Deno.serve(async request => {
++  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
++  try {
++    const auth = await authenticatedClient(request);
++    const { data: { user } } = await auth.auth.getUser();
++    if (!user || user.is_anonymous) return json({ error: "Unauthorized" }, 401);
++    const body = await parseJsonObject(request);
++    validateCampfireDevice(body, user.id);
++    const admin = serviceClient();
++    const { error } = body.unregister === true
++      ? await admin.rpc("unregister_campfire_device", { p_user_id: user.id, p_installation_id: body.installationID, p_revision: body.revision })
++      : await admin.rpc("register_campfire_device", {
++        p_user_id: user.id, p_installation_id: body.installationID, p_token: body.token,
++        p_environment: body.environment, p_enabled: body.enabled, p_quiet_until: body.quietUntil,
++        p_time_zone: body.timeZone, p_quiet_start: body.quietStart, p_quiet_end: body.quietEnd, p_revision: body.revision,
++      });
++    if (error) throw error;
++    return json({ accepted: true });
++  } catch (error) { return errorResponse(error); }
++});
+--- a/supabase/functions/campfire-dispatch/index.ts
++++ b/supabase/functions/campfire-dispatch/index.ts
+@@ -0,0 +1,40 @@
++import { serviceClient } from "../_shared/supabase.ts";
++import { sendCampfireAlert } from "../_shared/apns.ts";
++import { campfireAlertPayload } from "../_shared/campfire-alerts.ts";
++import { json } from "../_shared/http.ts";
++
++Deno.serve(async request => {
++  if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
++  const secret = Deno.env.get("DISPATCH_SECRET");
++  if (!secret || request.headers.get("x-dispatch-secret") !== secret) return json({ error: "Unauthorized" }, 401);
++  const client = serviceClient();
++  const { data, error } = await client.rpc("claim_campfire_alerts");
++  if (error) return json({ error: "Could not claim invitations" }, 503);
++  let processed = 0;
++  await Promise.all((data ?? []).map(async (event: { id: string; lease: string }) => {
++    try {
++      // Refresh authorization and expiry immediately before handing an alert to APNs.
++      const { data: payload, error: payloadError } = await client.rpc("campfire_alert_payload", { p_id: event.id, p_lease: event.lease });
++      if (payloadError) return;
++      if (payload?.defer) {
++        await client.rpc("defer_campfire_alert", { p_id: event.id, p_lease: event.lease });
++        return;
++      }
++      let retry = false;
++      await Promise.all((payload?.devices ?? []).map(async (device: { token: string; environment: "sandbox" | "production" }) => {
++        try {
++        const result = await sendCampfireAlert({ token: device.token, environment: device.environment, id: event.id,
++          expiresAt: payload.expiresAt, payload: campfireAlertPayload(payload) });
++        retry ||= result.outcome === "retry";
++        if (result.outcome !== "retry") {
++          const { error: receiptError } = await client.rpc("record_campfire_alert_device", { p_id: event.id, p_lease: event.lease, p_token: device.token });
++          if (receiptError) retry = true;
++        }
++        } catch { retry = true; }
++      }));
++      const { error: finishError } = await client.rpc("finish_campfire_alert", { p_id: event.id, p_lease: event.lease, p_retry: retry });
++      if (!finishError) processed++;
++    } catch { /* The lease expires; bounded retries preserve the original event. */ }
++  }));
++  return json({ processed });
++});

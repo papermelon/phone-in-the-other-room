@@ -16,6 +16,13 @@ final class CampfireTests: XCTestCase {
         XCTAssertFalse(row.isCurrent(at: row.expiresAt))
         XCTAssertEqual(CampfireRules.currentSessions(state, members: [row.memberID], isFresh: true, at: now), [row])
     }
+    func testUnconfirmedAndFailedObservationsDoNotImplyLivePresence() {
+        XCTAssertFalse(NightFlockV4PartyObservationState.notRequested.permitsLivePresence)
+        XCTAssertFalse(NightFlockV4PartyObservationState.refreshing(lastReceivedAt: nil).permitsLivePresence)
+        XCTAssertFalse(NightFlockV4PartyObservationState.stale(lastReceivedAt: now).permitsLivePresence)
+        XCTAssertTrue(NightFlockV4PartyObservationState.current(lastReceivedAt: now).permitsLivePresence)
+        XCTAssertTrue(NightFlockV4PartyObservationState.refreshing(lastReceivedAt: now).permitsLivePresence)
+    }
     func testRestoredSessionNeverInheritsAnotherAccount() {
         let a = UUID(), b = UUID()
         XCTAssertTrue(CampfireRules.permitsOwner(captured: a, current: a))
@@ -40,15 +47,59 @@ final class CampfireTests: XCTestCase {
     func testSeatingIsStableBoundedAndNeverChangesArrangement() {
         let positions = (0..<8).map { CampfireRules.seat(index: $0, count: 8) }
         XCTAssertTrue(positions.allSatisfy(SharedPastureRules.isWalkable))
-        for index in 0..<8 {
-            let visitor = CampfireRules.visitorSeat(index: index, count: 8)
-            XCTAssertTrue(SharedPastureRules.isWalkable(visitor))
-            XCTAssertGreaterThan(visitor.distance(to: CampfireRules.fire), 0.15)
-        }
         XCTAssertEqual(Set(positions.map { "\($0.x):\($0.y)" }).count, 8)
         let id = UUID()
         let pasture = SharedPastureState(memberEpochID: UUID(), entities: [.init(id: "member-\(id)", kind: "shepherd", referenceID: id, revision: 8, x: 0.6, y: 0.7)], visits: [], lantern: .init(contributions: 5, requiredContributions: 12))
         XCTAssertTrue(SharedPastureRules.changedEntities(in: pasture.arrangement, from: pasture).isEmpty)
+    }
+    func testLiveParticipantsExcludeIdleMembersAndDisappearAtEnd() {
+        let members = [NightFlockV4Membership(memberID: UUID(), profile: .init(displayName: "Active"), role: .host, joinedAt: now),
+                       NightFlockV4Membership(memberID: UUID(), profile: .init(displayName: "Idle"), role: .member, joinedAt: now)]
+        let active = session(member: members[0].memberID)
+        let state = CampfireState(sessions: [active])
+        let current = CampfireRules.currentSessions(state, members: Set(members.map(\.memberID)), isFresh: true, at: now)
+        XCTAssertEqual(CampfireRules.participants(in: members, sessions: current).map(\.memberID), [active.memberID])
+        let expired = CampfireRules.currentSessions(state, members: Set(members.map(\.memberID)), isFresh: true, at: active.expiresAt)
+        XCTAssertTrue(CampfireRules.participants(in: members, sessions: expired).isEmpty)
+        let unavailable = CampfireRules.currentSessions(state, members: Set(members.map(\.memberID)), isFresh: false, at: now)
+        XCTAssertTrue(CampfireRules.participants(in: members, sessions: unavailable).isEmpty)
+    }
+    func testWindDownAndPhoneAwayShareTheFireRegardlessOfInputOrder() {
+        let members = [NightFlockV4Membership(memberID: UUID(), profile: .init(displayName: "Wind Down"), role: .host, joinedAt: now),
+                       NightFlockV4Membership(memberID: UUID(), profile: .init(displayName: "Phone Away"), role: .member, joinedAt: now)]
+        var windDown = session(member: members[0].memberID)
+        windDown.kind = .windDown; windDown.activity = nil
+        let phoneAway = session(member: members[1].memberID)
+        let memberIDs = Set(members.map(\.memberID))
+        for rows in [[windDown, phoneAway], [phoneAway, windDown]] {
+            let current = CampfireRules.currentSessions(.init(sessions: rows), members: memberIDs, isFresh: true, at: now)
+            XCTAssertEqual(Set(current.map(\.kind)), [.windDown, .phoneAway])
+            XCTAssertEqual(Set(CampfireRules.participants(in: members, sessions: current).map(\.memberID)), memberIDs)
+        }
+        var ended = phoneAway; ended.ended = true; ended.revision = 2
+        let remaining = CampfireRules.currentSessions(.init(sessions: [windDown, phoneAway, ended]), members: memberIDs, isFresh: true, at: now)
+        XCTAssertEqual(remaining, [windDown])
+    }
+
+    func testPhoneAwayValidityUsesItsOwnPlannedEnd() {
+        let plan = NightWatchPlan.additionalQuiet(start: now, end: now.addingTimeInterval(1800), cueText: "Private task")
+        let run = FocusRun(plannedDurationSeconds: 1800, startedAt: now, nightWatchPlan: plan)
+        XCTAssertEqual(CampfireRules.end(for: run), now.addingTimeInterval(1800))
+    }
+    func testParticipantFramesDoNotOverlapFromOneThroughEight() {
+        for count in 1...8 {
+            let width = count > 4 ? 680.0 : 320.0
+            let height = count > 4 ? 360.0 : 280.0
+            let size = (3...4).contains(count) ? 64.0 : 82.0
+            let points = (0..<count).map { CampfireRules.seat(index: $0, count: count) }
+            for a in 0..<count {
+                for b in (a+1)..<count {
+                    let dx = abs(points[a].x-points[b].x)*width
+                    let dy = abs(points[a].y-points[b].y)*height
+                    XCTAssertTrue(dx >= size || dy >= size+26, "Overlapping participants at count \(count)")
+                }
+            }
+        }
     }
     func testLegacyPlanAndPastureDecodeWithoutCampfireConsentOrActivity() throws {
         let plan = NightWatchPlan.additionalQuiet(start: now, end: now.addingTimeInterval(1800), cueText: "Private task title")

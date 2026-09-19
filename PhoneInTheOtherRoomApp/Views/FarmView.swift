@@ -46,6 +46,7 @@ struct FarmView: View {
                     onShowGuide: viewModel.startFarmGuide,
                     onExploreWithoutGuide: viewModel.deferFarmGuide,
                     nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
+                    campfireSocial: viewModel.nightFlockViewModel.featureEnabled ? viewModel.nightFlockViewModel : nil,
                     visitingSheepIDs: viewModel.nightFlockViewModel.visitingSheepIDs,
                     onOpenNightFlock: { nightFlockPartyID in
                         self.nightFlockPartyID = nightFlockPartyID
@@ -126,6 +127,7 @@ struct FarmDashboardContent: View {
     var onShowGuide: () -> Void = {}
     var onExploreWithoutGuide: () -> Void = {}
     var nightFlockSummary: NightFlockHomeSummary? = nil
+    var campfireSocial: NightFlockViewModel? = nil
     var visitingSheepIDs: Set<UUID> = []
     var onOpenNightFlock: (UUID?) -> Void = { _ in }
     var onPersistScene: (PastureSceneSnapshot) -> Void = { _ in }
@@ -189,6 +191,7 @@ struct FarmDashboardContent: View {
                         )
                     }
                     FarmKeepsakeDisplay(state: state)
+                    if let campfireSocial { CampfireHomeEntry(social: campfireSocial) }
                     FarmBalanceBar(state: state, linksEnabled: true)
                         .orientationTourTarget(.farmWool)
                         .orientationTourTarget(.farmCapacity)

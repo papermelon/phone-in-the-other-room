@@ -135,8 +135,7 @@ struct NightWatchReceiptCard: View {
 
     private var elapsedLabel: String {
         guard let run else { return "Under 1 min" }
-        let datedElapsed = run.endedAt.map { max(0, $0.timeIntervalSince(run.startedAt)) } ?? 0
-        let seconds = max(run.actualDurationSeconds, datedElapsed)
+        let seconds = FocusRunRules.receiptDurationSeconds(for: run)
         guard seconds >= 60 else {
             return "Under 1 min"
         }

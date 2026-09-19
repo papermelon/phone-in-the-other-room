@@ -288,6 +288,10 @@ private struct PixelHomeDashboardContent: View {
                 )
             }
 
+            if let nightFlockViewModel, nightFlockViewModel.featureEnabled {
+                CampfireHomeEntry(social: nightFlockViewModel)
+            }
+
             UpcomingQuietTimesCard(
                 nextPeriod: nextUpcoming,
                 additionalCount: upcomingAdditionalCount,

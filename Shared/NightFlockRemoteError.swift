@@ -812,7 +812,7 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         case .sharedNightPlanFrozen: return "That shared plan has already begun and will stay as it was."
         case .sharedNightPlanCancelled: return "That shared night is no longer available and will not be sent."
         case .receiptActualStartRequired: return "That factual nightly result needs its recorded start time."
-        case .serviceUnavailable: return "Slumber Party is resting offline. Please try again."
+        case .serviceUnavailable: return "Slumber Party couldn’t reach the server. Please try again."
         case .internalError: return "Slumber Party could not complete that request."
         }
     }

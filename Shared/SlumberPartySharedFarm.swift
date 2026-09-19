@@ -6,6 +6,14 @@ enum NightFlockV4PartyObservationState: Equatable {
     case current(lastReceivedAt: Date)
     case stale(lastReceivedAt: Date?)
 
+    var permitsLivePresence: Bool {
+        switch self {
+        case .current: return true
+        case .refreshing(let receivedAt): return receivedAt != nil
+        case .notRequested, .stale: return false
+        }
+    }
+
     /// A routine refresh is not evidence that the cached update is unavailable.
     var showsConnectionWarning: Bool {
         if case .stale = self { return true }

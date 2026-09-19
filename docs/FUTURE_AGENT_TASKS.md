@@ -1,7 +1,62 @@
 # Future Agent Tasks — Prioritised Backlog
 
+## Personal shield device acceptance (19 September 2026)
+
+- Interactive review resumed: both modes, completion/check states, phrase gates, Ollie/
+  receipt routing, early-wake handoff, light/dark, keyboard and accessibility-size wrapping
+  were inspected. Touch targets and disabled-button appearance were refined. The final
+  app build, 1,065 unit tests, and isolated integration probe passed; see
+  [Simulator evidence and captures](../output/design/personal-shield-20260919/README.md).
+  Finish small-screen inspection (the disposable iPhone SE had boot/app-launch failures),
+  touch scrolling with large text, spoken VoiceOver and dictation. Accessibility
+  labels, Checked/Unchecked values and lower-action activation were inspected locally.
+- Local source implementation is recorded in the [personal shielding note](plans/personal-shield-design-2026-09-17.md).
+  On a signed iOS 26.5+ device, verify warm/cold shield buttons open the correct sheet
+  over Ollie, normal reopens do not replay it, checked steps appear on the next shield
+  presentation, and cached shields refresh without clearing protection. Verify older-OS
+  manual handoff, an unattended automatic start, NFC-authenticated exit, cancelled and
+  fresh phrase gates, near-end Brief Access, restore after suspension, VoiceOver/dictation,
+  and account/occurrence changes. Simulator evidence does not establish these platform
+  behaviours. No deployment or physical-device acceptance is implied.
+
+## Wind Down automatic-start and late-reopen acceptance (17 September 2026)
+
+- Source repair and validation: [repair note](plans/wind-down-automatic-recovery-2026-09-17.md).
+  Verify actual selected-app blocking on both affected signed devices with the app
+  closed overnight, two consecutive unattended starts, receipt dismissal, and late
+  reopening. Verify non-daily routines and multi-night history recovery: the legacy
+  automatic shield repeats daily while app persistence retains one occurrence.
+
+## Unified Campfire activation and device acceptance (16 September 2026)
+
+- Founder-authorized source implements one Campfire with Off / My Slumber Party / Global. Home/Farm and private-group entry share the same panel; browsing never changes audience. The visible agreement flow, typed joins, both session modes, accessible lists, compact empty states and larger-text layouts replace the earlier proposed “Together now” direction. See [implementation contract](plans/global-campfire-2026-09-15.md) and [local validation](../output/design/unified-campfire-20260916/README.md).
+- Public backend source is new and disabled by default. Obtain specific deployment/activation authorization before applying `20260916120000_global_campfire.sql` and publishing `campfire-global`. Verify the full hosted stack, actual pg_cron execution, service-only access, account deletion, moderation owner/support contact, age/disclosure requirements, retention/backups, load limits and rollback. Local PostgreSQL tests use documented fixtures for existing contracts and do not prove hosted integration.
+- Repeat the original build 51 scenario on disposable physical accounts after updated app distribution: one Wind Down and one Phone Away, both private seats on both phones; then zero-party Global, mixed private/global, active widening/narrowing, offline early end/Off, kill/relaunch, two-device receipt conflicts and account switch. Verify shielding, morning check-in timing and VoiceOver separately. Preserve the founder’s Farms. Simulator sessions and app-reported presence do not prove physical placement.
+- General mutual connections, public free text/chat, worldwide realtime/scale and the broader Wind Down/Screen-Free Morning redesign remain later slices. The [Fable study](plans/cursor-fable-social-ux-handoff-2026-09-15.md) is design evidence; its public proposal buttons do not imply these features shipped.
+- Trace the screenshot’s “completed Wind Down · 0 quiet min” using before-bed versus overnight records. A factual zero is distinct from absent sharing or no record. This metrics investigation is separate from the unified Campfire visibility implementation.
+
+## Mobbin first-night research follow-up (14 September 2026)
+
+- A private three-flow collection and [source-grounded research brief](plans/mobbin-first-night-2026-09-14.md)
+  are ready. Next: prototype the state-aware first-start action and consolidated plan review,
+  then assess small-screen, large-text, denied/empty-selection and runtime-failure states.
+  These are proposed experiments, not implemented changes. Preserve ongoing start-sheet/Home
+  work and current consent/admission rules. OAuth setup succeeded, but a callable Mobbin MCP
+  search still needs verification; this research used the authenticated browser.
+
 ## Shop/Ollie and campfire follow-up (13 September 2026)
 
+- Campfire Buddies source is implemented: explicit intentions, volunteer buddy support, return
+  check-ins and opt-in ordinary APNs party/buddy notifications. Preserve the existing paper art.
+  [Current contract and activation checklist](plans/campfire-buddies-implementation-2026-09-13.md);
+  [validation evidence](../output/design/campfire-buddies-20260913/README.md). Still pending: authorized
+  app distribution and two-device notification/quiet-time/account-switch acceptance. The two new
+  migrations, matching Edge bundle, APNs topic and Vault/pg_net scheduler were
+  [deployed and verified](evidence/campfire-buddies-deploy-20260913/deployment.md); scheduled workers
+  returned HTTP 200 with zero queued events. Physical push receipt is not yet proven. Validate
+  foreground token rotation, offline logout limits, duplicate receipt recovery, physical VoiceOver,
+  notification-denied state and expired deep links. Named buddy invitations and new social collectibles
+  remain later refinements; current support is one volunteer buddy per session/party.
 - Local shop pass replaces floating cutouts with fitted paper garments for all six Ollie items,
   and adds native paper art for all eight decorations, six keepsakes and four pasture upgrades.
   Home, Farm, Shop previews and chase share the equipped look. See [review and campfire direction](plans/shop-ollie-and-campfire-2026-09-13.md)
@@ -13,6 +68,12 @@
   See [contract](plans/campfire-implementation-2026-09-13.md) and
   [local evidence](../output/design/campfire-20260913/README.md). Production migrations and matching
   Edge version 5 were [deployed and verified on 13 September](evidence/campfire-deploy-20260913/deployment.md).
+  Device feedback exposed an always-lit fire and inactive-member/active-seat overlap; the live-only
+  scene, distinct seating, separate saved meadow and visible-screen refresh fallback are repaired
+  locally. Verify zero/one/eight active participants and recovery after stale updates in the next
+  app build; [repair evidence](../output/design/campfire-live-repair-20260913/README.md).
+  Recheck any service-unavailable error while opening/refreshing with the preserved outgoing
+  request ID; the screenshot’s exact network/gateway cause could not be established from logs.
   Verify two-device consent/start/expiry/early-end retry, killed
   app/relaunch, leave/block/account switching, and real shielding. Mac lock prevented native tap
   and VoiceOver automation during this pass; complete physical interaction/accessibility checks.
@@ -21,6 +82,15 @@
 - Legacy Shop/overlay PNGs are bypassed by the new native renderers but retain catalog compatibility
   references. Retire only after all-target/static/dynamic reference and recovery checks; do not
   claim resource savings from this rendering change.
+
+## Personal Farm fetch — device acceptance (13 September 2026)
+
+- Local implementation now supports aimed tap/drag/flick throws, continuous dressed Ollie
+  retrieval, pickup/carry/handoff, one ball at a time, and bounded sheep avoidance. Validate
+  gesture feel on a physical iPhone, including flick strength versus parent-scroll gestures,
+  repeated throws, resting-to-rise transitions, pasture changes, backgrounding, Reduce Motion and VoiceOver direction-menu
+  throws. Native Simulator captures and domain/lifecycle tests are recorded in
+  [fetch evidence](../output/design/fetch-20260913/README.md). No new TestFlight upload is implied.
 
 ## Farm / shared pasture — device and rollout gates (12 September 2026)
 

@@ -24,6 +24,10 @@ final class FocusRunViewModel: ObservableObject {
     @Published var windDownScheduleError: String?
     @Published var windDownRoutines: [WindDownRoutine] = []
     @Published var nextWindDownOverride: NextWindDownOverride?
+    @Published var personalShieldSession: PersonalShieldSession?
+    @Published var personalShieldSheet: PersonalShieldSheet?
+    @Published var personalShieldError: String?
+    @Published var nextPhoneAwayTasks = ["", "", ""]
     @Published var offlinePurpose: OfflinePurposeProfile = .defaultProfile
     @Published private(set) var currentPurposeCue: QuietPurposeCue?
     @Published var selectedDuration: TimeInterval = 25 * 60
@@ -127,8 +131,8 @@ final class FocusRunViewModel: ObservableObject {
     private let screenTimeService = ScreenTimeAuthorizationService()
     let healthSleepService = HealthSleepService()
     private let phoneBedNFCService = PhoneBedNFCService()
-    private let quietTimeShielding: QuietTimeShieldingProviding
-    private let purposeCueDefaults: UserDefaults?
+    let quietTimeShielding: QuietTimeShieldingProviding
+    let purposeCueDefaults: UserDefaults?
     private let usageMonitoring = NightWatchUsageMonitoringService()
     private let impactDataSyncService = ImpactDataSyncService()
     private let guidanceDismissalStore: WindDownGuidanceDismissalStore
@@ -147,6 +151,7 @@ final class FocusRunViewModel: ObservableObject {
     /// schedule can be reconciled repeatedly while the app returns to the
     /// foreground, but only its one captured decision may reach admission.
     private var automaticPrimarySharingAdmissionRunID: UUID?
+    private var automaticStartTimer: Timer?
     /// Timer/NFC starts can synchronously validate the new primary run before
     /// the start caller receives `.started`. Keep only that admission-sized
     /// window in memory; the durable decision is written immediately after a
@@ -161,7 +166,7 @@ final class FocusRunViewModel: ObservableObject {
     var sharedHabitSleepReconcileGeneration: UInt = 0
     private let foregroundSleepRefreshInterval: TimeInterval = 5 * 60
 
-    private var activeRunIsAdditionalQuiet: Bool {
+    var activeRunIsAdditionalQuiet: Bool {
         activeRun?.nightWatchPlan?.role == .additionalQuiet
     }
 
@@ -282,6 +287,9 @@ final class FocusRunViewModel: ObservableObject {
             self.reconcileOrientationAfterRun()
             self.reloadCurrentPurposeCue()
             if !linkedMorningHandoff {
+                if self.persistence.automaticWindDownSchedule?.id == run.id {
+                    self.persistence.automaticWindDownSchedule = nil
+                }
                 self.scheduleAutomaticWindDownIfNeeded()
             }
         }
@@ -299,7 +307,9 @@ final class FocusRunViewModel: ObservableObject {
             self?.coordinator.showSlumberPartyCheer(feedback)
         }
         self.nightFlockViewModel.onCampfireAuthorityAvailable = { [weak self] in
-            guard let self, let run = self.activeRun else { return }
+            guard let self else { return }
+            self.reconcileScheduledCampfireAudience()
+            guard let run = self.activeRun else { return }
             self.nightFlockViewModel.publishCampfireSession(run, ended: run.state == .completed || run.state == .endedEarly)
         }
         self.nightFlockViewModel.onSharedHabitsAgreementAvailable = { [weak self] in
@@ -655,6 +665,7 @@ final class FocusRunViewModel: ObservableObject {
     /// Re-reads only on lifecycle/occurrence boundaries. Purpose is not read
     /// from UserDefaults on the active timer's render path.
     func reloadCurrentPurposeCue() {
+        refreshPersonalShield()
         guard let defaults = purposeCueDefaults else {
             currentPurposeCue = nil
             return
@@ -785,14 +796,13 @@ final class FocusRunViewModel: ObservableObject {
             return
         }
         guard activeRun?.guardKind == .nfcTag else {
-            _ = coordinator.transitionToEarlyMorning(intent: intent, reason: .userEnded, at: nowProvider())
-            reloadCurrentPurposeCue()
+            openPersonalShield(.endSession, earlyMorningIntent: intent)
             return
         }
         nfcStatus = ""
         let purpose = currentNFCPurpose
         guard phoneBedTagLibrary.hasTag(for: purpose) else {
-            nfcStatus = "Your Wind Down tag is unavailable. Wind Down is still running. Use the emergency exit only if needed."
+            nfcStatus = "Your Wind Down tag is unavailable. Wind Down is still running. Choose End Wind Down to confirm without your tag."
             return
         }
         phoneBedNFCService.scan(isAdditionalQuiet: false) { [weak self] result in
@@ -821,14 +831,14 @@ final class FocusRunViewModel: ObservableObject {
             case .cancelled:
                 self.nfcStatus = "No tag was read. Wind Down is still running."
             case .unavailable:
-                self.nfcStatus = "NFC is not available. Wind Down is still running. Use the emergency exit only if needed."
+                self.nfcStatus = "NFC is not available. Wind Down is still running. Choose End Wind Down to confirm without your tag."
             }
         }
     }
 
     func finishScreenFreeMorning(_ occurrenceID: UUID) {
-        _ = coordinator.finishScreenFreeMorning(occurrenceID: occurrenceID, at: nowProvider())
-        reloadCurrentPurposeCue()
+        guard activeScreenFreeMorning?.id == occurrenceID else { return }
+        openPersonalShield(.endSession)
     }
 
     var isOrientationActive: Bool { orientationState.isGuideActive }
@@ -1258,6 +1268,20 @@ final class FocusRunViewModel: ObservableObject {
         focusGuidance = "A legacy Shortcut prepared \(selectedDurationLabel) of phone-away time. Your saved Wind Down remains the main bedtime ritual."
     }
 
+    @discardableResult
+    func requestCampfireSessionStart(_ kind: NightFlockV4ActivityKind) -> Bool {
+        if kind == .phoneAway { return startNewOneTimeAdditionalQuietNow() }
+        guard requestStartNightWatch() else { return false }
+        // Generic schedule lookup can resolve an additional quiet period.
+        // An explicit Wind Down join must keep the requested ritual instead.
+        if pendingNightWatchPlan?.role != .primarySleepBookend {
+            pendingNightWatchSourceOccurrenceID = nil
+            pendingWindDownStartContext = nil
+            pendingNightWatchPlan = nightWatchPreferences.makePlan(startedAt: nowProvider())
+        }
+        return true
+    }
+
     func requestStartRun() {
         guard ScreenTimeProtectionStartPolicy.canStart(shieldingReadiness) else {
             focusGuidance = shieldingReadiness.detail
@@ -1331,6 +1355,7 @@ final class FocusRunViewModel: ObservableObject {
 
     func cancelNightWatchStart() {
         guard !nightWatchStartInFlight else { return }
+        nextPhoneAwayTasks = ["", "", ""]
         pendingStartTransactionID = nil
         startNFCStatus = ""
         if isScanningNFCForStart { phoneBedNFCService.cancel() }
@@ -1370,6 +1395,11 @@ final class FocusRunViewModel: ObservableObject {
         }
     }
 
+    @Published var nextCampfireIntention = ""
+    @Published var nextCampfireAnnouncesStart = true
+    @Published var nextCampfireAsksForBuddy = false
+    @Published var nextCampfireSharesSession = true
+    @Published var nextCampfireExcludedParties: Set<UUID> = []
     @Published var nextCampfireActivity: CampfireActivity = .phoneAway
 
     private func startPendingNightWatch(
@@ -1448,8 +1478,27 @@ final class FocusRunViewModel: ObservableObject {
 #else
         appShieldingRequested = true
 #endif
+        _ = nightFlockViewModel.restoreCampfireVisibility()
+        guard nightFlockViewModel.campfireStartIsReady else {
+            nightWatchStartInFlight = false
+            nightWatchStartStatus = "Campfire visibility is still being saved. Wait for confirmation, or choose Off to start privately."
+            return
+        }
         plan.campfireOwnerID = nightFlockViewModel.campfireOwnerForNewRun
+        plan.campfireVisibility = nightFlockViewModel.campfireVisibility
+        plan.publicCampfireAgreementID = plan.campfireVisibility == .global && nightFlockViewModel.campfireStartIsReady ? nightFlockViewModel.campfireDocument.publicAgreement?.id : nil
         if plan.role == .additionalQuiet { plan.campfireActivity = nextCampfireActivity }
+        plan.campfirePartyIDs = nightFlockViewModel.slumberParties.compactMap { party in
+            plan.campfireVisibility != .off && nightFlockViewModel.selectedCampfirePartyIDs.contains(party.partyID)
+                && nextCampfireSharesSession && !nextCampfireExcludedParties.contains(party.partyID)
+                && nightFlockViewModel.campfireAgreement(partyID: party.partyID) != nil ? party.partyID : nil
+        }
+        plan.campfireIntentions = (plan.campfirePartyIDs ?? []).compactMap { partyID in
+            guard let agreement = nightFlockViewModel.campfireAgreement(partyID: partyID), agreement.version == 2 else { return nil }
+            return CampfireSharedIntention(partyID: partyID, agreementID: agreement.id,
+                text: CampfireBuddiesRules.publicText(nextCampfireIntention), announceStart: nextCampfireAnnouncesStart,
+                asksForBuddy: nextCampfireAsksForBuddy)
+        }
         let sourceID = pendingNightWatchSourceOccurrenceID
         let startNFCPurpose = currentNFCPurpose
         let runID = stagedRunID ?? UUID()
@@ -1496,6 +1545,14 @@ final class FocusRunViewModel: ObservableObject {
         if let primaryShareSelection {
             primaryRunSharingAdmissions[runID] = primaryShareSelection
         }
+        do {
+            try preparePersonalShield(id: runID, plan: plan, startedAt: startedAt,
+                tasks: plan.role == .additionalQuiet ? nextPhoneAwayTasks : [])
+        } catch {
+            nightWatchStartInFlight = false
+            nightWatchStartStatus = "Your routine or tasks could not be saved. Please try again."
+            return
+        }
         let startResult = coordinator.start(
             configuration: FocusRunConfiguration(
                 nightWatchPlan: plan,
@@ -1531,6 +1588,7 @@ final class FocusRunViewModel: ObservableObject {
             return
         }
 
+        nextPhoneAwayTasks = ["", "", ""]
         consumeSmallerWindDownChoice(after: startedRun.nightWatchPlan)
         liveActivityEnabled = liveActivityRequested
         persistLiveActivityChoiceIfNeeded(liveActivityRequested)
@@ -1568,7 +1626,12 @@ final class FocusRunViewModel: ObservableObject {
                 publishValidatedStatusAfterAdmission: validatedDuringAdmission
             )
         }
+        nightFlockViewModel.publishCampfireSession(startedRun)
         nextCampfireActivity = .phoneAway
+        nextCampfireIntention = ""
+        nextCampfireAsksForBuddy = false
+        nextCampfireSharesSession = true
+        nextCampfireExcludedParties = []
         reloadCurrentPurposeCue()
         if let sourceID,
            sourceID == orientationState.practicePeriodID,
@@ -2462,8 +2525,8 @@ final class FocusRunViewModel: ObservableObject {
         let purpose = currentNFCPurpose
         guard phoneBedTagLibrary.hasTag(for: purpose) else {
             nfcStatus = activeRunIsAdditionalQuiet
-                ? "The saved Phone Away tag is missing. Phone Away is still running. Use the emergency exit to end without the tag."
-                : "The saved Wind Down tag is missing. Wind Down is still running. Use the emergency exit to end without the tag."
+                ? "The saved Phone Away tag is missing. Phone Away is still running. Choose End Phone Away to confirm without your tag."
+                : "The saved Wind Down tag is missing. Wind Down is still running. Choose End Wind Down to confirm without your tag."
             return
         }
         phoneBedNFCService.scan(isAdditionalQuiet: activeRunIsAdditionalQuiet) { [weak self] result in
@@ -2490,42 +2553,14 @@ final class FocusRunViewModel: ObservableObject {
                     : "No tag was read. Wind Down is still running."
             case .unavailable:
                 self.nfcStatus = self.activeRunIsAdditionalQuiet
-                    ? "NFC is not available. Phone Away is still running. Use the emergency exit to end without the tag."
-                    : "NFC is not available. Wind Down is still running. Use the emergency exit to end without the tag."
+                    ? "NFC is not available. Phone Away is still running. Choose End Phone Away to confirm without your tag."
+                    : "NFC is not available. Wind Down is still running. Choose End Wind Down to confirm without your tag."
             }
         }
     }
 
-    var emergencyExitChallenge: EmergencyExitChallenge? {
-        coordinator.emergencyExitChallenge
-    }
-
-    func beginEmergencyExitChallenge() -> Bool {
-        coordinator.beginEmergencyExitChallenge()
-    }
-
-    func submitEmergencyExitWord(_ word: String) -> Bool {
-        coordinator.submitEmergencyExitWord(word)
-    }
-
-    func submitEmergencyExitReason(_ reason: String) -> Bool {
-        coordinator.submitEmergencyExitReason(reason)
-    }
-
-    func submitEmergencyExitConfirmation(_ reason: String) -> Bool {
-        coordinator.submitEmergencyExitConfirmation(reason)
-    }
-
-    func cancelEmergencyExitChallenge() {
-        coordinator.cancelEmergencyExitChallenge()
-    }
-
-    func confirmEmergencyExit() -> Bool {
-        coordinator.confirmEmergencyExit()
-    }
-
     func endWindDownEarly() {
-        performAuthorizedEarlyExit(reason: .userEnded)
+        openPersonalShield(.endSession)
     }
 
     private func performAuthorizedEarlyExit(reason: EarlyEndReason) {
@@ -2821,6 +2856,9 @@ final class FocusRunViewModel: ObservableObject {
     func reconcileAutomaticWindDownIfNeeded(
         stagedPrimaryDecision: NightFlockPrimaryRunSharingDecision? = nil
     ) {
+        automaticStartTimer?.invalidate()
+        automaticStartTimer = nil
+        refreshScreenTimeState()
         guard persistence.farmSaveStore.hasReadableSave,
               (try? persistence.farmSaveStore.snapshot().effectiveScope) != .signedOut else {
             quietTimeShielding.cancelAutomaticSchedule()
@@ -2828,10 +2866,24 @@ final class FocusRunViewModel: ObservableObject {
         }
         guard !isRunning,
               nightWatchPreferences.isConfigured,
-              hasAutomaticWindDownRoutine,
-              let schedule = persistence.automaticWindDownSchedule else {
+              hasAutomaticWindDownRoutine else {
             return
         }
+
+        let now = nowProvider()
+        switch AutomaticWindDownRecoveryDecision.resolve(
+            schedule: persistence.automaticWindDownSchedule,
+            lastRun: activeRun ?? persistence.lastRun,
+            at: now
+        ) {
+        case .installMissing, .advancePastSettledRun:
+            persistence.automaticWindDownSchedule = nil
+            scheduleAutomaticWindDownIfNeeded()
+            return
+        case .waitUntil, .materialize:
+            break
+        }
+        guard let schedule = persistence.automaticWindDownSchedule else { return }
 
         guard case .schedule = AutomaticWindDownProtectionDecision.resolve(
             readiness: shieldingReadiness
@@ -2842,7 +2894,6 @@ final class FocusRunViewModel: ObservableObject {
 
         persistence.automaticWindDownProtectionRepairNeeded = false
 
-        let now = Date()
         if let sourceID = schedule.sourceOccurrenceID,
            windDownSchedule.oneTimePeriods.contains(where: { $0.id == sourceID }) {
             // One-time windows are manual even when an older build persisted
@@ -2854,7 +2905,12 @@ final class FocusRunViewModel: ObservableObject {
             return
         }
         guard now >= schedule.startedAt else {
-            quietTimeShielding.scheduleAutomatic(for: schedule, at: now)
+            let installation = quietTimeShielding.scheduleAutomatic(for: schedule, at: now)
+            guard AutomaticWindDownInstallationDecision.canSaveSchedule(after: installation) else {
+                recordAutomaticProtectionRepair()
+                return
+            }
+            armAutomaticStartTimer(for: schedule)
             return
         }
 
@@ -2931,9 +2987,15 @@ final class FocusRunViewModel: ObservableObject {
             // the ordinary terminal path without inventing an active status.
             publishSlumberPartyOutcome(for: reconciledRun)
             notifications.cancelNightWatchReminder()
-            persistence.automaticWindDownSchedule = nil
             consumeScheduledOccurrence(schedule.sourceOccurrenceID)
-            scheduleNextAutomaticWindDown()
+            // finish() synchronously installs the next schedule. Do not erase
+            // that replacement when this older recovery call resumes.
+            if persistence.automaticWindDownSchedule?.id == schedule.id {
+                persistence.automaticWindDownSchedule = nil
+            }
+            if persistence.automaticWindDownSchedule == nil {
+                scheduleAutomaticWindDownIfNeeded()
+            }
             return
         }
         primaryRunSharingAdmissions[schedule.id] = automaticShareSelection
@@ -2981,6 +3043,8 @@ final class FocusRunViewModel: ObservableObject {
     }
 
     func scheduleAutomaticWindDownIfNeeded() {
+        automaticStartTimer?.invalidate()
+        automaticStartTimer = nil
         guard persistence.farmSaveStore.hasReadableSave,
               (try? persistence.farmSaveStore.snapshot().effectiveScope) != .signedOut else {
             quietTimeShielding.cancelAutomaticSchedule()
@@ -3040,6 +3104,12 @@ final class FocusRunViewModel: ObservableObject {
                 return
             }
         }
+        if let schedule = persistence.automaticWindDownSchedule,
+           schedule.startedAt <= nowProvider(),
+           schedule.id != activeRun?.id {
+            reconcileAutomaticWindDownIfNeeded()
+            return
+        }
         scheduleNextAutomaticWindDown()
         notifications.reconcileUpcomingWindDownNotifications(
             for: windDownSchedule,
@@ -3094,12 +3164,30 @@ final class FocusRunViewModel: ObservableObject {
                 startedAt: startDate
             )
         } ?? nightWatchPreferences.makePlan(startedAt: startDate)
+        _ = nightFlockViewModel.restoreCampfireVisibility()
         plan.campfireOwnerID = nightFlockViewModel.campfireOwnerForNewRun
+        plan.campfireVisibility = nightFlockViewModel.campfireVisibility
+        plan.publicCampfireAgreementID = plan.campfireVisibility == .global && nightFlockViewModel.campfireStartIsReady ? nightFlockViewModel.campfireDocument.publicAgreement?.id : nil
+        plan.campfirePartyIDs = nightFlockViewModel.slumberParties.compactMap { party in
+            plan.campfireVisibility != .off && nightFlockViewModel.selectedCampfirePartyIDs.contains(party.partyID)
+                && nightFlockViewModel.campfireAgreement(partyID: party.partyID) != nil ? party.partyID : nil
+        }
+        plan.campfireIntentions = (plan.campfirePartyIDs ?? []).compactMap { partyID in
+            guard let agreement = nightFlockViewModel.campfireAgreement(partyID: partyID), agreement.version == 2 else { return nil }
+            return CampfireSharedIntention(partyID: partyID, agreementID: agreement.id,
+                text: "", announceStart: true, asksForBuddy: false)
+        }
+
         let supportedPlan = WindDownHabitRules.planForStart(
             plan, support: windDownHabitPlan,
             useSmallerVersion: windDownHabitPlan.useSmallerVersionNextTime
         )
+        let previousSchedule = persistence.automaticWindDownSchedule
         let schedule = AutomaticWindDownSchedule(
+            id: previousSchedule.flatMap {
+                $0.startedAt == startDate && $0.plan == supportedPlan
+                    && $0.sourceOccurrenceID == next?.sourceID ? $0.id : nil
+            } ?? UUID(),
             startedAt: startDate,
             plan: supportedPlan,
             sourceOccurrenceID: next?.sourceID,
@@ -3112,6 +3200,8 @@ final class FocusRunViewModel: ObservableObject {
         }
         persistence.automaticWindDownProtectionRepairNeeded = false
         persistence.automaticWindDownSchedule = schedule
+        refreshPersonalShield()
+        armAutomaticStartTimer(for: schedule)
         notifications.cancelNightWatchReminder()
         notifications.scheduleAutomaticWindDownNotifications(
             at: startDate,
@@ -3127,11 +3217,27 @@ final class FocusRunViewModel: ObservableObject {
     /// run or recording any shield evidence. The next foreground Home state
     /// reads the same readiness and offers the focused repair route.
     private func recordAutomaticProtectionRepair() {
+        automaticStartTimer?.invalidate()
+        automaticStartTimer = nil
         persistence.automaticWindDownSchedule = nil
         persistence.automaticWindDownProtectionRepairNeeded = true
         notifications.cancelNightWatchReminder()
         quietTimeShielding.cancelAutomaticSchedule()
         usageMonitoring.cancel()
+    }
+
+    private func armAutomaticStartTimer(for schedule: AutomaticWindDownSchedule) {
+        automaticStartTimer?.invalidate()
+        guard schedule.startedAt > nowProvider() else { return }
+        let timer = Timer(fire: schedule.startedAt, interval: 0, repeats: false) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self, self.persistence.automaticWindDownSchedule?.id == schedule.id else { return }
+                self.reconcileAutomaticWindDownIfNeeded()
+            }
+        }
+        timer.tolerance = 0.5
+        RunLoop.main.add(timer, forMode: .common)
+        automaticStartTimer = timer
     }
 
     private func consumeScheduledOccurrence(_ id: UUID?) {

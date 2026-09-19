@@ -60,6 +60,10 @@ The ordinary flow supports independent use and the workshop; there is no separat
 4. **Start:** use the existing admission and protection checks. Any smaller-version
    choice is explicitly defined and does not imply a completed activity or changed
    protection. Keep the active plan stable if future preferences change.
+   As of 19 September, the active routine also has optional, reversible session checks.
+   They are private self-reports, with the same saved check marks projected to the native
+   app shield. This does not make the routine mandatory or award completion credit.
+   See [personal shielding](personal-shield-design-2026-09-17.md) for the current interaction.
 5. **Return:** preserve factual receipts and existing cumulative rewards. Make a short
    optional habit reflection reachable even without a session record. A reflection
    should offer a relevant editing destination; it never starts a session on save.

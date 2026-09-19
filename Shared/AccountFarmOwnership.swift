@@ -35,7 +35,7 @@ enum AccountFarmLocalKeys {
         "ollie.farm.pastureScene", "ollie.analytics.manualEntries",
         "ollie.morningCheckIns", "ollie.nightWatch.history", "ollie.lastRun",
         "ollie.impactSharing.preferences", "ollie.impactSharing.records",
-        WindDownProfileRecord.storageKey, WindDownHabitPlan.storageKey, WindDownHabitReflectionHistory.storageKey, RitualPersonalisation.storageKey
+        WindDownProfileRecord.storageKey, WindDownHabitPlan.storageKey, WindDownHabitReflectionHistory.storageKey, RitualPersonalisation.storageKey, PersonalShieldSession.storageKey
     ]
 }
 

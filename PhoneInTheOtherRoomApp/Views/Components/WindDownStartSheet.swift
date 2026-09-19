@@ -131,17 +131,25 @@ struct WindDownStartSheet: View {
                         }
                     }
 
+                    if viewModel.pendingNightWatchIsAdditionalQuiet {
+                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                            Text("My tasks · optional").font(AppTypography.headline)
+                            Text("Private to this session.").font(AppTypography.caption).foregroundStyle(AppColors.muted)
+                            ForEach(0..<3, id: \.self) { index in
+                                TextField("Task \(index + 1)", text: $viewModel.nextPhoneAwayTasks[index], axis: .vertical)
+                                    .textFieldStyle(PixelTextFieldStyle())
+                                    .font(AppTypography.body)
+                                    .onChange(of: viewModel.nextPhoneAwayTasks[index]) { _, value in
+                                        viewModel.nextPhoneAwayTasks[index] = String(value.prefix(120))
+                                    }
+                            }
+                        }
+                    }
                     shieldingChoice
 
                     nightFlockPrivacyChoice
-                    if viewModel.pendingNightWatchIsAdditionalQuiet,
-                       viewModel.pendingWindDownStartContext?.isPractice != true,
-                       viewModel.nightFlockViewModel.hasCampfireSharing {
-                        Picker("At the campfire", selection: $viewModel.nextCampfireActivity) {
-                            ForEach(CampfireActivity.allCases) { Text($0.title).tag($0) }
-                        }.font(AppTypography.body)
-                        Text("An optional intention for parties where you’ve enabled campfire sharing. Your custom task title stays private.")
-                            .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                    if viewModel.pendingWindDownStartContext?.isPractice != true {
+                        CampfireStartChoices(viewModel: viewModel)
                     }
 
                     Toggle(

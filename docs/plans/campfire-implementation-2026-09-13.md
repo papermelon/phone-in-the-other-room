@@ -6,6 +6,14 @@ Source is implemented and committed. The founder-authorized production backend r
 on 13 September: [deployment evidence](../evidence/campfire-deploy-20260913/deployment.md).
 Physical two-device acceptance and updated app distribution remain separate, outstanding gates.
 
+## Subsequent Buddies iteration
+
+The founder approved the [Buddies source contract](campfire-buddies-implementation-2026-09-13.md)
+later on 13 September. It adds agreement version 2, explicit authored intentions, volunteer support,
+return check-ins and ordinary APNs invitations. The version 1 behavior and deployment recorded below
+remain the compatibility baseline; its statement about no new notifications describes that iteration.
+Buddies backend activation and push configuration are [verified](../evidence/campfire-buddies-deploy-20260913/deployment.md); device distribution and physical notification receipt remain pending.
+
 ## Product behavior
 
 - Campfire is free on day one within each existing Slumber Party meadow. It does not add a tab.
@@ -24,10 +32,13 @@ Physical two-device acceptance and updated app distribution remain separate, out
   enabling during a running session starts sharing with the next session. Private Wind Down
   decisions still fence publication. Turning campfire sharing off leaves other agreed sharing
   and the local timer intact.
-- Active Shepherds and their visiting sheep use temporary, deterministic gathering positions.
-  These positions never enter the saved arrangement or movement outbox; the ordinary positions
-  return after end/expiry. Gathered figures open their existing member/visit cards, without drag
-  writes to temporary seats. The background remains the existing paper meadow.
+- Founder correction after device feedback: the default Live sessions scene renders only members
+  with a current, supported, freshly observed shared session. No active shared sessions means no
+  fire and no characters. Membership and saved positions never imply activity. Current participants
+  have distinct automatic seats and activity/planned-end labels; these seats are not editable.
+- Shared meadow is a separate, explicitly labelled view for saved member positions, owned-sheep
+  visits and the earned lantern. It keeps its existing arrangement controls. Switching views or
+  a save acknowledgement does not reset the other view or persist temporary campfire positions.
 - The shared lantern keeps its existing 12-contribution progress and movable prop. It is an
   earned extra light beside the free gathering place. The first completed-session round grant
   per member per party-day still contributes once. Presence/scene visits never award wool or
@@ -57,7 +68,10 @@ reconcile the phone's existing current/terminal run without changing the session
 Successful publications refresh observations without selecting another party behind the user.
 
 The session's planned validity does not require foreground heartbeats. The screen invalidates at
-expiry without a network poll; stale party observations stop presenting current campfire seats.
+expiry without a network request. While the party screen is visible and foregrounded, a
+20-second canonical refresh supplements realtime invalidation; it stops on background/disappear.
+Stale/unconfirmed party observations stop presenting current campfire seats, and retrying a failed
+refresh does not itself restore live presence.
 Offline early endings may remain as the last app report until the update arrives or validity
 expires. Pending, acknowledged and retry copy distinguishes a running session from an ended one.
 The start/protection path never waits for campfire transport. No new notifications, dependencies,
@@ -77,3 +91,13 @@ Phone Away intention, early end offline/reconnect, killed/reopened app, consent 
 leave/rejoin/block, account A/B isolation, simultaneous preference edits and real shielding.
 The Mac lock prevented native tap/VoiceOver automation in this pass; Simulator render and domain
 checks do not substitute for physical accessibility or protection validation.
+
+## Device-feedback repair — 13 September
+
+The earlier implementation left all members and an always-lit fire in the scene, then overrode
+only active members’ positions. The founder’s screenshots exposed a collision between an active
+seat and an inactive member’s saved position. The correction above supersedes that presentation.
+A service-unavailable error is separate from activity presence; it cannot establish that someone
+ended a run. Connection/gateway errors now retain the original outgoing request ID instead of
+minting a replacement that cannot be correlated with the server. The clearer message names the
+connection failure. See [repair evidence](../../output/design/campfire-live-repair-20260913/README.md).

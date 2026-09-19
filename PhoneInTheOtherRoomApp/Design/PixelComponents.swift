@@ -55,6 +55,18 @@ struct PixelCard<Content: View>: View {
     }
 }
 
+// MARK: - Inputs
+
+struct PixelTextFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(AppSpacing.sm)
+            .frame(minHeight: 44)
+            .background(AppColors.panel, in: RoundedRectangle(cornerRadius: AppRadius.sm))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.sm).stroke(AppColors.stroke.opacity(0.35)))
+    }
+}
+
 // MARK: - Buttons
 
 struct PixelPrimaryButtonStyle: ButtonStyle {

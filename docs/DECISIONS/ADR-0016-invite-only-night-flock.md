@@ -6,9 +6,31 @@
 - Supersedes: v1–v3 Slumber Party product contract; those schemas remain legacy compatibility only
 - Related: ADR-0003, ADR-0005, ADR-0006, ADR-0010, ADR-0015
 
+## Unified Campfire refinement — 16 September 2026
+
+The founder authorized implementation of **Off / My Slumber Party / Global** in one Campfire. Slumber Party remains invite-only membership, history and the persistent Shared Meadow. Campfire is the current-session experience for both Wind Down and Phone Away; global browsing and participation do not require a party. This supersedes the earlier party-only Campfire boundary, without widening any existing private agreement.
+
+Browsing never changes visibility. Private and public publication have separate versioned authority; Global requires explicit public disclosure and a preview. Off/narrowing persist withdrawal, while explicitly widening an active session shares only from the accepted change. Existing accounts never migrate to Global. The first public slice uses preset names/activities, a minimal Shepherd appearance, coarse timing, encouragement, blocking and reporting; mutual connections and chat remain later work.
+
+See the [current implementation contract](../plans/global-campfire-2026-09-15.md) and [local evidence](../../output/design/unified-campfire-20260916/README.md). Source implementation is authorized and local. New public deployment/activation and app distribution are not yet authorized or completed; the source kill switch defaults off. The private deployments below remain their own evidence.
+
+## Campfire Buddies refinement — 13 September 2026
+
+The founder subsequently approved implementation of explicit shared intentions, party start invitations,
+volunteer buddy commitments and optional return check-ins, using Counting Sheep's existing paper art.
+These additions require separate agreement version 2 and advertised buddy capability. Existing private
+task/routine text remains private; only separately authored text is shared, without pre-consent history.
+Only active sessions confer a seat at the fire. Buddy support does not confer presence. Notifications
+are recipient opt-in, respect quiet periods and contain generic previews. See the
+[current source contract and activation checklist](../plans/campfire-buddies-implementation-2026-09-13.md).
+The founder then authorized Buddies deployment and push configuration; both are [verified in production](../evidence/campfire-buddies-deploy-20260913/deployment.md). App distribution and physical push receipt remain pending. The earlier deployment below covers version 1 only.
+
 ## Campfire direction — 13 September 2026
 
-The founder authorized implementing a free campfire in the existing shared meadow. The lantern
+The founder authorized implementing a free campfire in the existing shared meadow. Device
+feedback clarifies that the fire lights only for current shared sessions: Live sessions renders only
+those participants. Saved members, sheep and arrangements remain in a separate Shared meadow view.
+These positions do not indicate presence. The lantern
 remains an earned movable improvement, with its existing progress preserved. Customized Shepherds
 represent app-reported Wind Down/Phone Away sessions through a separately consented per-party
 campfire version 1 contract; private task text stays private. Temporary seats and visitor positions

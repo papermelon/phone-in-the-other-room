@@ -29,18 +29,19 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
         let now = Date()
         let snapshot = presentationSnapshot
         let role = snapshot?.role ?? .primaryWindDown
-        let group = snapshot?.cueGroup(at: now) ?? .windDown
-        let defaultCue = ShieldCueCatalog.cue(
-            for: group,
-            runID: snapshot?.runID,
-            date: now
-        )
-        let cue = purposeCue(for: snapshot)?.shieldText ?? defaultCue
-        let detailLines = [
-            cue,
-            snapshot?.protectedEndDate.map { "Selected apps blocked until \($0.formatted(date: .omitted, time: .shortened))." },
-            allowsBriefAccess ? "Brief access unlocks selected apps for up to 5 minutes. Your timer continues." : nil
+        let defaults = UserDefaults(suiteName: QuietTimeShieldPresentationStorage.appGroupIdentifier)
+        let personal = defaults.flatMap { PersonalShieldStorage.projection(from: $0) }.flatMap { projection in
+            snapshot.flatMap { projection.matches($0, at: now) ? projection.session : nil }
+        }
+        var detailLines = [
+            personal?.summary(at: now),
+            (snapshot?.protectedEndDate ?? snapshot?.morningQuietInterval.end).map {
+                "Selected apps blocked until \($0.formatted(date: .omitted, time: .shortened))."
+            }
         ].compactMap { $0 }
+        if #unavailable(iOS 26.5) {
+            detailLines.append("Open Counting Sheep for your list or 5-min access.")
+        }
         let subtitleText = detailLines.joined(separator: "\n")
         let secondaryLabel = allowsBriefAccess
             ? ShieldConfiguration.Label(
@@ -49,7 +50,7 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
             )
             : nil
         let title = ShieldConfiguration.Label(
-            text: "\(role.timerName) is on",
+            text: personal?.title(at: now) ?? "\(role.timerName) is on",
             color: UIColor(red: 0.92, green: 0.89, blue: 0.79, alpha: 1)
         )
         let subtitle = ShieldConfiguration.Label(
@@ -57,25 +58,11 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
             color: UIColor(red: 0.78, green: 0.77, blue: 0.71, alpha: 1)
         )
         let primary = ShieldConfiguration.Label(
-            text: primaryButtonTitle(for: role),
+            text: personal?.listButton(at: now) ?? (role == .additionalQuiet ? "My tasks" : "My routine"),
             color: UIColor(red: 0.10, green: 0.11, blue: 0.09, alpha: 1)
         )
         let background = UIColor(red: 0.035, green: 0.043, blue: 0.039, alpha: 1)
         let buttonBackground = UIColor(red: 0.88, green: 0.85, blue: 0.74, alpha: 1)
-
-        if #available(iOS 26.4, *), allowsBriefAccess {
-            return ShieldConfiguration(
-                backgroundBlurStyle: nil,
-                backgroundColor: background,
-                icon: ollieIcon,
-                title: title,
-                subtitle: subtitle,
-                primaryButtonLabel: primary,
-                primaryButtonBackgroundColor: buttonBackground,
-                secondaryButtonLabel: secondaryLabel,
-                secondaryButtonSubmenuItems: secondarySubmenuItems(for: role)
-            )
-        }
 
         return ShieldConfiguration(
             backgroundBlurStyle: nil,
@@ -98,27 +85,6 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
         return QuietTimeShieldPresentationSnapshot.load(from: defaults)
     }
 
-    private func briefAccessTrackerSummary(for runID: UUID?) -> QuietTimeBriefAccessTrackerSummary {
-        guard let defaults = UserDefaults(
-            suiteName: QuietTimeShieldPresentationStorage.appGroupIdentifier
-        ) else {
-            return QuietTimeBriefAccessTrackerSummary()
-        }
-        return QuietTimeBriefAccessTrackerSummary.load(for: runID, from: defaults)
-    }
-
-    private func purposeCue(for snapshot: QuietTimeShieldPresentationSnapshot?) -> QuietPurposeCue? {
-        guard let snapshot,
-              let defaults = UserDefaults(
-                  suiteName: QuietTimeShieldPresentationStorage.appGroupIdentifier
-              ),
-              let cue = QuietPurposeCueState.load(from: defaults),
-              cue.occurrenceID == snapshot.runID,
-              cue.revision == snapshot.registryRevision,
-              cue.epoch == snapshot.registryEpoch else { return nil }
-        return cue.cue
-    }
-
     private var ollieIcon: UIImage {
         if let image = UIImage(
             named: "ollie_sheep_storybook_shield",
@@ -138,19 +104,5 @@ final class QuietTimeShieldConfiguration: ShieldConfigurationDataSource {
             ?? UIImage()
     }
 
-    private func primaryButtonTitle(for role: QuietTimeShieldRole) -> String {
-        switch role {
-        case .primaryWindDown: return "Keep winding down"
-        case .additionalQuiet: return "Keep phone away"
-        case .screenFreeMorning: return "Keep the morning quiet"
-        }
-    }
-
-    private func secondarySubmenuItems(for role: QuietTimeShieldRole) -> [String] {
-        ["Allow selected apps for 5 minutes"]
-    }
-
-    private var secondaryButtonTitle: String {
-        "Get 5-minute access"
-    }
+    private var secondaryButtonTitle: String { "5-min access" }
 }

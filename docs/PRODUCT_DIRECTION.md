@@ -73,10 +73,34 @@ implementation and pilot plan](plans/wind-down-habit-loop-2026-09-08.md) owns th
 
 Home brings the first chosen evening activity forward and offers a direct, save-only edit.
 Plan progressively offers an optional recognizable cue, preparation, smaller activity, and
-phone placement. None is a mandatory questionnaire or a completion checklist. A smaller
+phone placement. None is a mandatory questionnaire. Optional, reversible checks during
+a session are private self-reports; they do not change timers, shielding, rewards or
+social evidence. A smaller
 version replaces the next primary Wind Down's evening invitations only; it preserves timing,
 overnight protection, morning invitations, and rewards. Selection survives relaunch and is
 consumed only after coordinator admission; a run retains its own immutable snapshot.
+
+The native app shield shows the current routine/tasks as read-only text with saved check
+marks. Its direct actions are **My routine** (Wind Down and Screen-Free Morning), **My
+tasks** (Phone Away), and **5-min access**. On iOS 26.5+, the first button opens the
+checklist sheet over the existing Ollie Home journey; the second opens its phrase sheet.
+Older systems give manual-open instructions. Ordinary app opens continue to show Ollie.
+Each handoff is bounded, one-use and matched to the owner and protection occurrence.
+
+Brief Access and deliberate early ending both require a fresh matching phrase from the
+next unchecked activity/task or the relevant exact goal. Completed/overnight Wind Down
+uses “Put my phone away for sleep” and leads toward sleep. Checking everything does not
+end protection. Phone Away accepts up to three optional private tasks at start, independent
+of Campfire intentions. NFC-authenticated exits and technical fail-open remain intact.
+The existing Brief Access restore ledger caps access at five minutes or the earlier end.
+
+The account-local session checklist stays on the device. Only its bounded current/upcoming
+routine, goal, checks and opaque owner/occurrence/revision identity are projected to the
+existing App Group; typed confirmation responses are never persisted. This explicitly
+supersedes the earlier no-free-text shield projection restriction. No new data enters
+Farm sync, Slumber Party, Live Activity registration or analytics. Native shield redraw
+and warm/cold handoffs require physical-device acceptance. See the
+[personal shielding implementation](plans/personal-shield-design-2026-09-17.md).
 
 Nights offers optional, private starting-ease/obstacle reflections without requiring a session
 record. A relevant adjustment link opens the normal editor without starting a session. A note
@@ -212,13 +236,21 @@ See [collection review and implementation](plans/shop-ollie-and-campfire-2026-09
 
 ## Slumber Party
 
+16 September founder-authorized refinement and implementation of [Campfire visibility](plans/global-campfire-2026-09-15.md): retain **Campfire** for the shared-session experience with an **Off / My Slumber Party / Global** visibility choice. This supersedes Astra's proposed “Together now” label and reserving Campfire for public use. Slumber Party remains the ongoing private group and meadow. Both Wind Down and Phone Away belong at its Campfire; global participation works without a party. The implementation separates browsing from publication so looking at global participants never changes one's visibility. Required disclosures belong in the visible choice flow rather than a hidden second enable switch. Unified UI and the first global service slice are implemented locally; public backend deployment, activation and app distribution remain pending. Existing private sessions never become public automatically. The new visible choice flow covers both session modes and adapts to large text. The original build 51 report still needs two-account physical-device acceptance after distribution. The current private implementation and consent contracts follow.
+
 Founder authorized campfire implementation on 13 September 2026. Campfire is a free gathering
 place inside each existing meadow; the 12-contribution lantern remains an earned improvement.
-Customized Shepherds gather for explicitly shared app-reported sessions. Optional bounded Phone
-Away intentions require a separate per-party version 1 consent receipt and advertised capability;
-private task text never uploads. Default Wind Down validity ends at planned wake, Phone Away at
+Only customized Shepherds with current, freshly observed shared sessions appear in Live sessions.
+The live Campfire scene is absent when no session is active. Saved membership, sheep visits and placements live
+in a separate Shared meadow view and never imply activity. Optional bounded Phone
+Away activity categories require a separate per-party version 1 consent receipt and advertised capability.
+The founder-approved Buddies iteration adds separately authored intentions, volunteer buddy support,
+optional return check-ins and opt-in party notifications under agreement version 2. Private task text
+is never copied automatically. See the [current Buddies source contract](plans/campfire-buddies-implementation-2026-09-13.md);
+this iteration’s backend and push configuration were [deployed and verified](evidence/campfire-buddies-deploy-20260913/deployment.md); updated app distribution and physical notification receipt remain pending. Default Wind Down validity ends at planned wake, Phone Away at
 its planned end, with terminal precedence and a 24-hour ceiling. Temporary gathering positions
-restore saved arrangements. Source is implemented and the production backend was deployed on
+are distinct and never overwrite saved arrangements. Realtime updates have a 20-second fallback
+refresh while the party screen is visible in the foreground. The base version 1 production backend was deployed on
 13 September; [rollout evidence](evidence/campfire-deploy-20260913/deployment.md). Device acceptance
 and updated app distribution remain pending. See
 [current campfire contract](plans/campfire-implementation-2026-09-13.md).
@@ -260,7 +292,17 @@ also drawing it in the private scene. Everyone may arrange earned group decorati
 Personal Farm navigation uses one rule: tapping a resident opens that resident's details and
 actions. Sheep open their existing Barn detail; the Shepherd opens personal appearance and
 wardrobe; Ollie opens play and owned accessories, with an explicit Shop link. Fetch/gather
-returns to the visible pasture. The Shepherd model stays pinned above scrolling customization
+returns to the visible pasture. Fetch opens a local aiming mode: tap a destination or drag and
+release to aim, with flick momentum extending the throw within the grass. One ball travels in
+an arc, lands, and stays there until Ollie reaches it. If Ollie is resting, fetch continues from
+his displayed pose through the authored rise sequence before allowing a throw. His dressed running animation follows a
+continuous route out and back; nearby sheep step aside. The ball becomes available again only
+after handoff. Direction-menu throws provide an alternative to gestures, and Reduce Motion
+removes the arc/spin/gait cycling while preserving travel and timing; a resting pose is held
+before the upright pose instead of cycling the rise frames. The Farm backdrop is aligned to
+keep the barn visible when narrow cards crop the wide artwork. Leaving the visible Farm,
+changing pasture, backgrounding or starting Wind Down cancels play. Fetch grants no rewards
+and sends no social presence. The Shepherd model stays pinned above scrolling customization
 controls, showing changes immediately. The Shop remains a named destination.
 
 Founder confirmed after the working eight-person study: keep Ollie on the personal Farm for this release. Fetch/gather remain personal play; the shared companion experiment is DEBUG-only. Retain the existing wide shared meadow and add a movable earned lantern. Everyone can

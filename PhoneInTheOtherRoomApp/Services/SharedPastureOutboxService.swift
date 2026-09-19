@@ -29,7 +29,7 @@ final class SharedPastureOutboxService {
         guard !saved.contains(where: { $0.id == command.id }) else { return }
         if command.command == "setCampfireSharing" {
             // Revocation wins locally before transport; queued starts cannot escape it.
-            saved.removeAll { $0.partyID == command.partyID && $0.command == "publishCampfireSession" }
+            saved.removeAll { $0.partyID == command.partyID && ["publishCampfireSession", "campfireBuddyAction", "setCampfireAlerts"].contains($0.command) }
         }
         if command.command == "publishCampfireSession" {
             guard !saved.contains(where: { $0.partyID == command.partyID && $0.command == "setCampfireSharing" }) else { return }
