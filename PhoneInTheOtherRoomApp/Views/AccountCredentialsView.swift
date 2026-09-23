@@ -14,13 +14,15 @@ struct AccountCredentialsView: View {
                 Text(title).font(AppTypography.title)
                 if model.stage == .methods {
                     methods
+                } else if model.stage == .signIn && !farm.signedIn && farm.authenticatedAccountID != nil {
+                    AccountConnectionContent(model: farm)
                 } else {
                     form
                 }
                 if let notice = model.notice {
                     Text(notice).font(AppTypography.body).accessibilityLabel(notice)
                 }
-                if farm.busy { ProgressView("Please wait…") }
+                if farm.busy { SheepLoadingView("Please wait…") }
             }
             .padding(AppSpacing.md)
             .foregroundStyle(AppColors.ink)
@@ -40,8 +42,8 @@ struct AccountCredentialsView: View {
         case .verify, .verifyEmailChange: return "Verify your email"
         case .recover, .recoveryCode: return "Reset password"
         case .newPassword: return "Set password"
-        case .claimUsername: return "Choose a username"
-        case .methods: return "Sign-in and username"
+        case .claimUsername: return "Choose your handle"
+        case .methods: return "Handle and sign-in"
         case .emailChange: return "Recovery email"
         }
     }
@@ -50,11 +52,11 @@ struct AccountCredentialsView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             switch model.stage {
             case .signIn:
-                input("Username or email", text: $model.identifier, type: .username)
+                input("Handle or email", text: $model.identifier, type: .username)
                 passwordField
             case .register:
                 input("Email", text: $model.email, type: .emailAddress)
-                input("Username", text: $model.username, type: .username)
+                input("Handle", text: $model.username, type: .username)
                 passwordField
                 Text("3–24 letters, numbers or underscores. Start with a letter.").font(AppTypography.caption)
             case .verify, .recoveryCode:
@@ -70,7 +72,11 @@ struct AccountCredentialsView: View {
                 passwordField
                 input("Security code, if requested", text: $model.code, type: .oneTimeCode)
             case .claimUsername:
-                input("Username", text: $model.username, type: .username)
+                input("Handle", text: $model.username, type: .username)
+                Text("Your handle is your unique username for sign-in and Slumber Party invites. It’s separate from your Shepherd name.")
+                    .font(AppTypography.body)
+                Text("3–24 letters, numbers or underscores. Start with a letter. Handles ignore capitalization and stay with the account once chosen.")
+                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
             case .methods: EmptyView()
             }
             if [.signIn, .register].contains(model.stage) {
@@ -103,7 +109,7 @@ struct AccountCredentialsView: View {
         case .verify, .recoveryCode, .verifyEmailChange: return "Verify code"
         case .recover: return "Send recovery code"
         case .newPassword: return "Save password"
-        case .claimUsername: return "Use this username"
+        case .claimUsername: return "Use this handle"
         case .emailChange: return "Verify new email"
         case .methods: return "Continue"
         }
@@ -136,10 +142,10 @@ struct AccountCredentialsView: View {
                         .buttonStyle(AccountSecondaryButtonStyle())
                 }
                 if !profile.usernameLookupSucceeded {
-                    Text("Your username couldn’t be loaded.").font(AppTypography.caption)
-                    Button("Check username", action: model.showMethods).buttonStyle(AccountTextButtonStyle())
+                    Text("Your handle couldn’t be loaded.").font(AppTypography.caption)
+                    Button("Check handle", action: model.showMethods).buttonStyle(AccountTextButtonStyle())
                 } else if profile.username == nil {
-                    Button("Choose a username") { model.stage = .claimUsername }
+                    Button("Choose a handle") { model.stage = .claimUsername }
                         .buttonStyle(AccountSecondaryButtonStyle())
                 }
             } else {

@@ -110,6 +110,7 @@ struct SharedPastureCommand: Codable, Equatable, Identifiable, Sendable {
     var startedAt: Date?
     var observedAt: Date?
     var expiresAt: Date?
+    var intendedBedtime: Date?
     var ended: Bool?
     var revision: Int?
     var checkInAfter: Date?

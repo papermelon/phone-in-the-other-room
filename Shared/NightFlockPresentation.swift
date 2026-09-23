@@ -607,6 +607,17 @@ enum NightFlockV4Presentation {
 
     /// A one-shot local invalidation lets an already-open view remove an
     /// expired status without treating time passage as a reason to poll.
+    static func timelineDates(in party: NightFlockV4PartyDetail?, at date: Date) -> [Date] {
+        guard let party else { return [date] }
+        let statusDates = displayInvalidationDates(in: party, at: date).map { $0.addingTimeInterval(0.001) }
+        let campfireDates = CampfireRules.displayInvalidationDates(in: party.pasture?.campfire, at: date)
+        var dates = [date] + Array(Set(statusDates + campfireDates)).sorted()
+        // The finite explicit Timeline on iOS can stop before delivering its last
+        // entry. A trailing entry ensures the final real boundary is rendered.
+        if dates.count > 1, let last = dates.last { dates.append(last.addingTimeInterval(1)) }
+        return dates
+    }
+
     static func nextDisplayInvalidation(
         in party: NightFlockV4PartyDetail,
         at date: Date = Date()

@@ -18,7 +18,7 @@ struct EarlyWakeSheet: View {
                     Text("What would feel right this morning?")
                         .font(AppTypography.title)
                         .foregroundStyle(AppColors.ink)
-                    Text("These choices only change tonight. Your usual Wind Down plan stays the same.")
+                    Text("These choices apply to this morning. Your usual plan stays the same.")
                         .font(AppTypography.body)
                         .foregroundStyle(AppColors.secondaryText)
 
@@ -29,7 +29,7 @@ struct EarlyWakeSheet: View {
                     )
                     choice(
                         title: "Keep at usual time",
-                        detail: "Leave a calm gap, then begin at your planned wake time.",
+                        detail: "Unblock selected apps now. Begin Screen-Free Morning at your planned wake time.",
                         intent: .deferToUsualTime
                     )
                     choice(

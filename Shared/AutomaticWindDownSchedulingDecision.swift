@@ -57,7 +57,7 @@ enum AutomaticWindDownStatusPresentation: Equatable {
     var title: String {
         switch self {
         case .off: return "Automatic Wind Down is off"
-        case .scheduled: return "Automatic Wind Down is ready"
+        case .scheduled: return "Automatic Wind Down is scheduled"
         case let .needsRepair(title, _): return title
         case .preparing: return "Preparing the next automatic start"
         }

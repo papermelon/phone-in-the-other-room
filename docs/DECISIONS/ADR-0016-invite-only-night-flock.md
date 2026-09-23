@@ -271,8 +271,12 @@ two successful display name changes in a rolling 14-day window. The curated publ
 deliberately small: the
 canonical name, Shepherd look, Ollie ornament, featured sheep definition, and pasture theme. It
 updates routinely for all current parties. The server accepts only allowlisted catalogue
-identifiers and revisions. This profile is visible only through parties and Farm; it creates no
-directory, discovery, feed, chat, follower graph, leaderboard, rank, or competitive score.
+identifiers and revisions. Baseline profile visibility remains scoped to parties and Farm;
+explicitly accepted Global Campfire follows its newer profile contract. The founder's
+[21 September invitation direction](../plans/slumber-party-repair-2026-09-21.md) additionally
+permits exact handle/user-ID lookup of the minimal name/handle/ID needed to invite someone.
+It creates no public directory, broad discovery, feed, chat, follower graph, leaderboard,
+rank, or competitive score.
 
 Party detail is people-first: it shows current members, app-recorded/self-reported round records, curated snapshots,
 and statuses with `revision`, `observed_at`, and `expires_at`. Fixed cheers are the only social

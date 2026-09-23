@@ -40,63 +40,59 @@ struct NightWatchReceiptCard: View {
                     compactRow(icon: "sun.max.fill", title: "Screen-Free Morning", value: morningSummary(screenFreeMorning))
                 }
 
-                DisclosureGroup("Session details") {
+                if let credit = farmCredit,
+                   !credit.migrated || credit.creditedSeconds > 0 || credit.trackingIncomplete {
+                    receiptRow(icon: "leaf.fill", title: "Farm progress",
+                        value: "\(Int(credit.creditedSeconds / 60)) min",
+                        detail: credit.trackingIncomplete
+                            ? "Timing is incomplete. Previously saved progress stays."
+                            : "Time added to wool growth and Ollie’s search.")
+                }
+
+                DisclosureGroup("Timer & progress details") {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        if let credit = farmCredit,
-                           !credit.migrated || credit.creditedSeconds > 0 || credit.trackingIncomplete {
-                            receiptRow(icon: "leaf.fill", title: "Farm credit",
-                                value: "\(Int(credit.creditedSeconds / 60)) min", detail: credit.detail)
+                        if let credit = farmCredit {
+                            Text(credit.detail)
+                                .foregroundStyle(AppColors.secondaryText)
                         }
-
                         if let run, run.isNightWatch {
-                            receiptRow(
-                                icon: "clock",
-                                title: run.nightWatchPlan?.role == .additionalQuiet ? "Phone Away minutes" : "Pre-Sleep Wind Down",
+                            receiptRow(icon: "clock",
+                                title: run.nightWatchPlan?.role == .additionalQuiet ? "Phone Away timer" : "Before bedtime",
                                 value: "\(run.isProgressionEligibleNightWatch ? run.creditedWindDownMinutes : run.creditedQuietMinutes) min",
-                                detail: recordedMinutesDetail(for: run)
-                            )
-
-                            let shieldEvidence = QuietTimeShieldReceiptPresentation.make(
-                                shieldingRequested: run.appShieldingRequested,
-                                record: record
-                            )
-                            receiptRow(
-                                icon: shieldEvidence.systemImage,
-                                title: "App protection record",
-                                value: shieldEvidence.value,
-                                detail: shieldEvidence.detail
-                            )
-
+                                detail: recordedMinutesDetail(for: run))
                             if run.briefAccessUseCount > 0 {
-                                receiptRow(
-                                    icon: "arrow.triangle.2.circlepath",
-                                    title: "Brief Access",
+                                receiptRow(icon: "arrow.triangle.2.circlepath", title: "Brief Access",
                                     value: "\(run.briefAccessUseCount) use\(run.briefAccessUseCount == 1 ? "" : "s")",
-                                    detail: "Selected-app limits lifted temporarily; the timer continued"
-                                )
+                                    detail: "The timer continued while selected-app limits were lifted.")
                             }
-                        }
-
-                        if run?.nightWatchPlan?.role != .additionalQuiet {
-                            receiptRow(
-                                icon: "bed.double.fill",
-                                title: "Sleep from Apple Health",
-                                value: sleepValue,
-                                detail: sleepDetail
-                            )
-
-                            receiptRow(
-                                icon: "chart.bar",
-                                title: "Screen Time reports",
-                                value: screenTimeValue,
-                                detail: screenTimeDetail
-                            )
                         }
                     }
                     .padding(.top, AppSpacing.sm)
                 }
                 .font(AppTypography.caption)
                 .tint(AppColors.grass)
+                .frame(minHeight: 44)
+
+                DisclosureGroup("Health & app protection") {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        if let run, run.isNightWatch {
+                            let evidence = QuietTimeShieldReceiptPresentation.make(
+                                shieldingRequested: run.appShieldingRequested, record: record)
+                            receiptRow(icon: evidence.systemImage, title: "App protection record",
+                                value: evidence.value, detail: evidence.detail)
+                        }
+                        if run?.nightWatchPlan?.role != .additionalQuiet {
+                            receiptRow(icon: "bed.double.fill", title: "Sleep from Apple Health",
+                                value: sleepValue, detail: sleepDetail)
+                            receiptRow(icon: "chart.bar", title: "Screen Time reports",
+                                value: screenTimeValue, detail: screenTimeDetail)
+                        }
+                    }
+                    .padding(.top, AppSpacing.sm)
+                }
+                .font(AppTypography.caption)
+                .tint(AppColors.grass)
+                .frame(minHeight: 44)
             }
         }
     }
@@ -242,8 +238,8 @@ struct NightWatchReceiptCard: View {
 
     private func recordedMinutesDetail(for run: FocusRun) -> String {
         run.nightWatchPlan?.role == .additionalQuiet
-            ? "Elapsed timer minutes. Farm credit excludes brief access and is saved separately."
-            : "Time on the timer before your planned bedtime. Farm credit also includes eligible overnight time."
+            ? "Elapsed timer minutes. Farm progress excludes brief access and is saved separately."
+            : "Time on the timer before your planned bedtime. Farm progress also includes eligible overnight time."
     }
 }
 

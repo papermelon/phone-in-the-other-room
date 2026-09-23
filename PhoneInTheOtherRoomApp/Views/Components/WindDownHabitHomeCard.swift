@@ -1,28 +1,69 @@
 import SwiftUI
 
 struct WindDownHabitHomeCard: View {
-    var activity: String?
+    var routine: [WindDownRoutineStep]
     var plan: WindDownHabitPlan
     @Binding var useSmallerVersion: Bool
     var saveMessage: String? = nil
     var onEdit: () -> Void
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: onEdit) {
+                routineSummary
+                    .padding(AppSpacing.md)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("home-wind-down-routine")
+            .accessibilityHint("Explore ideas and edit your whole Wind Down routine")
+
+            if plan.hasSmallerVersion || saveMessage != nil {
+                routineOptions.padding(AppSpacing.md)
+            }
+        }
+        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
+        .onChange(of: plan.hasSmallerVersion) { _, available in
+            if !available { useSmallerVersion = false }
+        }
+        .onAppear {
+            if !plan.hasSmallerVersion { useSmallerVersion = false }
+        }
+    }
+
+    private var routineSummary: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
-                Text("A LITTLE ROOM FOR YOU")
+                Text("Your Wind Down routine")
+                    .font(AppTypography.headline)
+                    .foregroundStyle(AppColors.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Button("Edit", action: onEdit)
-                    .font(AppTypography.caption.weight(.semibold))
-                    .foregroundStyle(AppColors.grass)
-                    .frame(minWidth: 44, minHeight: 44)
-                    .accessibilityLabel("Edit my Wind Down routine")
+                    .accessibilityHidden(true)
             }
-            Text(invitation)
-                .font(AppTypography.headline)
+            Text("Make the time before bed your own.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
+            if invitations.isEmpty {
+                Text("Explore ideas for reading, unwinding, or getting ready for tomorrow.")
+                    .font(AppTypography.body)
+            } else {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    ForEach(Array(invitations.enumerated()), id: \.offset) { index, invitation in
+                        HStack(alignment: .firstTextBaseline, spacing: AppSpacing.sm) {
+                            Text("\(index + 1)")
+                                .font(pixelFont(.caption))
+                                .foregroundStyle(AppColors.grass)
+                                .frame(minWidth: AppSpacing.lg)
+                            Text(invitation).font(AppTypography.body)
+                        }
+                    }
+                }
+            }
             if let cue = plan.cue {
                 detail("Begin", value: cue)
             }
@@ -32,7 +73,16 @@ struct WindDownHabitHomeCard: View {
             Text(plan.phonePlacement.actionCue)
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.muted)
+            Text(routine.isEmpty ? "Explore routine ideas" : "Explore ideas & edit routine")
+                .font(AppTypography.caption.weight(.semibold))
+                .foregroundStyle(AppColors.grass)
+        }
+        .multilineTextAlignment(.leading)
+        .fixedSize(horizontal: false, vertical: true)
+    }
 
+    private var routineOptions: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
             if plan.hasSmallerVersion {
                 Toggle("Smaller version for my next Wind Down", isOn: $useSmallerVersion)
                     .font(AppTypography.caption.weight(.semibold))
@@ -52,21 +102,13 @@ struct WindDownHabitHomeCard: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(AppSpacing.md)
-        .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md))
-        .onChange(of: plan.hasSmallerVersion) { _, available in
-            if !available { useSmallerVersion = false }
-        }
-        .onAppear {
-            if !plan.hasSmallerVersion { useSmallerVersion = false }
-        }
     }
 
-    private var invitation: String {
+    private var invitations: [String] {
         if useSmallerVersion, let smaller = WindDownHabitRules.smallerActivityInvitation(for: plan) {
-            return smaller
+            return [smaller]
         }
-        return activity ?? "Choose something you’ll look forward to."
+        return routine.map(\.title)
     }
 
     private func detail(_ label: String, value: String) -> some View {
@@ -82,14 +124,14 @@ struct WindDownHabitHomeCard: View {
 }
 
 #Preview("My evening · empty") {
-    WindDownHabitHomeCard(activity: nil, plan: WindDownHabitPlan(), useSmallerVersion: .constant(false), onEdit: {})
+    WindDownHabitHomeCard(routine: [], plan: WindDownHabitPlan(), useSmallerVersion: .constant(false), onEdit: {})
         .padding(AppSpacing.md)
         .background(AppColors.paper)
 }
 
 #Preview("My evening · smaller version") {
     WindDownHabitHomeCard(
-        activity: "Read my book",
+        routine: [.suggested(.read, phase: .evening), .suggested(.stretch, phase: .evening), .suggested(.prepareTomorrow, phase: .evening)],
         plan: WindDownHabitPlan(cue: "After brushing my teeth", preparation: "Book beside the chair", smallerActivity: "Read one paragraph"),
         useSmallerVersion: .constant(true),
         onEdit: {}
@@ -98,4 +140,12 @@ struct WindDownHabitHomeCard: View {
     .background(AppColors.paper)
     .environment(\.dynamicTypeSize, .accessibility3)
     .preferredColorScheme(.dark)
+}
+
+#Preview("Whole evening routine") {
+    WindDownHabitHomeCard(
+        routine: [.suggested(.read, phase: .evening), .suggested(.stretch, phase: .evening), .suggested(.prepareTomorrow, phase: .evening)],
+        plan: WindDownHabitPlan(cue: "After dinner"),
+        useSmallerVersion: .constant(false), onEdit: {})
+        .padding(AppSpacing.md).background(AppColors.paper).preferredColorScheme(.dark)
 }

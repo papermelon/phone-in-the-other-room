@@ -68,23 +68,67 @@ extension FarmBackupPayload {
     /// Wire saves must survive lossless decoding. Legacy domain decoders are
     /// intentionally forgiving locally; they cannot silently repair a backup.
     static func decodeRemote(_ data: Data) throws -> Self {
-        let object = try JSONSerialization.jsonObject(with: data) as? NSDictionary
-        guard let schema = object?["schemaVersion"] as? Int, schema == currentSchemaVersion,
-              object?["economyVersion"] as? Int == 1 else { throw FarmSaveError.unsupportedSchema }
-        for (key, version) in [("farm", FarmState.currentSchemaVersion),
-                               ("search", SheepSearchState.currentSchemaVersion),
+        guard let object = try JSONSerialization.jsonObject(with: data) as? NSDictionary else {
+            throw FarmSaveError.corrupt
+        }
+        guard let schema = object["schemaVersion"] as? Int, schema == currentSchemaVersion,
+              object["economyVersion"] as? Int == 1 else { throw FarmSaveError.unsupportedSchema }
+        guard let farmVersion = (object["farm"] as? NSDictionary)?["schemaVersion"] as? Int,
+              (3...FarmState.currentSchemaVersion).contains(farmVersion) else {
+            throw FarmSaveError.unsupportedSchema
+        }
+        for (key, version) in [("search", SheepSearchState.currentSchemaVersion),
                                ("welcome", WelcomeRewardLedger.currentSchemaVersion),
                                ("socialRewards", NightFlockRewardLedger.currentSchemaVersion),
                                ("sunrise", SunriseTrailState.currentSchemaVersion)] {
-            guard (object?[key] as? NSDictionary)?["schemaVersion"] as? Int == version else {
+            guard (object[key] as? NSDictionary)?["schemaVersion"] as? Int == version else {
                 throw FarmSaveError.unsupportedSchema
             }
         }
-        let decoded = try JSONDecoder().decode(Self.self, from: data)
-        guard try canonicalObject(data) == canonicalObject(JSONEncoder().encode(decoded)),
+        var normalized: Any = object as Any
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer()
+            if let seconds = try? container.decode(Double.self) {
+                return Date(timeIntervalSinceReferenceDate: seconds)
+            }
+            let raw = try container.decode(String.self)
+            // Supabase's RPC encoder also changes Dates nested in the Farm.
+            let format = Date.ISO8601FormatStyle.iso8601.year().month().day()
+                .dateTimeSeparator(.standard)
+            // The native parser accepts trailing text and calendar overflow.
+            // Restrict this compatibility path to the deployed UTC wire forms.
+            guard raw.range(of: #"\A[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{3})?Z?\z"#,
+                            options: .regularExpression) != nil,
+                  let date = try? Date(raw, strategy: format.time(includingFractionalSeconds: raw.contains("."))),
+                  date.formatted(format.time(includingFractionalSeconds: false)) == String(raw.prefix(19)) else {
+                throw DecodingError.dataCorruptedError(in: container, debugDescription: "Invalid Farm date")
+            }
+            // Normalize only fields actually decoded as Date. Reformatting ISO
+            // text can truncate another millisecond after floating-point parsing.
+            normalized = try replacingDate(in: normalized, path: decoder.codingPath[...],
+                                           seconds: date.timeIntervalSinceReferenceDate)
+            return date
+        }
+        let decoded = try decoder.decode(Self.self, from: data)
+        guard try canonicalObject(JSONSerialization.data(withJSONObject: normalized))
+                == canonicalObject(JSONEncoder().encode(decoded)),
               decoded.farm.cumulativeCredit?.migrationCompleted == true,
               decoded.completedWindDownCount >= 0 else { throw FarmSaveError.corrupt }
         return decoded
+    }
+
+    private static func replacingDate(in value: Any, path: ArraySlice<CodingKey>, seconds: Double) throws -> Any {
+        guard let key = path.first else { return seconds }
+        if var array = value as? [Any], let index = key.intValue, array.indices.contains(index) {
+            array[index] = try replacingDate(in: array[index], path: path.dropFirst(), seconds: seconds)
+            return array
+        }
+        if var object = value as? [String: Any], let child = object[key.stringValue] {
+            object[key.stringValue] = try replacingDate(in: child, path: path.dropFirst(), seconds: seconds)
+            return object
+        }
+        throw FarmSaveError.corrupt
     }
 
     private static func canonicalObject(_ data: Data) throws -> NSDictionary {

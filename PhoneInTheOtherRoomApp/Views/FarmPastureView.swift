@@ -7,6 +7,7 @@ struct FarmPastureView: View {
     let protectedNightCount: Int
     let layoutSeed: UInt64
     let onSelectSheep: (FlockSheep) -> Void
+    var isReadOnly = false
     var shepherdDisplayName: String = ""
     var isWindDownActive: Bool = false
     var persistedScene: PastureSceneSnapshot? = nil
@@ -35,6 +36,11 @@ struct FarmPastureView: View {
             if sceneController.fetchGame.isPresented {
                 PastureFetchActions(game: sceneController.fetchGame, onDone: sceneController.endFetch)
             }
+        }
+        .alert("Play is paused", isPresented: $sceneController.showsPlayPaused) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Ollie’s games pause during an active session. Come back when your session ends.")
         }
     }
 
@@ -65,8 +71,8 @@ struct FarmPastureView: View {
                     .padding(.horizontal, AppSpacing.sm).frame(minHeight: 44)
                     .background(AppColors.paper.opacity(0.9), in: Capsule())
             }.padding(AppSpacing.xs).accessibilityHint("Open a resident’s details and actions")
-                .opacity(sceneController.fetchGame.isPresented ? 0 : 1)
-                .disabled(sceneController.fetchGame.isPresented)
+                .opacity(isReadOnly || sceneController.fetchGame.isPresented ? 0 : 1)
+                .disabled(isReadOnly || sceneController.fetchGame.isPresented).accessibilityHidden(isReadOnly)
         }
         .overlay(alignment: .topTrailing) {
             Menu {
@@ -77,8 +83,8 @@ struct FarmPastureView: View {
                     .padding(.horizontal, AppSpacing.sm).frame(minHeight: 44)
                     .background(AppColors.paper.opacity(0.9), in: Capsule())
             }.padding(AppSpacing.xs)
-                .opacity(sceneController.fetchGame.isPresented ? 0 : 1)
-                .disabled(sceneController.fetchGame.isPresented || isWindDownActive)
+                .opacity(isReadOnly || sceneController.fetchGame.isPresented ? 0 : 1)
+                .disabled(isReadOnly || sceneController.fetchGame.isPresented).accessibilityHidden(isReadOnly)
                 .accessibilityLabel("Play with Ollie").accessibilityValue(sceneController.playMessage ?? "Choose fetch or gather")
         }
         .frame(height: 280)
@@ -102,6 +108,7 @@ struct FarmPastureView: View {
                 }
             }
         }
+        .environment(\.ollieCoat, state.equipment.ollieCoat)
         .accessibilityElement(children: .contain)
         .onAppear {
             isPresented = true
@@ -277,8 +284,8 @@ struct FarmPastureView: View {
         .position(x: size.width * point.x, y: size.height * point.y)
         .animation(spatialAnimation(for: behavior), value: point)
         .zIndex(point.y)
-        .allowsHitTesting(!sceneController.fetchGame.isPresented)
-        .accessibilityHidden(sceneController.fetchGame.isPresented)
+        .allowsHitTesting(!isReadOnly && !sceneController.fetchGame.isPresented)
+        .accessibilityHidden(isReadOnly || sceneController.fetchGame.isPresented)
     }
 
     private var pastureIsVisibleForMotion: Bool {
@@ -383,7 +390,7 @@ struct FarmPastureView: View {
                     Capsule().stroke(AppColors.stroke.opacity(0.34), lineWidth: 1)
                 }
                 .position(
-                    x: size.width * point.x,
+                    x: min(size.width - 67, max(67, size.width * point.x)),
                     y: min(size.height - 14, max(16, size.height * point.y + 48))
                 )
                 .allowsHitTesting(false)

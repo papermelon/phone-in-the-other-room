@@ -16,7 +16,7 @@ extension NightFlockViewModel {
 
     var campfireStartIsReady: Bool {
         if campfireVisibility == .off { return true }
-        if campfireVisibility == .global && (campfireDocumentOwner != pastureOwner || campfireDocument.publicAgreement?.version != 1 || campfireDocument.publicAgreement?.enabled != true
+        if campfireVisibility == .global && (campfireDocumentOwner != pastureOwner || campfireDocument.publicAgreement?.version != 2 || campfireDocument.publicAgreement?.enabled != true
             || campfireDocument.selection?.publicAgreementID != campfireDocument.publicAgreement?.id
             || campfireDocument.commands.contains(where: { $0.command == "agreement" })) { return false }
         if campfireVisibility == .party && selectedCampfirePartyIDs.isEmpty { return false }
@@ -46,6 +46,8 @@ extension NightFlockViewModel {
         globalCampfireState = nil; globalCampfireFailure = nil; globalCampfireRequestID = nil
         globalCampfireLoading = false; globalCampfireAttempted = []; globalCampfireSendID = nil; campfireVisibilityMessage = nil
         globalCampfireGathering = "all"
+        globalCampfireChannel = 0; globalCampfireChannelChanging = false; globalCampfireChannelMessage = nil
+        resolvedCampfireProfile = nil
     }
 
     @discardableResult
@@ -78,9 +80,10 @@ extension NightFlockViewModel {
         guard visibility != .party || !eligible.isEmpty else {
             campfireVisibilityMessage = "Choose a Slumber Party to share with."; return false
         }
-        guard visibility != .global || (globalCampfireState?.isSupported == true && PublicCampfireName.choices.contains(publicName)) else {
+        guard visibility != .global || (globalCampfireState?.supportsProfiles == true && publicName == v4Profile?.displayName) else {
             campfireVisibilityMessage = "Global Campfire isn’t available right now. Your private party is still here."; return false
         }
+        resolvedCampfireProfile = nil
         var document = campfireDocument
         var selection = CampfireAudienceSelection(visibility: visibility, partyIDs: visibility == .off ? [] : eligible, effectiveAt: Date())
         var agreementsToAccept: [SharedPastureCommand] = []
@@ -112,9 +115,9 @@ extension NightFlockViewModel {
         document.runSelections = document.runSelections.filter { $0.value.effectiveAt > Date().addingTimeInterval(-8 * 86400) }
         if visibility == .global {
             document.publicName = publicName; document.appearance = appearance
-            if document.publicAgreement?.permitsSharing != true || globalCampfireState?.publicName != publicName || globalCampfireState?.appearance != appearance {
+            if document.publicAgreement?.version != 2 || document.publicAgreement?.enabled != true || globalCampfireState?.publicName != publicName || globalCampfireState?.appearance != appearance {
                 var command = GlobalCampfireCommand(command: "agreement")
-                command.consentVersion = 1
+                command.consentVersion = 2
                 command.enabled = true; command.expectedRevision = document.publicAgreement?.revision ?? 0
                 command.publicName = publicName; command.appearance = appearance
                 selection.publicAgreementCommandID = command.id
@@ -131,6 +134,7 @@ extension NightFlockViewModel {
         } else if document.publicAgreement?.enabled == true || document.commands.contains(where: { $0.command == "agreement" && $0.enabled == true }) {
             document.commands.removeAll { $0.command == "agreement" && $0.enabled == true }
             var command = GlobalCampfireCommand(command: "agreement")
+            // Withdrawal has the same meaning on both deployed contracts.
             command.consentVersion = 1
             command.enabled = false; command.expectedRevision = document.publicAgreement?.revision ?? 0
             guard document.enqueue(command) else { campfireVisibilityMessage = "Your visibility change couldn’t be saved. Please retry."; return false }

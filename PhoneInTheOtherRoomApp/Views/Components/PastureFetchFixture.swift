@@ -11,7 +11,7 @@ struct PastureFetchNativeFixture: View {
         }
         scene.fetch()
         if args.contains("--fetch-aim") {
-            scene.fetchGame.updateAim(release: .init(x: 0.6, y: 0.7), predicted: .init(x: 0.8, y: 0.6))
+            scene.fetchGame.updateAim(translation: .init(x: 0.1, y: -0.1), predictedTranslation: .init(x: 0.25, y: -0.2))
         } else if !args.contains("--fetch-ready") {
             do { try await Task.sleep(for: .seconds(3)) } catch { return }
             scene.fetchGame.throwBall(at: .init(x: 0.2, y: 0.62))
@@ -34,18 +34,30 @@ struct PastureFetchNativeFixture: View {
                                        point: .init(x: 0.32 + Double(index) * 0.14, y: 0.65))
         }
         entries += [.init(entityID: .ollie(pastureIndex: 0), point: .init(x: 0.80, y: 0.75)),
-                    .init(entityID: .shepherd(pastureIndex: 0), point: .init(x: 0.48, y: 0.79))]
+                    .init(entityID: .shepherd(pastureIndex: 0), point: .init(x: 0.88, y: 0.79))]
         return .init(positions: entries)
     }
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                Text("Fetch with Ollie").font(AppTypography.title)
-                FarmPastureView(state: farm, protectedNightCount: 0, layoutSeed: 47,
-                                onSelectSheep: { _ in }, shepherdDisplayName: "Tommy", persistedScene: snapshot)
-            }.padding(AppSpacing.md)
+        Group {
+            if ProcessInfo.processInfo.arguments.contains("--fetch-controls-only") {
+                PastureFetchActions(game: PastureFetchViewModel(), onDone: {})
+                    .padding(AppSpacing.md)
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                        Text("Fetch with Ollie").font(AppTypography.title)
+                        FarmPastureView(state: farm, protectedNightCount: 0, layoutSeed: 47,
+                                        onSelectSheep: { _ in }, shepherdDisplayName: "Tommy",
+                                        isWindDownActive: ProcessInfo.processInfo.arguments.contains("--fetch-active-session"),
+                                        persistedScene: snapshot)
+                    }.padding(AppSpacing.md)
+                }
+            }
         }
         .background(AppColors.background.ignoresSafeArea())
+        .transformEnvironment(\.dynamicTypeSize) { size in
+            if ProcessInfo.processInfo.arguments.contains("--fetch-largest-text") { size = .accessibility5 }
+        }
     }
 }
 

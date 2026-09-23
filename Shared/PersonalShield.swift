@@ -51,7 +51,22 @@ struct PersonalShieldSession: Codable, Equatable, Identifiable {
         }
     }
 
-    func listButton(at date: Date) -> String { mode(at: date) == .additionalQuiet ? "My tasks" : "My routine" }
+    func listButton(at date: Date) -> String {
+        switch mode(at: date) {
+        case .additionalQuiet: return "My tasks"
+        case .screenFreeMorning: return "My morning"
+        case .primaryWindDown: return "My routine"
+        }
+    }
+
+    func confirmationPhrase(at date: Date, morningIntent: MorningQuietIntent?) -> String {
+        switch morningIntent {
+        case .startNow: return "Start my morning"
+        case .deferToUsualTime: return "Start my morning at the usual time"
+        case .skipToday: return "Skip my morning today"
+        case .none, .keepWindDownRunning: return phrase(at: date)
+        }
+    }
 
     func phrase(at date: Date) -> String {
         // No existing goal field explicitly records a sleep intention. Do not infer one
@@ -114,6 +129,18 @@ struct PersonalShieldSheet: Identifiable, Equatable {
     let phrase: String
     let mode: QuietTimeShieldRole
     var endDetail: String? = nil
+    var morningIntent: MorningQuietIntent? = nil
+
+    var requiresTypedPhrase: Bool { action != .endSession || morningIntent != .startNow }
+    var confirmationTitle: String {
+        switch morningIntent {
+        case .startNow: return "Start Screen-Free Morning"
+        case .deferToUsualTime: return "Keep morning at usual time"
+        case .skipToday: return "Skip morning today"
+        case .none, .keepWindDownRunning:
+            return action == .briefAccess ? "5-min access" : "End \(mode.timerName)"
+        }
+    }
 }
 
 /// Only the bounded current/upcoming plan is projected to the device's App Group.

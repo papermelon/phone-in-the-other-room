@@ -69,7 +69,16 @@ extension NightFlockAccountService {
     func claimUsername(_ raw: String) async throws {
         guard let name = AccountUsername.normalized(raw) else { throw AccountCredentialError.invalidUsername }
         struct Parameters: Encodable { let p_action = "claim"; let p_username: String }
-        _ = try await provider.client().rpc("account_username_v1", params: Parameters(p_username: name)).execute()
+        do {
+            _ = try await provider.client().rpc("account_username_v1", params: Parameters(p_username: name)).execute()
+        } catch let error as PostgrestError {
+            switch error.message {
+            case "account_username_unavailable": throw AccountCredentialError.usernameUnavailable
+            case "account_username_already_claimed": throw AccountCredentialError.usernameAlreadyClaimed
+            case "account_username_invalid", "account_username_reserved": throw AccountCredentialError.invalidUsername
+            default: throw error
+            }
+        }
     }
 
     func credentialProfile() async throws -> AccountCredentialProfile {

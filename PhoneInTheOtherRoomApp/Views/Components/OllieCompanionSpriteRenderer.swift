@@ -88,7 +88,7 @@ struct OllieCompanionSpriteRenderer<Neutral: View>: View {
             availableAssetNames: available
         )
         let fitted = OllieGarment(itemID: accessoryItemID) == nil
-            || required.allSatisfy { OllieGarmentFit.forAsset($0) != nil }
+            || required.allSatisfy { OllieNeckwearPose.forAsset($0) != nil }
         for action in OllieCompanionSpriteManifest.production.capabilityActions(for: animationFrame.action) {
             actionCapabilities[action] = canRender && fitted
         }

@@ -17,7 +17,7 @@ extension NightFlockViewModel {
               let pending = try? pastureOutbox.commands(owner: owner),
               !pending.contains(where: { $0.partyID == partyID && $0.command == "setCampfireSharing" }) else { return nil }
         guard campfire.agreement?.permitsSharing == true else {
-            return "Joining a Slumber Party doesn’t enable Campfire sharing. Review sharing before your next Wind Down or Phone Away to bring your Shepherd to the fire."
+            return "Joining a Slumber Party doesn’t enable Campfire sharing. Review sharing before your next Wind Down or Phone Away to bring your Shepherd to the campfire."
         }
         guard let run, let end = CampfireRules.end(for: run), end > Date(),
               run.state != .completed, run.state != .endedEarly else { return nil }
@@ -89,6 +89,7 @@ extension NightFlockViewModel {
             command.agreementID = agreement.id; command.sourceID = run.id
             command.kind = plan.role == .primarySleepBookend ? .windDown : .phoneAway
             command.activity = plan.role == .additionalQuiet ? plan.campfireActivity : nil
+            command.intendedBedtime = CampfireRules.intendedBedtime(for: run, supported: state.campfire?.supportsIntendedBedtime == true)
             if agreement.version == 2,
                let intention = plan.campfireIntentions?.first(where: { $0.partyID == party.partyID && $0.agreementID == agreement.id }) {
                 command.publicIntention = intention.text

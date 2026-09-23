@@ -174,7 +174,9 @@ struct ShepherdProductionPreview: View {
                 )
                 ForEach(FarmShopCatalog.items(in: .shepherd)) { item in
                     Button {
-                        if item.effect == .shepherdOutfit {
+                        if item.effect == .shepherdShirt {
+                            profile.shirtItemID = profile.shirtItemID == item.id ? nil : item.id
+                        } else if item.effect == .shepherdOutfit {
                             profile.outfitItemID = profile.outfitItemID == item.id ? nil : item.id
                         } else {
                             profile.accessoryItemID = profile.accessoryItemID == item.id ? nil : item.id
@@ -184,7 +186,7 @@ struct ShepherdProductionPreview: View {
                             FarmShopItemImage(item: item, size: 54)
                             Text(item.title).font(AppTypography.body)
                             Spacer()
-                            if profile.outfitItemID == item.id || profile.accessoryItemID == item.id {
+                            if profile.outfitItemID == item.id || profile.accessoryItemID == item.id || profile.shirtItemID == item.id {
                                 Image(systemName: "checkmark")
                             }
                         }

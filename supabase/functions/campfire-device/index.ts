@@ -1,12 +1,11 @@
-import { authenticatedClient, serviceClient } from "../_shared/supabase.ts";
+import { authenticatedContext, serviceClient } from "../_shared/supabase.ts";
 import { errorResponse, json, parseJsonObject } from "../_shared/http.ts";
 import { validateCampfireDevice } from "../_shared/campfire-alerts.ts";
 
 Deno.serve(async request => {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   try {
-    const auth = await authenticatedClient(request);
-    const { data: { user } } = await auth.auth.getUser();
+    const { user } = await authenticatedContext(request);
     if (!user || user.is_anonymous) return json({ error: "Unauthorized" }, 401);
     const body = await parseJsonObject(request);
     validateCampfireDevice(body, user.id);

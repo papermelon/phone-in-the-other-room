@@ -42,7 +42,7 @@ fenced legacy compatibility, invite recovery is installed by
 `20260825110000_night_flock_parties_v4.sql` implements the current long-lived named party,
 repeatable seven-night rounds, five-party membership, curated profiles, factual records/statuses,
 fixed cheers, moderation, and account-safe deletion. Edge requests never carry Family Controls
-tokens, selected-app lists, exact schedules, raw Health data, or full Farm inventory. Run both
+tokens, selected-app lists, exact schedules, raw Health data, or full Farm inventory through these older Slumber Party endpoints. The new explicitly accepted Global Campfire profile contract is described below. Run both
 Night Flock SQL tests after `db reset`. Production received all five Slumber Party migrations,
 both JWT-protected functions, and versioned invitation secrets with explicit founder approval on
 2026-08-25; updated app distribution and physical/operational release gates remain separate.
@@ -50,6 +50,16 @@ both JWT-protected functions, and versioned invitation secrets with explicit fou
 Latest production rollout: [13 September shared pasture and campfire](../docs/evidence/campfire-deploy-20260913/deployment.md).
 Both exact migrations and Edge version 5 are deployed; shared-night plans/agreement-v2 remain
 withheld. App distribution and physical acceptance remain separate.
+
+Latest public slice: [20 September Global Campfire deployment and activation](../docs/evidence/global-campfire-deploy-20260920/deployment.md). Only `20260916120000_global_campfire.sql` and `campfire-global` v1 were added; the Global switch is enabled. Private bedtime/shared-night migrations and native distribution remain separate.
+
+Latest private-party update: [21 September addressed invitations](../docs/evidence/slumber-invitation-deploy-20260921/deployment.md). `20260921120000_slumber_party_invitations.sql` is deployed and advertises `directInvitationsVersion = 1`. The authenticated invitation RPC uses existing account usernames or immutable user IDs. Hosted tests passed with rolled-back fixtures; native app distribution and two-account physical checks remain outstanding.
+
+Latest backend rollout: [23 September Campfire bedtime, profiles and wardrobe](../docs/evidence/campfire-wardrobe-deploy-20260923/deployment.md). The three exact migrations and matching `night-flock-command` and `campfire-global` functions are deployed to production. Shared-night plans remain pending. Native distribution and two-account physical appearance checks remain separate.
+
+## Local Campfire profile revision
+
+The [20 September profile contract](../docs/plans/campfire-profiles-2026-09-20.md) added `20260920120000_campfire_profiles.sql` and a matching `campfire-global` revision. It was deployed on 23 September, separately from the earlier alias-only Global activation. It reuses the character name and shares the explicitly accepted display snapshot. Channel capacity is eight and allocation is serialized. Detail reads remain service-only and recheck current presence and blocks.
 
 ## Hosted development project
 

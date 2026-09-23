@@ -16,6 +16,7 @@ struct PastureFetchRound {
     let origin: PastureScenePoint
     let target: PastureScenePoint
     let ollieStart: PastureScenePoint
+    let pickupPoint: PastureScenePoint
     let returnPoint: PastureScenePoint
     let flightDuration: Double
     let arrivalTime: Double
@@ -26,22 +27,36 @@ struct PastureFetchRound {
         self.origin = origin
         self.target = Self.boundedTarget(target)
         self.ollieStart = ollieStart
+        // The ball can reach the grass edges; Ollie stands inward to keep his sprite visible.
+        pickupPoint = .init(x: min(0.87, max(0.13, self.target.x)), y: min(0.81, self.target.y))
         returnPoint = PastureSceneLayout.clamped(.init(x: origin.x + 0.11, y: origin.y - 0.07), footprint: .ollie)
         flightDuration = 0.65 + origin.distance(to: self.target) * 0.8
-        arrivalTime = max(flightDuration + 0.3, 0.15 + ollieStart.distance(to: self.target) / 0.25)
-        returnTime = arrivalTime + 0.4 + max(0.1, self.target.distance(to: returnPoint) / 0.25)
+        arrivalTime = max(flightDuration + 0.3, 0.15 + ollieStart.distance(to: pickupPoint) / 0.25)
+        returnTime = arrivalTime + 0.4 + max(0.1, pickupPoint.distance(to: returnPoint) / 0.25)
     }
+
+    // Fetch uses the visible grass, not the smaller resident-wandering area.
+    // Y is the scene anchor; the ball renderer adds its ground offset below it.
+    static let targetMinimum = PastureScenePoint(x: 0.04, y: 0.36)
+    static let targetMaximum = PastureScenePoint(x: 0.96, y: 0.86)
 
     static func boundedTarget(_ point: PastureScenePoint) -> PastureScenePoint {
-        guard point.x.isFinite, point.y.isFinite else { return .init(x: 0.3, y: 0.6) }
-        return PastureSceneLayout.clamped(point, footprint: .ollie)
+        guard point.x.isFinite, point.y.isFinite else { return .init(x: 0.5, y: 0.6) }
+        return .init(x: min(targetMaximum.x, max(targetMinimum.x, point.x)),
+                     y: min(targetMaximum.y, max(targetMinimum.y, point.y)))
     }
 
-    /// The release point aims the throw; a faster flick adds travel in that direction.
-    static func throwTarget(release: PastureScenePoint, predicted: PastureScenePoint) -> PastureScenePoint {
-        guard predicted.x.isFinite, predicted.y.isFinite else { return boundedTarget(release) }
-        return boundedTarget(.init(x: release.x + (predicted.x - release.x) * 0.35,
-                                   y: release.y + (predicted.y - release.y) * 0.35))
+    /// Travel starts at the ball, so grabbing either edge of its touch target aims identically.
+    /// A tap is not a throw; projected travel adds momentum to a deliberate swipe.
+    static func throwTarget(origin: PastureScenePoint, translation: PastureScenePoint,
+                            predictedTranslation: PastureScenePoint) -> PastureScenePoint? {
+        guard origin.x.isFinite, origin.y.isFinite,
+              translation.x.isFinite, translation.y.isFinite,
+              predictedTranslation.x.isFinite, predictedTranslation.y.isFinite,
+              hypot(translation.x, translation.y) >= 0.035 else { return nil }
+        return boundedTarget(.init(
+            x: origin.x + translation.x * 1.35 + (predictedTranslation.x - translation.x) * 0.75,
+            y: origin.y + translation.y * 1.35 + (predictedTranslation.y - translation.y) * 0.75))
     }
 
     func frame(at elapsed: Double, reduceMotion: Bool = false) -> Frame {
@@ -49,7 +64,7 @@ struct PastureFetchRound {
         let returnStart = arrivalTime + 0.4
         let outbound = min(1, max(0, (t - 0.15) / (arrivalTime - 0.15)))
         let inbound = min(1, max(0, (t - returnStart) / (returnTime - returnStart)))
-        let dog = t < returnStart ? Self.mix(ollieStart, target, outbound) : Self.mix(target, returnPoint, inbound)
+        let dog = t < returnStart ? Self.mix(ollieStart, pickupPoint, outbound) : Self.mix(pickupPoint, returnPoint, inbound)
         let left = t < arrivalTime ? target.x < ollieStart.x : returnPoint.x < target.x
         let phase: Phase
         let ball: PastureScenePoint
@@ -66,7 +81,7 @@ struct PastureFetchRound {
             lift = sin(bounce * .pi) * 0.035
         } else if t < returnStart {
             phase = .pickup
-            ball = target
+            ball = Self.mix(target, pickupPoint, (t - arrivalTime) / 0.4)
         } else if t < returnTime {
             phase = .returning
             ball = dog

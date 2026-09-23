@@ -39,7 +39,7 @@ struct CampfireBuddiesNativeFixture: View {
         let defaults = UserDefaults(suiteName: "CampfireBuddiesFixture.\(UUID())")!
         defaults.set(UUID().uuidString, forKey: NightFlockAccountService.expectedLinkedUserIDKey)
         let social = NightFlockViewModel(featureEnabled: true, previewPhase: .ready, previewAccountState: .linked, defaults: defaults)
-        social.v4ListState = .init(parties: [party.summary], profileAvatarVersion: 1, sharedHabitsVersion: 1)
+        social.v4ListState = .init(parties: [party.summary], profile: .init(displayName: "Tommy"), profileAvatarVersion: 1, sharedHabitsVersion: 1)
         social.v4ObservedPartyDetails[party.summary.partyID] = party
         social.v4ObservedPartyObservationStates[party.summary.partyID] = .current(lastReceivedAt: now)
         _social = StateObject(wrappedValue: social)
@@ -47,33 +47,77 @@ struct CampfireBuddiesNativeFixture: View {
             startsExternalServices: false, nightFlockViewModel: social, purposeCueDefaults: defaults)
         social.sharedFarmAccount = nil
         _ = social.restoreCampfireVisibility()
-        if mode.hasPrefix("unified") || mode == "visibility" || mode == "public-card" {
+        if mode.hasPrefix("unified") || mode == "visibility" || mode.hasPrefix("public-card") {
             social.globalCampfireState = .init(version: 1, available: mode != "unified-unavailable", observedAt: now,
                 participants: (0..<8).map { index in
-                    .init(id: UUID(), profileID: UUID(), name: PublicCampfireName.choices[index], appearance: .init(),
+                    .init(id: UUID(), profileID: UUID(), name: ["Tommy", "Jim", "Alex", "Sam", "Riley", "Casey", "Morgan", "Jo"][index], appearance: .init(),
                         kind: index.isMultiple(of: 2) ? .windDown : .phoneAway, activity: index.isMultiple(of: 2) ? nil : .reading,
-                        remaining: index.isMultiple(of: 2) ? .severalHours : .short, encouragedByMe: index == 1, isMe: false)
-                }, approximateCount: 10)
+                        remaining: index.isMultiple(of: 2) ? .severalHours : .short, encouragedByMe: index == 1, isMe: false,
+                        thought: index.isMultiple(of: 2) ? "Read before bed" : "One more chapter", hasProfile: true)
+                }, approximateCount: 10, profileVersion: 2, channels: [.init(id: 1, count: 8), .init(id: 2, count: 0)], channelID: 1)
+            if mode == "unified-plans" || mode == "public-card-long" {
+                let plans: [String?] = ["Read a chapter", "Shower, then read before bed", String(repeating: "Make time for a chapter and a cup of tea. ", count: 8),
+                    " \n ", "读完一章，然后准备休息", "أقرأ فصلاً قبل النوم", "A little café time ☕️", nil]
+                for index in 0..<8 { social.globalCampfireState?.participants[index].thought = plans[index] }
+                if mode == "public-card-long" { social.globalCampfireState?.participants[0].thought = plans[2] }
+            }
+            if let countArgument = ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--buddy-count=") }),
+               let count = Int(countArgument.replacingOccurrences(of: "--buddy-count=", with: "")) {
+                social.globalCampfireState?.participants = Array((social.globalCampfireState?.participants ?? []).prefix(max(0, min(8, count))))
+            }
+            if mode == "unified-loading" || mode == "unified-retrying" {
+                social.globalCampfireState = nil
+                social.globalCampfireLoading = true
+                if mode == "unified-retrying" { social.globalCampfireFailure = .connection }
+            }
+            if mode == "public-card-pending", let person = social.globalCampfireState?.participants.first {
+                social.campfireDocument.commands = [.init(command: "encourage", targetID: person.id)]
+                social.campfireVisibilityMessage = "Your Campfire change is waiting to sync."
+            }
+            if mode == "public-card-sent" { social.globalCampfireState?.participants[0].encouragedByMe = true }
+            if mode == "unified-refreshing" { social.globalCampfireLoading = true }
+            if mode == "unified-party-refreshing" {
+                social.v4ObservedPartyObservationStates[party.summary.partyID] = .refreshing(lastReceivedAt: now)
+            }
+            if mode == "unified-unavailable" { social.globalCampfireFailure = .unavailable }
             if mode == "unified-stale" { social.globalCampfireState?.observedAt = now.addingTimeInterval(-120) }
-            if mode == "unified-failed" { social.globalCampfireState = nil; social.globalCampfireFailure = "Refresh to try again." }
+            if mode == "unified-failed" { social.globalCampfireState = nil; social.globalCampfireFailure = .connection }
             if mode == "unified-empty" { social.globalCampfireState?.participants = []; social.globalCampfireState?.approximateCount = 0 }
             if mode == "unified-no-party" { social.v4ListState = .init(parties: [], profileAvatarVersion: 1, sharedHabitsVersion: 1) }
         }
+        if mode == "visibility" {
+            social.campfireDocument.selection = .init(visibility: .global, partyIDs: [party.summary.partyID], effectiveAt: now)
+        }
+        social.v4Profile = .init(displayName: "Tommy")
         app.nextCampfireIntention = "Read one chapter"
         app.nextCampfireAsksForBuddy = true
         _app = StateObject(wrappedValue: app)
     }
     var body: some View {
         Group {
-            if mode == "visibility" { CampfireVisibilitySheet(social: social).environmentObject(app) }
-            else if mode == "public-card", let person = social.globalCampfireState?.participants.first {
+            if mode.hasPrefix("bedtime") { CampfireBedtimeNativeFixture(mode: mode) }
+            else if mode == "profile" {
+                ScrollView {
+                    CampfireProfileContents(snapshot: .init(session: ["Phone Away · Active", "Started 20 Sep, 10:00 AM", "Planned end 20 Sep, 10:30 AM", "Times in Asia/Singapore"],
+                        tasks: ["Read one chapter"], routines: ["Wind Down · 22:30–07:00", "Evening · Read"], intention: "Make room for a quiet evening",
+                        history: ["Wind Down · 19 Sep, 10:30 PM – 20 Sep, 7:00 AM · Completed"], partyNames: ["Family"],
+                        inventory: ["shepherd_moss_coat"], sheep: [], appearance: .init(), decorations: [:], collectibles: [:],
+                        ollieAccessory: "none", barnCapacityLevel: 0)).padding(AppSpacing.md)
+                }.background(AppColors.paper).environmentObject(app)
+            }
+            else if mode == "private-card", let person = party.pasture?.campfire?.sessions.first {
+                CampfirePrivatePersonView(social: social, partyID: party.summary.partyID, sourceID: person.id,
+                    memberID: person.memberID, onJoin: { _ in }).environmentObject(app)
+            }
+            else if mode == "visibility" { CampfireVisibilitySheet(social: social).environmentObject(app) }
+            else if mode.hasPrefix("public-card"), let person = social.globalCampfireState?.participants.first {
                 CampfirePublicPersonView(social: social, participantID: person.id, onJoin: { _ in }).environmentObject(app)
             }
             else if mode.hasPrefix("unified") {
                 NavigationStack {
                     ScrollViewReader { proxy in
                         ScrollView {
-                            CampfirePanel(social: social, partyID: mode == "unified-party" ? party.summary.partyID : nil, onStart: { _ in }).padding(AppSpacing.md)
+                            CampfirePanel(social: social, partyID: mode.hasPrefix("unified-party") ? party.summary.partyID : nil, onStart: { _ in }).padding(AppSpacing.md)
                             Color.clear.frame(height: 1).id("fixture-bottom")
                         }.background(AppColors.paper)
                             .onAppear {
@@ -131,6 +175,11 @@ struct CampfireBuddiesNativeFixture: View {
 #Preview("Unified Campfire · eight public participants") { CampfireBuddiesNativeFixture(mode: "unified") }
 #Preview("Unified Campfire · no Slumber Party") { CampfireBuddiesNativeFixture(mode: "unified-no-party") }
 #Preview("Unified Campfire · unavailable") { CampfireBuddiesNativeFixture(mode: "unified-unavailable") }
+#Preview("Campfire · varied plans") { CampfireBuddiesNativeFixture(mode: "unified-plans") }
+#Preview("Campfire · full shared plan") { CampfireBuddiesNativeFixture(mode: "public-card-long") }
+#Preview("Unified Campfire · loading") { CampfireBuddiesNativeFixture(mode: "unified-loading") }
+#Preview("Unified Campfire · refreshing") { CampfireBuddiesNativeFixture(mode: "unified-refreshing") }
+#Preview("Unified Campfire · retrying") { CampfireBuddiesNativeFixture(mode: "unified-retrying") }
 #Preview("Unified Campfire · empty") { CampfireBuddiesNativeFixture(mode: "unified-empty") }
 #Preview("Unified Campfire · visibility") { CampfireBuddiesNativeFixture(mode: "visibility") }
 #endif

@@ -333,7 +333,7 @@ enum ScreenbookHabitLoopProbe {
             runIDs.append(run.id)
             return .scheduled
         }
-        func reconcile(for occurrence: MorningQuietOccurrence, at date: Date) -> QuietTimeShieldingOutcome { .scheduled }
+        func reconcile(for occurrence: MorningQuietOccurrence, at date: Date, parentRunIsActive: Bool) -> QuietTimeShieldingOutcome { .scheduled }
         func clear() {}
         func clear(occurrenceID: UUID) {}
         func scheduleAutomatic(for schedule: AutomaticWindDownSchedule, at date: Date) -> QuietTimeShieldingOutcome { .scheduled }

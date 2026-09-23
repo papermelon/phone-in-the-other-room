@@ -84,8 +84,8 @@ struct SlumberPartySharedHabitsSection: View {
                 Label("SHARED HABITS", systemImage: "clock")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text(isLoading ? "Opening shared summaries…" : "Shared summaries need a refresh.")
-                    .font(AppTypography.body.weight(.semibold))
+                if isLoading { SheepLoadingView("Opening shared summaries…") }
+                else { Text("Shared summaries need a refresh.").font(AppTypography.body.weight(.semibold)) }
                 if let loadingOrRetryErrorDetail {
                     Text(loadingOrRetryErrorDetail)
                         .font(AppTypography.caption)

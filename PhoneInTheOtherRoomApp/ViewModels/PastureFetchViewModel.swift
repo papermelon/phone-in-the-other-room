@@ -11,8 +11,8 @@ final class PastureFetchViewModel {
     private(set) var elapsed = 0.0
     private(set) var wakeAssetName: String?
     private(set) var aim: PastureScenePoint?
-    private(set) var message = "Tap a spot, or drag and release. Flick faster to throw farther."
-    let origin = PastureScenePoint(x: 0.22, y: 0.83)
+    private(set) var message = "Swipe the ball to throw. A quicker flick goes farther."
+    let origin = PastureScenePoint(x: 0.50, y: 0.76)
     private var ollie: PastureSceneEntityID?
     private var task: Task<Void, Never>?
     private var reduceMotion = false
@@ -25,7 +25,7 @@ final class PastureFetchViewModel {
         self.reduceMotion = reduceMotion
         isPresented = true
         isReady = true
-        message = "Tap a spot, or drag and release. Flick faster to throw farther."
+        message = "Swipe the ball to throw. A quicker flick goes farther."
         let wakeFrames = PastureFetchWakeUp.frames(from: restingAsset)
         guard !wakeFrames.isEmpty else { return }
         isReady = false
@@ -42,14 +42,24 @@ final class PastureFetchViewModel {
             guard let self, self.generation == current, !Task.isCancelled else { return }
             self.wakeAssetName = nil
             self.isReady = true
-            self.message = "Ollie’s ready. Tap a spot, or drag and release."
+            self.message = "Ollie’s ready. Swipe the ball to throw."
             self.task = nil
         }
     }
 
-    func updateAim(release: PastureScenePoint, predicted: PastureScenePoint) {
+    func updateAim(translation: PastureScenePoint, predictedTranslation: PastureScenePoint) {
         guard isPresented, isReady else { return }
-        aim = PastureFetchRound.throwTarget(release: release, predicted: predicted)
+        aim = PastureFetchRound.throwTarget(origin: origin, translation: translation,
+                                           predictedTranslation: predictedTranslation)
+    }
+
+    func cancelAim() { aim = nil }
+
+    func flickBall(translation: PastureScenePoint, predictedTranslation: PastureScenePoint) {
+        cancelAim()
+        guard let target = PastureFetchRound.throwTarget(origin: origin, translation: translation,
+                                                        predictedTranslation: predictedTranslation) else { return }
+        throwBall(at: target)
     }
 
     func throwBall(at target: PastureScenePoint) {
@@ -73,7 +83,7 @@ final class PastureFetchViewModel {
                 previous = t
                 if t >= round.duration {
                     self.isReady = true
-                    self.message = "Back with you. Choose your next throw."
+                    self.message = "Back with you. Swipe the ball again."
                     self.task = nil
                     return
                 }

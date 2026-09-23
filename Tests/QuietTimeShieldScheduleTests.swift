@@ -11,16 +11,18 @@ final class QuietTimeShieldScheduleTests: XCTestCase {
         let snapshot = QuietTimeShieldScheduleBuilder.snapshot(for: schedule, revision: 1)
         var morning = MorningQuietOccurrence(linkedWindDownRunID: schedule.id,
             scheduledStart: wake, scheduledEnd: plan.protectedUntil, outcome: .scheduled)
-        XCTAssertTrue(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+        XCTAssertTrue(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot, parentRunIsActive: true))
+        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot, parentRunIsActive: false),
+                       "A terminal parent must be replaced before its monitor is removed")
         morning.outcome = .active
-        XCTAssertTrue(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+        XCTAssertTrue(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot, parentRunIsActive: true))
         morning.scheduledEnd = plan.protectedUntil.addingTimeInterval(60)
-        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot, parentRunIsActive: true))
         morning.scheduledEnd = plan.protectedUntil
         morning.linkedWindDownRunID = UUID()
-        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot, parentRunIsActive: true))
         morning.linkedWindDownRunID = nil
-        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot))
+        XCTAssertFalse(QuietTimeShieldSchedulePolicy.coversMorning(morning, snapshot: snapshot, parentRunIsActive: true))
     }
 
     func testMonitoringPolicyKeepsShortSessionEndExactWithPlatformPadding() {

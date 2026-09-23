@@ -1,0 +1,12 @@
+[
+  {
+    "credential": "missing",
+    "status": 401,
+    "body": "{\"error\":\"Unauthorized\"}"
+  },
+  {
+    "credential": "invalid",
+    "status": 401,
+    "body": "{\"error\":\"Unauthorized\"}"
+  }
+]

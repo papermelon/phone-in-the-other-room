@@ -16,10 +16,21 @@ test('three audiences do not share through the read API',()=>{
 });
 test('public consent is explicitly versioned and profile fields are bounded',()=>{
   assert.doesNotThrow(()=>validateGlobalCampfire(agreement));
-  for(const change of [{consentVersion:2},{expectedRevision:-1},{enabled:'true'},{publicName:'My private account name'},
+  for(const change of [{consentVersion:3},{expectedRevision:-1},{enabled:'true'},{publicName:'My private account name'},
     {appearance:{...appearance,partyID:id}},{appearance:{...appearance,shepherdOutfitID:'private'}},{partyID:id}]) assert.throws(()=>validateGlobalCampfire({...agreement,...change}));
   assert.doesNotThrow(()=>validateGlobalCampfire({id,command:'agreement',consentVersion:1,expectedRevision:1,enabled:false}));
   assert.throws(()=>validateGlobalCampfire({...agreement,enabled:false}));
+});
+test('wardrobe additions accept only the three curated appearance IDs',()=>{
+  const dressed={...appearance,shepherdShirtID:'shepherd_berry_shirt',shepherdOuterwearID:'shepherd_open_moss_coat',ollieCoatID:'fuller'};
+  assert.doesNotThrow(()=>validateGlobalCampfire({...agreement,appearance:dressed}));
+  for(const shirt of ['shepherd_dusk_shirt','shepherd_amber_shirt']) assert.doesNotThrow(()=>validateGlobalCampfire({...agreement,appearance:{...dressed,shepherdShirtID:shirt}}));
+  for(const key of ['shepherdShirtID','shepherdOuterwearID','ollieCoatID']) {
+    assert.throws(()=>validateGlobalCampfire({...agreement,appearance:{...dressed,[key]:'private'}}));
+    const partial={...dressed}; delete partial[key];
+    assert.throws(()=>validateGlobalCampfire({...agreement,appearance:partial}));
+  }
+  assert.throws(()=>validateGlobalCampfire({...agreement,appearance:{...dressed,shirtItemID:'private'}}));
 });
 test('both kinds and terminal-before-start are accepted; private fields never ride a session',()=>{
   assert.doesNotThrow(()=>validateGlobalCampfire(session));
@@ -42,4 +53,29 @@ test('public actions cannot contain a chat message or private membership identit
   }
   assert.doesNotThrow(()=>validateGlobalCampfire({id,command:'report',targetID:id,reason:'profile'}));
   assert.throws(()=>validateGlobalCampfire({id,command:'report',targetID:id,reason:'free text'}));
+});
+
+const profile={session:['Phone Away · Active'],tasks:['Read my book'],routines:['Evening · 22:00–07:00'],intention:'Rest',history:['Wind Down · 21 September'],partyNames:['Family'],inventory:[],sheep:[],appearance,decorations:{},collectibles:{},ollieAccessory:'none',barnCapacityLevel:0};
+test('full character profile uses one explicit version-2 choice and a bounded display snapshot',()=>{
+  assert.doesNotThrow(()=>validateGlobalCampfire({...agreement,consentVersion:2,publicName:'Tommy'}));
+  assert.doesNotThrow(()=>validateGlobalCampfire({...agreement,consentVersion:2,publicName:'Ngawang Chime',appearance:{...appearance,headShapeID:'boxy'}}));
+  const command={id,command:'profile',agreementID:id,sourceID:id,capturedAt:'2026-09-20T12:00:00Z',profile};
+  assert.doesNotThrow(()=>validateGlobalCampfire(command));
+  for(const change of [{health:{}},{ownerID:id},{tasks:[{}]},{history:Array(5001).fill('x')},{appearance:{...appearance,headShapeID:'unknown'}},{sheep:[{name:'unknown'}]}]) {
+    assert.throws(()=>validateGlobalCampfire({...command,profile:{...profile,...change}}));
+  }
+  assert.throws(()=>validateGlobalCampfire({...command,agreementID:'bad'}));
+  assert.doesNotThrow(()=>validateGlobalCampfire({command:'detail',participantID:id}));
+  assert.doesNotThrow(()=>validateGlobalCampfire({command:'detail',memberID:id}));
+  assert.throws(()=>validateGlobalCampfire({command:'detail',memberID:id,participantID:id}));
+});
+
+test('numbered channel reads and moves are bounded and session-scoped',()=>{
+  assert.doesNotThrow(()=>validateGlobalCampfire({command:'state',channelID:0}));
+  assert.doesNotThrow(()=>validateGlobalCampfire({...session,channelID:2}));
+  const move={id,command:'channel',agreementID:id,sourceID:id,channelID:2};
+  assert.doesNotThrow(()=>validateGlobalCampfire(move));
+  for(const channelID of [-1,0,1.5,'2',1000001,null]) assert.throws(()=>validateGlobalCampfire({...move,channelID}));
+  assert.throws(()=>validateGlobalCampfire({...move,sourceID:'invalid'}));
+  assert.throws(()=>validateGlobalCampfire({command:'state',channelID:-1}));
 });

@@ -163,6 +163,13 @@ extension FocusRunViewModel {
         }
     }
 
+    func setOllieCoat(_ coat: OllieCoatStyle) {
+        mutateFarm { state in
+            state.equipment.ollieCoatID = coat == .classic ? nil : coat.rawValue
+            return nil
+        }
+    }
+
     func wearOllieAccessory(_ itemID: String) {
         mutateFarm { state in
             try state.wearOllieAccessory(itemID: itemID)
@@ -174,6 +181,20 @@ extension FocusRunViewModel {
         mutateFarm { state in
             try state.takeOffOllieAccessory(itemID: itemID)
             return "Ollie is ready for the next search."
+        }
+    }
+
+    func wearShepherdShirt(_ itemID: String) {
+        mutateFarm { state in
+            try state.wearShepherdShirt(itemID: itemID)
+            return FarmShopCatalog.item(for: itemID).map { "Your Shepherd is wearing \($0.title)." }
+        }
+    }
+
+    func takeOffShepherdShirt(_ itemID: String) {
+        mutateFarm { state in
+            try state.takeOffShepherdShirt(itemID: itemID)
+            return "Your Shepherd’s cream shirt is back on."
         }
     }
 

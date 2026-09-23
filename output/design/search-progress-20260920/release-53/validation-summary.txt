@@ -1,0 +1,22 @@
+/tmp/counting-sheep-release-arm64-simulator.log
+** BUILD SUCCEEDED **
+
+/tmp/counting-sheep-build53-tests.log
+Executed 1094 tests, with 0 failures (0 unexpected) in 8.373 (10.479) seconds
+Executed 1094 tests, with 0 failures (0 unexpected) in 8.373 (10.486) seconds
+** TEST SUCCEEDED **
+
+/tmp/counting-sheep-build53-save-tests.log
+Executed 80 tests, with 0 failures (0 unexpected) in 2.406 (2.429) seconds
+Executed 80 tests, with 0 failures (0 unexpected) in 2.406 (2.448) seconds
+
+14 tracked property lists/entitlements: plutil PASS
+Source manifest: unchanged except intended build-number bump
+Live disclosure and scrolling: PASS
+Spoken VoiceOver: founder to verify on iPhone
+
+Signed archive: ARCHIVE SUCCEEDED; verified build 53 across seven bundles
+Distribution export: EXPORT SUCCEEDED; seven bundles passed signature/profile checks
+Upload: succeeded 2026-09-20 11:18 Singapore
+App Store Connect: Complete; build 53 Ready to Submit, Internal QA assigned (2 invitees)
+Live Ollie’s Search expansion, scrolling and collapse: PASS

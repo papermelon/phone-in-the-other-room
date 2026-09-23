@@ -1,5 +1,62 @@
 # Future Agent Tasks — Prioritised Backlog
 
+## Slumber Party recurring loading failure and request volume (22 September 2026)
+
+- [Investigation and local repair](plans/slumber-party-loading-investigation-2026-09-22.md): confirmed **`PGRST303: JWT issued at future`** on PostgREST 14.5, strongly matching Supabase's stale-time-cache incident. The founder authorized one project restart around 22:02 SGT; afterward the same secret-key HTTP checks passed twice and the Slumber Party list RPC returned HTTP 200 (387 ms from the Mac). Production remains on 14.5, so this is recovery evidence, not a proven permanent fix. Verify physical Farm/Apple/party recovery and confirm the patched service upgrade if failure recurs; the offered Postgres 17.6.1.166 upgrade has not been proven to contain that fix.
+- Campfire also has a confirmed compatibility defect: build 58 sends default-channel and withdrawal-consent fields rejected by production version 1. Local repair omits the default channel, repairs rejected withdrawal commands only after confirmed legacy capability, and retains profile-sharing gates. Validation is recorded in the linked report.
+- The affected account has 282 server revisions, latest September 12. The founder signed out; preserve the phone installation and verify the local account archive before any reset/restore that could lose newer changes. New 22:06 screenshots show Apple/Face ID completing; Farm RPCs returned HTTP 200. A separate confirmed client defect rejects the saved ISO date strings as numeric dates. The shared remote decoder and response normalization are repaired locally with synthetic regression coverage; distribute and physically verify recovery of the correct account and its newer local pending progress. Earlier no-sheet reports remain unverified separately.
+- Earlier request coalescing/backoff/Auth/diagnostic changes remain locally implemented. Production Edge functions have not received them. Obtain separate deployment/distribution authorization, then verify current Farm sync, Campfire audience changes, and two-account/privacy boundaries on a physical build. Never deploy the unrelated pending feature migrations as a blanket repair.
+
+## Home intent, goal picker, routine ideas, and receipts (22 September 2026)
+
+- [Implemented direction](plans/routine-home-receipt-2026-09-22.md): atomic goal-sheet presentation, contextual draft-based ideas, Farm progress copy, compact receipts, and Ollie/intent Home composition with grouped sections.
+- Home follow-up: compact start controls, Offline Together, feature info sheets, and the 30-minute manual Wind Down overlap rule are implemented. Verify the live transition, early-start confirmation, and both info sheets on the next physical build. Automatic start times remain unchanged.
+- After distribution, repeat first goal tap/save/reopen, cancel and save ideas, daytime/bedtime action transitions, full-card planning, Reduce Motion, narrow-screen wrapping, and spoken VoiceOver on physical devices. Planned minutes must remain clearly distinct from measured sleep or readiness. [Local evidence](../output/design/routine-home-receipt-20260922/README.md).
+
+## Home routine and Farm navigation clarity (21 September 2026)
+
+- [Implemented presentation](plans/home-farm-clarity-2026-09-21.md): whole evening routine with full-card editing, clearly named Wind Down/Phone Away start actions and purpose cues, grouped Farm destinations with contextual search help. Existing start eligibility, rewards and guidance dismissal state are preserved.
+- Distribute separately and repeat full-card taps, routine edits, smaller-version toggle, action-mode transitions, Farm guide targets and spoken VoiceOver on physical devices. Repeat narrow-device and complete large-text visual checks: local Simulator launch/capture was limited by low disk space and native automation errors. [Local validation](../output/design/home-farm-clarity-20260921/README.md).
+
+## Profile authentication and search collapse (21 September 2026)
+
+- [Source repair](plans/account-and-search-repair-2026-09-21.md): separate verified sign-in feedback from Farm activation, retry connection without repeating Apple, restore saved status after credential refresh, expose unique handles on Profile, and make the search summary/trail plus a bottom Show less control toggle reliably.
+- Distribute the app, then verify Apple success → Farm connection failure → retry on the affected physical account with support diagnostics. The screenshot establishes the failure stage, not its hosted cause. Verify handle claim collision with disposable accounts and spoken VoiceOver; preserve the founder's Farm.
+- Recheck expand/collapse in the full Farm screen on physical iPhone 16 Pro and other supported sizes. Local simulator checks are recorded in [evidence](../output/design/account-search-repair-20260921/README.md).
+
+## Automatic start and loading follow-through (21 September 2026)
+
+- [Source repair](plans/wind-down-loading-repair-2026-09-21.md): preserve due automatic occurrences during ordinary account sync, move the toggle to Edit Wind Down, bound Campfire reads, handle missing party detail, and reuse Bramble's running art for loading.
+- Distribute the updated app, then verify the reported 10 PM case with automatic start enabled beforehand and an account refresh across the boundary. Repeat background/terminated/open starts, actual selected-app access and the next unattended night. Simulator scheduling probes do not establish physical enforcement.
+- On the affected account/device, check Campfire timing, offline timeout/retry, party/Global switching, reduced motion and spoken VoiceOver. Source fixes do not identify the screenshot's specific hosted latency without request evidence. [Local checks](../output/design/wind-down-loading-20260921/README.md).
+
+## Slumber Party consent and addressed invitations (21 September 2026)
+
+- [Implementation and current direction](plans/slumber-party-repair-2026-09-21.md): consolidated terms, creation acknowledgement, scoped invitation feedback, exact handle/ID search, recipient inbox, shared loading sheep and button padding. [Evidence](../output/design/slumber-party-repair-20260921/README.md) separates local checks from hosted/device proof.
+- Backend deployed with founder authorization on 21 September: `20260921120000_slumber_party_invitations.sql`; `directInvitationsVersion = 1`, account username claim/search and invitation tests passed against production with rolled-back fixtures. [Deployment evidence](evidence/slumber-invitation-deploy-20260921/deployment.md). No Edge function or invite-key rotation was needed.
+- Pending distribution and physical two-account checks: create/join agreement confirmation, send/accept/decline/revoke, offline retry, account switch, blocked/expired invitation, large text, spoken VoiceOver and Reduce Motion. Diagnose the original screenshot request `ccf30050-1ad5-4960-bcce-a189142ab23a` against hosted logs if retained; the local source fix does not prove the original server incident's cause.
+- Persisting the entire create request across process death remains separate from the existing durable agreement receipt; after an uncertain relaunch reconcile the party list before retrying creation.
+
+## Campfire profiles and channels rollout (20 September 2026)
+
+- Deploy the [profile contract](plans/campfire-profiles-2026-09-20.md) only with explicit deployment authorization: additive profile migration and matching `campfire-global` Edge revision. Existing public version-1 receipts must not expose broader details until Save Global accepts version 2.
+- Distribute the updated native build separately; verify Global/party thought-bubble taps, exact times, own-account history, inventory/appearance, account switching, withdrawal, expiry and blocking on two physical accounts. Verify channel moves, full-channel races and the eight-person cap. Confirm large-text and VoiceOver behavior. Final channel/spacing and read-only Farm screenshot QA needs repeating after CoreSimulator launch/boot failures; see the [local evidence](../output/design/campfire-profiles-20260920/README.md). Local Farm positions remain local.
+- Future GTM: “claim your handle” reserves the same account character identity; do not introduce a separate public alias or Campfire name.
+
+## Ollie's next search card and bedtime bonus (20 September 2026)
+
+- [Scoped implementation](plans/ollies-next-search-2026-09-20.md) and [validation/native captures](../output/design/search-progress-20260920/README.md): shared card replaced in place, with a separately accounted 20-point bedtime bonus and 15-minute start tolerance for new runs. Source implemented; existing Farm layout and active-session visibility retained. Live Farm and Ollie’s Search disclosure/collapse and normal/large-text rule scrolling now verified in Simulator. TestFlight 1.0 (53) is processed and assigned to Internal QA. Pending: spoken VoiceOver on the founder’s iPhone (agreed handoff; automation could not establish speech/focus evidence), and signed-device overnight/account-switch validation. Heavy Phone Away still dominates the 30-day simulation; its cap, grouped arrival provenance and recoverable wandering remain separate follow-ups.
+
+## Repeated Brief Access and early-wake protection acceptance (20 September 2026)
+
+- [Source repair and acceptance matrix](plans/shield-access-and-early-wake-repair-2026-09-20.md): serialized restore warnings, per-grant callback identities, explicit terminal-parent replacement and stable independent-Morning access reconciliation. The App Shielding Start now handoff uses a dedicated button; NFC remains tag-authorized. Verify six back-to-back grants without foreground recovery and early wake during an active grant on a signed physical build. Source tests do not establish background Screen Time delivery.
+
+## Overnight re-entry and social exploration (20 September 2026)
+
+- [Exploration and staged plan](plans/campfire-connections-and-rest-exploration-2026-09-20.md): use a phase-aware “Back to rest” surface after frozen bedtime, preserving the evening checklist as secondary content. This is a recommendation, not yet implemented. Retain Brief Access/emergency exit and test real shield warm/cold routes.
+- [Social redesign prompt](plans/campfire-social-redesign-prompt.md) covers private/public people sheets, quiet cheers, buddy actions, activity gatherings and future themes/connections. Choose a design and initial theme taxonomy before new backend implementation.
+- Ollie play now explains the existing active-session restriction at the shared controller; menu and profile requests converge there. [1,079-test/build and native alert evidence](../output/design/campfire-global-20260920/README.md). Verify both entry paths on the next physical build, including VoiceOver. App distribution remains pending.
+
 ## Personal shield device acceptance (19 September 2026)
 
 - Interactive review resumed: both modes, completion/check states, phrase gates, Ollie/
@@ -27,22 +84,53 @@
   reopening. Verify non-daily routines and multi-night history recovery: the legacy
   automatic shield repeats daily while app persistence retains one occurrence.
 
+## Private Campfire bedtime rollout and device acceptance (19 September 2026)
+
+- Local implementation follows the [bedtime contract](plans/campfire-bedtime-2026-09-19.md). See [validation evidence](../output/design/campfire-bedtime-20260919/README.md). Deploy only with separate authorization: additive `night-flock-command` validator first, then `20260919130000_campfire_bedtime.sql`, verifying the actual hosted wrapper chain and privileges. Keep this private-bedtime rollout separate from the already activated Global slice.
+- Updated distribution and the contract's physical two-account matrix remain outstanding: open-screen bedtime/wake, late start/sharing, frozen settings, offline terminal/reconnect, receiver resume, withdrawal/block/party/account isolation, old/new clients, VoiceOver and Reduce Motion. Preserve founder data; presence never grants progression or proves sleep/online status.
+
+## Campfire readable plans and organic seating (20 September 2026)
+
+- [Mobbin research and implementation plan](plans/campfire-readable-plans-and-organic-seating-2026-09-20.md) records the implemented readable multiline plan cues, explicit full-text disclosure and stable asymmetric seats with local facing variation. [Validation evidence](../output/design/campfire-readable-20260920/README.md) tracks the local build, tests and native checks.
+- Bubbles/seating and person-sheet hierarchy are implemented locally, with full shared text in the existing sheet/list and profile/Farm disclosures after actions. Live-network, spoken VoiceOver and two-device acceptance remain release gates; no distribution or backend deployment is included.
+
+## Campfire polish acceptance (20 September 2026)
+
+- The common Campfire panel now keeps its campsite through loading, empty, populated,
+  refreshing and failed states, with native fire motion, a participant disclosure and a
+  seating menu. Valid presence survives routine refresh; unavailable presence is removed.
+  Duplicate entry command draining and overlapping periodic reads were reduced. See the
+  [implementation record](plans/campfire-polish-2026-09-20.md) and
+  [local evidence](../output/design/campfire-polish-20260920/README.md).
+- Remaining physical checks: slow/flaky network, account/gathering changes, foreground return,
+  spoken VoiceOver and seat actions, Reduce Motion, and hold/drag versus scrolling. No backend
+  deployment or app distribution is included in this visual pass.
+
+## Campfire seating and navigation device acceptance (19 September 2026)
+
+- Local [seating/navigation changes](plans/campfire-seating-navigation-2026-09-19.md) require physical tap/hold/drag versus scrolling, VoiceOver seat actions, Reduce Motion and party-to-Campfire return checks. Seats are local view state. Global was deployed and activated on 20 September; themed gatherings and mutual connections are [exploration only](plans/campfire-connections-and-rest-exploration-2026-09-20.md).
+
 ## Unified Campfire activation and device acceptance (16 September 2026)
 
-- Founder-authorized source implements one Campfire with Off / My Slumber Party / Global. Home/Farm and private-group entry share the same panel; browsing never changes audience. The visible agreement flow, typed joins, both session modes, accessible lists, compact empty states and larger-text layouts replace the earlier proposed “Together now” direction. See [implementation contract](plans/global-campfire-2026-09-15.md) and [local validation](../output/design/unified-campfire-20260916/README.md).
-- Public backend source is new and disabled by default. Obtain specific deployment/activation authorization before applying `20260916120000_global_campfire.sql` and publishing `campfire-global`. Verify the full hosted stack, actual pg_cron execution, service-only access, account deletion, moderation owner/support contact, age/disclosure requirements, retention/backups, load limits and rollback. Local PostgreSQL tests use documented fixtures for existing contracts and do not prove hosted integration.
+- Founder-authorized source implements one Campfire with Off / My Slumber Party / Global. Home/Farm and private-group entry share the same panel; browsing never changes audience. The visible agreement flow, typed joins, both session modes, accessible lists and larger-text layouts (with the 20 September persistent campsite replacing compact empty cards) replace the earlier proposed “Together now” direction. See [implementation contract](plans/global-campfire-2026-09-15.md) and [local validation](../output/design/unified-campfire-20260916/README.md).
+- Explicitly authorized [Global deployment/activation completed on 20 September](evidence/global-campfire-deploy-20260920/deployment.md): exact migration, Edge v1, enabled switch, hosted rolled-back SQL suite, service-only access and invalid-auth probes verified. Daily pg_cron is configured; observe its first scheduled execution. Authenticated two-device HTTP/UI acceptance, operational moderation owner/support contact, public-connections age/disclosure decisions, backup/restore and production load evidence remain unverified. No native app distribution occurred.
 - Repeat the original build 51 scenario on disposable physical accounts after updated app distribution: one Wind Down and one Phone Away, both private seats on both phones; then zero-party Global, mixed private/global, active widening/narrowing, offline early end/Off, kill/relaunch, two-device receipt conflicts and account switch. Verify shielding, morning check-in timing and VoiceOver separately. Preserve the founder’s Farms. Simulator sessions and app-reported presence do not prove physical placement.
 - General mutual connections, public free text/chat, worldwide realtime/scale and the broader Wind Down/Screen-Free Morning redesign remain later slices. The [Fable study](plans/cursor-fable-social-ux-handoff-2026-09-15.md) is design evidence; its public proposal buttons do not imply these features shipped.
 - Trace the screenshot’s “completed Wind Down · 0 quiet min” using before-bed versus overnight records. A factual zero is distinct from absent sharing or no record. This metrics investigation is separate from the unified Campfire visibility implementation.
 
-## Mobbin first-night research follow-up (14 September 2026)
+## Mobbin first-night follow-up (updated 20 September 2026)
 
-- A private three-flow collection and [source-grounded research brief](plans/mobbin-first-night-2026-09-14.md)
-  are ready. Next: prototype the state-aware first-start action and consolidated plan review,
-  then assess small-screen, large-text, denied/empty-selection and runtime-failure states.
-  These are proposed experiments, not implemented changes. Preserve ongoing start-sheet/Home
-  work and current consent/admission rules. OAuth setup succeeded, but a callable Mobbin MCP
-  search still needs verification; this research used the authenticated browser.
+- The state-aware first-start sheet is implemented with a full-height presentation, fixed
+  bottom action, separate permission/selection/start steps, existing repair intents, and
+  preserved consent/NFC behavior. See the [research and implementation brief](plans/mobbin-first-night-2026-09-14.md)
+  and [local validation evidence](../output/design/first-start-20260920/README.md).
+- Remaining acceptance: physical-device authorization denial/restoration, picker dismissal,
+  foreground return, runtime protection failure, NFC cancellation/mismatch/success, spoken
+  VoiceOver, and a first-use observation. Preview readiness is simulated and cannot prove
+  those platform behaviors.
+- The consolidated plan-review experiment remains proposed and was not implemented in this
+  task. The private three-flow collection is available in the brief. OAuth succeeded during
+  research; that research used the authenticated browser, not a verified MCP search.
 
 ## Shop/Ollie and campfire follow-up (13 September 2026)
 
@@ -61,6 +149,14 @@
   and adds native paper art for all eight decorations, six keepsakes and four pasture upgrades.
   Home, Farm, Shop previews and chase share the equipped look. See [review and campfire direction](plans/shop-ollie-and-campfire-2026-09-13.md)
   and [native visual/build evidence](../output/design/shop-ollie-20260913/README.md).
+- **20 September fitting correction:** the earlier placement-only renderer reused one neck
+  transform for every Home frame and had no chin/ruff occlusion. All six current garments now
+  use independent neckline/chest landmarks and the original textured fur over the fabric. New
+  silhouettes need their own overlap review; colour/motif variants can reuse an accepted shape.
+  The Shop preview now
+  includes head tilt and settle/rest/rise, and native art capture includes every Home frame.
+  See [fitting contract](ASSET_NAMING.md#ollie-neckwear-fitting) and
+  [repair evidence](../output/design/ollie-bandana-20260920/README.md).
 - Confirm fitted motion, small Farm scale, large text, physical VoiceOver and Reduce Motion on
   the next device build. Source/Simulator checks do not constitute installed TestFlight acceptance.
 - Campfire source is implemented: free gathering place, separate version 1 sharing consent,
@@ -83,14 +179,24 @@
   references. Retire only after all-target/static/dynamic reference and recovery checks; do not
   claim resource savings from this rendering change.
 
-## Personal Farm fetch — device acceptance (13 September 2026)
+## Personal Farm fetch — device acceptance (updated 20 September 2026)
 
-- Local implementation now supports aimed tap/drag/flick throws, continuous dressed Ollie
-  retrieval, pickup/carry/handoff, one ball at a time, and bounded sheep avoidance. Validate
+- Current source uses ball-origin swipe/flick throws, all four grass corners, continuous dressed
+  Ollie retrieval, pickup/carry/handoff, one ball at a time, and bounded sheep avoidance. Large-text
+  controls wrap/stack and the Shepherd nameplate stays inside the card. Validate
   gesture feel on a physical iPhone, including flick strength versus parent-scroll gestures,
   repeated throws, resting-to-rise transitions, pasture changes, backgrounding, Reduce Motion and VoiceOver direction-menu
   throws. Native Simulator captures and domain/lifecycle tests are recorded in
-  [fetch evidence](../output/design/fetch-20260913/README.md). No new TestFlight upload is implied.
+  [original fetch evidence](../output/design/fetch-20260913/README.md). No new TestFlight upload is implied.
+- [20 September validation](../output/design/fetch-swipe-20260920/README.md): full app build
+  passed; 1,096 tests passed with the unrelated, uncompilable `CampfireProfileTests.swift`
+  excluded (14 fetch tests passed). Restore the unrestricted full-suite gate after that test
+  target issue is repaired. Native large-text, swipe/scroll and VoiceOver acceptance remains
+  pending: the Mac was locked and capture Simulators stalled launching/migrating. The DEBUG
+  fixture supports `--fetch-largest-text` and `--fetch-controls-only` for the next inspection.
+- Progression and wool Shop additions are proposals, not shipped features. Start with optional
+  short target practice and cosmetic balls; see [fetch progression proposal](plans/fetch-progression-2026-09-20.md).
+  Confirm the first progression slice before changing inventory, save contracts or rewards.
 
 ## Farm / shared pasture — device and rollout gates (12 September 2026)
 
@@ -195,6 +301,24 @@ questionnaire answers are not saved until the person accepts the result; closing
 that optional draft without changing existing answers or gift eligibility.
 
 ## Shepherd artwork and fitted clothing — 12 September 2026
+
+22 September expansion follow-up: [wardrobe and collection study](plans/wardrobe-expansion-2026-09-22.md).
+The [23 September first slice](plans/wardrobe-layers-2026-09-23.md) implements a fuller coat and
+independent shirt/outerwear. Capability-gated social appearance support for the shirt, open
+coat and Ollie coat IDs, with validators, storage and old-client fallbacks, was [deployed to production
+on 23 September](evidence/campfire-wardrobe-deploy-20260923/deployment.md). Verify a two-account
+physical Campfire and distribute the matching native app before claiming exact social appearance
+is live on devices. Older clients retain the cream shirt, closed moss coat and classic Ollie coat.
+Berry, dusk and amber shirts are now in the local Shop.
+Then add footwear/neckwear/carry alongside finished art and persistence coverage. Farm collections
+require coexisting placement review before sale. The [Corgi sit/run/rest study](../output/design/corgi-breed-study-20260923/README.md)
+corrects the earlier Collie-like colour swap. Complete all 23 poses and garment fit, including
+an uninterrupted copper forehead, before making it selectable or shareable. Other breeds still
+need complete authored packs.
+Physical-device motion, VoiceOver and multi-account restore remain separate from Simulator QA.
+Production lint after the 23 September rollout reports two JSONB initialization cast warnings
+in `public.global_campfire_state_before_wardrobe`; exercised paths passed, but use explicit
+JSONB literals if that function is next revised. Two older unused-variable warnings remain.
 
 The founder-approved body correction is implemented in the shared production renderer:
 broader curved clothes, angled sleeves, mitten hands, shorter trouser sections, rounded boots

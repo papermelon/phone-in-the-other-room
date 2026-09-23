@@ -46,7 +46,7 @@ const v4CommandFields: Record<string, string[]> = {
   campfireBuddyAction: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","targetMemberID","buddyAction","outcome","reflection","idempotencyKey"],
   setCampfireAlerts: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","startAlerts","idempotencyKey"],
   setCampfireSharing: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","expectedRevision","consentVersion","enabled","idempotencyKey"],
-  publishCampfireSession: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","kind","activity","startedAt","observedAt","expiresAt","ended","revision","publicIntention","asksForBuddy","announceStart","checkInAfter","idempotencyKey"],
+  publishCampfireSession: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","kind","activity","startedAt","observedAt","expiresAt","intendedBedtime","ended","revision","publicIntention","asksForBuddy","announceStart","checkInAfter","idempotencyKey"],
   movePastureEntity: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","entityID","expectedRevision","x","y","idempotencyKey"],
   contributePastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","sheepID","consentVersion","idempotencyKey"],
   recallPastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","visitID","idempotencyKey"],
@@ -66,6 +66,7 @@ const v4CommandFields: Record<string, string[]> = {
   deleteAccount: ["schemaVersion", "command", "idempotencyKey"],
   updatePublicProfile: [
     "schemaVersion", "command", "expectedRevision", "displayName", "nameSelectionKind", "skinToneID", "hairStyleID", "shepherdOutfitID", "shepherdAccessoryID", "ollieOrnamentID", "featuredSheepDefinitionID", "pastureThemeID", "headShapeID", "idempotencyKey",
+    "shepherdShirtID", "shepherdOuterwearID", "ollieCoatID",
   ],
   publishActivity: [
     "schemaVersion", "command", "sourceEventID", "kind", "outcome", "startedAt", "endedAt", "windDownMinutes", "phoneAwayMinutes", "statusRevision", "sharingScope", "idempotencyKey",
@@ -234,6 +235,11 @@ function validateV4Command(body: Record<string, unknown>, command: string): void
       if (![start, end, Date.parse(String(body.observedAt))].every(Number.isFinite) || !["windDown","phoneAway"].includes(String(body.kind)) || typeof body.ended !== "boolean"
         || body.revision !== (body.ended ? 2 : 1) || end <= start || end - start > 86400000
         || Date.parse(String(body.observedAt)) < start) throw new Error("Invalid campfire session");
+      if (body.intendedBedtime !== undefined && body.intendedBedtime !== null) {
+        body.intendedBedtime = normalizeActivityTimestamp(body.intendedBedtime, "intendedBedtime");
+        const bedtime = Date.parse(String(body.intendedBedtime));
+        if (body.kind !== "windDown" || !Number.isFinite(bedtime) || bedtime > end) throw new Error("Invalid campfire bedtime");
+      }
       if (body.publicIntention !== undefined) {
         if (typeof body.publicIntention !== "string" || [...body.publicIntention].length > 80 || /[\u0000-\u001f\u007f]/.test(body.publicIntention)
           || typeof body.announceStart !== "boolean" || typeof body.asksForBuddy !== "boolean") throw new Error("Invalid public intention");
@@ -287,6 +293,11 @@ function validateV4Command(body: Record<string, unknown>, command: string): void
       validateDisplayName(body);
       requireEnum(body, "nameSelectionKind", ["initial", "migration", "change"]);
       validateFlatPresentation(body);
+      if (["shepherdShirtID", "shepherdOuterwearID", "ollieCoatID"].some(key => body[key] !== undefined)) {
+        requireEnum(body, "shepherdShirtID", ["none", "shepherd_berry_shirt", "shepherd_dusk_shirt", "shepherd_amber_shirt"]);
+        requireEnum(body, "shepherdOuterwearID", ["none", "shepherd_open_moss_coat"]);
+        requireEnum(body, "ollieCoatID", ["classic", "fuller"]);
+      }
       if (body.avatarID !== undefined) validateAvatarID(body);
       if (body.headShapeID !== undefined) requireEnum(body, "headShapeID", ["pear", "round", "boxy", "triangular"]);
       break;

@@ -20,8 +20,10 @@ validation has been performed. This replaces the earlier design-only status.
   returns there; no third-party app is launched. Routes expire after two minutes, match
   owner/session/schedule revision and epoch, and are consumed once after restoration.
 - Brief Access reuses the existing grant/restore monitor and ledger, scheduled before
-  clearing selected-app limits. Intentional early endings consume a fresh coordinator
-  challenge. NFC authentication and technical failure transitions keep their paths.
+  clearing selected-app limits. Ordinary intentional early endings consume a fresh coordinator
+  challenge. The [20 September refinement](shield-access-and-early-wake-repair-2026-09-20.md)
+  gives Start Screen-Free Morning now a dedicated confirmation button; defer/skip use
+  intent-specific phrases. NFC authentication and technical failure transitions keep their paths.
 - Phrase entry is ephemeral. Matching tolerates case, Unicode forms, whitespace and
   punctuation while retaining words and numbers. No new public/social, Farm-sync or
   remote Live Activity fields are introduced.
@@ -79,7 +81,7 @@ Example before-bed shield:
 >
 > **My routine** · **5-min access**
 
-Both actions are visible immediately. **My routine** (or **My tasks** for Phone Away)
+Both actions are visible immediately. **My routine** (or **My morning** / **My tasks** in those modes)
 opens the interactive checklist; **5-min access** opens the phrase gate directly.
 Neither grants access on its own. These use the two system button slots, replacing
 the prior Close app / Options arrangement. The normal Home gesture remains available

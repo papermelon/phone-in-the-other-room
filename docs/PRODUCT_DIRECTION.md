@@ -71,7 +71,7 @@ The ordinary independent-user journey is the primary experience. Workshops use t
 journey; Counting Sheep stays optional for platform-agnostic activities. The [8 September
 implementation and pilot plan](plans/wind-down-habit-loop-2026-09-08.md) owns the bounded slice.
 
-Home brings the first chosen evening activity forward and offers a direct, save-only edit.
+Home presents the whole saved evening routine under “Your Wind Down routine” and offers a full-card, save-only route to explore ideas and edit it. The main start action names its current mode prominently: Start Wind Down during its window or when the default 30-minute Phone Away would overlap its start; otherwise Start Phone Away with the saved period/purpose. See the [21 September Home and Farm refinement](plans/home-farm-clarity-2026-09-21.md).
 Plan progressively offers an optional recognizable cue, preparation, smaller activity, and
 phone placement. None is a mandatory questionnaire. Optional, reversible checks during
 a session are private self-reports; they do not change timers, shielding, rewards or
@@ -81,14 +81,15 @@ overnight protection, morning invitations, and rewards. Selection survives relau
 consumed only after coordinator admission; a run retains its own immutable snapshot.
 
 The native app shield shows the current routine/tasks as read-only text with saved check
-marks. Its direct actions are **My routine** (Wind Down and Screen-Free Morning), **My
+marks. Its direct actions are **My routine** (Wind Down), **My morning** (Screen-Free Morning), **My
 tasks** (Phone Away), and **5-min access**. On iOS 26.5+, the first button opens the
 checklist sheet over the existing Ollie Home journey; the second opens its phrase sheet.
 Older systems give manual-open instructions. Ordinary app opens continue to show Ollie.
 Each handoff is bounded, one-use and matched to the owner and protection occurrence.
 
-Brief Access and deliberate early ending both require a fresh matching phrase from the
-next unchecked activity/task or the relevant exact goal. Completed/overnight Wind Down
+Brief Access and ordinary deliberate early ending require a fresh matching phrase from the
+next unchecked activity/task or the relevant exact goal. Starting Screen-Free Morning now
+uses the dedicated confirmation described below; deferring/skipping use intent-specific phrases. Completed/overnight Wind Down
 uses “Put my phone away for sleep” and leads toward sleep. Checking everything does not
 end protection. Phone Away accepts up to three optional private tasks at start, independent
 of Campfire intentions. NFC-authenticated exits and technical fail-open remain intact.
@@ -115,6 +116,8 @@ encouragement provide continuity. This slice adds no reward economics, notificat
 remote analytics, social fields, or habit-effectiveness claims. Shared-idea borrowing keeps
 existing agreements/capability gates and offers an explicit routine-review route when full.
 
+20 September early-wake refinement: choosing **Start Screen-Free Morning now** with App Shielding uses a dedicated confirmation button, without typing a sleep phrase. NFC retains tag authorization; deferring/skipping and ordinary exits retain their applicable confirmation because they lift protection. The existing coordinator owns the terminal handoff and independent morning occurrence. See [repair contract](plans/shield-access-and-early-wake-repair-2026-09-20.md).
+
 ## Morning continuity and completion presentation
 
 Founder direction, 13 September 2026: Screen-Free Morning continues the same Ollie-and-sheep
@@ -125,9 +128,9 @@ Remove the generic active-session Purpose menu. Its compatibility storage is not
 profile and must not be repurposed as one without the person's confirmation.
 
 Completion leads with an actually saved sheep/clue outcome or carried Farm progress, followed
-by one compact timer record and one main destination. Keep Farm credit calculations, Health,
+by one compact timer record and one main destination. Use **Farm progress** in release copy; retain technical credit identifiers and accounting. Keep calculations, Health,
 Brief Access, and protection evidence in details. Only the morning linked to the displayed Wind
-Down belongs in its receipt. The pre-bedtime timer segment is labelled “Pre-Sleep Wind Down”;
+Down belongs in its receipt. The pre-bedtime timer segment is labelled “Before bedtime”;
 this changes presentation only, not credited minutes or reward accounting.
 
 The [meaningful personalisation implementation](plans/meaningful-personalisation-implementation-2026-09-13.md)
@@ -168,13 +171,24 @@ is a separate proposal: no AI processing, API spend, deployment or distribution 
   searches, the first three completed 100-minute Screen-Free Morning searches, and the first
   three completed 100-minute Phone Away meter searches each guarantee a sheep; later searches
   use their source's independent chance and bad-luck protection. Wind Down and Phone Away
-  searches use cumulative credit under ADR-0020: 420 eligible Wind Down minutes or
+  searches use cumulative credit under ADR-0020: a seven-hour Wind Down trail, with
+  separately recorded bedtime bonuses for new version-2 runs, or
   100 independent Phone Away minutes, including eligible early-ended time and excluding
   Brief Access. Wind Down includes overnight timer time through actual/planned end;
   Screen-Free Morning remains a separate ledger. Farm progression is not a claim about
   sleep or verified screen avoidance. Factual before-bed minutes and completed-night
   counts remain distinct. **Screen-Free Morning** is the release-facing name;
   `SunriseTrail*` names remain compatibility-safe internals.
+- Founder direction, 20 September 2026: evolve the existing progress card beneath the
+  Farm into a folded/expanded **Ollie's next search** card, story first with exact
+  progress on expansion, while preserving the current Farm layout. Combine accumulated
+  Wind Down time with a separately accounted bedtime-ritual bonus. The
+  [scoped implementation plan](plans/ollies-next-search-2026-09-20.md) records the
+  implementation and validation work. The authorized initial policy grants 20 percentage
+  points once per anchored night for starting within 15 minutes of the planned Wind
+  Down start and continuing to bedtime. This is included in
+  [TestFlight 1.0 (53), Internal QA](../output/design/search-progress-20260920/release-53/README.md);
+  physical acceptance remains separate. Version-0/1 runs retain their existing ADR-0020 contracts.
 - Search outcomes are deterministic after resolution, persisted once, and protected against
   unreasonable bad luck. Missing data never lowers the search chance.
 - The Farm progression direction separates a permanent discovery/history record from the
@@ -200,15 +214,13 @@ is a separate proposal: no AI processing, API spend, deployment or distribution 
   Practice has its separate welcome reward rather than regular meter credit. Legacy
   `trailDistance`, `trailStrength`, `trailMap`, `pendingMappedMinutes`, and odds fields
   remain decodable; release copy does not present those obsolete fields as current progress.
-- The user-facing action labels are **“Put phone away,” “Start now,”** and **“Plan.”** Copy does
-  not force the mode name into awkward verbs.
+- Home names its dynamic primary action **Start Wind Down** or **Start Phone Away**, with the saved routine or purpose visible. Planning remains a separate action.
 - Wind Down setup may hold up to three ordered evening suggestions and two morning suggestions.
   These are private by default, optional ideas with no checkmarks, verification, reward, score,
   streak, or claim that a suggestion was completed. An accepted versioned Slumber Party agreement
   may share the stable selected ideas and their planned order without changing that evidence
   boundary. Guidance appears beside those choices, on Home, and at phase-appropriate moments. The
-  source library is bundled locally and reached from the secondary **“About these ideas and
-  sources”** link; “finite guide” is an internal description only.
+  source library is bundled locally. Evening and morning planning offer contextual ideas, rationale, and source notes; additions stay in a draft until **Save ideas**. Home has no standalone sources footer. The full library remains available from relevant help routes; “finite guide” is an internal description only.
   Following the 7 September device review, Live Activity cues use complete action wording and
   show the selected ideas together, without pairing the first idea with an unrelated tip.
   Ideas do not rotate on a timer or imply step completion. The bedtime display should move
@@ -234,19 +246,44 @@ with actual worn/placed previews and reversible equipment actions. Preserve inve
 prices, unlocks and ownership. The seven existing fitted Shepherd items remain in the same style.
 See [collection review and implementation](plans/shop-ollie-and-campfire-2026-09-13.md).
 
+22 September founder direction: expand breeds/coat lengths, wardrobe and Farm collectibles in
+the same simple painted style. Clothing at different positions must coexist; a hat must not
+exclude a shirt or coat. Current Shepherd headwear and clothing already have independent saved
+choices. The [expansion study](plans/wardrobe-expansion-2026-09-22.md) defines proposed additional
+slots, breed/coat art requirements and collection destinations. The
+[23 September first slice](plans/wardrobe-layers-2026-09-23.md) adds a complete fuller Border Collie
+coat and independent Shepherd shirt/outerwear locally; other breeds and slots remain planned.
+The source now capability-gates the exact shirt, open coat and Ollie coat IDs through private
+Slumber Party and Global Campfire. The [23 September backend rollout](evidence/campfire-wardrobe-deploy-20260923/deployment.md)
+activated that contract in production; native distribution and physical acceptance remain separate.
+Older servers still receive the supported fallback look. Two additional shirts
+use the existing paper-textured Shepherd renderer. Corgi exploration must differ in low body,
+short legs, wedge head, copper saddle markings and bobtail across every pose; its forehead is
+plain copper, without a dot or Border Collie blaze. The [three-pose study](../output/design/corgi-breed-study-20260923/README.md)
+is not selectable until its complete fitted animation pack is approved.
+
 ## Slumber Party
 
-16 September founder-authorized refinement and implementation of [Campfire visibility](plans/global-campfire-2026-09-15.md): retain **Campfire** for the shared-session experience with an **Off / My Slumber Party / Global** visibility choice. This supersedes Astra's proposed “Together now” label and reserving Campfire for public use. Slumber Party remains the ongoing private group and meadow. Both Wind Down and Phone Away belong at its Campfire; global participation works without a party. The implementation separates browsing from publication so looking at global participants never changes one's visibility. Required disclosures belong in the visible choice flow rather than a hidden second enable switch. Unified UI and the first global service slice are implemented locally; public backend deployment, activation and app distribution remain pending. Existing private sessions never become public automatically. The new visible choice flow covers both session modes and adapts to large text. The original build 51 report still needs two-account physical-device acceptance after distribution. The current private implementation and consent contracts follow.
+21 September founder-authorized [consent and invitation repair](plans/slumber-party-repair-2026-09-21.md): one collapsible terms disclosure, visible creation/join and agreement confirmation, exact handle/user-ID invitations with an incoming invitation list, and a shared animated sheep for loading. This authorizes narrow account lookup for inviting known people; parties remain private. Codes become a compatibility fallback. Search and invitations require the advertised backend capability. Source, local validation and production activation are recorded separately.
+
+20 September [readable Campfire plans and organic seating](plans/campfire-readable-plans-and-organic-seating-2026-09-20.md): the authorized native refinement replaces the uniform ellipse with stable asymmetric seats and local facing variation. Short shared plans wrap; longer plans use View plan and open the complete permitted text in the existing person sheet/list. Person sheets lead with plan and actions, followed by expandable profile/Farm/history. Local validation is recorded separately from deployment and physical acceptance.
+
+20 September founder correction: [Campfire character profiles](plans/campfire-profiles-2026-09-20.md) replaces preset public aliases and minimal public cards. Saving Global reveals the existing character name/look, tasks, routines, exact session times/state, intention, recorded history, party names and Farm inventory/appearance. Activity bubbles open details. Global uses numbered channels with eight shared participants each and an occupancy/channel switcher; more channels open as needed. One character name/handle belongs to each account, including a future “claim your handle” launch flow. Existing acceptance is not silently expanded. This source revision is separate from the earlier Global backend deployment.
+
+19 September [Campfire navigation and seating refinement](plans/campfire-seating-navigation-2026-09-19.md): Campfire is an independent Home/Farm destination, with party entry opening that destination already scoped to the group. The scene offers locally movable seats around the fire and visible existing buddy-request cues. Rearrangement never changes publication, other members' layouts or rewards. Global service availability is distinct from an empty gathering; source changes do not activate the public backend.
+
+19 September founder-approved [private Campfire bedtime presentation](plans/campfire-bedtime-2026-09-19.md): an actual shared primary Wind Down keeps its customized Shepherd awake before the admitted run's frozen intended bedtime, then tucked into a sleeping bag until the existing session ends/expires. Phone Away stays awake. Ordinary schedules never create Campfire presence. This uses the existing sharing choice and updated disclosure, with no new user-facing consent/version flow or exact-bedtime label. Source implementation is local; backend deployment, distribution and physical two-account validation remain pending. Global now follows the 20 September full-profile direction linked above.
+
+16 September founder-authorized refinement and implementation of [Campfire visibility](plans/global-campfire-2026-09-15.md): retain **Campfire** for the shared-session experience with an **Off / My Slumber Party / Global** visibility choice. This supersedes Astra's proposed “Together now” label and reserving Campfire for public use. Slumber Party remains the ongoing private group and meadow. Both Wind Down and Phone Away belong at its Campfire; global participation works without a party. The implementation separates browsing from publication so looking at global participants never changes one's visibility. Required disclosures belong in the visible choice flow rather than a hidden second enable switch. Unified UI is implemented locally. The first Global backend slice was [deployed and activated on 20 September](evidence/global-campfire-deploy-20260920/deployment.md) with explicit founder authorization; updated native app distribution and physical acceptance remain separate. Existing private sessions never become public automatically. The new visible choice flow covers both session modes and adapts to large text. The original build 51 report still needs two-account physical-device acceptance after distribution. The current private implementation and consent contracts follow.
 
 Founder authorized campfire implementation on 13 September 2026. Campfire is a free gathering
 place inside each existing meadow; the 12-contribution lantern remains an earned improvement.
 Only customized Shepherds with current, freshly observed shared sessions appear in Live sessions.
-The live Campfire scene is absent when no session is active. Saved membership, sheep visits and placements live
+The campsite remains visible through loading and empty states; only current, freshly observed shared sessions seat Shepherds. Saved membership, sheep visits and placements live
 in a separate Shared meadow view and never imply activity. Optional bounded Phone
 Away activity categories require a separate per-party version 1 consent receipt and advertised capability.
 The founder-approved Buddies iteration adds separately authored intentions, volunteer buddy support,
-optional return check-ins and opt-in party notifications under agreement version 2. Private task text
-is never copied automatically. See the [current Buddies source contract](plans/campfire-buddies-implementation-2026-09-13.md);
+optional return check-ins and opt-in party notifications under agreement version 2. Party-only sharing does not copy task text; explicit Global visibility includes it in the character profile. See the [current Buddies source contract](plans/campfire-buddies-implementation-2026-09-13.md);
 this iteration’s backend and push configuration were [deployed and verified](evidence/campfire-buddies-deploy-20260913/deployment.md); updated app distribution and physical notification receipt remain pending. Default Wind Down validity ends at planned wake, Phone Away at
 its planned end, with terminal precedence and a 24-hour ceiling. Temporary gathering positions
 are distinct and never overwrite saved arrangements. Realtime updates have a 20-second fallback
@@ -292,8 +329,10 @@ also drawing it in the private scene. Everyone may arrange earned group decorati
 Personal Farm navigation uses one rule: tapping a resident opens that resident's details and
 actions. Sheep open their existing Barn detail; the Shepherd opens personal appearance and
 wardrobe; Ollie opens play and owned accessories, with an explicit Shop link. Fetch/gather
-returns to the visible pasture. Fetch opens a local aiming mode: tap a destination or drag and
-release to aim, with flick momentum extending the throw within the grass. One ball travels in
+returns to the visible pasture. Founder update (20 September 2026): fetch starts by swiping
+or flicking the ball itself. Swipe direction, travel and momentum determine its landing point;
+tapping the field or ball does not throw. Fetch can reach all four grass corners independently
+of the smaller resident-wandering bounds. A landing guide previews the throw. One ball travels in
 an arc, lands, and stays there until Ollie reaches it. If Ollie is resting, fetch continues from
 his displayed pose through the authored rise sequence before allowing a throw. His dressed running animation follows a
 continuous route out and back; nearby sheep step aside. The ball becomes available again only
@@ -301,7 +340,7 @@ after handoff. Direction-menu throws provide an alternative to gestures, and Red
 removes the arc/spin/gait cycling while preserving travel and timing; a resting pose is held
 before the upright pose instead of cycling the rise frames. The Farm backdrop is aligned to
 keep the barn visible when narrow cards crop the wide artwork. Leaving the visible Farm,
-changing pasture, backgrounding or starting Wind Down cancels play. Fetch grants no rewards
+changing pasture, backgrounding or starting an active session cancels play. Play is paused during active sessions; both the pasture menu and Ollie profile actions explain the pause in an alert. Fetch grants no rewards
 and sends no social presence. The Shepherd model stays pinned above scrolling customization
 controls, showing changes immediately. The Shop remains a named destination.
 
@@ -377,7 +416,7 @@ records or raw Health samples. Consult the exact versioned capability before pub
 ## Home hero
 
 - Home design approval (2026-08-28; native composition implemented, acceptance incomplete): personal Ollie
-  leads a minimalist hero with 1–3 home ornaments, a bordered Tonight timing card above it, and
+  leads a minimalist hero with 1–3 home ornaments and
   a connected Slumber Party member/status preview with one recent highlight. Keep the round
   label on one line. Photo-based ear and tongue poses are approved references for animation
   in both Home and Farm; registered frame sets and the three finished cosmetic layers are now implemented. The
@@ -391,11 +430,19 @@ records or raw Health samples. Consult the exact versioned capability before pub
   processing provenance are retained. Physical-device performance and interaction acceptance
   remain separate gates. No updated phone build or distribution is implied by source work.
   See `docs/plans/home-hero-approved-direction.md` for sequencing and acceptance checks.
-  Founder correction at 20:37 on 28 August: restore the older bordered Tonight design with
-  bedtime/wake time and separate Before bed/After waking inset cells above Ollie. Restore one
-  prominent green start card beneath the hero, choosing eligible Wind Down or Phone Away.
-  Keep the rest of current Home and current character art; do not revive obsolete combined
-  quiet-minute claims or the old five-tab navigation.
+  Founder refinement on 22 September supersedes the earlier requirement to place timing above Ollie:
+  keep Ollie’s animated home and group it with an Atoms-inspired prominent intent/start button.
+  The compact button places its icon beside the same title, cue, and subtitle, with native press feedback. It names the current mode and starts a timer, never
+  records a routine activity as completed. Organize supporting content into Your evening,
+  Your day, and Offline Together. Preserve the bedtime/wake and separate Before bed/After waking
+  planned-minute summary under Your evening. The hero highlights before-bed minutes as Your planned Wind Down. These are plan values, not a sleep-readiness score.
+  Keep Phone Away planning as a compact full-card route with its saved purpose; the independent
+  100-minute Phone Away and seven-hour Wind Down search meters belong on Farm. Preserve current
+  art and the four-tab structure. Slumber Party and Campfire each have an accessible info control:
+  Slumber Party is an invite-only friend group; Campfire leads with the wider Global community,
+  while retaining private viewing. Viewing and publication remain separate. Manual Home start
+  selection and confirmation allow Wind Down when a default 30-minute Phone Away would cross its
+  start. Ending exactly at that boundary does not overlap; automatic starts are not advanced. See [Home, routines, and receipts](plans/routine-home-receipt-2026-09-22.md).
 ## Shared-habits implementation records
 
 These dated records identify authorized slices and their evidence sources. Verify current

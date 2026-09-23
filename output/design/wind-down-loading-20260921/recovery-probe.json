@@ -1,0 +1,153 @@
+{
+  "cases" : [
+    {
+      "failures" : [
+
+      ],
+      "name" : "ordinary-prewake-intent-only",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "ordinary-partial-morning-replay",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "consumed-decision-no-resurrection",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "explicit-active-handoff",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "explicit-defer-expired-window",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "unauthorized-nfc-has-no-terminal-decision",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "manual-start-no-prior-automatic",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "manual-start-replaces-prior-automatic",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "rejected-manual-start-preserves-prior-automatic",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "manual-start-purpose-cue",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "short-primary-terminal-projection",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "shielding-install-rollback",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "explicit-morning-shielding-failure",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "unrelated-morning-success-keeps-run-failure",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "cold-active-morning-republishes-shielding-failure",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "late-wind-down-cold-and-warm-completion",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "expired-automatic-keeps-installed-successor",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "automatic-reinstall-failure-needs-repair",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "account-sync-preserves-future-automatic-start",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "account-sync-preserves-due-automatic-start",
+      "passed" : true
+    },
+    {
+      "failures" : [
+
+      ],
+      "name" : "account-change-clears-automatic-start",
+      "passed" : true
+    }
+  ],
+  "generatedAt" : 811693826.572666,
+  "schemaVersion" : 1
+}

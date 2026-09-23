@@ -4,6 +4,7 @@ struct ShepherdCustomizationView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @State private var nameDraft = ""
     @State private var nameFeedback: String?
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var state: FarmState { viewModel.farmState }
     private var ownedWearables: [FarmShopItem] {
@@ -45,6 +46,9 @@ struct ShepherdCustomizationView: View {
             Text("WARDROBE")
                 .font(pixelFont(.caption))
                 .foregroundStyle(AppColors.grass)
+            Text("Choose your hat, shirt and outer layer separately. Covered shirts stay selected underneath.")
+                .font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText)
             if ownedWearables.isEmpty {
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -61,33 +65,49 @@ struct ShepherdCustomizationView: View {
                     }
                 }
             } else {
-                ForEach(ownedWearables) { item in
-                    HStack(spacing: AppSpacing.sm) {
-                        FarmShopItemImage(item: item, size: 54)
-                            .frame(width: 54, height: 54)
-                            .background(farmVisualColor(item.visualStyle).opacity(0.12), in: RoundedRectangle(cornerRadius: AppRadius.md))
-                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                            Text(item.title).font(AppTypography.headline)
-                            Text(isEquipped(item) ? "Equipped" : "Owned")
-                                .font(AppTypography.caption)
-                                .foregroundStyle(isEquipped(item) ? AppColors.success : AppColors.secondaryText)
-                        }
-                        Spacer()
-                        Button(isEquipped(item) ? "Take off" : "Wear") {
-                            toggleWearable(item)
-                        }
-                        .buttonStyle(PixelChipButtonStyle(isSelected: isEquipped(item)))
-                        .frame(minWidth: 72, minHeight: 44)
+                wardrobeGroup("HEADWEAR", effect: .shepherdAccessory)
+                wardrobeGroup("SHIRTS", effect: .shepherdShirt)
+                wardrobeGroup("COATS & OVERALLS", effect: .shepherdOutfit)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func wardrobeGroup(_ title: String, effect: FarmShopEffect) -> some View {
+        let items = ownedWearables.filter { $0.effect == effect }
+        if !items.isEmpty {
+            Text(title).font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+            ForEach(items) { item in
+                let layout = dynamicTypeSize.isAccessibilitySize
+                    ? AnyLayout(VStackLayout(alignment: .leading, spacing: AppSpacing.sm))
+                    : AnyLayout(HStackLayout(spacing: AppSpacing.sm))
+                layout {
+                    FarmShopItemImage(item: item, size: 54)
+                        .frame(width: 54, height: 54)
+                        .background(farmVisualColor(item.visualStyle).opacity(0.12), in: RoundedRectangle(cornerRadius: AppRadius.md))
+                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                        Text(item.title).font(AppTypography.headline)
+                        Text(isEquipped(item) ? "Equipped" : "Owned")
+                            .font(AppTypography.caption)
+                            .foregroundStyle(isEquipped(item) ? AppColors.success : AppColors.secondaryText)
                     }
-                    .padding(AppSpacing.sm)
-                    .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md))
+                    if !dynamicTypeSize.isAccessibilitySize { Spacer() }
+                    Button(isEquipped(item) ? "Take off" : "Wear") {
+                        toggleWearable(item)
+                    }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: isEquipped(item)))
+                    .frame(minWidth: 72, minHeight: 44)
+                    .accessibilityLabel("\(isEquipped(item) ? "Take off" : "Wear") \(item.title)")
                 }
+                .padding(AppSpacing.sm)
+                .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md))
             }
         }
     }
 
     private func isEquipped(_ item: FarmShopItem) -> Bool {
         switch item.effect {
+        case .shepherdShirt: return state.shepherd.shirtItemID == item.id
         case .shepherdOutfit: return state.shepherd.outfitItemID == item.id
         case .shepherdAccessory: return state.shepherd.accessoryItemID == item.id
         default: return false
@@ -96,6 +116,8 @@ struct ShepherdCustomizationView: View {
 
     private func toggleWearable(_ item: FarmShopItem) {
         switch item.effect {
+        case .shepherdShirt:
+            if isEquipped(item) { viewModel.takeOffShepherdShirt(item.id) } else { viewModel.wearShepherdShirt(item.id) }
         case .shepherdOutfit:
             if isEquipped(item) { viewModel.takeOffShepherdOutfit(item.id) }
             else { viewModel.wearShepherdOutfit(item.id) }
@@ -122,7 +144,7 @@ struct ShepherdLivePreview: View {
             .overlay(alignment: .bottom) { Divider() }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Your Shepherd preview")
-            .accessibilityValue("\(profile.headShape.title) head, \(profile.skinTone.title) skin, \(profile.hairStyle.title) hair")
+            .accessibilityValue("\(profile.headShape.title) head, \(profile.skinTone.title) skin, \(profile.hairStyle.title) hair, \(profile.accessoryItemID.flatMap { FarmShopCatalog.item(for: $0)?.title } ?? "no headwear"), \(profile.outfitItemID.flatMap { FarmShopCatalog.item(for: $0)?.title } ?? "no outer layer"), \(profile.shirtItemID.flatMap { FarmShopCatalog.item(for: $0)?.title } ?? "cream shirt")")
     }
 }
 
@@ -257,14 +279,33 @@ struct ShepherdAppearanceControls: View {
 }
 
 #Preview("Your Shepherd") {
-    NavigationStack {
-        VStack(spacing: AppSpacing.md) {
-            ShepherdAvatarView(profile: FarmPreviewData.fullState.shepherd, size: 180)
-            Text("Five skin tones and five hair styles")
-                .font(AppTypography.body)
+    ShepherdWardrobePreview(ownsClothes: true)
+}
+
+#Preview("Empty wardrobe · large text") {
+    ShepherdWardrobePreview(ownsClothes: false).dynamicTypeSize(.accessibility3)
+}
+
+private struct ShepherdWardrobePreview: View {
+    @StateObject private var model: FocusRunViewModel
+
+    init(ownsClothes: Bool) {
+        let defaults = UserDefaults(suiteName: "WardrobePreview.\(UUID())")!
+        let persistence = PersistenceService(defaults: defaults,
+            farmSaveDirectory: FileManager.default.temporaryDirectory.appendingPathComponent("WardrobePreview-\(UUID())"))
+        var farm = FarmState.empty
+        if ownsClothes {
+            farm.ownedShopItemIDs = FarmShopCatalog.items(in: .shepherd).map(\.id)
+            farm.shepherd.outfitItemID = "shepherd_moss_coat"
+            farm.shepherd.accessoryItemID = "shepherd_wool_hat"
         }
-        .padding()
-        .background(AppColors.paper)
+        persistence.farmState = farm
+        _model = StateObject(wrappedValue: FocusRunViewModel(persistence: persistence,
+            startsExternalServices: false, purposeCueDefaults: defaults))
+    }
+
+    var body: some View {
+        NavigationStack { ShepherdCustomizationView() }.environmentObject(model)
     }
 }
 

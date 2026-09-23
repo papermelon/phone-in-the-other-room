@@ -2,6 +2,15 @@ import Foundation
 import Supabase
 
 extension NightFlockViewModel {
+    func presentListRefreshError(_ error: Error) {
+        guard !(error is CancellationError) else { return }
+        presentNightFlockError(error, lane: .snapshot(schema: 4))
+        guard pendingAuthenticationRecovery == .none else { return }
+        let failure = NightFlockRefreshFailure(listError: Self.remoteError(from: error), showingPrevious: v4ListState != nil)
+        listRefreshFailure = failure
+        phase = v4ListState == nil ? .error(failure.detail) : .ready
+    }
+
     func refreshFailure(for error: Error) -> NightFlockRefreshFailure? {
         let remote = Self.remoteError(from: error)
         if let remote {
@@ -106,6 +115,7 @@ extension NightFlockViewModel {
 
     static func remoteError(from error: Error) -> NightFlockRemoteError? {
         if let remote = error as? NightFlockRemoteError { return remote }
+        if let error = error as? URLError { return .network(reason: error.code) }
         if let functionsError = error as? FunctionsError,
            case let .httpError(status, data) = functionsError {
             return NightFlockRemoteError.decode(statusCode: status, data: data)
@@ -119,7 +129,7 @@ extension NightFlockViewModel {
             case .inviteUnavailable: return .expiredInvite
             case .flockFull: return .fullFlock
             case .blockedMembership: return .blocked
-            default: return .error(remote.errorDescription ?? "Slumber Party could not complete that request.")
+            default: return .error(remote.errorDescription ?? "Something went wrong with Slumber Party. Please try again in a moment.")
             }
         }
         if let functionsError = error as? FunctionsError {
@@ -131,7 +141,7 @@ extension NightFlockViewModel {
             }
         }
         if error is URLError { return .offline }
-        return .error("Slumber Party could not complete that request.")
+        return .error("Something went wrong with Slumber Party. Please try again in a moment.")
     }
 
     var canRetryNightFlockRequest: Bool {

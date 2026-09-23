@@ -6,6 +6,14 @@ Source is implemented and committed. The founder-authorized production backend r
 on 13 September: [deployment evidence](../evidence/campfire-deploy-20260913/deployment.md).
 Physical two-device acceptance and updated app distribution remain separate, outstanding gates.
 
+## Bedtime presentation extension
+
+The [19 September private bedtime contract](campfire-bedtime-2026-09-19.md) extends
+current primary sessions with an optional frozen intended bedtime and local sleeping
+pose. Existing sharing receipts remain valid; the technical capability is additive.
+It supersedes awake-only art and defensive sleep-disclaimer copy on the private live
+surface. Deployment/distribution/physical acceptance of this extension remain pending.
+
 ## Subsequent Buddies iteration
 
 The founder approved the [Buddies source contract](campfire-buddies-implementation-2026-09-13.md)

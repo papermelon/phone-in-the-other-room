@@ -4,11 +4,13 @@ struct WindDownGuidanceDetailView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     let item: WindDownGuidanceItem
     var onboardingDraft: Binding<OnboardingDraft>? = nil
+    var routineDraft: Binding<[WindDownRoutineStep]>? = nil
     @State private var replacementStepIDs: [UUID] = []
     @State private var showReplacementChoice = false
     @State private var statusMessage: String?
 
     private var routineSteps: [WindDownRoutineStep] {
+        if let routineDraft { return routineDraft.wrappedValue }
         guard let phase = item.routinePhase else { return [] }
         if let onboardingDraft {
             return phase == .evening
@@ -65,7 +67,7 @@ struct WindDownGuidanceDetailView: View {
                             Text("Add \(activity.title) to your \(phase == .evening ? "evening" : "morning") ideas. Your routine remains optional and has a \(phase == .evening ? "three" : "two")-idea limit.")
                                 .font(AppTypography.body)
                                 .foregroundStyle(AppColors.secondaryText)
-                            Button(onboardingDraft == nil
+                            Button(onboardingDraft == nil && routineDraft == nil
                                 ? "Add to my \(phase == .evening ? "evening" : "morning") ideas"
                                 : "Add to this draft") {
                                 addToRoutine()
@@ -99,13 +101,18 @@ struct WindDownGuidanceDetailView: View {
             ForEach(routineSteps.filter { replacementStepIDs.contains($0.id) }) { step in
                 Button("Replace \(step.title)") {
                     let result = addToRoutine(replacing: step.id)
-                    statusMessage = result == .added ? "Ollie added this idea to your routine." : "Ollie kept your routine as it was."
+                    statusMessage = result == .added ? addedMessage : "Ollie kept your routine as it was."
                 }
             }
             Button("Keep my routine", role: .cancel) {}
         } message: {
             Text("Choose the optional idea you would like to swap out.")
         }
+    }
+
+    private var addedMessage: String {
+        if onboardingDraft != nil { return "Added to your setup draft." }
+        return routineDraft == nil ? "Ollie added this idea to your routine." : "Added to your draft. Go back to ideas and tap Save ideas to keep it."
     }
 
     private func detailCard(title: String, detail: String) -> some View {
@@ -129,7 +136,9 @@ struct WindDownGuidanceDetailView: View {
                     NavigationLink {
                         WindDownGuidanceSourceDetailView(
                             source: source,
-                            onboardingDraft: onboardingDraft
+                            onboardingDraft: onboardingDraft,
+                            routineDraft: routineDraft,
+                            routinePhase: item.routinePhase
                         )
                     } label: {
                         HStack(alignment: .top, spacing: AppSpacing.sm) {
@@ -165,7 +174,7 @@ struct WindDownGuidanceDetailView: View {
     private func addToRoutine() {
         switch addToRoutine(replacing: nil) {
         case .added:
-            statusMessage = "Ollie added this idea to your routine."
+            statusMessage = addedMessage
         case .alreadyAdded:
             statusMessage = "This idea is already in your routine."
         case let .needsReplacement(_, stepIDs):
@@ -178,6 +187,12 @@ struct WindDownGuidanceDetailView: View {
 
     @discardableResult
     private func addToRoutine(replacing stepID: UUID?) -> WindDownGuidanceRoutineAddResult {
+        if let routineDraft {
+            var steps = routineDraft.wrappedValue
+            let result = WindDownGuidanceRoutineMutation.add(item, replacing: stepID, to: &steps)
+            if result == .added { routineDraft.wrappedValue = steps }
+            return result
+        }
         if let onboardingDraft {
             var updated = onboardingDraft.wrappedValue
             guard let phase = item.routinePhase else { return .unavailable }

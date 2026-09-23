@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { createClient, SupabaseClient, User } from "npm:@supabase/supabase-js@2";
 
 function requiredEnvironment(name: string): string {
   const value = Deno.env.get(name);
@@ -9,6 +9,13 @@ function requiredEnvironment(name: string): string {
 export async function authenticatedClient(
   request: Request,
 ): Promise<SupabaseClient> {
+  return (await authenticatedContext(request)).client;
+}
+
+// Return the already verified user so callers never need a second Auth round trip.
+export async function authenticatedContext(
+  request: Request,
+): Promise<{ client: SupabaseClient; user: User }> {
   const authorization = request.headers.get("authorization");
   if (!authorization?.startsWith("Bearer ")) throw new Error("Unauthorized");
 
@@ -22,7 +29,7 @@ export async function authenticatedClient(
   );
   const { data, error } = await client.auth.getUser();
   if (error || !data.user) throw new Error("Unauthorized");
-  return client;
+  return { client, user: data.user };
 }
 
 export function serviceClient(): SupabaseClient {

@@ -1425,7 +1425,7 @@ final class FocusSessionCoordinator: ObservableObject {
             journal.morningOccurrences[index] = occurrence
             persistence.windDownMorningSettlementJournal = journal
         }
-        reconcileShielding(for: occurrence, at: resourceNow)
+        reconcileShielding(for: occurrence, at: resourceNow, parentRunIsActive: false)
         // The replacement entry must exist before tombstoning the parent, so
         // an extension callback never sees an unprotected handoff gap.
         shielding.clear(occurrenceID: terminalRun.id)
@@ -1734,9 +1734,12 @@ final class FocusSessionCoordinator: ObservableObject {
         }
     }
 
-    private func reconcileShielding(for occurrence: MorningQuietOccurrence, at date: Date) {
+    private func reconcileShielding(for occurrence: MorningQuietOccurrence, at date: Date, parentRunIsActive: Bool? = nil) {
         recordShieldingOutcome(
-            shielding.reconcile(for: occurrence, at: date),
+            shielding.reconcile(for: occurrence, at: date,
+                parentRunIsActive: parentRunIsActive ?? (run.map {
+                    $0.id == occurrence.linkedWindDownRunID && ![.setup, .completed, .endedEarly].contains($0.state)
+                } == true)),
             identity: .morning(occurrence.id)
         )
     }

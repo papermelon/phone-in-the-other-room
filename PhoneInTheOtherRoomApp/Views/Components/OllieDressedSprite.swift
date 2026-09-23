@@ -5,33 +5,30 @@ import SwiftUI
 struct OllieDressedSprite: View {
     let assetName: String
     let accessoryItemID: String?
+    @Environment(\.ollieCoat) private var coat
 
     var body: some View {
         Group {
-            if let baseImage = UIImage(named: assetName) {
-                ZStack {
-                    Image(uiImage: baseImage)
-                        .resizable()
-                        .interpolation(.high)
-                        .antialiased(true)
-                        .scaledToFit()
-                    if let garment = OllieGarment(itemID: accessoryItemID),
-                       let fit = OllieGarmentFit.forAsset(assetName) {
-                        Canvas { context, size in
-                            context.scaleBy(x: size.width / 512, y: size.height / 512)
-                            if garment == .starKeeperCape, fit.drape < 0.5 {
-                                var shoulder = context
-                                shoulder.translateBy(x: 150, y: 303)
-                                OllieGarmentPainter(painter: .init(context: shoulder, texture: true)).restingCape()
-                            }
-                            context.translateBy(x: fit.x, y: fit.y)
-                            context.rotate(by: .degrees(fit.angle))
-                            context.scaleBy(x: fit.width / 100, y: fit.width / 100)
-                            OllieGarmentPainter(painter: .init(context: context, texture: true))
-                                .draw(garment, drape: fit.drape)
-                        }
+            if let baseImage = UIImage(named: resolvedAsset) {
+                Canvas { context, size in
+                    // A single fitted canvas keeps the fur mask and clothing registered,
+                    // including callers that offer a non-square layout proposal.
+                    let scale = min(size.width, size.height) / 512
+                    context.translateBy(x: (size.width - 512 * scale) / 2, y: (size.height - 512 * scale) / 2)
+                    context.scaleBy(x: scale, y: scale)
+                    let image = Image(uiImage: baseImage)
+                    let bounds = CGRect(x: 0, y: usesFullerCoat ? OllieFullerCoatRegistration.groundOffset(for: assetName) : 0, width: 512, height: 512)
+                    let garment = OllieGarment(itemID: accessoryItemID)
+                    let pose = usesFullerCoat ? OllieFullerCoatRegistration.neckwear(for: assetName) : OllieNeckwearPose.forAsset(assetName)
+                    if garment == .starKeeperCape, let pose {
+                        drawCapeBehindOllie(pose, in: context)
+                    }
+                    context.draw(image, in: bounds)
+                    if let garment, let pose {
+                        drawGarment(garment, pose: pose, base: image, bounds: bounds, in: context)
                     }
                 }
+                .aspectRatio(1, contentMode: .fit)
             } else {
                 Image(systemName: "pawprint.fill")
                     .resizable().scaledToFit().foregroundStyle(AppColors.grass)
@@ -40,84 +37,158 @@ struct OllieDressedSprite: View {
         }
         .accessibilityHidden(true)
     }
+
+    private var usesFullerCoat: Bool {
+        coat == .fuller && OllieCoatAvailability.fuller
+            && OllieCoatStyle.fullerAsset(for: assetName) != nil
+    }
+
+    private var resolvedAsset: String {
+        usesFullerCoat ? OllieCoatStyle.fullerAsset(for: assetName)! : assetName
+    }
+
+    private func drawCapeBehindOllie(_ pose: OllieNeckwearPose, in context: GraphicsContext) {
+        var cape = context
+        cape.concatenate(placement(for: pose))
+        OllieGarmentPainter(painter: .init(context: cape, texture: true)).capeBack()
+    }
+
+    private func drawGarment(_ garment: OllieGarment, pose: OllieNeckwearPose, base: Image, bounds: CGRect, in context: GraphicsContext) {
+        let placement = placement(for: pose)
+        if garment.hasTie, pose.showsTie {
+            var tie = context
+            tie.concatenate(placement)
+            OllieGarmentPainter(painter: .init(context: tie, texture: true)).tie(for: garment)
+        }
+        // Tucked fabric stays inside Ollie's painted silhouette. Cape fabric is
+        // drawn behind the base above, so it is naturally hidden by fur and paws.
+        var cloth = context
+        cloth.clipToLayer { silhouette in
+            silhouette.draw(base, in: bounds)
+        }
+        cloth.concatenate(placement)
+        OllieGarmentPainter(painter: .init(context: cloth, texture: true)).fitted(garment, pose: pose)
+
+        // Restore the textured chin/ruff over the neckline after clothing is drawn.
+        var fur = context
+        fur.clip(to: ruff(for: placement))
+        fur.draw(base, in: bounds)
+    }
+
+    private func placement(for pose: OllieNeckwearPose) -> CGAffineTransform {
+        let left = pose.neckLeft, right = pose.neckRight, tip = pose.bibTip
+        return CGAffineTransform(
+            a: (right.x - left.x) / 100, b: (right.y - left.y) / 100,
+            c: (tip.x - (left.x + right.x) / 2) / 70,
+            d: (tip.y - (left.y + right.y) / 2) / 70,
+            tx: left.x, ty: left.y)
+    }
+
+    private func ruff(for placement: CGAffineTransform) -> Path {
+        Path { p in
+            p.move(to: CGPoint(x: -30, y: -400))
+            p.addLine(to: CGPoint(x: 130, y: -400))
+            p.addLine(to: CGPoint(x: 130, y: -3))
+            p.addLine(to: CGPoint(x: 100, y: 5))
+            p.addQuadCurve(to: CGPoint(x: 0, y: 5), control: CGPoint(x: 50, y: 30))
+            p.addLine(to: CGPoint(x: -30, y: -3))
+            p.closeSubpath()
+        }.applying(placement)
+    }
+}
+
+private extension OllieGarment {
+    var hasTie: Bool { self == .mossBandana || self == .moonKerchief }
 }
 
 private struct OllieGarmentPainter {
     let painter: ShepherdStudyPainter
     private typealias Pigment = ShepherdStudyPalette
 
-    func restingCape() {
-        painter.fill(Path { path in
-            path.move(to: CGPoint(x: 30, y: 0))
-            path.addQuadCurve(to: CGPoint(x: 91, y: 22), control: CGPoint(x: 65, y: -9))
-            path.addQuadCurve(to: CGPoint(x: 111, y: 68), control: CGPoint(x: 97, y: 42))
-            path.addQuadCurve(to: CGPoint(x: -7, y: 62), control: CGPoint(x: 52, y: 110))
-            path.addQuadCurve(to: CGPoint(x: 30, y: 0), control: CGPoint(x: -1, y: 20))
-        }, Pigment.midnight)
-        painter.fill(polygon([(47, 25), (52, 36), (64, 38), (55, 46), (57, 58),
-                              (47, 52), (36, 58), (38, 46), (29, 38), (41, 36)]), Pigment.cream)
+    func fitted(_ garment: OllieGarment, pose: OllieNeckwearPose) {
+        switch garment {
+        case .mossBandana:
+            fittedKerchief(color: Pigment.moss, pose: pose) { sheep(x: 44, y: 38) }
+        case .moonKerchief:
+            fittedKerchief(color: Pigment.heather, pose: pose) { moon(x: 44, y: 35, color: Pigment.heather) }
+        case .brassBell:
+            collar(Pigment.trousers)
+            if pose.showsFrontDetail { bell() }
+        case .cloverCollar:
+            collar(Pigment.moss)
+            if pose.showsFrontDetail { clover() }
+        case .sunriseScarf:
+            collar(Pigment.hat)
+            if pose.showsFrontDetail { scarfTail() }
+        case .starKeeperCape:
+            if pose.showsFrontDetail { capeShoulder() }
+            collar(Pigment.midnight)
+            if pose.showsFrontDetail { painter.ellipse(48, 14, 9, 9, Pigment.hat) }
+        }
     }
 
-    func draw(_ garment: OllieGarment, drape: Double) {
-        let color: Color
-        switch garment {
-        case .mossBandana, .cloverCollar: color = Pigment.moss
-        case .moonKerchief: color = Pigment.heather
-        case .brassBell: color = Pigment.trousers
-        case .sunriseScarf: color = Pigment.hat
-        case .starKeeperCape: color = Pigment.midnight
+    func tie(for garment: OllieGarment) {
+        knot(garment == .moonKerchief ? Pigment.heather : Pigment.moss)
+    }
+
+    func capeBack() {
+        painter.fill(Path { p in
+            p.move(to: CGPoint(x: 3, y: 2))
+            p.addQuadCurve(to: CGPoint(x: -46, y: 75), control: CGPoint(x: -39, y: 22))
+            p.addQuadCurve(to: CGPoint(x: 38, y: 82), control: CGPoint(x: -10, y: 98))
+            p.addQuadCurve(to: CGPoint(x: 41, y: 11), control: CGPoint(x: 25, y: 40))
+            p.closeSubpath()
+        }, Pigment.midnight)
+        painter.fill(polygon([(-8, 40), (-4, 49), (6, 50), (-2, 56), (0, 66),
+                              (-8, 60), (-16, 66), (-14, 56), (-22, 50), (-12, 49)]), Pigment.cream)
+    }
+
+    private func fittedKerchief(color: Color, pose: OllieNeckwearPose, motif: () -> Void) {
+        painter.fill(Path { p in
+            p.move(to: CGPoint(x: 0, y: -5))
+            p.addQuadCurve(to: CGPoint(x: 100, y: -5), control: CGPoint(x: 50, y: 14))
+            p.addCurve(to: CGPoint(x: 50, y: 70), control1: CGPoint(x: 97, y: 25), control2: CGPoint(x: 69, y: 61))
+            p.addCurve(to: CGPoint(x: 0, y: -5), control1: CGPoint(x: 30, y: 60), control2: CGPoint(x: 3, y: 27))
+            p.closeSubpath()
+        }, color)
+        painter.fill(Path { p in
+            p.move(to: CGPoint(x: 1, y: 5))
+            p.addQuadCurve(to: CGPoint(x: 99, y: 5), control: CGPoint(x: 50, y: 30))
+            p.addQuadCurve(to: CGPoint(x: 4, y: 13), control: CGPoint(x: 51, y: 39))
+            p.closeSubpath()
+        }, Pigment.pocket.opacity(0.35))
+        if pose.showsFrontDetail { motif() }
+    }
+
+    private func bell() {
+        painter.rounded(48, 17, 7, 9, 3, Pigment.hatBand)
+        painter.fill(polygon([(45, 26), (58, 26), (63, 41), (40, 41)]), Pigment.hat)
+        painter.ellipse(48, 40, 7, 5, Pigment.hatBand)
+        painter.rounded(41, 38, 21, 3, 1, Pigment.cream)
+    }
+
+    private func clover() {
+        for (x, y) in [(45.0, 26.0), (52, 26), (45, 33), (52, 33)] {
+            painter.ellipse(x, y, 9, 9, Pigment.cream)
         }
-        let depth = 50 * drape
-        switch garment {
-        case .mossBandana, .moonKerchief:
-            // The top edge hugs the white ruff; there is no hollow inventory rim.
-            painter.fill(Path { p in
-                p.move(to: CGPoint(x: 0, y: 0))
-                p.addQuadCurve(to: CGPoint(x: 100, y: 0), control: CGPoint(x: 53, y: 24))
-                p.addQuadCurve(to: CGPoint(x: 53, y: 17 + depth), control: CGPoint(x: 95, y: 25 + depth * 0.45))
-                p.addQuadCurve(to: CGPoint(x: 0, y: 0), control: CGPoint(x: 4, y: 21 + depth * 0.45))
-            }, color)
-            fold(color)
-            if drape > 0.5 {
-                knot(color)
-                if garment == .mossBandana { sheep(x: 45, y: 30) }
-                else { moon(x: 44, y: 28, color: color) }
-            }
-        case .brassBell, .cloverCollar:
-            collar(color)
-            if drape > 0.5 {
-                if garment == .brassBell {
-                    painter.rounded(48, 17, 7, 9, 3, Pigment.hatBand)
-                    painter.fill(polygon([(45, 26), (58, 26), (63, 41), (40, 41)]), Pigment.hat)
-                    painter.ellipse(48, 40, 7, 5, Pigment.hatBand)
-                    painter.rounded(41, 38, 21, 3, 1, Pigment.cream)
-                } else {
-                    for (x, y) in [(45.0, 26.0), (52, 26), (45, 33), (52, 33)] {
-                        painter.ellipse(x, y, 9, 9, Pigment.cream)
-                    }
-                }
-            }
-        case .sunriseScarf:
-            if drape > 0.5 {
-                painter.fill(polygon([(6, 7), (29, 15), (16, 63 * drape), (0, 58 * drape)]), color)
-                painter.fill(polygon([(11, 8), (29, 12), (43, 46 * drape), (25, 53 * drape)]), Pigment.hatBand)
-                painter.rounded(4, 49 * drape, 13, 3, 1, Pigment.cream)
-            }
-            collar(color)
-        case .starKeeperCape:
-            if drape > 0.5 {
-                painter.fill(Path { p in
-                    p.move(to: CGPoint(x: 3, y: 2))
-                    p.addQuadCurve(to: CGPoint(x: -46, y: 75 * drape), control: CGPoint(x: -39, y: 22))
-                    p.addQuadCurve(to: CGPoint(x: 38, y: 82 * drape), control: CGPoint(x: -10, y: 98 * drape))
-                    p.addQuadCurve(to: CGPoint(x: 41, y: 11), control: CGPoint(x: 25, y: 40))
-                    p.closeSubpath()
-                }, color)
-                painter.fill(polygon([(-8, 40), (-4, 49), (6, 50), (-2, 56), (0, 66), (-8, 60), (-16, 66), (-14, 56), (-22, 50), (-12, 49)]), Pigment.cream)
-            }
-            collar(color)
-            painter.ellipse(48, 14, 9, 9, Pigment.hat)
-        }
+    }
+
+    private func scarfTail() {
+        painter.fill(polygon([(6, 7), (29, 15), (16, 63), (0, 58)]), Pigment.hat)
+        painter.fill(polygon([(11, 8), (29, 12), (43, 46), (25, 53)]), Pigment.hatBand)
+        painter.rounded(4, 49, 13, 3, 1, Pigment.cream)
+    }
+
+    private func capeShoulder() {
+        painter.fill(Path { p in
+            p.move(to: CGPoint(x: 3, y: 2))
+            p.addQuadCurve(to: CGPoint(x: 19, y: 61), control: CGPoint(x: -12, y: 28))
+            p.addQuadCurve(to: CGPoint(x: 43, y: 13), control: CGPoint(x: 40, y: 48))
+            p.addQuadCurve(to: CGPoint(x: 3, y: 2), control: CGPoint(x: 28, y: 6))
+            p.closeSubpath()
+        }, Pigment.midnight)
+        painter.fill(polygon([(18, 28), (21, 35), (28, 37), (22, 41), (23, 49),
+                              (18, 44), (13, 49), (14, 41), (8, 37), (15, 35)]), Pigment.cream)
     }
 
     private func collar(_ color: Color) {
@@ -130,16 +201,7 @@ private struct OllieGarmentPainter {
         }, color)
     }
 
-    private func fold(_ color: Color) {
-        painter.fill(Path { p in
-            p.move(to: CGPoint(x: 2, y: 1))
-            p.addQuadCurve(to: CGPoint(x: 98, y: 1), control: CGPoint(x: 53, y: 25))
-            p.addQuadCurve(to: CGPoint(x: 5, y: 9), control: CGPoint(x: 46, y: 33))
-            p.closeSubpath()
-        }, color.opacity(0.65))
-    }
-
-    private func knot(_ color: Color) {
+    func knot(_ color: Color) {
         painter.fill(polygon([(4, 6), (-19, -3), (-13, 13), (3, 17), (-13, 26), (0, 27), (12, 14)]), color)
         painter.ellipse(0, 8, 13, 13, color)
     }
@@ -177,4 +239,22 @@ private struct OllieGarmentPainter {
         OllieDressedSprite(assetName: "dog/dog_ollie_motion_pose_09", accessoryItemID: "ollie_star_keeper_cape")
         OllieDressedSprite(assetName: NightJourneyAssets.ollieHomeIdleFrames[0], accessoryItemID: "future_item")
     }.frame(height: 170).background(AppColors.paper)
+}
+
+
+private struct OllieCoatEnvironmentKey: EnvironmentKey {
+    static let defaultValue = OllieCoatStyle.classic
+}
+
+extension EnvironmentValues {
+    var ollieCoat: OllieCoatStyle {
+        get { self[OllieCoatEnvironmentKey.self] }
+        set { self[OllieCoatEnvironmentKey.self] = newValue }
+    }
+}
+
+enum OllieCoatAvailability {
+    static let fuller = OllieCoatStyle.hasCompletePack(available: Set(
+        OllieCoatStyle.baseAssets.compactMap(OllieCoatStyle.fullerAsset).filter { UIImage(named: $0) != nil }
+    ))
 }

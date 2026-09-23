@@ -88,6 +88,8 @@ struct ScreenbookRootView: View {
         case .configuredHome:
             if ProcessInfo.processInfo.arguments.contains("-screenbook-personal-shield") {
                 ScreenbookPersonalShieldView()
+            } else if ProcessInfo.processInfo.arguments.contains("-screenbook-goal-picker") {
+                NavigationStack { RitualPersonalisationView() }
             } else if ProcessInfo.processInfo.arguments.contains("-screenbook-personalisation") {
                 ScreenbookPersonalisationView()
             } else if ProcessInfo.processInfo.arguments.contains("-screenbook-habit-plan") {
@@ -155,13 +157,23 @@ struct ScreenbookRootView: View {
                 allowsLaunchRouting: false
             )
         case .populatedFarm:
-            HomeView(
-                initialTab: .farm,
-                farmVisitSeed: 44,
-                activeRunNow: ScreenbookFixtures.now(for: kind),
-                dashboardWatch: viewModel.coordinator.watch,
-                allowsLaunchRouting: false
-            )
+            if ProcessInfo.processInfo.arguments.contains("-screenbook-search-trail") {
+                ScrollView {
+                    CumulativeFarmProgressCard(credit: CumulativeFarmCredit(
+                        windDownSeconds: 256 * 60, phoneAwaySeconds: 300,
+                        bedtimeBonus: BedtimeSearchBonus(remainingSearchSeconds: 5040)),
+                        initiallyExpanded: ProcessInfo.processInfo.arguments.contains("-search-trail-expanded"))
+                        .padding(AppSpacing.md)
+                }.background(AppColors.background)
+            } else {
+                HomeView(
+                    initialTab: .farm,
+                    farmVisitSeed: 44,
+                    activeRunNow: ScreenbookFixtures.now(for: kind),
+                    dashboardWatch: viewModel.coordinator.watch,
+                    allowsLaunchRouting: false
+                )
+            }
         }
     }
 

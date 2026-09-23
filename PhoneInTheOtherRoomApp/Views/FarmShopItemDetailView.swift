@@ -61,7 +61,7 @@ struct FarmShopItemDetailView: View {
             switch item.effect {
             case .ollieAccessory:
                 OllieFarmAvatar(accessoryItemID: item.id, size: 190)
-            case .shepherdOutfit, .shepherdAccessory:
+            case .shepherdOutfit, .shepherdAccessory, .shepherdShirt:
                 ShepherdAvatarView(profile: previewShepherd, size: 210)
             case .farmDecoration:
                 GeometryReader { proxy in
@@ -131,8 +131,12 @@ struct FarmShopItemDetailView: View {
         switch item.effect {
         case .ollieAccessory:
             return "Ollie wears one accessory at a time. Bringing this home changes his look; his other accessories stay in the wardrobe."
-        case .shepherdOutfit, .shepherdAccessory:
-            return "Bringing this home changes your Shepherd’s look. Your other clothes stay in the wardrobe."
+        case .shepherdShirt:
+            return "Changes your shirt and keeps your headwear and outer layer selected. Closed coats may cover it; taking them off reveals your shirt."
+        case .shepherdOutfit:
+            return "Changes your outer layer and keeps your shirt and headwear selected. Your previous outer layer stays in the wardrobe."
+        case .shepherdAccessory:
+            return "Changes your headwear and keeps your clothing on. Your previous headwear stays in the wardrobe."
         case .farmDecoration:
             return item.id == "farm_lanterns"
                 ? "Placed beside your Barn. These are personal decorations; the Slumber Party lantern is a separate group project."
@@ -147,6 +151,7 @@ struct FarmShopItemDetailView: View {
     private var previewShepherd: ShepherdProfile {
         var profile = state.shepherd
         switch item.effect {
+        case .shepherdShirt: profile.shirtItemID = item.id
         case .shepherdOutfit: profile.outfitItemID = item.id
         case .shepherdAccessory: profile.accessoryItemID = item.id
         default: break

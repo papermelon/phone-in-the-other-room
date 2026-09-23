@@ -2,6 +2,9 @@
 
 17 September 2026 · Local source repair; not distributed.
 
+The [21 September follow-up](wind-down-loading-repair-2026-09-21.md) fixes ordinary
+account synchronization replacing a due occurrence and moves its control to Edit Wind Down.
+
 The founder reported automatic Wind Down failing across devices, with selected apps
 accessible throughout the night. The supplied receipt showed 21h 12m after reopening
 late. These establish symptoms, not the installed build or individual monitor failures.

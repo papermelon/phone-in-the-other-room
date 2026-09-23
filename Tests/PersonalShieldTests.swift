@@ -11,6 +11,22 @@ final class PersonalShieldTests: XCTestCase {
             goal: "Time for myself", morningGoal: "An unhurried morning")
     }
 
+    func testMorningHandoffHasDistinctConfirmationAndMorningAction() {
+        let value = session()
+        let overnight = now.addingTimeInterval(2000)
+        XCTAssertNotEqual(value.confirmationPhrase(at: overnight, morningIntent: .startNow), value.phrase(at: overnight))
+        var request = PersonalShieldSheet(sessionID: value.id, owner: value.owner, action: .endSession,
+            phrase: "Start my morning", mode: .primaryWindDown, morningIntent: .startNow)
+        XCTAssertFalse(request.requiresTypedPhrase)
+        XCTAssertEqual(request.confirmationTitle, "Start Screen-Free Morning")
+        request.morningIntent = .skipToday
+        XCTAssertTrue(request.requiresTypedPhrase)
+        XCTAssertEqual(value.confirmationPhrase(at: overnight, morningIntent: .skipToday), "Skip my morning today")
+        request.morningIntent = nil
+        XCTAssertTrue(request.requiresTypedPhrase, "Ordinary exits retain their challenge")
+        XCTAssertEqual(value.listButton(at: now.addingTimeInterval(3100)), "My morning")
+    }
+
     func testChecksAreReversibleAndSleepReplacesBroadGoal() throws {
         var value = session()
         XCTAssertEqual(value.phrase(at: now), "Brush my teeth")

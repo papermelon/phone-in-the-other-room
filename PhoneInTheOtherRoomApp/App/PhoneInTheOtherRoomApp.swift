@@ -6,7 +6,15 @@ struct PhoneInTheOtherRoomApp: App {
     var body: some Scene {
         WindowGroup {
 #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("--campfire-buddies-qa") {
+            if ProcessInfo.processInfo.arguments.contains("--slumber-repair-qa") {
+                SlumberPartyRepairFixture()
+            } else if ProcessInfo.processInfo.arguments.contains("--first-start-preview") {
+                FirstStartSheetPreview(
+                    readiness: FirstStartSheetPreview.launchReadiness,
+                    usesNFC: ProcessInfo.processInfo.arguments.contains("--nfc"),
+                    phoneAway: ProcessInfo.processInfo.arguments.contains("--phone-away")
+                )
+            } else if ProcessInfo.processInfo.arguments.contains("--campfire-buddies-qa") {
                 CampfireBuddiesNativeFixture()
             } else if ProcessInfo.processInfo.arguments.contains("--shop-wardrobe-qa") {
                 ShopWardrobeNativeQA()
@@ -74,6 +82,7 @@ private struct PhoneInTheOtherRoomRuntimeView: View {
     var body: some View {
             rootView
                 .environmentObject(runViewModel)
+                .environment(\.ollieCoat, runViewModel.farmState.equipment.ollieCoat)
                 .preferredColorScheme(preferredColorScheme)
                 .onChange(of: runViewModel.activeRun, initial: true) { _, run in
                     runViewModel.nightFlockViewModel.updateCampfireQuietPeriod(for: run)

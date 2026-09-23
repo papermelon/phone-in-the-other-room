@@ -148,6 +148,9 @@ export function nightFlockError(code: NightFlockErrorCode): NightFlockErrorDescr
 
 export function classifyNightFlockError(error: unknown): NightFlockErrorDescriptor {
   const detail = safeClassificationDetail(error);
+  // Auth has already verified the caller. Rejection of the server's RPC token
+  // is a backend outage, not a reason to sign the player out.
+  if (/\bpgrst30[013]\b/.test(detail)) return nightFlockError("service_unavailable");
   if (detail.includes("pasture_sheep_not_owned")) return nightFlockError("pasture_sheep_not_owned");
   if (detail.includes("pasture_sheep_already_visiting")) return nightFlockError("pasture_sheep_already_visiting");
   if (detail.includes("unauthorized") || detail.includes("invalid jwt")) return nightFlockError("unauthorized");

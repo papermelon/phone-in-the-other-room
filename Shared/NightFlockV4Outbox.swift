@@ -28,6 +28,12 @@ enum NightFlockV4OutboxOrigin: String, Codable, Sendable { case live, backfill }
 
 struct NightFlockV4OutboxSourceRecord: Identifiable, Codable, Equatable, Sendable {
     var id: UUID { source.sourceEventID }
+
+    // A late acknowledgement must not remove a newer revision enqueued during the send.
+    func matchesPublication(_ other: Self) -> Bool {
+        source == other.source && origin == other.origin && sharingScope == other.sharingScope
+            && idempotencyKey == other.idempotencyKey
+    }
     var source: NightFlockV4SourceActivityRecord
     var origin: NightFlockV4OutboxOrigin
     var idempotencyKey: String

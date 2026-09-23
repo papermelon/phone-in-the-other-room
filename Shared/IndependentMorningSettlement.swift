@@ -209,13 +209,6 @@ struct MorningQuietOccurrence: Codable, Equatable, Identifiable {
     }
 }
 
-enum MorningQuietIntent: Equatable {
-    case startNow
-    case deferToUsualTime
-    case skipToday
-    case keepWindDownRunning
-}
-
 enum MorningQuietIntentEngine {
     static func isAvailable(run: FocusRun, at date: Date) -> Bool {
         guard run.isProgressionEligibleNightWatch,

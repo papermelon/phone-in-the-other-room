@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var partyOriginTab: MainAppTab?
     @State private var nightFlockPartyID: UUID?
     @State private var showsUnifiedCampfire = false
+    @State private var campfirePartyID: UUID?
     @State private var pendingCampfireStart: NightFlockV4ActivityKind?
     @State private var homeScrollViewportSize = CGSize.zero
     @State private var homeNavigationPath = NavigationPath()
@@ -97,11 +98,12 @@ struct HomeView: View {
                 _ = viewModel.requestCampfireSessionStart(kind)
             }
         }) {
-            CampfireView(social: viewModel.nightFlockViewModel) { kind in
+            CampfireView(social: viewModel.nightFlockViewModel, partyID: campfirePartyID) { kind in
                 pendingCampfireStart = kind; showsUnifiedCampfire = false
             }.environmentObject(viewModel)
         }
-        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowCampfire)) { _ in
+        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowCampfire)) { notification in
+            campfirePartyID = notification.object as? UUID
             showsUnifiedCampfire = true
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowFarm)) { _ in
@@ -180,7 +182,7 @@ struct HomeView: View {
         }) {
             WindDownStartSheet()
                 .environmentObject(viewModel)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
         }
         .modifier(GuidePresentationModifier(target: shouldPresentOrientationCoach ? activeOrientationTarget : nil) {

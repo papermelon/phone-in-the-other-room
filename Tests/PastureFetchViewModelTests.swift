@@ -3,6 +3,55 @@ import XCTest
 @MainActor final class PastureFetchViewModelTests: XCTestCase {
     private let ollie = PastureSceneEntityID.ollie(pastureIndex: 0)
 
+    func testExplicitPlayExplainsActiveSessionPauseAndResumesAfterSession() {
+        let scene = PastureSceneController()
+        func configure(active: Bool) {
+            scene.configure(activeSheep: [], pastureCount: 1, layoutSeed: 1,
+                            activePastureIndex: 0, persistedSnapshot: nil,
+                            reduceMotion: true, isWindDownActive: active, onPersist: { _ in })
+        }
+        configure(active: true)
+        let positions = scene.positions
+        scene.fetch()
+        XCTAssertTrue(scene.showsPlayPaused)
+        XCTAssertFalse(scene.fetchGame.isPresented)
+        scene.showsPlayPaused = false
+        scene.gather()
+        XCTAssertTrue(scene.showsPlayPaused)
+        XCTAssertNil(scene.playMessage)
+        XCTAssertEqual(scene.positions, positions)
+
+        configure(active: false)
+        XCTAssertFalse(scene.showsPlayPaused)
+        scene.fetch()
+        XCTAssertTrue(scene.fetchGame.isPresented)
+        configure(active: true)
+        XCTAssertFalse(scene.fetchGame.isPresented, "Starting a session still cancels play")
+        scene.stop()
+    }
+
+    func testTapAndCancelledAimDoNotThrowButSwipeStartsOnlyOneRound() {
+        let model = PastureFetchViewModel()
+        model.begin(positions: [ollie: .init(x: 0.8, y: 0.7)], ollie: ollie, reduceMotion: false)
+        model.flickBall(translation: .init(x: 0, y: 0), predictedTranslation: .init(x: 0, y: 0))
+        XCTAssertTrue(model.isReady)
+        XCTAssertNil(model.frame)
+        let travel = PastureScenePoint(x: -0.2, y: -0.2)
+        model.updateAim(translation: travel, predictedTranslation: travel)
+        XCTAssertNotNil(model.aim)
+        model.cancelAim()
+        XCTAssertNil(model.aim)
+        XCTAssertTrue(model.isReady)
+        model.flickBall(translation: travel, predictedTranslation: travel)
+        XCTAssertFalse(model.isReady)
+        XCTAssertNotNil(model.frame)
+        model.updateAim(translation: travel, predictedTranslation: travel)
+        XCTAssertNil(model.aim)
+        model.stop()
+        model.flickBall(translation: travel, predictedTranslation: travel)
+        XCTAssertNil(model.frame)
+    }
+
     func testSleepingOllieWakesInPlaceBeforeThrowIsAllowed() async throws {
         let model = PastureFetchViewModel()
         let resting = "dog/dog_ollie_motion_pose_09"

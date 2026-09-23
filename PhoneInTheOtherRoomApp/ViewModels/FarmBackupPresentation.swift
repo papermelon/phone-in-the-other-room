@@ -94,9 +94,12 @@ extension FarmBackupViewModel {
         if error as? FarmSaveError == .unsupportedSchema {
             message = "Update Counting Sheep to open this account Farm. Your current Farm has been kept."
         } else if error is NightFlockAccountError {
+            authenticatedAccountID = nil
             message = "Sign in again to reconnect your account."
         } else {
-            message = "Couldn’t sync your latest changes. They’ll wait for a connection."
+            message = hasAuthenticatedAccount && !signedIn
+                ? "Your account is connected, but your Farm couldn’t open. Please try again in a moment."
+                : "Your Farm couldn’t sync right now. Your changes have been kept on this phone."
         }
     }
 

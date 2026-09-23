@@ -131,7 +131,7 @@ struct NightsHealthContext: View {
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
         case .checking:
             HStack(spacing: AppSpacing.sm) {
-                ProgressView()
+                SheepLoadingView()
                     .tint(AppColors.grass)
                 Text("Checking for sleep data…")
                     .font(AppTypography.body)

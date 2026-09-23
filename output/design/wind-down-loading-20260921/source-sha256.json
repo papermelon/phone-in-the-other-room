@@ -1,0 +1,16 @@
+{
+  "PhoneInTheOtherRoomApp/ViewModels/FocusRunViewModel+FarmBackup.swift": "86a12c3da71a0c63d822660e0576aeb01667633e04410203d0509b4326b5acbb",
+  "PhoneInTheOtherRoomApp/ViewModels/FocusRunViewModel.swift": "498d102e9edad4a9cb357a8e3e2407f12397ffb8d9cd4ac87d9f8cb58b0c14d8",
+  "PhoneInTheOtherRoomApp/Services/NightFlockService.swift": "0df79ffa57fd3d19fd214ed767fcee9537cf6d4f1d2e26b67f8eaaf4397c7af6",
+  "PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+GlobalCampfire.swift": "aaa28674f7e7fce2fd1866295f8f738842d14d01ef86445bc62355fe556fb966",
+  "PhoneInTheOtherRoomApp/Views/NightFlock/CampfirePanel.swift": "c956c55f8aaee4e19b0577a565c60aba8aef04a515ba9fa8dd60270afc7f79a1",
+  "PhoneInTheOtherRoomApp/Views/FocusRunSetupView.swift": "ce6af479b9caed6f6cd418d2b5e780cecca944549c8b8b40318557290f910980",
+  "PhoneInTheOtherRoomApp/Views/SettingsDetailViews.swift": "851d49ac34e28b938f06bf098ffb3f8fc505823129911a198511cdd0e434db6c",
+  "PhoneInTheOtherRoomApp/Views/Components/AutomaticWindDownCard.swift": "1876d8da687f5ee9049e3101b9a897bef2cb517a8f80627c59dc6193f187ea2b",
+  "PhoneInTheOtherRoomApp/Views/Components/SheepLoadingView.swift": "1698bb3eb9c44939af57cc56688e9b433de93d8573ab08201a5462444748712d",
+  "PhoneInTheOtherRoomApp/Screenbook/ScreenbookRecoveryProbe.swift": "d4038bda3a1e9bc136f175ea42473e39940563f53df0b600424ba47f92f59a48",
+  "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyRepairFixture.swift": "987cc6bb5027c7fbc37d75f376bb989385a0bd6837c9ec022813b82e3b633b42",
+  "Shared/AutomaticWindDownSchedulingDecision.swift": "70ba02cc8c3fd2ae8e42b9883d05f7499b9b6265fb07f4bce0328ea7f0858d31",
+  "Shared/NightFlockReadDeadline.swift": "96d1e6715896f676f918128b6342161b5ab658b45b07daa0dd4fe5ead8ce69fa",
+  "Tests/NightFlockReadDeadlineTests.swift": "878da2009c7e5b406ac50e9a9deafd919fb279fa3245bd6c2c8897b4562f6b4f"
+}

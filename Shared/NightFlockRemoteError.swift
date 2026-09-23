@@ -777,6 +777,7 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
     let requestID: String
     let retryable: Bool
     let recovery: NightFlockRemoteRecovery?
+    let transportReason: URLError.Code?
 
     var errorDescription: String? {
         switch code {
@@ -812,8 +813,8 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         case .sharedNightPlanFrozen: return "That shared plan has already begun and will stay as it was."
         case .sharedNightPlanCancelled: return "That shared night is no longer available and will not be sent."
         case .receiptActualStartRequired: return "That factual nightly result needs its recorded start time."
-        case .serviceUnavailable: return "Slumber Party couldn’t reach the server. Please try again."
-        case .internalError: return "Slumber Party could not complete that request."
+        case .serviceUnavailable: return "Slumber Party is temporarily unavailable. Please try again in a moment."
+        case .internalError: return "Something went wrong with Slumber Party. Please try again in a moment."
         }
     }
 
@@ -830,8 +831,9 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         ]
     }
 
-    init(statusCode: Int, code: NightFlockRemoteErrorCode, requestID: String, recovery: NightFlockRemoteRecovery? = nil) {
+    init(statusCode: Int, code: NightFlockRemoteErrorCode, requestID: String, recovery: NightFlockRemoteRecovery? = nil, transportReason: URLError.Code? = nil) {
         self.statusCode = statusCode
+        self.transportReason = transportReason
         self.code = code
         self.requestID = Self.canonicalRequestID(requestID) ?? UUID().uuidString.lowercased()
         self.retryable = Self.policy(for: code).retryable
@@ -850,8 +852,8 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         return NightFlockRemoteError(statusCode: statusCode, code: code, requestID: requestID)
     }
 
-    static func network(requestID: String = UUID().uuidString) -> NightFlockRemoteError {
-        NightFlockRemoteError(statusCode: 0, code: .serviceUnavailable, requestID: requestID)
+    static func network(requestID: String = UUID().uuidString, reason: URLError.Code? = nil) -> NightFlockRemoteError {
+        NightFlockRemoteError(statusCode: 0, code: .serviceUnavailable, requestID: requestID, transportReason: reason)
     }
 
     private static func legacyCode(statusCode: Int, detail: String?) -> NightFlockRemoteErrorCode {
@@ -899,13 +901,15 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
 
 /// A read failure belongs to its section, not the last command or another party.
 struct NightFlockRefreshFailure: Equatable {
+    let title: String
     let detail: String
     let requestReference: String?
     let canRetry: Bool
 
-    static func actionTitle(for command: NightFlockV4Command, accepted: Bool) -> String {
+    static func actionTitle(for command: NightFlockV4Command, accepted: Bool, uncertain: Bool = false) -> String {
         // A failed follow-up read must not invite repetition of a saved action.
-        if accepted { return "Your change was saved. The latest view couldn’t be loaded." }
+        if accepted { return "Your change was saved" }
+        if uncertain { return "We couldn’t confirm that change" }
         switch command {
         case .updatePublicProfile: return "Your Slumber Party profile couldn’t be updated"
         case .createParty: return "Your Slumber Party couldn’t be created"
@@ -929,14 +933,33 @@ struct NightFlockRefreshFailure: Equatable {
         }
     }
 
+    init(listError remote: NightFlockRemoteError?, showingPrevious: Bool) {
+        requestReference = NightFlockSupportReference.format(requestID: remote?.requestID)
+        canRetry = remote?.retryable ?? true
+        if showingPrevious {
+            title = "Your parties couldn’t refresh"
+            detail = canRetry ? "Showing the last update. Try again in a moment." : (remote?.errorDescription ?? "We couldn’t load the latest update.")
+        } else if remote?.transportReason == .notConnectedToInternet {
+            title = "You’re offline"
+            detail = "Connect to the internet to see your parties. You can still use Wind Down."
+        } else if remote?.transportReason == .timedOut {
+            title = "Your parties are taking longer to load"
+            detail = "Please try again in a moment."
+        } else {
+            title = "We couldn’t load your parties"
+            detail = canRetry ? "Please try again in a moment. You can still use Wind Down." : (remote?.errorDescription ?? "Please check for an app update.")
+        }
+    }
+
     init(remote: NightFlockRemoteError?) {
+        title = "We couldn’t load the latest update"
         requestReference = NightFlockSupportReference.format(requestID: remote?.requestID)
         canRetry = remote?.retryable ?? true
         switch remote?.code {
         case .invalidRequest, .methodNotAllowed, .unsupportedSchema:
-            detail = "The app and Slumber Party couldn’t complete this request. Trying again may not help."
+            detail = "Please check for an app update before trying again."
         case .none:
-            detail = "The latest update couldn’t be reached. Check your connection and try again."
+            detail = "Please try again in a moment."
         default:
             detail = remote?.errorDescription ?? "The latest update couldn’t be loaded."
         }

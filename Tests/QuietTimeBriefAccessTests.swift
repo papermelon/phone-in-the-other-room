@@ -1,6 +1,46 @@
 import XCTest
 
 final class QuietTimeBriefAccessTests: XCTestCase {
+    func testRepeatedFractionalGrantsRestoreAtSerializedWarningAndRejectOldCallbacks() throws {
+        let start = Date(timeIntervalSince1970: 1_900_000_000.75)
+        let schedule = makeSchedule(start: start, end: start.addingTimeInterval(7200))
+        var state = QuietTimeBriefAccessState(runID: schedule.runID, scheduleRevision: schedule.revision, updatedAt: start)
+        var priorIdentifier: String?
+        for round in 0..<6 {
+            let requested = start.addingTimeInterval(Double(round) * 301.137)
+            let grant = try XCTUnwrap(QuietTimeBriefAccessPolicy.makeGrant(runID: schedule.runID,
+                scheduleRevision: schedule.revision, requestedAt: requested, schedule: schedule))
+            XCTAssertTrue(state.propose(grant, at: requested))
+            XCTAssertTrue(state.markScheduled(nonce: grant.nonce, at: requested))
+            let plan = try XCTUnwrap(QuietTimeBriefAccessRestorePlan.make(requestedAt: requested, expiresAt: grant.expiresAt))
+            let warning = (plan.warningTime.hour ?? 0) * 3600 + (plan.warningTime.minute ?? 0) * 60 + (plan.warningTime.second ?? 0)
+            let callback = Date(timeIntervalSince1970: floor(plan.intervalEnd.timeIntervalSince1970) - Double(warning))
+            XCTAssertGreaterThanOrEqual(callback, grant.expiresAt)
+            XCTAssertLessThan(callback.timeIntervalSince(grant.expiresAt), 1.001)
+            XCTAssertEqual(QuietTimeBriefAccessPolicy.reconciliation(state: state, schedule: schedule,
+                currentRunID: schedule.runID, currentRevision: schedule.revision, at: callback), .restoreShield)
+            XCTAssertTrue(QuietTimeBriefAccessConstants.matches(grant.restoreActivityIdentifier, grant: grant))
+            if let priorIdentifier { XCTAssertFalse(QuietTimeBriefAccessConstants.matches(priorIdentifier, grant: grant)) }
+            XCTAssertFalse(QuietTimeBriefAccessConstants.matches(QuietTimeBriefAccessConstants.restoreActivityIdentifier, grant: grant))
+            priorIdentifier = grant.restoreActivityIdentifier
+            state.archiveCurrentRun(at: callback)
+        }
+        XCTAssertEqual(state.durableCount(for: schedule.runID), 6)
+    }
+
+    func testLegacyRestoreIdentifierStillDecodesAndMatchesOnlyItsGrant() throws {
+        let start = Date(timeIntervalSince1970: 1_900_000_000)
+        let legacy = QuietTimeBriefAccessGrant(runID: UUID(), scheduleRevision: 1,
+            requestedAt: start, expiresAt: start.addingTimeInterval(300),
+            restoreActivityIdentifier: QuietTimeBriefAccessConstants.restoreActivityIdentifier, status: .scheduled)
+        var payload = try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(legacy)) as? [String: Any])
+        payload.removeValue(forKey: "restoreActivityIdentifier")
+        let restored = try JSONDecoder().decode(QuietTimeBriefAccessGrant.self, from: JSONSerialization.data(withJSONObject: payload))
+        XCTAssertTrue(QuietTimeBriefAccessConstants.matches(QuietTimeBriefAccessConstants.restoreActivityIdentifier, grant: restored))
+        XCTAssertFalse(QuietTimeBriefAccessConstants.matches(QuietTimeBriefAccessConstants.identifier(for: UUID()), grant: restored))
+        XCTAssertFalse(QuietTimeBriefAccessConstants.isRestoreActivity(QuietTimeBriefAccessConstants.restoreActivityIdentifier + ".invalid"))
+    }
+
     func testGrantIsClampedToProtectedIntervalEndAndBoundaryBecomesIneligible() {
         let start = Date(timeIntervalSince1970: 1_900_000_000)
         let end = start.addingTimeInterval(4 * 60)

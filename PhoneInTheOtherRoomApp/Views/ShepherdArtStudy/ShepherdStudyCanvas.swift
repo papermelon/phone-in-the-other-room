@@ -5,6 +5,7 @@ struct ShepherdStudyCanvas: View {
     var direction: ShepherdStudyDirection = .threeQuarter
     var pose: ShepherdStudyPose = .still
     var paperTexture = true
+    var seated = false
 
     var body: some View {
         Canvas(opaque: false, rendersAsynchronously: false) { context, size in
@@ -22,7 +23,7 @@ struct ShepherdStudyCanvas: View {
         .accessibilityLabel("Shepherd, \(appearance.head.title), \(appearance.hair.title) hair, \(appearance.outfit.title), \(direction.title), hat \(appearance.hat ? "on" : "off")")
     }
 
-    private func draw(in p: ShepherdStudyPainter) {
+    func draw(in p: ShepherdStudyPainter) {
         let side = direction == .side
         let skin = ShepherdStudyPalette.skin(appearance.skin)
         if appearance.hair == .long {
@@ -32,21 +33,31 @@ struct ShepherdStudyCanvas: View {
             hair.fill(ShepherdStudyMasterPaths.longHair(appearance.head, direction: direction), ShepherdStudyPalette.hair)
         }
         // The waist overlaps both legs and the shirt hem, including during a lifted step.
-        if appearance.outfit == .shirt || appearance.outfit == .overalls {
+        if appearance.outfit == .shirt || appearance.outfit == .overalls || appearance.outfit == .openCoat {
             p.rounded(side ? 106 : 94, 208 - pose.bodyLift, side ? 40 : 60, 24, 6, trouserColor)
         }
-        leg(in: p, x: side ? 115 : 104, foot: pose.leftFoot, near: false)
-        leg(in: p, x: side ? 131 : 142, foot: pose.rightFoot, near: true)
+        if seated {
+            let left = p.rotated(18, around: CGPoint(x: 123, y: 229))
+            let right = p.rotated(-18, around: CGPoint(x: 123, y: 229))
+            left.rounded(77, 218, 91, 25, 12, trouserColor)
+            right.rounded(78, 218, 91, 25, 12, trouserColor)
+            left.rounded(145, 218, 27, 19, 7, ShepherdStudyPalette.boots)
+            right.rounded(73, 218, 27, 19, 7, ShepherdStudyPalette.boots)
+        } else {
+            leg(in: p, x: side ? 115 : 104, foot: pose.leftFoot, near: false)
+            leg(in: p, x: side ? 131 : 142, foot: pose.rightFoot, near: true)
+        }
         var upper = p
         upper.context.translateBy(x: 0, y: -pose.bodyLift)
         upper.rounded(112, 149, 22, 24, 5, skin)
         if side { arm(in: upper, right: false, swing: -pose.armSwing) }
         upper.fill(ShepherdStudyMasterPaths.garment(appearance.outfit, side: side), garmentColor)
+        if appearance.outfit == .openCoat && !direction.hidesFace { openCoatFront(in: upper, side: side) }
         if appearance.outfit == .overalls { overallBody(in: upper, side: side) }
         if !direction.hidesFace { frontDetails(in: upper, side: side) }
         if !side { arm(in: upper, right: false, swing: -pose.armSwing) }
         arm(in: upper, right: true, swing: pose.armSwing)
-        if !direction.hidesFace && appearance.outfit != .shirt && appearance.outfit != .overalls {
+        if !direction.hidesFace && appearance.outfit != .shirt && appearance.outfit != .overalls && appearance.outfit != .openCoat {
             upper.fill(ShepherdStudyMasterPaths.collar(side: side), ShepherdStudyPalette.cream)
         }
         ShepherdStudyHeadDrawing.draw(in: upper, appearance: appearance, direction: direction, pose: pose)
@@ -54,13 +65,44 @@ struct ShepherdStudyCanvas: View {
 
     private var garmentColor: Color {
         switch appearance.outfit {
-        case .shirt: return ShepherdStudyPalette.cream
-        case .coat: return ShepherdStudyPalette.moss
+        case .shirt: return shirtColor
+        case .coat, .openCoat: return ShepherdStudyPalette.moss
         case .dress: return ShepherdStudyPalette.berry
         case .moonCoat: return ShepherdStudyPalette.moon
-        case .overalls: return ShepherdStudyPalette.cream
+        case .overalls: return shirtColor
         case .cloak: return ShepherdStudyPalette.midnight
         }
+    }
+
+    private var shirtColor: Color {
+        switch appearance.shirt {
+        case .cream: return ShepherdStudyPalette.cream
+        case .berry: return ShepherdStudyPalette.berry
+        case .dusk: return ShepherdStudyPalette.moon
+        case .amber: return ShepherdStudyPalette.hat
+        }
+    }
+
+    private func openCoatFront(in p: ShepherdStudyPainter, side: Bool) {
+        // The opening is cut into the long coat silhouette; the shirt stops at
+        // its own hem, exposing trousers below rather than becoming a dress.
+        let opening = Path { path in
+            path.move(to: CGPoint(x: side ? 137 : 115, y: 161))
+            path.addQuadCurve(to: CGPoint(x: side ? 153 : 146, y: 243),
+                              control: CGPoint(x: side ? 140 : 132, y: 203))
+            path.addLine(to: CGPoint(x: side ? 136 : 106, y: 243))
+            path.addQuadCurve(to: CGPoint(x: side ? 129 : 126, y: 161),
+                              control: CGPoint(x: side ? 128 : 118, y: 200))
+            path.closeSubpath()
+        }
+        var front = p
+        front.context.clip(to: ShepherdStudyMasterPaths.garment(.openCoat, side: side))
+        front.context.clip(to: opening)
+        front.fill(opening, trouserColor)
+        front.fill(ShepherdStudyMasterPaths.garment(.shirt, side: side), shirtColor)
+        p.fill(ShepherdStudyMasterPaths.collar(side: side), ShepherdStudyPalette.cream)
+        p.fill(ShepherdStudyMasterPaths.pocket(x: side ? 113 : 91, y: 209, width: 15),
+               ShepherdStudyPalette.pocket.opacity(0.5))
     }
 
     private var trouserColor: Color {
@@ -141,7 +183,7 @@ struct ShepherdStudyCanvas: View {
             }
             return
         }
-        guard appearance.outfit != .shirt else { return }
+        guard appearance.outfit != .shirt && appearance.outfit != .openCoat else { return }
         let x: CGFloat = side ? 143 : 120
         p.ellipse(x, 187, 8, 9, appearance.outfit == .dress ? ShepherdStudyPalette.cream : ShepherdStudyPalette.hat)
         guard appearance.outfit == .coat || appearance.outfit == .moonCoat else { return }

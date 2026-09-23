@@ -5,7 +5,7 @@ struct OllieDetailView: View {
     let onPlay: (FarmPasturePlayAction) -> Void
 
     var body: some View {
-        OllieDetailContent(state: viewModel.farmState, onPlay: onPlay) { item in
+        OllieDetailContent(state: viewModel.farmState, onPlay: onPlay, onCoat: viewModel.setOllieCoat) { item in
             if viewModel.farmState.equipment.ollieAccessoryItemID == item.id {
                 viewModel.takeOffOllieAccessory(item.id)
             } else {
@@ -19,6 +19,7 @@ struct OllieDetailView: View {
 private struct OllieDetailContent: View {
     let state: FarmState
     let onPlay: (FarmPasturePlayAction) -> Void
+    var onCoat: (OllieCoatStyle) -> Void = { _ in }
     let onToggle: (FarmShopItem) -> Void
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
@@ -31,6 +32,7 @@ private struct OllieDetailContent: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 Text("Ollie’s look follows him from Home to the Farm and every chase.")
                     .font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
+                OllieCoatPicker(equipment: state.equipment, onSelect: onCoat)
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     sectionTitle("PLAY TOGETHER")
                     Button { onPlay(.fetch) } label: {

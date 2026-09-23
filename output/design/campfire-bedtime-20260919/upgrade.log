@@ -1,0 +1,16 @@
+BEGIN
+INSERT 0 1
+                            night_flock_v4_command
+-------------------------------------------------------------------------------
+ {"accepted": true, "resolvedPartyID": "9e900787-4f24-43c2-9bda-66915615e06f"}
+(1 row)
+
+INSERT 0 1
+INSERT 0 1
+ALTER TABLE
+ALTER TABLE
+CREATE FUNCTION
+CREATE FUNCTION
+REVOKE
+DO
+ROLLBACK

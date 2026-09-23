@@ -278,7 +278,7 @@ enum FirstRunGuideCopy {
         case .home:
             return "Bedtime, wake time, and both quiet windows live here."
         case .start:
-            return "When your Wind Down is ready, tap Put phone away to start. Then leave your phone in its spot in another room."
+            return "At Wind Down time, this button says Start Wind Down. Earlier in the day, it offers Phone Away for time beyond your screen. Each starts its own kind of session."
         case .phoneAway:
             return "Use Phone Away for a break from your phone at any time of day. Read, cook, work, or spend time with someone. These minutes appear separately in Nights."
         case .rootTabs:
@@ -304,7 +304,7 @@ enum FirstRunGuideCopy {
         case .farmShop:
             return "Spend wool on more room for sheep, Farm decorations, and clothes. Your welcome gifts are free."
         case .farmSearch:
-            return "Ollie’s Search is the missing-sheep board. Search Journal keeps resolved finds and clues. Favouring a sheep changes likely identity after a find, not the chance of finding one."
+            return "Wind Down, Screen-Free Morning and Phone Away each give Ollie ways to search. Open this board to choose a sheep to favour, or tap its question mark for the full guide. Search Journal keeps every find and clue."
         case .slumberParty:
             return "Invite people you know to a long-lived private group. Seven-night rounds organize shared progress, cheers, and Farm rewards."
         case .settings:

@@ -1,6 +1,9 @@
 # ADR-0020 — Cumulative Farm credit
 
-Accepted by founder request, 5 September 2026. Local implementation; not distributed.
+Accepted by founder request, 5 September 2026; bedtime-bonus extension authorized
+20 September 2026. Included in TestFlight 1.0 (53), assigned to Internal QA.
+[Distribution evidence](../../output/design/search-progress-20260920/release-53/README.md);
+physical-device acceptance remains separate.
 
 ## Problem and decision
 
@@ -9,7 +12,39 @@ for completed-night counters to advance. Farm now earns cumulative timer credit:
 Wind Down searches cost 420 minutes; Phone Away searches cost 100 minutes. Early
 endings retain all eligible credit. There is no minimum session duration, per-run
 credit cap, or three-Wind-Down gate for the new Phone Away meter. Existing independent
-first-three and bad-luck guarantees remain. No completion bonus is added in this slice.
+first-three and bad-luck guarantees remain. New version-2 runs also follow the
+separately accounted bedtime-bonus policy below; version-0/1 runs retain their contracts.
+
+## Bedtime bonus and search presentation (20 September extension)
+
+The existing shared card beneath Farm and on Ollie's Search is now folded by default:
+“Ollie's next search”, a story line and a small trail. Expanding reveals the same
+trail, exact unspent time/bonus contributions, rules and independent Phone Away progress.
+Farm's pasture, section order and active-session visibility do not change.
+
+A new-policy primary Wind Down earns 20 percentage points of a search once per saved
+night-ending date when it starts within 15 minutes of the frozen planned Wind Down
+start, starts before bedtime, and its bounded recorded interval reaches bedtime.
+The evening duration must be positive. Normal terminal settlement/recovery awards
+the bonus, including qualifying early endings after bedtime. Incomplete timing,
+missing attribution or an indeterminate interruption earns no bonus and records no
+habit failure. Brief Access still excludes time but is not an extra disqualification.
+
+`BedtimeSearchBonus` stores unspent search-equivalent units and durable per-night
+grant identities in the Farm ledger. These units never enter wool growth, factual
+minutes, completion counts, Health or social ledgers. Threshold resolution consumes
+timer credit first, then bonus credit; all remaining contributions carry forward.
+Odds and existing guarantees are unchanged. Bonus receipts retain the original
+grant even after it has been spent. No live UI clock grants progress.
+
+New runs use `farmCreditVersion = 2`. Restored version-0/1 runs are not upgraded to
+this policy, and historical time backfill never creates bonuses. Farm schema 4
+protects new receipts/grants from older local clients; supported schema-3 payloads
+retain their encoding until a version-2 settlement, preserving queued upload identity.
+Private wire schema/economy version remains 1: the existing server stores the nested
+Farm document, while the lossless client decoder accepts Farm 3/4 and rejects unknown
+versions/fields. See the [implementation plan](../plans/ollies-next-search-2026-09-20.md)
+and [save contract](../plans/farm-save-contract.md).
 
 Wind Down includes the overnight timer, bounded by the saved planned end and actual
 terminal time. The scheduled linked Screen-Free Morning window is excluded because

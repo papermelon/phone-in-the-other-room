@@ -35,10 +35,47 @@ struct CampfireSession: Codable, Equatable, Identifiable, Sendable {
     var expiresAt: Date
     var ended: Bool
     var revision: Int
+    var intendedBedtime: Date? = nil
     var title: String { CampfireRules.sessionTitle(kind: kind, activity: activity) }
+    var validIntendedBedtime: Date? {
+        guard kind == .windDown, let intendedBedtime, intendedBedtime.timeIntervalSince1970.isFinite,
+              intendedBedtime <= expiresAt else { return nil }
+        return intendedBedtime
+    }
+    func pose(at date: Date) -> CampfireShepherdPose {
+        guard isCurrent(at: date), let bedtime = validIntendedBedtime, date >= bedtime else { return .awake }
+        return .bedtime
+    }
     func isCurrent(at date: Date) -> Bool {
         !ended && revision == 1 && startedAt <= date && observedAt <= date.addingTimeInterval(300) && expiresAt > date
             && expiresAt <= startedAt.addingTimeInterval(CampfireRules.maximumDuration)
+    }
+}
+
+enum CampfireShepherdPose: Equatable, Sendable {
+    case awake, bedtime
+    var accessibilityDescription: String {
+        self == .bedtime ? "Shepherd tucked in for bedtime" : "Shepherd awake by the Campfire"
+    }
+}
+
+extension CampfireSession {
+    private enum CodingKeys: String, CodingKey {
+        case id, memberID, kind, activity, startedAt, observedAt, expiresAt, ended, revision, intendedBedtime
+    }
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        memberID = try c.decode(UUID.self, forKey: .memberID)
+        kind = try c.decode(NightFlockV4ActivityKind.self, forKey: .kind)
+        activity = try c.decodeIfPresent(CampfireActivity.self, forKey: .activity)
+        startedAt = try c.decode(Date.self, forKey: .startedAt)
+        observedAt = try c.decode(Date.self, forKey: .observedAt)
+        expiresAt = try c.decode(Date.self, forKey: .expiresAt)
+        ended = try c.decode(Bool.self, forKey: .ended)
+        revision = try c.decode(Int.self, forKey: .revision)
+        // Optional art metadata must not make an otherwise valid party unreadable.
+        intendedBedtime = try? c.decodeIfPresent(Date.self, forKey: .intendedBedtime)
     }
 }
 
@@ -47,10 +84,31 @@ struct CampfireState: Codable, Equatable, Sendable {
     var agreement: CampfireAgreement?
     var sessions: [CampfireSession] = []
     var buddies: CampfireBuddiesState? = nil
+    var supportsIntendedBedtime = false
     var isSupported: Bool { version == 1 }
 }
 
 enum CampfireRules {
+    static func intendedBedtime(for run: FocusRun, supported: Bool) -> Date? {
+        guard supported, let plan = run.nightWatchPlan, plan.role == .primarySleepBookend,
+              let expiry = end(for: run), plan.intendedBedtime.timeIntervalSince1970.isFinite,
+              plan.intendedBedtime <= expiry else { return nil }
+        return plan.intendedBedtime
+    }
+
+    /// Local presentation only; neither these dates nor their ticks publish activity.
+    static func displayInvalidationDates(in state: CampfireState?, at date: Date) -> [Date] {
+        guard let state, state.isSupported else { return [] }
+        let sessions = state.sessions.filter { !$0.ended && $0.revision == 1 }
+        let boundaries = sessions.flatMap { [$0.startedAt, $0.expiresAt] + [$0.validIntendedBedtime].compactMap { $0 } }
+        let buddyDates = state.buddies?.sessions.flatMap {
+            [$0.expiresAt, $0.checkInAfter, $0.startedAt.addingTimeInterval(CampfireBuddiesRules.retention)]
+        } ?? []
+        // TimelineView can round its delivered timestamp just below the requested
+        // instant. One millisecond crosses that boundary without a polling clock.
+        return Array(Set((boundaries + buddyDates).filter { $0.timeIntervalSince1970.isFinite && $0 > date }))
+            .map { $0.addingTimeInterval(0.001) }.sorted()
+    }
     static func sessionTitle(kind: NightFlockV4ActivityKind, activity: CampfireActivity?) -> String {
         guard kind == .phoneAway else { return "Wind Down" }
         guard let activity, activity != .phoneAway else { return "Phone Away" }
@@ -103,13 +161,12 @@ enum CampfireRules {
         switch plan.role {
         case .primarySleepBookend: return min(plan.wakeTime, run.startedAt.addingTimeInterval(maximumDuration))
         case .additionalQuiet: return min(run.plannedEndAt, run.startedAt.addingTimeInterval(maximumDuration))
-        default: return nil
         }
     }
 }
 
 extension CampfireState {
-    private enum CodingKeys: String, CodingKey { case version, agreement, sessions, buddies }
+    private enum CodingKeys: String, CodingKey { case version, agreement, sessions, buddies, supportsIntendedBedtime }
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         version = try container.decode(Int.self, forKey: .version)
@@ -118,7 +175,65 @@ extension CampfireState {
             agreement = nil; sessions = []; buddies = nil; return
         }
         buddies = try container.decodeIfPresent(CampfireBuddiesState.self, forKey: .buddies)
+        supportsIntendedBedtime = try container.decodeIfPresent(Bool.self, forKey: .supportsIntendedBedtime) ?? false
         agreement = try container.decodeIfPresent(CampfireAgreement.self, forKey: .agreement)
         sessions = try container.decodeIfPresent([CampfireSession].self, forKey: .sessions) ?? []
+    }
+}
+
+/// Eight local seats. Membership changes fill vacancies without moving people
+/// already seated; no coordinates are published or added to a Farm arrangement.
+struct CampfireSeating {
+    private(set) var slots: [UUID: Int] = [:]
+    static let order = [0, 3, 2, 1, 5, 4, 6, 7]
+    // Composed clearings leave room for text and the fire; refreshes never roll new positions.
+    static let anchors: [PastureScenePoint] = [
+        .init(x: 0.245, y: 0.17), .init(x: 0.735, y: 0.19),
+        .init(x: 0.30, y: 0.50), .init(x: 0.765, y: 0.525),
+        .init(x: 0.23, y: 0.69), .init(x: 0.71, y: 0.72),
+        .init(x: 0.285, y: 0.88), .init(x: 0.75, y: 0.905)
+    ]
+
+    static func point(for slot: Int) -> PastureScenePoint {
+        anchors[((slot % anchors.count) + anchors.count) % anchors.count]
+    }
+    mutating func reconcile(_ ids: [UUID]) {
+        let current = Set(ids.prefix(8))
+        slots = slots.filter { current.contains($0.key) }
+        for id in ids.prefix(8) where slots[id] == nil {
+            if let vacancy = Self.order.first(where: { !slots.values.contains($0) }) { slots[id] = vacancy }
+        }
+    }
+    func position(_ id: UUID) -> PastureScenePoint { Self.point(for: slots[id] ?? 0) }
+    mutating func move(_ id: UUID, to point: PastureScenePoint) {
+        guard let old = slots[id], point.x.isFinite, point.y.isFinite else { return }
+        let nearest = (0..<8).min {
+            Self.point(for: $0).distance(to: point) < Self.point(for: $1).distance(to: point)
+        } ?? old
+        if let neighbour = slots.first(where: { $0.value == nearest })?.key { slots[neighbour] = old }
+        slots[id] = nearest
+    }
+}
+
+/// Refreshing does not extend the authority or freshness of a presence snapshot.
+enum CampfireScenePhase: Equatable {
+    case loading, refreshing, populated, empty, unavailable
+
+    static func resolve(hasCurrentSnapshot: Bool, isRefreshing: Bool, hasPeople: Bool) -> Self {
+        guard hasCurrentSnapshot else { return isRefreshing ? .loading : .unavailable }
+        if isRefreshing { return .refreshing }
+        return hasPeople ? .populated : .empty
+    }
+
+    var showsPeople: Bool { self == .populated || self == .refreshing }
+    var isUpdating: Bool { self == .loading || self == .refreshing }
+}
+
+/// Display whitespace is normalized without shortening or rewriting someone's shared plan.
+enum CampfirePlanText {
+    static func normalized(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let text = value.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+        return text.isEmpty ? nil : text
     }
 }

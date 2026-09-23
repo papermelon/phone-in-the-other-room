@@ -6,6 +6,8 @@ Founder direction is recorded in ADR-0023. Production configuration, deployment 
 acceptance remain separate release gates. The design below records the intended contract;
 the implementation evidence section records what has actually been verified.
 
+Current Profile presentation and handle discoverability follow the [21 September repair](account-and-search-repair-2026-09-21.md). Authentication feedback is distinct from confirmed Farm activation.
+
 ## 1. Outcome
 
 Each signed-in account owns one active Farm. Signing in loads that Farm and enables

@@ -3,6 +3,36 @@ import XCTest
 final class CampfireVisibilityTests: XCTestCase {
     let now = Date(timeIntervalSince1970: 1_800_000_000)
 
+    func testDefaultReadWorksBeforeChannelCapabilityIsKnown() throws {
+        func body(_ request: GlobalCampfireStateRequest) throws -> [String: Any] {
+            try XCTUnwrap(JSONSerialization.jsonObject(with: JSONEncoder().encode(request)) as? [String: Any])
+        }
+        let legacy = try body(.init())
+        XCTAssertEqual(Set(legacy.keys), ["command", "gathering"])
+        XCTAssertEqual(legacy["command"] as? String, "state")
+        XCTAssertEqual(try body(.init(gathering: "reading", channelID: 3))["channelID"] as? Int, 3)
+    }
+
+    func testLegacyServerRepairsOnlyRejectedWithdrawalsAndKeepsRetryIdentity() throws {
+        var off = GlobalCampfireCommand(command: "agreement")
+        off.enabled = false; off.consentVersion = 2; off.expectedRevision = 4
+        var on = off; on.id = UUID().uuidString; on.enabled = true
+        var document = CampfireVisibilityDocument()
+        document.commands = [off, on]
+        var state = GlobalCampfireState(version: 1, available: true, observedAt: now,
+            participants: [], approximateCount: 0, profileVersion: 2)
+        XCTAssertTrue(document.repairWithdrawals(for: state).isEmpty)
+        state.profileVersion = nil; state.available = false
+        XCTAssertTrue(document.repairWithdrawals(for: state).isEmpty)
+        state.available = true
+        XCTAssertEqual(document.repairWithdrawals(for: state), [off.id])
+        off.consentVersion = 1
+        XCTAssertEqual(document.commands, [off, on])
+        XCTAssertTrue(document.repairWithdrawals(for: state).isEmpty)
+        XCTAssertEqual(try JSONDecoder().decode(CampfireVisibilityDocument.self,
+            from: JSONEncoder().encode(document)), document)
+    }
+
     func testMigrationPreservesPrivateChoiceAndNeverEnrollsGlobal() {
         XCTAssertEqual(CampfireVisibilityRules.initialVisibility(saved: nil, hasPrivateAgreement: true), .party)
         XCTAssertEqual(CampfireVisibilityRules.initialVisibility(saved: nil, hasPrivateAgreement: false), .off)
@@ -10,7 +40,7 @@ final class CampfireVisibilityTests: XCTestCase {
     }
 
     func testPublicPublicationRequiresTheExactAcceptedReceipt() {
-        let receipt = CampfireAgreement(id: UUID(), version: 1, revision: 1, enabled: true, acceptedAt: now)
+        let receipt = CampfireAgreement(id: UUID(), version: 2, revision: 1, enabled: true, acceptedAt: now)
         XCTAssertTrue(CampfireVisibilityRules.permitsPublicPublication(visibility: .global, capturedAgreement: receipt.id, current: receipt))
         for visibility in [CampfireVisibility.off, .party] {
             XCTAssertFalse(CampfireVisibilityRules.permitsPublicPublication(visibility: visibility, capturedAgreement: receipt.id, current: receipt))
@@ -19,7 +49,9 @@ final class CampfireVisibilityTests: XCTestCase {
         XCTAssertFalse(CampfireVisibilityRules.permitsPublicPublication(visibility: .global, capturedAgreement: nil, current: receipt))
         var revoked = receipt; revoked.enabled = false
         XCTAssertFalse(CampfireVisibilityRules.permitsPublicPublication(visibility: .global, capturedAgreement: receipt.id, current: revoked))
-        var future = receipt; future.version = 2
+        var legacy = receipt; legacy.version = 1
+        XCTAssertFalse(CampfireVisibilityRules.permitsPublicPublication(visibility: .global, capturedAgreement: receipt.id, current: legacy))
+        var future = receipt; future.version = 3
         XCTAssertFalse(CampfireVisibilityRules.permitsPublicPublication(visibility: .global, capturedAgreement: receipt.id, current: future))
     }
 
@@ -94,7 +126,7 @@ final class CampfireVisibilityTests: XCTestCase {
         var document = CampfireVisibilityDocument()
         document.runSelections[run] = .init(visibility: .global, partyIDs: [], effectiveAt: now, publicAgreementCommandID: command)
         document.selection = document.runSelections[run]
-        let receipt = CampfireAgreement(id: UUID(), version: 1, revision: 1, enabled: true, acceptedAt: now.addingTimeInterval(5))
+        let receipt = CampfireAgreement(id: UUID(), version: 2, revision: 1, enabled: true, acceptedAt: now.addingTimeInterval(5))
         document.bindPublicAgreement(commandID: "another-command", agreement: receipt)
         XCTAssertNil(document.runSelections[run]?.publicAgreementID)
         document.bindPublicAgreement(commandID: command, agreement: receipt)

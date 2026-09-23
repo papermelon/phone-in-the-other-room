@@ -1,0 +1,6 @@
+{
+  "supabase/functions/campfire-global/index.ts": true,
+  "supabase/functions/_shared/global-campfire.ts": true,
+  "supabase/functions/_shared/http.ts": true,
+  "supabase/functions/_shared/supabase.ts": true
+}

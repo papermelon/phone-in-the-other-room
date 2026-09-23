@@ -1,0 +1,11 @@
+{
+  "migration": "5a48a873db8a083db6f2d02a7440c0b744ad90c6932cefa8b4c4430c52533412",
+  "tests": "45256ad9a4f39fb681ee23e29bd95d2b882e40f5dddb1782c29168e0665cabde",
+  "fixtureIDs": [
+    "4087e010-b053-40ec-a5eb-c9a440770367",
+    "0278fd1a-0710-4df5-8433-8f4ef73cddd8",
+    "f33c3efd-83e7-4789-92d1-249223010515",
+    "44dfffee-a71b-4c8e-b1eb-309525a31725"
+  ],
+  "fixtureHandle": "qa_inv_03db13901f82"
+}

@@ -18,20 +18,31 @@ struct CampfireHomeEntry: View {
                 Image(systemName: "chevron.right").accessibilityHidden(true)
             }.frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
         }.buttonStyle(PixelChipButtonStyle(isSelected: false))
-            .accessibilityHint("Browse your party or the global fire. Opening it doesn’t share your session.")
+            .accessibilityHint("Browse your party or the global campfire. Opening it doesn’t share your session.")
             .task(id: social.campfireOwnerForNewRun) { _ = social.restoreCampfireVisibility() }
     }
 }
 
 struct CampfireView: View {
     @ObservedObject var social: NightFlockViewModel
+    var partyID: UUID? = nil
+    @EnvironmentObject private var app: FocusRunViewModel
     var onStart: (NightFlockV4ActivityKind) -> Void
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
-            ScrollView { CampfirePanel(social: social, onStart: onStart).padding(AppSpacing.md) }
+            ScrollView { CampfirePanel(social: social, partyID: partyID ?? (social.globalCampfireState?.isSupported == true ? nil : social.slumberParties.first?.partyID), onStart: onStart).padding(AppSpacing.md) }
                 .background(AppColors.paper.ignoresSafeArea()).navigationBarTitleDisplayMode(.inline)
-                .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                    ToolbarItem(placement: .bottomBar) {
+                        if app.isRunning {
+                            Button("Back to your session") {
+                                NotificationCenter.default.post(name: .countingSheepShowHome, object: nil)
+                            }
+                        }
+                    }
+                }
         }
     }
 }
@@ -46,6 +57,7 @@ struct CampfirePanel: View {
     @Environment(\.dynamicTypeSize) private var textSize
     @State private var viewedPartyID: UUID?
     @State private var gathering = "all"
+    @State private var showsPeople = false
     @State private var selectedPrivateSession: CampfireSession?
     @State private var selectedPublicPerson: GlobalCampfireParticipant?
     @State private var pendingStart: NightFlockV4ActivityKind?
@@ -54,34 +66,43 @@ struct CampfirePanel: View {
         self.social = social; self.onStart = onStart; _viewedPartyID = State(initialValue: partyID)
     }
     private var party: NightFlockV4PartyDetail? { viewedPartyID.flatMap { social.v4ObservedPartyDetail(for: $0) } }
+    private var isRefreshing: Bool {
+        guard let viewedPartyID else { return social.globalCampfireLoading }
+        if case .refreshing = social.v4ObservedPartyObservationState(for: viewedPartyID) { return true }
+        return false
+    }
     private var viewTitle: String { viewedPartyID == nil ? "Global" : party?.summary.name ?? "My Slumber Party" }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             Text("Campfire").font(AppTypography.title)
-            if textSize.isAccessibilitySize { startActions }
-            Menu {
-                Button("Global") { viewedPartyID = nil }
-                ForEach(social.slumberParties, id: \.partyID) { party in
-                    Button(party.name) { viewedPartyID = party.partyID }
+            if textSize.isAccessibilitySize {
+                viewingChoice
+                if viewedPartyID == nil { gatheringChoice }
+            } else {
+                HStack(spacing: AppSpacing.md) {
+                    viewingChoice
+                    if viewedPartyID == nil { gatheringChoice }
                 }
-            } label: {
-                HStack(spacing: AppSpacing.sm) {
-                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("Viewing").font(AppTypography.caption)
-                        Text(viewTitle).font(AppTypography.body)
-                    }
-                    Image(systemName: "chevron.down").font(AppTypography.caption)
-                        .dynamicTypeSize(...DynamicTypeSize.xxxLarge).accessibilityHidden(true)
-                }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            }.tint(AppColors.grass).accessibilityHint("Changes whose sessions you see. Your visibility stays the same.")
-            CampfireVisibilityButton(social: social, run: app.isRunning ? app.activeRun : nil)
-            if !textSize.isAccessibilitySize { startActions }
-            TimelineView(.periodic(from: .now, by: 15)) { context in
-                if let viewedPartyID { privateFire(partyID: viewedPartyID, at: context.date) }
-                else { globalFire(at: context.date) }
             }
+            HStack(spacing: AppSpacing.sm) {
+                CampfireVisibilityButton(social: social, run: app.isRunning ? app.activeRun : nil, compact: true)
+                Button(action: refresh) {
+                    Image(systemName: "arrow.clockwise").frame(width: 44, height: 44)
+                }.tint(AppColors.grass).accessibilityLabel("Refresh Campfire")
+                    .disabled(isRefreshing || social.accountState != .linked)
+            }
+            if let viewedPartyID {
+                SlumberPartyV4PresentationClock(party: party) { date in
+                    privateFire(partyID: viewedPartyID, at: date)
+                }
+            } else {
+                TimelineView(.periodic(from: .now, by: 15)) { context in globalFire(at: context.date) }
+            }
+            if !app.isRunning { startActions }
         }
+        .onAppear { if textSize.isAccessibilitySize { showsPeople = true } }
+        .onChange(of: textSize) { _, size in if size.isAccessibilitySize { showsPeople = true } }
         .sheet(item: $selectedPrivateSession, onDismiss: finishJoin) { session in
             if let viewedPartyID {
                 CampfirePrivatePersonView(social: social, partyID: viewedPartyID, sourceID: session.id, memberID: session.memberID) { kind in
@@ -94,17 +115,51 @@ struct CampfirePanel: View {
                 pendingStart = kind; selectedPublicPerson = nil
             }.environmentObject(app)
         }
-        .task(id: "\(viewedPartyID?.uuidString ?? gathering)-\(scenePhase == .active)") {
+        .task(id: "\(viewedPartyID?.uuidString ?? gathering)-\(social.campfireOwnerForNewRun?.uuidString ?? "guest")-\(scenePhase == .active)") {
             guard scenePhase == .active else { return }
             _ = social.restoreCampfireVisibility()
             social.drainGlobalCampfireCommands(retry: true)
+            refresh()
             while !Task.isCancelled {
-                social.drainGlobalCampfireCommands(retry: true)
-                refresh()
                 do { try await Task.sleep(for: .seconds(CampfireRules.foregroundRefreshInterval)) }
                 catch { return }
+                social.drainGlobalCampfireCommands(retry: true)
+                if !isRefreshing && (viewedPartyID != nil || social.globalCampfireFailure?.permitsAutomaticRetry != false) {
+                    refresh()
+                }
             }
         }
+    }
+
+    private var viewingChoice: some View {
+        Menu {
+            Button(social.globalCampfireFailure == .unavailable ? "Global · unavailable" : "Global") { viewedPartyID = nil }
+                .disabled(social.globalCampfireFailure == .unavailable)
+            if social.globalCampfireFailure == .unavailable {
+                Button("Check Global availability") { social.refreshGlobalCampfire() }
+            }
+            ForEach(social.slumberParties, id: \.partyID) { party in
+                Button(party.name) { viewedPartyID = party.partyID }
+            }
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                    Text("Viewing").font(AppTypography.caption)
+                    Text(viewTitle).font(AppTypography.body)
+                }
+                Image(systemName: "chevron.down").font(AppTypography.caption)
+                    .dynamicTypeSize(...DynamicTypeSize.xxxLarge).accessibilityHidden(true)
+            }.fixedSize(horizontal: false, vertical: true).frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        }.tint(AppColors.grass).accessibilityHint("Changes whose sessions you see. Your visibility stays the same.")
+    }
+
+    private var gatheringChoice: some View {
+        Picker("Gathering", selection: $gathering) {
+            Text("Everyone").tag("all")
+            Text("Wind Down").tag("windDown")
+            ForEach(CampfireActivity.allCases) { Text($0.title).tag($0.rawValue) }
+        }.pickerStyle(.menu).font(AppTypography.body).tint(AppColors.grass)
+            .frame(minHeight: 44)
     }
 
     private func finishJoin() {
@@ -116,95 +171,127 @@ struct CampfirePanel: View {
     }
     private var startActions: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            if app.isRunning {
-                Button { NotificationCenter.default.post(name: .countingSheepShowHome, object: nil) } label: {
-                    Label("Back to your session", systemImage: "moon.stars")
-                }.buttonStyle(PixelPrimaryButtonStyle())
-            } else {
-                Button { onStart(.windDown) } label: { Text("Start Wind Down").frame(maxWidth: .infinity) }
-                    .buttonStyle(PixelPrimaryButtonStyle())
-                Button("Start Phone Away") { onStart(.phoneAway) }.buttonStyle(PixelChipButtonStyle(isSelected: false))
-            }
+            Button { onStart(.windDown) } label: { Text("Start Wind Down").frame(maxWidth: .infinity) }
+                .buttonStyle(PixelPrimaryButtonStyle())
+            Button("Start Phone Away") { onStart(.phoneAway) }.buttonStyle(PixelChipButtonStyle(isSelected: false))
         }
     }
 
     @ViewBuilder private func privateFire(partyID: UUID, at date: Date) -> some View {
-        if let party {
-            let fresh = social.v4ObservedPartyObservationState(for: partyID).permitsLivePresence
-            let sessions = CampfireRules.currentSessions(party.pasture?.campfire, members: Set(party.memberships.map(\.memberID)), isFresh: fresh, at: date)
-            if !fresh { empty("This fire needs an update", detail: "Refresh to see current sessions.") }
-            else if sessions.isEmpty { empty("A quiet spot is waiting", detail: "Shared Wind Down and Phone Away sessions appear here.") }
-            else {
-                CampfireSceneView(people: sessions.compactMap { session in
-                    party.memberships.first { $0.memberID == session.memberID }.map {
-                        CampfireScenePerson(id: session.id, name: $0.profile.displayName, appearance: $0.profile.presentation, detail: session.title)
-                    }
-                }) { id in selectedPrivateSession = sessions.first { $0.id == id } }
+        let observation = social.v4ObservedPartyObservationState(for: partyID)
+        let fresh = party != nil && observation.permitsLivePresence
+        let updating: Bool = {
+            if case .refreshing = observation { return true }
+            return false
+        }()
+        let sessions = CampfireRules.currentSessions(party?.pasture?.campfire,
+            members: Set(party?.memberships.map(\.memberID) ?? []), isFresh: fresh, at: date)
+        let phase = CampfireScenePhase.resolve(hasCurrentSnapshot: fresh, isRefreshing: updating, hasPeople: !sessions.isEmpty)
+        let people: [CampfireScenePerson] = sessions.compactMap { session in
+            guard let party, let member = party.memberships.first(where: { $0.memberID == session.memberID }) else { return nil }
+            return .init(id: session.id, name: member.profile.displayName, appearance: member.profile.presentation,
+                detail: session.title, pose: session.pose(at: date), seatID: session.memberID,
+                buddyCue: buddy(for: session, in: party)?.participationCue, thought: buddy(for: session, in: party)?.publicIntention)
+        }
+        CampfireSceneView(people: phase.showsPeople ? people : [],
+            notice: phase == .populated ? nil : phase.isUpdating ? (fresh ? "Updating…" : "Opening your party’s campfire…")
+                : phase == .empty ? "A quiet spot is waiting" : "The campfire needs an update",
+            detail: phase.isUpdating ? nil : phase == .empty ? "Shared Wind Down and Phone Away sessions appear here."
+                : phase == .unavailable ? "We couldn’t confirm who’s here. Try an update." : nil,
+            isUpdating: phase.isUpdating, retry: phase == .unavailable ? refresh : nil
+        ) { id in selectedPrivateSession = sessions.first { $0.id == id } }
+        .id("\(partyID)-\(social.campfireOwnerForNewRun?.uuidString ?? "guest")")
+        if phase.showsPeople, let party, !sessions.isEmpty {
+            DisclosureGroup(isExpanded: $showsPeople) {
                 ForEach(sessions) { session in
                     if let member = party.memberships.first(where: { $0.memberID == session.memberID }) {
                         Button { selectedPrivateSession = session } label: {
                             CampfirePersonRow(name: member.profile.displayName, appearance: member.profile.presentation,
-                                detail: "\(session.title) · planned until \(session.expiresAt.formatted(date: .omitted, time: .shortened))")
+                                detail: "\(session.title) · planned until \(session.expiresAt.formatted(date: .omitted, time: .shortened))", pose: session.pose(at: date),
+                                buddyCue: buddy(for: session, in: party)?.participationCue, intention: buddy(for: session, in: party)?.publicIntention)
                         }.buttonStyle(.plain)
                     }
                 }
-                Text("Shared by your party members. A session doesn’t show sleep or where a phone is.")
-                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
-            }
-        } else { empty("Opening your party’s fire…", detail: "Your visibility stays the same while it loads.") }
-        Button("Refresh Campfire", action: refresh).font(AppTypography.caption).frame(minHeight: 44).tint(AppColors.grass)
+            } label: {
+                Text("People here · \(sessions.count)").frame(minHeight: 44)
+            }.font(AppTypography.body).tint(AppColors.grass)
+        }
+    }
+
+    private func buddy(for session: CampfireSession, in party: NightFlockV4PartyDetail) -> CampfireBuddySession? {
+        guard party.pasture?.campfire?.agreement?.version == 2,
+              party.pasture?.campfire?.buddies?.isSupported == true else { return nil }
+        return party.pasture?.campfire?.buddies?.sessions.first {
+            $0.sourceID == session.id && $0.memberID == session.memberID
+        }
     }
 
     @ViewBuilder private func globalFire(at date: Date) -> some View {
-        if social.accountState != .linked {
-            empty("Company beyond your party", detail: "Sign in from Settings to browse Global Campfire. You don’t need a Slumber Party.")
-        } else if let failure = social.globalCampfireFailure {
-            empty("The global fire couldn’t be reached", detail: failure)
-        } else if let state = social.globalCampfireState, state.isSupported,
-                  CampfireVisibilityRules.isFresh(observedAt: state.observedAt, now: date) {
-            Picker("Gathering", selection: $gathering) {
-                Text("Everyone").tag("all")
-                Text("Wind Down").tag("windDown")
-                ForEach(CampfireActivity.allCases) { Text($0.title).tag($0.rawValue) }
-            }.font(AppTypography.body).pickerStyle(.menu).tint(AppColors.grass)
-            Text(state.approximateCount == 0 ? "No shared sessions in this gathering" : "Up to \(state.approximateCount) sharing in this gathering")
-                .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+        let state = social.globalCampfireState
+        let linked = social.accountState == .linked
+        let issue = social.globalCampfireFailure ?? (state?.available == false ? GlobalCampfireIssue.unavailable : nil)
+        let fresh = linked && social.globalCampfireFailure == nil && state?.isSupported == true
+            && state.map { CampfireVisibilityRules.isFresh(observedAt: $0.observedAt, now: date) } == true
+        let updating = linked && social.globalCampfireLoading
+        let phase = CampfireScenePhase.resolve(hasCurrentSnapshot: fresh, isRefreshing: updating,
+            hasPeople: state?.participants.isEmpty == false)
+        let people: [CampfireScenePerson] = phase.showsPeople ? (state?.participants ?? []).map {
+            .init(id: $0.id, name: $0.name, appearance: $0.appearance.presentation, detail: $0.title, thought: $0.thought)
+        } : []
+        CampfireSceneView(people: people,
+            notice: !linked ? "Company beyond your party" : phase.isUpdating ? (fresh ? "Updating…" : "Opening Campfire…")
+                : phase == .populated ? nil : phase == .empty ? "There’s room by the campfire"
+                : issue?.title ?? "The campfire needs an update",
+            detail: !linked ? "Sign in from Settings to browse Global Campfire."
+                : phase.isUpdating || phase == .populated ? nil
+                : phase == .empty ? "Start a session whenever you’re ready. Your visibility is your choice."
+                : issue?.detail ?? "We couldn’t confirm who’s here. Try an update.",
+            isUpdating: phase.isUpdating, retry: linked && phase == .unavailable ? refresh : nil
+        ) { id in selectedPublicPerson = state?.participants.first { $0.id == id } }
+        .id("global-\(social.globalCampfireChannel)-\(gathering)-\(social.campfireOwnerForNewRun?.uuidString ?? "guest")")
+        if fresh, let state {
+            if let channels = state.channels, let channelID = state.channelID {
+                Menu {
+                    ForEach(channels) { channel in
+                        Button(channel.title + (channel.isFull ? " · Full" : "")) { social.changeGlobalCampfireChannel(channel.id) }
+                            .disabled(state.ownSourceID != nil && channel.isFull && channel.id != state.ownChannelID)
+                    }
+                } label: {
+                    Label(channels.first(where: { $0.id == channelID })?.title ?? "Channel \(channelID)", systemImage: "arrow.left.arrow.right")
+                        .font(AppTypography.body).frame(minHeight: 44)
+                }.tint(AppColors.grass).disabled(social.globalCampfireChannelChanging)
+                    .accessibilityHint(state.ownSourceID == nil ? "Browse another channel." : "Move your shared session to another channel.")
+            }
+            if let message = social.globalCampfireChannelMessage {
+                Text(message).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            }
+            if state.channels == nil {
+                Text(state.approximateCount == 0 ? "No shared sessions in this gathering" : "Up to \(state.approximateCount) sharing in this gathering")
+                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            }
             if let count = state.ownEncouragementCount, count > 0 {
                 Text(count == 1 ? "Someone sent encouragement for your latest shared session." : "\(count) people sent encouragement for your latest shared session.")
                     .font(AppTypography.body).fixedSize(horizontal: false, vertical: true)
             }
-            if state.participants.isEmpty { empty("There’s room by the fire", detail: "Start a session whenever you’re ready. Your visibility is your choice.") }
-            else {
-                CampfireSceneView(people: state.participants.map {
-                    .init(id: $0.id, name: $0.name, appearance: $0.appearance.presentation, detail: $0.title)
-                }) { id in selectedPublicPerson = state.participants.first { $0.id == id } }
-                ForEach(state.participants) { person in
-                    Button { selectedPublicPerson = person } label: {
-                        CampfirePersonRow(name: person.isMe ? "You · \(person.name)" : person.name, appearance: person.appearance.presentation,
-                                          detail: "\(person.title) · \(person.remaining.title)")
-                    }.buttonStyle(.plain)
-                }
-                if let cursor = state.nextCursor {
-                    Button("More people") { social.refreshGlobalCampfire(gathering: gathering, cursor: cursor) }
-                        .font(AppTypography.body).frame(minHeight: 44)
-                }
+            if !state.participants.isEmpty {
+                DisclosureGroup(isExpanded: $showsPeople) {
+                    ForEach(state.participants) { person in
+                        Button { selectedPublicPerson = person } label: {
+                            CampfirePersonRow(name: person.isMe ? "You · \(person.name)" : person.name, appearance: person.appearance.presentation,
+                                detail: "\(person.title) · \(person.remaining.title)", intention: person.thought)
+                        }.buttonStyle(.plain)
+                    }
+                    if state.channels == nil, let cursor = state.nextCursor {
+                        Button("More people") { social.refreshGlobalCampfire(gathering: gathering, cursor: cursor) }
+                            .font(AppTypography.body).frame(minHeight: 44).disabled(social.globalCampfireLoading)
+                    }
+                } label: {
+                    Text("People here · \(state.participants.count)").frame(minHeight: 44)
+                }.font(AppTypography.body).tint(AppColors.grass)
             }
-        } else {
-            empty(social.globalCampfireLoading ? "Checking the global fire…" : "Global Campfire isn’t available right now",
-                  detail: "Your private party and your own session are still here.")
         }
-        Button("Refresh Global Campfire", action: refresh).font(AppTypography.caption).frame(minHeight: 44).tint(AppColors.grass)
     }
 
-    private func empty(_ title: String, detail: String) -> some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                PaperCampfire().frame(width: 48, height: 48)
-                Text(title).font(AppTypography.headline)
-                Text(detail).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
-            }.fixedSize(horizontal: false, vertical: true)
-        }
-    }
 }
 
 struct CampfireScenePerson: Identifiable {
@@ -212,47 +299,33 @@ struct CampfireScenePerson: Identifiable {
     var name: String
     var appearance: CountingSheepPublicPresentation
     var detail: String
-}
-
-struct CampfireSceneView: View {
-    var people: [CampfireScenePerson]
-    var onSelect: (UUID) -> Void
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Image(AssetSlot.Farm.sharedMeadowDusk).resizable().scaledToFill().accessibilityHidden(true)
-                PaperCampfire().frame(width: 54, height: 54).position(x: geometry.size.width / 2, y: geometry.size.height * 0.85)
-                ForEach(Array(people.prefix(8).enumerated()), id: \.element.id) { index, person in
-                    let point = CampfireRules.seat(index: index, count: min(people.count, 8))
-                    Button { onSelect(person.id) } label: {
-                        VStack(spacing: AppSpacing.xxs) {
-                            SlumberPartySocialAvatarView(presentation: person.appearance, avatarID: "shepherd", size: 58, showsBackdrop: false)
-                            Text(person.name).font(AppTypography.caption).dynamicTypeSize(...DynamicTypeSize.large).lineLimit(1)
-                                .padding(.horizontal, AppSpacing.xxs).background(AppColors.paper.opacity(0.94), in: Capsule())
-                        }
-                    }.buttonStyle(.plain).accessibilityLabel("\(person.name), \(person.detail)")
-                        .accessibilityHint("Opens their session card")
-                        .position(x: geometry.size.width * point.x, y: geometry.size.height * point.y - 24)
-                }
-            }.frame(width: geometry.size.width, height: geometry.size.height).clipped()
-        }.frame(height: people.count > 4 ? 270 : 230).clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-    }
+    var pose: CampfireShepherdPose = .awake
+    var seatID: UUID? = nil
+    var buddyCue: String? = nil
+    var thought: String? = nil
+    var placementID: UUID { seatID ?? id }
 }
 
 struct CampfirePersonRow: View {
     var name: String
     var appearance: CountingSheepPublicPresentation
     var detail: String
+    var pose: CampfireShepherdPose = .awake
+    var buddyCue: String? = nil
+    var intention: String? = nil
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
-            SlumberPartySocialAvatarView(presentation: appearance, avatarID: "shepherd", size: 44).accessibilityHidden(true)
+            CampfireShepherdView(presentation: appearance, pose: pose, size: 44).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                 Text(name).font(AppTypography.headline)
                 Text(detail).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                if let intention = CampfirePlanText.normalized(intention) { Text(intention).font(AppTypography.body) }
+                if let buddyCue { Label(buddyCue, systemImage: "person.2.fill").font(AppTypography.caption).foregroundStyle(AppColors.grass) }
             }.fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }.frame(maxWidth: .infinity, minHeight: 48, alignment: .leading).padding(.vertical, AppSpacing.xs)
             .accessibilityElement(children: .combine)
+            .accessibilityValue(pose.accessibilityDescription)
     }
 }
 

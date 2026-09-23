@@ -60,7 +60,7 @@ enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identi
         switch self {
         case .practice: return "Try a five-minute practice"
         case .nights: return "Your nights, kept together"
-        case .farm: return "Ollie’s finds lead here"
+        case .farm: return "How Ollie’s searches work"
         case .settings: return "Your plan lives here"
         case .phoneBreak: return "A break outside bedtime"
         case .trailNote: return "Search Journal keeps the record"
@@ -75,11 +75,11 @@ enum CountingSheepContextualTip: String, Codable, CaseIterable, Hashable, Identi
         case .nights:
             return "Wind Down is your nightly ritual.\nPhone Away stays here as a smaller, separate record."
         case .farm:
-            return "A qualifying Wind Down can open one of Ollie’s searches.\nScreen-Free Morning and Phone Away build separate search progress."
+            return "Wind Downs build Ollie’s next search trail. Shorter sessions count too. Screen-Free Morning and Phone Away have their own searches.\nOpen Ollie’s Search and tap the question mark whenever you want the full guide."
         case .settings:
             return "Change Wind Down, connections, and guidance here.\nYou can replay this guide whenever you like."
         case .phoneBreak:
-            return "Start one now or plan one for later.\nEligible minutes carry forward; each \(PhoneAwaySearchMeter.maximumMinutes)-minute meter opens a search after three qualifying Wind Down searches."
+            return "Start one now or plan one for later.\nEligible minutes carry forward; every \(PhoneAwaySearchMeter.maximumMinutes) minutes opens a search."
         case .trailNote:
             return "A homecoming means Ollie found a missing sheep.\nA clue means Ollie will look again another night."
         case .barnCapacity:

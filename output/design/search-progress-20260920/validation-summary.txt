@@ -1,0 +1,14 @@
+build: /tmp/counting-sheep-search-build-complete.log
+** BUILD SUCCEEDED **
+unit: /tmp/counting-sheep-search-tests-complete.log
+SEARCH_BALANCE bedtime-only: searches 30->36, sheep 10->10, pending 0->0, wool 123->124
+SEARCH_BALANCE mixed: searches 60->66, sheep 27->27, pending 15->15, wool 193->191
+SEARCH_BALANCE heavy-phone-away: searches 180->186, sheep 60->66, pending 48->54, wool 341->341
+SEARCH_BALANCE short: searches 2->8, sheep 2->4, pending 0->0, wool 2->4
+SEARCH_BALANCE irregular: searches 47->49, sheep 19->22, pending 7->10, wool 118->124
+Executed 1094 tests, with 0 failures (0 unexpected) in 4.391 (5.004) seconds
+Executed 1094 tests, with 0 failures (0 unexpected) in 4.391 (5.007) seconds
+** TEST SUCCEEDED **
+save: /tmp/counting-sheep-search-save-tests-final.log
+Executed 80 tests, with 0 failures (0 unexpected) in 1.055 (1.063) seconds
+Executed 80 tests, with 0 failures (0 unexpected) in 1.055 (1.065) seconds

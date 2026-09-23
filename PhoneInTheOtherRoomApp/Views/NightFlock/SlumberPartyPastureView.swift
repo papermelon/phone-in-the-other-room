@@ -115,7 +115,7 @@ struct SlumberPartyPastureView: View {
                 Text("Live campfire sharing isn’t available on this server yet.")
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
             } else if showsLiveSessions && sessions.isEmpty {
-                Text("No shared sessions right now. The fire lights when someone shares a Wind Down or Phone Away session.")
+                Text("No shared sessions right now. The campfire lights when someone shares a Wind Down or Phone Away session.")
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
             }
             ForEach(showsLiveSessions ? sessions : []) { session in
@@ -255,6 +255,7 @@ struct SlumberPartyPastureView: View {
                     hint: "Tap to play fetch. Hold and drag to move locally.", actionTitle: "Play fetch",
                     action: { controller.fetchWithCompanion(owner: owner) }) {
                         OllieFarmAvatar(accessoryItemID: member.profile.presentation.ollieOrnamentID, size: 55, motionEnabled: false)
+                            .environment(\.ollieCoat, OllieCoatStyle(rawValue: member.profile.presentation.renderableAppearance.ollieCoatID ?? "") ?? .classic)
                     }
                     .frame(width: 55, height: 55)
                     .position(x: point.x * size.width, y: point.y * size.height - 23).zIndex(point.y)
@@ -269,11 +270,23 @@ struct SlumberPartyPastureView: View {
                 let seatIndex = showsLiveSessions ? sessions.firstIndex { $0.memberID == member.memberID } : nil
                 let point = seatIndex.map { CampfireRules.seat(index: $0, count: sessions.count) } ?? controller.position(for: entity)
                 shadow(point, in: size, width: 35)
-                resident(entity, size: size, label: "\(member.profile.displayName), \(showsLiveSessions ? sessions.first(where: { $0.memberID == member.memberID })?.title ?? "Shared session" : "Shepherd in the shared meadow")", owner: member.memberID, isGathering: seatIndex != nil) {
-                    SlumberPartySocialAvatarView(presentation: member.profile.presentation, avatarID: "shepherd", size: shepherdSize, showsBackdrop: false)
+                resident(entity, size: size, label: "\(member.profile.displayName), \(showsLiveSessions ? sessions.first(where: { $0.memberID == member.memberID }).map { "\($0.title), \($0.pose(at: now).accessibilityDescription)" } ?? "Shared session" : "Shepherd in the shared meadow")", owner: member.memberID, isGathering: seatIndex != nil) {
+                    CampfireShepherdView(presentation: member.profile.presentation,
+                        pose: showsLiveSessions ? sessions.first(where: { $0.memberID == member.memberID })?.pose(at: now) ?? .awake : .awake,
+                        size: shepherdSize).accessibilityHidden(true)
                 }
                 .position(x: point.x * size.width, y: point.y * size.height - shepherdSize * 0.43)
                 .zIndex(point.y)
+                if showsLiveSessions, let session = sessions.first(where: { $0.memberID == member.memberID }) {
+                    Button { onSelect(member.memberID) } label: {
+                        Label(session.title, systemImage: "ellipsis.bubble.fill")
+                            .font(AppTypography.caption).lineLimit(2)
+                            .padding(AppSpacing.xs).background(AppColors.paper, in: Capsule())
+                    }.buttonStyle(.plain).frame(minHeight: 44)
+                        .accessibilityLabel("\(member.profile.displayName), \(session.title). Open profile")
+                        .position(x: point.x * size.width, y: point.y * size.height - shepherdSize - AppSpacing.lg)
+                        .zIndex(3)
+                }
                 Text(member.profile.displayName)
                     .font(AppTypography.caption.weight(.semibold))
                     .dynamicTypeSize(...DynamicTypeSize.large)

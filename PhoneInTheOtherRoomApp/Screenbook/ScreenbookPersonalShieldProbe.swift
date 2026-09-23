@@ -103,6 +103,23 @@ enum ScreenbookPersonalShieldProbe {
             check(overnight.confirmPersonalShield(request, entry: request.phrase), "early wake phrase failed")
             check(overnight.screenFreeMorningOccurrences.contains { $0.outcome == .skipped }, "early wake choice lost")
         } else { failures.append("early wake phrase sheet missing") }
+        let earlyMorning = try fixture(overnight: true)
+        let morningSpy = earlyMorning.quietTimeShielding as? ShieldingSpy
+        morningSpy?.morningParentReuse = []
+        earlyMorning.chooseEarlyWake(.startNow)
+        if let request = earlyMorning.personalShieldSheet {
+            check(!request.requiresTypedPhrase, "morning still asks for a sleep phrase")
+            var altered = request
+            altered.morningIntent = .skipToday
+            check(!earlyMorning.confirmPersonalShield(altered, entry: request.phrase), "altered intent was accepted")
+            check(earlyMorning.confirmPersonalShield(request, entry: ""), "morning confirmation did not hand off")
+            check(earlyMorning.activeScreenFreeMorning != nil, "morning not active after handoff")
+            check(morningSpy?.morningParentReuse.first == false, "handoff reused a parent about to be removed")
+            check(!earlyMorning.confirmPersonalShield(request, entry: ""), "morning confirmation replayed")
+        } else { failures.append("morning confirmation missing") }
+#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
+        check(QuietTimeShieldingService.debugBriefAccessMonitorProbe(), "repeated restore monitors failed")
+#endif
         let corrupt = try fixture()
         try corrupt.persistence.farmSaveStore.setLocalData(Data("unreadable".utf8), for: PersonalShieldSession.storageKey)
         corrupt.openPersonalShield(.endSession)
@@ -121,6 +138,7 @@ enum ScreenbookPersonalShieldProbe {
         let defaults: UserDefaults
         var grants = 0
         var allowsGrant = true
+        var morningParentReuse: [Bool] = []
         init(defaults: UserDefaults) { self.defaults = defaults }
         func reconcile(for run: FocusRun?, at date: Date) -> QuietTimeShieldingOutcome {
             guard let run, let snapshot = QuietTimeShieldScheduleBuilder.snapshot(for: run, revision: 1, updatedAt: date),
@@ -128,7 +146,10 @@ enum ScreenbookPersonalShieldProbe {
             defaults.set(data, forKey: QuietTimeShieldPresentationStorage.scheduleKey)
             return .applied
         }
-        func reconcile(for occurrence: MorningQuietOccurrence, at date: Date) -> QuietTimeShieldingOutcome { .scheduled }
+        func reconcile(for occurrence: MorningQuietOccurrence, at date: Date, parentRunIsActive: Bool) -> QuietTimeShieldingOutcome {
+            morningParentReuse.append(parentRunIsActive)
+            return .scheduled
+        }
         func clear() { PersonalShieldStorage.clear(from: defaults) }
         func clear(occurrenceID: UUID) { clear() }
         func scheduleAutomatic(for schedule: AutomaticWindDownSchedule, at date: Date) -> QuietTimeShieldingOutcome { .scheduled }
@@ -167,7 +188,9 @@ struct ScreenbookPersonalShieldView: View {
                 if ProcessInfo.processInfo.arguments.contains("-personal-shield-complete"), let session = fixture.personalShieldSession {
                     session.steps.forEach { fixture.togglePersonalShieldStep($0.id) }
                 }
-                if !ProcessInfo.processInfo.arguments.contains("-personal-shield-home") {
+                if ProcessInfo.processInfo.arguments.contains("-personal-shield-start-morning") {
+                    fixture.chooseEarlyWake(.startNow)
+                } else if !ProcessInfo.processInfo.arguments.contains("-personal-shield-home") {
                     fixture.openPersonalShield(ProcessInfo.processInfo.arguments.contains("-personal-shield-access") ? .briefAccess
                         : ProcessInfo.processInfo.arguments.contains("-personal-shield-end") ? .endSession : .checklist)
                 }

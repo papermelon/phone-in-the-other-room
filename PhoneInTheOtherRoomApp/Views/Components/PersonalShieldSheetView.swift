@@ -70,7 +70,7 @@ struct PersonalShieldSheetView: View {
             .background(AppColors.activeWindDownBackground.ignoresSafeArea())
             .navigationTitle(request.action == .checklist
                 ? (viewModel.personalShieldSession?.listTitle(at: Date()) ?? "My routine")
-                : (request.action == .briefAccess ? "5-min access" : "End \(request.mode.timerName)"))
+                : (request.morningIntent == nil ? request.confirmationTitle : "Early wake"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -134,26 +134,29 @@ struct PersonalShieldPhraseForm: View {
     let confirm: () -> Void
 
     private var prompt: String {
-        request.action == .endSession ? "Type this phrase to end the session" : "Type this phrase to continue"
+        if !request.requiresTypedPhrase { return "Ready to start your morning?" }
+        return request.action == .endSession ? "Type this phrase to confirm your choice" : "Type this phrase to continue"
     }
 
-    private var canConfirm: Bool { PersonalShieldPhrase.matches(entry, phrase: request.phrase) }
+    private var canConfirm: Bool { !request.requiresTypedPhrase || PersonalShieldPhrase.matches(entry, phrase: request.phrase) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.lg) {
             Text(prompt).font(AppTypography.title).foregroundStyle(AppColors.ink)
-            PixelCard {
-                Text(request.phrase).font(AppTypography.headline)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            if request.requiresTypedPhrase {
+                PixelCard {
+                    Text(request.phrase).font(AppTypography.headline)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                TextField("Type the phrase", text: $entry, axis: .vertical)
+                    .font(AppTypography.body).textFieldStyle(PixelTextFieldStyle())
+                    .textInputAutocapitalization(.sentences).autocorrectionDisabled()
+                    .accessibilityLabel(prompt)
+                    .onChange(of: entry) { _, value in entry = String(value.prefix(500)) }
             }
-            TextField("Type the phrase", text: $entry, axis: .vertical)
-                .font(AppTypography.body).textFieldStyle(PixelTextFieldStyle())
-                .textInputAutocapitalization(.sentences).autocorrectionDisabled()
-                .accessibilityLabel(prompt)
-                .onChange(of: entry) { _, value in entry = String(value.prefix(500)) }
             Text(request.action == .endSession ? (request.endDetail ?? "Ends the session and unblocks selected apps.") : "Selected apps unlock for up to 5 minutes.")
                 .font(AppTypography.body).foregroundStyle(AppColors.muted)
-            Button(request.action == .endSession ? "End \(request.mode.timerName)" : "Allow 5 minutes", action: confirm)
+            Button(request.action == .endSession ? request.confirmationTitle : "Allow 5 minutes", action: confirm)
                 .buttonStyle(PixelPrimaryButtonStyle())
                 .disabled(!canConfirm)
                 .opacity(canConfirm ? 1 : 0.5)
@@ -166,7 +169,7 @@ struct PersonalShieldActions: View {
 
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
-            Button(viewModel.activeRunIsAdditionalQuiet ? "My tasks" : "My routine") { viewModel.openPersonalShield(.checklist) }
+            Button(viewModel.personalShieldSession?.listButton(at: Date()) ?? (viewModel.activeScreenFreeMorning != nil ? "My morning" : viewModel.activeRunIsAdditionalQuiet ? "My tasks" : "My routine")) { viewModel.openPersonalShield(.checklist) }
                 .buttonStyle(PixelPrimaryButtonStyle())
             Button("5-min access") { viewModel.openPersonalShield(.briefAccess) }
                 .buttonStyle(PixelChipButtonStyle(isSelected: false))

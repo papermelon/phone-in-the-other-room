@@ -27,6 +27,7 @@ struct PastureCharacterHitTarget<Controller: PastureInteractionControlling, Cont
     let label: String
     let hint: String
     let actionTitle: String
+    var accessibleStep: Double = 0.06
     let action: () -> Void
     @ViewBuilder let content: () -> Content
 
@@ -71,10 +72,10 @@ struct PastureCharacterHitTarget<Controller: PastureInteractionControlling, Cont
                 action()
             }
             .accessibilityAction(named: "Gentle nudge") { responseStarted = Date() }
-            .accessibilityAction(named: "Move left") { moveAccessibly(x: -0.06, y: 0) }
-            .accessibilityAction(named: "Move right") { moveAccessibly(x: 0.06, y: 0) }
-            .accessibilityAction(named: "Move toward the hills") { moveAccessibly(x: 0, y: -0.06) }
-            .accessibilityAction(named: "Move forward") { moveAccessibly(x: 0, y: 0.06) }
+            .accessibilityAction(named: "Move left") { moveAccessibly(x: -accessibleStep, y: 0) }
+            .accessibilityAction(named: "Move right") { moveAccessibly(x: accessibleStep, y: 0) }
+            .accessibilityAction(named: "Move toward the hills") { moveAccessibly(x: 0, y: -accessibleStep) }
+            .accessibilityAction(named: "Move forward") { moveAccessibly(x: 0, y: accessibleStep) }
         }
         .accessibilityRepresentation {
             Button(label) {
@@ -83,10 +84,10 @@ struct PastureCharacterHitTarget<Controller: PastureInteractionControlling, Cont
             }
             .accessibilityHint(hint)
             .accessibilityAction(named: "Gentle nudge") { responseStarted = Date() }
-            .accessibilityAction(named: "Move left") { moveAccessibly(x: -0.06, y: 0) }
-            .accessibilityAction(named: "Move right") { moveAccessibly(x: 0.06, y: 0) }
-            .accessibilityAction(named: "Move toward the hills") { moveAccessibly(x: 0, y: -0.06) }
-            .accessibilityAction(named: "Move forward") { moveAccessibly(x: 0, y: 0.06) }
+            .accessibilityAction(named: "Move left") { moveAccessibly(x: -accessibleStep, y: 0) }
+            .accessibilityAction(named: "Move right") { moveAccessibly(x: accessibleStep, y: 0) }
+            .accessibilityAction(named: "Move toward the hills") { moveAccessibly(x: 0, y: -accessibleStep) }
+            .accessibilityAction(named: "Move forward") { moveAccessibly(x: 0, y: accessibleStep) }
         }
         .task(id: responseStarted) {
             guard responseStarted != nil else { return }

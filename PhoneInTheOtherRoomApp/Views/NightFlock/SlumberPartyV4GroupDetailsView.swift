@@ -27,7 +27,7 @@ struct SlumberPartyV4GroupDetailsView: View {
     }
 
     private var actionIsInFlight: Bool {
-        viewModel.isRefreshingV4Party(party.summary.partyID) || viewModel.phase == .loading
+        viewModel.isRefreshingV4Party(party.summary.partyID) || viewModel.v4CommandIsInFlight
     }
 
     private var sharedHabitsState: NightFlockSharedHabitsStateResponse? {
@@ -253,7 +253,23 @@ struct SlumberPartyV4GroupDetailsView: View {
                 Text("INVITATION")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                invitationContent
+                if viewModel.v4InvitationLoadingPartyIDs.contains(party.summary.partyID) { SheepLoadingView("Updating your invitation…") }
+                if let failure = viewModel.v4InvitationErrors[party.summary.partyID] {
+                    Text(failure.detail).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                }
+                if viewModel.supportsDirectInvitations {
+                    NavigationLink {
+                        SlumberPartyInvitePeopleView(social: viewModel, partyID: party.summary.partyID)
+                    } label: {
+                        Label("Invite people", systemImage: "person.badge.plus").font(AppTypography.body).frame(minHeight: 44)
+                    }.buttonStyle(PixelPrimaryButtonStyle())
+                    Text("Find someone by handle or user ID and send an invitation.")
+                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                }
+                DisclosureGroup("Share an invitation code") {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) { invitationContent }
+                        .padding(.top, AppSpacing.sm)
+                }.font(AppTypography.body).tint(AppColors.grass)
                 if let copiedCodeNotice {
                     Text(copiedCodeNotice)
                         .font(AppTypography.caption)
@@ -265,7 +281,7 @@ struct SlumberPartyV4GroupDetailsView: View {
 
     @ViewBuilder
     private var invitationContent: some View {
-        if let code = viewModel.v4InviteCode, party.invitation?.status == .active {
+        if let code = viewModel.v4InviteCode(for: party), party.invitation?.status == .active {
             Text(displayInvitationCode(code))
                 .font(AppTypography.headline.monospaced())
                 .fixedSize(horizontal: false, vertical: true)
@@ -365,7 +381,7 @@ struct SlumberPartyV4GroupDetailsView: View {
                     .foregroundStyle(AppColors.grass)
                 if party.summary.myRole == .host {
                     TextField("Party name", text: $newName)
-                        .textFieldStyle(.roundedBorder)
+                        .textFieldStyle(PixelTextFieldStyle())
                         .font(AppTypography.body)
                         .frame(minHeight: 44)
                     Button("Save party name") {

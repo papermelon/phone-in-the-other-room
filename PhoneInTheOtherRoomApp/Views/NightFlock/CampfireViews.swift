@@ -1,7 +1,27 @@
 import SwiftUI
 
 struct PaperCampfire: View {
+    var animated = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var isVisible = false
+
     var body: some View {
+        Group {
+            if animated && !reduceMotion && scenePhase == .active && isVisible {
+                TimelineView(.animation(minimumInterval: 1.0 / 15)) { context in
+                    drawing(flameScale: 1 + 0.035 * sin(context.date.timeIntervalSinceReferenceDate * 2.4))
+                }
+            } else {
+                drawing(flameScale: 1)
+            }
+        }
+        .accessibilityHidden(true)
+        .onAppear { isVisible = true }
+        .onDisappear { isVisible = false }
+    }
+
+    private func drawing(flameScale: Double) -> some View {
         Canvas { context, size in
             let scale = min(size.width / 100, size.height / 100)
             context.scaleBy(x: scale, y: scale)
@@ -12,6 +32,10 @@ struct PaperCampfire: View {
                 log.fill(Path(roundedRect: CGRect(x: 0, y: 0, width: 52, height: 12), cornerRadius: 5), with: .color(ShepherdStudyPalette.boots))
                 log.stroke(Path(CGRect(x: 5, y: 4, width: 42, height: 1)), with: .color(ShepherdStudyPalette.hatBand), lineWidth: 1)
             }
+            // Only the flame breathes; the logs remain planted in the scene.
+            context.translateBy(x: 50, y: 78)
+            context.scaleBy(x: 2 - flameScale, y: flameScale)
+            context.translateBy(x: -50, y: -78)
             var flame = Path()
             flame.move(to: CGPoint(x: 49, y: 78))
             flame.addCurve(to: CGPoint(x: 42, y: 14), control1: CGPoint(x: 8, y: 66), control2: CGPoint(x: 47, y: 39))
@@ -46,15 +70,18 @@ struct CampfireSharingSheet: View {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
                     PaperCampfire().frame(width: 110, height: 110).frame(maxWidth: .infinity)
                     Text("A little company, phone away").font(AppTypography.title)
-                    Text("The fire lights when someone shares an active session. Only those Shepherds gather here, in their chosen outfits. Everyone’s saved places, sheep visits and earned lantern are in Shared meadow.").font(AppTypography.body)
+                    Text("Shared sessions bring Shepherds around the campfire in their chosen outfits. Everyone’s saved places, sheep visits and earned lantern are in Shared meadow.").font(AppTypography.body)
                     Text("Joining a Slumber Party and sharing at its campfire are separate choices. Enabling Campfire sharing applies to sessions you start afterwards.")
                         .font(AppTypography.body)
                     if state?.isSupported == true {
                         Text(state?.buddies?.isSupported == true ? "CAMPFIRE BUDDIES · VERSION 2" : "CAMPFIRE SHARING · VERSION 1").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
-                        Text("When you enable sharing with this party, new Wind Down and Phone Away sessions bring your Shepherd to the fire. Members can see the session type, start and planned end, and an optional Phone Away intention.").font(AppTypography.body)
+                        Text("When you enable sharing with this party, new Wind Down and Phone Away sessions bring your Shepherd to the campfire. Members can see the session type, start and planned end, and an optional Phone Away intention.").font(AppTypography.body)
                         Text("Wind Down stays until the planned wake time. A private Wind Down stays private. Joining another party needs its own choice.").font(AppTypography.body)
+                        if state?.supportsIntendedBedtime == true {
+                            Text("Your party also receives your planned bedtime for a shared Wind Down. Your Shepherd settles into a sleeping bag then. Phone Away keeps its chosen activity at the campfire.").font(AppTypography.body)
+                        }
                         if state?.buddies?.isSupported == true {
-                            Text("Campfire Buddies lets you write a separate shared intention, invite a check-in buddy, and share a result or encouragement. Members who accept this agreement can see those details for up to seven days. Private task and routine text is never copied automatically.").font(AppTypography.body)
+                            Text("Campfire Buddies lets you write a separate shared intention, invite a check-in buddy, and share a result or encouragement. Members who accept this agreement can see those details for up to seven days. Party-only sharing uses this intention. Global visibility also shares your tasks and routines through your character profile.").font(AppTypography.body)
                             Text("New automatic Wind Downs can invite the party; manual starts let you choose each time. Private Wind Downs stay private. This phone can register for party notifications and share a quiet-until time to avoid interrupting your sessions. Notification previews contain no task text. You can turn invitations off independently.").font(AppTypography.body)
                             if state?.agreement?.version != 2 || state?.agreement?.enabled != true {
                                 Button("Enable Campfire Buddies with this party") { social.setCampfireSharing(true, partyID: partyID) }
@@ -63,7 +90,7 @@ struct CampfireSharingSheet: View {
                                 CampfireInvitationSettings(social: social, partyID: partyID)
                             }
                         }
-                        Text("These are app-reported sessions, not proof of sleep or offline activity. You can close the app. If an early end can’t sync, the last shared session may remain until its planned end.").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                        Text("You can close the app. If an early end can’t sync, the last shared session may remain until its planned end.").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                         if state?.agreement?.permitsSharing == true {
                             Text("Sharing is enabled for new sessions.").font(AppTypography.body)
                             Button("Turn off campfire sharing") { social.setCampfireSharing(false, partyID: partyID) }
@@ -102,7 +129,7 @@ struct CampfireParticipationNotice: View {
 
 #Preview("Campfire · sharing setup · large text") {
     ScrollView {
-        CampfireParticipationNotice(message: "Joining a Slumber Party doesn’t enable Campfire sharing. Review sharing before your next Wind Down or Phone Away to bring your Shepherd to the fire.", onReview: {})
+        CampfireParticipationNotice(message: "Joining a Slumber Party doesn’t enable Campfire sharing. Review sharing before your next Wind Down or Phone Away to bring your Shepherd to the campfire.", onReview: {})
             .padding(AppSpacing.md)
     }.dynamicTypeSize(.accessibility3).background(AppColors.paper)
 }

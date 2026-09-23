@@ -1,0 +1,18 @@
+{
+  "global": [
+    {
+      "slug": "campfire-global",
+      "version": 1,
+      "status": "ACTIVE",
+      "verify_jwt": false
+    }
+  ],
+  "otherFunctionsUnchanged": true,
+  "swiftTests": 1079,
+  "swiftFailures": 0,
+  "simulatorBuild": "passed",
+  "wireTests": 6,
+  "edgeTypeCheck": "passed",
+  "authenticatedPhysicalHTTP": "not performed",
+  "nativeDistribution": "not performed"
+}

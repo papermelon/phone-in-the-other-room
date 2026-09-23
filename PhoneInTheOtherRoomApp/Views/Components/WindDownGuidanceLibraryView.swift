@@ -94,3 +94,72 @@ struct WindDownGuideView: View {
             .environmentObject(FocusRunViewModel(startsExternalServices: false))
     }
 }
+
+
+struct RoutineIdeasView: View {
+    let phase: WindDownRoutinePhase
+    @Binding var steps: [WindDownRoutineStep]
+    var onSave: () -> Void
+    @State private var draft: [WindDownRoutineStep]
+    @Environment(\.dismiss) private var dismiss
+
+    init(phase: WindDownRoutinePhase, steps: Binding<[WindDownRoutineStep]>, onSave: @escaping () -> Void = {}) {
+        self.phase = phase
+        self._steps = steps
+        self.onSave = onSave
+        self._draft = State(initialValue: steps.wrappedValue)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: AppSpacing.md) {
+                Text("Find something that fits")
+                    .font(AppTypography.headline)
+                Text("Explore a small idea, see why you might try it, and add it to your routine draft. Tap Save ideas here when you’re ready.")
+                    .font(AppTypography.body)
+                    .foregroundStyle(AppColors.secondaryText)
+                ForEach(WindDownGuidanceLibrary.items.filter { $0.routinePhase == phase }) { item in
+                    NavigationLink {
+                        WindDownGuidanceDetailView(item: item, routineDraft: $draft)
+                    } label: {
+                        PixelCard {
+                            HStack(spacing: AppSpacing.sm) {
+                                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                                    Text(item.title).font(AppTypography.headline)
+                                    Text(item.suggestion).font(AppTypography.caption)
+                                        .foregroundStyle(AppColors.secondaryText)
+                                }
+                                Spacer(minLength: 0)
+                                Image(systemName: "chevron.right").accessibilityHidden(true)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(AppSpacing.md)
+        }
+        .background(AppColors.paper.ignoresSafeArea())
+        .foregroundStyle(AppColors.ink)
+        .navigationTitle(phase == .evening ? "Evening ideas" : "Morning ideas")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Save ideas") {
+                    steps = draft
+                    onSave()
+                    dismiss()
+                }
+            }
+        }
+    }
+}
+
+#Preview("Evening ideas in a routine draft") {
+    NavigationStack {
+        RoutineIdeasView(phase: .evening, steps: .constant([]))
+            .environmentObject(FocusRunViewModel(startsExternalServices: false))
+    }
+}

@@ -37,6 +37,7 @@ struct FocusRunSetupView: View {
                 NavigationLink("What I’m working toward") { RitualPersonalisationView() }
                     .font(AppTypography.body).frame(minHeight: 44)
                 tonightPlanAccordion
+                AutomaticWindDownCard()
                 privateRoutineAccordion
                     .id("habit-routine")
                 NavigationLink {
@@ -50,7 +51,7 @@ struct FocusRunSetupView: View {
                             VStack(alignment: .leading, spacing: AppSpacing.xxs) {
                                 Text("Protection & tags")
                                     .font(AppTypography.headline)
-                                Text("Manage app limits, NFC tags, and automatic start.")
+                                Text("Manage app limits and NFC tags.")
                                     .font(AppTypography.caption)
                                     .foregroundStyle(AppColors.muted)
                             }

@@ -8,7 +8,9 @@ struct SlumberPartySharedFarmView: View {
     var onSelect: (UUID) -> Void
 
     var body: some View {
-        SlumberPartyPastureView(party: party, onSelect: onSelect)
+        SlumberPartyV4PresentationClock(party: party) { date in
+            SlumberPartyPastureView(party: party, onSelect: onSelect, now: date)
+        }
     }
 }
 
@@ -48,7 +50,7 @@ struct SlumberPartyMemberUpdatesView: View {
                             .overlay(alignment: .topTrailing) {
                                 Group {
                                     if reduceMotion { Image(systemName: "arrow.clockwise") }
-                                    else { ProgressView() }
+                                    else { SheepLoadingView() }
                                 }
                                 .frame(width: 24, height: 24)
                                 .opacity(isRefreshing ? 1 : 0)
@@ -63,6 +65,7 @@ struct SlumberPartyMemberUpdatesView: View {
                             Button("Refresh updates") { viewModel.selectSlumberParty(partyID) }
                                 .buttonStyle(PixelChipButtonStyle(isSelected: false))
                         }
+                        CampfireProfileView(social: viewModel, memberID: memberID)
                         let updates = SlumberPartySharedFarmRules.updates(for: memberID, in: party)
                         if updates.isEmpty {
                             SlumberPartyV4UnavailableCard(title: "No shared update yet",

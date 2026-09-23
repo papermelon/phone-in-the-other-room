@@ -38,6 +38,10 @@ struct CampfireBuddySession: Codable, Equatable, Identifiable, Sendable {
     var checkInAfter: Date
     var ended: Bool
     var kind: NightFlockV4ActivityKind
+    var participationCue: String? {
+        if buddyMemberID != nil { return "Buddy paired" }
+        return asksForBuddy ? "Buddy welcome" : nil
+    }
     func mayReflect(at now: Date) -> Bool {
         // A Wind Down return invitation waits until its quiet window has ended.
         (kind == .windDown ? now >= checkInAfter : ended || now >= expiresAt)

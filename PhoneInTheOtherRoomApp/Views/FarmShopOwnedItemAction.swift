@@ -10,6 +10,7 @@ struct FarmShopOwnedItemAction: View {
         switch item.effect {
         case .ollieAccessory: return state.equipment.ollieAccessoryItemID == item.id
         case .shepherdAccessory: return state.shepherd.accessoryItemID == item.id
+        case .shepherdShirt: return state.shepherd.shirtItemID == item.id
         case .shepherdOutfit: return state.shepherd.outfitItemID == item.id
         case .farmDecoration: return state.equipment.farmDecorationItemIDs.contains(item.id)
         case .collectible: return state.equipment.collectibleItemIDs.contains(item.id)
@@ -29,7 +30,7 @@ struct FarmShopOwnedItemAction: View {
 
     private var title: String {
         switch item.effect {
-        case .ollieAccessory, .shepherdAccessory, .shepherdOutfit: return active ? "Take off" : "Wear"
+        case .ollieAccessory, .shepherdAccessory, .shepherdOutfit, .shepherdShirt: return active ? "Take off" : "Wear"
         case .farmDecoration: return active ? "Put away" : "Place"
         case .collectible: return active ? "Store" : "Display"
         case .capacity: return "Open"
@@ -42,6 +43,8 @@ struct FarmShopOwnedItemAction: View {
             if active { viewModel.takeOffOllieAccessory(item.id) } else { viewModel.wearOllieAccessory(item.id) }
         case .shepherdAccessory:
             if active { viewModel.takeOffShepherdAccessory(item.id) } else { viewModel.wearShepherdAccessory(item.id) }
+        case .shepherdShirt:
+            if active { viewModel.takeOffShepherdShirt(item.id) } else { viewModel.wearShepherdShirt(item.id) }
         case .shepherdOutfit:
             if active { viewModel.takeOffShepherdOutfit(item.id) } else { viewModel.wearShepherdOutfit(item.id) }
         case .farmDecoration:

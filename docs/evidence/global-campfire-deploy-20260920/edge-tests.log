@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: a queued agreement cannot follow an account switch
+ok 1 - a queued agreement cannot follow an account switch
+  ---
+  duration_ms: 0.548083
+  type: 'test'
+  ...
+# Subtest: three audiences do not share through the read API
+ok 2 - three audiences do not share through the read API
+  ---
+  duration_ms: 0.323375
+  type: 'test'
+  ...
+# Subtest: public consent is explicitly versioned and profile fields are bounded
+ok 3 - public consent is explicitly versioned and profile fields are bounded
+  ---
+  duration_ms: 0.254042
+  type: 'test'
+  ...
+# Subtest: both kinds and terminal-before-start are accepted; private fields never ride a session
+ok 4 - both kinds and terminal-before-start are accepted; private fields never ride a session
+  ---
+  duration_ms: 5.347334
+  type: 'test'
+  ...
+# Subtest: Foundation timestamps normalize to the same bounded wire interval
+ok 5 - Foundation timestamps normalize to the same bounded wire interval
+  ---
+  duration_ms: 0.319583
+  type: 'test'
+  ...
+# Subtest: public actions cannot contain a chat message or private membership identity
+ok 6 - public actions cannot contain a chat message or private membership identity
+  ---
+  duration_ms: 0.169833
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 127.210458

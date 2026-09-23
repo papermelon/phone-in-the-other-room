@@ -179,6 +179,21 @@ enum ShieldingReadiness: Equatable {
     }
 
     var canStartProtectedSession: Bool { self == .ready }
+
+    enum StartSheetAction: Equatable {
+        case requestAccess, restoreAccess, chooseApps, retryProtection, start, unavailable
+    }
+
+    var startSheetAction: StartSheetAction {
+        switch self {
+        case .authorizationRequired: return .requestAccess
+        case .denied, .revoked: return .restoreAccess
+        case .noSelection: return .chooseApps
+        case .runtimeFailure: return .retryProtection
+        case .ready: return .start
+        case .unavailable: return .unavailable
+        }
+    }
 }
 
 enum ScreenTimeSelectionSelfConfirmation: Equatable {

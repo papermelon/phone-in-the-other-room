@@ -10,7 +10,7 @@ final class PastureFetchTests: XCTestCase {
             let frames = PastureFetchWakeUp.frames(from: asset)
             XCTAssertEqual(frames.first?.assetName, asset)
             XCTAssertEqual(frames.last?.assetName, NightJourneyAssets.ollieHomeIdleFrames[0])
-            XCTAssertTrue(frames.allSatisfy { $0.duration > 0 && OllieGarmentFit.forAsset($0.assetName) != nil })
+            XCTAssertTrue(frames.allSatisfy { $0.duration > 0 && OllieNeckwearPose.forAsset($0.assetName) != nil })
             XCTAssertTrue(frames.dropFirst().allSatisfy { $0.poseIdentifier >= 10 })
         }
         XCTAssertTrue(PastureFetchWakeUp.frames(from: nil).isEmpty)
@@ -18,21 +18,52 @@ final class PastureFetchTests: XCTestCase {
         XCTAssertTrue(PastureFetchWakeUp.frames(from: "unknown_asset").isEmpty)
     }
 
-    func testReleaseDirectionAndFlickSpeedControlThrow() {
-        let release = PastureScenePoint(x: 0.4, y: 0.7)
-        let tap = PastureFetchRound.throwTarget(release: release, predicted: release)
-        let flick = PastureFetchRound.throwTarget(release: release, predicted: .init(x: 0.1, y: 0.4))
-        XCTAssertEqual(tap, release)
-        XCTAssertLessThan(flick.x, tap.x)
-        XCTAssertLessThan(flick.y, tap.y)
-        XCTAssertGreaterThan(origin.distance(to: flick), origin.distance(to: tap))
+    func testSwipeDirectionAndMomentumControlThrowAndTapsDoNothing() throws {
+        let travel = PastureScenePoint(x: -0.1, y: -0.1)
+        let slow = try XCTUnwrap(PastureFetchRound.throwTarget(origin: origin, translation: travel,
+                                                              predictedTranslation: travel))
+        let fast = try XCTUnwrap(PastureFetchRound.throwTarget(origin: origin, translation: travel,
+                                                              predictedTranslation: .init(x: -0.3, y: -0.3)))
+        XCTAssertLessThan(fast.x, slow.x)
+        XCTAssertLessThan(fast.y, slow.y)
+        XCTAssertGreaterThan(origin.distance(to: fast), origin.distance(to: slow))
+        for invalid in [PastureScenePoint(x: 0, y: 0), .init(x: 0.01, y: 0.01), .init(x: .nan, y: 0)] {
+            XCTAssertNil(PastureFetchRound.throwTarget(origin: origin, translation: invalid,
+                                                       predictedTranslation: travel))
+        }
+        XCTAssertNil(PastureFetchRound.throwTarget(origin: origin, translation: travel,
+                                                   predictedTranslation: .init(x: .infinity, y: 0)))
     }
 
-    func testTargetsStayInsideReachableGroundIncludingInvalidInput() {
+    func testSwipesReachAllFourGrassCornersAndOllieRetrievesWithoutClipping() throws {
+        for x in [PastureFetchRound.targetMinimum.x, PastureFetchRound.targetMaximum.x] {
+            for y in [PastureFetchRound.targetMinimum.y, PastureFetchRound.targetMaximum.y] {
+                let corner = PastureScenePoint(x: x, y: y)
+                let travel = PastureScenePoint(x: x - origin.x, y: y - origin.y)
+                let target = try XCTUnwrap(PastureFetchRound.throwTarget(origin: origin, translation: travel,
+                                                                        predictedTranslation: travel))
+                XCTAssertEqual(target, corner)
+                let round = PastureFetchRound(origin: origin, target: target, ollieStart: start)
+                XCTAssertEqual(round.frame(at: round.arrivalTime).ball, corner)
+                XCTAssertEqual(round.frame(at: round.duration).ball, origin)
+                XCTAssertGreaterThanOrEqual(round.pickupPoint.x, 0.13)
+                XCTAssertLessThanOrEqual(round.pickupPoint.x, 0.87)
+                for time in [round.arrivalTime, round.arrivalTime + 0.4, round.returnTime] {
+                    let before = round.frame(at: time - 0.00001), after = round.frame(at: time + 0.00001)
+                    XCTAssertLessThan(before.ball.distance(to: after.ball), 0.0001)
+                    XCTAssertLessThan(before.ollie.distance(to: after.ollie), 0.0001)
+                }
+            }
+        }
+    }
+
+    func testTargetsStayInsideGrassIncludingInvalidInput() {
         for point in [PastureScenePoint(x: -10, y: -10), .init(x: 10, y: 10), .init(x: .nan, y: .infinity)] {
             let bounded = PastureFetchRound.boundedTarget(point)
-            XCTAssertEqual(bounded, PastureSceneLayout.clamped(bounded, footprint: .ollie))
+            XCTAssertEqual(bounded, PastureFetchRound.boundedTarget(bounded))
             XCTAssertTrue(bounded.x.isFinite && bounded.y.isFinite)
+            XCTAssertGreaterThanOrEqual(bounded.x, PastureFetchRound.targetMinimum.x)
+            XCTAssertLessThanOrEqual(bounded.y, PastureFetchRound.targetMaximum.y)
         }
     }
 

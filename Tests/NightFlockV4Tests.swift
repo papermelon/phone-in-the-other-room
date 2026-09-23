@@ -368,6 +368,26 @@ final class NightFlockV4Tests: XCTestCase {
         )
     }
 
+    func testWardrobeSyncWaitsForServerCapability() throws {
+        let server = CountingSheepUserProfile(displayName: "Clover", presentation: .defaultValue, revision: 4)
+        var local = server
+        local.presentation.shepherdShirtID = "shepherd_dusk_shirt"
+        local.presentation.shepherdOuterwearID = "none"
+        local.presentation.ollieCoatID = "fuller"
+        XCTAssertNil(NightFlockV4ProfileSyncRules.routinePlan(local: local, server: server,
+            supportsSocialAvatar: true, supportsWardrobe: false))
+        let plan = try XCTUnwrap(NightFlockV4ProfileSyncRules.routinePlan(local: local, server: server,
+            supportsSocialAvatar: true, supportsWardrobe: true))
+        XCTAssertEqual(plan.profile.revision, 4)
+        let encoded = try object(NightFlockV4CommandRequest(command: .updatePublicProfile(
+            expectedRevision: plan.profile.revision, nameSelectionKind: plan.nameSelectionKind,
+            displayName: plan.profile.displayName, presentation: plan.profile.presentation,
+            idempotencyKey: "wardrobe")))
+        XCTAssertEqual(encoded["shepherdShirtID"] as? String, "shepherd_dusk_shirt")
+        XCTAssertEqual(encoded["shepherdOuterwearID"] as? String, "none")
+        XCTAssertEqual(encoded["ollieCoatID"] as? String, "fuller")
+    }
+
     func testHomeSummaryUsesV4PartyListRatherThanLegacyGoalCopy() throws {
         let empty = NightFlockHomeSummary.make(from: [] as [NightFlockV4PartySummary])
         XCTAssertEqual(empty.title, "Your Slumber Parties")

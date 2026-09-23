@@ -105,9 +105,10 @@ final class PasswordAccountViewModel: ObservableObject {
                 switch stage {
                 case .claimUsername:
                     if error as? AccountCredentialError == .differentAccount {
-                        notice = "Sign in to the account that started this registration before choosing its username."
+                        notice = "Sign in to the account that started this registration before choosing its handle."
                     } else {
-                        notice = "That username could not be claimed. Try another name, or try again."
+                        notice = (error as? AccountCredentialError)?.localizedDescription
+                            ?? "Your handle couldn’t be saved. Check your connection and try again."
                     }
                 case .verify, .recoveryCode, .verifyEmailChange:
                     notice = "That code could not be verified. Check it or request a new one."
@@ -176,7 +177,7 @@ final class PasswordAccountViewModel: ObservableObject {
             try await account.claimUsername(username)
             farm.credentialProfile = try await account.credentialProfile()
             stage = .methods
-            notice = "Username added."
+            notice = "Handle added."
             _ = profile
             return
         }

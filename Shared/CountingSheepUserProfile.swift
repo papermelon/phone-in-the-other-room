@@ -4,6 +4,9 @@ import Foundation
 /// It deliberately stores identifiers only; local Farm ownership never crosses this boundary.
 struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
     var headShapeID: String? = nil
+    var shepherdShirtID: String? = nil
+    var shepherdOuterwearID: String? = nil
+    var ollieCoatID: String? = nil
     var skinToneID: String
     var hairStyleID: String
     var shepherdOutfitID: String
@@ -33,6 +36,9 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
             && CountingSheepPublicPresentationAllowlist.ollieOrnamentIDs.contains(ollieOrnamentID)
             && CountingSheepPublicPresentationAllowlist.featuredSheepDefinitionIDs.contains(featuredSheepDefinitionID)
             && CountingSheepPublicPresentationAllowlist.pastureThemeIDs.contains(pastureThemeID)
+            && (shepherdShirtID.map { CountingSheepPublicPresentationAllowlist.shepherdShirtIDs.contains($0) } ?? true)
+            && (shepherdOuterwearID.map { CountingSheepPublicPresentationAllowlist.shepherdOuterwearIDs.contains($0) } ?? true)
+            && (ollieCoatID.map { CountingSheepPublicPresentationAllowlist.ollieCoatIDs.contains($0) } ?? true)
     }
 
     /// Unknown fields use their individual fallback; valid clothes are never discarded.
@@ -44,11 +50,14 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
         if !CountingSheepPublicPresentationAllowlist.shepherdOutfitIDs.contains(shepherdOutfitID) { result.shepherdOutfitID = fallback.shepherdOutfitID }
         if !CountingSheepPublicPresentationAllowlist.shepherdAccessoryIDs.contains(shepherdAccessoryID) { result.shepherdAccessoryID = fallback.shepherdAccessoryID }
         if !CountingSheepPublicPresentationAllowlist.ollieOrnamentIDs.contains(ollieOrnamentID) { result.ollieOrnamentID = fallback.ollieOrnamentID }
+        if !CountingSheepPublicPresentationAllowlist.shepherdShirtIDs.contains(shepherdShirtID ?? "none") { result.shepherdShirtID = nil }
+        if !CountingSheepPublicPresentationAllowlist.shepherdOuterwearIDs.contains(shepherdOuterwearID ?? "none") { result.shepherdOuterwearID = nil }
+        if !CountingSheepPublicPresentationAllowlist.ollieCoatIDs.contains(ollieCoatID ?? "classic") { result.ollieCoatID = nil }
         return result
     }
 
     private enum CodingKeys: String, CodingKey {
-        case headShapeID, skinToneID, hairStyleID, shepherdOutfitID, shepherdAccessoryID
+        case headShapeID, shepherdShirtID, shepherdOuterwearID, ollieCoatID, skinToneID, hairStyleID, shepherdOutfitID, shepherdAccessoryID
         case ollieOrnamentID, featuredSheepDefinitionID, pastureThemeID, avatarID
     }
 
@@ -61,9 +70,15 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
         featuredSheepDefinitionID: String,
         pastureThemeID: String,
         avatarID: String = SocialAvatarRules.shepherdID,
-        headShapeID: String? = nil
+        headShapeID: String? = nil,
+        shepherdShirtID: String? = nil,
+        shepherdOuterwearID: String? = nil,
+        ollieCoatID: String? = nil
     ) {
         self.headShapeID = headShapeID
+        self.shepherdShirtID = shepherdShirtID
+        self.shepherdOuterwearID = shepherdOuterwearID
+        self.ollieCoatID = ollieCoatID
         self.skinToneID = skinToneID
         self.hairStyleID = hairStyleID
         self.shepherdOutfitID = shepherdOutfitID
@@ -86,7 +101,10 @@ struct CountingSheepPublicPresentation: Codable, Equatable, Sendable {
             pastureThemeID: try container.decode(String.self, forKey: .pastureThemeID),
             avatarID: try container.decodeIfPresent(String.self, forKey: .avatarID)
                 ?? SocialAvatarRules.shepherdID,
-            headShapeID: try container.decodeIfPresent(String.self, forKey: .headShapeID)
+            headShapeID: try container.decodeIfPresent(String.self, forKey: .headShapeID),
+            shepherdShirtID: try container.decodeIfPresent(String.self, forKey: .shepherdShirtID),
+            shepherdOuterwearID: try container.decodeIfPresent(String.self, forKey: .shepherdOuterwearID),
+            ollieCoatID: try container.decodeIfPresent(String.self, forKey: .ollieCoatID)
         )
     }
 }
@@ -150,6 +168,9 @@ enum CountingSheepPublicPresentationAllowlist {
     static let hairStyleIDs = Set(ShepherdHairStyle.allCases.map(\.rawValue))
     static let shepherdOutfitIDs: Set<String> = ["none", "shepherd_moss_coat", "shepherd_moon_coat", "shepherd_field_overalls", "shepherd_star_keeper_cloak"]
     static let shepherdAccessoryIDs: Set<String> = ["none", "shepherd_wool_hat", "shepherd_clover_headscarf", "shepherd_moon_beanie"]
+    static let shepherdShirtIDs: Set<String> = ["none", "shepherd_berry_shirt", "shepherd_dusk_shirt", "shepherd_amber_shirt"]
+    static let shepherdOuterwearIDs: Set<String> = ["none", "shepherd_open_moss_coat"]
+    static let ollieCoatIDs: Set<String> = ["classic", "fuller"]
     static let ollieOrnamentIDs: Set<String> = ["none", "ollie_moss_bandana", "ollie_moon_kerchief", "ollie_brass_bell", "ollie_clover_collar", "ollie_sunrise_scarf", "ollie_star_keeper_cape"]
     static let featuredSheepDefinitionIDs = Set(SheepCatalog.all.map(\.id)).union(["none"])
     static let pastureThemeIDs: Set<String> = ["pasture_meadow", "pasture_moonlit", "pasture_sunrise"]

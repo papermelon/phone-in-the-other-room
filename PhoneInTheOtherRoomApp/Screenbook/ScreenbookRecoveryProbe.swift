@@ -44,7 +44,10 @@ enum ScreenbookRecoveryProbe {
                 coldActiveMorningRestoreRepublishesShieldingFailure(now: now),
                 lateWindDownCompletionUsesScheduledEnd(now: now),
                 expiredAutomaticRecoveryKeepsNextSchedule(now: now),
-                futureAutomaticRecoverySurfacesMonitorFailure(now: now)
+                futureAutomaticRecoverySurfacesMonitorFailure(now: now),
+                accountSyncPreservesAutomaticOccurrence(now: now, isDue: false),
+                accountSyncPreservesAutomaticOccurrence(now: now, isDue: true),
+                accountChangeClearsAutomaticOccurrence(now: now)
             ]
         )
     }
@@ -106,6 +109,40 @@ enum ScreenbookRecoveryProbe {
             check(fixture.persistence.automaticWindDownSchedule == nil, "failed monitor still presented as scheduled"),
             check(fixture.persistence.automaticWindDownProtectionRepairNeeded, "failed reinstall did not request repair"),
             check(!fixture.viewModel.isRunning, "failure fabricated a running session")
+        ])
+    }
+
+    private static func accountSyncPreservesAutomaticOccurrence(now: Date, isDue: Bool) -> CaseResult {
+        let fixture = manualStartFixture(now: now, hasAutomaticSchedule: false)
+        fixture.viewModel.nightWatchPreferences.automaticStartEnabled = true
+        fixture.persistence.nightWatchPreferences = fixture.viewModel.nightWatchPreferences
+        let start = now.addingTimeInterval(isDue ? -9 * 60 : 60 * 60)
+        let run = makeRun(wake: start.addingTimeInterval(8 * 3600))
+        let schedule = AutomaticWindDownSchedule(id: run.id, startedAt: start, plan: run.nightWatchPlan!)
+        fixture.persistence.automaticWindDownSchedule = schedule
+        fixture.viewModel.farmBackupViewModel.didRestore?()
+        let retainedSchedule = fixture.persistence.automaticWindDownSchedule
+        if isDue {
+            fixture.viewModel.reconcileAutomaticWindDownIfNeeded(stagedPrimaryDecision:
+                NightFlockPrimaryRunSharingDecision(runID: schedule.id, allowsSharing: false, capturedAt: start))
+        }
+        return evaluate(isDue ? "account-sync-preserves-due-automatic-start" : "account-sync-preserves-future-automatic-start", [
+            check(retainedSchedule?.id == schedule.id, "ordinary sync replaced the saved occurrence"),
+            check(retainedSchedule?.startedAt == start, "ordinary sync moved the scheduled start"),
+            check(!isDue || fixture.coordinator.run?.id == schedule.id, "due occurrence did not reach coordinator admission"),
+            check(!isDue || fixture.coordinator.run?.startedAt == start, "late admission changed the timer anchor")
+        ])
+    }
+
+    private static func accountChangeClearsAutomaticOccurrence(now: Date) -> CaseResult {
+        let fixture = manualStartFixture(now: now, hasAutomaticSchedule: true)
+        do { try fixture.persistence.farmSaveStore.activate(.signedOut) }
+        catch { return evaluate("account-change-clears-automatic-start", [check(false, "could not switch isolated owner")]) }
+        fixture.viewModel.farmBackupViewModel.didRestore?()
+        return evaluate("account-change-clears-automatic-start", [
+            check(fixture.persistence.automaticWindDownSchedule == nil, "new owner inherited the old automatic start"),
+            check(fixture.shielding.events.contains("cancelAutomatic"), "old owner's monitor was not cancelled"),
+            check(!fixture.viewModel.isRunning, "account change fabricated a running session")
         ])
     }
 
@@ -767,7 +804,7 @@ enum ScreenbookRecoveryProbe {
             return runOutcomes[run.id] ?? .scheduled
         }
 
-        func reconcile(for occurrence: MorningQuietOccurrence, at date: Date) -> QuietTimeShieldingOutcome {
+        func reconcile(for occurrence: MorningQuietOccurrence, at date: Date, parentRunIsActive: Bool) -> QuietTimeShieldingOutcome {
             reconciledOccurrenceIDs.append(occurrence.id)
             events.append("reconcileOccurrence:\(occurrence.id.uuidString)")
             if let configured = occurrenceOutcomes[occurrence.id] {

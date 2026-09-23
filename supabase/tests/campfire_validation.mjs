@@ -32,3 +32,17 @@ test('buddy actions are scoped and reflections never ride an encouragement',()=>
  assert.doesNotThrow(()=>validate({...c,buddyAction:'reflect',outcome:'madeProgress',reflection:'One page'}));
  for(const change of [{buddyAction:'unknown'},{targetMemberID:'bad'},{outcome:'didIt'},{buddyAction:'reflect',outcome:'verified'},{buddyAction:'reflect',outcome:'didIt',reflection:'x'.repeat(161)}]) assert.throws(()=>validate({...c,...change}));
 });
+test('frozen bedtime is optional, normalized and may precede sharing start',()=>{
+ const windDown={...base,kind:'windDown'}; delete windDown.activity;
+ for(const intendedBedtime of [undefined,null,'2026-09-13T11:00:00Z',windDown.expiresAt]) {
+  assert.doesNotThrow(()=>validate({...windDown,intendedBedtime}));
+ }
+ const foundation=(Date.parse('2026-09-13T11:00:00Z')-Date.UTC(2001,0,1))/1000;
+ assert.equal(validate({...windDown,intendedBedtime:foundation}).intendedBedtime,'2026-09-13T11:00:00.000Z');
+ for(const intendedBedtime of ['bad','infinity',Infinity,{},true,'2026-09-13T12:30:01Z']) {
+  assert.throws(()=>validate({...windDown,intendedBedtime}));
+ }
+ assert.throws(()=>validate({...base,intendedBedtime:base.startedAt}));
+ assert.doesNotThrow(()=>validate({...windDown,ended:true,revision:2}));
+ assert.doesNotThrow(()=>validate({...windDown,ended:true,revision:2,intendedBedtime:windDown.startedAt}));
+});

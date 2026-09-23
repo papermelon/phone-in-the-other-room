@@ -53,7 +53,7 @@ The ordinary flow supports independent use and the workshop; there is no separat
    returning sign-in always available at the opening and a discoverable later welcome
    gift choice. Existing saved drafts and reward eligibility survive any route change.
 2. **Home before the first evening:** retain the timing, Ollie and start hierarchy,
-   while showing the chosen activity and a direct route to edit it. Clearly distinguish
+   while showing the whole saved evening routine and a full-card route to explore ideas or edit it. The [21 September Home refinement](home-farm-clarity-2026-09-21.md) supersedes the earlier first-activity-only summary. Clearly distinguish
    a saved plan from incomplete protection. Declined optional reminders never block use.
 3. **Prepare the evening:** optionally add a recognizable cue, something to prepare,
    and a smaller activity. These fields are progressive, not another required form.

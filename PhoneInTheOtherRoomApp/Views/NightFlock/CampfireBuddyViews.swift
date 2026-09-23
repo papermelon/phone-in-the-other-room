@@ -7,6 +7,7 @@ struct CampfireBuddyCard: View {
     var now: Date = Date()
     var canJoin = true
     var isSending = false
+    var showsMemberName = true
     var onJoin: () -> Void = {}
     var onAction: (String, CampfireOutcome?, String?) -> Void = { _, _, _ in }
     @State private var reflection = ""
@@ -14,9 +15,12 @@ struct CampfireBuddyCard: View {
     private func name(_ id: UUID) -> String { party.memberships.first { $0.memberID == id }?.profile.displayName ?? "A party member" }
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Label("\(name(session.memberID)) · \(session.kind == .windDown ? "Wind Down" : "Phone Away")", systemImage: active ? "flame" : "leaf")
+            Label(showsMemberName ? "\(name(session.memberID)) · \(session.kind == .windDown ? "Wind Down" : "Phone Away")" : (session.kind == .windDown ? "Wind Down" : "Phone Away"), systemImage: active ? "flame" : "leaf")
                 .font(AppTypography.headline)
-            if !session.publicIntention.isEmpty { Text(session.publicIntention).font(AppTypography.body) }
+            if let plan = CampfirePlanText.normalized(session.publicIntention) {
+                Text("Shared plan").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                Text(plan).font(AppTypography.body).fixedSize(horizontal: false, vertical: true)
+            }
             Text(active ? "Planned until \(session.expiresAt.formatted(date: .omitted, time: .shortened))" : "Session ended")
                 .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
             if let buddy = session.buddyMemberID {

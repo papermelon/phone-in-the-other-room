@@ -30,6 +30,7 @@ extension FocusRunViewModel {
                 persistence.purgeLegacyFarmDefaultsAfterAccountDeletion()
                 farmBackupViewModel.accessBlocked = true
                 farmBackupViewModel.signedIn = false
+                farmBackupViewModel.authenticatedAccountID = nil
                 farmBackupViewModel.credentialProfile = nil
                 farmBackupViewModel.credentials.clearForSignOut()
                 farmBackupViewModel.didRestore?()
@@ -60,9 +61,15 @@ extension FocusRunViewModel {
         }
         farmBackupViewModel.didRestore = { [weak self] in
             guard let self else { return }
+            let previousIdentity = habitLocalIdentity
             reloadWindDownHabitState()
-            persistence.automaticWindDownSchedule = nil
-            scheduleAutomaticWindDownIfNeeded()
+            // Ordinary same-account synchronization also invokes didRestore.
+            // Keep its due occurrence until admission; replacing it here would
+            // silently move tonight's start to tomorrow during foreground sync.
+            if previousIdentity == nil || previousIdentity != habitLocalIdentity {
+                persistence.automaticWindDownSchedule = nil
+                quietTimeShielding.cancelAutomaticSchedule()
+            }
             coordinator.farmState = persistence.farmState
             coordinator.sheepSearchState = persistence.sheepSearchState
             coordinator.progress = persistence.progress
@@ -70,6 +77,7 @@ extension FocusRunViewModel {
             coordinator.latestReward = nil
             coordinator.latestSheepSearchOutcome = nil
             impactSharingPreferences = persistence.impactSharingPreferences
+            reconcileAutomaticWindDownIfNeeded()
             WatchConnectivityManager.shared.send(WatchMessage(type: .focusRunStateUpdate, run: nil))
             objectWillChange.send()
         }

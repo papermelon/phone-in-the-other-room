@@ -306,7 +306,6 @@ struct BarnSheepDetailView: View {
     }
 
     private func lifecycleCard(_ sheep: FlockSheep) -> some View {
-        let remaining = FarmEconomyRules.remainingRegrowthNights(for: sheep, protectedNightCount: protectedNights)
         return PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 Text("FLOCK LIFE")
@@ -334,10 +333,6 @@ struct BarnSheepDetailView: View {
                         }
                         .buttonStyle(PixelPrimaryButtonStyle())
                     } else {
-                        let remaining = FarmEconomyRules.remainingRegrowthNights(
-                            for: sheep,
-                            protectedNightCount: protectedNights
-                        )
                         Label(
                             FarmEconomyRules.regrowthLabel(for: sheep, protectedNightCount: protectedNights),
                             systemImage: "leaf.fill"

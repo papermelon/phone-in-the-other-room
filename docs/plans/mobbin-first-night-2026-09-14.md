@@ -1,7 +1,7 @@
 # Mobbin research — Counting Sheep's first night
 
-14 September 2026. Research brief and proposed experiments; not an implemented redesign
-or a change to product direction.
+Research recorded 14 September 2026. The first-start experiment was implemented on
+20 September 2026; the consolidated plan-review experiment remains a proposal.
 
 ## Reference collection
 
@@ -21,14 +21,14 @@ Opal and Structured were inspected at the relevant portions of their longer sequ
 the complete flows remain saved for subsequent review. No third-party artwork or copy was
 imported into the app.
 
-## Current journey and findings
+## Journey and findings at the 14 September research pass
 
 The fresh route is two skippable story pages, schedule/reminders, one optional evening
 activity, then review and Go to Home. Protection setup is deferred until an actual start.
 The optional profile, gift, and account chapter remains separate. Preserve this contract in
 [Product direction](../PRODUCT_DIRECTION.md#first-run-and-guidance).
 
-Source inspection establishes the following:
+Source inspection at that time established the following:
 
 - [OnboardingFlowView](../../PhoneInTheOtherRoomApp/Views/Onboarding/OnboardingFlowView.swift)
   already has a bottom action bar and returning-user sign-in. Keep these strengths.
@@ -45,7 +45,7 @@ Source inspection establishes the following:
   no-selection, revoked, and runtime-failure states under the same generic setup action.
   These are source findings; visibility and comprehension on the current build need testing.
 
-## Recommended first experiment: make the next action clear
+## First experiment: make the next action clear
 
 Prototype a state-aware first-start sheet. Keep the existing coordinator, admission checks,
 consent rules, and start transaction.
@@ -70,6 +70,26 @@ unaccepted agreement or change the saved choice.
 the next action without hunting through optional controls. Repeat with large text, denied
 permission, empty selection, runtime failure, and ready/NFC states. The footer must not cover
 content. VoiceOver order must explain the blocker before its action.
+
+## First-start implementation (20 September 2026)
+
+The authorized first experiment now uses a full-height native sheet with a bottom
+`safeAreaInset` action bar. The protection state appears immediately after the heading.
+Permission request, permission restoration, app selection, protection retry, and actual
+start have separate actions. Unavailable protection offers an explanation and **Not now**.
+Authorization completes without opening the picker; selecting apps returns to the sheet
+without confirming a start. Runtime failures use the existing `retryShielding()` intent
+and provide a link to the existing protection setup view.
+
+Mode-specific start wording and NFC confirmation remain intact. Duration, private tasks,
+Slumber Party privacy, Campfire consent/visibility, and Lock Screen choices remain in the
+scrolling content. The repair view was moved to its own file without changing its behavior.
+The shared readiness/action mapping has a unit check, and isolated Debug previews cover
+permission, empty selection, repair, unavailable, large-text and ready/NFC presentation.
+
+Validation evidence is recorded in
+[the first-start review](../../output/design/first-start-20260920/README.md).
+The plan-review experiment below has not been implemented in this task.
 
 ## Second experiment: one readable plan review
 
@@ -120,7 +140,7 @@ the repository's copy, SwiftUI, build, test, and visual-validation requirements.
 the working tree first: the start sheet and Home were already under active development
 during this research.
 
-## Evidence and limits
+## Original research evidence and limits (14 September)
 
 - Created the collection with Private enabled; verified all three flow titles in its contents.
 - Mobbin OAuth login succeeded in the preceding setup turn. Mobbin tools were absent from

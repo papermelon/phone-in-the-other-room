@@ -12,6 +12,7 @@ final class PastureSceneController {
     let fetchGame = PastureFetchViewModel()
     private var olliePoseByPasture: [Int: String] = [:]
     private(set) var playMessage: String?
+    var showsPlayPaused = false
 
     private var settledPositions: [PastureSceneEntityID: PastureScenePoint] = [:]
     private var entityIDs = Set<PastureSceneEntityID>()
@@ -52,6 +53,7 @@ final class PastureSceneController {
         self.activePastureIndex = activePastureIndex
         self.reduceMotion = reduceMotion
         self.isWindDownActive = isWindDownActive
+        if !isWindDownActive { showsPlayPaused = false }
         persistSnapshot = onPersist
 
         if !loadedSnapshot {
@@ -303,7 +305,7 @@ final class PastureSceneController {
 
     /// Explicit play stays local and never settles session or reward state.
     func fetch() {
-        guard !isWindDownActive, !fetchGame.isPresented,
+        guard admitsExplicitPlay(), !fetchGame.isPresented,
               let ollie = entityIDs.first(where: { $0.kind == .ollie && $0.pastureIndex == activePastureIndex }),
               !isInteractionActive else { return }
         stopAutonomyAndSettle()
@@ -320,7 +322,7 @@ final class PastureSceneController {
     }
 
     func gather() {
-        guard !isWindDownActive, !fetchGame.isPresented, !isInteractionActive,
+        guard admitsExplicitPlay(), !fetchGame.isPresented, !isInteractionActive,
               let shepherd = entityIDs.first(where: { $0.kind == .shepherd && $0.pastureIndex == activePastureIndex }),
               let ollie = entityIDs.first(where: { $0.kind == .ollie && $0.pastureIndex == activePastureIndex }) else { return }
         stopAutonomyAndSettle()
@@ -348,6 +350,13 @@ final class PastureSceneController {
             self.playMessage = "The flock has gathered"
             self.startSchedulerIfNeeded()
         }
+    }
+
+    private func admitsExplicitPlay() -> Bool {
+        // Every entry point, including a request returning from Ollie's profile,
+        // must explain the same active-session restriction.
+        showsPlayPaused = isWindDownActive
+        return !isWindDownActive
     }
 
     private static func membership(

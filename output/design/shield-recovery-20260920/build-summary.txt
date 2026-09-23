@@ -1,0 +1,5 @@
+Validate /Users/ngawangchime/Library/Developer/Xcode/DerivedData/PhoneInTheOtherRoom-cbapevrcjnbvryejcvolmjxokfkc/Build/Products/Debug-iphonesimulator/Counting\ Sheep.app (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+    cd /Users/ngawangchime/Desktop/Developer\ Projects/Phone\ in\ the\ Other\ Room
+    builtin-validationUtility /Users/ngawangchime/Library/Developer/Xcode/DerivedData/PhoneInTheOtherRoom-cbapevrcjnbvryejcvolmjxokfkc/Build/Products/Debug-iphonesimulator/Counting\ Sheep.app -shallow-bundle -infoplist-subpath Info.plist
+
+** BUILD SUCCEEDED **

@@ -2,6 +2,16 @@ import XCTest
 
 final class ShieldingReadinessTests: XCTestCase {
 
+    func testFirstStartAdvancesSetupBeforeOfferingAnExplicitStart() {
+        let journey: [ShieldingReadiness] = [.authorizationRequired, .denied, .revoked, .noSelection, .ready, .runtimeFailure, .unavailable]
+        XCTAssertEqual(journey.map(\.startSheetAction), [
+            .requestAccess, .restoreAccess, .restoreAccess, .chooseApps, .start, .retryProtection, .unavailable
+        ])
+        for readiness in journey {
+            XCTAssertEqual(readiness.startSheetAction == .start, readiness.canStartProtectedSession)
+        }
+    }
+
     func testEarlyWakeSkipRemainsAvailableWhenNewMorningProtectionNeedsRepair() {
         XCTAssertTrue(EarlyWakeProtectionStartPolicy.canCommit(intent: .skipToday, readiness: .noSelection))
         XCTAssertFalse(EarlyWakeProtectionStartPolicy.canCommit(intent: .startNow, readiness: .noSelection))

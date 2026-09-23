@@ -3,10 +3,7 @@ import SwiftUI
 struct RitualPersonalisationView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var showsGoal = false
-    @State private var showsPlan = false
-    @State private var reviewingSuggestion: RitualSuggestion?
-    @State private var editorToken: RitualPersonalisationEditToken?
+    @State private var editor: Editor?
     @State private var confirmsClear = false
 
     var body: some View {
@@ -42,20 +39,18 @@ struct RitualPersonalisationView: View {
         .navigationTitle("My routine")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { viewModel.reloadPersonalisation() }
-        .onChange(of: viewModel.habitEditingIdentity) { _, _ in dismiss() }
-        .sheet(isPresented: $showsGoal) {
-            if let token = editorToken {
-                RitualGoalEditor(goal: viewModel.personalisation.goal) { mode, kind, wording in
+        .onChange(of: viewModel.habitEditingIdentity) { _, _ in editor = nil; dismiss() }
+        .sheet(item: $editor) { editor in
+            switch editor {
+            case let .goal(goal, token):
+                RitualGoalEditor(goal: goal) { mode, kind, wording in
                     viewModel.saveRitualGoal(mode: mode, kind: kind, wording: wording, token: token)
                 }
                 .id(viewModel.habitEditingIdentity)
-            }
-        }
-        .sheet(isPresented: $showsPlan) {
-            if let plan = viewModel.personalisation.currentPlan, let token = editorToken {
-                RitualPlanReview(plan: plan, suggestion: reviewingSuggestion) { activities, cue, preparation in
+            case let .plan(plan, suggestion, token):
+                RitualPlanReview(plan: plan, suggestion: suggestion) { activities, cue, preparation in
                     viewModel.reviewRitualPlan(activities: activities, cue: cue, preparation: preparation,
-                                              suggestionID: reviewingSuggestion?.id, token: token)
+                                              suggestionID: suggestion?.id, token: token)
                 }
                 .id(viewModel.habitEditingIdentity)
             }
@@ -80,7 +75,7 @@ struct RitualPersonalisationView: View {
                     Text(goal.mode == .morning ? "Screen-Free Morning" : "Wind Down")
                         .font(AppTypography.caption).foregroundStyle(AppColors.muted)
                 }
-                Button(viewModel.personalisation.goal == nil ? "Choose a goal" : "Edit goal") { editorToken = viewModel.personalisationToken(); showsGoal = true }
+                Button(viewModel.personalisation.goal == nil ? "Choose a goal" : "Edit goal") { if let token = viewModel.personalisationToken() { editor = .goal(viewModel.personalisation.goal, token) } }
                     .frame(minHeight: 44)
             }
         }
@@ -94,7 +89,7 @@ struct RitualPersonalisationView: View {
                     ForEach(plan.activities) { Text($0.title).font(AppTypography.body) }
                     if let cue = plan.cue { Text("Begin: \(cue)").font(AppTypography.body) }
                 }
-                Button("Review my activity") { editorToken = viewModel.personalisationToken(); reviewingSuggestion = nil; showsPlan = true }
+                Button("Review my activity") { openPlan() }
                     .frame(minHeight: 44)
             }
         }
@@ -113,11 +108,30 @@ struct RitualPersonalisationView: View {
                             .font(AppTypography.body)
                     }
                 }.frame(minHeight: 44)
-                Button("Review change") { editorToken = viewModel.personalisationToken(); reviewingSuggestion = suggestion; showsPlan = true }.frame(minHeight: 44)
+                Button("Review change") { openPlan(suggestion: suggestion) }.frame(minHeight: 44)
                 Button("Keep my plan") { respond(suggestion, .dismissed) }.frame(minHeight: 44)
                 Button("Later") { respond(suggestion, .deferred) }.frame(minHeight: 44)
             }
         }
+    }
+
+    // Carry the edit snapshot in the presentation so a sheet never opens before its data exists.
+    private enum Editor: Identifiable {
+        case goal(RitualGoal?, RitualPersonalisationEditToken)
+        case plan(RitualPlanRevision, RitualSuggestion?, RitualPersonalisationEditToken)
+
+        var id: String {
+            switch self {
+            case .goal: return "goal"
+            case .plan: return "plan"
+            }
+        }
+    }
+
+    private func openPlan(suggestion: RitualSuggestion? = nil) {
+        guard let plan = viewModel.personalisation.currentPlan,
+              let token = viewModel.personalisationToken() else { return }
+        editor = .plan(plan, suggestion, token)
     }
 
     private func respond(_ suggestion: RitualSuggestion, _ status: RitualSuggestion.Status) {

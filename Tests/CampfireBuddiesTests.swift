@@ -7,6 +7,14 @@ final class CampfireBuddiesTests: XCTestCase {
               encouragementMemberIDs: [], checkInRequested: false, startedAt: now.addingTimeInterval(-1800),
               expiresAt: now.addingTimeInterval(1800), checkInAfter: now.addingTimeInterval(3600), ended: false, kind: kind)
     }
+    func testParticipationCueFollowsTheSharedBuddyRequest() {
+        var value = session()
+        XCTAssertEqual(value.participationCue, "Buddy welcome")
+        value.buddyMemberID = UUID()
+        XCTAssertEqual(value.participationCue, "Buddy paired")
+        value.buddyMemberID = nil; value.asksForBuddy = false
+        XCTAssertNil(value.participationCue)
+    }
     func testVersionTwoAgreementIsExplicitAndOlderStateRemainsReadable() throws {
         XCTAssertTrue(CampfireAgreement(id: UUID(), version: 2, revision: 1, enabled: true, acceptedAt: now).permitsSharing)
         XCTAssertFalse(CampfireAgreement(id: UUID(), version: 3, revision: 1, enabled: true, acceptedAt: now).permitsSharing)

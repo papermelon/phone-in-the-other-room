@@ -120,19 +120,20 @@ extension FocusRunViewModel {
 
     func openPersonalShield(_ action: PersonalShieldAction, earlyMorningIntent: MorningQuietIntent? = nil) {
         refreshPersonalShield()
+        guard earlyMorningIntent == nil || (action == .endSession && isEarlyWakeAvailable) else { return }
         guard let session = personalShieldSession, session.interval.start <= nowProvider(),
               nowProvider() < session.interval.end, isRunning || activeScreenFreeMorning != nil,
               !homeReceiptRoute.replacesTabShell else { return }
         coordinator.cancelEmergencyExitChallenge()
-        let phrase = session.phrase(at: nowProvider())
+        let phrase = session.confirmationPhrase(at: nowProvider(), morningIntent: earlyMorningIntent)
         if action == .endSession {
             guard coordinator.beginPersonalExitChallenge(phrase: phrase, occurrenceID: session.id, earlyMorningIntent: earlyMorningIntent) else { return }
         }
         personalShieldError = nil
         personalShieldSheet = PersonalShieldSheet(sessionID: session.id, owner: session.owner, action: action,
-            phrase: phrase, mode: session.mode(at: nowProvider()))
+            phrase: phrase, mode: session.mode(at: nowProvider()), morningIntent: earlyMorningIntent)
         switch earlyMorningIntent {
-        case .startNow: personalShieldSheet?.endDetail = "Ends Wind Down and starts Screen-Free Morning now. Selected apps stay blocked."
+        case .startNow: personalShieldSheet?.endDetail = "Ends Wind Down and begins your full planned morning time, with selected-app protection on."
         case .deferToUsualTime: personalShieldSheet?.endDetail = "Ends Wind Down and unblocks selected apps until your usual morning time."
         case .skipToday: personalShieldSheet?.endDetail = "Ends Wind Down and unblocks selected apps. Screen-Free Morning is skipped today."
         case .keepWindDownRunning, .none: break
@@ -158,11 +159,11 @@ extension FocusRunViewModel {
     @discardableResult
     func confirmPersonalShield(_ sheet: PersonalShieldSheet, entry: String) -> Bool {
         refreshPersonalShield()
-        guard personalShieldSheet?.id == sheet.id, let session = personalShieldSession,
+        guard personalShieldSheet == sheet, let session = personalShieldSession,
               session.id == sheet.sessionID, session.owner == sheet.owner,
               session.mode(at: nowProvider()) == sheet.mode,
-              session.phrase(at: nowProvider()) == sheet.phrase,
-              PersonalShieldPhrase.matches(entry, phrase: sheet.phrase) else {
+              session.confirmationPhrase(at: nowProvider(), morningIntent: sheet.morningIntent) == sheet.phrase,
+              (!sheet.requiresTypedPhrase || PersonalShieldPhrase.matches(entry, phrase: sheet.phrase)) else {
             personalShieldError = "This session has changed. Close this sheet and try again."
             return false
         }
@@ -175,7 +176,7 @@ extension FocusRunViewModel {
                 return false
             }
         case .endSession:
-            guard coordinator.submitEmergencyExitConfirmation(entry), coordinator.confirmEmergencyExit() else {
+            guard coordinator.submitEmergencyExitConfirmation(sheet.requiresTypedPhrase ? entry : sheet.phrase), coordinator.confirmEmergencyExit() else {
                 personalShieldError = "The session could not end. Please try again."
                 return false
             }

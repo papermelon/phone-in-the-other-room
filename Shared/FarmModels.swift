@@ -188,6 +188,7 @@ struct ShepherdProfile: Codable, Equatable {
     var skinTone: ShepherdSkinTone
     var hairStyle: ShepherdHairStyle
     var outfitItemID: String?
+    var shirtItemID: String? = nil
     var accessoryItemID: String?
     // Preserve future IDs through a save round-trip; render a known shape until supported.
     var headShapeID: String? = nil
@@ -197,14 +198,15 @@ struct ShepherdProfile: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case skinTone, hairStyle, outfitItemID, accessoryItemID, headShapeID
+        case skinTone, hairStyle, outfitItemID, accessoryItemID, headShapeID, shirtItemID
     }
 
     init(skinTone: ShepherdSkinTone, hairStyle: ShepherdHairStyle,
-         outfitItemID: String?, accessoryItemID: String?, headShapeID: String? = nil) {
+         outfitItemID: String?, accessoryItemID: String?, headShapeID: String? = nil, shirtItemID: String? = nil) {
         self.skinTone = skinTone
         self.hairStyle = hairStyle
         self.outfitItemID = outfitItemID
+        self.shirtItemID = shirtItemID
         self.accessoryItemID = accessoryItemID
         self.headShapeID = headShapeID
     }
@@ -213,6 +215,7 @@ struct ShepherdProfile: Codable, Equatable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         skinTone = try c.decode(ShepherdSkinTone.self, forKey: .skinTone)
         hairStyle = try c.decode(ShepherdHairStyle.self, forKey: .hairStyle)
+        shirtItemID = try c.decodeIfPresent(String.self, forKey: .shirtItemID)
         outfitItemID = try c.decodeIfPresent(String.self, forKey: .outfitItemID)
         accessoryItemID = try c.decodeIfPresent(String.self, forKey: .accessoryItemID)
         headShapeID = try c.decodeIfPresent(String.self, forKey: .headShapeID)
@@ -243,6 +246,8 @@ enum FarmCollectibleSlot: String, Codable, CaseIterable, Hashable {
 }
 
 struct FarmEquipment: Codable, Equatable {
+    var ollieCoatID: String? = nil
+    var ollieCoat: OllieCoatStyle { OllieCoatStyle(rawValue: ollieCoatID ?? "") ?? .classic }
     var ollieAccessoryItemID: String?
     var decorationPlacements: [FarmDecorationZone: String]
     var collectiblePlacements: [FarmCollectibleSlot: String]
@@ -274,7 +279,7 @@ struct FarmEquipment: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case ollieAccessoryItemID, decorationPlacements, collectiblePlacements
+        case ollieAccessoryItemID, decorationPlacements, collectiblePlacements, ollieCoatID
         case farmDecorationItemIDs, collectibleItemIDs
     }
 
@@ -290,6 +295,7 @@ struct FarmEquipment: Codable, Equatable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        ollieCoatID = try container.decodeIfPresent(String.self, forKey: .ollieCoatID)
         ollieAccessoryItemID = try container.decodeIfPresent(String.self, forKey: .ollieAccessoryItemID)
         decorationPlacements = try container.decodeIfPresent(
             [FarmDecorationZone: String].self,
@@ -318,6 +324,7 @@ struct FarmEquipment: Codable, Equatable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(ollieCoatID, forKey: .ollieCoatID)
         try container.encodeIfPresent(ollieAccessoryItemID, forKey: .ollieAccessoryItemID)
         try container.encode(decorationPlacements, forKey: .decorationPlacements)
         try container.encode(collectiblePlacements, forKey: .collectiblePlacements)
@@ -325,7 +332,7 @@ struct FarmEquipment: Codable, Equatable {
 }
 
 struct FarmState: Codable, Equatable {
-    static let currentSchemaVersion = 3
+    static let currentSchemaVersion = 4
     static let maximumTransactions = 256
     static let currencyConsolidationKey = "currency:wool-only:v2"
 
@@ -397,7 +404,7 @@ struct FarmState: Codable, Equatable {
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let decodedSchemaVersion = try container.decodeIfPresent(Int.self, forKey: .schemaVersion) ?? 1
-        let legacyCash = decodedSchemaVersion < Self.currentSchemaVersion
+        let legacyCash = decodedSchemaVersion < 3
             ? max(0, try container.decodeIfPresent(Int.self, forKey: .cashBalance) ?? 0)
             : 0
         let convertedWool = FarmEconomyRules.convertLegacyCashToWool(legacyCash)
@@ -415,6 +422,8 @@ struct FarmState: Codable, Equatable {
             trackedSheepDefinitionID: try container.decodeIfPresent(String.self, forKey: .trackedSheepDefinitionID)
         )
         cumulativeCredit = try container.decodeIfPresent(CumulativeFarmCredit.self, forKey: .cumulativeCredit)
+        // Keep queued v3 uploads byte-equivalent until a new-policy settlement.
+        if decodedSchemaVersion == 3 { schemaVersion = 3 }
         if legacyCash > 0,
            !transactions.contains(where: { $0.idempotencyKey == Self.currencyConsolidationKey }) {
             appendTransaction(FarmTransaction(
@@ -432,7 +441,7 @@ struct FarmState: Codable, Equatable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(Self.currentSchemaVersion, forKey: .schemaVersion)
+        try container.encode(schemaVersion, forKey: .schemaVersion)
         try container.encodeIfPresent(cumulativeCredit, forKey: .cumulativeCredit)
         try container.encode(sheep, forKey: .sheep)
         try container.encode(discoveries, forKey: .discoveries)

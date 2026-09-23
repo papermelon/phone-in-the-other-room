@@ -1,0 +1,29 @@
+/tmp/warning-cleanup-build.log
+2026-09-22 06:36:36.133 appintentsmetadataprocessor[35712:9384307] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:36:36.318 appintentsmetadataprocessor[35718:9384371] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:36:36.893 appintentsmetadataprocessor[35736:9384438] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:36:38.001 appintentsmetadataprocessor[35756:9384559] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:36:44.641 appintentsmetadataprocessor[35822:9385031] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+ValidateEmbeddedBinary /tmp/slumber-repair-derived/Build/Products/Debug-iphonesimulator/Counting\ Sheep.app/Extensions/Counting\ Sheep\ Screen\ Time\ Report.appex (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+** BUILD SUCCEEDED **
+
+/tmp/warning-cleanup-tests.log
+2026-09-22 06:38:40.387 appintentsmetadataprocessor[36312:9390799] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:38:40.384 appintentsmetadataprocessor[36313:9390802] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:38:41.409 appintentsmetadataprocessor[36331:9390905] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:38:45.529 appintentsmetadataprocessor[36362:9391241] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:38:55.171 appintentsmetadataprocessor[36407:9391844] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:39:01.092 appintentsmetadataprocessor[36423:9392029] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+ValidateEmbeddedBinary /tmp/slumber-repair-derived/Build/Products/Debug-iphonesimulator/Counting\ Sheep.app/Extensions/Counting\ Sheep\ Screen\ Time\ Report.appex (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+	 Executed 1112 tests, with 0 failures (0 unexpected) in 7.891 (11.228) seconds
+	 Executed 1112 tests, with 0 failures (0 unexpected) in 7.891 (11.249) seconds
+** TEST SUCCEEDED **
+
+/tmp/warning-cleanup-release-install.log
+2026-09-22 06:40:39.636 appintentsmetadataprocessor[37139:9399351] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:40:39.887 appintentsmetadataprocessor[37145:9399367] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:42:37.684 appintentsmetadataprocessor[37622:9404960] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:42:42.555 appintentsmetadataprocessor[37651:9405141] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+2026-09-22 06:42:46.512 appintentsmetadataprocessor[37676:9405323] warning: Metadata extraction skipped. No AppIntents.framework dependency found.
+ValidateEmbeddedBinary /tmp/slumber-repair-derived/Build/Intermediates.noindex/ArchiveIntermediates/PhoneInTheOtherRoom/InstallationBuildProductsLocation/Applications/Counting\ Sheep.app/Extensions/Counting\ Sheep\ Screen\ Time\ Report.appex (in target 'PhoneInTheOtherRoom' from project 'PhoneInTheOtherRoom')
+** INSTALL SUCCEEDED **

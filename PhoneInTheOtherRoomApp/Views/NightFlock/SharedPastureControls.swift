@@ -78,7 +78,7 @@ struct SharedPastureLanternSheet: View {
                     ProgressView(value: Double(min(lantern.contributions, lantern.requiredContributions)), total: Double(max(1, lantern.requiredContributions)))
                         .tint(AppColors.grass)
                     Text("\(min(lantern.contributions, lantern.requiredContributions)) of \(lantern.requiredContributions) contributions").font(AppTypography.body)
-                    Text("Your first completed Wind Down or Phone Away that earns a round grant counts once per party-day. Everyone’s contributions stay across rounds. Early endings keep their usual Farm credit.")
+                    Text("Your first completed Wind Down or Phone Away that earns a round grant counts once per party-day. Everyone’s contributions stay across rounds. Early endings keep their usual Farm progress.")
                         .font(AppTypography.body)
                     if lantern.isComplete { Text("Everyone can arrange the lantern in the shared meadow.").font(AppTypography.caption) }
                 } else {

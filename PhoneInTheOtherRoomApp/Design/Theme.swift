@@ -140,6 +140,14 @@ enum AppSpacing {
     static let xxl: CGFloat = 36
 }
 
+enum SearchTrailLayout {
+    static let headerHeight: CGFloat = 44
+    static let foldedHeight: CGFloat = 48
+    static let expandedHeight: CGFloat = 108
+    static let ollieSize: CGFloat = 44
+    static let lineWidth: CGFloat = 5
+}
+
 enum AppRadius {
     static let xs: CGFloat = 4
     static let sm: CGFloat = 6
@@ -304,4 +312,16 @@ enum SharedFarmLayout {
     static let companionSize: CGFloat = 100
     static let shadowWidth: CGFloat = 52
     static let shadowHeight: CGFloat = 9
+}
+
+// A fixed campsite prevents participant counts and loading states from moving the page.
+enum CampfireSceneLayout {
+    static let height: CGFloat = 800
+    static let fireSize: CGFloat = 84
+    static let fireY: CGFloat = 0.345
+    static let bubbleWidthFraction: CGFloat = 0.40
+    static let bubbleMaxWidth: CGFloat = 156
+    static let bubbleTextHeight: CGFloat = 54
+    static let statusClearance: CGFloat = 64
+    static let shepherdSize: CGFloat = 58
 }

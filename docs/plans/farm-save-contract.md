@@ -1,5 +1,26 @@
 # Farm save contract and migration inventory
 
+22 September 2026 compatibility repair: the deployed Supabase RPC encoder writes
+payload Dates as ISO text, while local Codable documents use numeric reference-date
+values. Remote decoding accepts both. It converts only fields decoded as `Date`
+before the existing lossless object comparison; all other fields, schema gates,
+receipts and migration requirements remain checked. ISO text is restricted to the
+deployed UTC forms and rejects calendar overflow/trailing garbage. Comparing
+reformatted ISO strings is unsafe because fractional-date parsing/formatting can
+truncate another millisecond. Transport envelopes carry the validated payload in
+local numeric-date form before lookup/receipt decoding. Upload encoding is unchanged
+so retries of durable pending operations keep their existing request identity.
+See [the investigation](slumber-party-loading-investigation-2026-09-22.md).
+
+20 September 2026 extension: Farm schema 4 carries a separate bedtime search-bonus
+remainder, immutable per-night grant identities and per-run bonus receipts. These
+minimal economic records join the existing private Farm payload; raw bedtime-plan
+evidence remains local. Wire schema/economy version stays 1. New clients losslessly
+accept Farm 3/4; older clients' existing local and remote version gates reject Farm
+4 before dropping bonus data. Decoded schema-3 Farms retain their wire version until
+a version-2 settlement so pending upload fingerprints remain unchanged. There is no
+retroactive bonus migration. See [the scoped plan](ollies-next-search-2026-09-20.md).
+
 Date: 2026-09-05. Local format v2 (v1 readable) and `FarmBackupPayload` v1 implemented.
 The private backend is deployed; native app acceptance is in progress. See
 `../FARM_BACKUP_DEPLOYMENT.md` for current evidence.
@@ -21,6 +42,11 @@ reward effects. Keys are identifiers inside a document, not separate write store
 | `ollie.progress` / `UserProgress` | Local completed count, factual minutes/streaks, reward count/level, daily records and legacy balances | Export only the completed Wind Down count required by current economy rules. Already migrated Farm inventory/wool carries legacy value. Keep dated daily records, factual minute/streak history and obsolete balances local. Restore must separate economic continuity from Nights presentation. |
 | `ollie.rewards` / `[RewardItem]` | Local keepsake/reward history, descriptions, source context | `FarmBackupKeepsake` preserves identity/type/rarity/title/date/demo marker. Descriptions, detailed source context and factual run minutes do not enter this projection. |
 | `ollie.windDownMorning.settlementJournal` | Benefits, hidden/resolved results, delivered projections, deferred/active occurrences, `sunriseTrail`, delivery markers, authorized terminal decisions | Never serialize whole journal. Include settled `SunriseTrail` meters/fills/claims; delivered Wind Down outcome/run identities and delivered effect markers. Exclude full runs, pending authorizations, recurrence and scheduled/active occurrences. |
+
+Wardrobe additions on 23 September 2026 keep optional `ShepherdProfile.shirtItemID` and
+`FarmEquipment.ollieCoatID` inside the existing private profile/equipment payload. Missing
+fields use the cream shirt and Classic coat; unknown identifiers survive round-trip with
+known rendering fallbacks. These additions do not extend the public Slumber Party contract.
 
 Personalisation added 13 September 2026 follows `AccountFarmLocalKeys`, not the remote
 payload: `ollie.windDown.personalisation` stores explicit goals, plan revisions and

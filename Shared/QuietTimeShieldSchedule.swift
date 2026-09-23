@@ -129,9 +129,10 @@ enum QuietTimeShieldSchedulePolicy {
     /// would stop the overnight (and repeating automatic) callback.
     static func coversMorning(
         _ occurrence: MorningQuietOccurrence,
-        snapshot: QuietTimeShieldScheduleSnapshot
+        snapshot: QuietTimeShieldScheduleSnapshot,
+        parentRunIsActive: Bool
     ) -> Bool {
-        guard let parentID = occurrence.linkedWindDownRunID,
+        guard parentRunIsActive, let parentID = occurrence.linkedWindDownRunID,
               snapshot.runID == parentID,
               let interval = snapshot.protectedSessionInterval else { return false }
         return interval.start <= occurrence.scheduledStart && interval.end >= occurrence.scheduledEnd

@@ -306,6 +306,7 @@ final class FocusRunViewModel: ObservableObject {
         self.nightFlockViewModel.onV4CheerFeedback = { [weak self] feedback in
             self?.coordinator.showSlumberPartyCheer(feedback)
         }
+        self.nightFlockViewModel.makeCampfireProfile = { [weak self] run in self?.campfireProfileSnapshot(for: run) }
         self.nightFlockViewModel.onCampfireAuthorityAvailable = { [weak self] in
             guard let self else { return }
             self.reconcileScheduledCampfireAudience()
@@ -496,12 +497,27 @@ final class FocusRunViewModel: ObservableObject {
     /// Home keeps the nightly ritual in the dominant position even when a
     /// separate Phone Away period happens to be eligible at the same moment.
     var currentPrimaryWindDownStartContext: WindDownStartContext? {
-        currentPrimaryWindDownPeriod.map {
+        HomeStartRoutingPolicy.windDownPeriod(
+            in: windDownSchedule, at: nowProvider(),
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        ).map {
             WindDownStartContext(
                 period: $0,
                 practicePeriodID: orientationState.practicePeriodID
             )
         }
+    }
+
+    private func manualStartOccurrence(at date: Date, sourceID: UUID) -> WindDownSchedulePeriod? {
+        if let current = WindDownScheduleEngine.eligibleOccurrence(
+            in: windDownSchedule, at: date, sourceID: sourceID,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        ) { return current }
+        let upcoming = HomeStartRoutingPolicy.windDownPeriod(
+            in: windDownSchedule, at: date,
+            primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
+        )
+        return upcoming?.sourceID == sourceID ? upcoming : nil
     }
 
     var currentPhoneAwayStartContext: WindDownStartContext? {
@@ -1306,12 +1322,7 @@ final class FocusRunViewModel: ObservableObject {
         let requestedAt = nowProvider()
         let eligible: WindDownSchedulePeriod?
         if let sourceID {
-            eligible = WindDownScheduleEngine.eligibleOccurrence(
-                in: windDownSchedule,
-                at: requestedAt,
-                sourceID: sourceID,
-                primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
-            )
+            eligible = manualStartOccurrence(at: requestedAt, sourceID: sourceID)
             guard eligible != nil else {
                 nightWatchStartStatus = "That quiet window has passed or is too short to start now."
                 return false
@@ -1423,12 +1434,7 @@ final class FocusRunViewModel: ObservableObject {
         let startedAt = stagedStartedAt ?? nowProvider()
         var plan: NightWatchPlan
         if let sourceID = pendingNightWatchSourceOccurrenceID {
-            guard let eligible = WindDownScheduleEngine.eligibleOccurrence(
-                in: windDownSchedule,
-                at: startedAt,
-                sourceID: sourceID,
-                primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes
-            ), eligible.sourceID == sourceID else {
+            guard let eligible = manualStartOccurrence(at: startedAt, sourceID: sourceID) else {
                 rollbackPendingAdHocQuiet()
                 nightWatchStartInFlight = false
                 nightWatchStartStatus = "That quiet window has passed or is too short to start now."
@@ -3110,7 +3116,7 @@ final class FocusRunViewModel: ObservableObject {
             reconcileAutomaticWindDownIfNeeded()
             return
         }
-        scheduleNextAutomaticWindDown()
+        scheduleNextAutomaticWindDown(after: nowProvider())
         notifications.reconcileUpcomingWindDownNotifications(
             for: windDownSchedule,
             primaryExtensionMinutes: nightWatchPreferences.morningQuietMinutes,
@@ -3128,7 +3134,7 @@ final class FocusRunViewModel: ObservableObject {
         return hasRepeating || (windDownRoutines.isEmpty && nightWatchPreferences.automaticStartEnabled)
     }
 
-    private func scheduleNextAutomaticWindDown(after date: Date = Date()) {
+    private func scheduleNextAutomaticWindDown(after date: Date) {
         guard case .schedule = AutomaticWindDownProtectionDecision.resolve(
             readiness: shieldingReadiness
         ) else {

@@ -27,6 +27,7 @@ struct SlumberPartySocialAvatarView: View {
         switch avatarID {
         case "ollie":
             OllieFarmAvatar(accessoryItemID: ollieAccessoryID, size: size - AppSpacing.sm)
+                .environment(\.ollieCoat, OllieCoatStyle(rawValue: presentation.renderableAppearance.ollieCoatID ?? "") ?? .classic)
         case let value where value.hasPrefix("sheep:"):
             if let sheep = SheepCatalog.definition(for: String(value.dropFirst("sheep:".count))) {
                 PixelAssetImage(name: sheep.assetName)
@@ -43,19 +44,8 @@ struct SlumberPartySocialAvatarView: View {
     }
 
     private var shepherd: some View {
-        ShepherdAvatarView(profile: shepherdProfile, size: size - AppSpacing.sm)
+        ShepherdAvatarView(profile: presentation.shepherdProfile, size: size - AppSpacing.sm)
             .accessibilityHidden(true)
-    }
-
-    private var shepherdProfile: ShepherdProfile {
-        let source = presentation.renderableAppearance
-        return ShepherdProfile(
-            skinTone: ShepherdSkinTone(rawValue: source.skinToneID) ?? .warm,
-            hairStyle: ShepherdHairStyle(rawValue: source.hairStyleID) ?? .waves,
-            outfitItemID: source.shepherdOutfitID == "none" ? nil : source.shepherdOutfitID,
-            accessoryItemID: source.shepherdAccessoryID == "none" ? nil : source.shepherdAccessoryID,
-            headShapeID: source.headShapeID
-        )
     }
 
     private var ollieAccessoryID: String? {
