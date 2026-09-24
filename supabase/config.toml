@@ -232,6 +232,16 @@ verify_jwt = true
 [functions.night-flock-state]
 verify_jwt = true
 
+# These handlers verify account identity or the private dispatcher secret themselves.
+[functions.campfire-device]
+verify_jwt = false
+
+[functions.campfire-global]
+verify_jwt = false
+
+[functions.campfire-dispatch]
+verify_jwt = false
+
 [functions.account-password-login]
 # Username/password login is unauthenticated by design; the function performs
 # its own keyed IP and identifier limits before delegating to Supabase Auth.

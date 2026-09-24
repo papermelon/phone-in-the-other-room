@@ -32,6 +32,7 @@ struct FarmShopView: View {
                 categoryGrid
                 categoryStory
                 if category == .shepherd { shepherdLink }
+                if category == .ollie { OllieCoatPicker(equipment: state.equipment, onSelect: viewModel.setOllieCoat) }
                 LazyVGrid(columns: itemColumns, alignment: .leading, spacing: AppSpacing.sm) {
                     ForEach(items) { item in
                         FarmShopItemCard(
@@ -221,6 +222,7 @@ private struct FarmShopItemCard: View {
         switch item.effect {
         case .capacity(let level): return state.barnCapacityLevel >= level
         case .ollieAccessory: return state.equipment.ollieAccessoryItemID == item.id
+        case .shepherdShirt: return state.shepherd.shirtItemID == item.id
         case .shepherdOutfit: return state.shepherd.outfitItemID == item.id
         case .shepherdAccessory: return state.shepherd.accessoryItemID == item.id
         case .farmDecoration: return state.equipment.farmDecorationItemIDs.contains(item.id)
@@ -299,7 +301,7 @@ private struct FarmShopItemCard: View {
     private var activeStatusTitle: String {
         switch item.effect {
         case .capacity: return "OPEN"
-        case .ollieAccessory, .shepherdOutfit, .shepherdAccessory: return "WORN"
+        case .ollieAccessory, .shepherdOutfit, .shepherdAccessory, .shepherdShirt: return "WORN"
         case .farmDecoration: return "PLACED"
         case .collectible: return "DISPLAYED"
         }
@@ -351,6 +353,11 @@ private struct FarmShopItemCard: View {
                     equipmentButton(isActive ? "Take off" : "Wear") {
                         if isActive { viewModel.takeOffOllieAccessory(item.id) }
                         else { viewModel.wearOllieAccessory(item.id) }
+                    }
+                case .shepherdShirt:
+                    equipmentButton(isActive ? "Take off" : "Wear") {
+                        if isActive { viewModel.takeOffShepherdShirt(item.id) }
+                        else { viewModel.wearShepherdShirt(item.id) }
                     }
                 case .shepherdOutfit:
                     equipmentButton(isActive ? "Take off" : "Wear") {

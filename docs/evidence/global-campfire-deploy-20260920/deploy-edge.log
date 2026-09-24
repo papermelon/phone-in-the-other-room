@@ -1,0 +1,5 @@
+Uploading asset (campfire-global): supabase/functions/campfire-global/index.ts
+Uploading asset (campfire-global): supabase/functions/_shared/global-campfire.ts
+Uploading asset (campfire-global): supabase/functions/_shared/http.ts
+Uploading asset (campfire-global): supabase/functions/_shared/supabase.ts
+{"project_ref":"sxjlkcccsentmhowgoqe","functions":["campfire-global"],"dashboard_url":"https://supabase.com/dashboard/project/sxjlkcccsentmhowgoqe/functions","message":"Deployed Functions."}

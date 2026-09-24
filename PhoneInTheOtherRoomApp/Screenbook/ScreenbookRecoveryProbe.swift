@@ -41,9 +41,109 @@ enum ScreenbookRecoveryProbe {
                 shieldingInstallRollbackUsesProductionRegistry(),
                 explicitMorningShieldingFailureRoutesRepair(now: now),
                 unrelatedMorningSuccessDoesNotClearRunFailure(now: now),
-                coldActiveMorningRestoreRepublishesShieldingFailure(now: now)
+                coldActiveMorningRestoreRepublishesShieldingFailure(now: now),
+                lateWindDownCompletionUsesScheduledEnd(now: now),
+                expiredAutomaticRecoveryKeepsNextSchedule(now: now),
+                futureAutomaticRecoverySurfacesMonitorFailure(now: now),
+                accountSyncPreservesAutomaticOccurrence(now: now, isDue: false),
+                accountSyncPreservesAutomaticOccurrence(now: now, isDue: true),
+                accountChangeClearsAutomaticOccurrence(now: now)
             ]
         )
+    }
+
+    private static func lateWindDownCompletionUsesScheduledEnd(now: Date) -> CaseResult {
+        let active = makeRun(wake: now.addingTimeInterval(-12 * 3600))
+        let persistence = isolatedPersistence()
+        persistence.lastRun = active
+        let shielding = ShieldingSpy()
+        let restored = FocusSessionCoordinator(persistence: persistence,
+            liveActivity: FocusRunLiveActivityService(installationID: UUID(), enabled: false),
+            shielding: shielding, watch: .inactiveForDeterministicCapture(), notificationEffectsEnabled: false)
+        let firstFarm = restored.farmState
+        restored.applicationDidBecomeActive()
+        let warmPersistence = isolatedPersistence()
+        let warm = FocusSessionCoordinator(persistence: warmPersistence,
+            liveActivity: FocusRunLiveActivityService(installationID: UUID(), enabled: false),
+            shielding: ShieldingSpy(), watch: .inactiveForDeterministicCapture(), notificationEffectsEnabled: false)
+        warm.run = active
+        warm.reconcileSession(at: now)
+        return evaluate("late-wind-down-cold-and-warm-completion", [
+            check(restored.run?.endedAt == active.plannedEndAt, "cold restore used reopen time"),
+            check(warm.run?.endedAt == active.plannedEndAt, "warm resume used reopen time"),
+            check(restored.run?.actualDurationSeconds == active.plannedDurationSeconds, "cold duration exceeded plan"),
+            check(restored.farmState == firstFarm, "foreground replay changed settled Farm"),
+            check(persistence.nightWatchHistory.records.first?.endedAt == active.plannedEndAt, "history retained late reopen time")
+        ])
+    }
+
+    private static func expiredAutomaticRecoveryKeepsNextSchedule(now: Date) -> CaseResult {
+        let fixture = manualStartFixture(now: now, hasAutomaticSchedule: false)
+        var preferences = fixture.viewModel.nightWatchPreferences
+        preferences.automaticStartEnabled = true
+        fixture.persistence.nightWatchPreferences = preferences
+        fixture.viewModel.nightWatchPreferences = preferences
+        let oldRun = makeRun(wake: now.addingTimeInterval(-12 * 3600))
+        let schedule = AutomaticWindDownSchedule(id: oldRun.id, startedAt: oldRun.startedAt, plan: oldRun.nightWatchPlan!)
+        fixture.persistence.automaticWindDownSchedule = schedule
+        fixture.viewModel.reconcileAutomaticWindDownIfNeeded(stagedPrimaryDecision:
+            NightFlockPrimaryRunSharingDecision(runID: schedule.id, allowsSharing: false, capturedAt: schedule.startedAt))
+        let next = fixture.persistence.automaticWindDownSchedule
+        fixture.viewModel.reconcileAutomaticWindDownIfNeeded()
+        return evaluate("expired-automatic-keeps-installed-successor", [
+            check(fixture.coordinator.run?.id == schedule.id, "expired automatic run was not recovered"),
+            check(fixture.coordinator.run?.endedAt == schedule.plan.protectedUntil, "expired automatic end changed"),
+            check(next != nil && next!.id != schedule.id && next!.startedAt > now, "completion erased its next automatic schedule"),
+            check(fixture.persistence.automaticWindDownSchedule?.id == next?.id, "repeated foreground replaced the next schedule")
+        ])
+    }
+
+    private static func futureAutomaticRecoverySurfacesMonitorFailure(now: Date) -> CaseResult {
+        let fixture = manualStartFixture(now: now, hasAutomaticSchedule: true)
+        var preferences = fixture.viewModel.nightWatchPreferences
+        preferences.automaticStartEnabled = true
+        fixture.viewModel.nightWatchPreferences = preferences
+        fixture.shielding.automaticOutcome = .failed("probe-install")
+        fixture.viewModel.reconcileAutomaticWindDownIfNeeded()
+        return evaluate("automatic-reinstall-failure-needs-repair", [
+            check(fixture.persistence.automaticWindDownSchedule == nil, "failed monitor still presented as scheduled"),
+            check(fixture.persistence.automaticWindDownProtectionRepairNeeded, "failed reinstall did not request repair"),
+            check(!fixture.viewModel.isRunning, "failure fabricated a running session")
+        ])
+    }
+
+    private static func accountSyncPreservesAutomaticOccurrence(now: Date, isDue: Bool) -> CaseResult {
+        let fixture = manualStartFixture(now: now, hasAutomaticSchedule: false)
+        fixture.viewModel.nightWatchPreferences.automaticStartEnabled = true
+        fixture.persistence.nightWatchPreferences = fixture.viewModel.nightWatchPreferences
+        let start = now.addingTimeInterval(isDue ? -9 * 60 : 60 * 60)
+        let run = makeRun(wake: start.addingTimeInterval(8 * 3600))
+        let schedule = AutomaticWindDownSchedule(id: run.id, startedAt: start, plan: run.nightWatchPlan!)
+        fixture.persistence.automaticWindDownSchedule = schedule
+        fixture.viewModel.farmBackupViewModel.didRestore?()
+        let retainedSchedule = fixture.persistence.automaticWindDownSchedule
+        if isDue {
+            fixture.viewModel.reconcileAutomaticWindDownIfNeeded(stagedPrimaryDecision:
+                NightFlockPrimaryRunSharingDecision(runID: schedule.id, allowsSharing: false, capturedAt: start))
+        }
+        return evaluate(isDue ? "account-sync-preserves-due-automatic-start" : "account-sync-preserves-future-automatic-start", [
+            check(retainedSchedule?.id == schedule.id, "ordinary sync replaced the saved occurrence"),
+            check(retainedSchedule?.startedAt == start, "ordinary sync moved the scheduled start"),
+            check(!isDue || fixture.coordinator.run?.id == schedule.id, "due occurrence did not reach coordinator admission"),
+            check(!isDue || fixture.coordinator.run?.startedAt == start, "late admission changed the timer anchor")
+        ])
+    }
+
+    private static func accountChangeClearsAutomaticOccurrence(now: Date) -> CaseResult {
+        let fixture = manualStartFixture(now: now, hasAutomaticSchedule: true)
+        do { try fixture.persistence.farmSaveStore.activate(.signedOut) }
+        catch { return evaluate("account-change-clears-automatic-start", [check(false, "could not switch isolated owner")]) }
+        fixture.viewModel.farmBackupViewModel.didRestore?()
+        return evaluate("account-change-clears-automatic-start", [
+            check(fixture.persistence.automaticWindDownSchedule == nil, "new owner inherited the old automatic start"),
+            check(fixture.shielding.events.contains("cancelAutomatic"), "old owner's monitor was not cancelled"),
+            check(!fixture.viewModel.isRunning, "account change fabricated a running session")
+        ])
     }
 
     private static func ordinaryPreWakeIntentOnly(now: Date) -> CaseResult {
@@ -333,7 +433,8 @@ enum ScreenbookRecoveryProbe {
     private static func shieldingInstallRollbackUsesProductionRegistry() -> CaseResult {
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
         evaluate("shielding-install-rollback", [
-            check(QuietTimeShieldingService.debugRollbackProbe(), "production shielding rollback did not preserve unrelated authority")
+            check(QuietTimeShieldingService.debugRollbackProbe(), "production shielding rollback did not preserve unrelated authority"),
+            check(QuietTimeShieldingService.debugAutomaticMonitorProbe(), "automatic monitoring was not idempotent, repaired, or retired")
         ])
 #else
         // This probe is a release-safety gate. A target without the required
@@ -688,6 +789,7 @@ enum ScreenbookRecoveryProbe {
     }
 
     private final class ShieldingSpy: QuietTimeShieldingProviding {
+        var automaticOutcome: QuietTimeShieldingOutcome = .scheduled
         var events: [String] = []
         var runOutcomes: [UUID: QuietTimeShieldingOutcome] = [:]
         var occurrenceOutcomes: [UUID: QuietTimeShieldingOutcome] = [:]
@@ -702,7 +804,7 @@ enum ScreenbookRecoveryProbe {
             return runOutcomes[run.id] ?? .scheduled
         }
 
-        func reconcile(for occurrence: MorningQuietOccurrence, at date: Date) -> QuietTimeShieldingOutcome {
+        func reconcile(for occurrence: MorningQuietOccurrence, at date: Date, parentRunIsActive: Bool) -> QuietTimeShieldingOutcome {
             reconciledOccurrenceIDs.append(occurrence.id)
             events.append("reconcileOccurrence:\(occurrence.id.uuidString)")
             if let configured = occurrenceOutcomes[occurrence.id] {
@@ -723,7 +825,7 @@ enum ScreenbookRecoveryProbe {
         func clear(occurrenceID: UUID) { clearedOccurrenceIDs.append(occurrenceID) }
         func scheduleAutomatic(for schedule: AutomaticWindDownSchedule, at date: Date) -> QuietTimeShieldingOutcome {
             events.append("scheduleAutomatic")
-            return .scheduled
+            return automaticOutcome
         }
         func cancelAutomaticSchedule() { events.append("cancelAutomatic") }
         func resetLocalState() { events.append("resetLocalState") }

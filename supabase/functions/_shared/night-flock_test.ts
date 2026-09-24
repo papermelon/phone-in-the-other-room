@@ -3,6 +3,7 @@ import {
   handleNightFlockCommand,
   handleNightFlockState,
   nightFlockCompletionLogRecord,
+  nightFlockUpstreamDiagnostics,
   NightFlockCommandDependencies,
 } from "./night-flock-handlers.ts";
 import { validateNightFlockCommand, validateNightFlockState } from "./night-flock.ts";
@@ -12,6 +13,16 @@ import { createInvitation, decryptInvitation, redactInvitationResult } from "./n
 const userID = "10000000-0000-4000-8000-000000000001";
 const challengeID = "20000000-0000-4000-8000-000000000001";
 const key = "a".repeat(64);
+
+Deno.test("server RPC token rejection is retryable without signing the caller out", () => {
+  for (const code of ["PGRST300", "PGRST301", "PGRST303"]) {
+    const error = classifyNightFlockError({ code, message: "JWT issued at future" });
+    assertEquals(error.code, "service_unavailable");
+    assertEquals(error.status, 503);
+    assertEquals(error.recovery, "retry");
+  }
+  assertEquals(classifyNightFlockError(new Error("Unauthorized")).code, "unauthorized");
+});
 
 Deno.test("Slumber Party payload rejects every unrecognized sensitive field", () => {
   const base = {
@@ -231,7 +242,7 @@ Deno.test("completion logs have an exact allowlist and redact a comprehensive se
     classifyNightFlockError({ code: "23505", message: "night_flock_members_active_alias" }),
   );
   assertEquals(Object.keys(record).sort(), [
-    "code", "command", "elapsedDurationBucket", "endpoint", "outcome", "requestID", "schemaVersion", "status",
+    "code", "command", "elapsedDurationBucket", "endpoint", "outcome", "requestID", "schemaVersion", "scope", "status",
   ].sort());
   const serialized = JSON.stringify(record);
   for (const secret of ["Moonlit Meadow", "10000000-0000-4000-8000-000000000001", "ABCD23456789", "AppleIdentityToken", "selectedApps", "HealthKit", "raw database error"]) {
@@ -707,6 +718,26 @@ Deno.test("schema four profile avatar is additive and catalogue-bound", () => {
   );
 });
 
+Deno.test("schema four profile wardrobe is additive and catalogue-bound", () => {
+  const v4Key = "2".repeat(64);
+  const profile = {
+    schemaVersion: 4, command: "updatePublicProfile", expectedRevision: 1,
+    displayName: "Moss", nameSelectionKind: "migration",
+    skinToneID: "warm", hairStyleID: "waves", shepherdOutfitID: "none",
+    shepherdAccessoryID: "none", ollieOrnamentID: "none",
+    featuredSheepDefinitionID: "none", pastureThemeID: "pasture_meadow",
+    idempotencyKey: v4Key,
+  };
+  const wardrobe = {
+    shepherdShirtID: "shepherd_berry_shirt",
+    shepherdOuterwearID: "shepherd_open_moss_coat",
+    ollieCoatID: "fuller",
+  };
+  assertEquals(validateNightFlockCommand({ ...profile, ...wardrobe }, v4Key).ollieCoatID, "fuller");
+  assertThrows(() => validateNightFlockCommand({ ...profile, ollieCoatID: "fuller" }, v4Key));
+  assertThrows(() => validateNightFlockCommand({ ...profile, ...wardrobe, ollieCoatID: "corgi" }, v4Key));
+});
+
 Deno.test("schema four invitation envelope round-trips and never survives response redaction", async () => {
   const keyMaterial = Uint8Array.from({ length: 32 }, (_, index) => index + 1);
   const invitation = await createInvitation(keyMaterial, 1);
@@ -775,4 +806,32 @@ Deno.test("public head shape and update cheer acknowledgement stay strictly allo
   assertEquals(validateNightFlockCommand(ack, key).command, "acknowledgeUpdateCheer");
   assertThrows(() => validateNightFlockCommand({ ...ack, seenAt: "2026-09-09" }, key));
   assertThrows(() => validateNightFlockCommand({ ...ack, recipientMemberID: userID }, key));
+});
+
+Deno.test("state failure retains safe scope, upstream code and numeric phase timings", async () => {
+  const records: Record<string, unknown>[] = [];
+  const original = console.info;
+  console.info = (value) => records.push(JSON.parse(String(value)));
+  try {
+    const result = await handleNightFlockState(stateRequest({ schemaVersion: 4, scope: "list" }), {
+      authenticate: async () => ({ id: userID, isAnonymous: false }),
+      read: async () => { throw { code: "57014", status: 504, message: "secret@example.com", details: "private party data" }; },
+    });
+    assertEquals(result.status, 500);
+    const record = records[0];
+    assertEquals(record.scope, "list");
+    assertEquals(record.stage, "read");
+    assertEquals(record.upstreamCode, "57014");
+    assertEquals(record.upstreamStatus, 504);
+    assert(typeof record.elapsedMs === "number");
+    for (const stage of ["authenticate", "validate", "read"]) {
+      assert(typeof (record.stageDurationsMs as Record<string, unknown>)[stage] === "number");
+    }
+    assert(!JSON.stringify(record).includes("secret@example.com"));
+    assert(!JSON.stringify(record).includes("private party data"));
+    assertEquals(nightFlockUpstreamDiagnostics({ code: "private", status: "private", hint: "private" }),
+      { upstreamCode: null, upstreamStatus: null });
+    assertEquals(nightFlockUpstreamDiagnostics({ code: "PGRST002", status: 503 }),
+      { upstreamCode: "PGRST002", upstreamStatus: 503 });
+  } finally { console.info = original; }
 });

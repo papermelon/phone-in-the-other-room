@@ -116,6 +116,8 @@ extension FarmBackupViewModel {
             try await loadAccount()
             return
         }
+        try assertTransport()
+        authenticatedAccountID = owner
         let original = try persistence.farmSaveStore.snapshot()
         let cached = original.effectiveScope.ownerID == owner ? original.backup
             : try persistence.farmSaveStore.cachedAccount(owner)?.backup
@@ -286,7 +288,7 @@ extension FarmBackupViewModel {
     }
 
     func disconnectAccount() async throws {
-        guard canRestore?() == true, let account else {
+        guard canRestore?() == true, account != nil else {
             message = "Finish your current session before signing out."
             return
         }
@@ -298,6 +300,7 @@ extension FarmBackupViewModel {
         resetAutomaticRetry()
         accessBlocked = true
         signedIn = false
+        authenticatedAccountID = nil
         needsSyncAgreement = false
         syncConnectionNotice = nil
         generationNeedsReview = false

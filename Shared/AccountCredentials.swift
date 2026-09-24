@@ -38,11 +38,13 @@ struct AppleAccountFailure: Equatable {
 }
 
 enum AccountCredentialError: LocalizedError {
-    case invalidUsername, invalidCredentials, verifyEmail, unavailable, differentAccount
+    case invalidUsername, usernameUnavailable, usernameAlreadyClaimed, invalidCredentials, verifyEmail, unavailable, differentAccount
     var errorDescription: String? {
         switch self {
         case .invalidUsername: return "Use 3–24 letters, numbers or underscores, starting with a letter."
-        case .invalidCredentials: return "Check your username or email and password, then try again."
+        case .usernameUnavailable: return "That handle is already taken. Choose another."
+        case .usernameAlreadyClaimed: return "This account already has a handle. Reload your profile to see it."
+        case .invalidCredentials: return "Check your handle or email and password, then try again."
         case .verifyEmail: return "Verify your email before continuing."
         case .unavailable: return "Account sign-in could not finish. Please try again."
         case .differentAccount: return "This sign-in method belongs to a different account."

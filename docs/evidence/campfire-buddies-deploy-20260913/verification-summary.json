@@ -1,0 +1,25 @@
+{
+  "project": "sxjlkcccsentmhowgoqe",
+  "date": "2026-09-13",
+  "migrationsApplied": 2,
+  "migrationHashesMatch": true,
+  "deployedFunctions": {
+    "night-flock-command": 7,
+    "night-flock-state": 7,
+    "campfire-device": 2,
+    "campfire-dispatch": 2
+  },
+  "typeCheckedEntrypoints": 4,
+  "denoTestsPassed": 32,
+  "nodeTestsPassed": 13,
+  "hostedSQLSuitesPassedBeforeAndAfter": 3,
+  "unauthenticatedProbesPassed": 8,
+  "downloadedSourceFilesMatched": 14,
+  "scheduledWorkerHTTPStatus": 200,
+  "processedEventsDuringVerification": 0,
+  "remainingFixtureUsers": 0,
+  "registeredDevicesAtPostflight": 0,
+  "pushConfigured": true,
+  "physicalPushReceiptVerified": false,
+  "appDistributed": false
+}

@@ -31,7 +31,6 @@ extension NightFlockViewModel {
         }
         runContexts[stored.runID] = stored
         let generation = localSocialGeneration
-        let transportEpoch = transportRecoveryEpoch
         let compatibility = NightFlockV2OutboxRecord(
             challengeID: stored.challengeID,
             memberID: stored.memberID,

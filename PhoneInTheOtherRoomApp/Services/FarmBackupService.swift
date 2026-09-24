@@ -55,7 +55,8 @@ actor FarmBackupService {
         // latest session, even when set explicitly on a query. Use a stateless
         // PostgREST transport to pin this request to the checked account.
         let transport = PostgrestClient(url: configuration.url.appendingPathComponent("rest/v1"),
-            headers: ["apikey": configuration.publishableKey, "Authorization": "Bearer \(session.accessToken)"])
+            headers: ["apikey": configuration.publishableKey, "Authorization": "Bearer \(session.accessToken)"],
+            logger: nil)
         guard await authorization() else { throw FarmSaveError.unavailable }
         let bytes: Data
         do {
@@ -68,12 +69,14 @@ actor FarmBackupService {
             throw FarmBackupRemoteError.headChanged
         }
         var root = try JSONSerialization.jsonObject(with: bytes) as? [String: Any] ?? [:]
-        // Postgres timestamps belong to the transport envelope. Farm payload
-        // dates retain the established Swift Codable reference-date format.
+        // Normalize the transport envelope and validated payload to local Codable
+        // dates. Supabase's RPC encoder writes ISO dates inside the payload too.
         func revision(_ value: Any?) throws -> Any? {
             guard var object = value as? [String: Any] else { return value }
             if let payload = object["payload"] {
-                _ = try FarmBackupPayload.decodeRemote(JSONSerialization.data(withJSONObject: payload))
+                let data = try JSONSerialization.data(withJSONObject: payload)
+                let decoded = try FarmBackupPayload.decodeRemote(data)
+                object["payload"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(decoded))
             }
             if let raw = object["createdAt"] as? String {
                 let formatter = ISO8601DateFormatter()

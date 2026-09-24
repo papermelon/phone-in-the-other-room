@@ -1,0 +1,17 @@
+{
+  "PhoneInTheOtherRoomApp/Services/NightFlockService.swift": "8621c2bd35e67d31572742ca7eb01f9cfa2d0d1355075d0b124dc3f45852dab2",
+  "PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+V4.swift": "888c3817685534930cd533e36c41ba486893641982eb7a7941ffed102fc7248b",
+  "PhoneInTheOtherRoomApp/Views/NightFlock/CampfireViews.swift": "dca2f2fd5043dde3434f9f4ee9b467a981306a1ebce40c69fd52f942fa416cc6",
+  "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyPastureView.swift": "aa8cf118c394a908ee3e5ce35492b9c9e5e29c784cf0610ece0563099bdc0212",
+  "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartySharedFarmFixtures.swift": "448fafce227cfec22fbafa77600a49d70497c9a0cf67222f23ef1d5d772a6782",
+  "PhoneInTheOtherRoomApp/Views/NightFlock/SlumberPartyV4PartyDetailView.swift": "243bb7d67548c7832378bbeaaa79520890e37393a70972638f193a78ecad5f86",
+  "Shared/Campfire.swift": "835fcc4336870089212d007eb0c3c0b232a680cddb984932b08388b2198aff5f",
+  "Shared/NightFlockRemoteError.swift": "ececf69d41b5aaca34ec513ae697e53dc03452db951b1899e9c434b7a0ca02e4",
+  "Shared/SlumberPartySharedFarm.swift": "9ef003b6d37073863e138cbf170d3fbbbf556e7d8de14f337630114c56cfafd5",
+  "Tests/CampfireTests.swift": "4cccdf6634615bf04f71d2ae11b1e2d1114d2226a39393551f490ad850ca2eb3",
+  "Tests/NightFlockRemoteErrorTests.swift": "f305277f1b4f2bf4e20820b0a5bd2ba6fc3c6af557a90e3704ee12fb0d2332e7",
+  "docs/DECISIONS/ADR-0016-invite-only-night-flock.md": "fe2058ec7f2c4010fee2bc3afb1f0e122baa79e3a21b8aa59f4d76bcda7bd17e",
+  "docs/FUTURE_AGENT_TASKS.md": "4ef296d37deeef8a4bb612f70f584181a7403f597e75dfaf5582f2b578be05dc",
+  "docs/PRODUCT_DIRECTION.md": "b1943f0c5104d0d7ba1af6c2df5392ba2b11e61ed9c112fe29a3064014041f65",
+  "docs/plans/campfire-implementation-2026-09-13.md": "492750c1bb3032f07484b91d4b8a30df3ae9b85c45a9eafae7995a0413356641"
+}

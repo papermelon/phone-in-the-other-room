@@ -43,8 +43,10 @@ export type NightFlockCommandPayload = Record<string, unknown> & {
 };
 
 const v4CommandFields: Record<string, string[]> = {
+  campfireBuddyAction: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","targetMemberID","buddyAction","outcome","reflection","idempotencyKey"],
+  setCampfireAlerts: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","startAlerts","idempotencyKey"],
   setCampfireSharing: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","expectedRevision","consentVersion","enabled","idempotencyKey"],
-  publishCampfireSession: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","kind","activity","startedAt","observedAt","expiresAt","ended","revision","idempotencyKey"],
+  publishCampfireSession: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","agreementID","sourceID","kind","activity","startedAt","observedAt","expiresAt","intendedBedtime","ended","revision","publicIntention","asksForBuddy","announceStart","checkInAfter","idempotencyKey"],
   movePastureEntity: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","entityID","expectedRevision","x","y","idempotencyKey"],
   contributePastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","sheepID","consentVersion","idempotencyKey"],
   recallPastureSheep: ["schemaVersion","command","partyID","memberEpochID","sceneRevision","visitID","idempotencyKey"],
@@ -64,6 +66,7 @@ const v4CommandFields: Record<string, string[]> = {
   deleteAccount: ["schemaVersion", "command", "idempotencyKey"],
   updatePublicProfile: [
     "schemaVersion", "command", "expectedRevision", "displayName", "nameSelectionKind", "skinToneID", "hairStyleID", "shepherdOutfitID", "shepherdAccessoryID", "ollieOrnamentID", "featuredSheepDefinitionID", "pastureThemeID", "headShapeID", "idempotencyKey",
+    "shepherdShirtID", "shepherdOuterwearID", "ollieCoatID",
   ],
   publishActivity: [
     "schemaVersion", "command", "sourceEventID", "kind", "outcome", "startedAt", "endedAt", "windDownMinutes", "phoneAwayMinutes", "statusRevision", "sharingScope", "idempotencyKey",
@@ -203,11 +206,26 @@ export function validateNightFlockState(body: Record<string, unknown>): NightFlo
 }
 
 function validateV4Command(body: Record<string, unknown>, command: string): void {
+  if (["campfireBuddyAction", "setCampfireAlerts"].includes(command)) {
+    for (const key of ["partyID", "memberEpochID", "agreementID"]) requireUUID(body, key);
+    if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
+    if (command === "setCampfireAlerts") {
+      if (typeof body.startAlerts !== "boolean") throw new Error("Invalid startAlerts");
+    } else {
+      requireUUID(body, "sourceID"); requireUUID(body, "targetMemberID");
+      requireEnum(body, "buddyAction", ["accept", "encourage", "checkIn", "reflect"]);
+      if (body.buddyAction === "reflect") {
+        requireEnum(body, "outcome", ["didIt", "madeProgress", "changedPlans"]);
+        if (body.reflection !== undefined && (typeof body.reflection !== "string" || [...body.reflection].length > 160 || /[\u0000-\u001f\u007f]/.test(body.reflection))) throw new Error("Invalid reflection");
+      } else if (body.outcome !== undefined || body.reflection !== undefined) throw new Error("Unexpected reflection");
+    }
+    return;
+  }
   if (["setCampfireSharing", "publishCampfireSession"].includes(command)) {
     requireUUID(body, "partyID"); requireUUID(body, "memberEpochID");
     if (body.sceneRevision !== 1) throw new Error("Unsupported sceneRevision");
     if (command === "setCampfireSharing") {
-      if (body.consentVersion !== 1 || typeof body.enabled !== "boolean"
+      if (![1, 2].includes(Number(body.consentVersion)) || typeof body.consentVersion !== "number" || typeof body.enabled !== "boolean"
         || !Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0
         || Number(body.expectedRevision) > 2147483646) throw new Error("Invalid campfire consent");
     } else {
@@ -217,6 +235,18 @@ function validateV4Command(body: Record<string, unknown>, command: string): void
       if (![start, end, Date.parse(String(body.observedAt))].every(Number.isFinite) || !["windDown","phoneAway"].includes(String(body.kind)) || typeof body.ended !== "boolean"
         || body.revision !== (body.ended ? 2 : 1) || end <= start || end - start > 86400000
         || Date.parse(String(body.observedAt)) < start) throw new Error("Invalid campfire session");
+      if (body.intendedBedtime !== undefined && body.intendedBedtime !== null) {
+        body.intendedBedtime = normalizeActivityTimestamp(body.intendedBedtime, "intendedBedtime");
+        const bedtime = Date.parse(String(body.intendedBedtime));
+        if (body.kind !== "windDown" || !Number.isFinite(bedtime) || bedtime > end) throw new Error("Invalid campfire bedtime");
+      }
+      if (body.publicIntention !== undefined) {
+        if (typeof body.publicIntention !== "string" || [...body.publicIntention].length > 80 || /[\u0000-\u001f\u007f]/.test(body.publicIntention)
+          || typeof body.announceStart !== "boolean" || typeof body.asksForBuddy !== "boolean") throw new Error("Invalid public intention");
+        body.checkInAfter = normalizeActivityTimestamp(body.checkInAfter, "checkInAfter");
+        const after = Date.parse(String(body.checkInAfter));
+        if (!Number.isFinite(after) || after < end || after > end + 21600000) throw new Error("Invalid check-in time");
+      } else if (["announceStart", "asksForBuddy", "checkInAfter"].some(key => body[key] !== undefined)) throw new Error("Missing public intention");
       if (body.activity !== undefined && (body.kind !== "phoneAway" || !["phoneAway","reading","studying","making","chores","resting"].includes(String(body.activity)))) throw new Error("Invalid campfire activity");
     }
     return;
@@ -263,6 +293,11 @@ function validateV4Command(body: Record<string, unknown>, command: string): void
       validateDisplayName(body);
       requireEnum(body, "nameSelectionKind", ["initial", "migration", "change"]);
       validateFlatPresentation(body);
+      if (["shepherdShirtID", "shepherdOuterwearID", "ollieCoatID"].some(key => body[key] !== undefined)) {
+        requireEnum(body, "shepherdShirtID", ["none", "shepherd_berry_shirt", "shepherd_dusk_shirt", "shepherd_amber_shirt"]);
+        requireEnum(body, "shepherdOuterwearID", ["none", "shepherd_open_moss_coat"]);
+        requireEnum(body, "ollieCoatID", ["classic", "fuller"]);
+      }
       if (body.avatarID !== undefined) validateAvatarID(body);
       if (body.headShapeID !== undefined) requireEnum(body, "headShapeID", ["pear", "round", "boxy", "triangular"]);
       break;

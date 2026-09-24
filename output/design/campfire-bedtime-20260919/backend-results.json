@@ -1,0 +1,57 @@
+[
+  {
+    "suite": "campfire_bedtime_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  },
+  {
+    "suite": "campfire_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  },
+  {
+    "suite": "campfire_buddies_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  },
+  {
+    "suite": "shared_pasture_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  },
+  {
+    "suite": "night_flock_v4_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": true
+  },
+  {
+    "suite": "night_flock_membership_sharing_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": true
+  },
+  {
+    "suite": "night_flock_v4_social_avatar_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": true
+  },
+  {
+    "suite": "slumber_party_farm_cheer_receipts_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  },
+  {
+    "suite": "night_flock_shared_habits_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": true
+  },
+  {
+    "suite": "farm_save_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  },
+  {
+    "suite": "account_identity_test.sql",
+    "exitCode": 0,
+    "legacyAuthAdapter": false
+  }
+]

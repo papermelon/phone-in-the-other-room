@@ -46,6 +46,7 @@ struct FarmView: View {
                     onShowGuide: viewModel.startFarmGuide,
                     onExploreWithoutGuide: viewModel.deferFarmGuide,
                     nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
+                    campfireSocial: viewModel.nightFlockViewModel.featureEnabled ? viewModel.nightFlockViewModel : nil,
                     visitingSheepIDs: viewModel.nightFlockViewModel.visitingSheepIDs,
                     onOpenNightFlock: { nightFlockPartyID in
                         self.nightFlockPartyID = nightFlockPartyID
@@ -126,6 +127,7 @@ struct FarmDashboardContent: View {
     var onShowGuide: () -> Void = {}
     var onExploreWithoutGuide: () -> Void = {}
     var nightFlockSummary: NightFlockHomeSummary? = nil
+    var campfireSocial: NightFlockViewModel? = nil
     var visitingSheepIDs: Set<UUID> = []
     var onOpenNightFlock: (UUID?) -> Void = { _ in }
     var onPersistScene: (PastureSceneSnapshot) -> Void = { _ in }
@@ -134,7 +136,6 @@ struct FarmDashboardContent: View {
     var playRequest: Binding<FarmPasturePlayAction?> = .constant(nil)
     let onSelectSheep: (FlockSheep) -> Void
 
-    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var farmScrollViewportSize = CGSize.zero
 
     private var latestOutcome: SheepSearchOutcome? { searchState.outcomes.last }
@@ -178,7 +179,8 @@ struct FarmDashboardContent: View {
                     .contextualGuideTarget(.farm)
                     .orientationTourTarget(.farmPasture)
                     if let credit = state.cumulativeCredit, !isWindDownActive {
-                        CumulativeFarmProgressCard(credit: credit)
+                        CumulativeFarmProgressCard(credit: credit,
+                            accessoryItemID: state.equipment.ollieAccessoryItemID)
                     }
                     priorityCard
                     if let nightFlockSummary, !isWindDownActive {
@@ -189,16 +191,8 @@ struct FarmDashboardContent: View {
                         )
                     }
                     FarmKeepsakeDisplay(state: state)
-                    FarmBalanceBar(state: state, linksEnabled: true)
-                        .orientationTourTarget(.farmWool)
-                        .orientationTourTarget(.farmCapacity)
-                    NavigationLink {
-                        SheepSearchExplainerView()
-                    } label: {
-                        searchSourcesCard
-                    }
-                    .buttonStyle(.plain)
-                    destinationGrid
+                    if let campfireSocial { CampfireHomeEntry(social: campfireSocial) }
+                    destinations
                     recentStory
                 }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -231,33 +225,6 @@ struct FarmDashboardContent: View {
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
         }
-    }
-
-    private var searchSourcesCard: some View {
-        PixelCard {
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                Image(systemName: "binoculars.fill")
-                    .foregroundStyle(AppColors.grass)
-                    .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("HOW OLLIE’S SEARCHES WORK")
-                        .font(pixelFont(.caption2))
-                        .foregroundStyle(AppColors.grass)
-                    Text("Three ways Ollie searches: Wind Down, Screen-Free Morning, and Phone Away.")
-                        .font(AppTypography.body.weight(.semibold))
-                        .fixedSize(horizontal: false, vertical: true)
-                    Text("Open the guide to see when each one gives Ollie a look.")
-                        .font(AppTypography.caption)
-                        .foregroundStyle(AppColors.secondaryText)
-                }
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .foregroundStyle(AppColors.muted)
-                    .accessibilityHidden(true)
-            }
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Three ways Ollie searches: Wind Down, Screen-Free Morning, and Phone Away. Each keeps its own progress, guarantees, chances, and clues.")
     }
 
     @ViewBuilder
@@ -381,32 +348,24 @@ struct FarmDashboardContent: View {
         }
     }
 
-    @ViewBuilder
-    private var destinationGrid: some View {
-        let columns = destinationColumns
-        Grid(horizontalSpacing: AppSpacing.sm, verticalSpacing: AppSpacing.sm) {
-            if columns.count == 1 {
-                GridRow { destination("The Barn", detail: "Manage flock & wool", badge: "\(state.activeSheep.count) / \(state.activeCapacity)", icon: "house.lodge.fill", tourTarget: .farmCapacity) { FarmBarnView() } }
-                GridRow { destination("Ollie’s Search", detail: "Find missing sheep", badge: "\(searchableCount) available", icon: "map.fill", tourTarget: .farmSearch) { TrailBoardView() } }
-                GridRow { destination("Farm Shop", detail: "Spend wool on the Farm", badge: "\(state.woolBalance) wool", icon: "storefront.fill", tourTarget: .farmShop) { FarmShopView() } }
-                GridRow { destination("Search Journal", detail: "Past arrivals & clues", badge: "\(searchState.outcomes.count) entries", icon: "note.text") { TrailNotesArchiveView() } }
-            } else {
-                GridRow {
-                    destination("The Barn", detail: "Manage flock & wool", badge: "\(state.activeSheep.count) / \(state.activeCapacity)", icon: "house.lodge.fill", tourTarget: .farmCapacity) { FarmBarnView() }
-                    destination("Ollie’s Search", detail: "Find missing sheep", badge: "\(searchableCount) available", icon: "map.fill", tourTarget: .farmSearch) { TrailBoardView() }
-                }
-                GridRow {
-                    destination("Farm Shop", detail: "Spend wool on the Farm", badge: "\(state.woolBalance) wool", icon: "storefront.fill", tourTarget: .farmShop) { FarmShopView() }
-                    destination("Search Journal", detail: "Past arrivals & clues", badge: "\(searchState.outcomes.count) entries", icon: "note.text") { TrailNotesArchiveView() }
+    private var destinations: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("AROUND YOUR FARM")
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.grass)
+            PixelCard {
+                VStack(spacing: 0) {
+                    destination("The Barn", detail: "Care for your flock", badge: "\(state.activeSheep.count) / \(state.activeCapacity) sheep", icon: "house.lodge.fill", tourTarget: .farmCapacity) { FarmBarnView() }
+                    Divider().overlay(AppColors.stroke)
+                    destination("Ollie’s Search", detail: "Choose a sheep to look for", badge: "\(searchableCount) to discover", icon: "map.fill", tourTarget: .farmSearch) { TrailBoardView() }
+                    Divider().overlay(AppColors.stroke)
+                    destination("Farm Shop", detail: "Clothes, decorations & more room", badge: "\(state.woolBalance) wool", icon: "storefront.fill", tourTarget: .farmShop) { FarmShopView() }
+                        .orientationTourTarget(.farmWool)
+                    Divider().overlay(AppColors.stroke)
+                    destination("Search Journal", detail: "Past arrivals & clues", badge: "\(state.discoveries.count) known · \(searchState.outcomes.count) entries", icon: "note.text") { TrailNotesArchiveView() }
                 }
             }
         }
-    }
-
-    private var destinationColumns: [GridItem] {
-        dynamicTypeSize.isAccessibilitySize
-            ? [GridItem(.flexible())]
-            : [GridItem(.flexible()), GridItem(.flexible())]
     }
 
     private func destination<Destination: View>(
@@ -432,47 +391,33 @@ struct FarmDashboardContent: View {
         badge: String,
         icon: String
     ) -> some View {
-        VStack(alignment: .leading, spacing: AppSpacing.xs) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(AppColors.grass)
-                Spacer(minLength: 0)
-                Text(badge)
-                    .font(pixelFont(.caption2))
-                    .foregroundStyle(AppColors.grass)
-                    .multilineTextAlignment(.trailing)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Text(title)
-                .font(AppTypography.headline)
-                .foregroundStyle(AppColors.ink)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(detail)
-                .font(AppTypography.caption)
-                .foregroundStyle(AppColors.secondaryText)
-                .fixedSize(horizontal: false, vertical: true)
-            Image(systemName: "arrow.right")
-                .font(.caption.weight(.bold))
+        HStack(alignment: .center, spacing: AppSpacing.sm) {
+            Image(systemName: icon)
+                .font(pixelFont(.headline))
                 .foregroundStyle(AppColors.grass)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                .frame(width: AppSpacing.xl)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                Text(title).font(AppTypography.headline).foregroundStyle(AppColors.ink)
+                Text(detail).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                Text(badge).font(pixelFont(.caption2)).foregroundStyle(AppColors.grass)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Image(systemName: "chevron.right")
+                .font(pixelFont(.caption))
+                .foregroundStyle(AppColors.muted)
+                .accessibilityHidden(true)
         }
-        .frame(maxWidth: .infinity, alignment: .topLeading)
-        .padding(AppSpacing.md)
-        .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.lg))
-        .overlay {
-            RoundedRectangle(cornerRadius: AppRadius.lg)
-                .stroke(AppColors.stroke.opacity(0.2), lineWidth: 1)
-        }
+        .multilineTextAlignment(.leading)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.vertical, AppSpacing.sm)
+        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+        .contentShape(Rectangle())
     }
 
     private var recentStory: some View {
-        PixelCard {
+        DisclosureGroup("Latest on the Farm") {
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("RECENT EVENTS")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
                 if let transaction = state.transactions.last {
                     Text(storyTitle(for: transaction))
                         .font(AppTypography.headline)
@@ -494,7 +439,11 @@ struct FarmDashboardContent: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, AppSpacing.sm)
         }
+        .font(AppTypography.caption)
+        .tint(AppColors.grass)
+        .padding(.vertical, AppSpacing.xs)
     }
 
     private func fallbackStoryTitle(for sheep: FlockSheep) -> String {

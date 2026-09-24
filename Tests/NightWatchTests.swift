@@ -1,6 +1,33 @@
 import XCTest
 
 final class NightWatchTests: XCTestCase {
+    func testLateCompletionEndsAtScheduledBoundaryAndLegacyReceiptIsBounded() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        var run = FocusRun(plannedDurationSeconds: 9 * 3600, startedAt: start, state: .running, guardKind: .honorTimer)
+        run.actualDurationSeconds = 21 * 3600 + 12 * 60
+        run.endedAt = start.addingTimeInterval(run.actualDurationSeconds)
+        XCTAssertEqual(FocusRunRules.receiptDurationSeconds(for: run), 9 * 3600)
+        let completed = FocusRunRules.completedAtScheduledEnd(run)
+        XCTAssertEqual(completed.endedAt, start.addingTimeInterval(9 * 3600))
+        XCTAssertEqual(completed.actualDurationSeconds, 9 * 3600)
+        XCTAssertEqual(completed.state, .completed)
+        XCTAssertTrue(completed.completedSuccessfully)
+        XCTAssertEqual(FocusRunRules.completedAtScheduledEnd(completed), completed)
+    }
+
+    func testReceiptPreservesActualEarlyEndInsteadOfInflatedElapsedCounter() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        var run = FocusRun(plannedDurationSeconds: 9 * 3600, startedAt: start, state: .endedEarly, guardKind: .honorTimer)
+        run.endedAt = start.addingTimeInterval(12 * 60)
+        run.actualDurationSeconds = 9 * 3600
+        XCTAssertEqual(FocusRunRules.receiptDurationSeconds(for: run), 12 * 60)
+        run.endedAt = start.addingTimeInterval(-60)
+        XCTAssertEqual(FocusRunRules.receiptDurationSeconds(for: run), 0)
+        run.endedAt = nil
+        run.actualDurationSeconds = 5 * 60
+        XCTAssertEqual(FocusRunRules.receiptDurationSeconds(for: run), 5 * 60)
+    }
+
     func testPhaseTitlesNameRitualStateWithoutClaimingSleepOrScreenAvoidance() {
         XCTAssertEqual(NightWatchPhase.windDown.title, "Wind Down")
         XCTAssertEqual(NightWatchPhase.overnight.title, "Overnight")

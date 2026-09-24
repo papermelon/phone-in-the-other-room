@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: device registration is caller bound and rejects unknown or malformed fields
+ok 1 - device registration is caller bound and rejects unknown or malformed fields
+  ---
+  duration_ms: 10.120792
+  type: 'test'
+  ...
+# Subtest: notification contains only approved generic copy and opaque routing IDs
+ok 2 - notification contains only approved generic copy and opaque routing IDs
+  ---
+  duration_ms: 0.584542
+  type: 'test'
+  ...
+# Subtest: APNs alert uses the ordinary app topic and bounded retry policy without network
+ok 3 - APNs alert uses the ordinary app topic and bounded retry policy without network
+  ---
+  duration_ms: 42.610083
+  type: 'test'
+  ...
+# Subtest: bounded intentions and terminal revision accepted
+ok 4 - bounded intentions and terminal revision accepted
+  ---
+  duration_ms: 1.996625
+  type: 'test'
+  ...
+# Subtest: rejects private content, invalid timestamps, oversized intervals and mismatched terminal revision
+ok 5 - rejects private content, invalid timestamps, oversized intervals and mismatched terminal revision
+  ---
+  duration_ms: 0.508542
+  type: 'test'
+  ...
+# Subtest: separate versioned consent and revision required
+ok 6 - separate versioned consent and revision required
+  ---
+  duration_ms: 0.261375
+  type: 'test'
+  ...
+# Subtest: explicit public intentions require all v2 fields and strict bounds
+ok 7 - explicit public intentions require all v2 fields and strict bounds
+  ---
+  duration_ms: 0.243167
+  type: 'test'
+  ...
+# Subtest: buddy actions are scoped and reflections never ride an encouragement
+ok 8 - buddy actions are scoped and reflections never ride an encouragement
+  ---
+  duration_ms: 0.188458
+  type: 'test'
+  ...
+# Subtest: frozen bedtime is optional, normalized and may precede sharing start
+ok 9 - frozen bedtime is optional, normalized and may precede sharing start
+  ---
+  duration_ms: 0.286917
+  type: 'test'
+  ...
+# Subtest: a queued agreement cannot follow an account switch
+ok 10 - a queued agreement cannot follow an account switch
+  ---
+  duration_ms: 1.022167
+  type: 'test'
+  ...
+# Subtest: three audiences do not share through the read API
+ok 11 - three audiences do not share through the read API
+  ---
+  duration_ms: 2.511375
+  type: 'test'
+  ...
+# Subtest: public consent is explicitly versioned and profile fields are bounded
+ok 12 - public consent is explicitly versioned and profile fields are bounded
+  ---
+  duration_ms: 0.329417
+  type: 'test'
+  ...
+# Subtest: both kinds and terminal-before-start are accepted; private fields never ride a session
+ok 13 - both kinds and terminal-before-start are accepted; private fields never ride a session
+  ---
+  duration_ms: 12.22475
+  type: 'test'
+  ...
+# Subtest: Foundation timestamps normalize to the same bounded wire interval
+ok 14 - Foundation timestamps normalize to the same bounded wire interval
+  ---
+  duration_ms: 0.848625
+  type: 'test'
+  ...
+# Subtest: public actions cannot contain a chat message or private membership identity
+ok 15 - public actions cannot contain a chat message or private membership identity
+  ---
+  duration_ms: 0.175791
+  type: 'test'
+  ...
+# Subtest: accepts normalized placements for people, sheep and earned lantern
+ok 16 - accepts normalized placements for people, sheep and earned lantern
+  ---
+  duration_ms: 2.362125
+  type: 'test'
+  ...
+# Subtest: rejects invalid ground, future revisions and private payload fields
+ok 17 - rejects invalid ground, future revisions and private payload fields
+  ---
+  duration_ms: 0.304834
+  type: 'test'
+  ...
+# Subtest: visits require explicit consent and owned ID, no uploaded appearance
+ok 18 - visits require explicit consent and owned ID, no uploaded appearance
+  ---
+  duration_ms: 0.117208
+  type: 'test'
+  ...
+# Subtest: recall accepts only a bounded visit reference and stable retry key
+ok 19 - recall accepts only a bounded visit reference and stable retry key
+  ---
+  duration_ms: 0.438875
+  type: 'test'
+  ...
+# Subtest: ownership failures are actionable and never blindly retried
+ok 20 - ownership failures are actionable and never blindly retried
+  ---
+  duration_ms: 0.259458
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 469.521916

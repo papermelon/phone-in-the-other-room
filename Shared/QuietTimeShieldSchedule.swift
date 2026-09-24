@@ -124,6 +124,20 @@ struct QuietTimeShieldScheduleSnapshot: Codable, Equatable {
 }
 
 enum QuietTimeShieldSchedulePolicy {
+    /// The linked Morning already lies inside the parent's continuous
+    /// monitor. Replacing that monitor with a future Morning-only interval
+    /// would stop the overnight (and repeating automatic) callback.
+    static func coversMorning(
+        _ occurrence: MorningQuietOccurrence,
+        snapshot: QuietTimeShieldScheduleSnapshot,
+        parentRunIsActive: Bool
+    ) -> Bool {
+        guard parentRunIsActive, let parentID = occurrence.linkedWindDownRunID,
+              snapshot.runID == parentID,
+              let interval = snapshot.protectedSessionInterval else { return false }
+        return interval.start <= occurrence.scheduledStart && interval.end >= occurrence.scheduledEnd
+    }
+
     static func activeWindow(
         in snapshot: QuietTimeShieldScheduleSnapshot,
         at date: Date

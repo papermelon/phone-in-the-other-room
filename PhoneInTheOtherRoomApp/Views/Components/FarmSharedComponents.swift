@@ -136,11 +136,12 @@ struct FarmShopItemImage: View {
                 OllieFarmAvatar(accessoryItemID: item.id, size: size)
             } else if PaperFarmObjectView.supportedIDs.contains(item.id) {
                 PaperFarmObjectView(itemID: item.id).frame(width: size, height: size)
-            } else if item.effect == .shepherdOutfit || item.effect == .shepherdAccessory {
+            } else if item.effect == .shepherdOutfit || item.effect == .shepherdAccessory || item.effect == .shepherdShirt {
                 ShepherdAvatarView(profile: ShepherdProfile(
                     skinTone: .warm, hairStyle: .waves,
                     outfitItemID: item.effect == .shepherdOutfit ? item.id : nil,
-                    accessoryItemID: item.effect == .shepherdAccessory ? item.id : nil
+                    accessoryItemID: item.effect == .shepherdAccessory ? item.id : nil,
+                    shirtItemID: item.effect == .shepherdShirt ? item.id : nil
                 ), size: size)
             } else {
                 FarmCatalogAssetImage(
@@ -211,6 +212,7 @@ struct OllieFarmAvatar: View {
     let accessoryItemID: String?
     var size: CGFloat = 72
     var motionEnabled = false
+    var onPoseChanged: (String) -> Void = { _ in }
     @State private var actionCapabilities: [OllieCompanionAction: Bool] = [:]
     @State private var capabilityRevision = 0
 
@@ -226,7 +228,8 @@ struct OllieFarmAvatar: View {
                 accessoryItemID: renderedAccessoryItemID,
                 size: size,
                 actionCapabilities: $actionCapabilities,
-                capabilityRevision: $capabilityRevision
+                capabilityRevision: $capabilityRevision,
+                onSpriteChanged: { onPoseChanged($0 ?? NightJourneyAssets.ollieHomeIdleFrames[0]) }
             ) {
                 OllieDressedSprite(assetName: NightJourneyAssets.ollieHomeIdleFrames[0],
                                    accessoryItemID: renderedAccessoryItemID)
@@ -246,6 +249,9 @@ struct OllieFarmAvatar: View {
 
     private var animationSchedule: OllieCompanionAnimationSchedule {
         #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("--fetch-resting") {
+            return .init(segments: [.init(.resting, duration: 60)])
+        }
         return ScreenbookOllieMotionReview.configuration?.schedule ?? .gentle
         #else
         return .gentle
@@ -365,6 +371,36 @@ extension View {
             Button("OK") { viewModel.clearFarmActionMessage() }
         } message: {
             Text(viewModel.farmActionMessage ?? "")
+        }
+    }
+}
+
+
+struct OllieCoatPicker: View {
+    let equipment: FarmEquipment
+    let onSelect: (OllieCoatStyle) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+            Text("OLLIE’S COAT").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+            Text("Same Ollie, a little more fluff. His accessories stay on.")
+                .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            ForEach(OllieCoatStyle.allCases.filter { $0 == .classic || OllieCoatAvailability.fuller }) { coat in
+                let selected = equipment.ollieCoat == coat
+                Button { onSelect(coat) } label: {
+                    HStack(spacing: AppSpacing.sm) {
+                        OllieDressedSprite(assetName: NightJourneyAssets.ollieHomeIdleFrames[0],
+                            accessoryItemID: equipment.ollieAccessoryItemID)
+                            .environment(\.ollieCoat, coat).frame(width: 64, height: 64)
+                        Text(coat.title).font(AppTypography.body)
+                        Spacer(minLength: 0)
+                        if selected { Image(systemName: "checkmark") }
+                    }.frame(maxWidth: .infinity, minHeight: 64)
+                }
+                .buttonStyle(PixelChipButtonStyle(isSelected: selected))
+                .accessibilityLabel(coat.title)
+                .accessibilityAddTraits(selected ? .isSelected : [])
+            }
         }
     }
 }

@@ -189,8 +189,8 @@ enum WindDownRoutineStepKind: String, Codable, CaseIterable, Hashable {
     case custom
 }
 
-/// A private invitation in the Wind Down sequence. The model intentionally has
-/// no completion field: choosing an idea is not a promise that it happened.
+/// Immutable activity invitations. Optional session checks are stored separately
+/// in PersonalShieldSession; choosing an activity never checks it automatically.
 struct WindDownRoutineStep: Codable, Equatable, Identifiable, Hashable {
     static let maximumEveningCount = 3
     static let maximumMorningCount = 2
@@ -699,15 +699,20 @@ struct NightWatchPlan: Codable, Equatable {
     var usesSmallerRoutine: Bool
     /// Matches one next-start choice so an admitted-run replay cannot consume a later choice.
     var smallerRoutineSelectionID: UUID?
+    var campfirePartyIDs: [UUID]? = nil
+    var campfireIntentions: [CampfireSharedIntention]? = nil
     var campfireActivity: CampfireActivity? = nil
     /// Captured locally at admission/scheduling; never part of public presence.
     var campfireOwnerID: UUID? = nil
+    var campfireVisibility: CampfireVisibility? = nil
+    var publicCampfireAgreementID: UUID? = nil
 
     private enum CodingKeys: String, CodingKey {
         case intendedBedtime, wakeTime, protectedUntil, windDownMinutes, morningQuietMinutes
         case eveningActivity, morningActivity, eveningCueText, morningCueText
         case eveningRoutine, morningRoutine, role, localDateAnchor
-        case phonePlacement, usesSmallerRoutine, smallerRoutineSelectionID, campfireActivity, campfireOwnerID
+        case phonePlacement, usesSmallerRoutine, smallerRoutineSelectionID, campfireActivity, campfireOwnerID, campfireIntentions, campfirePartyIDs
+        case campfireVisibility, publicCampfireAgreementID
     }
 
     init(
@@ -803,7 +808,11 @@ struct NightWatchPlan: Codable, Equatable {
         )
         phonePlacement = try container.decodeIfPresent(WindDownPhonePlacement.self, forKey: .phonePlacement) ?? .anotherRoom
         usesSmallerRoutine = try container.decodeIfPresent(Bool.self, forKey: .usesSmallerRoutine) ?? false
+        campfirePartyIDs = try container.decodeIfPresent([UUID].self, forKey: .campfirePartyIDs)
+        campfireIntentions = try container.decodeIfPresent([CampfireSharedIntention].self, forKey: .campfireIntentions)
         campfireOwnerID = try container.decodeIfPresent(UUID.self, forKey: .campfireOwnerID)
+        campfireVisibility = try container.decodeIfPresent(CampfireVisibility.self, forKey: .campfireVisibility)
+        publicCampfireAgreementID = try container.decodeIfPresent(UUID.self, forKey: .publicCampfireAgreementID)
         campfireActivity = try container.decodeIfPresent(CampfireActivity.self, forKey: .campfireActivity)
         smallerRoutineSelectionID = try container.decodeIfPresent(UUID.self, forKey: .smallerRoutineSelectionID)
     }

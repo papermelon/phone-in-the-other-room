@@ -1,0 +1,6 @@
+{
+  "APNS_ENVIRONMENT": true,
+  "APNS_HOST": true,
+  "APNS_ALERT_TOPIC": true,
+  "signingFieldsPresent": true
+}

@@ -1,0 +1,64 @@
+{
+  "ipa": "/tmp/counting-sheep-export53/Counting Sheep.ipa",
+  "bytes": 150288381,
+  "sha256": "10cedfb46c107eb912b5b9e64cf61329456a70155cf47f2a678effe895ad17eb",
+  "deep_strict_signature": "passed",
+  "bundles": [
+    {
+      "bundle": "com.ngawangchime.countingsheep",
+      "version": "1.0",
+      "build": "53",
+      "distribution_profile": true,
+      "get_task_allow": false,
+      "capabilities_match_profile": true
+    },
+    {
+      "bundle": "com.ngawangchime.countingsheep.ScreenTimeReport",
+      "version": "1.0",
+      "build": "53",
+      "distribution_profile": true,
+      "get_task_allow": false,
+      "capabilities_match_profile": true
+    },
+    {
+      "bundle": "com.ngawangchime.countingsheep.liveactivity",
+      "version": "1.0",
+      "build": "53",
+      "distribution_profile": true,
+      "get_task_allow": false,
+      "capabilities_match_profile": true
+    },
+    {
+      "bundle": "com.ngawangchime.countingsheep.ShieldAction",
+      "version": "1.0",
+      "build": "53",
+      "distribution_profile": true,
+      "get_task_allow": false,
+      "capabilities_match_profile": true
+    },
+    {
+      "bundle": "com.ngawangchime.countingsheep.DeviceActivityMonitor",
+      "version": "1.0",
+      "build": "53",
+      "distribution_profile": true,
+      "get_task_allow": false,
+      "capabilities_match_profile": true
+    },
+    {
+      "bundle": "com.ngawangchime.countingsheep.ShieldConfiguration",
+      "version": "1.0",
+      "build": "53",
+      "distribution_profile": true,
+      "get_task_allow": false,
+      "capabilities_match_profile": true
+    },
+    {
+      "bundle": "com.ngawangchime.countingsheep.watchkitapp",
+      "version": "1.0",
+      "build": "53",
+      "distribution_profile": true,
+      "get_task_allow": false,
+      "capabilities_match_profile": true
+    }
+  ]
+}

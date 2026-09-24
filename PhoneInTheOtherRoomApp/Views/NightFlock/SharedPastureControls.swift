@@ -34,11 +34,15 @@ struct SharedPastureSheepSheet: View {
                         ForEach(app.farmState.activeSheep) { sheep in
                             let visiting = social.visitingSheepIDs.contains(sheep.id)
                             Button { social.contributeSheep(sheep.id, partyID: partyID) } label: {
-                                HStack {
-                                    Text(sheep.displayName)
-                                    Spacer()
-                                    Text(visiting ? "Visiting" : "Send to visit")
-                                }.font(AppTypography.body).frame(minHeight: 48)
+                                HStack(alignment: .top, spacing: AppSpacing.sm) {
+                                    PixelAssetImage(name: SheepCatalog.definition(for: sheep.definitionID)?.assetName ?? AssetSlot.Sheep.common)
+                                        .frame(width: 52, height: 52).accessibilityHidden(true)
+                                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                                        Text(sheep.displayName).font(AppTypography.headline)
+                                        Text(visiting ? "Visiting" : "Send to visit").font(AppTypography.caption)
+                                    }.fixedSize(horizontal: false, vertical: true)
+                                    Spacer(minLength: 0)
+                                }.frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
                             }
                             .buttonStyle(PixelChipButtonStyle(isSelected: visiting))
                             .disabled(visiting || social.pastureSending.contains(partyID))
@@ -74,7 +78,7 @@ struct SharedPastureLanternSheet: View {
                     ProgressView(value: Double(min(lantern.contributions, lantern.requiredContributions)), total: Double(max(1, lantern.requiredContributions)))
                         .tint(AppColors.grass)
                     Text("\(min(lantern.contributions, lantern.requiredContributions)) of \(lantern.requiredContributions) contributions").font(AppTypography.body)
-                    Text("Your first completed Wind Down or Phone Away that earns a round grant counts once per party-day. Everyone’s contributions stay across rounds. Early endings keep their usual Farm credit.")
+                    Text("Your first completed Wind Down or Phone Away that earns a round grant counts once per party-day. Everyone’s contributions stay across rounds. Early endings keep their usual Farm progress.")
                         .font(AppTypography.body)
                     if lantern.isComplete { Text("Everyone can arrange the lantern in the shared meadow.").font(AppTypography.caption) }
                 } else {

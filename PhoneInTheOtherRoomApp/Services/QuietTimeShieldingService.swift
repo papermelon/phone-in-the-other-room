@@ -33,7 +33,7 @@ protocol QuietTimeShieldingProviding {
     @discardableResult
     func reconcile(for run: FocusRun?, at date: Date) -> QuietTimeShieldingOutcome
     @discardableResult
-    func reconcile(for occurrence: MorningQuietOccurrence, at date: Date) -> QuietTimeShieldingOutcome
+    func reconcile(for occurrence: MorningQuietOccurrence, at date: Date, parentRunIsActive: Bool) -> QuietTimeShieldingOutcome
     func clear()
     func clear(occurrenceID: UUID)
     @discardableResult
@@ -41,6 +41,7 @@ protocol QuietTimeShieldingProviding {
     func cancelAutomaticSchedule()
     func resetLocalState()
     func protectionSummary(for run: FocusRun, at date: Date) -> QuietTimeShieldProtectionSummary
+    func grantBriefAccess(for projection: PersonalShieldProjection, at date: Date) -> Bool
     func briefAccessUseCount(for run: FocusRun) -> Int
     func briefAccessIntervals(for run: FocusRun) -> [DateInterval]
     func briefAccessTrackerSummary(for run: FocusRun) -> QuietTimeBriefAccessTrackerSummary
@@ -48,6 +49,7 @@ protocol QuietTimeShieldingProviding {
 }
 
 extension QuietTimeShieldingProviding {
+    func grantBriefAccess(for projection: PersonalShieldProjection, at date: Date) -> Bool { false }
     func briefAccessIntervals(for run: FocusRun) -> [DateInterval] { run.briefAccessIntervals }
 
     @discardableResult
@@ -170,6 +172,65 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             && !afterPreflight.accepts(occurrenceID: preflightID, revision: 1, epoch: 1)
             && service.loadSchedule()?.runID == unrelatedID
     }
+
+    static func debugBriefAccessMonitorProbe() -> Bool {
+        let suite = "ollie.shielding.brief-access-probe.\(UUID())"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let unrelated = DeviceActivityName("unrelated.probe")
+        var active: Set<DeviceActivityName> = [unrelated, .ollieBriefAccessRestore]
+        var starts = 0
+        let client = MonitoringClient(activities: { Array(active) }, start: { name, _ in
+            active.insert(name); starts += 1
+        }, stop: { active.subtract($0) })
+        let service = QuietTimeShieldingService(defaults: defaults, sharedDefaults: defaults, monitoring: client)
+        let now = Date()
+        for index in 0..<6 {
+            service.stopBriefAccessRestore()
+            let date = now.addingTimeInterval(Double(index) * 301)
+            let grant = QuietTimeBriefAccessGrant(runID: UUID(), scheduleRevision: 1,
+                requestedAt: date, expiresAt: date.addingTimeInterval(300))
+            guard active == [unrelated], service.ensureBriefAccessRestoreScheduled(for: grant, at: date),
+                  service.ensureBriefAccessRestoreScheduled(for: grant, at: date), starts == index + 1,
+                  active == [unrelated, DeviceActivityName(grant.restoreActivityIdentifier)] else { return false }
+        }
+        service.stopBriefAccessRestore()
+        return active == [unrelated]
+    }
+
+    static func debugAutomaticMonitorProbe() -> Bool {
+        let suite = "ollie.shielding.automatic-probe.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let now = Date()
+        let start = now.addingTimeInterval(3600)
+        let automatic = AutomaticWindDownSchedule(startedAt: start,
+            plan: .additionalQuiet(start: start, end: start.addingTimeInterval(1800)))
+        let snapshot = QuietTimeShieldScheduleBuilder.snapshot(for: automatic, revision: 1, updatedAt: now)
+        let orphan = QuietTimeShieldRegistryActivity(occurrenceID: UUID(), revision: 1, epoch: 1).deviceActivityName
+        let unrelated = DeviceActivityName("unrelated.probe")
+        var active: Set<DeviceActivityName> = [orphan, unrelated]
+        var starts = 0
+        let client = MonitoringClient(activities: { Array(active) }, start: { name, _ in
+            active.insert(name)
+            starts += 1
+        }, stop: { names in active.subtract(names) })
+        let service = QuietTimeShieldingService(defaults: defaults, sharedDefaults: defaults, monitoring: client)
+        do {
+            try service.installMonitoringIfNeeded(snapshot, at: now, preservingActiveBarrier: true)
+            guard let installed = service.loadSchedule() else { return false }
+            let initialStarts = starts
+            try service.installMonitoringIfNeeded(installed, at: now, preservingActiveBarrier: true)
+            guard starts == initialStarts, !active.contains(orphan), active.contains(unrelated) else { return false }
+            let registryNames = active.filter { QuietTimeShieldRegistryActivity(deviceActivityName: $0) != nil }
+            active.subtract(registryNames)
+            try service.installMonitoringIfNeeded(installed, at: now, preservingActiveBarrier: true)
+            guard starts > initialStarts else { return false }
+            service.tombstoneCurrentRegistry(at: now)
+            return !active.contains { QuietTimeShieldRegistryActivity(deviceActivityName: $0) != nil }
+                && active.contains(unrelated)
+        } catch { return false }
+    }
 #endif
 
     @discardableResult
@@ -194,10 +255,10 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             return .noSelection
         }
 
-        if let automaticSnapshot = loadSchedule(), automaticSnapshot.repeatsDaily {
+        if let automaticSnapshot = loadSchedule(), automaticSnapshot.repeatsDaily,
+           automaticSnapshot.runID == run.id {
             prepareBriefAccessState(for: automaticSnapshot, at: date)
             switch reconcileBriefAccess(
-                for: run,
                 snapshot: automaticSnapshot,
                 at: date,
                 currentRunID: automaticSnapshot.runID
@@ -231,7 +292,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
 
         prepareBriefAccessState(for: snapshot, at: date)
 
-        switch reconcileBriefAccess(for: run, snapshot: snapshot, at: date) {
+        switch reconcileBriefAccess(snapshot: snapshot, at: date) {
         case .active:
             return .scheduled
         case .restored, .none:
@@ -275,11 +336,12 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         let revision = existing?.runID == schedule.id
             ? (existing?.revision ?? 0) + 1
             : 1
-        let snapshot = QuietTimeShieldScheduleBuilder.snapshot(
+        let proposed = QuietTimeShieldScheduleBuilder.snapshot(
             for: schedule,
             revision: revision,
             updatedAt: date
         )
+        let snapshot = existing.flatMap { $0.hasSameWindows(as: proposed) ? $0 : nil } ?? proposed
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
         let selection = selections.load(.bedtime)
         guard !selection.phoneOtherIsEmpty else {
@@ -287,6 +349,9 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             return .noSelection
         }
         do {
+            if let existing, existing.runID != snapshot.runID {
+                tombstoneCurrentRegistry(at: date)
+            }
             try installMonitoringIfNeeded(snapshot, at: date)
             prepareBriefAccessState(for: snapshot, at: date)
             // Scheduling a future repeating window must never leave a shield from
@@ -308,6 +373,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     }
 
     func clear() {
+        if let sharedDefaults { PersonalShieldStorage.clear(from: sharedDefaults) }
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(ManagedSettings)
         let clearedAt = Date()
         let clearedSnapshot = loadSchedule()
@@ -328,7 +394,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
                 at: clearedAt
             )
         }
-        activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+        stopBriefAccessRestore()
         archiveBriefAccessState(at: clearedAt)
         guard !preserveAutomaticSchedule else { return }
         activityCenter.stopMonitoring([
@@ -346,6 +412,9 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     /// must be removed without clearing a deferred or automatic Wind Down.
     func clear(occurrenceID: UUID) {
         guard let sharedDefaults else { return }
+        if PersonalShieldStorage.projection(from: sharedDefaults)?.scheduleID == occurrenceID {
+            PersonalShieldStorage.clear(from: sharedDefaults)
+        }
         var registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults)
         let originalRegistry = registry
         registry.prune(at: Date())
@@ -413,13 +482,14 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     @discardableResult
     func reconcile(
         for occurrence: MorningQuietOccurrence,
-        at date: Date = Date()
+        at date: Date = Date(),
+        parentRunIsActive: Bool = false
     ) -> QuietTimeShieldingOutcome {
         guard occurrence.outcome == .active || occurrence.outcome == .scheduled else {
             clear(occurrenceID: occurrence.id)
             return .cleared
         }
-        let snapshot = QuietTimeShieldScheduleSnapshot(
+        let proposed = QuietTimeShieldScheduleSnapshot(
             runID: occurrence.id,
             revision: 1,
             role: .screenFreeMorning,
@@ -430,15 +500,26 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             ),
             updatedAt: date
         )
+        let existing = loadSchedule()
+        let snapshot = existing.flatMap { $0.hasSameWindows(as: proposed) ? $0 : nil } ?? proposed
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
         let selection = selections.load(.bedtime)
         guard !selection.phoneOtherIsEmpty else { return .noSelection }
+        if let parent = existing,
+           QuietTimeShieldSchedulePolicy.coversMorning(occurrence, snapshot: parent, parentRunIsActive: parentRunIsActive),
+           monitoring.activities().contains(.ollieProtectedSession) {
+            // Keep the parent's continuous monitor and Brief Access identity.
+            // The coordinator reconciles its current shield separately.
+            return .scheduled
+        }
         do {
             try installMonitoringIfNeeded(
                 snapshot,
                 at: date,
                 preservingActiveBarrier: occurrence.outcome == .active
             )
+            prepareBriefAccessState(for: snapshot, at: date)
+            if case .active = reconcileBriefAccess(snapshot: snapshot, at: date) { return .scheduled }
             if occurrence.outcome == .active, occurrence.scheduledStart <= date, date < occurrence.scheduledEnd {
                 apply(selection)
                 writeStatus(for: snapshot, status: .applied, window: .morningQuiet, at: date)
@@ -457,7 +538,9 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     }
 
     func cancelAutomaticSchedule() {
+        if let sharedDefaults { PersonalShieldStorage.clear(from: sharedDefaults) }
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(ManagedSettings)
+        stopBriefAccessRestore()
         activityCenter.stopMonitoring([
             .ollieProtectedSession,
             .ollieWindDown,
@@ -476,7 +559,9 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     /// is intentionally separate from `clear()`, which preserves a repeating
     /// automatic schedule during ordinary run reconciliation.
     func resetLocalState() {
+        if let sharedDefaults { PersonalShieldStorage.clear(from: sharedDefaults) }
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
+        stopBriefAccessRestore()
         activityCenter.stopMonitoring([
             .ollieProtectedSession,
             .ollieWindDown,
@@ -491,6 +576,63 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.statusHistoryKey)
         sharedDefaults?.removeObject(forKey: QuietTimeShieldSharedStorage.briefAccessStateKey)
         sharedDefaults?.removeObject(forKey: QuietTimeShieldPresentationStorage.purposeCueKey)
+    }
+
+    /// Called only after the parent app consumes a fresh phrase confirmation.
+    /// Reuse the existing ledger and restore monitor; never lift before scheduling.
+    func grantBriefAccess(for projection: PersonalShieldProjection, at date: Date) -> Bool {
+#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
+        guard let sharedDefaults,
+              PersonalShieldStorage.projection(from: sharedDefaults) == projection,
+              let presentation = QuietTimeShieldPresentationSnapshot.load(from: sharedDefaults),
+              projection.matches(presentation, at: date),
+              AuthorizationCenter.shared.authorizationStatus == .approved,
+              let snapshot = loadSchedule(), snapshot.isEligible(at: date),
+              let identity = briefAccessIdentity(for: snapshot),
+              identity.revision == projection.revision, identity.epoch == projection.epoch,
+              identity.runID == projection.scheduleID else { return false }
+        let selection = selections.load(.bedtime)
+        guard !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else { return false }
+        prepareBriefAccessState(for: snapshot, at: date)
+        guard var state = loadBriefAccessState() else { return false }
+        if let active = state.activeGrant {
+            guard active.expiresAt <= date else { return false }
+            stopBriefAccessRestore()
+            state.archiveCurrentRun(at: date)
+        }
+        guard let grant = QuietTimeBriefAccessPolicy.makeGrant(runID: identity.runID,
+                scheduleRevision: identity.revision, requestedAt: date, schedule: snapshot,
+                occurrenceID: identity.occurrenceID, scheduleEpoch: identity.epoch),
+              state.propose(grant, at: date) else { return false }
+        saveBriefAccessState(state)
+        guard loadBriefAccessState() == state,
+              ensureBriefAccessRestoreScheduled(for: grant, at: date) else {
+            state.rollback(nonce: grant.nonce, at: date)
+            saveBriefAccessState(state)
+            stopBriefAccessRestore()
+            return false
+        }
+        guard let latestSnapshot = loadSchedule(), let currentIdentity = briefAccessIdentity(for: latestSnapshot),
+              currentIdentity == identity, latestSnapshot.isEligible(at: Date()),
+              PersonalShieldStorage.projection(from: sharedDefaults) == projection,
+              var current = loadBriefAccessState(),
+              QuietTimeBriefAccessPolicy.canCommitScheduledGrant(state: current, grant: grant,
+                currentRunID: identity.runID, currentRevision: identity.revision,
+                currentOccurrenceID: identity.occurrenceID, currentEpoch: identity.epoch),
+              current.markScheduled(nonce: grant.nonce, at: date) else {
+            stopBriefAccessRestore()
+            return false
+        }
+        saveBriefAccessState(current)
+        guard loadBriefAccessState() == current else {
+            stopBriefAccessRestore()
+            return false
+        }
+        clearStore()
+        return true
+#else
+        return false
+#endif
     }
 
     func briefAccessIntervals(for run: FocusRun) -> [DateInterval] {
@@ -604,6 +746,15 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         guard let sharedDefaults,
               let snapshot = loadSchedule() else { return }
         var registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults)
+#if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
+        if let entry = registry.entry(for: snapshot.runID) {
+            monitoring.stop([QuietTimeShieldRegistryActivity(
+                occurrenceID: entry.occurrenceID,
+                revision: entry.revision,
+                epoch: entry.epoch
+            ).deviceActivityName])
+        }
+#endif
         registry.remove(occurrenceID: snapshot.runID, at: date)
         QuietTimeShieldScheduleRegistryStorage.save(registry, to: sharedDefaults)
     }
@@ -655,7 +806,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
                 || state.occurrenceID != identity.occurrenceID
                 || state.scheduleRevision != identity.revision
                 || state.scheduleEpoch != identity.epoch {
-                activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+                stopBriefAccessRestore()
                 state.carryingLedgerForward(
                     to: identity.runID,
                     occurrenceID: identity.occurrenceID,
@@ -677,14 +828,13 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
     }
 
     private func reconcileBriefAccess(
-        for run: FocusRun,
         snapshot: QuietTimeShieldScheduleSnapshot,
         at date: Date,
         currentRunID: UUID? = nil
     ) -> BriefAccessReconcileResult {
         guard let identity = briefAccessIdentity(for: snapshot) else {
             if loadBriefAccessState()?.activeGrant != nil {
-                activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+                stopBriefAccessRestore()
                 archiveBriefAccessState(at: date)
             }
             return .none
@@ -700,37 +850,43 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             at: date
         ) {
         case .noActiveGrant:
-            activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+            stopBriefAccessRestore()
             return .none
         case .discardStaleGrant:
             if state?.activeGrant != nil {
-                activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+                stopBriefAccessRestore()
                 archiveBriefAccessState(at: date)
             }
             return .none
         case .rejectPendingGrant:
             guard var state, let grant = state.activeGrant else {
-                activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+                stopBriefAccessRestore()
                 return .none
             }
             state.rejectPendingGrant(nonce: grant.nonce, at: date)
             saveBriefAccessState(state)
-            activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+            stopBriefAccessRestore()
             return .none
         case .keepShieldClear:
             guard let grant = state?.activeGrant,
                   ensureBriefAccessRestoreScheduled(for: grant, at: date) else {
-                activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+                stopBriefAccessRestore()
                 archiveBriefAccessState(at: date)
                 return .restored
             }
             clearStore()
             return .active
         case .restoreShield:
-            activityCenter.stopMonitoring([.ollieBriefAccessRestore])
+            stopBriefAccessRestore()
             archiveBriefAccessState(at: date)
             return .restored
         }
+    }
+
+    private func stopBriefAccessRestore() {
+        monitoring.stop(monitoring.activities().filter {
+            QuietTimeBriefAccessConstants.isRestoreActivity($0.rawValue)
+        })
     }
 
     private func ensureBriefAccessRestoreScheduled(
@@ -738,7 +894,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         at date: Date
     ) -> Bool {
         guard grant.expiresAt > date.addingTimeInterval(QuietTimeBriefAccessConstants.minimumSchedulingLead),
-              !activityCenter.activities.contains(.ollieBriefAccessRestore) else {
+              !monitoring.activities().contains(DeviceActivityName(grant.restoreActivityIdentifier)) else {
             return grant.expiresAt > date.addingTimeInterval(QuietTimeBriefAccessConstants.minimumSchedulingLead)
         }
         guard let restorePlan = QuietTimeBriefAccessRestorePlan.make(
@@ -752,7 +908,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             warningTime: restorePlan.warningTime
         )
         do {
-            try activityCenter.startMonitoring(.ollieBriefAccessRestore, during: schedule)
+            try monitoring.start(DeviceActivityName(grant.restoreActivityIdentifier), schedule)
             return true
         } catch {
             return false
@@ -796,8 +952,15 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
                 return window.activityName
             }
         )
+        let registeredActivities = Set(monitoring.activities())
+        let currentRegistry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults ?? .standard)
+        let registryActivity = currentRegistry.entry(for: snapshot.runID).map {
+            QuietTimeShieldRegistryActivity(occurrenceID: $0.occurrenceID,
+                revision: $0.revision, epoch: $0.epoch).deviceActivityName
+        }
         if loadSchedule() == snapshot,
-           expectedActivities.isSubset(of: Set(monitoring.activities())) {
+           registryActivity.map({ registeredActivities.contains($0) }) == true,
+           expectedActivities.isSubset(of: registeredActivities) {
             return
         }
 
@@ -815,6 +978,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         }
 
         if !preservingActiveBarrier {
+            stopBriefAccessRestore()
             monitoring.stop([
                 .ollieProtectedSession,
                 .ollieWindDown,
@@ -838,6 +1002,17 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
             let registry = QuietTimeShieldScheduleRegistryStorage.load(
                 from: sharedDefaults ?? .standard
             )
+            let desiredNames = Set(registry.entries.map {
+                QuietTimeShieldRegistryActivity(occurrenceID: $0.occurrenceID,
+                    revision: $0.revision, epoch: $0.epoch).deviceActivityName
+            })
+            // Older cancellations tombstoned entries without unregistering
+            // their monitors. Retire those names before registering another
+            // window so repeated edits cannot exhaust DeviceActivity's quota.
+            monitoring.stop(monitoring.activities().filter {
+                QuietTimeShieldRegistryActivity(deviceActivityName: $0) != nil
+                    && !desiredNames.contains($0)
+            })
             if let entry = registry.entry(for: snapshot.runID) {
                 var presentationSnapshot = snapshot
                 presentationSnapshot.registryRevision = entry.revision

@@ -20,6 +20,23 @@ struct SlumberPartyV4PartyDetailView: View {
     @State private var showsVisitPicker = false
     @State private var showsLantern = false
     @State private var showsCampfire = false
+    @State private var selectedCampfireBuddy: CampfireBuddySession?
+    @State private var joinsAfterBuddyDismissal: NightFlockV4ActivityKind?
+
+    @ViewBuilder
+    private func campfireCard(_ session: CampfireSession, party: NightFlockV4PartyDetail, date: Date) -> some View {
+        if let buddy = party.pasture?.campfire?.buddies?.sessions.first(where: { $0.sourceID == session.id && $0.memberID == session.memberID }) {
+            CampfireBuddyCard(session: buddy, party: party, active: true, now: date, canJoin: !appViewModel.isRunning,
+                isSending: viewModel.pastureSending.contains(party.summary.partyID),
+                onJoin: { _ = appViewModel.requestCampfireSessionStart(session.kind) },
+                onAction: { action, outcome, note in
+                    viewModel.sendCampfireAction(action, session: buddy, partyID: party.summary.partyID, outcome: outcome, reflection: note)
+                })
+        } else {
+            Text("\(party.memberships.first { $0.memberID == session.memberID }?.profile.displayName ?? "Member") · \(session.title)")
+                .font(AppTypography.body).padding(.vertical, AppSpacing.sm)
+        }
+    }
 
     private var sharedHabitsHealthActionTitle: String? {
         switch appViewModel.healthSleepConnectionPresentation {
@@ -56,12 +73,7 @@ struct SlumberPartyV4PartyDetailView: View {
                         onRetry: failure.canRetry ? { viewModel.selectSlumberParty(summary.partyID) } : nil
                     )
                 } else {
-                    NightFlockStatusCard(
-                        symbol: "moon.stars.fill",
-                        title: "Opening this Slumber Party…",
-                        detail: "Ollie is bringing the group’s shared record into view."
-                    )
-                    .redacted(reason: .placeholder)
+                    SheepLoadingView("Opening your Slumber Party…")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -98,6 +110,32 @@ struct SlumberPartyV4PartyDetailView: View {
                 SharedFarmVisitPickerView(store: sharedFarmPrototype).environmentObject(appViewModel)
             } else {
                 SharedPastureSheepSheet(social: viewModel, partyID: summary.partyID).environmentObject(appViewModel)
+            }
+        }
+        .sheet(item: $selectedCampfireBuddy, onDismiss: {
+            if let kind = joinsAfterBuddyDismissal {
+                joinsAfterBuddyDismissal = nil
+                _ = appViewModel.requestCampfireSessionStart(kind)
+            }
+        }) { selected in
+            NavigationStack {
+                ScrollView {
+                    if viewModel.v4ObservedPartyObservationState(for: summary.partyID).permitsLivePresence,
+                       let party = viewModel.v4ObservedPartyDetail(for: summary.partyID),
+                       let latest = party.pasture?.campfire?.buddies?.sessions.first(where: { $0.id == selected.id }) {
+                        SlumberPartyV4PresentationClock(party: party) { date in
+                        CampfireBuddyCard(session: latest, party: party,
+                            active: !latest.ended && latest.expiresAt > date, now: date, canJoin: !appViewModel.isRunning,
+                            isSending: viewModel.pastureSending.contains(summary.partyID),
+                            onJoin: { joinsAfterBuddyDismissal = latest.kind; selectedCampfireBuddy = nil },
+                            onAction: { action, outcome, note in
+                                viewModel.sendCampfireAction(action, session: latest, partyID: summary.partyID, outcome: outcome, reflection: note)
+                            }).padding()
+                        }
+                        SharedPastureSaveFeedback(social: viewModel, partyID: summary.partyID).padding()
+                    } else { Text("This shared intention isn’t available right now. Refresh the party to check again.").padding() }
+                }.background(AppColors.paper).navigationTitle("At the campfire")
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { selectedCampfireBuddy = nil } } }
             }
         }
         .sheet(isPresented: $showsCampfire) { CampfireSharingSheet(social: viewModel, partyID: summary.partyID) }
@@ -172,14 +210,16 @@ struct SlumberPartyV4PartyDetailView: View {
             listState: viewModel.v4ListState,
             partyState: sharedHabitsState
         )
-        if appViewModel.isRunning {
-            Button {
-                NotificationCenter.default.post(name: .countingSheepShowHome, object: nil)
-            } label: { Label("Back to your running session", systemImage: "moon.stars") }
-                .buttonStyle(PixelChipButtonStyle(isSelected: false)).frame(minHeight: 44)
-        }
         observationNotice(for: party, at: date)
         updateNotice
+        if viewModel.supportsSharedHabits {
+            if sharedHabitsState?.agreement != nil && !viewModel.requiresSharedNightPlanAgreement(partyID: summary.partyID) {
+                Label("Agreement confirmed", systemImage: "checkmark.shield.fill")
+                    .font(AppTypography.caption.weight(.semibold)).foregroundStyle(AppColors.grass)
+            } else {
+                sharedHabitsSection(for: party)
+            }
+        }
         if let sharedFarmPrototype {
             SlumberPartySharedMeadowView(
                 party: party, showsSocialAvatar: showsSocialAvatar, store: sharedFarmPrototype,
@@ -206,18 +246,26 @@ struct SlumberPartyV4PartyDetailView: View {
                 showsMemberUpdates = true
             }
         } else {
-            SlumberPartyPastureView(party: party, visits: party.pasture?.isSupported == true ? party.pasture?.visits ?? [] : [],
-                arrangement: party.pasture?.isSupported == true ? party.pasture?.arrangement : nil,
-                lantern: party.pasture?.isSupported == true ? party.pasture?.lantern : nil, canArrange: party.pasture?.isSupported == true && !viewModel.pastureSending.contains(party.summary.partyID),
-                isQuiet: appViewModel.isRunning,
-                statusIsFresh: !viewModel.v4ObservedPartyObservationState(for: party.summary.partyID).showsConnectionWarning,
-                onMove: { viewModel.movePasture(partyID: party.summary.partyID, arrangement: $0) },
-                onSelect: { memberID in
-                    selectedFarmMember = memberID; selectedFarmActivity = nil; showsMemberUpdates = true
-                }, onSheep: { showsVisitPicker = true }, onImprovement: { showsLantern = true },
-                onCampfire: { showsCampfire = true }, now: date)
-                .id(viewModel.pastureRefreshTokens[party.summary.partyID, default: 0])
+            groupDetailsSection(party)
+            Button {
+                NotificationCenter.default.post(name: .countingSheepShowCampfire, object: party.summary.partyID)
+            } label: {
+                Label("Visit our Campfire", systemImage: "flame")
+                    .font(AppTypography.headline).frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+            }.buttonStyle(PixelChipButtonStyle(isSelected: false))
+                .accessibilityHint("Opens Campfire with this party selected. Your sharing choice stays the same.")
+            DisclosureGroup("Shared meadow") {
+                SlumberPartyPastureView(party: party, visits: party.pasture?.visits ?? [],
+                    arrangement: party.pasture?.arrangement, lantern: party.pasture?.lantern,
+                    canArrange: party.pasture?.isSupported == true && !viewModel.pastureSending.contains(party.summary.partyID),
+                    isQuiet: appViewModel.isRunning,
+                    onMove: { viewModel.movePasture(partyID: party.summary.partyID, arrangement: $0) },
+                    onSelect: { memberID in selectedFarmMember = memberID; selectedFarmActivity = nil; showsMemberUpdates = true },
+                    onSheep: { showsVisitPicker = true }, onImprovement: { showsLantern = true },
+                    refreshRevision: viewModel.pastureRefreshTokens[party.summary.partyID, default: 0], now: date, meadowOnly: true)
+            }.font(AppTypography.headline).tint(AppColors.grass)
             SharedPastureSaveFeedback(social: viewModel, partyID: party.summary.partyID)
+            CampfireFollowThrough(social: viewModel, party: party, now: date)
             SlumberPartyReceivedCheersSection(party: party) { memberID, activityID in
                 selectedFarmMember = memberID
                 selectedFarmActivity = activityID
@@ -236,7 +284,7 @@ struct SlumberPartyV4PartyDetailView: View {
             }
             DisclosureGroup("Habits and round progress", isExpanded: $showsMoreFromGroup) {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
-                    if viewModel.supportsSharedHabits { sharedHabitsSection(for: party) }
+                    if showsSharedHabits && !viewModel.requiresSharedNightPlanAgreement(partyID: summary.partyID) { sharedHabitsSection(for: party) }
                     roundProgressSection(presentation)
                 }
             }.font(AppTypography.body).tint(AppColors.grass)
@@ -270,10 +318,10 @@ struct SlumberPartyV4PartyDetailView: View {
                 )
             }
         }
-        if !party.summary.supportsMembershipSharing, viewModel.supportsSharedHabits {
+        if !party.summary.supportsMembershipSharing, showsSharedHabits, !viewModel.requiresSharedNightPlanAgreement(partyID: summary.partyID) {
             sharedHabitsSection(for: party)
         }
-        groupDetailsSection(party)
+        if sharedFarmPrototype != nil { groupDetailsSection(party) }
     }
 
     private func legacyPeopleSection(
@@ -362,7 +410,7 @@ struct SlumberPartyV4PartyDetailView: View {
     private func observationNotice(for party: NightFlockV4PartyDetail, at date: Date) -> some View {
         switch viewModel.v4ObservedPartyObservationState(for: party.summary.partyID) {
         case .refreshing:
-            EmptyView()
+            SheepLoadingView("Syncing live updates…")
         case .stale:
             if let failure = viewModel.partyRefreshFailures[party.summary.partyID] {
                 SlumberPartyV4UnavailableCard(
@@ -392,9 +440,16 @@ struct SlumberPartyV4PartyDetailView: View {
         }
         if case let .error(message) = viewModel.phase {
             SlumberPartyV4UnavailableCard(
-                title: viewModel.actionFailureTitle ?? "Slumber Party couldn’t complete this request",
+                title: viewModel.actionFailureTitle ?? "We couldn’t confirm that change",
                 detail: message,
-                requestID: viewModel.requestReference
+                requestID: viewModel.requestReference,
+                onRetry: {
+                    Task {
+                        _ = await viewModel.refreshState(showLoading: false)
+                        viewModel.refreshSelectedSlumberParty()
+                    }
+                },
+                retryTitle: "Refresh party"
             )
         }
     }
@@ -672,7 +727,7 @@ struct SlumberPartyV4PartyDetailView: View {
                         .foregroundStyle(AppColors.grass)
                         .accessibilityHidden(true)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("Group details")
+                        Text("Members and settings")
                             .font(AppTypography.headline)
                         Text("People, invitations, and group controls")
                             .font(AppTypography.caption)
@@ -701,40 +756,5 @@ struct SlumberPartyV4PartyDetailView: View {
 
     private func cheerSummary(_ cheers: [NightFlockV4CheerSummary]) -> String {
         cheers.map { "\(cheerTitle($0.cheer)): \($0.count)" }.joined(separator: " · ")
-    }
-}
-
-/// Re-renders at the next known status expiry. It intentionally does not make
-/// a network request, so an open screen can stop presenting a live state even
-/// when the app stays in the foreground.
-private struct SlumberPartyV4PresentationClock<Content: View>: View {
-    let party: NightFlockV4PartyDetail
-    let content: (Date) -> Content
-
-    init(
-        party: NightFlockV4PartyDetail,
-        @ViewBuilder content: @escaping (Date) -> Content
-    ) {
-        self.party = party
-        self.content = content
-    }
-
-    var body: some View {
-        TimelineView(.explicit(invalidationDates)) { context in
-            content(context.date)
-        }
-    }
-
-    private var invalidationDates: [Date] {
-        let now = Date()
-        // A status is current while `expiresAt > date`, so advance one small
-        // representable interval beyond the boundary rather than retaining it
-        // on an exactly-equal Timeline tick. Including `now` is essential:
-        // an explicit Timeline otherwise supplies its first scheduled future
-        // date as the initial context, which would make every live status look
-        // expired on first render.
-        return [now] + (party.pasture?.campfire?.sessions.map(\.expiresAt).filter { $0 > now } ?? []) + NightFlockV4Presentation
-            .displayInvalidationDates(in: party, at: now)
-            .map { $0.addingTimeInterval(0.001) }
     }
 }

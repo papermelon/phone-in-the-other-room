@@ -21,6 +21,7 @@ struct HomeWindDownSummary: View {
     var primaryWindDownPeriod: WindDownSchedulePeriod?
     var phoneAwayStartContext: WindDownStartContext? = nil
     var immediatePhoneAwayMinutes: Int? = nil
+    var phoneAwayPurpose: OfflinePurposeProfile = .defaultProfile
     var protectionPresentation: HomeProtectionStartPresentation
     var onPrimaryAction: () -> Void
     var onRepairProtection: () -> Void
@@ -92,30 +93,31 @@ struct HomeWindDownSummary: View {
                 title: primaryTitle(for: primaryStartAction),
                 subtitle: primarySubtitle(for: primaryStartAction),
                 icon: primaryIcon(for: primaryStartAction),
-                assetName: primaryAsset(for: primaryStartAction),
                 action: { perform(primaryStartAction) }
             )
         }
     }
 
     private var setupSummary: some View {
-        PixelCard {
-            VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Text("WIND DOWN")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                Text("Make a little room for quiet")
-                    .font(AppTypography.headline)
-                Text("Choose when your phone goes away and wakes up. You can add a few private ideas, too.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button("Plan", action: onSetup)
-                    .buttonStyle(PixelPrimaryButtonStyle())
-                    .frame(maxWidth: .infinity, minHeight: 44)
+        Button(action: onSetup) {
+            PixelCard {
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("Plan your Wind Down")
+                        .font(AppTypography.headline)
+                    Text("Choose your bedtime, wake time, and what you’d like to do before bed.")
+                        .font(AppTypography.caption)
+                        .foregroundStyle(AppColors.secondaryText)
+                    Label("Make a plan", systemImage: "chevron.right")
+                        .font(AppTypography.caption.weight(.semibold))
+                        .foregroundStyle(AppColors.grass)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize(horizontal: false, vertical: true)
             }
-            .accessibilityElement(children: .contain)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .multilineTextAlignment(.leading)
     }
 
     private var timingCard: some View {
@@ -296,45 +298,39 @@ struct HomeWindDownSummary: View {
 
     private func primaryEyebrow(for action: StartAction) -> String {
         switch action {
-        case .windDown: return timingHeading
-        case .scheduledPhoneAway, .immediatePhoneAway: return "PHONE AWAY"
+        case .windDown: return "TIME TO UNWIND"
+        case .scheduledPhoneAway, .immediatePhoneAway: return "TIME OFF YOUR PHONE"
         }
     }
 
     private func primaryTitle(for action: StartAction) -> String {
         switch action {
-        case .windDown: return "Put phone away"
-        case .scheduledPhoneAway, .immediatePhoneAway: return "Start now"
+        case .windDown: return "Start Wind Down"
+        case .scheduledPhoneAway, .immediatePhoneAway: return "Start Phone Away"
         }
     }
 
     private func primarySubtitle(for action: StartAction) -> String {
         switch action {
         case .windDown:
+            if !preferences.eveningRoutine.isEmpty {
+                return preferences.eveningRoutine.map(\.title).joined(separator: " · ")
+            }
             if let phoneWake = primaryWindDownPlan?.plan.protectedUntil {
-                return "Timer ends at \(OllieFormat.time(phoneWake))."
+                return "Put your phone away until \(OllieFormat.time(phoneWake))."
             }
             return "Begin tonight’s Wind Down."
         case let .scheduledPhoneAway(context):
-            return "Begin \(context.title). Make room beyond the screen."
+            return "\(context.title) · ends at \(OllieFormat.time(context.interval.end))"
         case let .immediatePhoneAway(minutes):
-            return "\(minutes) min for anything you value beyond the screen."
+            return "\(minutes) min · \(phoneAwayPurpose.inAppDisplayPhrase)"
         }
     }
 
     private func primaryIcon(for action: StartAction) -> String {
         switch action {
-        case .windDown: return "door.left.hand.open"
+        case .windDown: return "moon.stars.fill"
         case .scheduledPhoneAway, .immediatePhoneAway: return "timer"
-        }
-    }
-
-    private func primaryAsset(for action: StartAction) -> String? {
-        switch action {
-        case .windDown:
-            return AssetSlot.Home.door
-        case .scheduledPhoneAway, .immediatePhoneAway:
-            return nil
         }
     }
 

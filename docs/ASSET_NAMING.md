@@ -100,6 +100,39 @@ Keep Shop inventory artwork separate from production character rendering:
   should leave the owner/equipment state intact and show the base character or a code-native
   fallback.
 
+### Ollie neckwear fitting
+
+The six current Ollie garments use code-native paper artwork in `OllieDressedSprite`, with
+per-frame neck-left, neck-right and bib-tip landmarks in `OllieNeckwearPose`. The neckline
+follows the neck while the bib stays against the chest; a registered cut restores the original
+sprite's chin/ruff over the tucked-in cloth. The same canvas transform must place the base,
+cloth and occluding fur. Do not replace this with a single position/rotation shared by every
+Home frame, or stretch a separate clothing canvas to a non-square view.
+
+New colours/motifs can reuse a validated garment silhouette. Different silhouettes need
+their own fit and overlap review, including all Home/blink/tilt, run, settle/rest/rise and
+Farm-neutral frames. Keep texture attached to cloth coordinates. Use the production motion
+timings in previews; inspect at Home and small Farm/chase sizes, in both directions, against
+light and dark backgrounds. Reduce Motion must provide a stable fitted pose. Metadata
+coverage tests do not establish visual fit. Add a garment by choosing one of the existing
+fitted patterns (kerchief, collar, scarf or cape), rather than placing a Shop thumbnail over
+Ollie's sprite.
+
+### Expansion: coat packs and independent clothing
+
+The [22 September expansion study](plans/wardrobe-expansion-2026-09-22.md) defines candidate
+collections and their worn/placed destinations. A breed or longer coat changes Ollie's base
+silhouette across the complete production motion pack, with its own garment registration and
+ground contact. A generic neck overlay is not a coat-length asset. Review sit, run and rest
+masters before authoring the remaining frames; only complete, visually validated packs become
+selectable. The current Border Collie remains the fallback.
+
+Shepherd headwear and clothing already render independently. Extend this rule to new positions:
+tops, outerwear, bottoms, footwear, neckwear and carry items replace only their occupied slots.
+Coverage by another garment must not erase a selection. Author overlap for hair/hat, shirt/coat,
+collar/scarf and bag/arm combinations. Keep existing whole-outfit IDs compatible when introducing
+separate layers, and show a combined try-on using the current appearance before purchase.
+
 ## Recommended Sizes
 
 Initial target sizes:
@@ -196,3 +229,11 @@ icon_tab_stats
 icon_device_watch_connected
 icon_device_phone_away
 ```
+
+
+23 September first coat pack: `dog/dog_fuller_classic_home_idle_frame_01…06`,
+`dog/dog_fuller_classic_run_frame_01…06`, `dog/dog_fuller_ollie_motion_pose_02…11`,
+and `dog/dog_fuller_classic_farm_idle`. These are complete painted bases, not fur overlays.
+All exports are transparent 512×512. `OllieFullerCoatRegistration` records ground offsets and
+neck landmarks against those exports. A missing member disables the whole fuller pack.
+See [implementation and evidence](plans/wardrobe-layers-2026-09-23.md).

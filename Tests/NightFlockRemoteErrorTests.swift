@@ -2,12 +2,23 @@ import Foundation
 import XCTest
 
 final class NightFlockRemoteErrorTests: XCTestCase {
+    func testListFailureCopyDistinguishesServerOfflineTimeoutAndCachedState() {
+        let server = NightFlockRemoteError(statusCode: 500, code: .internalError, requestID: UUID().uuidString)
+        let initial = NightFlockRefreshFailure(listError: server, showingPrevious: false)
+        XCTAssertEqual(initial.title, "We couldn’t load your parties")
+        XCTAssertFalse(initial.detail.contains("connection"))
+        XCTAssertEqual(NightFlockRefreshFailure(listError: .network(reason: .notConnectedToInternet), showingPrevious: false).title, "You’re offline")
+        XCTAssertEqual(NightFlockRefreshFailure(listError: .network(reason: .timedOut), showingPrevious: false).title, "Your parties are taking longer to load")
+        XCTAssertEqual(NightFlockRefreshFailure(listError: server, showingPrevious: true).detail, "Showing the last update. Try again in a moment.")
+        XCTAssertEqual(NightFlockRefreshFailure.actionTitle(for: .createParty(name: "Family", timeZoneIdentifier: "UTC", idempotencyKey: "stable"), accepted: false, uncertain: true), "We couldn’t confirm that change")
+    }
+
     func testAcceptedCommandWithFailedReadIsNotPresentedAsAFailedMutation() {
         let command = NightFlockV4Command.renameParty(partyID: UUID(), name: "Family", idempotencyKey: "rename")
         XCTAssertEqual(NightFlockRefreshFailure.actionTitle(for: command, accepted: false),
                        "The party name couldn’t be changed")
         XCTAssertEqual(NightFlockRefreshFailure.actionTitle(for: command, accepted: true),
-                       "Your change was saved. The latest view couldn’t be loaded.")
+                       "Your change was saved")
         XCTAssertEqual(NightFlockRefreshFailure.actionTitle(
             for: .cheerMember(partyID: UUID(), memberID: UUID(), cheer: .warmWave, idempotencyKey: "cheer"),
             accepted: false), "Your cheer couldn’t be sent")
@@ -128,7 +139,7 @@ final class NightFlockRemoteErrorTests: XCTestCase {
         let data = Data((#"{"error":""# + secret + #""}"#).utf8)
         let error = NightFlockRemoteError.decode(statusCode: 500, data: data, headerRequestID: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb")
         XCTAssertEqual(error.code, .serviceUnavailable)
-        XCTAssertEqual(error.errorDescription, "Slumber Party is resting offline. Please try again.")
+        XCTAssertEqual(error.errorDescription, "Slumber Party is temporarily unavailable. Please try again in a moment.")
         XCTAssertFalse(error.errorDescription?.contains("apple-token") == true)
         XCTAssertFalse(error.errorDescription?.contains("selectedApps") == true)
     }
@@ -144,6 +155,15 @@ final class NightFlockRemoteErrorTests: XCTestCase {
         let server = NightFlockRemoteError.decode(statusCode: 503, data: Data(#"{"error":"retry","code":"service_unavailable"}"#.utf8))
         XCTAssertFalse(server.allowsSchemaFallback)
         XCTAssertTrue(server.retryable)
+    }
+
+    func testGatewayFailureRetainsOutgoingRequestIDWithoutAnEdgeEnvelope() {
+        let id = "6bb51f1b-a8f1-4014-afa9-0c15ca692cc5"
+        let error = NightFlockRemoteError.decode(statusCode: 504, data: Data("upstream timeout".utf8), headerRequestID: id)
+        XCTAssertEqual(error.requestID, id)
+        XCTAssertEqual(error.code, .serviceUnavailable)
+        XCTAssertTrue(error.retryable)
+        XCTAssertEqual(NightFlockRemoteError.network(requestID: id).requestID, id)
     }
 
     func testNetworkPolicyIsRetryable() {

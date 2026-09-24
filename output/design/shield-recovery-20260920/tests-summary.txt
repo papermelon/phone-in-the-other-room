@@ -1,0 +1,12 @@
+Test Suite 'All tests' passed at 2026-09-20 07:09:01.373.
+	 Executed 1082 tests, with 0 failures (0 unexpected) in 6.335 (8.311) seconds
+2026-09-20 07:09:01.823 xcodebuild[65485:6417455] [MT] IDETestOperationsObserverDebug: 39.206 elapsed -- Testing started completed.
+2026-09-20 07:09:01.823 xcodebuild[65485:6417455] [MT] IDETestOperationsObserverDebug: 0.000 sec, +0.000 sec -- start
+2026-09-20 07:09:01.823 xcodebuild[65485:6417455] [MT] IDETestOperationsObserverDebug: 39.206 sec, +39.206 sec -- end
+
+Test session results, code coverage, and logs:
+	/tmp/shield-recovery-final-20260920.xcresult
+
+** TEST SUCCEEDED **
+
+Testing started

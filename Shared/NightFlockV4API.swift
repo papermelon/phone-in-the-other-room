@@ -28,19 +28,22 @@ enum NightFlockV4ProfileSyncRules {
         local: CountingSheepUserProfile,
         server: CountingSheepUserProfile?,
         supportsSocialAvatar: Bool,
-        supportsHeadShape: Bool = false
+        supportsHeadShape: Bool = false,
+        supportsWardrobe: Bool = false
     ) -> NightFlockV4ProfileSyncPlan? {
         let localPresentation = wirePresentation(
             local.presentation,
             supportsSocialAvatar: supportsSocialAvatar,
-            supportsHeadShape: supportsHeadShape
+            supportsHeadShape: supportsHeadShape,
+            supportsWardrobe: supportsWardrobe
         )
         guard server == nil
                 || server?.displayName != local.displayName
                 || wirePresentation(
                     server?.presentation ?? .defaultValue,
                     supportsSocialAvatar: supportsSocialAvatar,
-                    supportsHeadShape: supportsHeadShape
+                    supportsHeadShape: supportsHeadShape,
+                    supportsWardrobe: supportsWardrobe
                 ) != localPresentation
         else { return nil }
 
@@ -75,10 +78,16 @@ enum NightFlockV4ProfileSyncRules {
     private static func wirePresentation(
         _ presentation: CountingSheepPublicPresentation,
         supportsSocialAvatar: Bool,
-        supportsHeadShape: Bool = false
+        supportsHeadShape: Bool = false,
+        supportsWardrobe: Bool = false
     ) -> CountingSheepPublicPresentation {
         var projected = presentation
         if !supportsHeadShape { projected.headShapeID = nil }
+        if !supportsWardrobe {
+            projected.shepherdShirtID = nil
+            projected.shepherdOuterwearID = nil
+            projected.ollieCoatID = nil
+        }
         if !supportsSocialAvatar {
             projected.avatarID = SocialAvatarRules.shepherdID
         }
@@ -120,7 +129,7 @@ struct NightFlockV4CommandRequest: Encodable, Equatable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, command, partyID, name, timeZoneIdentifier, expectedInviteID, inviteID, inviteCode
-        case headShapeID, expectedRevision, nameSelectionKind, displayName, skinToneID, hairStyleID, shepherdOutfitID, shepherdAccessoryID
+        case headShapeID, shepherdShirtID, shepherdOuterwearID, ollieCoatID, expectedRevision, nameSelectionKind, displayName, skinToneID, hairStyleID, shepherdOutfitID, shepherdAccessoryID
         case ollieOrnamentID, featuredSheepDefinitionID, pastureThemeID, avatarID, sourceEventID, kind, outcome, startedAt, endedAt
         case windDownMinutes, phoneAwayMinutes, statusRevision, status, revision, observedAt, roundID, cursor
         case reactionID, idempotencyKey, activityID, cheer, grantID, memberID, reason, sharingScope, statusID
@@ -153,6 +162,9 @@ struct NightFlockV4CommandRequest: Encodable, Equatable, Sendable {
         case let .updatePublicProfile(expectedRevision, nameSelectionKind, displayName, presentation, avatarID, key):
             try c.encode("updatePublicProfile", forKey: .command); try c.encode(expectedRevision, forKey: .expectedRevision); try c.encode(nameSelectionKind, forKey: .nameSelectionKind); try c.encode(displayName, forKey: .displayName)
             try c.encodeIfPresent(presentation.headShapeID, forKey: .headShapeID)
+            try c.encodeIfPresent(presentation.shepherdShirtID, forKey: .shepherdShirtID)
+            try c.encodeIfPresent(presentation.shepherdOuterwearID, forKey: .shepherdOuterwearID)
+            try c.encodeIfPresent(presentation.ollieCoatID, forKey: .ollieCoatID)
             try c.encode(presentation.skinToneID, forKey: .skinToneID); try c.encode(presentation.hairStyleID, forKey: .hairStyleID); try c.encode(presentation.shepherdOutfitID, forKey: .shepherdOutfitID); try c.encode(presentation.shepherdAccessoryID, forKey: .shepherdAccessoryID); try c.encode(presentation.ollieOrnamentID, forKey: .ollieOrnamentID); try c.encode(presentation.featuredSheepDefinitionID, forKey: .featuredSheepDefinitionID); try c.encode(presentation.pastureThemeID, forKey: .pastureThemeID); try c.encodeIfPresent(avatarID, forKey: .avatarID); try c.encode(key, forKey: .idempotencyKey)
         case let .publishActivity(record):
             let source = record.source
@@ -179,7 +191,9 @@ struct NightFlockV4ListStateResponse: Decodable, Equatable, Sendable {
     var parties: [NightFlockV4PartySummary]
     var profile: CountingSheepUserProfile?
     var grantInbox: [NightFlockV4GrantInboxItem]
+    var directInvitationsVersion: Int? = nil
     var profileHeadShapeVersion: Int? = nil
+    var profileWardrobeVersion: Int? = nil
     var profileAvatarVersion: Int?
     /// Absent keeps this version on the existing V4 contract. Shared habits
     /// must never be inferred from membership-stream capability alone.
@@ -189,7 +203,7 @@ struct NightFlockV4ListStateResponse: Decodable, Equatable, Sendable {
     var sharedRoutinePlansVersion: Int?
     var retainedSharedHabitParties: [NightFlockRetainedSharedHabitParty]
 
-    private enum CodingKeys: String, CodingKey { case schemaVersion, parties, profile, grantInbox, profileHeadShapeVersion, profileAvatarVersion, sharedHabitsVersion, sharedRoutinePlansVersion, retainedSharedHabitParties }
+    private enum CodingKeys: String, CodingKey { case schemaVersion, parties, profile, grantInbox, directInvitationsVersion, profileHeadShapeVersion, profileWardrobeVersion, profileAvatarVersion, sharedHabitsVersion, sharedRoutinePlansVersion, retainedSharedHabitParties }
 
     init(
         parties: [NightFlockV4PartySummary],
@@ -215,7 +229,9 @@ struct NightFlockV4ListStateResponse: Decodable, Equatable, Sendable {
         parties = try container.decodeIfPresent([NightFlockV4PartySummary].self, forKey: .parties) ?? []
         profile = try container.decodeIfPresent(CountingSheepUserProfile.self, forKey: .profile)
         grantInbox = try container.decodeIfPresent([NightFlockV4GrantInboxItem].self, forKey: .grantInbox) ?? []
+        directInvitationsVersion = try container.decodeIfPresent(Int.self, forKey: .directInvitationsVersion)
         profileHeadShapeVersion = try container.decodeIfPresent(Int.self, forKey: .profileHeadShapeVersion)
+        profileWardrobeVersion = try container.decodeIfPresent(Int.self, forKey: .profileWardrobeVersion)
         profileAvatarVersion = try container.decodeIfPresent(Int.self, forKey: .profileAvatarVersion)
         sharedHabitsVersion = try container.decodeIfPresent(Int.self, forKey: .sharedHabitsVersion)
         sharedRoutinePlansVersion = try container.decodeIfPresent(Int.self, forKey: .sharedRoutinePlansVersion)

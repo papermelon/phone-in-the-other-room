@@ -6,6 +6,8 @@ struct SlumberPartySharedHabitsConsentDisclosure: View {
     let partyName: String
     let includesSharedNightPlans: Bool
     var actionLead: String? = nil
+    var includesSharedHabits = true
+    var includesChosenCharacter = true
     var receiptIsPending = false
     var isSaving = false
     var isCheckingReceipt = false
@@ -17,52 +19,44 @@ struct SlumberPartySharedHabitsConsentDisclosure: View {
     var body: some View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                Label("SHARED HABITS AGREEMENT", systemImage: "person.2.badge.gearshape")
-                    .font(pixelFont(.caption))
-                    .foregroundStyle(AppColors.grass)
-                Text(agreementTitle)
-                    .font(AppTypography.headline)
-                Text(summaryDisclosure)
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("Wind Down and Phone Away summaries come from app-recorded entries on the member’s iPhone and are self-reported to Slumber Party. They are not independently verified. Sleep duration is derived only when Apple Health has an eligible record.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                Text("Leaving stops future sharing and group access. Earlier shared records may remain visible unless a separate removal request is accepted.")
-                    .font(AppTypography.caption)
-                    .foregroundStyle(AppColors.secondaryText)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button {
-                    showsMore.toggle()
-                } label: {
-                    HStack(spacing: AppSpacing.xs) {
-                        Text(showsMore ? "See less" : "See more")
-                        Image(systemName: showsMore ? "chevron.up" : "chevron.down")
-                    }
-                    .font(AppTypography.caption.weight(.semibold))
-                }
-                .frame(minHeight: 44)
-                .foregroundStyle(AppColors.grass)
-                .accessibilityValue(showsMore ? "Expanded" : "Collapsed")
-                .accessibilityIdentifier("slumberParty.sharedHabitsAgreement.seeMore")
-                .accessibilityHint("Shows what stays private and what happens when you leave.")
-                if showsMore {
-                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                        Text("Coverage shows the available nights behind a summary. Missing data is unavailable, not a missed habit.")
-                        if includesSharedNightPlans {
-                            Text("The group also receives a plan rounded to five minutes for your next seven local nights: Wind Down timing, bedtime and wake bookends for comparison, and ordered bundled routine ideas.")
-                            Text("App-recorded nightly results can include rounded start and terminal timing, outcome and minutes, protection evidence, and emergency-exit status. Missing evidence stays unknown. Ideas are planned context, never verified completion.")
-                            Text("Your recurrence rule, custom routine text, exact app identity, per-app use, raw Health samples, Screen Time tokens, and phone-bed credentials stay private.")
-                        } else {
-                            Text("Your recurrence rule, routine ideas and custom text, exact times, raw Health samples, app identity, per-app use, Screen Time tokens, and phone-bed credentials stay private.")
+                DisclosureGroup(isExpanded: $showsMore) {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("What members see").font(AppTypography.caption.weight(.semibold))
+                        Text("Members see your Shepherd name, \(includesChosenCharacter ? "chosen character and its curated look" : "curated Shepherd look, Ollie ornament, featured sheep and pasture theme"), party role, round participation, brief app status and fixed cheers.")
+                        Text("Wind Down and Phone Away entries are shared during seven-night rounds. Where supported, sharing starts when you join and continues between rounds. Group minutes are rounded.")
+                        if includesSharedHabits {
+                            Text(summaryDisclosure)
+                            Text("Sleep duration comes only from eligible Apple Health records. Coverage shows how many nights are available. Missing data is unknown, never a missed habit.")
                         }
-                        Text("Leaving stops future sharing and group access. Account and safety offers a separate request to remove your earlier shared records; Counting Sheep confirms that request separately.")
+                        Text("Entries and statuses are recorded on each member’s iPhone and self-reported to Slumber Party. They are not independently verified and do not prove sleep or continuous phone placement.")
+                        if includesSharedNightPlans {
+                            Text("Your next seven local nights include a plan rounded to five minutes: Wind Down timing, bedtime and wake bookends, and ordered bundled routine ideas. Nightly results can include rounded start and end times, outcome, minutes, protection evidence and emergency-exit status. Routine ideas are plans, never proof of completion.")
+                        }
+                        Text("What stays private").font(AppTypography.caption.weight(.semibold))
+                        Text("This agreement does not share your full Farm or wool, recurrence rule, exact schedule, custom purpose, routine or reflection text, selected apps or per-app use, Screen Time tokens or reports, raw Health samples, NFC or phone-bed credentials, or notification settings.")
+                        if !includesSharedNightPlans {
+                            Text("Routine ideas and planned times also stay private.")
+                        }
+                        Text("Leaving and removing records").font(AppTypography.caption.weight(.semibold))
+                        Text("Leaving stops future sharing and removes your group access. Earlier shared records may remain visible. You can separately request their removal in Account and safety; removal is confirmed by the service. Your local Wind Down and Farm remain on this iPhone.")
                     }
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, AppSpacing.sm)
+                } label: {
+                    Label("Terms of agreement", systemImage: "checkmark.shield")
+                        .font(AppTypography.headline)
+                        .foregroundStyle(AppColors.ink)
+                        .frame(minHeight: 44)
+                }
+                .tint(AppColors.grass)
+                .accessibilityIdentifier("slumberParty.terms")
+                if onConfirm != nil {
+                    Text(agreementTitle).font(AppTypography.caption)
+                    if isSaving || isCheckingReceipt {
+                        SheepLoadingView(isSaving ? "Saving your agreement…" : "Checking your agreement…")
+                    }
                 }
                 if let errorDetail {
                     Text(errorDetail)

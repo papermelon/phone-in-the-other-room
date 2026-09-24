@@ -1,7 +1,7 @@
 import { errorResponse, json, parseJsonObject } from "../_shared/http.ts";
 import { deliverNextFeedback } from "../_shared/feedback-delivery.ts";
 import { validateFeedbackPayload } from "../_shared/feedback.ts";
-import { authenticatedClient, serviceClient } from "../_shared/supabase.ts";
+import { authenticatedContext, serviceClient } from "../_shared/supabase.ts";
 
 const attachmentBucket = "feedback-attachments";
 
@@ -11,13 +11,10 @@ Deno.serve(async (request) => {
   }
 
   try {
-    const userClient = await authenticatedClient(request);
-    const { data: userData, error: userError } = await userClient.auth
-      .getUser();
-    if (userError || !userData.user) throw new Error("Unauthorized");
+    const { user } = await authenticatedContext(request);
 
     const body = await parseJsonObject(request);
-    const feedback = validateFeedbackPayload(body, userData.user.id);
+    const feedback = validateFeedbackPayload(body, user.id);
     const idempotencyKey = request.headers.get("idempotency-key")
       ?.toLowerCase();
     if (idempotencyKey !== feedback.submissionID) {
@@ -27,7 +24,7 @@ Deno.serve(async (request) => {
     const admin = serviceClient();
     await verifyAttachments(
       admin,
-      userData.user.id,
+      user.id,
       feedback.submissionID,
       feedback.attachmentPaths,
     );
@@ -37,7 +34,7 @@ Deno.serve(async (request) => {
       "submit_app_feedback",
       {
         p_id: feedback.submissionID,
-        p_user_id: userData.user.id,
+        p_user_id: user.id,
         p_category: feedback.category,
         p_message: feedback.message,
         p_reply_email: feedback.replyEmail,

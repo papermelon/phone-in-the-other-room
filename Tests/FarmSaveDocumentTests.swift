@@ -108,6 +108,54 @@ final class FarmSaveDocumentTests: XCTestCase {
         XCTAssertEqual(try FarmSaveDocument.decode(document.encoded()), document)
     }
 
+    func testRemoteBackupWithSupabaseDateEncodingPreservesFarmAndRejectsLossyFields() throws {
+        let format = Date.ISO8601FormatStyle.iso8601.year().month().day()
+            .dateTimeSeparator(.standard).time(includingFractionalSeconds: true)
+        let date = Date(timeIntervalSince1970: 1_789_200_123.456)
+        var welcome = WelcomeRewardEngine.reconcile(farm: .empty, search: .empty, ledger: .empty, now: date)
+        welcome.farm.schemaVersion = 3
+        welcome.farm.migrateCumulativeCredit(records: [], searchState: .empty, protectedNightCount: 0)
+        welcome.farm.cumulativeCredit?.consumedIntervals = [DateInterval(start: date, duration: 123.25)]
+        welcome.farm.woolBalance = 137
+        let document = FarmSaveDocument(lineageID: UUID(), generation: 2, values: [
+            "ollie.farm.state": try JSONEncoder().encode(welcome.farm),
+            WelcomeRewardLedger.storageKey: try JSONEncoder().encode(welcome.ledger)
+        ])
+        let payload = try FarmBackupPayload(document: document)
+        // Match the installed Supabase SDK's default RPC Date codec.
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .custom { date, encoder in
+            var container = encoder.singleValueContainer()
+            try container.encode(date.formatted(format))
+        }
+        let bytes = try encoder.encode(payload)
+        let restored = try FarmBackupPayload.decodeRemote(bytes)
+        XCTAssertEqual(restored.farm.schemaVersion, 3)
+        XCTAssertEqual(restored.farm.woolBalance, 137)
+        XCTAssertEqual(restored.farm.sheep.map(\.id), payload.farm.sheep.map(\.id))
+        XCTAssertEqual(restored.farm.sheep[0].arrivedAt, try Date("2026-09-12T08:02:03.456", strategy: format))
+        XCTAssertEqual(restored.farm.cumulativeCredit?.consumedIntervals.first?.duration, 123.25)
+        XCTAssertEqual(try FarmBackupPayload.decodeRemote(JSONEncoder().encode(restored)), restored)
+        XCTAssertEqual(try FarmBackupPayload.decodeRemote(bytes).fingerprint(), try restored.fingerprint())
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: bytes) as? [String: Any])
+        var farm = try XCTUnwrap(object["farm"] as? [String: Any])
+        farm["unrecognizedFutureBalance"] = 999
+        object["farm"] = farm
+        XCTAssertThrowsError(try FarmBackupPayload.decodeRemote(JSONSerialization.data(withJSONObject: object)))
+        farm.removeValue(forKey: "unrecognizedFutureBalance")
+        farm.removeValue(forKey: "woolBalance")
+        object["farm"] = farm
+        XCTAssertThrowsError(try FarmBackupPayload.decodeRemote(JSONSerialization.data(withJSONObject: object)))
+        farm["woolBalance"] = 137
+        var sheep = try XCTUnwrap(farm["sheep"] as? [[String: Any]])
+        for invalidDate in ["2026-02-30T08:02:03.456", "2026-09-12T08:02:03.456garbage", "bad"] {
+            sheep[0]["arrivedAt"] = invalidDate
+            farm["sheep"] = sheep
+            object["farm"] = farm
+            XCTAssertThrowsError(try FarmBackupPayload.decodeRemote(JSONSerialization.data(withJSONObject: object)))
+        }
+    }
+
     func testRestoreSeparatesFarmContinuityFromLocalNightsAndKeepsReplayMarkers() throws {
         var farm = FarmState.empty
         farm.migrateCumulativeCredit(records: [], searchState: .empty, protectedNightCount: 9)

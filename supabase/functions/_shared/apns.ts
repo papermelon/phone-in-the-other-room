@@ -272,3 +272,20 @@ export async function sendLiveActivityUpdate(
   }
   return { status: response.status, reason, outcome: "terminal" };
 }
+
+export async function sendCampfireAlert(event: {
+  token: string; environment: Environment; id: string; expiresAt: string; payload: unknown;
+}): Promise<APNsResult> {
+  const environment = requiredEnvironment("APNS_ENVIRONMENT");
+  if (event.environment !== environment) return { status: 400, reason: "EnvironmentMismatch", outcome: "terminal" };
+  const host = environment === "production" ? "https://api.push.apple.com" : "https://api.sandbox.push.apple.com";
+  const response = await fetch(`${host}/3/device/${event.token}`, {
+    method: "POST", signal: AbortSignal.timeout(8000),
+    headers: { authorization: `bearer ${await providerToken()}`, "apns-push-type": "alert",
+      "apns-topic": requiredEnvironment("APNS_ALERT_TOPIC"), "apns-priority": "5", "apns-collapse-id": event.id,
+      "apns-expiration": String(Math.floor(Date.parse(event.expiresAt) / 1000)), "content-type": "application/json" },
+    body: JSON.stringify(event.payload),
+  });
+  return { status: response.status, reason: response.ok ? "Accepted" : "APNs rejected alert",
+    outcome: response.ok ? "delivered" : response.status === 429 || response.status >= 500 ? "retry" : "terminal" };
+}

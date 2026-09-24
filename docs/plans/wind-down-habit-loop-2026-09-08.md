@@ -53,13 +53,17 @@ The ordinary flow supports independent use and the workshop; there is no separat
    returning sign-in always available at the opening and a discoverable later welcome
    gift choice. Existing saved drafts and reward eligibility survive any route change.
 2. **Home before the first evening:** retain the timing, Ollie and start hierarchy,
-   while showing the chosen activity and a direct route to edit it. Clearly distinguish
+   while showing the whole saved evening routine and a full-card route to explore ideas or edit it. The [21 September Home refinement](home-farm-clarity-2026-09-21.md) supersedes the earlier first-activity-only summary. Clearly distinguish
    a saved plan from incomplete protection. Declined optional reminders never block use.
 3. **Prepare the evening:** optionally add a recognizable cue, something to prepare,
    and a smaller activity. These fields are progressive, not another required form.
 4. **Start:** use the existing admission and protection checks. Any smaller-version
    choice is explicitly defined and does not imply a completed activity or changed
    protection. Keep the active plan stable if future preferences change.
+   As of 19 September, the active routine also has optional, reversible session checks.
+   They are private self-reports, with the same saved check marks projected to the native
+   app shield. This does not make the routine mandatory or award completion credit.
+   See [personal shielding](personal-shield-design-2026-09-17.md) for the current interaction.
 5. **Return:** preserve factual receipts and existing cumulative rewards. Make a short
    optional habit reflection reachable even without a session record. A reflection
    should offer a relevant editing destination; it never starts a session on save.

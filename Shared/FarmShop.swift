@@ -20,6 +20,7 @@ enum FarmShopEffect: Equatable {
     case capacity(level: Int)
     case ollieAccessory
     case shepherdOutfit
+    case shepherdShirt
     case shepherdAccessory
     case farmDecoration
     case collectible
@@ -241,6 +242,8 @@ extension FarmState {
             break
         case .ollieAccessory:
             try wearOllieAccessory(itemID: item.id)
+        case .shepherdShirt:
+            try wearShepherdShirt(itemID: item.id)
         case .shepherdOutfit:
             try wearShepherdOutfit(itemID: item.id)
         case .shepherdAccessory:
@@ -262,6 +265,16 @@ extension FarmState {
             throw FarmActionError.itemNotEquipped
         }
         equipment.ollieAccessoryItemID = nil
+    }
+
+    mutating func wearShepherdShirt(itemID: String) throws {
+        let item = try ownedItem(itemID, matching: .shepherdShirt)
+        shepherd.shirtItemID = item.id
+    }
+
+    mutating func takeOffShepherdShirt(itemID: String) throws {
+        guard shepherd.shirtItemID == itemID else { throw FarmActionError.itemNotEquipped }
+        shepherd.shirtItemID = nil
     }
 
     mutating func wearShepherdOutfit(itemID: String) throws {
@@ -323,6 +336,8 @@ extension FarmState {
             break
         case .ollieAccessory:
             equipment.ollieAccessoryItemID = item.id
+        case .shepherdShirt:
+            shepherd.shirtItemID = item.id
         case .shepherdOutfit:
             shepherd.outfitItemID = item.id
         case .shepherdAccessory:
@@ -345,6 +360,7 @@ extension FarmState {
         guard let item = FarmShopCatalog.item(for: itemID) else { throw FarmActionError.itemNotFound }
         switch (item.effect, effect) {
         case (.ollieAccessory, .ollieAccessory),
+             (.shepherdShirt, .shepherdShirt),
              (.shepherdOutfit, .shepherdOutfit),
              (.shepherdAccessory, .shepherdAccessory),
              (.farmDecoration, .farmDecoration),

@@ -37,12 +37,32 @@ extension NightFlockViewModel {
         slumberParties.count < NightFlockV4Rules.maximumConcurrentParties
     }
 
+    var requestScope: NightFlockRequestScope {
+        .init(ownerID: NightFlockExpectedIdentityBinding.classify(
+            defaults.string(forKey: NightFlockAccountService.expectedLinkedUserIDKey)
+        ).validUserID ?? linkedAccountID, generation: localSocialGeneration,
+              transportEpoch: transportRecoveryEpoch, privacyEpoch: sharedHabitsFenceGeneration)
+    }
+
+    func loadV4List() async throws -> NightFlockV4ListStateResponse {
+        guard permitsNightFlockNetwork, let service else { throw NightFlockTransportPaused() }
+        let scope = requestScope
+        do {
+            let result = try await service.stateV4List(scope: scope)
+            guard permitsNightFlockNetwork, requestScope == scope else { throw NightFlockTransportPaused() }
+            return result
+        } catch {
+            guard permitsNightFlockNetwork, requestScope == scope else { throw NightFlockTransportPaused() }
+            throw error
+        }
+    }
+
     func refreshV4List(showLoading: Bool = false) async throws {
-        guard accountState == .linked, permitsNightFlockNetwork, let service else { return }
+        guard accountState == .linked, permitsNightFlockNetwork else { return }
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         if showLoading { phase = .loading }
-        let response = try await service.stateV4List()
+        let response = try await loadV4List()
         guard permitsNightFlockNetwork,
               isCurrentTransportTask(generation: generation, epoch: transportEpoch)
         else { return }
@@ -52,6 +72,7 @@ extension NightFlockViewModel {
         visibleResponse.parties.removeAll { isSharedHabitsPartySuppressed($0.partyID) }
         reconcileSharedHabitsLeaveFences(with: response.parties)
         v4ListState = visibleResponse
+        listRefreshFailure = nil
         let visiblePartyIDs = Set(visibleResponse.parties.map(\.partyID))
         restorePastureVisitIndex(eligiblePartyIDs: visiblePartyIDs)
         await outbox?.retainUpdateCheers(in: visiblePartyIDs, epoch: generation)
@@ -78,14 +99,16 @@ extension NightFlockViewModel {
               !isSharedHabitsPartySuppressed(partyID),
               let service
         else { return }
+        if selectedV4Party?.summary.partyID != partyID { warmNotice = nil }
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         let fenceGeneration = sharedHabitsFenceGeneration
         let attemptID = UUID()
         v4SelectedPartyRefreshAttemptIDs[partyID] = attemptID
         v4RefreshingPartyIDs.insert(partyID)
+        let wasUnavailable = v4ObservedPartyObservationStates[partyID]?.showsConnectionWarning == true
         v4ObservedPartyObservationStates[partyID] = .refreshing(
-            lastReceivedAt: v4ObservedPartyRefreshDates[partyID]
+            lastReceivedAt: wasUnavailable ? nil : v4ObservedPartyRefreshDates[partyID]
         )
         let requestSequence = beginV4PartyDetailRequest()
         Task {
@@ -157,13 +180,20 @@ extension NightFlockViewModel {
     }
 
     func createSlumberParty(named name: String, timeZoneIdentifier: String = TimeZone.current.identifier) {
-        let commandID = UUID()
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= 48, accountState == .linked, permitsNightFlockNetwork, service != nil,
+              let commandID = v4Acquisition.begin(.create(name: name, timeZone: timeZoneIdentifier)) else { return }
+        warmNotice = nil
         stageSharedHabitsJoinAgreement(commandID: commandID, timeZoneIdentifier: timeZoneIdentifier) { [weak self] in
             self?.performV4(.createParty(
                 name: name,
                 timeZoneIdentifier: timeZoneIdentifier,
                 idempotencyKey: NightFlockV4Idempotency.command("create-party", seed: commandID)
-            ), resolvedPartyIntentCommandID: commandID, onResolvedNewParty: { partyID in
+            ), onSettled: { result in
+                if case .failure = result { self?.v4Acquisition.finish() }
+            }, onAcceptedResponse: { response in
+                self?.v4Acquisition.finish(partyID: response.resolvedPartyID)
+            }, resolvedPartyIntentCommandID: commandID, onResolvedNewParty: { partyID in
                 self?.acceptStagedSharedHabitsAgreementAfterJoining(partyID: partyID, commandID: commandID)
             })
         }
@@ -186,33 +216,33 @@ extension NightFlockViewModel {
     }
 
     func createSlumberPartyInvite(_ partyID: UUID) {
-        performV4(.createInvite(
+        performSlumberPartyInvitation(.createInvite(
             partyID: partyID,
             idempotencyKey: NightFlockV4Idempotency.command("create-invite")
-        ))
+        ), partyID: partyID)
     }
 
     func replaceSlumberPartyInvite(_ partyID: UUID, expectedInviteID: UUID) {
-        performV4(.replaceInvite(
+        performSlumberPartyInvitation(.replaceInvite(
             partyID: partyID,
             expectedInviteID: expectedInviteID,
             idempotencyKey: NightFlockV4Idempotency.command("replace-invite")
-        ))
+        ), partyID: partyID)
     }
 
     func revokeSlumberPartyInvite(_ partyID: UUID, inviteID: UUID) {
-        performV4(.revokeInvite(
+        performSlumberPartyInvitation(.revokeInvite(
             partyID: partyID,
             inviteID: inviteID,
             idempotencyKey: NightFlockV4Idempotency.command("revoke-invite")
-        ))
+        ), partyID: partyID)
     }
 
     func retrieveSlumberPartyInvite(_ partyID: UUID) {
-        performV4(.retrieveInvite(
+        performSlumberPartyInvitation(.retrieveInvite(
             partyID: partyID,
             idempotencyKey: NightFlockV4Idempotency.command("retrieve-invite")
-        ))
+        ), partyID: partyID)
     }
 
     func previewSlumberPartyInvite(code: String) {
@@ -227,12 +257,18 @@ extension NightFlockViewModel {
     func redeemSlumberPartyInvite(code: String) {
         let normalized = NightFlockInviteCode.normalize(code)
         guard !normalized.isEmpty else { return }
-        let commandID = UUID()
+        guard accountState == .linked, permitsNightFlockNetwork, service != nil,
+              let commandID = v4Acquisition.begin(.join(code: normalized)) else { return }
+        warmNotice = nil
         stageSharedHabitsJoinAgreement(commandID: commandID) { [weak self] in
             self?.performV4(.redeemInvite(
                 inviteCode: normalized,
                 idempotencyKey: NightFlockV4Idempotency.command("redeem-invite", seed: commandID)
-            ), resolvedPartyIntentCommandID: commandID, onResolvedNewParty: { partyID in
+            ), onSettled: { result in
+                if case .failure = result { self?.v4Acquisition.finish() }
+            }, onAcceptedResponse: { response in
+                self?.v4Acquisition.finish(partyID: response.resolvedPartyID)
+            }, resolvedPartyIntentCommandID: commandID, onResolvedNewParty: { partyID in
                 self?.acceptStagedSharedHabitsAgreementAfterJoining(partyID: partyID, commandID: commandID)
             })
         }
@@ -344,6 +380,11 @@ extension NightFlockViewModel {
             ?? (profile.hasEstablishedDisplayName ? .change : .initial)
         var wirePresentation = profile.presentation
         if v4ListState?.profileHeadShapeVersion != 1 { wirePresentation.headShapeID = nil }
+        if v4ListState?.profileWardrobeVersion != 1 {
+            wirePresentation.shepherdShirtID = nil
+            wirePresentation.shepherdOuterwearID = nil
+            wirePresentation.ollieCoatID = nil
+        }
         pendingV4ProfileMutation = profile
         performV4(.updatePublicProfile(
             expectedRevision: profile.revision,
@@ -576,6 +617,8 @@ extension NightFlockViewModel {
         onResolvedNewParty: ((UUID) -> Void)? = nil
     ) {
         guard accountState == .linked, permitsNightFlockNetwork, let service else { return }
+        let attemptID = UUID()
+        v4CommandAttempts.insert(attemptID)
         let acceptedNotice = NightFlockV4AcceptedCommandPresentation.notice(for: command)
         if acceptedNotice != nil {
             // A new consequence-bearing action owns the next acknowledgement;
@@ -590,16 +633,14 @@ extension NightFlockViewModel {
         }
         if showLoading { phase = .loading }
         Task {
+            defer { v4CommandAttempts.remove(attemptID) }
             var commandAccepted = false
             do {
                 let response = try await service.sendV4(command)
                 guard permitsNightFlockNetwork,
                       isCurrentTransportTask(generation: generation, epoch: transportEpoch)
                 else { return }
-                guard response.accepted else {
-                    onSettled?(.failure(NightFlockServiceError.unsupportedResponse))
-                    return
-                }
+                guard response.accepted else { throw NightFlockServiceError.unsupportedResponse }
                 commandAccepted = true
                 if let acceptedNotice {
                     warmNotice = acceptedNotice
@@ -649,6 +690,19 @@ extension NightFlockViewModel {
                 default:
                     break
                 }
+                // Invite credentials and previews are usable as soon as this
+                // command succeeds. A failed unrelated list refresh must not
+                // turn a successful code lookup into an apparent failure.
+                switch command {
+                case .previewInvite:
+                    phase = .ready
+                    return
+                case .retrieveInvite, .createInvite, .replaceInvite, .revokeInvite:
+                    phase = .ready
+                    if let directCommandPartyID { selectSlumberParty(directCommandPartyID) }
+                    return
+                default: break
+                }
                 try await refreshV4List(showLoading: false)
                 if let resolvedPartyID,
                    slumberParties.contains(where: { $0.partyID == resolvedPartyID }) {
@@ -658,7 +712,7 @@ extension NightFlockViewModel {
                     applyV4PartyDetail(detail.party, requestSequence: requestSequence)
                     onResolvedNewParty?(resolvedPartyID)
                 }
-                if let partyID = selectedV4Party?.summary.partyID {
+                if let partyID = selectedV4Party?.summary.partyID, partyID != resolvedPartyID {
                     let requestSequence = beginV4PartyDetailRequest()
                     let detail = try await service.stateV4Party(partyID: partyID)
                     guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
@@ -673,10 +727,16 @@ extension NightFlockViewModel {
                     pendingV4ProfileMutation = nil
                 }
                 if !commandAccepted { onSettled?(.failure(error)) }
+                let remote = Self.remoteError(from: error)
+                let uncertain = remote == nil || remote?.retryable == true
                 presentNightFlockError(
                     error, lane: .directCommand(schema: NightFlockV4Rules.schemaVersion),
-                    actionTitle: NightFlockRefreshFailure.actionTitle(for: command, accepted: commandAccepted)
+                    actionTitle: NightFlockRefreshFailure.actionTitle(for: command, accepted: commandAccepted, uncertain: uncertain)
                 )
+                if pendingAuthenticationRecovery == .none {
+                    if commandAccepted { phase = .error("We couldn’t refresh the party yet.") }
+                    else if uncertain { phase = .error("Refresh the party to check.") }
+                }
             }
         }
     }
@@ -703,10 +763,12 @@ extension NightFlockViewModel {
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         for record in await outbox.v4Records() {
-            guard await outbox.permitsSharedHabitsPublication() else { return }
+            guard await outbox.permitsSharedHabitsPublication(), permitsNightFlockNetwork,
+                  isCurrentTransportTask(generation: generation, epoch: transportEpoch),
+                  mayPublishWhileSharedHabitsFenceIsOpen() else { return }
             if record.source.kind == .windDown,
                !maySharePrimaryRun(runID: record.source.sourceEventID, startedAt: record.source.startedAt) {
-                await outbox.removeV4(record.source.sourceEventID, kind: record.source.kind, epoch: generation)
+                await outbox.removeV4(record, epoch: generation)
                 continue
             }
             do {
@@ -715,19 +777,21 @@ extension NightFlockViewModel {
                 guard response.accepted,
                       isCurrentTransportTask(generation: generation, epoch: transportEpoch)
                 else { return }
-                await outbox.removeV4(record.source.sourceEventID, kind: record.source.kind, epoch: generation)
+                await outbox.removeV4(record, epoch: generation)
                 // Publication acknowledgement is enough to request a fresh
                 // canonical projection; do not wait for a Realtime hint.
                 reconcileV4ObservedPartyDetails(with: slumberParties)
             } catch {
                 guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
-                await outbox.markV4Attempt(record.source.sourceEventID, kind: record.source.kind, epoch: generation)
+                await outbox.markV4Attempt(record, epoch: generation)
                 handleOutboxFailure(error, lane: .outbox(schema: NightFlockV4Rules.schemaVersion))
                 return
             }
         }
         for record in await outbox.v4StatusRecords() {
-            guard await outbox.permitsSharedHabitsPublication() else { return }
+            guard await outbox.permitsSharedHabitsPublication(), permitsNightFlockNetwork,
+                  isCurrentTransportTask(generation: generation, epoch: transportEpoch),
+                  mayPublishWhileSharedHabitsFenceIsOpen() else { return }
             if !mayShareV4Status(record) {
                 await outbox.removeV4Status(record, epoch: generation)
                 continue
@@ -769,7 +833,8 @@ extension NightFlockViewModel {
             local: local,
             server: serverProfile,
             supportsSocialAvatar: supportsSocialAvatar,
-            supportsHeadShape: v4ListState?.profileHeadShapeVersion == 1
+            supportsHeadShape: v4ListState?.profileHeadShapeVersion == 1,
+            supportsWardrobe: v4ListState?.profileWardrobeVersion == 1
         ) else { return }
         syncPublicProfile(
             plan.profile,
@@ -1027,8 +1092,9 @@ extension NightFlockViewModel {
         let attemptID = UUID()
         let requestSequence = beginV4PartyDetailRequest()
         v4PartyObservationAttemptIDs[partyID] = attemptID
+        let wasUnavailable = v4ObservedPartyObservationStates[partyID]?.showsConnectionWarning == true
         v4ObservedPartyObservationStates[partyID] = .refreshing(
-            lastReceivedAt: v4ObservedPartyRefreshDates[partyID]
+            lastReceivedAt: wasUnavailable ? nil : v4ObservedPartyRefreshDates[partyID]
         )
         let task = Task { [weak self] in
             await Task.yield()
@@ -1059,7 +1125,7 @@ extension NightFlockViewModel {
                 // Sanitized party signals also cover join/leave, renames and
                 // invitation/profile changes, so refresh the list projection
                 // rather than leaving Home/Farm with an old summary.
-                let list = try await service.stateV4List()
+                let list = try await self.loadV4List()
                 guard self.permitsNightFlockNetwork,
                       self.isCurrentTransportTask(generation: generation, epoch: transportEpoch)
                 else { return }
@@ -1069,6 +1135,7 @@ extension NightFlockViewModel {
                 visibleList.parties.removeAll { self.isSharedHabitsPartySuppressed($0.partyID) }
                 self.reconcileSharedHabitsLeaveFences(with: list.parties)
                 self.v4ListState = visibleList
+                self.listRefreshFailure = nil
                 self.refreshSharedHabitsReceiptsForCurrentParties()
                 self.synchronizeV4RealtimeSubscriptions(with: visibleList.parties)
                 self.adoptServerV4ProfileIfSafe(list.profile)
@@ -1129,6 +1196,14 @@ extension NightFlockViewModel {
         v4ObservedPartyObservationStates = [:]
         v4CheerSendStates = [:]
         updateCheerAcknowledgements = [:]
+        v4Acquisition = SlumberPartyAcquisition()
+        v4CommandAttempts = []
+        v4InvitationLoadingPartyIDs = []
+        v4InvitationErrors = [:]
+        partyConnections = nil
+        partyConnectionsError = nil
+        partyConnectionsBusy = false
+        partyConnectionsAttemptID = nil
         v4NextPartyDetailRequestSequence = 0
         v4AcceptedPartyDetailRequestSequences = [:]
         Task { [service] in

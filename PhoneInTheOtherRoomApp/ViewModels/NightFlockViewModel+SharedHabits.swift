@@ -236,10 +236,13 @@ extension NightFlockViewModel {
         }
         let generation = localSocialGeneration
         Task { [weak self] in
-            guard let self,
-                  await outbox.stageSharedHabitsJoinAgreementIntent(commandID: commandID, timeZoneIdentifier: timeZoneIdentifier, epoch: generation),
-                  self.isCurrentLocalSocialGeneration(generation)
-            else { return }
+            let staged = await outbox.stageSharedHabitsJoinAgreementIntent(commandID: commandID, timeZoneIdentifier: timeZoneIdentifier, epoch: generation)
+            guard let self, self.isCurrentLocalSocialGeneration(generation) else { return }
+            guard staged else {
+                self.v4Acquisition.finish()
+                self.phase = .error("Your agreement couldn’t be saved on this iPhone. Please try again.")
+                return
+            }
             action()
         }
     }
@@ -280,7 +283,8 @@ extension NightFlockViewModel {
     /// its exact party after the current membership detail is available.
     func resumeResolvedSharedHabitsJoinAgreementIfPossible(partyID: UUID) {
         guard supportsSharedHabits,
-              !sharedHabitsStagedJoinPartyIDs.contains(partyID),
+              !sharedHabitsAgreementSavingPartyIDs.contains(partyID),
+              sharedHabitsAgreementErrors[partyID] == nil,
               let outbox
         else { return }
         let generation = localSocialGeneration
@@ -376,7 +380,7 @@ extension NightFlockViewModel {
                     return
                 }
             }
-            await self.flushSharedHabitsOutbox()
+            await self.flushOutbox()
         }
     }
 
@@ -507,6 +511,10 @@ extension NightFlockViewModel {
 
     func flushSharedNightOutbox() async {
         guard supportsSharedNightPlans, accountState == .linked, permitsNightFlockNetwork, mayPublishWhileSharedHabitsFenceIsOpen(), let outbox, let service else { return }
+        guard sharedNightDrainGate.begin(scope: requestScope) else { return }
+        defer {
+            if sharedNightDrainGate.finish() { Task { await flushSharedNightOutbox() } }
+        }
         let generation = localSocialGeneration; let transportEpoch = transportRecoveryEpoch
         let privacyFences = await outbox.sharedNightPlanPrivacyFences()
         for queued in await outbox.sharedNightRecords() {
@@ -528,7 +536,7 @@ extension NightFlockViewModel {
                 await outbox.removeSharedNight(queued, epoch: generation)
                 continue
             }
-            guard await outbox.permitsSharedHabitsPublication(), isCurrentTransportTask(generation: generation, epoch: transportEpoch),
+            guard await outbox.permitsSharedHabitsPublication(), permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch),
                   let agreement = sharedHabitsStates[queued.partyID]?.agreement, agreement.agreementVersion >= 2,
                   agreement.agreementID == queued.agreementID, agreement.memberEpochID == queued.memberEpochID,
                   !isSharedHabitsPartySuppressed(queued.partyID) else { continue }
@@ -540,6 +548,7 @@ extension NightFlockViewModel {
                 case let .receipt(receipt): command = .publishNightReceipt(receipt, idempotencyKey: queued.idempotencyKey)
                 }
                 let response = try await service.sendSharedHabits(command)
+                guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
                 if case let .plan(plan) = queued.payload {
                     await outbox.acknowledgeSharedNightPlan(
                         queued,
@@ -555,11 +564,13 @@ extension NightFlockViewModel {
                 }
                 refreshSharedHabits(partyID: queued.partyID)
             } catch {
+                guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
                 if isPermanentSharedNightPublicationFailure(error) {
                     await outbox.removeSharedNight(queued, epoch: generation)
                     refreshSharedHabits(partyID: queued.partyID)
                     continue
                 }
+                sharedNightDrainGate.recordFailure()
                 await outbox.markSharedNightAttempt(queued, epoch: generation)
                 return
             }

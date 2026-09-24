@@ -10,7 +10,8 @@ enum ScreenbookFixtures {
         switch kind {
         case .activeWindDown: return date(hour: 22, minute: 15)
         case .earlyEnd: return date(hour: 22).addingTimeInterval(338 * 60)
-        case .configuredHome: return date(hour: 22, minute: 40)
+        case .configuredHome:
+            return date(hour: 22, minute: ProcessInfo.processInfo.arguments.contains("-screenbook-home-overlap") ? 10 : 40)
         case .interactiveHome: return date(hour: 20, minute: 0)
         default: return date(hour: 20, minute: 0)
         }
@@ -26,6 +27,15 @@ enum ScreenbookFixtures {
 
         if kind != .onboardingWelcome {
             persistence.nightWatchPreferences = configuredPreferences
+            if ProcessInfo.processInfo.arguments.contains("-screenbook-home-routines") {
+                var preferences = persistence.nightWatchPreferences
+                preferences.eveningRoutine = [
+                    .suggested(.read, phase: .evening),
+                    .suggested(.stretch, phase: .evening),
+                    .suggested(.prepareTomorrow, phase: .evening)
+                ]
+                persistence.nightWatchPreferences = preferences
+            }
             persistence.windDownSchedule = schedule(for: kind)
             persistence.offlinePurpose = OfflinePurposeProfile(category: .read)
             persistence.orientationState = CountingSheepOrientationState(

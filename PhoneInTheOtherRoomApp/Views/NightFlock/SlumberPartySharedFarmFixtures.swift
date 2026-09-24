@@ -107,6 +107,10 @@ struct SlumberPartySharedFarmNativeFixture: View {
                         expiresAt: campfireExpired ? clock.addingTimeInterval(-1) : clock.addingTimeInterval(1800), ended: false, revision: 1)
                 })
         }
+        if mode == "campfire-solo" {
+            let solo = Array(party.pasture?.campfire?.sessions.prefix(1) ?? [])
+            party.pasture?.campfire?.sessions = solo
+        }
         self.party = party
         let defaults = UserDefaults(suiteName: "SlumberPartyNativeFixture.\(UUID())")!
         let model = NightFlockViewModel(featureEnabled: true, previewPhase: .ready, previewAccountState: .linked, defaults: defaults)
@@ -144,7 +148,9 @@ struct SlumberPartySharedFarmNativeFixture: View {
     }
     var body: some View {
         Group {
-            if mode == "refreshing" || mode == "stale" || mode == "recipient" || mode == "friend" || mode == "empty" || mode == "unsupported" || mode == "pending" || mode == "failed" || mode == "old-server" {
+            if mode == "fetch" {
+                PastureFetchNativeFixture()
+            } else if mode == "refreshing" || mode == "stale" || mode == "recipient" || mode == "friend" || mode == "empty" || mode == "unsupported" || mode == "pending" || mode == "failed" || mode == "old-server" {
                 SlumberPartyMemberUpdatesView(viewModel: model, partyID: party.summary.partyID,
                     memberID: ["friend", "pending", "failed", "old-server"].contains(mode) ? SlumberPartySharedFarmFixtures.friend : SlumberPartySharedFarmFixtures.me,
                     showsSocialAvatar: true)

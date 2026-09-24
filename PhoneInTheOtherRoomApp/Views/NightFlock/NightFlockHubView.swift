@@ -59,14 +59,14 @@ struct NightFlockHubView: View {
                 title: "Opening Slumber Party…",
                 detail: "Ollie is checking whether this service is ready."
             )
-            ProgressView("Loading your parties…")
+            SheepLoadingView("Loading your parties…")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
         case .offline:
             NightFlockStatusCard(
                 symbol: "wifi.slash",
-                title: "Slumber Party is resting offline.",
-                detail: "Wind Down still works. Try again whenever you have a connection."
+                title: "You’re offline",
+                detail: "Connect to the internet to see your parties. You can still use Wind Down."
             )
             Button("Refresh") {
                 Task { _ = await viewModel.refreshState(showLoading: true) }
@@ -75,15 +75,17 @@ struct NightFlockHubView: View {
             .buttonStyle(PixelChipButtonStyle(isSelected: false))
         case .error(let message):
             SlumberPartyV4UnavailableCard(
-                title: "Slumber Party could not open yet.",
-                detail: message,
-                requestID: viewModel.v4RequestID ?? viewModel.requestReference
+                title: viewModel.listRefreshFailure?.title ?? "We couldn’t load your parties",
+                detail: viewModel.listRefreshFailure?.detail ?? message,
+                requestID: viewModel.listRefreshFailure?.requestReference ?? viewModel.requestReference
             )
-            Button("Try again") {
-                Task { _ = await viewModel.refreshState(showLoading: true) }
+            if viewModel.listRefreshFailure?.canRetry != false {
+                Button("Try again") {
+                    Task { _ = await viewModel.refreshState(showLoading: true) }
+                }
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .buttonStyle(PixelChipButtonStyle(isSelected: false))
             }
-            .frame(maxWidth: .infinity, minHeight: 44)
-            .buttonStyle(PixelChipButtonStyle(isSelected: false))
         case .idle:
             SlumberPartyV4UnavailableCard(
                 title: "Your parties haven’t loaded yet.",

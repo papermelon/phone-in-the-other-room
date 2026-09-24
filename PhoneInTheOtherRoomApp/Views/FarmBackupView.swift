@@ -16,6 +16,8 @@ struct FarmBackupView: View {
                     PixelCard {
                         VStack(alignment: .leading, spacing: AppSpacing.sm) {
                             Text("YOUR DETAILS").font(pixelFont(.caption)).foregroundStyle(AppColors.grass)
+                            handleDetails
+                            Divider().overlay(AppColors.stroke)
                             NavigationLink { ShepherdCustomizationView() } label: {
                                 AccountRowLabel(title: "Name and appearance", symbol: "person.crop.circle")
                             }.buttonStyle(.plain)
@@ -24,13 +26,11 @@ struct FarmBackupView: View {
                                 AccountCredentialsView(farm: model, model: model.credentials)
                                     .task { model.credentials.showMethods() }
                             } label: {
-                                AccountRowLabel(title: "Sign-in and username", symbol: "key",
+                                AccountRowLabel(title: "Handle and sign-in", symbol: "key",
                                     detail: model.credentialProfile?.signInMethodsTitle ?? "View connected methods")
                             }.buttonStyle(.plain)
                         }
                     }
-                    Button("Sign out") { confirmsSignOut = true }
-                        .buttonStyle(AccountTextButtonStyle()).disabled(model.busy || model.appleSignInInProgress)
                     if let account {
                         DisclosureGroup("Account management") {
                             NavigationLink { FarmAccountControlsView(account: account, backup: model) } label: {
@@ -40,6 +40,10 @@ struct FarmBackupView: View {
                         }
                         .font(AppTypography.caption).tint(AppColors.secondaryText)
                     }
+                }
+                if model.hasAuthenticatedAccount {
+                    Button("Sign out") { confirmsSignOut = true }
+                        .buttonStyle(AccountTextButtonStyle()).disabled(model.busy || model.appleSignInInProgress)
                 }
                 if !model.needsSyncAgreement { FarmSyncDisclosure() }
             }
@@ -68,13 +72,35 @@ struct FarmBackupView: View {
                 if let username = model.credentialProfile?.username {
                     Text("@\(username)").font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
                 }
-                Text(model.signedIn
-                     ? model.credentialProfile?.signInMethodsTitle ?? "Signed in"
+                Text(model.hasAuthenticatedAccount
+                     ? (model.signedIn ? model.credentialProfile?.signInMethodsTitle ?? "Signed in" : "Signed in · Farm not connected")
                      : "Guest · saved on this phone")
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
             }
         }
         .accessibilityElement(children: .combine)
+    }
+
+    @ViewBuilder private var handleDetails: some View {
+        if let handle = model.credentialProfile?.username {
+            Text("Your handle · @\(handle)").font(AppTypography.body).textSelection(.enabled)
+            Text("Your unique username for sign-in and Slumber Party invites. Your Shepherd name can be shared by other people.")
+                .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            Button("Copy handle") { UIPasteboard.general.string = "@\(handle)" }
+                .buttonStyle(AccountTextButtonStyle())
+        } else if model.credentialProfile?.usernameLookupSucceeded == true {
+            Text("Choose your unique handle so people can invite you to a Slumber Party.")
+                .font(AppTypography.body)
+            NavigationLink {
+                AccountCredentialsView(farm: model, model: model.credentials)
+                    .onAppear { model.credentials.stage = .claimUsername }
+            } label: { AccountRowLabel(title: "Choose a handle", symbol: "at") }
+                .buttonStyle(.plain).disabled(model.busy)
+        } else {
+            Text("Your handle hasn’t loaded yet.").font(AppTypography.body)
+            Button("Load handle", action: model.credentials.showMethods)
+                .buttonStyle(AccountTextButtonStyle()).disabled(model.busy)
+        }
     }
 
 }
@@ -88,7 +114,24 @@ struct AccountConnectionContent: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
-            if model.signedIn && !requiresAuthentication {
+            if model.hasAuthenticatedAccount && !model.signedIn && !requiresAuthentication {
+                PixelCard {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Label("Sign-in complete", systemImage: "checkmark.circle.fill")
+                            .font(AppTypography.headline)
+                        if model.busy {
+                            SheepLoadingView("Connecting your Farm…")
+                        } else {
+                            Text("Your account is connected. Your Farm hasn’t finished connecting yet.")
+                                .font(AppTypography.body)
+                            Text("Your current Farm has been kept on this phone.")
+                                .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                            Button("Retry Farm connection", action: model.acceptAutomaticSync)
+                                .buttonStyle(AccountPrimaryButtonStyle())
+                        }
+                    }
+                }
+            } else if model.signedIn && !requiresAuthentication {
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Label(status, systemImage: "icloud").font(AppTypography.headline)
@@ -96,7 +139,7 @@ struct AccountConnectionContent: View {
                             Text("Last saved \(date.formatted(date: .abbreviated, time: .shortened))")
                                 .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                         }
-                        if model.busy { ProgressView() }
+                        if model.busy { SheepLoadingView() }
                         if model.needsSyncAgreement {
                             Text("Save your Farm to your account and keep it up to date across phones.").font(AppTypography.body)
                             if let notice = model.syncConnectionNotice {
@@ -120,6 +163,8 @@ struct AccountConnectionContent: View {
                         }
                     }
                 }
+            } else if model.busy {
+                SheepLoadingView("Signing in…")
             } else {
                 Text("Sign in to continue your Farm across phones. Your account keeps it in sync automatically.")
                     .font(AppTypography.body)
@@ -127,17 +172,20 @@ struct AccountConnectionContent: View {
                     SignInWithAppleButton(.signIn, onRequest: model.prepareApple, onCompletion: model.completeApple)
                         .signInWithAppleButtonStyle(colorScheme == .dark ? .white : .black)
                         .frame(height: 50).disabled(model.busy || model.appleSignInInProgress)
-                    NavigationLink("Sign in with username or email") {
+                    if model.appleSignInInProgress { SheepLoadingView("Waiting for Apple…") }
+                    NavigationLink("Sign in with handle or email") {
                         AccountCredentialsView(farm: model, model: model.credentials)
                             .onAppear { if requiresAuthentication { model.credentials.stage = .signIn } }
                     }.buttonStyle(AccountSecondaryButtonStyle()).disabled(model.busy || model.appleSignInInProgress)
                 } else { Text("Account sign-in is unavailable in this build.").font(AppTypography.body) }
-                if model.busy { ProgressView("Connecting…") }
+                if model.busy { SheepLoadingView("Connecting…") }
                 if model.accountPresentation == .failed && model.appleSignInFailure == nil { Text(model.message).font(AppTypography.body) }
             }
-            if let failure = model.appleSignInFailure {
+            if let failure = model.appleSignInFailure, !model.busy {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    Text(failure.message).font(AppTypography.body)
+                    if !model.hasAuthenticatedAccount || failure.stage != .farm {
+                        Text(failure.message).font(AppTypography.body)
+                    }
                     DisclosureGroup("Support details") {
                         Text(failure.supportDetail).font(AppTypography.caption).textSelection(.enabled)
                     }.font(AppTypography.caption)
@@ -202,4 +250,14 @@ struct FarmBackupStatusView: View {
             model.credentialProfile = .init(id: UUID(), hasApple: true, hasEmail: false)
         }
         .environment(\.dynamicTypeSize, .accessibility3)
+}
+
+#Preview("Profile · signed in, Farm connection needs retry") {
+    let model = FarmBackupViewModel(persistence: .shared, account: nil, service: nil)
+    NavigationStack { FarmBackupView(model: model) }
+        .onAppear {
+            model.authenticatedAccountID = UUID()
+            model.accountPresentation = .failed
+            model.appleSignInFailure = .init(stage: .farm)
+        }
 }

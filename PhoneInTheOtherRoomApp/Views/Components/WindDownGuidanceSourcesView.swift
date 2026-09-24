@@ -83,9 +83,12 @@ struct WindDownGuidanceSourceDetailView: View {
     @EnvironmentObject private var viewModel: FocusRunViewModel
     let source: WindDownGuidanceSource
     var onboardingDraft: Binding<OnboardingDraft>? = nil
+    var routineDraft: Binding<[WindDownRoutineStep]>? = nil
+    var routinePhase: WindDownRoutinePhase? = nil
 
     private var relatedIdeas: [WindDownGuidanceItem] {
         WindDownGuidanceLibrary.items(referencingSourceID: source.id)
+            .filter { routineDraft == nil || $0.routinePhase == routinePhase }
     }
 
     var body: some View {
@@ -156,7 +159,7 @@ struct WindDownGuidanceSourceDetailView: View {
                     .foregroundStyle(AppColors.grass)
                 ForEach(relatedIdeas) { item in
                     NavigationLink {
-                        WindDownGuidanceDetailView(item: item, onboardingDraft: onboardingDraft)
+                        WindDownGuidanceDetailView(item: item, onboardingDraft: onboardingDraft, routineDraft: routineDraft)
                             .environmentObject(viewModel)
                     } label: {
                         Text(item.title)

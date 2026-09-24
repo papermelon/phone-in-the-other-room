@@ -12,8 +12,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
-        if activity == .ollieBriefAccessRestore {
-            reconcileBriefAccessRestore()
+        if QuietTimeBriefAccessConstants.isRestoreActivity(activity.rawValue) {
+            reconcileBriefAccessRestore(activity)
             return
         }
         if let usage = NightWatchUsageActivity(activityName: activity) {
@@ -235,8 +235,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
 
     override func intervalDidEnd(for activity: DeviceActivityName) {
         super.intervalDidEnd(for: activity)
-        if activity == .ollieBriefAccessRestore {
-            reconcileBriefAccessRestore()
+        if QuietTimeBriefAccessConstants.isRestoreActivity(activity.rawValue) {
+            reconcileBriefAccessRestore(activity)
             return
         }
         guard QuietTimeShieldWindow(activityName: activity) != nil
@@ -249,8 +249,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
 
     override func intervalWillEndWarning(for activity: DeviceActivityName) {
         super.intervalWillEndWarning(for: activity)
-        if activity == .ollieBriefAccessRestore {
-            reconcileBriefAccessRestore()
+        if QuietTimeBriefAccessConstants.isRestoreActivity(activity.rawValue) {
+            reconcileBriefAccessRestore(activity)
             return
         }
         guard QuietTimeShieldWindow(activityName: activity) != nil
@@ -317,9 +317,16 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         return try? JSONDecoder().decode(FamilyActivitySelection.self, from: data)
     }
 
-    private func reconcileBriefAccessRestore() {
+    private func reconcileBriefAccessRestore(_ activity: DeviceActivityName) {
         let now = Date()
         let state = loadBriefAccessState()
+        // A stopped grant can deliver a late callback after the next grant
+        // starts. It must neither restore nor cancel that newer grant.
+        guard let grant = state?.activeGrant,
+              QuietTimeBriefAccessConstants.matches(activity.rawValue, grant: grant) else {
+            DeviceActivityCenter().stopMonitoring([activity])
+            return
+        }
         let schedule = loadSchedule()
         let registry = QuietTimeShieldScheduleRegistryStorage.load(from: sharedDefaults ?? .standard)
         let identity = schedule.flatMap { briefAccessIdentity(for: $0, registry: registry) }
@@ -338,7 +345,7 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             at: now
         ) {
         case .noActiveGrant:
-            stopBriefAccessRestore()
+            stopBriefAccessRestore(activity)
         case .keepShieldClear:
             // A start callback can arrive before the requested expiry. The shield
             // must remain clear only for the already scheduled grant, never longer.
@@ -356,7 +363,7 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             state.rejectPendingGrant(nonce: grant.nonce, at: now)
             saveBriefAccessState(state)
             reapplyCurrentShieldIfEligible(at: now, schedule: schedule)
-            stopBriefAccessRestore()
+            stopBriefAccessRestore(activity)
         case .discardStaleGrant:
             switch QuietTimeBriefAccessPolicy.staleGrantAction(
                 schedule: schedule,
@@ -378,8 +385,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
                         )
                         scheduleShieldingFailureNotification(role: schedule.role)
                     }
-                    stopBriefAccessRestore()
-                    archiveBriefAccessState()
+                    stopBriefAccessRestore(activity)
+                    archiveBriefAccessState(matching: grant.nonce)
                     return
                 }
                 store.shield.applications = selection.applicationTokens.isEmpty
@@ -400,8 +407,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
                     writeStatus(.cleared, snapshot: schedule, window: nil, at: now)
                 }
             }
-            stopBriefAccessRestore()
-            archiveBriefAccessState()
+            stopBriefAccessRestore(activity)
+            archiveBriefAccessState(matching: grant.nonce)
         case .restoreShield:
             guard let schedule, let selection = loadSelection(),
                   !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else {
@@ -416,8 +423,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
                     )
                     scheduleShieldingFailureNotification(role: schedule.role)
                 }
-                stopBriefAccessRestore()
-                archiveBriefAccessState()
+                stopBriefAccessRestore(activity)
+                archiveBriefAccessState(matching: grant.nonce)
                 return
             }
             store.shield.applications = selection.applicationTokens.isEmpty
@@ -426,8 +433,8 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
             store.shield.applicationCategories = selection.categoryTokens.isEmpty
                 ? nil
                 : .specific(selection.categoryTokens)
-            stopBriefAccessRestore()
-            archiveBriefAccessState()
+            stopBriefAccessRestore(activity)
+            archiveBriefAccessState(matching: grant.nonce)
             writeStatus(
                 .applied,
                 snapshot: schedule,
@@ -532,15 +539,19 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
         sharedDefaults?.set(data, forKey: QuietTimeShieldSharedStorage.briefAccessStateKey)
     }
 
-    private func archiveBriefAccessState() {
-        guard var state = loadBriefAccessState() else { return }
+    private func archiveBriefAccessState(matching nonce: UUID? = nil) {
+        guard var state = loadBriefAccessState(),
+              nonce == nil || state.activeGrant?.nonce == nonce else { return }
         state.archiveCurrentRun(at: Date())
         guard let data = try? JSONEncoder().encode(state) else { return }
         sharedDefaults?.set(data, forKey: QuietTimeShieldSharedStorage.briefAccessStateKey)
     }
 
-    private func stopBriefAccessRestore() {
-        DeviceActivityCenter().stopMonitoring([.ollieBriefAccessRestore])
+    private func stopBriefAccessRestore(_ activity: DeviceActivityName? = nil) {
+        let center = DeviceActivityCenter()
+        center.stopMonitoring(activity.map { [$0] } ?? center.activities.filter {
+            QuietTimeBriefAccessConstants.isRestoreActivity($0.rawValue)
+        })
     }
 
     private func writeStatus(

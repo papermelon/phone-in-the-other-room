@@ -163,20 +163,20 @@ actor NightFlockOutboxService {
         save(NightFlockV4OutboxRules.merge(record, into: v4Records()), key: Self.v4OutboxKey)
     }
 
-    func markV4Attempt(_ sourceEventID: UUID, kind: NightFlockV4ActivityKind, epoch: UInt64) {
+    func markV4Attempt(_ record: NightFlockV4OutboxSourceRecord, epoch: UInt64) {
         guard admits(epoch) else { return }
         var queued = v4Records()
         guard let index = queued.firstIndex(where: {
-            $0.source.sourceEventID == sourceEventID && $0.source.kind == kind
+            $0.matchesPublication(record)
         }) else { return }
         queued[index].attemptCount += 1
         save(queued, key: Self.v4OutboxKey)
     }
 
-    func removeV4(_ sourceEventID: UUID, kind: NightFlockV4ActivityKind, epoch: UInt64) {
+    func removeV4(_ record: NightFlockV4OutboxSourceRecord, epoch: UInt64) {
         guard admits(epoch) else { return }
         save(v4Records().filter {
-            !($0.source.sourceEventID == sourceEventID && $0.source.kind == kind)
+            !$0.matchesPublication(record)
         }, key: Self.v4OutboxKey)
     }
 

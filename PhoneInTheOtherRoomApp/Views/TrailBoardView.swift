@@ -43,7 +43,8 @@ struct TrailBoardView: View {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 header
                 if let credit = viewModel.farmState.cumulativeCredit, !viewModel.isRunning {
-                    CumulativeFarmProgressCard(credit: credit)
+                    CumulativeFarmProgressCard(credit: credit,
+                        accessoryItemID: viewModel.farmState.equipment.ollieAccessoryItemID)
                 }
                 Picker("Ollie’s Search filter", selection: $filter) {
                     ForEach(TrailBoardFilter.allCases) { Text($0.title).tag($0) }
@@ -94,9 +95,20 @@ struct TrailBoardView: View {
                         .font(.title.weight(.bold))
                         .foregroundStyle(AppColors.grass)
                     VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("OLLIE’S SEARCH")
-                            .font(pixelFont(.caption))
-                            .foregroundStyle(AppColors.grass)
+                        HStack {
+                            Text("OLLIE’S SEARCH")
+                                .font(pixelFont(.caption))
+                            Spacer(minLength: AppSpacing.xs)
+                            NavigationLink { SheepSearchExplainerView() } label: {
+                                Image(systemName: "questionmark.circle")
+                                    .font(pixelFont(.headline))
+                                    .frame(minWidth: 44, minHeight: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            .accessibilityLabel("How Ollie’s searches work")
+                        }
+                        .foregroundStyle(AppColors.grass)
                         Text("Choose one missing sheep for Ollie to watch for.")
                             .font(AppTypography.headline)
                             .fixedSize(horizontal: false, vertical: true)

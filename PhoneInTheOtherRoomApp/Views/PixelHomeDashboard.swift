@@ -32,6 +32,12 @@ struct PixelHomeDashboard: View {
     }
 
     var body: some View {
+        TimelineView(.periodic(from: .now, by: 30)) { _ in
+            dashboard
+        }
+    }
+
+    private var dashboard: some View {
         VStack(spacing: AppSpacing.lg) {
             firstRunCards
             PixelHomeDashboardContent(
@@ -45,9 +51,7 @@ struct PixelHomeDashboard: View {
             primaryWindDownPeriod: viewModel.homePrimaryWindDownPeriod,
             phoneAwayStartContext: viewModel.currentPhoneAwayStartContext,
             nextUpcoming: viewModel.nextUpcomingAdditionalQuietPeriod,
-            upcomingAdditionalCount: viewModel.upcomingAdditionalQuietPeriods.count,
             immediateAdditionalQuietMinutes: viewModel.immediateAdditionalQuietMinutes,
-            phoneBreakMeterMinutes: Int((viewModel.farmState.cumulativeCredit?.phoneAwaySeconds ?? Double(viewModel.sheepSearchState.trailMap.pendingMappedMinutes * 60)) / 60),
             ollieAccessoryItemID: viewModel.farmState.equipment.ollieAccessoryItemID,
             homeScrollViewportSize: homeScrollViewportSize,
             nightFlockSummary: viewModel.nightFlockViewModel.homeSummary,
@@ -205,9 +209,7 @@ private struct PixelHomeDashboardContent: View {
     var primaryWindDownPeriod: WindDownSchedulePeriod? = nil
     var phoneAwayStartContext: WindDownStartContext?
     var nextUpcoming: WindDownSchedulePeriod?
-    var upcomingAdditionalCount: Int
     var immediateAdditionalQuietMinutes: Int?
-    var phoneBreakMeterMinutes: Int
     var ollieAccessoryItemID: String? = nil
     var homeScrollViewportSize: CGSize = .zero
     var nightFlockSummary: NightFlockHomeSummary? = nil
@@ -231,6 +233,41 @@ private struct PixelHomeDashboardContent: View {
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
+            VStack(spacing: AppSpacing.md) {
+                HomeWelcomeHero(
+                    title: heroPlan.map { "\($0.windDownMinutes) min before bed" } ?? "Welcome home.",
+                    subtitle: heroPlan == nil ? "Ollie saved you a quiet spot." : "Your planned Wind Down",
+                    accessoryItemID: ollieAccessoryItemID,
+                    scrollViewportSize: homeScrollViewportSize
+                )
+
+                HomeWindDownSummary(
+                    preferences: preferences,
+                    canBeginNow: canBeginNow,
+                    isNFCTagReady: isNFCTagReady,
+                    primaryWindDownPeriod: primaryWindDownPeriod,
+                    phoneAwayStartContext: phoneAwayStartContext,
+                    immediatePhoneAwayMinutes: immediateAdditionalQuietMinutes,
+                    phoneAwayPurpose: purpose,
+                    protectionPresentation: protectionPresentation,
+                    onPrimaryAction: onPrimaryAction,
+                    onRepairProtection: onRepairProtection,
+                    onSetup: onSetup,
+                    onEdit: onEditTiming,
+                    onPhoneAwayStartNow: onStartNow,
+                    onPhoneAwayScheduled: onStartScheduled,
+                    content: .actions
+                )
+
+            }
+            .padding(AppSpacing.md)
+            .background(
+                LinearGradient(colors: [AppColors.grass.opacity(0.12), AppColors.paper],
+                               startPoint: .top, endPoint: .bottom),
+                in: RoundedRectangle(cornerRadius: AppRadius.lg)
+            )
+
+            sectionHeading("Your evening", icon: "moon.stars")
             HomeWindDownSummary(
                 preferences: preferences,
                 canBeginNow: canBeginNow,
@@ -238,6 +275,7 @@ private struct PixelHomeDashboardContent: View {
                 primaryWindDownPeriod: primaryWindDownPeriod,
                 phoneAwayStartContext: phoneAwayStartContext,
                 immediatePhoneAwayMinutes: immediateAdditionalQuietMinutes,
+                phoneAwayPurpose: purpose,
                 protectionPresentation: protectionPresentation,
                 onPrimaryAction: onPrimaryAction,
                 onRepairProtection: onRepairProtection,
@@ -248,59 +286,41 @@ private struct PixelHomeDashboardContent: View {
                 content: .timing
             )
 
-            HomeWelcomeHero(
-                accessoryItemID: ollieAccessoryItemID,
-                scrollViewportSize: homeScrollViewportSize
-            )
-
-            HomeWindDownSummary(
-                preferences: preferences,
-                canBeginNow: canBeginNow,
-                isNFCTagReady: isNFCTagReady,
-                primaryWindDownPeriod: primaryWindDownPeriod,
-                phoneAwayStartContext: phoneAwayStartContext,
-                immediatePhoneAwayMinutes: immediateAdditionalQuietMinutes,
-                protectionPresentation: protectionPresentation,
-                onPrimaryAction: onPrimaryAction,
-                onRepairProtection: onRepairProtection,
-                onSetup: onSetup,
-                onEdit: onEditTiming,
-                onPhoneAwayStartNow: onStartNow,
-                onPhoneAwayScheduled: onStartScheduled,
-                content: .actions
-            )
-
             WindDownHabitHomeCard(
-                activity: preferences.eveningRoutine.first?.title,
+                routine: preferences.eveningRoutine,
                 plan: habitPlan,
                 useSmallerVersion: useSmallerVersion,
                 saveMessage: habitSaveMessage,
                 onEdit: onEditRoutine
             )
 
-            if shouldLeadWithSlumberParty, let nightFlockViewModel {
-                SlumberPartyHomeSection(viewModel: nightFlockViewModel, openParty: onOpenNightFlock)
-            } else if let nightFlockSummary {
-                NightFlockHomeCard(
-                    summary: nightFlockSummary,
-                    context: .home,
-                    action: { onOpenNightFlock(nil) }
-                )
+            sectionHeading("Your day", icon: "sun.max")
+            UpcomingQuietTimesCard(nextPeriod: nextUpcoming, purpose: purpose, action: onQuietTimeSchedule)
+
+            if nightFlockSummary != nil || nightFlockViewModel?.featureEnabled == true {
+                sectionHeading("Offline Together", icon: "person.2")
+            }
+            if shouldLeadWithSlumberParty || nightFlockSummary != nil {
+                HStack(alignment: .top, spacing: AppSpacing.xxs) {
+                    if shouldLeadWithSlumberParty, let nightFlockViewModel {
+                        SlumberPartyHomeSection(viewModel: nightFlockViewModel, openParty: onOpenNightFlock)
+                    } else if let nightFlockSummary {
+                        NightFlockHomeCard(summary: nightFlockSummary, context: .home,
+                                          action: { onOpenNightFlock(nil) })
+                    }
+                    HomeSocialInfoButton(title: "Slumber Party", message:
+                        "Your private, invite-only friend group. Share quiet nights with friends, a partner, or family. Members see only the updates covered by your sharing agreement.")
+                }
             }
 
-            UpcomingQuietTimesCard(
-                nextPeriod: nextUpcoming,
-                additionalCount: upcomingAdditionalCount,
-                immediateStartMinutes: immediateAdditionalQuietMinutes,
-                scheduledStart: phoneAwayStartContext,
-                windDownIsReady: canBeginNow,
-                trailMapPresentation: SheepTrailMapPresentation.cumulative(minutes: phoneBreakMeterMinutes),
-                protectionPresentation: protectionPresentation,
-                action: onQuietTimeSchedule,
-                startNow: onStartNow,
-                startScheduled: onStartScheduled,
-                showsQuickStartActions: false
-            )
+            if let nightFlockViewModel, nightFlockViewModel.featureEnabled {
+                HStack(alignment: .top, spacing: AppSpacing.xxs) {
+                    CampfireHomeEntry(social: nightFlockViewModel)
+                    HomeSocialInfoButton(title: "Campfire", message:
+                        "A shared place to go offline with the wider Counting Sheep community. Choose Global to see the global campfire, or view your Slumber Party. Browsing does not share your session; you choose your own visibility separately.")
+                }
+            }
+
 
             if preferences.guardKind == .watchPlacement {
                 watchStatus
@@ -313,13 +333,24 @@ private struct PixelHomeDashboardContent: View {
                 .onAppear { onGuidanceShown(guidance) }
             }
 
-            NavigationLink("About these ideas and sources") {
-                WindDownGuideView()
-            }
-            .font(AppTypography.caption.weight(.semibold))
-            .foregroundStyle(AppColors.muted)
-            .frame(maxWidth: .infinity, minHeight: 44)
         }
+    }
+
+    private var heroPlan: NightWatchPlan? {
+        guard preferences.isConfigured, let primaryWindDownPeriod else { return nil }
+        return WindDownScheduleEngine.plan(
+            for: primaryWindDownPeriod,
+            preferences: preferences,
+            startedAt: primaryWindDownPeriod.occurrence.interval.start
+        )
+    }
+
+    private func sectionHeading(_ title: String, icon: String) -> some View {
+        Label(title, systemImage: icon)
+            .font(AppTypography.title)
+            .foregroundStyle(AppColors.ink)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
     }
 
     private var shouldLeadWithSlumberParty: Bool {
@@ -358,9 +389,7 @@ private struct PixelHomeDashboardContent: View {
                 windDownStartContext: nil,
                 phoneAwayStartContext: nil,
                 nextUpcoming: nil,
-                upcomingAdditionalCount: 0,
                 immediateAdditionalQuietMinutes: nil,
-                phoneBreakMeterMinutes: 0,
                 protectionPresentation: .repair(title: "Choose apps to pause", detail: ShieldingReadiness.noSelection.detail),
                 onPrimaryAction: {},
                 onEditTiming: {},
@@ -398,9 +427,7 @@ private struct PixelHomeDashboardContent: View {
                 windDownStartContext: nil,
                 phoneAwayStartContext: nil,
                 nextUpcoming: nil,
-                upcomingAdditionalCount: 0,
                 immediateAdditionalQuietMinutes: nil,
-                phoneBreakMeterMinutes: PhoneAwaySearchMeter.maximumMinutes,
                 nightFlockSummary: .invitation,
                 protectionPresentation: .ready(selectionSummary: "2 apps, 1 category"),
                 onPrimaryAction: {},
@@ -433,9 +460,7 @@ private struct PixelHomeDashboardContent: View {
                     interval: DateInterval(start: now.addingTimeInterval(-60), end: now.addingTimeInterval(20 * 60))
                 ),
                 nextUpcoming: nil,
-                upcomingAdditionalCount: 1,
                 immediateAdditionalQuietMinutes: nil,
-                phoneBreakMeterMinutes: PhoneAwaySearchMeter.maximumMinutes,
                 protectionPresentation: .ready(selectionSummary: "2 apps"),
                 onPrimaryAction: {},
                 onEditTiming: {},
@@ -461,9 +486,7 @@ private struct PixelHomeDashboardContent: View {
                 windDownStartContext: nil,
                 phoneAwayStartContext: nil,
                 nextUpcoming: nil,
-                upcomingAdditionalCount: 0,
                 immediateAdditionalQuietMinutes: 30,
-                phoneBreakMeterMinutes: 0,
                 protectionPresentation: .repair(title: "Set up app protection", detail: ShieldingReadiness.authorizationRequired.detail),
                 onPrimaryAction: {},
                 onEditTiming: {},
@@ -473,5 +496,35 @@ private struct PixelHomeDashboardContent: View {
             .padding(AppSpacing.md)
         }
         .background(AppColors.paper)
+    }
+}
+
+private struct HomeSocialInfoButton: View {
+    let title: String
+    let message: String
+    @State private var showsInfo = false
+
+    var body: some View {
+        Button { showsInfo = true } label: {
+            Image(systemName: "info.circle")
+                .font(AppTypography.headline)
+                .foregroundStyle(AppColors.muted)
+                .frame(width: 44, height: 44)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("About \(title)")
+        .sheet(isPresented: $showsInfo) {
+            ContentFittingGuideSheet {
+                VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    HStack {
+                        Text(title).font(AppTypography.title)
+                        Spacer()
+                        Button("Done") { showsInfo = false }
+                            .frame(minWidth: 44, minHeight: 44)
+                    }
+                    Text(message).font(AppTypography.body)
+                }
+            }
+        }
     }
 }

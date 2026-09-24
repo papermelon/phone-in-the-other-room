@@ -233,12 +233,25 @@ actor NightFlockAccountService {
         try? await client.auth.signOut(scope: .local)
     }
 
+    private func revokeCampfireDevice() async {
+        defaults.removeObject(forKey: "ollie.campfire.pendingParty")
+        guard let installation = defaults.string(forKey: "ollie.campfire.pushInstallation"),
+              let owner = defaults.string(forKey: Self.expectedLinkedUserIDKey) else { return }
+        let revision = await CampfireNotificationService.nextRevision()
+        struct Revoke: Encodable { var ownerID: String; var installationID: String; var unregister = true; var revision: Int }
+        struct Accepted: Decodable { var accepted: Bool }
+        let _: Accepted? = try? await provider.client().functions.invoke("campfire-device",
+            options: FunctionInvokeOptions(body: Revoke(ownerID: owner, installationID: installation, revision: revision)))
+    }
+
     func signOutPreservingFarmBinding() async throws {
+        await revokeCampfireDevice()
         try await provider.client().auth.signOut(scope: .local)
     }
 
     /// Explicit logout permits a later account switch; expiry recovery does not.
     func signOutForAccountSwitch() async throws {
+        await revokeCampfireDevice()
         do { try await provider.client().auth.signOut(scope: .local) }
         catch let error as AuthError where error == .sessionMissing { }
         defaults.removeObject(forKey: Self.expectedLinkedUserIDKey)

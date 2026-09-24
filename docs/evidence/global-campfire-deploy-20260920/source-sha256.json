@@ -1,0 +1,7 @@
+{
+  "supabase/migrations/20260916120000_global_campfire.sql": "32205d1df2da2c872f5b3696c4e1339203fd4d63f8eb3f3135c14e089995d791",
+  "supabase/functions/campfire-global/index.ts": "857f161fece8d3904f2460f8377eedb66e4632b2dc04343fc9dc435d28e98868",
+  "supabase/functions/_shared/global-campfire.ts": "acac12475a01e9f8c1913013ad69761749472ef8b1e1fccd8f7645c9e32529f3",
+  "supabase/functions/_shared/http.ts": "27169114d41d4d4d99ce5a646ab37ca01d64da6764fa40ccdc11c840312da332",
+  "supabase/functions/_shared/supabase.ts": "4f79280f455e9f5039cf7a9bcfb5d10ba7678226ca7b774f66d9b0a4b0cf8e89"
+}

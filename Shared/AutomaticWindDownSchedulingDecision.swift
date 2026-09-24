@@ -57,7 +57,7 @@ enum AutomaticWindDownStatusPresentation: Equatable {
     var title: String {
         switch self {
         case .off: return "Automatic Wind Down is off"
-        case .scheduled: return "Automatic Wind Down is ready"
+        case .scheduled: return "Automatic Wind Down is scheduled"
         case let .needsRepair(title, _): return title
         case .preparing: return "Preparing the next automatic start"
         }
@@ -87,5 +87,21 @@ enum AutomaticWindDownStatusPresentation: Equatable {
 enum AutomaticWindDownInstallationDecision {
     static func canSaveSchedule(after outcome: QuietTimeShieldingOutcome) -> Bool {
         outcome == .scheduled
+    }
+}
+
+enum AutomaticWindDownRecoveryDecision: Equatable {
+    case installMissing
+    case waitUntil(Date)
+    case materialize
+    case advancePastSettledRun
+
+    static func resolve(schedule: AutomaticWindDownSchedule?, lastRun: FocusRun?, at date: Date) -> Self {
+        guard let schedule else { return .installMissing }
+        if let lastRun, lastRun.id == schedule.id,
+           [.completed, .endedEarly].contains(lastRun.state) {
+            return .advancePastSettledRun
+        }
+        return date < schedule.startedAt ? .waitUntil(schedule.startedAt) : .materialize
     }
 }

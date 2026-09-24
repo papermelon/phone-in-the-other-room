@@ -57,7 +57,7 @@ extension NightFlockViewModel {
               !isSharedHabitsPartySuppressed(command.partyID) else { return }
         do {
             let pending = try pastureOutbox.commands(owner: owner)
-            if command.command != "publishCampfireSession", pending.contains(where: { $0.partyID == command.partyID && $0.command == command.command && $0.sheepID == command.sheepID && $0.visitID == command.visitID && $0.entityID == command.entityID }) {
+            if command.command != "publishCampfireSession", pending.contains(where: { $0.partyID == command.partyID && $0.command == command.command && $0.sheepID == command.sheepID && $0.visitID == command.visitID && $0.entityID == command.entityID && $0.sourceID == command.sourceID && $0.targetMemberID == command.targetMemberID && $0.buddyAction == command.buddyAction }) {
                 recoverPasture(partyID: command.partyID, retry: true)
                 return
             }
@@ -106,10 +106,11 @@ extension NightFlockViewModel {
                           isCurrentTransportTask(generation: generation, epoch: transport),
                           fence == sharedHabitsFenceGeneration, !isSharedHabitsPartySuppressed(partyID) else { return }
                     guard result.accepted else { throw NightFlockServiceError.unsupportedResponse }
+                    guard recordCampfireAgreementResponse(command, conflicted: result.conflict == true) else { return }
                     try pastureOutbox.remove(command.id, owner: owner)
                     pastureMessages[partyID] = result.conflict == true
-                        ? command.command == "setCampfireSharing" ? "Sharing changed on another device. Showing the latest choice." : "Someone placed this first. Showing the shared arrangement."
-                        : command.command == "publishCampfireSession" ? (command.ended == true ? "Session end shared" : "Session shared") : "Saved to the shared pasture"
+                        ? command.command == "setCampfireSharing" ? "Sharing changed on another device. Showing the latest choice." : command.command == "campfireBuddyAction" ? "Someone already accepted. Showing the latest check-in buddy." : "Someone placed this first. Showing the shared arrangement."
+                        : command.command == "publishCampfireSession" ? (command.ended == true ? "Session end shared" : "Session shared") : command.command == "campfireBuddyAction" ? "Shared with the party" : command.command == "setCampfireAlerts" ? "Invitation preference saved" : "Saved to the shared pasture"
                     pastureRefreshTokens[partyID, default: 0] += 1
                     refreshV4PartyObservation(partyID, refreshListAfterward: false)
                 } catch {

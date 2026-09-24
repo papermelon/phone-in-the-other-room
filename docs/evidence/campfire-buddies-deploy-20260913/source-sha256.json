@@ -1,0 +1,4 @@
+{
+  "supabase/migrations/20260913140000_campfire_buddies.sql": "417b10f0950d3e4494360ac49e8d062010bca44c08ab5da264a08e7d332ec138",
+  "supabase/migrations/20260913150000_campfire_alert_delivery.sql": "f5d3e5c4f774caae3fb14fcbae491b04e6202ed759af589706f676d38f0d8246"
+}

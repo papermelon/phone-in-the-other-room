@@ -324,6 +324,7 @@ enum WelcomeRewardEngine {
         var preview = shepherd
         switch item.effect {
         case .shepherdAccessory: preview.accessoryItemID = itemID
+        case .shepherdShirt: preview.shirtItemID = itemID
         case .shepherdOutfit: preview.outfitItemID = itemID
         default: break
         }

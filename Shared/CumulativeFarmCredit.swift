@@ -11,6 +11,94 @@ struct CumulativeFarmCredit: Codable, Equatable {
     var phoneAwaySeconds: TimeInterval = 0
     var receipts: [UUID: FarmCreditReceipt] = [:]
     var outcomes: [SheepSearchOutcome] = []
+    var bedtimeBonus: BedtimeSearchBonus?
+
+    var windDownSearchProgress: TimeInterval {
+        windDownSeconds + (bedtimeBonus?.remainingSearchSeconds ?? 0)
+    }
+
+    var windDownProgressFraction: Double {
+        min(1, max(0, windDownSearchProgress / Self.windDownSearchSeconds))
+    }
+}
+
+/// Search units are separate from timer seconds: a bedtime bonus never grows wool.
+struct BedtimeSearchBonus: Codable, Equatable {
+    static let policyVersion = 2
+    static let percentagePoints = 20
+    static let startTolerance: TimeInterval = 15 * 60
+    static let grantSearchSeconds = CumulativeFarmCredit.windDownSearchSeconds * Double(percentagePoints) / 100
+
+    var remainingSearchSeconds: TimeInterval = 0
+    var grantedNights: [String: UUID] = [:]
+
+    static func receipt(for run: FocusRun, interval: DateInterval, trackingIncomplete: Bool,
+                        hasNewCredit: Bool, grantedNights: [String: UUID]) -> BedtimeBonusReceipt {
+        guard let plan = run.nightWatchPlan, plan.role == .primarySleepBookend,
+              plan.windDownMinutes > 0 else { return .init(result: .notEligible) }
+        guard let anchor = plan.localDateAnchor,
+              TimeZone(identifier: anchor.timeZoneIdentifier) != nil, !trackingIncomplete,
+              run.endedEarlyReason.map({ ![EarlyEndReason.appInterrupted, .unsupported, .signalLostTooLong].contains($0) }) ?? true else {
+            return .init(result: .unknown)
+        }
+        // Freeze attribution to the saved night, not the run ID or the current time zone.
+        let night = anchor.nightEndingDate
+        let key = "\(night.year)-\(night.month)-\(night.day)"
+        guard grantedNights[key] == nil else { return .init(result: .alreadyGranted, nightKey: key) }
+        let plannedStart = plan.intendedBedtime.addingTimeInterval(-Double(plan.windDownMinutes) * 60)
+        guard run.startedAt < plan.intendedBedtime,
+              abs(run.startedAt.timeIntervalSince(plannedStart)) <= startTolerance else {
+            return .init(result: .outsideStartWindow, nightKey: key)
+        }
+        guard interval.end >= plan.intendedBedtime else {
+            return .init(result: .endedBeforeBedtime, nightKey: key)
+        }
+        guard hasNewCredit else { return .init(result: .unknown, nightKey: key) }
+        return .init(result: .granted, nightKey: key, grantedSearchSeconds: grantSearchSeconds)
+    }
+}
+
+extension BedtimeSearchBonus {
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        remainingSearchSeconds = try values.decode(TimeInterval.self, forKey: .remainingSearchSeconds)
+        grantedNights = try values.decode([String: UUID].self, forKey: .grantedNights)
+        guard remainingSearchSeconds.isFinite, remainingSearchSeconds >= 0,
+              remainingSearchSeconds < CumulativeFarmCredit.windDownSearchSeconds else {
+            throw DecodingError.dataCorruptedError(forKey: .remainingSearchSeconds, in: values,
+                debugDescription: "Invalid unspent bedtime search bonus")
+        }
+    }
+}
+
+struct BedtimeBonusReceipt: Codable, Equatable {
+    enum Result: String, Codable {
+        case granted, alreadyGranted, outsideStartWindow, endedBeforeBedtime, notEligible, unknown
+    }
+    var result: Result
+    var nightKey: String?
+    var grantedSearchSeconds: TimeInterval = 0
+    var policyVersion: Int = BedtimeSearchBonus.policyVersion
+}
+
+struct SearchTrailPresentation {
+    let credit: CumulativeFarmCredit
+    var fraction: Double { credit.windDownProgressFraction }
+    var percentage: Int { min(99, Int((fraction * 100).rounded())) }
+    var summary: String { "\(percentage)% of the trail explored" }
+    var time: String { OllieFormat.duration(minutes: OllieFormat.minutes(credit.windDownSeconds)) }
+    var timeShare: String { share(credit.windDownSeconds) }
+    var bonusShare: String? {
+        guard let remaining = credit.bedtimeBonus?.remainingSearchSeconds, remaining > 0 else { return nil }
+        return share(remaining)
+    }
+    var phoneAwayFraction: Double {
+        min(1, max(0, credit.phoneAwaySeconds / CumulativeFarmCredit.phoneAwaySearchSeconds))
+    }
+    var phoneAway: String { "\(OllieFormat.minutes(credit.phoneAwaySeconds)) / 100 min" }
+    private func share(_ seconds: TimeInterval) -> String {
+        (seconds / CumulativeFarmCredit.windDownSearchSeconds).formatted(.percent.precision(.fractionLength(0...1)))
+    }
 }
 
 struct FarmCreditReceipt: Codable, Equatable {
@@ -19,12 +107,16 @@ struct FarmCreditReceipt: Codable, Equatable {
     let trackingIncomplete: Bool
     let migrated: Bool
     let outcomeIDs: [UUID]
+    var bedtimeBonus: BedtimeBonusReceipt?
 
     var detail: String {
         if trackingIncomplete {
-            return "Brief-access timing is incomplete, so no extra credit was added. Previously saved progress stays."
+            return "Brief-access timing is incomplete, so no extra Farm progress was added. Previously saved progress stays."
         }
-        return "\(Int(creditedSeconds / 60)) min added to wool growth and Ollie's search. Brief access is excluded; earned progress stays."
+        let bonus = bedtimeBonus?.result == .granted
+            ? " Bedtime bonus: +\(BedtimeSearchBonus.percentagePoints)% of a search trail. This adds no timer minutes or wool growth."
+            : ""
+        return "\(Int(creditedSeconds / 60)) min added to wool growth and Ollie's search. Brief access is excluded; earned progress stays." + bonus
     }
 }
 
@@ -136,10 +228,25 @@ extension FarmState {
         let phoneAway = run.nightWatchPlan?.role == .additionalQuiet
         let threshold = phoneAway ? CumulativeFarmCredit.phoneAwaySearchSeconds : CumulativeFarmCredit.windDownSearchSeconds
         if phoneAway { ledger.phoneAwaySeconds += seconds } else { ledger.windDownSeconds += seconds }
+        var bonusReceipt: BedtimeBonusReceipt?
+        if !migrated, !phoneAway, run.farmCreditVersion == BedtimeSearchBonus.policyVersion {
+            let receipt = BedtimeSearchBonus.receipt(for: run, interval: interval,
+                trackingIncomplete: incomplete, hasNewCredit: seconds > 0,
+                grantedNights: ledger.bedtimeBonus?.grantedNights ?? [:])
+            bonusReceipt = receipt
+            if receipt.result == .granted, let key = receipt.nightKey {
+                var bonus = ledger.bedtimeBonus ?? BedtimeSearchBonus()
+                bonus.remainingSearchSeconds += receipt.grantedSearchSeconds
+                bonus.grantedNights[key] = run.id
+                ledger.bedtimeBonus = bonus
+            }
+            // Older apps must reject this document before dropping the bonus receipt.
+            schemaVersion = Self.currentSchemaVersion
+        }
         var search = searchState
         for outcome in ledger.outcomes { search.append(outcome) }
         var newOutcomes: [UUID] = []
-        while (phoneAway ? ledger.phoneAwaySeconds : ledger.windDownSeconds) >= threshold {
+        while (phoneAway ? ledger.phoneAwaySeconds : ledger.windDownSearchProgress) >= threshold {
             let ordinal = ledger.outcomes.count
             let identity = FarmMigration.stableLegacyID(for: "cumulative:\(run.id.uuidString):\(ordinal)")
             let number = search.completedWindDownSearchCount + 1
@@ -152,10 +259,18 @@ extension FarmState {
             newOutcomes.append(outcome.id)
             search.append(outcome)
             recordArrival(outcome)
-            if phoneAway { ledger.phoneAwaySeconds -= threshold } else { ledger.windDownSeconds -= threshold }
+            if phoneAway {
+                ledger.phoneAwaySeconds -= threshold
+            } else {
+                let timeConsumed = min(ledger.windDownSeconds, threshold)
+                ledger.windDownSeconds -= timeConsumed
+                if threshold > timeConsumed {
+                    ledger.bedtimeBonus?.remainingSearchSeconds -= threshold - timeConsumed
+                }
+            }
         }
         ledger.receipts[run.id] = FarmCreditReceipt(creditedSeconds: seconds, excludedAccessSeconds: excluded,
-            trackingIncomplete: incomplete, migrated: migrated, outcomeIDs: newOutcomes)
+            trackingIncomplete: incomplete, migrated: migrated, outcomeIDs: newOutcomes, bedtimeBonus: bonusReceipt)
         cumulativeCredit = ledger
     }
 

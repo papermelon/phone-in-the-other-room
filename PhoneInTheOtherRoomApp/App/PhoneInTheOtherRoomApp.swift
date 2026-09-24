@@ -2,10 +2,21 @@ import SwiftUI
 
 @main
 struct PhoneInTheOtherRoomApp: App {
+    @UIApplicationDelegateAdaptor(CampfireAppDelegate.self) private var appDelegate
     var body: some Scene {
         WindowGroup {
 #if DEBUG
-            if ProcessInfo.processInfo.arguments.contains("--shop-wardrobe-qa") {
+            if ProcessInfo.processInfo.arguments.contains("--slumber-repair-qa") {
+                SlumberPartyRepairFixture()
+            } else if ProcessInfo.processInfo.arguments.contains("--first-start-preview") {
+                FirstStartSheetPreview(
+                    readiness: FirstStartSheetPreview.launchReadiness,
+                    usesNFC: ProcessInfo.processInfo.arguments.contains("--nfc"),
+                    phoneAway: ProcessInfo.processInfo.arguments.contains("--phone-away")
+                )
+            } else if ProcessInfo.processInfo.arguments.contains("--campfire-buddies-qa") {
+                CampfireBuddiesNativeFixture()
+            } else if ProcessInfo.processInfo.arguments.contains("--shop-wardrobe-qa") {
                 ShopWardrobeNativeQA()
             } else if ProcessInfo.processInfo.arguments.contains("--slumber-farm-fixture") {
                 SlumberPartySharedFarmNativeFixture()
@@ -71,7 +82,17 @@ private struct PhoneInTheOtherRoomRuntimeView: View {
     var body: some View {
             rootView
                 .environmentObject(runViewModel)
+                .environment(\.ollieCoat, runViewModel.farmState.equipment.ollieCoat)
                 .preferredColorScheme(preferredColorScheme)
+                .onChange(of: runViewModel.activeRun, initial: true) { _, run in
+                    runViewModel.nightFlockViewModel.updateCampfireQuietPeriod(for: run)
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .campfirePushTokenChanged)) { _ in
+                    runViewModel.nightFlockViewModel.syncCampfirePush()
+                }
+                .onReceive(NotificationCenter.default.publisher(for: .campfirePushRegistrationFailed)) { _ in
+                    runViewModel.nightFlockViewModel.campfirePushStatus = "This phone couldn’t register for invitations. Try again when connected."
+                }
                 .onChange(of: scenePhase) { _, newPhase in
 #if DEBUG
                     guard screenbookRequest == nil else { return }
@@ -83,6 +104,8 @@ private struct PhoneInTheOtherRoomRuntimeView: View {
                         runViewModel.coordinator.applicationDidBecomeActive()
                         runViewModel.reconcileAutomaticWindDownIfNeeded()
                         runViewModel.nightFlockViewModel.handleForeground()
+                        runViewModel.nightFlockViewModel.refreshCampfireNotificationToken()
+                        runViewModel.nightFlockViewModel.syncCampfirePush()
                     case .inactive:
                         break
                     @unknown default:
@@ -105,6 +128,9 @@ private struct PhoneInTheOtherRoomRuntimeView: View {
     }
 
     private var preferredColorScheme: ColorScheme? {
+#if DEBUG
+        if screenbookRequest != nil, ProcessInfo.processInfo.arguments.contains("-personal-shield-dark") { return .dark }
+#endif
         switch runViewModel.appearanceResolution {
         case .system: return nil
         case .light: return .light

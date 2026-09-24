@@ -115,13 +115,16 @@ struct WindDownRoutineEditor: View {
                     .foregroundStyle(AppColors.muted)
             }
 
-            if phase == .evening {
-                NavigationLink("About these ideas and sources") {
-                    WindDownGuideView()
-                }
-                .font(AppTypography.caption.weight(.semibold))
-                .foregroundStyle(AppColors.grass)
+            NavigationLink {
+                RoutineIdeasView(phase: phase, steps: steps, onSave: onChange)
+            } label: {
+                Label(phase == .evening ? "Explore evening ideas & why to try them" : "Explore morning ideas & why to try them",
+                      systemImage: "sparkles")
+                    .font(AppTypography.caption.weight(.semibold))
+                    .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                    .contentShape(Rectangle())
             }
+            .foregroundStyle(AppColors.grass)
         }
         .accessibilityElement(children: .contain)
     }

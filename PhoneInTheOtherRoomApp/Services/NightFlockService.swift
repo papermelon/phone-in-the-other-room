@@ -9,6 +9,8 @@ actor NightFlockService {
     }
 
     private let provider: SupabaseClientProviding
+    private let listReads = NightFlockListReadCoordinator()
+    private var requestCount = 0
     private let decoder: JSONDecoder
     private let logger = Logger(subsystem: "com.ngawangchime.countingsheep", category: "NightFlock")
     private var v4RealtimeSubscriptions: [UUID: V4RealtimeSubscription] = [:]
@@ -77,6 +79,49 @@ actor NightFlockService {
         } catch { throw mapError(error, operation: "command-v3") }
     }
 
+    func registerCampfireDevice(_ registration: CampfireDeviceRegistration) async throws {
+        struct Result: Decodable { var accepted: Bool }
+        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
+        let result: Result = try await provider.client().functions.invoke("campfire-device", options: FunctionInvokeOptions(body: registration, encoder: encoder))
+        guard result.accepted else { throw NightFlockServiceError.unsupportedResponse }
+    }
+
+    func globalCampfireState(gathering: String = "all", cursor: UUID? = nil, channelID: Int = 0) async throws -> GlobalCampfireResponse {
+        do {
+            let client = try provider.client()
+            let options = FunctionInvokeOptions(body: GlobalCampfireStateRequest(gathering: gathering, cursor: cursor, channelID: channelID))
+            return try await NightFlockReadDeadline.run {
+                try await client.functions.invoke("campfire-global", options: options, decoder: Self.campfireDecoder())
+            }
+        } catch { throw mapError(error, operation: "campfire-global-state") }
+    }
+
+    func campfireProfile(participantID: UUID? = nil, memberID: UUID? = nil) async throws -> CampfireProfileResponse {
+        struct Request: Encodable { var command = "detail"; var participantID: UUID?; var memberID: UUID? }
+        return try await provider.client().functions.invoke("campfire-global", options: FunctionInvokeOptions(
+            body: Request(participantID: participantID, memberID: memberID)), decoder: Self.campfireDecoder())
+    }
+
+    func sendGlobalCampfire(_ command: GlobalCampfireCommand, ownerID: UUID) async throws -> GlobalCampfireResponse {
+        let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
+        return try await provider.client().functions.invoke("campfire-global", options: FunctionInvokeOptions(
+            headers: ["X-Campfire-Owner": ownerID.uuidString.lowercased()], body: command, encoder: encoder), decoder: Self.campfireDecoder())
+    }
+
+    private static func campfireDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .custom { value in
+            let text = try value.singleValueContainer().decode(String.self)
+            let formatter = ISO8601DateFormatter()
+            formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+            if let date = formatter.date(from: text) { return date }
+            formatter.formatOptions = [.withInternetDateTime]
+            if let date = formatter.date(from: text) { return date }
+            throw DecodingError.dataCorrupted(.init(codingPath: value.codingPath, debugDescription: "Invalid Campfire timestamp"))
+        }
+        return decoder
+    }
+
     func sendPasture(_ command: SharedPastureCommand) async throws -> SharedPastureCommandResponse {
         do {
             return try await invoke("night-flock-command", headers: commandHeaders(idempotencyKey: command.idempotencyKey),
@@ -84,18 +129,43 @@ actor NightFlockService {
         } catch { throw mapError(error, operation: "command-pasture") }
     }
 
-    func stateV4List() async throws -> NightFlockV4ListStateResponse {
-        try await stateV4(request: NightFlockV4ListStateRequest(), operation: "state-v4-list")
+    func partyConnections(_ request: SlumberPartyConnectionsRequest) async throws -> SlumberPartyConnections {
+        struct Parameters: Encodable { var p_request: SlumberPartyConnectionsRequest }
+        do {
+            let response = try await provider.client().rpc("slumber_party_connections_v1", params: Parameters(p_request: request)).execute()
+            let value = try Self.campfireDecoder().decode(SlumberPartyConnections.self, from: response.data)
+            guard value.version == 1 else { throw NightFlockServiceError.unsupportedResponse }
+            return value
+        } catch let error as PostgrestError {
+            switch error.message {
+            case "party_full": throw SlumberPartyConnectionError.full
+            case "party_limit": throw SlumberPartyConnectionError.limit
+            case "rate_limited": throw SlumberPartyConnectionError.rateLimited
+            case "invite_unavailable", "already_member", "membership_required": throw SlumberPartyConnectionError.unavailable
+            default: throw SlumberPartyConnectionError.offline
+            }
+        } catch { throw SlumberPartyConnectionError.offline }
+    }
+
+    func stateV4List(scope: NightFlockRequestScope) async throws -> NightFlockV4ListStateResponse {
+        try await listReads.read(scope: scope) {
+            try await self.stateV4(request: NightFlockV4ListStateRequest(), operation: "state-v4-list")
+        }
     }
 
     func stateV4Party(
         partyID: UUID,
         cursor: NightFlockV4PaginationCursor? = nil
     ) async throws -> NightFlockV4PartyStateResponse {
-        try await stateV4(
+        let response: NightFlockV4PartyStateResponse = try await stateV4(
             request: NightFlockV4PartyStateRequest(partyID: partyID, cursor: cursor),
             operation: "state-v4-party"
         )
+        // A detail read without a party cannot finish any of its loading views.
+        guard response.party?.summary.partyID == partyID else {
+            throw NightFlockServiceError.unsupportedResponse
+        }
+        return response
     }
 
     func sendV4(_ command: NightFlockV4Command) async throws -> NightFlockV4CommandResponse {
@@ -268,11 +338,59 @@ actor NightFlockService {
         operation: String
     ) async throws -> Response {
         let client = try provider.client()
-        return try await client.functions.invoke(
-            function,
-            options: FunctionInvokeOptions(headers: headers, body: body),
-            decoder: decoder
-        )
+        let isCommand = function == "night-flock-command"
+        if isCommand { await listReads.invalidate() }
+        let startedAt = ContinuousClock.now
+        requestCount += 1
+        let requestNumber = requestCount
+        let requestID = headers["X-Request-ID"] ?? UUID().uuidString.lowercased()
+        let logger = self.logger
+        let decoder = self.decoder
+        var outcome = "error"
+        defer {
+            let elapsedMs = Self.milliseconds(startedAt.duration(to: .now))
+            logger.info("event=requestCompleted requestID=\(requestID, privacy: .public) operation=\(operation, privacy: .public) requestNumber=\(requestNumber) elapsedMs=\(elapsedMs) outcome=\(outcome, privacy: .public)")
+        }
+        let execute: @Sendable () async throws -> Response = {
+            try await client.functions.invoke(function, options: FunctionInvokeOptions(headers: headers, body: body)) { data, _ in
+                let decodeStartedAt = ContinuousClock.now
+                defer {
+                    let decodeMs = Self.milliseconds(decodeStartedAt.duration(to: .now))
+                    logger.info("event=responseDecoded requestID=\(requestID, privacy: .public) operation=\(operation, privacy: .public) decodeMs=\(decodeMs)")
+                }
+                return try decoder.decode(Response.self, from: data)
+            }
+        }
+        do {
+            let result = try await (function == "night-flock-state" ? NightFlockReadDeadline.run(operation: execute) : execute())
+            if isCommand { await listReads.invalidate() }
+            outcome = "success"
+            return result
+        } catch {
+            if isCommand { await listReads.invalidate() }
+            if error is CancellationError || (error as? URLError)?.code == .cancelled {
+                outcome = "cancelled"
+                throw CancellationError()
+            }
+            if error is DecodingError { outcome = "decodeError" }
+            // Keep the outgoing ID even when the gateway cannot return an envelope.
+            if let failure = error as? FunctionsError {
+                switch failure {
+                case .httpError(let status, let data):
+                    throw NightFlockRemoteError.decode(statusCode: status, data: data, headerRequestID: requestID)
+                case .relayError:
+                    throw NightFlockRemoteError.network(requestID: requestID)
+                }
+            }
+            if let error = error as? URLError {
+                throw NightFlockRemoteError.network(requestID: requestID, reason: error.code)
+            }
+            throw error
+        }
+    }
+
+    private nonisolated static func milliseconds(_ duration: Duration) -> Double {
+        Double(duration.components.seconds) * 1_000 + Double(duration.components.attoseconds) / 1e15
     }
 
     private func commandHeaders(idempotencyKey: String) -> [String: String] {
@@ -292,8 +410,9 @@ actor NightFlockService {
             case .relayError:
                 remote = .network()
             }
-        } else if error is URLError {
-            remote = .network()
+        } else if let error = error as? URLError {
+            if error.code == .cancelled { return CancellationError() }
+            remote = .network(reason: error.code)
         } else {
             return error
         }

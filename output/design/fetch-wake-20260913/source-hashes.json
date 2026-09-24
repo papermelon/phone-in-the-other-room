@@ -1,0 +1,13 @@
+{
+  "Shared/PastureFetchWakeUp.swift": "66fb579783234ba1507cb2da214e2c2e9ff567b1cce3cd0ddc92477d82672d46",
+  "PhoneInTheOtherRoomApp/ViewModels/PastureFetchViewModel.swift": "7cc6d79ef227f71e74726b61cd29a0546b1bfaa1650e171883dfd3d9828224a4",
+  "PhoneInTheOtherRoomApp/ViewModels/PastureSceneController.swift": "f019018d5e3d722757e2b436533eabc9823b8deeca95b1bd07be2aed12614a7b",
+  "PhoneInTheOtherRoomApp/Views/FarmPastureView.swift": "9da454b8140ac8e66047af0c36def3ac2cde5885d4e8b94549ade0cbcef22e00",
+  "PhoneInTheOtherRoomApp/Views/Components/PastureFetchView.swift": "9dabc6cc27c073eb1cade40f69d3eb61c77aedaba6cc3a853f22ff7f8b07edf0",
+  "PhoneInTheOtherRoomApp/Views/Components/PastureFetchFixture.swift": "f05be9cd4e330452392b4fcad8e99418c537c1ec0f1382898307edffd24895fc",
+  "PhoneInTheOtherRoomApp/Views/Components/FarmSharedComponents.swift": "a389a2b6d8f18a2ef30d13ae4d47b388b68150d5b66e06d2869d228cf12035a1",
+  "PhoneInTheOtherRoomApp/Views/Components/OllieCompanionSpriteRenderer.swift": "5351539603a56970fe238f99197adf8755e0c22a35475c5c0a9e63e29ce0d5b7",
+  "Tests/PastureFetchTests.swift": "b838354eeabf509da1b132cdda401329b41423ce9851d1d9440f78ad6b26b5d9",
+  "Tests/PastureFetchViewModelTests.swift": "b09086f075cd5ad57aaded3f776be2b9ce8aaed35e33d649c504e853e4a0d12f",
+  "project.yml": "d6ac0e308583513ee50e13053f3ac74e4d11e024b6f088954328ac9bd3179d58"
+}

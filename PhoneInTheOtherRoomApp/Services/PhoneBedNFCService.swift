@@ -316,7 +316,6 @@ extension PhoneBedNFCService: NFCNDEFReaderSessionDelegate {
                     guard self.finishProvision(.previouslyPaired(result.digest), for: session) else { return }
                     session.invalidate(errorMessage: message)
                 case .resetRequired:
-                    let message = "This is a previously used Counting Sheep tag. Confirm reset and pairing in Settings to replace its old credential."
                     guard self.finishProvision(.resetRequired(result.digest), for: session) else { return }
                     session.alertMessage = "Counting Sheep tag found."
                     session.invalidate()

@@ -55,30 +55,46 @@ struct PixelCard<Content: View>: View {
     }
 }
 
+// MARK: - Inputs
+
+struct PixelTextFieldStyle: TextFieldStyle {
+    func _body(configuration: TextField<Self._Label>) -> some View {
+        configuration
+            .padding(AppSpacing.sm)
+            .frame(minHeight: 44)
+            .background(AppColors.panel, in: RoundedRectangle(cornerRadius: AppRadius.sm))
+            .overlay(RoundedRectangle(cornerRadius: AppRadius.sm).stroke(AppColors.stroke.opacity(0.35)))
+    }
+}
+
 // MARK: - Buttons
 
 struct PixelPrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(.white)
             .padding(18)
-            .background(AppColors.grass.opacity(configuration.isPressed ? 0.88 : 1))
+            .background(AppColors.grass.opacity(isEnabled ? (configuration.isPressed ? 0.88 : 1) : 0.45))
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
             .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).stroke(AppColors.stroke.opacity(0.9), lineWidth: 2))
+            .opacity(isEnabled ? 1 : 0.45)
             .scaleEffect(!reduceMotion && configuration.isPressed ? 0.99 : 1)
             .animation(reduceMotion ? nil : AppMotion.press, value: configuration.isPressed)
     }
 }
 
 struct PixelChipButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var isEnabled
     var isSelected: Bool
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .foregroundStyle(isSelected ? .white : AppColors.ink)
             .padding(.vertical, 11)
+            .padding(.horizontal, AppSpacing.md)
             .frame(maxWidth: .infinity)
             .background(isSelected ? AppColors.grass : AppColors.panel)
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
@@ -344,47 +360,38 @@ struct PrimaryGreenCTA: View {
                 in: RoundedRectangle(cornerRadius: 10, style: .continuous)
             )
             .overlay(RoundedRectangle(cornerRadius: 10).stroke(AppColors.stroke, lineWidth: 2))
+            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PrimaryGreenPressStyle())
         .accessibilityElement(children: .combine)
         .orientationTourTarget(.startAction)
     }
 
     private var standardContent: some View {
         HStack(spacing: AppSpacing.sm) {
-                if let assetName {
-                    PixelAssetImage(name: assetName)
-                        .frame(width: 54, height: 54)
-                } else {
-                    Image(systemName: icon)
-                        .font(.system(size: 30, weight: .black))
-                        .foregroundStyle(AppColors.wood)
-                        .frame(width: 54, height: 54)
+            Image(systemName: icon)
+                .font(.title2.weight(.bold))
+                .foregroundStyle(AppColors.wool)
+                .frame(width: 40, height: 40)
+                .background(AppColors.paper.opacity(0.24), in: Circle())
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                if let eyebrow {
+                    Text(eyebrow)
+                        .font(pixelFont(.caption2))
+                        .foregroundStyle(.white.opacity(0.84))
                 }
-                VStack(alignment: .leading, spacing: 5) {
-                    if let eyebrow {
-                        Text(eyebrow)
-                            .font(pixelFont(.caption2))
-                            .foregroundStyle(.white.opacity(0.84))
-                    }
-                    Text(title)
-                        .font(AppTypography.title)
-                        .foregroundStyle(.white)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                    Text(subtitle)
-                        .font(pixelFont(.caption))
-                        .foregroundStyle(.white.opacity(0.92))
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.82)
-                        .multilineTextAlignment(.leading)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 28, weight: .black))
+                Text(title)
+                    .font(AppTypography.title)
                     .foregroundStyle(.white)
+                Text(subtitle)
+                    .font(AppTypography.body)
+                    .foregroundStyle(.white.opacity(0.92))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .multilineTextAlignment(.leading)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var accessibilityContent: some View {
@@ -870,5 +877,17 @@ struct AssetOrSymbolImage: View {
                 .font(.system(size: size * 0.42, weight: .black))
                 .foregroundStyle(AppColors.grass)
         }
+    }
+}
+
+
+private struct PrimaryGreenPressStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.97 : 1)
+            .opacity(configuration.isPressed ? 0.88 : 1)
+            .animation(reduceMotion ? nil : AppMotion.press, value: configuration.isPressed)
     }
 }

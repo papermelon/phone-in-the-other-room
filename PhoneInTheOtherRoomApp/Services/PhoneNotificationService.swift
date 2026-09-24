@@ -704,6 +704,9 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
+        if notification.request.content.userInfo["campfirePartyID"] != nil,
+           let quietUntil = UserDefaults.standard.object(forKey: "ollie.campfire.localQuietUntil") as? Date,
+           quietUntil > Date() { return [] }
         if notification.request.content.interruptionLevel == .passive {
             return [.list]
         }
@@ -715,6 +718,10 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        if let raw = response.notification.request.content.userInfo["campfirePartyID"] as? String, let partyID = UUID(uuidString: raw) {
+            UserDefaults.standard.set(partyID.uuidString, forKey: "ollie.campfire.pendingParty")
+            NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: partyID)
+        }
         if let rawValue = response.notification.request.content.userInfo["destination"] as? String,
            let destination = NotificationDestination(rawValue: rawValue) {
             UserDefaults.standard.set(destination.rawValue, forKey: Self.pendingDestinationKey)

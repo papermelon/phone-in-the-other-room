@@ -1,0 +1,7 @@
+counting-sheep-first-start-build-verified.log
+** BUILD SUCCEEDED **
+counting-sheep-first-start-tests.log
+Test Case '-[PhoneInTheOtherRoomTests.ShieldingReadinessTests testFirstStartAdvancesSetupBeforeOfferingAnExplicitStart]' passed (0.001 seconds).
+	 Executed 1101 tests, with 0 failures (0 unexpected) in 5.600 (6.861) seconds
+	 Executed 1101 tests, with 0 failures (0 unexpected) in 5.600 (6.867) seconds
+** TEST SUCCEEDED **

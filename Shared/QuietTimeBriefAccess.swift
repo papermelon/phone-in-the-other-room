@@ -70,7 +70,7 @@ struct QuietTimeBriefAccessGrant: Codable, Equatable {
         requestedAt: Date,
         expiresAt: Date,
         nonce: UUID = UUID(),
-        restoreActivityIdentifier: String = QuietTimeBriefAccessConstants.restoreActivityIdentifier,
+        restoreActivityIdentifier: String? = nil,
         status: QuietTimeBriefAccessGrantStatus = .pending
     ) {
         self.schemaVersion = schemaVersion
@@ -81,7 +81,7 @@ struct QuietTimeBriefAccessGrant: Codable, Equatable {
         self.requestedAt = requestedAt
         self.expiresAt = max(requestedAt, expiresAt)
         self.nonce = nonce
-        self.restoreActivityIdentifier = restoreActivityIdentifier
+        self.restoreActivityIdentifier = restoreActivityIdentifier ?? QuietTimeBriefAccessConstants.identifier(for: nonce)
         self.status = status
     }
 
@@ -328,6 +328,20 @@ enum QuietTimeBriefAccessConstants {
     /// The restore callback is therefore a warning inside a longer envelope.
     static let minimumRestoreMonitoringDuration: TimeInterval = 15 * 60
     static let restoreActivityIdentifier = "ollie.quietTime.briefAccessRestore"
+
+    static func identifier(for nonce: UUID) -> String {
+        "\(restoreActivityIdentifier).\(nonce.uuidString.lowercased())"
+    }
+
+    static func isRestoreActivity(_ identifier: String) -> Bool {
+        identifier == restoreActivityIdentifier || (identifier.hasPrefix(restoreActivityIdentifier + ".")
+            && UUID(uuidString: String(identifier.dropFirst(restoreActivityIdentifier.count + 1))) != nil)
+    }
+
+    static func matches(_ identifier: String, grant: QuietTimeBriefAccessGrant) -> Bool {
+        identifier == grant.restoreActivityIdentifier
+            && (identifier == restoreActivityIdentifier || identifier == self.identifier(for: grant.nonce))
+    }
 }
 
 struct QuietTimeBriefAccessRestorePlan: Equatable {
@@ -338,26 +352,14 @@ struct QuietTimeBriefAccessRestorePlan: Equatable {
     var duration: TimeInterval { intervalEnd.timeIntervalSince(intervalStart) }
 
     static func make(requestedAt: Date, expiresAt: Date) -> Self? {
-        let intervalStart = requestedAt.addingTimeInterval(
-            QuietTimeBriefAccessConstants.minimumSchedulingLead
-        )
-        guard expiresAt > intervalStart else { return nil }
-        let intervalEnd = max(
-            intervalStart.addingTimeInterval(
-                QuietTimeBriefAccessConstants.minimumRestoreMonitoringDuration
-            ),
-            expiresAt.addingTimeInterval(1)
-        )
-        let warningSeconds = max(1, Int(ceil(intervalEnd.timeIntervalSince(expiresAt))))
-        return Self(
-            intervalStart: intervalStart,
-            intervalEnd: intervalEnd,
-            warningTime: DateComponents(
-                hour: warningSeconds / 3600,
-                minute: (warningSeconds % 3600) / 60,
-                second: warningSeconds % 60
-            )
-        )
+        // Reuse the whole-second monitoring policy: an early warning would
+        // observe an unexpired grant and leave the barrier clear for 15 minutes.
+        guard let window = QuietTimeShieldMonitoringPolicy.window(
+            for: DateInterval(start: requestedAt, end: max(requestedAt, expiresAt)),
+            requestedAt: requestedAt.addingTimeInterval(QuietTimeBriefAccessConstants.minimumSchedulingLead)
+        ), let warningTime = window.warningTime else { return nil }
+        return Self(intervalStart: window.monitoring.start, intervalEnd: window.monitoring.end,
+                    warningTime: warningTime)
     }
 }
 
@@ -464,7 +466,7 @@ enum QuietTimeBriefAccessPolicy {
               grant.scheduleRevision == currentRevision,
               state.scheduleEpoch == max(1, currentEpoch),
               grant.scheduleEpoch == max(1, currentEpoch),
-              grant.restoreActivityIdentifier == QuietTimeBriefAccessConstants.restoreActivityIdentifier,
+              QuietTimeBriefAccessConstants.matches(grant.restoreActivityIdentifier, grant: grant),
               grant.status == .scheduled || grant.status == .pending else {
             return .discardStaleGrant
         }

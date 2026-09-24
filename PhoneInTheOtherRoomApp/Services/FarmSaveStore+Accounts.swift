@@ -74,7 +74,7 @@ extension FarmSaveStore {
 
     func removeAccountRecovery(_ owner: UUID) throws {
         try transaction {
-            pending?.accountArchives?.removeValue(forKey: owner.uuidString.lowercased())
+            _ = pending?.accountArchives?.removeValue(forKey: owner.uuidString.lowercased())
         }
     }
 }

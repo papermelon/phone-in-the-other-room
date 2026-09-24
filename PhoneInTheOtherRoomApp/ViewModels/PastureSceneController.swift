@@ -9,8 +9,10 @@ final class PastureSceneController {
     private(set) var positions: [PastureSceneEntityID: PastureScenePoint] = [:]
     private(set) var behaviors: [PastureSceneEntityID: PastureSceneBehavior] = [:]
     private(set) var isInteractionActive = false
-    private(set) var toyPosition: PastureScenePoint?
+    let fetchGame = PastureFetchViewModel()
+    private var olliePoseByPasture: [Int: String] = [:]
     private(set) var playMessage: String?
+    var showsPlayPaused = false
 
     private var settledPositions: [PastureSceneEntityID: PastureScenePoint] = [:]
     private var entityIDs = Set<PastureSceneEntityID>()
@@ -51,6 +53,7 @@ final class PastureSceneController {
         self.activePastureIndex = activePastureIndex
         self.reduceMotion = reduceMotion
         self.isWindDownActive = isWindDownActive
+        if !isWindDownActive { showsPlayPaused = false }
         persistSnapshot = onPersist
 
         if !loadedSnapshot {
@@ -86,7 +89,7 @@ final class PastureSceneController {
     }
 
     func position(for entity: PastureSceneEntityID) -> PastureScenePoint {
-        positions[entity]
+        fetchGame.positions[entity] ?? positions[entity]
             ?? settledPositions[entity]
             ?? PastureSceneLayout.seededPosition(for: entity, slot: slotByEntity[entity], seed: sceneSeed)
     }
@@ -96,7 +99,7 @@ final class PastureSceneController {
     }
 
     func beginDrag(_ entity: PastureSceneEntityID) {
-        guard entityIDs.contains(entity), interaction == nil else { return }
+        guard !fetchGame.isPresented, entityIDs.contains(entity), interaction == nil else { return }
         stopAutonomyAndSettle()
         interaction = DragInteraction(entity: entity, start: position(for: entity))
         isInteractionActive = true
@@ -179,7 +182,7 @@ final class PastureSceneController {
                 return false
             }
         }
-        return !isInteractionActive
+        return !isInteractionActive && !fetchGame.isPresented
     }
 
     func stop() {
@@ -195,7 +198,7 @@ final class PastureSceneController {
     }
 
     private func startSchedulerIfNeeded() {
-        guard !reduceMotion, !isWindDownActive, !isInteractionActive, schedulerTask == nil, !entityIDs.isEmpty else { return }
+        guard !fetchGame.isPresented, !reduceMotion, !isWindDownActive, !isInteractionActive, schedulerTask == nil, !entityIDs.isEmpty else { return }
         let generation = schedulerGeneration
         schedulerTask = Task { [weak self] in
             await self?.schedulerLoop(generation: generation)
@@ -204,7 +207,7 @@ final class PastureSceneController {
 
     private func stopAutonomyAndSettle() {
         schedulerGeneration &+= 1
-        toyPosition = nil
+        fetchGame.stop()
         schedulerTask?.cancel()
         schedulerTask = nil
         settleSceneBehaviors(preservingDrag: true)
@@ -295,33 +298,31 @@ final class PastureSceneController {
         guard generation == schedulerGeneration, !isWindDownActive else { return }
     }
 
+    func recordOlliePose(_ asset: String, pasture: Int) {
+        guard !fetchGame.isPresented else { return }
+        olliePoseByPasture[pasture] = asset
+    }
+
     /// Explicit play stays local and never settles session or reward state.
     func fetch() {
-        guard let ollie = entityIDs.first(where: { $0.kind == .ollie && $0.pastureIndex == activePastureIndex }), !isInteractionActive else { return }
+        guard admitsExplicitPlay(), !fetchGame.isPresented,
+              let ollie = entityIDs.first(where: { $0.kind == .ollie && $0.pastureIndex == activePastureIndex }),
+              !isInteractionActive else { return }
         stopAutonomyAndSettle()
-        let generation = schedulerGeneration
-        let origin = position(for: ollie)
-        let target = PasturePlay.fetchTarget(from: origin)
-        toyPosition = target
-        playMessage = "Ollie is fetching the toy"
-        behaviors[ollie] = .chasing
-        positions[ollie] = target
-        Task { [weak self] in
-            guard let self else { return }
-            try? await Task.sleep(for: .milliseconds(self.reduceMotion ? 20 : 850))
-            guard generation == self.schedulerGeneration, !self.isInteractionActive else { return }
-            self.toyPosition = nil
-            self.positions[ollie] = origin
-            try? await Task.sleep(for: .milliseconds(self.reduceMotion ? 20 : 850))
-            guard generation == self.schedulerGeneration, !self.isInteractionActive else { return }
-            self.behaviors[ollie] = .idle
-            self.playMessage = "Ollie brought the toy back"
-            self.startSchedulerIfNeeded()
-        }
+        fetchGame.begin(positions: positions.filter { $0.key.pastureIndex == activePastureIndex },
+                        ollie: ollie, reduceMotion: reduceMotion, restingAsset: olliePoseByPasture[activePastureIndex])
+    }
+
+    func endFetch() {
+        // Keep where play left the residents for this visit, without saving a layout.
+        for (entity, point) in fetchGame.positions { settledPositions[entity] = point }
+        fetchGame.stop()
+        settleSceneBehaviors()
+        startSchedulerIfNeeded()
     }
 
     func gather() {
-        guard !isInteractionActive,
+        guard admitsExplicitPlay(), !fetchGame.isPresented, !isInteractionActive,
               let shepherd = entityIDs.first(where: { $0.kind == .shepherd && $0.pastureIndex == activePastureIndex }),
               let ollie = entityIDs.first(where: { $0.kind == .ollie && $0.pastureIndex == activePastureIndex }) else { return }
         stopAutonomyAndSettle()
@@ -349,6 +350,13 @@ final class PastureSceneController {
             self.playMessage = "The flock has gathered"
             self.startSchedulerIfNeeded()
         }
+    }
+
+    private func admitsExplicitPlay() -> Bool {
+        // Every entry point, including a request returning from Ollie's profile,
+        // must explain the same active-session restriction.
+        showsPlayPaused = isWindDownActive
+        return !isWindDownActive
     }
 
     private static func membership(

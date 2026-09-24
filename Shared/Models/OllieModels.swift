@@ -162,7 +162,7 @@ struct FocusRun: Codable, Identifiable, Equatable {
         self.placementStatus = guardKind.needsPlacementConfirmation ? .awaitingConfirmation : .notRequired
         self.placementEvidence = .notRequired(for: guardKind)
         self.nightWatchPlan = nightWatchPlan
-        self.farmCreditVersion = 1
+        self.farmCreditVersion = BedtimeSearchBonus.policyVersion
         self.briefAccessIntervals = []
         self.briefAccessUseCount = 0
         self.isPractice = false

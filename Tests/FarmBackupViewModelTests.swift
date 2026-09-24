@@ -53,6 +53,19 @@ final class FarmBackupViewModelTests: XCTestCase {
         XCTFail("Operation did not finish")
     }
 
+    func testFarmConnectionFailureKeepsAuthenticatedIdentityAndLocalArchive() throws {
+        try persistence.farmSaveStore.activate(.account(owner), preservingGuest: true)
+        try persistence.farmSaveStore.activate(.signedOut)
+        let original = try persistence.farmSaveStore.cachedAccount(owner)
+        model.authenticatedAccountID = owner
+        model.show(URLError(.badServerResponse))
+        XCTAssertEqual(model.authenticatedAccountID, owner)
+        XCTAssertFalse(model.signedIn)
+        XCTAssertTrue(model.message.contains("account is connected"))
+        XCTAssertFalse(model.message.contains("wait for a connection"))
+        XCTAssertEqual(try persistence.farmSaveStore.cachedAccount(owner), original)
+    }
+
     private func waitFor(_ condition: @escaping @MainActor () async -> Bool) async throws {
         for _ in 0..<100 {
             if await condition() { return }
@@ -308,6 +321,8 @@ final class FarmBackupViewModelTests: XCTestCase {
         model.signOut()
         try await finish()
         XCTAssertFalse(model.signedIn)
+        XCTAssertNil(model.authenticatedAccountID)
+        XCTAssertFalse(model.hasAuthenticatedAccount)
         XCTAssertTrue(model.accessBlocked)
         model.perform { try await self.model.completeAppleFarmSignIn(identityToken: "second", nonce: "second") }
         try await finish()
@@ -392,6 +407,26 @@ final class FarmBackupViewModelTests: XCTestCase {
         XCTAssertEqual(callbacks, 0)
         XCTAssertEqual(try persistence.farmSaveStore.snapshot().effectiveScope, .guest)
         XCTAssertEqual(model.appleSignInFailure?.stage, .farm)
+        XCTAssertEqual(model.authenticatedAccountID, owner)
+        XCTAssertTrue(model.hasAuthenticatedAccount, "Farm failure must not offer Apple sign-in again")
+        XCTAssertFalse(model.signedIn, "Authentication is not permission to publish the Farm")
+
+        model.acceptAutomaticSync()
+        try await finish()
+        XCTAssertTrue(model.signedIn)
+        XCTAssertNil(model.appleSignInFailure)
+        XCTAssertEqual(callbacks, 1)
+        XCTAssertEqual(persistence.farmState.woolBalance, 300)
+    }
+
+    func testCredentialRefreshKeepsConfirmedFarmPresentation() async throws {
+        model.perform { try await self.model.completeAccountConnection(acceptSync: true) }
+        try await finish()
+        let savedPresentation = model.accountPresentation
+        model.credentials.showMethods()
+        try await finish()
+        XCTAssertEqual(model.accountPresentation, savedPresentation)
+        XCTAssertEqual(model.credentialProfile?.id, owner)
     }
 
     func testConnectivityRecoveryAutomaticallyRetriesDirtyFarmUpload() async throws {

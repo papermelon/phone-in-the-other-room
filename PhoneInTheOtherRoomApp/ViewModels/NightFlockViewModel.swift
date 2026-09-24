@@ -20,6 +20,27 @@ final class NightFlockViewModel: ObservableObject {
     @Published var pastureSending: Set<UUID> = []
     @Published var pastureRefreshTokens: [UUID: Int] = [:]
     @Published var cachedPastureVisits: [UUID: Set<UUID>] = [:]
+    @Published var campfirePushStatus = ""
+    @Published var campfireDocument = CampfireVisibilityDocument()
+    @Published var campfireVisibilityMessage: String?
+    @Published var globalCampfireState: GlobalCampfireState?
+    @Published var globalCampfireLoading = false
+    @Published var globalCampfireFailure: GlobalCampfireIssue?
+    let campfireVisibilityStore = CampfireVisibilityStore()
+    var campfireDocumentOwner: UUID?
+    var campfireStorageFailed = false
+    var globalCampfireRequestID: UUID?
+    var globalCampfireGathering = "all"
+    var globalCampfireChannel = 0
+    @Published var globalCampfireChannelChanging = false
+    @Published var globalCampfireChannelMessage: String?
+    var globalCampfireSendID: UUID?
+    var globalCampfireAttempted: Set<String> = []
+    var makeCampfireProfile: ((FocusRun) -> CampfireProfileSnapshot?)?
+    var resolvedCampfireProfile: GlobalCampfireCommand?
+    var campfireNotificationQuietUntil = Date.distantPast
+    var campfirePushNeedsSync = false
+    var campfirePushIsSyncing = false
     let pastureOutbox = SharedPastureOutboxService()
     var pastureAttempts: Set<String> = []
     @Published var phase: Phase
@@ -45,13 +66,18 @@ final class NightFlockViewModel: ObservableObject {
     @Published var prefersJoinEntry = false
     /// Additive schema-four presentation. Legacy `snapshot` remains intact for
     /// clients and deployments that have not yet upgraded.
-    @Published var v4ListState: NightFlockV4ListStateResponse?
+    @Published var listRefreshFailure: NightFlockRefreshFailure?
+    @Published var v4ListState: NightFlockV4ListStateResponse? {
+        didSet { if v4ListState == nil { listRefreshFailure = nil } }
+    }
     @Published var selectedV4Party: NightFlockV4PartyDetail?
     @Published var v4InvitePreview: NightFlockV4InvitePreview?
     struct V4InviteCode: Equatable {
         var inviteID: UUID
         var code: String
     }
+    @Published var v4InvitationLoadingPartyIDs: Set<UUID> = []
+    @Published var v4InvitationErrors: [UUID: NightFlockRefreshFailure] = [:]
     @Published var v4InviteCodes: [UUID: V4InviteCode] = [:]
     @Published var v4RequestID: String?
     @Published var v4Profile: CountingSheepUserProfile?
@@ -76,6 +102,13 @@ final class NightFlockViewModel: ObservableObject {
     // The v4 extension owns mutation. Cross-file Swift extensions cannot set a
     // `private(set)` property, so these remain module-internal while views use
     // the focused membership-filtered accessors in `+V4`.
+    @Published var partyConnections: SlumberPartyConnections?
+    @Published var partyConnectionsError: String?
+    @Published var partyConnectionsBusy = false
+    var partyConnectionsAttemptID: UUID?
+    @Published var v4Acquisition = SlumberPartyAcquisition()
+    @Published var v4CommandAttempts: Set<UUID> = []
+    var v4CommandIsInFlight: Bool { !v4CommandAttempts.isEmpty }
     @Published var v4ObservedPartyDetails: [UUID: NightFlockV4PartyDetail] = [:]
     @Published var v4ObservedPartyRefreshDates: [UUID: Date] = [:]
     @Published var v4ObservedPartyObservationStates: [UUID: NightFlockV4PartyObservationState] = [:]
@@ -109,9 +142,11 @@ final class NightFlockViewModel: ObservableObject {
     var onSharedHabitsAuthorityInvalidated: (() -> Void)?
 
     var v4InviteCode: String? {
-        guard let party = selectedV4Party,
-              let invitation = party.invitation,
-              invitation.status == .active,
+        selectedV4Party.flatMap { v4InviteCode(for: $0) }
+    }
+
+    func v4InviteCode(for party: NightFlockV4PartyDetail) -> String? {
+        guard let invitation = party.invitation, invitation.status == .active,
               v4InviteCodes[party.summary.partyID]?.inviteID == invitation.inviteID
         else { return nil }
         return v4InviteCodes[party.summary.partyID]?.code
@@ -157,7 +192,10 @@ final class NightFlockViewModel: ObservableObject {
     }
     private var stagedDestructiveLocalEffect: NightFlockDestructiveLocalEffect = .none
     private var hasRestoredStagedDestructiveEffect = false
+    var outboxDrainGate = NightFlockOutboxDrainGate()
+    var sharedNightDrainGate = NightFlockOutboxDrainGate()
     private var accountEntryInFlight = false
+    private var accountEntryScope: NightFlockRequestScope?
     private var accountEntryRefreshPending = false
     var inviteMutationInFlight = false
     var inviteCredential: NightFlockInviteCredential?
@@ -192,7 +230,7 @@ final class NightFlockViewModel: ObservableObject {
         let schema: Int
     }
 
-    private struct NightFlockTransportPaused: Error {}
+    struct NightFlockTransportPaused: Error {}
 
     var homeSummary: NightFlockHomeSummary? {
         NightFlockHomeDiscoveryPolicy.summary(
@@ -323,6 +361,7 @@ final class NightFlockViewModel: ObservableObject {
         v4RealtimePartyIDs = []
         v4RealtimeConnectedPartyIDs = []
         v4RefreshingPartyIDs = []
+        clearCampfireVisibilityContext()
         v4ObservedPartyDetails = [:]
         v4ObservedPartyRefreshDates = [:]
         v4ObservedPartyObservationStates = [:]
@@ -612,6 +651,7 @@ final class NightFlockViewModel: ObservableObject {
     func bootstrap() {
         guard !accountEntryInFlight, featureEnabled, phase == .idle, permitsNightFlockAccountSessionInspection else { return }
         accountEntryInFlight = true
+        accountEntryScope = requestScope
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         Task {
@@ -633,11 +673,10 @@ final class NightFlockViewModel: ObservableObject {
                     await flushOutbox()
                     return
                 }
-                await flushOutbox()
-                guard permitsNightFlockNetwork,
+                guard await refreshState(showLoading: false), permitsNightFlockNetwork,
                       isCurrentTransportTask(generation: generation, epoch: transportEpoch)
                 else { return }
-                await refreshState(showLoading: false)
+                Task { await flushOutbox() }
             } catch {
                 guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
                 guard !isDeletingOnlineAccount else { return }
@@ -652,9 +691,9 @@ final class NightFlockViewModel: ObservableObject {
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         Task {
+            guard await refreshState(showLoading: false), permitsNightFlockNetwork,
+                  isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
             await flushOutbox()
-            guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
-            await refreshState(showLoading: false)
         }
     }
 
@@ -692,6 +731,7 @@ final class NightFlockViewModel: ObservableObject {
         snapshot = nil
         v4ListState = nil
         selectedV4Party = nil
+        clearCampfireVisibilityContext()
         v4ObservedPartyDetails = [:]
         v4InviteCodes = [:]
         v4InvitePreview = nil
@@ -733,6 +773,7 @@ final class NightFlockViewModel: ObservableObject {
         pendingAuthenticationRecovery = .none
         accountState = .linked
         phase = .idle
+        syncCampfirePush()
         entryAppeared()
     }
 
@@ -793,6 +834,7 @@ final class NightFlockViewModel: ObservableObject {
                         snapshot = nil
                         v4ListState = nil
                         selectedV4Party = nil
+                        clearCampfireVisibilityContext()
                         v4ObservedPartyDetails = [:]
                         v4InviteCodes = [:]
                         v4InvitePreview = nil
@@ -1202,6 +1244,7 @@ final class NightFlockViewModel: ObservableObject {
         sharedHabitsStagedJoinPartyIDs = []
         sharedHabitsDestructiveCommandPartyIDs = []
         selectedV4Party = nil
+        clearCampfireVisibilityContext()
         v4ObservedPartyDetails = [:]
         v4ObservedPartyRefreshDates = [:]
         v4ObservedPartyObservationStates = [:]
@@ -1432,6 +1475,7 @@ final class NightFlockViewModel: ObservableObject {
 
     private func finishAccountEntry() {
         accountEntryInFlight = false
+        accountEntryScope = nil
         let shouldRefresh = accountEntryRefreshPending && permitsNightFlockNetwork
         accountEntryRefreshPending = false
         if shouldRefresh { entryAppeared() }
@@ -1440,10 +1484,13 @@ final class NightFlockViewModel: ObservableObject {
     func activateEntry() async {
         guard featureEnabled, permitsNightFlockAccountSessionInspection, let accountService else { return }
         guard !accountEntryInFlight else {
-            accountEntryRefreshPending = true
+            // The active entry already serves this caller. Only a changed account
+            // or recovery/privacy boundary needs a fresh entry when it finishes.
+            if accountEntryScope != requestScope { accountEntryRefreshPending = true }
             return
         }
         accountEntryInFlight = true
+        accountEntryScope = requestScope
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         defer {
@@ -1478,7 +1525,7 @@ final class NightFlockViewModel: ObservableObject {
                 else { return }
                 // A backlog of queued sharing must not delay opening the list.
                 if await refreshState(showLoading: false) {
-                    await flushOutbox()
+                    Task { await flushOutbox() }
                 }
             } else {
                 phase = .idle
@@ -1493,11 +1540,12 @@ final class NightFlockViewModel: ObservableObject {
 
     func refreshState(showLoading: Bool) async -> Bool {
         guard permitsNightFlockNetwork, let service else { return false }
+        listRefreshFailure = nil
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         if showLoading { phase = .loading }
         do {
-            let v4 = try await service.stateV4List()
+            let v4 = try await loadV4List()
             guard permitsNightFlockNetwork,
                   isCurrentTransportTask(generation: generation, epoch: transportEpoch)
             else { return false }
@@ -1507,6 +1555,7 @@ final class NightFlockViewModel: ObservableObject {
             visibleV4.parties.removeAll { isSharedHabitsPartySuppressed($0.partyID) }
             reconcileSharedHabitsLeaveFences(with: v4.parties)
             v4ListState = visibleV4
+            listRefreshFailure = nil
             refreshSharedHabitsReceiptsForCurrentParties()
             synchronizeV4RealtimeSubscriptions(with: visibleV4.parties)
             reconcileV4ObservedPartyDetails(with: visibleV4.parties)
@@ -1524,7 +1573,11 @@ final class NightFlockViewModel: ObservableObject {
             v4ListState = nil
         } catch {
             guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return false }
-            presentNightFlockError(error, lane: .snapshot(schema: NightFlockV4Rules.schemaVersion))
+            if error is CancellationError {
+                if phase == .loading { phase = v4ListState == nil ? .idle : .ready }
+                return false
+            }
+            presentListRefreshError(error)
             return false
         }
         do {
@@ -1645,7 +1698,7 @@ final class NightFlockViewModel: ObservableObject {
             _ = await reconcilePendingDestructiveIntentIfNeeded()
             return
         }
-        await refreshState(showLoading: true)
+        _ = await refreshState(showLoading: true)
     }
 
     func reconcileMembershipRecovery() async {
@@ -1842,6 +1895,10 @@ final class NightFlockViewModel: ObservableObject {
               NightFlockPendingIntentPolicy.permitsFlush(intentPresent: pendingDestructiveIntent != nil),
               NightFlockRelaunchReconciliationPolicy.permitsOutboxFlush(staged: stagedDestructiveLocalEffect),
               let outbox, let service else { return }
+        guard outboxDrainGate.begin(scope: requestScope) else { return }
+        defer {
+            if outboxDrainGate.finish() { Task { await flushOutbox() } }
+        }
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         guard await outbox.permitsSharedHabitsPublication() else { return }
@@ -1948,19 +2005,18 @@ final class NightFlockViewModel: ObservableObject {
     }
 
     func handleOutboxFailure(_ error: Error, lane: NightFlockRecoveryLane) {
+        outboxDrainGate.recordFailure()
         if let remote = Self.remoteError(from: error) {
-            presentNightFlockError(remote, lane: lane)
-            guard pendingAuthenticationRecovery == .none else { return }
-            guard snapshot != nil else { return }
-        } else if snapshot == nil && v4ListState == nil {
-            guard pendingAuthenticationRecovery == .none else { return }
-            phase = .offline
-            return
+            let presentation = configureAuthenticationRecovery(remote, lane: lane)
+            guard presentation.shouldUpdatePresentation else { return }
+            if pendingAuthenticationRecovery != .none {
+                presentNightFlockError(remote, lane: lane)
+                return
+            }
         }
-
         guard pendingAuthenticationRecovery == .none else { return }
-        phase = .ready
-        warmNotice = "Ollie is keeping your Slumber Party update safe until it can travel."
+        // Background delivery must not replace the list or a direct action's result.
+        warmNotice = "Your shared update is saved on this phone. We’ll try sending it again later."
     }
 
 }

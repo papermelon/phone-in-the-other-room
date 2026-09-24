@@ -8,8 +8,8 @@ enum EmergencyExitReasonStorage {
     }
 }
 
-/// An ephemeral, two-step confirmation for ending an NFC-protected run
-/// without its tag. The reason is kept only while this sheet is open.
+/// Ephemeral exit authorization. Personal shielding supplies the exact phrase;
+/// legacy reason-entry helpers remain source-compatible. Nothing here is persisted.
 struct EmergencyExitChallenge: Equatable, Identifiable {
     enum Stage: Equatable {
         // These names remain source-compatible with the original challenge;
@@ -25,6 +25,8 @@ struct EmergencyExitChallenge: Equatable, Identifiable {
     private(set) var stage: Stage
     private(set) var reason: String?
     private(set) var confirmationMatches = false
+    var isPersonalPhrase = false
+    var earlyMorningIntent: MorningQuietIntent?
 
     init(
         id: UUID = UUID(),
@@ -52,6 +54,7 @@ struct EmergencyExitChallenge: Equatable, Identifiable {
     }
 
     mutating func submitReason(_ value: String) -> Bool {
+        guard !isPersonalPhrase else { return false }
         let limited = Self.limitedReason(value)
         guard !Self.normalizedReason(limited).isEmpty else { return false }
         reason = limited
@@ -64,6 +67,10 @@ struct EmergencyExitChallenge: Equatable, Identifiable {
         guard stage == .readyToConfirm, let reason else {
             confirmationMatches = false
             return false
+        }
+        if isPersonalPhrase {
+            confirmationMatches = PersonalShieldPhrase.matches(value, phrase: reason)
+            return confirmationMatches
         }
         confirmationMatches = !Self.normalizedReason(value).isEmpty
             && Self.normalizedReason(value) == Self.normalizedReason(reason)
@@ -87,6 +94,14 @@ struct EmergencyExitChallengeMachine: Equatable {
 
     mutating func begin(for runID: UUID) -> EmergencyExitChallenge {
         let challenge = EmergencyExitChallenge(activeRunID: runID)
+        self.challenge = challenge
+        return challenge
+    }
+
+    mutating func begin(for runID: UUID, phrase: String, earlyMorningIntent: MorningQuietIntent? = nil) -> EmergencyExitChallenge {
+        var challenge = EmergencyExitChallenge(activeRunID: runID, stage: .readyToConfirm, reason: phrase)
+        challenge.isPersonalPhrase = true
+        challenge.earlyMorningIntent = earlyMorningIntent
         self.challenge = challenge
         return challenge
     }

@@ -1,142 +1,56 @@
 import SwiftUI
 
+/// The secondary planning route stays available when the main action is Wind Down.
 struct UpcomingQuietTimesCard: View {
     var nextPeriod: WindDownSchedulePeriod?
-    var additionalCount: Int
-    var immediateStartMinutes: Int?
-    var scheduledStart: WindDownStartContext?
-    var windDownIsReady: Bool
-    var trailMapPresentation: SheepTrailMapPresentation?
-    var protectionPresentation: HomeProtectionStartPresentation
+    var purpose: OfflinePurposeProfile = .defaultProfile
     var action: () -> Void
-    var startNow: () -> Void
-    var startScheduled: (UUID) -> Void = { _ in }
-    var showsQuickStartActions = true
 
     var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Button(action: action) {
+        Button(action: action) {
+            PixelCard {
                 HStack(spacing: AppSpacing.md) {
-                    Image(systemName: "moon.zzz.fill")
-                        .font(.title2.weight(.black))
-                        .foregroundStyle(AppColors.grass)
-                        .frame(width: 30)
-                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text("Phone Away")
-                            .font(AppTypography.headline)
-                        Text(summary)
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                    }
-                    Spacer(minLength: 0)
-                    HStack(spacing: AppSpacing.xxs) {
-                        Text("Plan")
-                            .font(AppTypography.caption.weight(.bold))
-                        Image(systemName: "chevron.right")
-                            .foregroundStyle(AppColors.muted)
-                    }
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityHint("Opens your Phone Away schedule")
-
-            if let trailMapPresentation {
-                HStack(alignment: .top, spacing: AppSpacing.sm) {
-                    Image(systemName: "binoculars.fill")
+                    Image(systemName: "timer")
+                        .font(AppTypography.headline)
                         .foregroundStyle(AppColors.grass)
                         .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                        Text(trailMapPresentation.title)
-                            .font(AppTypography.body)
-                        Text(trailMapPresentation.detail)
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                        Text("Phone Away").font(AppTypography.headline)
+                        Text(summary).font(AppTypography.caption)
+                            .foregroundStyle(AppColors.secondaryText)
+                        Text("Plan time for yourself")
+                            .font(AppTypography.caption.weight(.semibold))
+                            .foregroundStyle(AppColors.grass)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "chevron.right").accessibilityHidden(true)
                 }
-                .accessibilityElement(children: .combine)
-            }
-
-            if showsQuickStartActions, let scheduledStart {
-                scheduledAction(scheduledStart)
-            }
-            if showsQuickStartActions, let immediateStartMinutes {
-                Button(action: startNow) {
-                    Label("Start now · \(immediateStartMinutes) min", systemImage: "timer")
-                        .frame(maxWidth: .infinity, minHeight: 44)
-                }
-                .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                .accessibilityHint("Starts Phone Away without changing Wind Down")
+                .foregroundStyle(AppColors.ink)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                .contentShape(Rectangle())
             }
         }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens your Phone Away plans and start options")
         .orientationTourTarget(.phoneAway)
     }
 
-    @ViewBuilder
-    private func scheduledAction(_ context: WindDownStartContext) -> some View {
-        let presentation: (label: String, icon: String, hint: String) = {
-            switch protectionPresentation {
-            case let .repair(title, detail):
-                return (title, "shield.lefthalf.filled", detail)
-            case .ready:
-                return ("Start now", "play.fill", "Starts the scheduled Phone Away period, \(context.title)")
-            }
-        }()
-        Button {
-            guard let sourceID = context.sourceID else { return }
-            startScheduled(sourceID)
-        } label: {
-            Label(presentation.label, systemImage: presentation.icon)
-                .frame(maxWidth: .infinity, minHeight: 44)
-        }
-        .buttonStyle(PixelChipButtonStyle(isSelected: false))
-        .accessibilityHint(presentation.hint)
-    }
-
     private var summary: String {
-        guard let nextPeriod else {
-            return additionalCount == 0
-                ? "Start now or plan time beyond doomscrolling apps for reading, making, movement, cooking, conversation, rest, work, or anything else you value."
-                : "Your next Phone Away period is being tended by Ollie."
-        }
-        let start = nextPeriod.occurrence.interval.start.formatted(date: .abbreviated, time: .shortened)
-        let count: String
-        switch additionalCount {
-        case 0: count = "No Phone Away periods"
-        case 1: count = "1 Phone Away period"
-        default: count = "\(additionalCount) Phone Away periods"
-        }
-        return "Next: \(start) · \(count)"
+        guard let nextPeriod else { return purpose.inAppDisplayPhrase }
+        return "Next: \(nextPeriod.occurrence.interval.start.formatted(date: .abbreviated, time: .shortened))"
     }
 }
 
-#Preview("Phone Away search progress") {
-    UpcomingQuietTimesCard(
-        nextPeriod: nil,
-        additionalCount: 0,
-        immediateStartMinutes: 30,
-        scheduledStart: nil,
-        windDownIsReady: false,
-        trailMapPresentation: SheepTrailMapPresentation.home(availableBonusPercentagePoints: 5),
-        protectionPresentation: .ready(selectionSummary: "2 apps"),
-        action: {},
-        startNow: {}
-    )
-    .padding()
-    .background(AppColors.paper)
+#Preview("Phone Away planning") {
+    UpcomingQuietTimesCard(nextPeriod: nil, purpose: .init(category: .read), action: {})
+        .padding(AppSpacing.md)
+        .background(AppColors.paper)
 }
 
-#Preview("Extra quiet · Wind Down soon") {
-    UpcomingQuietTimesCard(
-        nextPeriod: nil,
-        additionalCount: 0,
-        immediateStartMinutes: nil,
-        scheduledStart: nil,
-        windDownIsReady: true,
-        trailMapPresentation: nil,
-        protectionPresentation: .ready(selectionSummary: "2 apps"),
-        action: {},
-        startNow: {}
-    )
-    .padding()
-    .background(AppColors.paper)
+#Preview("Phone Away at large text") {
+    UpcomingQuietTimesCard(nextPeriod: nil, action: {})
+        .environment(\.dynamicTypeSize, .accessibility3)
+        .padding(AppSpacing.md)
+        .background(AppColors.paper)
 }

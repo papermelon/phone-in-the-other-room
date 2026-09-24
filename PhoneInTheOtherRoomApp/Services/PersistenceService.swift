@@ -514,10 +514,14 @@ final class PersistenceService {
             fallback: CountingSheepPublicPresentation.defaultValue.hairStyleID
         )
         presentation.shepherdOutfitID = allowedProfileID(
-            farm.shepherd.outfitItemID,
+            farm.shepherd.sharedOutfitID,
             in: CountingSheepPublicPresentationAllowlist.shepherdOutfitIDs,
             fallback: "none"
         )
+        presentation.shepherdShirtID = allowedProfileID(farm.shepherd.shirtItemID,
+            in: CountingSheepPublicPresentationAllowlist.shepherdShirtIDs, fallback: "none")
+        presentation.shepherdOuterwearID = farm.shepherd.outfitItemID == "shepherd_open_moss_coat" ? "shepherd_open_moss_coat" : "none"
+        presentation.ollieCoatID = farm.equipment.ollieCoat.rawValue
         presentation.shepherdAccessoryID = allowedProfileID(
             farm.shepherd.accessoryItemID,
             in: CountingSheepPublicPresentationAllowlist.shepherdAccessoryIDs,

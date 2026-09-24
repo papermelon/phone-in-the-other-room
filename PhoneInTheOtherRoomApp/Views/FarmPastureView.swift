@@ -7,6 +7,7 @@ struct FarmPastureView: View {
     let protectedNightCount: Int
     let layoutSeed: UInt64
     let onSelectSheep: (FlockSheep) -> Void
+    var isReadOnly = false
     var shepherdDisplayName: String = ""
     var isWindDownActive: Bool = false
     var persistedScene: PastureSceneSnapshot? = nil
@@ -30,6 +31,20 @@ struct FarmPastureView: View {
     private var pastureCount: Int { max(1, state.activeCapacity / 12) }
 
     var body: some View {
+        VStack(spacing: AppSpacing.sm) {
+            pastureCard
+            if sceneController.fetchGame.isPresented {
+                PastureFetchActions(game: sceneController.fetchGame, onDone: sceneController.endFetch)
+            }
+        }
+        .alert("Play is paused", isPresented: $sceneController.showsPlayPaused) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Ollie’s games pause during an active session. Come back when your session ends.")
+        }
+    }
+
+    private var pastureCard: some View {
         VStack(spacing: 0) {
             if pastureCount == 1 {
                 pasturePage(0)
@@ -56,6 +71,8 @@ struct FarmPastureView: View {
                     .padding(.horizontal, AppSpacing.sm).frame(minHeight: 44)
                     .background(AppColors.paper.opacity(0.9), in: Capsule())
             }.padding(AppSpacing.xs).accessibilityHint("Open a resident’s details and actions")
+                .opacity(isReadOnly || sceneController.fetchGame.isPresented ? 0 : 1)
+                .disabled(isReadOnly || sceneController.fetchGame.isPresented).accessibilityHidden(isReadOnly)
         }
         .overlay(alignment: .topTrailing) {
             Menu {
@@ -65,7 +82,10 @@ struct FarmPastureView: View {
                 Label("Play", systemImage: "tennisball").font(AppTypography.caption).foregroundStyle(AppColors.ink)
                     .padding(.horizontal, AppSpacing.sm).frame(minHeight: 44)
                     .background(AppColors.paper.opacity(0.9), in: Capsule())
-            }.padding(AppSpacing.xs).accessibilityLabel("Play with Ollie").accessibilityValue(sceneController.playMessage ?? "Choose fetch or gather")
+            }.padding(AppSpacing.xs)
+                .opacity(isReadOnly || sceneController.fetchGame.isPresented ? 0 : 1)
+                .disabled(isReadOnly || sceneController.fetchGame.isPresented).accessibilityHidden(isReadOnly)
+                .accessibilityLabel("Play with Ollie").accessibilityValue(sceneController.playMessage ?? "Choose fetch or gather")
         }
         .frame(height: 280)
         .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
@@ -88,11 +108,17 @@ struct FarmPastureView: View {
                 }
             }
         }
+        .environment(\.ollieCoat, state.equipment.ollieCoat)
         .accessibilityElement(children: .contain)
         .onAppear {
             isPresented = true
             configureScene()
             performRequestedPlay()
+        }
+        .task {
+            #if DEBUG
+            await PastureFetchNativeFixture.runReview(sceneController)
+            #endif
         }
         .onChange(of: playRequest.wrappedValue) { _, _ in performRequestedPlay() }
         .onChange(of: visitingSheepIDs) { _, _ in configureScene() }
@@ -112,6 +138,10 @@ struct FarmPastureView: View {
             }
             configureScene()
         }
+        .onChange(of: isInScrollViewport) { _, visible in
+            if tracksScrollViewport, !visible { sceneController.stop() }
+            else if scenePhase == .active { configureScene() }
+        }
         .onChange(of: scrollViewportSize) { _, _ in
             updateScrollVisibility()
         }
@@ -127,6 +157,8 @@ struct FarmPastureView: View {
         return GeometryReader { proxy in
             ZStack {
                 PixelAssetImage(name: AssetSlot.Farm.backgroundDay, contentMode: .fill)
+                    .frame(width: proxy.size.width, height: proxy.size.height, alignment: .trailing)
+                    .clipped()
                     .accessibilityHidden(true)
                 LinearGradient(
                     colors: [.clear, AppColors.grass.opacity(0.16), AppColors.bark.opacity(0.34)],
@@ -134,11 +166,6 @@ struct FarmPastureView: View {
                     endPoint: .bottom
                 )
                 if pasture == 0 { decorations(in: proxy.size) }
-                if let toy = sceneController.toyPosition, selectedPasture == pasture {
-                    Circle().fill(AppColors.amber).frame(width: 12, height: 12)
-                        .position(x: proxy.size.width * toy.x, y: proxy.size.height * toy.y)
-                        .accessibilityLabel("Ollie’s toy")
-                }
 
                 ForEach(pageSheep) { sheep in
                     let entity = PastureSceneEntityID.sheep(sheep.id, pastureIndex: pasture)
@@ -170,16 +197,22 @@ struct FarmPastureView: View {
                     openActionTitle: "Open Ollie",
                     normalAction: onSelectOllie
                 ) {
-                    OllieFarmAvatar(
-                        accessoryItemID: state.equipment.ollieAccessoryItemID,
-                        size: 72,
-                        motionEnabled: selectedPasture == pasture
-                            && pastureIsVisibleForMotion
-                            && scenePhase == .active
-                            && !reduceMotion
-                            && !isWindDownActive
-                            && sceneController.behavior(for: ollieEntity) != .dragging
-                    )
+                    if sceneController.fetchGame.isPresented, pasture == selectedPasture {
+                        PastureFetchOllie(game: sceneController.fetchGame,
+                                          accessoryItemID: state.equipment.ollieAccessoryItemID)
+                    } else {
+                        OllieFarmAvatar(
+                            accessoryItemID: state.equipment.ollieAccessoryItemID,
+                            size: 72,
+                            motionEnabled: selectedPasture == pasture
+                                && pastureIsVisibleForMotion
+                                && scenePhase == .active
+                                && !reduceMotion
+                                && !isWindDownActive
+                                && sceneController.behavior(for: ollieEntity) != .dragging,
+                            onPoseChanged: { sceneController.recordOlliePose($0, pasture: pasture) }
+                        )
+                    }
                 }
 
                 let shepherdEntity = PastureSceneEntityID.shepherd(pastureIndex: pasture)
@@ -210,6 +243,9 @@ struct FarmPastureView: View {
                     .accessibilityHidden(true)
                 }
 
+                if sceneController.fetchGame.isPresented, selectedPasture == pasture {
+                    PastureFetchOverlay(game: sceneController.fetchGame, size: proxy.size).zIndex(3)
+                }
             }
             .coordinateSpace(name: coordinateSpace(for: pasture))
         }
@@ -248,6 +284,8 @@ struct FarmPastureView: View {
         .position(x: size.width * point.x, y: size.height * point.y)
         .animation(spatialAnimation(for: behavior), value: point)
         .zIndex(point.y)
+        .allowsHitTesting(!isReadOnly && !sceneController.fetchGame.isPresented)
+        .accessibilityHidden(isReadOnly || sceneController.fetchGame.isPresented)
     }
 
     private var pastureIsVisibleForMotion: Bool {
@@ -316,13 +354,11 @@ struct FarmPastureView: View {
     private func coordinateSpace(for pasture: Int) -> String { "FarmPasturePage-\(pasture)" }
 
     private func sheepSpriteSize(for normalizedY: Double) -> CGFloat {
-        if normalizedY < 0.69 { return 38 }
-        if normalizedY < 0.80 { return 46 }
-        return 52
+        CGFloat(min(52, max(38, 38 + (normalizedY - 0.62) * 64)))
     }
 
     private func spatialAnimation(for behavior: PastureSceneBehavior) -> Animation? {
-        guard !reduceMotion, behavior != .dragging else { return nil }
+        guard !sceneController.fetchGame.isPresented, !reduceMotion, behavior != .dragging else { return nil }
         return AppMotion.settle
     }
 
@@ -354,7 +390,7 @@ struct FarmPastureView: View {
                     Capsule().stroke(AppColors.stroke.opacity(0.34), lineWidth: 1)
                 }
                 .position(
-                    x: size.width * point.x,
+                    x: min(size.width - 67, max(67, size.width * point.x)),
                     y: min(size.height - 14, max(16, size.height * point.y + 48))
                 )
                 .allowsHitTesting(false)

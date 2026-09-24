@@ -18,7 +18,7 @@ struct AccountAccessGate<Content: View>: View {
                                     .font(AppTypography.body)
                                 Button("Finish signing out", action: model.refresh)
                                     .buttonStyle(AccountPrimaryButtonStyle()).disabled(model.busy)
-                                if model.busy { ProgressView() }
+                                if model.busy { SheepLoadingView() }
                                 if model.accountPresentation == .failed { Text(model.message).font(AppTypography.body) }
                             } else {
                                 AccountConnectionContent(model: model)

@@ -3,6 +3,7 @@ import SwiftUI
 struct OllieWardrobePreview: View {
     let itemID: String
     @State private var pose = Pose.sitting
+    @State private var beganAt = Date()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private enum Pose: String, CaseIterable, Identifiable {
@@ -12,9 +13,8 @@ struct OllieWardrobePreview: View {
 
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
-            TimelineView(.animation(minimumInterval: 0.15, paused: reduceMotion || pose != .running)) { time in
-                let frame = reduceMotion ? 0 : Int(time.date.timeIntervalSinceReferenceDate / 0.15) % 6
-                OllieDressedSprite(assetName: asset(frame: frame), accessoryItemID: itemID)
+            TimelineView(.animation(minimumInterval: 0.05, paused: reduceMotion)) { time in
+                OllieDressedSprite(assetName: asset(elapsed: max(0, time.date.timeIntervalSince(beganAt))), accessoryItemID: itemID)
                     .frame(width: 210, height: 210)
             }
             .accessibilityElement(children: .ignore)
@@ -24,6 +24,7 @@ struct OllieWardrobePreview: View {
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, AppSpacing.sm)
+            .onChange(of: pose) { _, _ in beganAt = Date() }
             Text("One look for Home, Farm and every chase.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.secondaryText)
@@ -32,12 +33,31 @@ struct OllieWardrobePreview: View {
         .padding(.vertical, AppSpacing.sm)
     }
 
-    private func asset(frame: Int) -> String {
-        switch pose {
-        case .sitting: return NightJourneyAssets.ollieHomeIdleFrames[0]
-        case .running: return NightJourneyAssets.ollieRunFrames[frame]
-        case .resting: return "dog/dog_ollie_motion_pose_09"
+    private func asset(elapsed: TimeInterval) -> String {
+        let neutral = NightJourneyAssets.ollieHomeIdleFrames[0]
+        if reduceMotion {
+            switch pose {
+            case .sitting: return neutral
+            case .running: return NightJourneyAssets.ollieRunFrames[0]
+            case .resting: return "dog/dog_ollie_motion_pose_09"
+            }
         }
+        let manifest = OllieCompanionSpriteManifest.production
+        let sequence: OllieCompanionSpriteSequence
+        switch pose {
+        case .sitting:
+            sequence = .init(frames: [.init(assetName: neutral, duration: 1.5, poseIdentifier: 1)]
+                + (manifest.sequence(for: .headTilt)?.frames ?? []))
+        case .running:
+            sequence = .init(frames: NightJourneyAssets.ollieRunFrames.enumerated().map {
+                .init(assetName: $0.element, duration: 0.15, poseIdentifier: $0.offset)
+            })
+        case .resting:
+            sequence = .init(frames: [.init(assetName: neutral, duration: 1, poseIdentifier: 1)]
+                + [OllieCompanionAction.settleToRest, .resting, .rise].flatMap { manifest.sequence(for: $0)?.frames ?? [] })
+        }
+        guard sequence.duration > 0 else { return neutral }
+        return sequence.frame(at: elapsed.truncatingRemainder(dividingBy: sequence.duration))?.assetName ?? neutral
     }
 }
 

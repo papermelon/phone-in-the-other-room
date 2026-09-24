@@ -80,32 +80,6 @@ struct SettingsProtectionTagsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.lg) {
                 SettingsDetailHeader(title: "Protection & tags", detail: "Choose app limits and manage the tags that start and end NFC runs.")
-                PixelCard {
-                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                        Toggle("Start Wind Down automatically", isOn: Binding(
-                            get: { viewModel.nightWatchPreferences.automaticStartEnabled },
-                            set: viewModel.setAutomaticStartEnabled
-                        ))
-                        .font(AppTypography.headline)
-                        Text("When enabled, Counting Sheep schedules the timer and selected-app limits for the next eligible repeating Wind Down, even while the app is closed.")
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.muted)
-                        Text(viewModel.automaticWindDownStatusPresentation.title)
-                            .font(AppTypography.body.weight(.semibold))
-                        Text(viewModel.automaticWindDownStatusPresentation.detail)
-                            .font(AppTypography.caption)
-                            .foregroundStyle(AppColors.secondaryText)
-                            .fixedSize(horizontal: false, vertical: true)
-                        if viewModel.automaticWindDownStatusPresentation.needsRepair {
-                            NavigationLink {
-                                ScreenTimeProtectionRepairView(repairsAutomaticStart: true)
-                            } label: {
-                                Text("Review protection repair")
-                            }
-                                .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                        }
-                    }
-                }
                 WindDownProtectionPicker(
                     selectedKind: viewModel.nightWatchPreferences.guardKind,
                     isNFCTagReady: viewModel.hasRegisteredNFCTag,

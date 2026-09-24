@@ -7,6 +7,10 @@ final class FarmBackupViewModel: ObservableObject {
     @Published var message = "Your Farm is saved on this phone. Online backup is off."
     @Published var busy = false
     @Published var signedIn = false
+    // Authentication can succeed while Farm lookup/activation still needs retry.
+    // This is presentation state, never authority to publish another owner's Farm.
+    @Published var authenticatedAccountID: UUID?
+    var hasAuthenticatedAccount: Bool { signedIn || authenticatedAccountID != nil }
     @Published var appleSignInInProgress = false
     @Published var appleSignInFailure: AppleAccountFailure?
     @Published var lookup: FarmBackupLookup?
@@ -232,6 +236,9 @@ final class FarmBackupViewModel: ObservableObject {
         try assertTransport()
         guard let account, let service else { throw FarmSaveError.unavailable }
         guard let owner = try await account.currentLinkedAccountID() else {
+            authenticatedAccountID = nil
+            credentialProfile = nil
+            appleSignInFailure = nil
             signedIn = false
             if (try? persistence.farmSaveStore.snapshot().effectiveScope.ownerID) != nil, canRestore?() == true {
                 try persistence.farmSaveStore.activate(.signedOut)
@@ -245,6 +252,8 @@ final class FarmBackupViewModel: ObservableObject {
             message = "Sign in with Apple to find or save your Farm."
             return
         }
+        try assertTransport()
+        authenticatedAccountID = owner
         signedIn = true
         credentialProfile = try? await account.credentialProfile()
         try assertTransport()
@@ -344,9 +353,12 @@ final class FarmBackupViewModel: ObservableObject {
         operationLineage = try? persistence.farmSaveStore.snapshot().lineageID
         operationEpoch = epoch
         busy = true
+        let previousPresentation = accountPresentation
         if available { accountPresentation = .checking }
         Task {
             defer {
+                // Credential-only work must not leave a saved Farm "Checking".
+                if accountPresentation == .checking { accountPresentation = previousPresentation }
                 busy = false
                 sync = try? persistence.farmSaveStore.snapshot().backup
                 accessBlocked = !persistence.farmSaveStore.hasReadableSave || (try? persistence.farmSaveStore.snapshot().effectiveScope) == .signedOut

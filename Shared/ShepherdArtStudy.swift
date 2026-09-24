@@ -39,12 +39,15 @@ enum ShepherdStudyHair: String, CaseIterable, Identifiable {
     var title: String { rawValue.capitalized }
 }
 
+enum ShepherdStudyShirt: String, Equatable { case cream, berry, dusk, amber }
+
 enum ShepherdStudyOutfit: String, CaseIterable, Identifiable {
-    case shirt, coat, dress, moonCoat, overalls, cloak
+    case shirt, coat, dress, moonCoat, overalls, cloak, openCoat
     var id: String { rawValue }
     var title: String {
         switch self {
         case .shirt: return "Shirt + trousers"
+        case .openCoat: return "Open Meadow coat"
         case .coat: return "Moss coat"
         case .dress: return "Berry dress"
         case .moonCoat: return "Moonlit coat"
@@ -75,6 +78,11 @@ struct ShepherdStudyAppearance: Equatable {
     var hat = false
     var faceLeft = false
     var headwear: ShepherdStudyHeadwear = .fieldHat
+    var shirt: ShepherdStudyShirt = .cream
+    var berryShirt: Bool {
+        get { shirt == .berry }
+        set { shirt = newValue ? .berry : .cream }
+    }
 
     static let round = Self(head: .round, hair: .long, eyes: .open, outfit: .dress)
 }
