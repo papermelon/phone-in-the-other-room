@@ -286,6 +286,8 @@ private struct PixelHomeDashboardContent: View {
                 content: .timing
             )
 
+            AutomaticWindDownCard()
+
             WindDownHabitHomeCard(
                 routine: preferences.eveningRoutine,
                 plan: habitPlan,
@@ -300,25 +302,15 @@ private struct PixelHomeDashboardContent: View {
             if nightFlockSummary != nil || nightFlockViewModel?.featureEnabled == true {
                 sectionHeading("Offline Together", icon: "person.2")
             }
-            if shouldLeadWithSlumberParty || nightFlockSummary != nil {
-                HStack(alignment: .top, spacing: AppSpacing.xxs) {
-                    if shouldLeadWithSlumberParty, let nightFlockViewModel {
-                        SlumberPartyHomeSection(viewModel: nightFlockViewModel, openParty: onOpenNightFlock)
-                    } else if let nightFlockSummary {
-                        NightFlockHomeCard(summary: nightFlockSummary, context: .home,
-                                          action: { onOpenNightFlock(nil) })
-                    }
-                    HomeSocialInfoButton(title: "Slumber Party", message:
-                        "Your private, invite-only friend group. Share quiet nights with friends, a partner, or family. Members see only the updates covered by your sharing agreement.")
-                }
+            if shouldLeadWithSlumberParty, let nightFlockViewModel {
+                SlumberPartyHomeSection(viewModel: nightFlockViewModel, openParty: onOpenNightFlock)
+            } else if let nightFlockSummary {
+                NightFlockHomeCard(summary: nightFlockSummary, context: .home,
+                                  action: { onOpenNightFlock(nil) })
             }
 
             if let nightFlockViewModel, nightFlockViewModel.featureEnabled {
-                HStack(alignment: .top, spacing: AppSpacing.xxs) {
-                    CampfireHomeEntry(social: nightFlockViewModel)
-                    HomeSocialInfoButton(title: "Campfire", message:
-                        "A shared place to go offline with the wider Counting Sheep community. Choose Global to see the global campfire, or view your Slumber Party. Browsing does not share your session; you choose your own visibility separately.")
-                }
+                CampfireHomeEntry(social: nightFlockViewModel)
             }
 
 
@@ -400,6 +392,7 @@ private struct PixelHomeDashboardContent: View {
         }
         .background(AppColors.paper)
     }
+    .environmentObject(FocusRunViewModel(startsExternalServices: false))
 }
 
 #Preview("Configured home · Wind Down soon") {
@@ -439,6 +432,7 @@ private struct PixelHomeDashboardContent: View {
         }
         .background(AppColors.paper)
     }
+    .environmentObject(FocusRunViewModel(startsExternalServices: false))
 }
 
 #Preview("Phone Away scheduled and secondary") {
@@ -471,6 +465,7 @@ private struct PixelHomeDashboardContent: View {
         }
         .background(AppColors.paper)
     }
+    .environmentObject(FocusRunViewModel(startsExternalServices: false))
 }
 
 #Preview("Phone Away start now · secondary") {
@@ -497,12 +492,21 @@ private struct PixelHomeDashboardContent: View {
         }
         .background(AppColors.paper)
     }
+    .environmentObject(FocusRunViewModel(startsExternalServices: false))
 }
 
-private struct HomeSocialInfoButton: View {
+struct HomeSocialInfoButton: View {
     let title: String
     let message: String
     @State private var showsInfo = false
+
+    static var slumberParty: Self {
+        Self(title: "Slumber Party", message: "Your private, invite-only friend group. Share quiet nights with friends, a partner, or family. Members see only the updates covered by your sharing agreement.")
+    }
+
+    static var campfire: Self {
+        Self(title: "Campfire", message: "A shared place to go offline with the wider Counting Sheep community. Choose Global to see the global campfire, or view your Slumber Party. Browsing does not share your session; you choose your own visibility separately.")
+    }
 
     var body: some View {
         Button { showsInfo = true } label: {

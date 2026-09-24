@@ -98,6 +98,7 @@ struct SlumberPartyHomeSection: View {
             if parties.count > 1 {
                 partyPicker
             }
+            HomeSocialInfoButton.slumberParty
         }
     }
 
@@ -410,9 +411,8 @@ struct SlumberPartyHomeSection: View {
     private func observationLine(for partyID: UUID) -> some View {
         let text: String
         switch viewModel.v4ObservedPartyObservationState(for: partyID) {
-        case .refreshing: text = "Refreshing shared moments…"
         case .stale: text = "Showing the last shared moments."
-        case .current, .notRequested: text = ""
+        case .current, .notRequested, .refreshing: text = ""
         }
         return Group {
             if !text.isEmpty {

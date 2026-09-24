@@ -286,7 +286,8 @@ The founder-approved Buddies iteration adds separately authored intentions, volu
 optional return check-ins and opt-in party notifications under agreement version 2. Party-only sharing does not copy task text; explicit Global visibility includes it in the character profile. See the [current Buddies source contract](plans/campfire-buddies-implementation-2026-09-13.md);
 this iteration’s backend and push configuration were [deployed and verified](evidence/campfire-buddies-deploy-20260913/deployment.md); updated app distribution and physical notification receipt remain pending. Default Wind Down validity ends at planned wake, Phone Away at
 its planned end, with terminal precedence and a 24-hour ceiling. Temporary gathering positions
-are distinct and never overwrite saved arrangements. Realtime updates have a 20-second fallback
+are distinct and never overwrite saved arrangements. Routine Slumber Party refreshes keep existing content in place without inserting a loading banner on Home or the party screen. Initial loading remains visible; refresh feedback fits inside the existing refresh control, and failures retain recovery guidance.
+Realtime updates have a 20-second fallback
 refresh while the party screen is visible in the foreground. The base version 1 production backend was deployed on
 13 September; [rollout evidence](evidence/campfire-deploy-20260913/deployment.md). Device acceptance
 and updated app distribution remain pending. See

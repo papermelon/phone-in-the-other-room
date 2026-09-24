@@ -239,7 +239,7 @@ struct HomeView: View {
                         .environmentObject(viewModel)
                 }
                 .navigationDestination(isPresented: dashboardDestinationBinding(for: .timing)) {
-                    WindDownTimingView()
+                    FocusRunSetupView()
                         .environmentObject(viewModel)
                 }
                 .navigationDestination(isPresented: dashboardDestinationBinding(for: .quietTimeSchedule)) {

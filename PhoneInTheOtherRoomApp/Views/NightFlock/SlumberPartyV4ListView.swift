@@ -111,7 +111,7 @@ struct SlumberPartyV4ListView: View {
                     }.buttonStyle(PixelPrimaryButtonStyle())
                 }
             }
-            if viewModel.phase == .loading && !viewModel.v4Acquisition.isBusy {
+            if viewModel.phase == .loading && viewModel.v4ListState == nil && !viewModel.v4Acquisition.isBusy {
                 SheepLoadingView("Updating your parties…")
             }
             if let notice = viewModel.sharedHabitsPrivacyNotice {

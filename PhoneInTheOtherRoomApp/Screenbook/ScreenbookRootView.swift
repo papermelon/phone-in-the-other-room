@@ -185,6 +185,10 @@ struct ScreenbookRootView: View {
             AppColors.paper.ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: AppSpacing.md) {
+                    if ProcessInfo.processInfo.arguments.contains("-screenbook-home-controls") {
+                        AutomaticWindDownCard()
+                        CampfireHomeEntry(social: viewModel.nightFlockViewModel)
+                    }
                     Text("HOME · SLUMBER PARTY")
                         .font(pixelFont(.caption))
                         .foregroundStyle(AppColors.muted)
