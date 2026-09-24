@@ -258,10 +258,13 @@ final class FarmEconomyTests: XCTestCase {
             .ollieAccessory(overlayAssetName: "dog/dog_classic_farm_moss_bandana_equipped_overlay")
         )
         XCTAssertEqual(hat.inventoryAssetName, "shop/shop_shepherd_wool_hat")
-        XCTAssertEqual(
-            hat.equippedRenderAsset?.assetName(for: .coils),
-            "farm/farm_shepherd_coils_wool_field_hat_equipped_overlay"
-        )
+        XCTAssertNil(hat.equippedRenderAsset)
+        var profile = ShepherdProfile.defaultProfile
+        profile.hairStyle = .coils
+        profile.accessoryItemID = hat.id
+        let appearance = ShepherdStudyAppearance(profile: profile)
+        XCTAssertTrue(appearance.hat)
+        XCTAssertEqual(appearance.headwear, .fieldHat)
     }
 
     func testUnknownPresentationIDsDoNotEraseOwnershipDuringRoundTrip() throws {

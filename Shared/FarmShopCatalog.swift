@@ -37,17 +37,17 @@ enum FarmShopCatalog {
     ]
 
     private static let shepherdItems: [FarmShopItem] = [
-        FarmShopItem(id: "shepherd_wool_hat", title: "Wool Field Hat", detail: "A warm hat for early mornings.", category: .shepherd, woolCost: 4, symbolName: "crown.fill", inventoryAssetName: "shop/shop_shepherd_wool_hat", equippedRenderAsset: headwearAssets("wool_field_hat"), visualStyle: "wood", effect: .shepherdAccessory),
+        FarmShopItem(id: "shepherd_wool_hat", title: "Wool Field Hat", detail: "A warm hat for early mornings.", category: .shepherd, woolCost: 4, symbolName: "crown.fill", inventoryAssetName: "shop/shop_shepherd_wool_hat", visualStyle: "wood", effect: .shepherdAccessory),
         FarmShopItem(id: "shepherd_berry_shirt", title: "Berry Field Shirt", detail: "A soft berry shirt, worn on its own or under a coat.", category: .shepherd, woolCost: 6, symbolName: "tshirt.fill", visualStyle: "berry", effect: .shepherdShirt),
         FarmShopItem(id: "shepherd_dusk_shirt", title: "Dusk Linen Shirt", detail: "A soft blue shirt for evening rounds.", category: .shepherd, woolCost: 7, symbolName: "tshirt.fill", visualStyle: "lavender", effect: .shepherdShirt),
         FarmShopItem(id: "shepherd_amber_shirt", title: "Sunrise Linen Shirt", detail: "An ochre shirt for quiet mornings.", category: .shepherd, woolCost: 7, symbolName: "tshirt.fill", visualStyle: "amber", effect: .shepherdShirt),
         FarmShopItem(id: "shepherd_open_moss_coat", title: "Open Meadow Coat", detail: "An open moss coat that lets your shirt show through.", category: .shepherd, woolCost: 10, symbolName: "tshirt.fill", visualStyle: "grass", effect: .shepherdOutfit),
-        FarmShopItem(id: "shepherd_moss_coat", title: "Moss Work Coat", detail: "A green coat with deep pockets.", category: .shepherd, woolCost: 8, symbolName: "tshirt.fill", inventoryAssetName: "shop/shop_shepherd_moss_coat", equippedRenderAsset: .shepherdOutfit(overlayAssetName: "farm/farm_shepherd_moss_work_coat_equipped_overlay"), visualStyle: "grass", effect: .shepherdOutfit),
-        FarmShopItem(id: "shepherd_moon_coat", title: "Moonlit Coat", detail: "A dusk-blue coat for nights at the Farm.", category: .shepherd, woolCost: 14, symbolName: "sparkles", inventoryAssetName: "shop/shop_shepherd_moon_coat", equippedRenderAsset: .shepherdOutfit(overlayAssetName: "farm/farm_shepherd_moonlit_coat_equipped_overlay"), visualStyle: "lavender", effect: .shepherdOutfit, unlockRequirement: tier2),
-        FarmShopItem(id: "shepherd_clover_headscarf", title: "Clover Headscarf", detail: "A soft green wrap for breezy mornings.", category: .shepherd, woolCost: 6, symbolName: "leaf.fill", inventoryAssetName: "shop/shop_shepherd_clover_headscarf", equippedRenderAsset: headwearAssets("clover_headscarf"), visualStyle: "grass", effect: .shepherdAccessory, unlockRequirement: tier1),
-        FarmShopItem(id: "shepherd_moon_beanie", title: "Moon Beanie", detail: "A knitted cap in quiet moonlit blue.", category: .shepherd, woolCost: 10, symbolName: "moon.fill", inventoryAssetName: "shop/shop_shepherd_moon_beanie", equippedRenderAsset: headwearAssets("moon_beanie"), visualStyle: "lavender", effect: .shepherdAccessory, unlockRequirement: tier2),
-        FarmShopItem(id: "shepherd_field_overalls", title: "Field Overalls", detail: "Sturdy overalls for pasture work.", category: .shepherd, woolCost: 12, symbolName: "figure.walk", inventoryAssetName: "shop/shop_shepherd_field_overalls", equippedRenderAsset: .shepherdOutfit(overlayAssetName: "farm/farm_shepherd_field_overalls_equipped_overlay"), visualStyle: "wood", effect: .shepherdOutfit, unlockRequirement: tier2),
-        FarmShopItem(id: "shepherd_star_keeper_cloak", title: "Star-Keeper Cloak", detail: "A deep-blue cloak lined with tiny stars.", category: .shepherd, woolCost: 22, symbolName: "star.fill", inventoryAssetName: "shop/shop_shepherd_star_keeper_cloak", equippedRenderAsset: .shepherdOutfit(overlayAssetName: "farm/farm_shepherd_star_keeper_cloak_equipped_overlay"), visualStyle: "lavender", effect: .shepherdOutfit, unlockRequirement: tier3)
+        FarmShopItem(id: "shepherd_moss_coat", title: "Moss Work Coat", detail: "A green coat with deep pockets.", category: .shepherd, woolCost: 8, symbolName: "tshirt.fill", inventoryAssetName: "shop/shop_shepherd_moss_coat", visualStyle: "grass", effect: .shepherdOutfit),
+        FarmShopItem(id: "shepherd_moon_coat", title: "Moonlit Coat", detail: "A dusk-blue coat for nights at the Farm.", category: .shepherd, woolCost: 14, symbolName: "sparkles", inventoryAssetName: "shop/shop_shepherd_moon_coat", visualStyle: "lavender", effect: .shepherdOutfit, unlockRequirement: tier2),
+        FarmShopItem(id: "shepherd_clover_headscarf", title: "Clover Headscarf", detail: "A soft green wrap for breezy mornings.", category: .shepherd, woolCost: 6, symbolName: "leaf.fill", inventoryAssetName: "shop/shop_shepherd_clover_headscarf", visualStyle: "grass", effect: .shepherdAccessory, unlockRequirement: tier1),
+        FarmShopItem(id: "shepherd_moon_beanie", title: "Moon Beanie", detail: "A knitted cap in quiet moonlit blue.", category: .shepherd, woolCost: 10, symbolName: "moon.fill", inventoryAssetName: "shop/shop_shepherd_moon_beanie", visualStyle: "lavender", effect: .shepherdAccessory, unlockRequirement: tier2),
+        FarmShopItem(id: "shepherd_field_overalls", title: "Field Overalls", detail: "Sturdy overalls for pasture work.", category: .shepherd, woolCost: 12, symbolName: "figure.walk", inventoryAssetName: "shop/shop_shepherd_field_overalls", visualStyle: "wood", effect: .shepherdOutfit, unlockRequirement: tier2),
+        FarmShopItem(id: "shepherd_star_keeper_cloak", title: "Star-Keeper Cloak", detail: "A deep-blue cloak lined with tiny stars.", category: .shepherd, woolCost: 22, symbolName: "star.fill", inventoryAssetName: "shop/shop_shepherd_star_keeper_cloak", visualStyle: "lavender", effect: .shepherdOutfit, unlockRequirement: tier3)
     ]
 
     private static let decorationItems: [FarmShopItem] = [
@@ -97,15 +97,6 @@ enum FarmShopCatalog {
 
     static func decorationAnchor(for itemID: String) -> FarmDecorationAnchor? {
         decorationZone(for: itemID).map(decorationAnchor)
-    }
-
-    private static func headwearAssets(_ slug: String) -> FarmShopEquippedRenderAsset {
-        .shepherdAccessoryByHairStyle(ShepherdHairStyle.allCases.map {
-            ShepherdRenderAsset(
-                hairStyle: $0,
-                assetName: "farm/farm_shepherd_\($0.rawValue)_\(slug)_equipped_overlay"
-            )
-        })
     }
 
     private static func decoration(id: String, title: String, detail: String, cost: Int, symbol: String, inventory: String, scene: String, style: String, zone: FarmDecorationZone, unlock: FarmShopUnlockRequirement = .immediate) -> FarmShopItem {

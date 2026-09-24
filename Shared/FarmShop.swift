@@ -66,24 +66,8 @@ enum FarmShopUnlockRequirement: Equatable {
     }
 }
 
-struct ShepherdRenderAsset: Equatable {
-    let hairStyle: ShepherdHairStyle
-    let assetName: String
-}
-
 enum FarmShopEquippedRenderAsset: Equatable {
     case ollieAccessory(overlayAssetName: String)
-    case shepherdOutfit(overlayAssetName: String)
-    case shepherdAccessoryByHairStyle([ShepherdRenderAsset])
-
-    func assetName(for hairStyle: ShepherdHairStyle) -> String? {
-        switch self {
-        case let .shepherdAccessoryByHairStyle(assets):
-            return assets.first { $0.hairStyle == hairStyle }?.assetName
-        case let .shepherdOutfit(assetName), let .ollieAccessory(assetName):
-            return assetName
-        }
-    }
 }
 
 struct FarmShopPresentation: Equatable {
