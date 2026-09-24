@@ -3,6 +3,7 @@ import SwiftUI
 struct PastureFetchOverlay: View {
     let game: PastureFetchViewModel
     let size: CGSize
+    var ballItemID: String? = nil
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @GestureState private var isDragging = false
@@ -27,15 +28,14 @@ struct PastureFetchOverlay: View {
                 let mouth = mouthOffset
                 Ellipse().fill(AppColors.bark.opacity(0.28)).frame(width: 13, height: 5)
                     .position(x: size.width * ball.x, y: size.height * ball.y + 31)
-                Image(systemName: "tennisball.fill")
-                    .resizable().scaledToFit().foregroundStyle(AppColors.amber)
+                FetchBallImage(itemID: ballItemID)
                     .frame(width: game.isReady ? 24 : 12, height: game.isReady ? 24 : 12)
                     .rotationEffect(.degrees(reduceMotion || game.isReady ? 0 : game.elapsed * 240))
                     .position(x: size.width * ball.x + mouth.width,
                               y: size.height * (ball.y - lift) + mouth.height)
             }
             .allowsHitTesting(false)
-            if game.isReady {
+            if game.canThrow {
                 // Only the ball captures touches; the rest of the pasture can still scroll.
                 Color.clear
                     .frame(width: 64, height: 64)
@@ -79,14 +79,47 @@ struct PastureFetchOverlay: View {
 struct PastureFetchActions: View {
     let game: PastureFetchViewModel
     let onDone: () -> Void
+    var personalBest: Int? = nil
+    var onPracticeComplete: (PastureFetchPractice) -> Void = { _ in }
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            if let practice = game.practice {
+                Text(practice.isComplete && game.isReady ? "Clover practice complete" : "Clover practice · \(practice.score) \(practice.score == 1 ? "point" : "points")")
+                    .font(AppTypography.headline).fixedSize(horizontal: false, vertical: true)
+                if let target = game.practiceTarget {
+                    Text(target.description).font(AppTypography.caption)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Text("\(practice.scores.count) of 5 throws landed")
+                    .font(AppTypography.caption)
+                if let feedback = game.landingFeedback {
+                    Text(feedback).font(AppTypography.body).fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("fetch-landing-feedback")
+                }
+            }
+            if let personalBest {
+                Text("Personal best: \(personalBest) of \(PastureFetchPractice.maximumScore)")
+                    .font(AppTypography.caption).fixedSize(horizontal: false, vertical: true)
+            }
             Text(game.message).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("fetch-status")
+            if game.practice == nil || game.practice?.isComplete == true {
+                Button(game.practice == nil ? "Try clover practice · 5 throws" : "Play another round") {
+                    game.startPractice(onComplete: onPracticeComplete)
+                }
+                .font(AppTypography.caption).frame(minHeight: 44).disabled(!game.isReady)
+            }
+            if game.practice != nil {
+                if game.practice?.isComplete != true || !game.isReady {
+                    PastureFetchAimControls(game: game)
+                }
+                Button("Free fetch") { game.freeFetch() }
+                    .font(AppTypography.caption).frame(minHeight: 44).disabled(!game.isReady)
+            }
             if dynamicTypeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: AppSpacing.xs) { done; throwMenu }
             } else {
@@ -103,24 +136,26 @@ struct PastureFetchActions: View {
         .background(AppColors.paper, in: RoundedRectangle(cornerRadius: AppRadius.md))
         .onChange(of: game.isReady) { _, ready in
             if ready, UIAccessibility.isVoiceOverRunning {
-                UIAccessibility.post(notification: .announcement, argument: game.message)
+                UIAccessibility.post(notification: .announcement, argument: [game.landingFeedback, game.message, game.practiceTarget?.description].compactMap { $0 }.joined(separator: " "))
             }
         }
     }
 
-    private var throwMenu: some View {
-        Menu {
-            Button("Far left") { game.throwBall(at: PastureFetchRound.targetMinimum) }
-            Button("Far right") { game.throwBall(at: .init(x: 0.96, y: 0.36)) }
-            Button("Near left") { game.throwBall(at: .init(x: 0.04, y: 0.86)) }
-            Button("Near right") { game.throwBall(at: PastureFetchRound.targetMaximum) }
-            Button("Throw ahead") { game.throwBall(at: .init(x: 0.50, y: 0.5)) }
-        } label: {
-            Label("Throw options", systemImage: "tennisball")
-                .font(AppTypography.caption).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44)
+    @ViewBuilder private var throwMenu: some View {
+        if game.practice == nil {
+            Menu {
+                Button("Far left") { game.throwBall(at: PastureFetchRound.targetMinimum) }
+                Button("Far right") { game.throwBall(at: .init(x: 0.96, y: 0.36)) }
+                Button("Near left") { game.throwBall(at: .init(x: 0.04, y: 0.86)) }
+                Button("Near right") { game.throwBall(at: PastureFetchRound.targetMaximum) }
+                Button("Throw ahead") { game.throwBall(at: .init(x: 0.50, y: 0.5)) }
+            } label: {
+                Label("Throw options", systemImage: "tennisball")
+                    .font(AppTypography.caption).fixedSize(horizontal: false, vertical: true).frame(minHeight: 44)
+            }
+            .disabled(!game.isReady)
+            .accessibilityHint("Choose a direction without swiping the ball")
         }
-        .disabled(!game.isReady)
-        .accessibilityHint("Choose a direction without swiping the ball")
     }
 
     private var done: some View {
@@ -151,4 +186,42 @@ struct PastureFetchOllie: View {
 #Preview("Fetch · accessible controls") {
     PastureFetchActions(game: PastureFetchViewModel(), onDone: {})
         .environment(\.dynamicTypeSize, .accessibility3)
+}
+
+/// Shop previews and the moving ball use the same art, including unknown-item fallback.
+struct FetchBallImage: View {
+    let itemID: String?
+    private var color: Color {
+        switch itemID {
+        case "fetch_ball_moss": return AppColors.grass
+        case "fetch_ball_sunset": return AppColors.berry
+        default: return AppColors.amber
+        }
+    }
+    var body: some View {
+        Image(systemName: "tennisball.fill").resizable().scaledToFit()
+            .foregroundStyle(color)
+            .background { Circle().fill(AppColors.paper).padding(1) }
+            .accessibilityHidden(true)
+    }
+}
+
+/// Ground markings sit below residents; the ball and its aim guide stay above them.
+struct PastureFetchTarget: View {
+    let target: PastureFetchPractice.Target
+    let size: CGSize
+
+    var body: some View {
+        ZStack {
+            Ellipse().fill(AppColors.grass.opacity(0.35))
+                .overlay { Ellipse().stroke(AppColors.paper, lineWidth: 2) }
+                .frame(width: size.width * target.radius * 2, height: size.height * target.radius * 2)
+            Ellipse().stroke(AppColors.paper, style: StrokeStyle(lineWidth: 2, dash: [3, 3]))
+                .frame(width: size.width * target.radius * 0.8, height: size.height * target.radius * 0.8)
+            Image(systemName: "clover.fill").font(AppTypography.caption)
+                .dynamicTypeSize(...DynamicTypeSize.large).foregroundStyle(AppColors.paper)
+        }
+        .position(x: size.width * target.point.x, y: size.height * target.point.y + 28)
+        .allowsHitTesting(false).accessibilityHidden(true)
+    }
 }

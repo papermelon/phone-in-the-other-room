@@ -48,6 +48,14 @@ Wardrobe additions on 23 September 2026 keep optional `ShepherdProfile.shirtItem
 fields use the cream shirt and Classic coat; unknown identifiers survive round-trip with
 known rendering fallbacks. These additions do not extend the public Slumber Party contract.
 
+Fetch progression added 25 September 2026 uses optional `FarmState.fetchPracticeBest`
+(0–15, absent until a completed practice round) and `FarmEquipment.fetchBallItemID`.
+They remain inside the existing private Farm projection and account archives. Missing
+ball IDs use the original ball; unknown IDs round-trip with that same rendering fallback.
+Missing fields remain omitted when encoded, preserving old queued-payload fingerprints.
+Malformed/out-of-range bests are rejected. This adds no public appearance field or reward ledger.
+Older strict remote decoders reject these unrecognized fields without overwriting either save.
+
 Personalisation added 13 September 2026 follows `AccountFarmLocalKeys`, not the remote
 payload: `ollie.windDown.personalisation` stores explicit goals, plan revisions and
 suggestion/review history; optional experience feedback extends the local habit

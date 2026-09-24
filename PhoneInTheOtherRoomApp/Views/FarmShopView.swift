@@ -221,6 +221,7 @@ private struct FarmShopItemCard: View {
     private var isActive: Bool {
         switch item.effect {
         case .capacity(let level): return state.barnCapacityLevel >= level
+        case .fetchBall: return state.equipment.fetchBallItemID == item.id
         case .ollieAccessory: return state.equipment.ollieAccessoryItemID == item.id
         case .shepherdShirt: return state.shepherd.shirtItemID == item.id
         case .shepherdOutfit: return state.shepherd.outfitItemID == item.id
@@ -300,6 +301,7 @@ private struct FarmShopItemCard: View {
 
     private var activeStatusTitle: String {
         switch item.effect {
+        case .fetchBall: return "IN PLAY"
         case .capacity: return "OPEN"
         case .ollieAccessory, .shepherdOutfit, .shepherdAccessory, .shepherdShirt: return "WORN"
         case .farmDecoration: return "PLACED"
@@ -349,6 +351,11 @@ private struct FarmShopItemCard: View {
                     .background(AppColors.success.opacity(0.09), in: RoundedRectangle(cornerRadius: AppRadius.md))
             } else {
                 switch item.effect {
+                case .fetchBall:
+                    equipmentButton(isActive ? "Use original ball" : "Use ball") {
+                        if isActive { viewModel.useOriginalFetchBall() }
+                        else { viewModel.equipFarmShopItem(item.id) }
+                    }
                 case .ollieAccessory:
                     equipmentButton(isActive ? "Take off" : "Wear") {
                         if isActive { viewModel.takeOffOllieAccessory(item.id) }

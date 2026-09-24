@@ -132,7 +132,9 @@ struct FarmShopItemImage: View {
 
     var body: some View {
         Group {
-            if item.effect == .ollieAccessory {
+            if item.effect == .fetchBall {
+                FetchBallImage(itemID: item.id).frame(width: size, height: size)
+            } else if item.effect == .ollieAccessory {
                 OllieFarmAvatar(accessoryItemID: item.id, size: size)
             } else if PaperFarmObjectView.supportedIDs.contains(item.id) {
                 PaperFarmObjectView(itemID: item.id).frame(width: size, height: size)

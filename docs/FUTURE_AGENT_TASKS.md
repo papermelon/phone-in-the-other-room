@@ -1,5 +1,20 @@
 # Future Agent Tasks — Prioritised Backlog
 
+## Home controls and Farm choice — 24 September 2026
+
+- Home and Settings now open the same full Wind Down editor. Home also exposes the automatic Wind Down toggle/status under Your evening; Offline Together info controls sit inside the full-width cards. Farm conflicts compare both versions and explain automatic sync after selection. Founder confirmed choosing one version, without combining progress.
+- On the next distributed build, verify the affected account can choose its newer phone Farm and that subsequent changes reach the server; preserve both versions until the founder chooses. Repeat the [automatic-start device checks](plans/wind-down-loading-repair-2026-09-21.md), including an account refresh across the start boundary. These UI changes do not establish that the reported device start is repaired.
+
+## Quiet Slumber Party refresh — 23 September 2026
+
+- Removed routine sync banners from cached party detail, Home shared moments and the loaded party list. Initial loading and actionable failure states remain; party refresh feedback uses the existing fixed-size toolbar control.
+- After distribution, confirm the reported party screen keeps its scroll position and check-in draft through repeated live refreshes on a physical iPhone. Local simulator validation does not establish production/device behavior.
+
+## Counting Sheep illustrated launch film (23 September 2026)
+
+- The nine-second portrait Tesseract style/transition test is rendered at `output/counting-sheep-intro-20260923/Style-Transition-Test-Reels.mp4`; the 39-second storyboard and editable project are alongside it. Pause for founder feedback before completing the film. Use the current native Shepherd; the [obsolete raster family is externally archived](evidence/legacy-shepherd-retirement-20260923/README.md).
+- After feedback, record actual Home/routine/Wind Down interactions, a brief consenting Slumber Party, and one consistent isolated demo Farm history showing cumulative progress, an earned discovery and that sheep in the Farm. Existing component screenshots are references, not recordings of those actions. Preserve explicit later-return timing and the no-sleep/no-physical-verification claims boundary.
+
 ## Slumber Party recurring loading failure and request volume (22 September 2026)
 
 - [Investigation and local repair](plans/slumber-party-loading-investigation-2026-09-22.md): confirmed **`PGRST303: JWT issued at future`** on PostgREST 14.5, strongly matching Supabase's stale-time-cache incident. The founder authorized one project restart around 22:02 SGT; afterward the same secret-key HTTP checks passed twice and the Slumber Party list RPC returned HTTP 200 (387 ms from the Mac). Production remains on 14.5, so this is recovery evidence, not a proven permanent fix. Verify physical Farm/Apple/party recovery and confirm the patched service upgrade if failure recurs; the offered Postgres 17.6.1.166 upgrade has not been proven to contain that fix.
@@ -179,7 +194,7 @@
   references. Retire only after all-target/static/dynamic reference and recovery checks; do not
   claim resource savings from this rendering change.
 
-## Personal Farm fetch — device acceptance (updated 20 September 2026)
+## Personal Farm fetch — device acceptance (updated 25 September 2026)
 
 - Current source uses ball-origin swipe/flick throws, all four grass corners, continuous dressed
   Ollie retrieval, pickup/carry/handoff, one ball at a time, and bounded sheep avoidance. Large-text
@@ -190,13 +205,20 @@
   [original fetch evidence](../output/design/fetch-20260913/README.md). No new TestFlight upload is implied.
 - [20 September validation](../output/design/fetch-swipe-20260920/README.md): full app build
   passed; 1,096 tests passed with the unrelated, uncompilable `CampfireProfileTests.swift`
-  excluded (14 fetch tests passed). Restore the unrestricted full-suite gate after that test
-  target issue is repaired. Native large-text, swipe/scroll and VoiceOver acceptance remains
-  pending: the Mac was locked and capture Simulators stalled launching/migrating. The DEBUG
-  fixture supports `--fetch-largest-text` and `--fetch-controls-only` for the next inspection.
-- Progression and wool Shop additions are proposals, not shipped features. Start with optional
-  short target practice and cosmetic balls; see [fetch progression proposal](plans/fetch-progression-2026-09-20.md).
-  Confirm the first progression slice before changing inventory, save contracts or rewards.
+  excluded (14 fetch tests passed). That historical exclusion no longer applies: the
+  25 September unrestricted suite passed all 1,137 tests, including 20 fetch tests. Native
+  iPhone SE inspection now covers ball tap/swipe, a five-throw result/personal best, deliberate
+  aim controls, largest-text scrolling, and Shop previews/purchase/equip. Full physical
+  VoiceOver and flick-feel acceptance remains pending. The DEBUG fixture supports
+  `--fetch-largest-text` and `--fetch-controls-only`.
+- The founder approved the first progression slice on 25 September: five-throw clover practice,
+  accessible heading/strength controls, private Farm personal best, and Moss/Sunset balls in Shop.
+  See [implementation and later proposals](plans/fetch-progression-2026-09-20.md) and
+  [validation evidence](../output/design/fetch-progression-20260925/README.md). Physical iPhone
+  flick calibration and VoiceOver play remain device acceptance checks before release.
+- Observe repeatable intentional landings before implementing later proposals: stitched-wool ball,
+  cosmetic target mat, toy basket, fitted disc/rope art and different physics. Milestone/reward
+  conversion and social scoring remain separate product and save-contract decisions.
 
 ## Farm / shared pasture — device and rollout gates (12 September 2026)
 

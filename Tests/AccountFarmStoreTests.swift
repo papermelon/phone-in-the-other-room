@@ -21,6 +21,28 @@ final class AccountFarmStoreTests: XCTestCase {
         }
     }
 
+    func testFetchBestAndBallStayWithTheirOwnerAfterSignOutAndReload() throws {
+        try withStore { store, directory in
+            try store.migrateAccountLocalValues { [:] }
+            let owner = UUID(), other = UUID()
+            try store.activate(.account(owner), preservingGuest: true)
+            var farm = FarmState.empty
+            farm.woolBalance = 7
+            try farm.purchase(itemID: "fetch_ball_sunset")
+            farm.fetchPracticeBest = 11
+            try store.set(JSONEncoder().encode(farm), for: "ollie.farm.state")
+            try store.activate(.signedOut)
+            XCTAssertTrue(try store.snapshot().values.isEmpty)
+            try store.finishCredentialRemoval()
+            try store.activate(.account(other))
+            XCTAssertNil(try store.snapshot().values["ollie.farm.state"])
+            let reopened = FarmSaveStore(directory: directory, legacy: { [:] })
+            try reopened.activate(.account(owner))
+            let bytes = try XCTUnwrap(reopened.snapshot().values["ollie.farm.state"])
+            XCTAssertEqual(try JSONDecoder().decode(FarmState.self, from: bytes), farm)
+        }
+    }
+
     func testAccountRoundTripKeepsFarmAndPrivateContextTogether() throws {
         try withStore { store, directory in
             try store.migrateAccountLocalValues { ["ollie.userProfile": Data("{\"displayName\":\"guest\"}".utf8)] }

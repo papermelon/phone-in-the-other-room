@@ -1,0 +1,2250 @@
+{
+  "$schema": "https://jerboa.dev/schemas/fx-composition/editable/v1/document.schema.json",
+  "formatVersion": 1,
+  "dimensions": {
+    "width": 1920,
+    "height": 1080
+  },
+  "duration": 33,
+  "composition": {
+    "id": "main",
+    "layers": [
+      {
+        "id": 57,
+        "name": "Quiet chime accent",
+        "type": "Audio",
+        "activeRange": {
+          "start": 28450,
+          "duration": 1800
+        },
+        "sourceRange": {
+          "start": 0,
+          "duration": 1800
+        },
+        "sourceIntrinsicDuration": 1800,
+        "source": {
+          "assetId": "chime"
+        },
+        "volume": 1,
+        "captionsEnabled": false
+      },
+      {
+        "id": 56,
+        "name": "Quiet air accent",
+        "type": "Audio",
+        "activeRange": {
+          "start": 16650,
+          "duration": 700
+        },
+        "sourceRange": {
+          "start": 0,
+          "duration": 700
+        },
+        "sourceIntrinsicDuration": 700,
+        "source": {
+          "assetId": "air"
+        },
+        "volume": 1,
+        "captionsEnabled": false
+      },
+      {
+        "id": 55,
+        "name": "Quiet tap accent",
+        "type": "Audio",
+        "activeRange": {
+          "start": 5500,
+          "duration": 250
+        },
+        "sourceRange": {
+          "start": 0,
+          "duration": 250
+        },
+        "sourceIntrinsicDuration": 250,
+        "source": {
+          "assetId": "tap"
+        },
+        "volume": 1,
+        "captionsEnabled": false
+      },
+      {
+        "type": "Image",
+        "id": 54,
+        "name": "marigold",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 28760,
+          "duration": 4240
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1275,
+            767
+          ],
+          "scale": [
+            34.1796875,
+            34.1796875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "marigold",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 53,
+        "name": "luna",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 28640,
+          "duration": 4360
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1080,
+            754
+          ],
+          "scale": [
+            37.109375,
+            37.109375
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "luna",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 52,
+        "name": "sheep",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 28520,
+          "duration": 4480
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            885,
+            760
+          ],
+          "scale": [
+            36.1328125,
+            36.1328125
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "sheep",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 51,
+        "name": "ollie",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 28400,
+          "duration": 4600
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            615,
+            703
+          ],
+          "scale": [
+            47.8515625,
+            47.8515625
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "ollie",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Text",
+        "id": 50,
+        "name": "Start with putting your phone away.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 28600,
+          "duration": 4400
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            290,
+            573
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Start with putting your phone away.",
+          "fontFamily": ".SF NS Rounded",
+          "fontStyle": "Regular",
+          "fontSize": 37,
+          "fillColor": [
+            0.45,
+            0.45,
+            0.4,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "center",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1340,
+            85
+          ],
+          "leading": 41.809999999999995
+        }
+      },
+      {
+        "type": "Text",
+        "id": 49,
+        "name": "Your evening. / A little quieter.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 28100,
+          "duration": 4900
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            250,
+            285
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Your evening.\nA little quieter.",
+          "fontFamily": "Arial Rounded MT Bold",
+          "fontStyle": "Regular",
+          "fontSize": 112,
+          "fillColor": [
+            0.12,
+            0.12,
+            0.1,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "center",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1420,
+            270
+          ],
+          "leading": 126.55999999999999
+        }
+      },
+      {
+        "type": "Text",
+        "id": 48,
+        "name": "COUNTING SHEEP",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 28000,
+          "duration": 5000
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            133
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "COUNTING SHEEP",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 30,
+          "fillColor": [
+            0.37,
+            0.53,
+            0.27,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "center",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1660,
+            65
+          ],
+          "leading": 33.9
+        }
+      },
+      {
+        "type": "Rect",
+        "id": 47,
+        "name": "Warm paper",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 28000,
+          "duration": 5000
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            1920,
+            1080
+          ],
+          "fillColor": [
+            0.98,
+            0.97,
+            0.92,
+            1
+          ],
+          "roundness": 0
+        }
+      },
+      {
+        "type": "Text",
+        "id": 46,
+        "name": "COUNTING SHEEP",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 23000,
+          "duration": 5250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            972
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "COUNTING SHEEP",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 22,
+          "fillColor": [
+            0.45,
+            0.45,
+            0.4,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            600,
+            50
+          ],
+          "leading": 24.86
+        }
+      },
+      {
+        "type": "Image",
+        "id": 45,
+        "name": "wardrobe",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 23200,
+          "duration": 5050
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1282,
+            91
+          ],
+          "scale": [
+            63.33333333333333,
+            63.33333333333333
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "wardrobe",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Rect",
+        "id": 44,
+        "name": "Shop capture border",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 23200,
+          "duration": 5050
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1270,
+            79
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            499,
+            902
+          ],
+          "fillColor": [
+            0.38,
+            0.46,
+            0.34,
+            1
+          ],
+          "roundness": 32
+        }
+      },
+      {
+        "type": "Image",
+        "id": 43,
+        "name": "ollie",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 23400,
+          "duration": 4850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            815,
+            567
+          ],
+          "scale": [
+            64.453125,
+            64.453125
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "ollie",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Text",
+        "id": 42,
+        "name": "Dress your shepherd. / Find a favourite look for Ollie.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 23600,
+          "duration": 4650
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            136,
+            579
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Dress your shepherd.\nFind a favourite look for Ollie.",
+          "fontFamily": ".SF NS Rounded",
+          "fontStyle": "Regular",
+          "fontSize": 39,
+          "fillColor": [
+            0.45,
+            0.45,
+            0.4,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            980,
+            160
+          ],
+          "leading": 44.06999999999999
+        }
+      },
+      {
+        "type": "Text",
+        "id": 41,
+        "name": "A little more / you.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 23150,
+          "duration": 5100
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            288
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "A little more\nyou.",
+          "fontFamily": "Arial Rounded MT Bold",
+          "fontStyle": "Regular",
+          "fontSize": 93,
+          "fillColor": [
+            0.12,
+            0.12,
+            0.1,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            940,
+            240
+          ],
+          "leading": 105.08999999999999
+        }
+      },
+      {
+        "type": "Text",
+        "id": 40,
+        "name": "04  /  MAKE IT YOURS",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 23000,
+          "duration": 5250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            130
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "04  /  MAKE IT YOURS",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 27,
+          "fillColor": [
+            0.37,
+            0.53,
+            0.27,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1600,
+            60
+          ],
+          "leading": 30.509999999999998
+        }
+      },
+      {
+        "type": "Rect",
+        "id": 39,
+        "name": "Soft sage",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 23000,
+          "duration": 5250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            1920,
+            1080
+          ],
+          "fillColor": [
+            0.9,
+            0.925,
+            0.86,
+            1
+          ],
+          "roundness": 0
+        }
+      },
+      {
+        "type": "Text",
+        "id": 38,
+        "name": "COUNTING SHEEP",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 17000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            972
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "COUNTING SHEEP",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 22,
+          "fillColor": [
+            0.45,
+            0.45,
+            0.4,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            600,
+            50
+          ],
+          "leading": 24.86
+        }
+      },
+      {
+        "type": "Image",
+        "id": 37,
+        "name": "farm-screen",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 17250,
+          "duration": 6000
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            940,
+            252
+          ],
+          "scale": [
+            128.0,
+            128.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "farm-screen",
+          "fit": "contain",
+          "sourceRect": {
+            "x": 31,
+            "y": 406,
+            "width": 688,
+            "height": 562
+          }
+        }
+      },
+      {
+        "type": "Text",
+        "id": 36,
+        "name": "Follow Ollie\u2019s Search. / Meet the sheep. / Collect a little wool.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 17650,
+          "duration": 5600
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            136,
+            598
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Follow Ollie\u2019s Search.\nMeet the sheep.\nCollect a little wool.",
+          "fontFamily": ".SF NS Rounded",
+          "fontStyle": "Regular",
+          "fontSize": 40,
+          "fillColor": [
+            0.45,
+            0.45,
+            0.4,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            760,
+            220
+          ],
+          "leading": 45.199999999999996
+        }
+      },
+      {
+        "type": "Text",
+        "id": 35,
+        "name": "Small rituals. / A growing flock.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 17150,
+          "duration": 6100
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            290
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Small rituals.\nA growing flock.",
+          "fontFamily": "Arial Rounded MT Bold",
+          "fontStyle": "Regular",
+          "fontSize": 88,
+          "fillColor": [
+            0.12,
+            0.12,
+            0.1,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            840,
+            235
+          ],
+          "leading": 99.44
+        }
+      },
+      {
+        "type": "Text",
+        "id": 34,
+        "name": "03  /  YOUR FARM",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 17000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            130
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "03  /  YOUR FARM",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 27,
+          "fillColor": [
+            0.37,
+            0.53,
+            0.27,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1600,
+            60
+          ],
+          "leading": 30.509999999999998
+        }
+      },
+      {
+        "type": "Rect",
+        "id": 33,
+        "name": "Warm paper",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 17000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            1920,
+            1080
+          ],
+          "fillColor": [
+            0.98,
+            0.97,
+            0.92,
+            1
+          ],
+          "roundness": 0
+        }
+      },
+      {
+        "type": "Text",
+        "id": 32,
+        "name": "COUNTING SHEEP",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            972
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "COUNTING SHEEP",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 22,
+          "fillColor": [
+            0.98,
+            0.97,
+            0.92,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            600,
+            50
+          ],
+          "leading": 24.86
+        }
+      },
+      {
+        "type": "Image",
+        "id": 31,
+        "name": "sheeprun6",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1120,
+            665
+          ],
+          "scale": [
+            49.8046875,
+            49.8046875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "sheeprun6",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 30,
+        "name": "run6",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            640,
+            520
+          ],
+          "scale": [
+            88.8671875,
+            88.8671875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run6",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 29,
+        "name": "sheeprun5",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1120,
+            665
+          ],
+          "scale": [
+            49.8046875,
+            49.8046875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "sheeprun5",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 28,
+        "name": "run5",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            640,
+            520
+          ],
+          "scale": [
+            88.8671875,
+            88.8671875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run5",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 27,
+        "name": "sheeprun4",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1120,
+            665
+          ],
+          "scale": [
+            49.8046875,
+            49.8046875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "sheeprun4",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 26,
+        "name": "run4",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            640,
+            520
+          ],
+          "scale": [
+            88.8671875,
+            88.8671875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run4",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 25,
+        "name": "sheeprun3",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1120,
+            665
+          ],
+          "scale": [
+            49.8046875,
+            49.8046875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "sheeprun3",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 24,
+        "name": "run3",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            640,
+            520
+          ],
+          "scale": [
+            88.8671875,
+            88.8671875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run3",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 23,
+        "name": "sheeprun2",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1120,
+            665
+          ],
+          "scale": [
+            49.8046875,
+            49.8046875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "sheeprun2",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 22,
+        "name": "run2",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            640,
+            520
+          ],
+          "scale": [
+            88.8671875,
+            88.8671875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run2",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 21,
+        "name": "sheeprun1",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1120,
+            665
+          ],
+          "scale": [
+            49.8046875,
+            49.8046875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "sheeprun1",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Image",
+        "id": 20,
+        "name": "run1",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            640,
+            520
+          ],
+          "scale": [
+            88.8671875,
+            88.8671875
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run1",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Text",
+        "id": 19,
+        "name": "Through Wind Down and into Screen-Free Morning.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11650,
+          "duration": 5600
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            136,
+            339
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Through Wind Down and into Screen-Free Morning.",
+          "fontFamily": ".SF NS Rounded",
+          "fontStyle": "Regular",
+          "fontSize": 35,
+          "fillColor": [
+            0.98,
+            0.97,
+            0.92,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1660,
+            90
+          ],
+          "leading": 39.55
+        }
+      },
+      {
+        "type": "Text",
+        "id": 18,
+        "name": "Ollie keeps you company.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11200,
+          "duration": 6050
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            221
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Ollie keeps you company.",
+          "fontFamily": "Arial Rounded MT Bold",
+          "fontStyle": "Regular",
+          "fontSize": 80,
+          "fillColor": [
+            0.98,
+            0.97,
+            0.92,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1700,
+            140
+          ],
+          "leading": 90.39999999999999
+        }
+      },
+      {
+        "type": "Text",
+        "id": 17,
+        "name": "02  /  MEET YOUR COMPANION",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            130
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "02  /  MEET YOUR COMPANION",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 27,
+          "fillColor": [
+            0.98,
+            0.97,
+            0.92,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1600,
+            60
+          ],
+          "leading": 30.509999999999998
+        }
+      },
+      {
+        "type": "Rect",
+        "id": 16,
+        "name": "Quiet top tint",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            1920,
+            400
+          ],
+          "fillColor": [
+            0.045,
+            0.085,
+            0.13,
+            0.58
+          ],
+          "roundness": 0
+        }
+      },
+      {
+        "type": "Image",
+        "id": 15,
+        "name": "moonlit",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 11000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            93.75,
+            93.75
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "moonlit",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Text",
+        "id": 14,
+        "name": "COUNTING SHEEP",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 5000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            972
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "COUNTING SHEEP",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 22,
+          "fillColor": [
+            0.98,
+            0.97,
+            0.92,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            600,
+            50
+          ],
+          "leading": 24.86
+        }
+      },
+      {
+        "type": "Text",
+        "id": 13,
+        "name": "App preview",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 5250,
+          "duration": 6000
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1710,
+            932
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "App preview",
+          "fontFamily": ".SF NS Rounded",
+          "fontStyle": "Regular",
+          "fontSize": 21,
+          "fillColor": [
+            0.72,
+            0.7,
+            0.64,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            160,
+            70
+          ],
+          "leading": 23.729999999999997
+        }
+      },
+      {
+        "type": "Image",
+        "id": 12,
+        "name": "home",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 5250,
+          "duration": 6000
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1235,
+            83
+          ],
+          "scale": [
+            34.660033167495854,
+            34.660033167495854
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "home",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Rect",
+        "id": 11,
+        "name": "Phone border",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 5250,
+          "duration": 6000
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1223,
+            71
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            442,
+            954
+          ],
+          "fillColor": [
+            0.3,
+            0.36,
+            0.29,
+            1
+          ],
+          "roundness": 48
+        }
+      },
+      {
+        "type": "Text",
+        "id": 10,
+        "name": "Choose your time. / Pick a simple routine. / Start when you\u2019re ready.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 5650,
+          "duration": 5600
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            136,
+            578
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Choose your time.\nPick a simple routine.\nStart when you\u2019re ready.",
+          "fontFamily": ".SF NS Rounded",
+          "fontStyle": "Regular",
+          "fontSize": 43,
+          "fillColor": [
+            0.72,
+            0.7,
+            0.64,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            930,
+            230
+          ],
+          "leading": 48.589999999999996
+        }
+      },
+      {
+        "type": "Text",
+        "id": 9,
+        "name": "An evening / that feels yours.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 5150,
+          "duration": 6100
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            285
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "An evening\nthat feels yours.",
+          "fontFamily": "Arial Rounded MT Bold",
+          "fontStyle": "Regular",
+          "fontSize": 88,
+          "fillColor": [
+            0.98,
+            0.97,
+            0.92,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1000,
+            240
+          ],
+          "leading": 99.44
+        }
+      },
+      {
+        "type": "Text",
+        "id": 8,
+        "name": "01  /  WIND DOWN",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 5000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            130
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "01  /  WIND DOWN",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 27,
+          "fillColor": [
+            0.7,
+            0.66,
+            0.84,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1600,
+            60
+          ],
+          "leading": 30.509999999999998
+        }
+      },
+      {
+        "type": "Rect",
+        "id": 7,
+        "name": "Forest green",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 5000,
+          "duration": 6250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            1920,
+            1080
+          ],
+          "fillColor": [
+            0.055,
+            0.075,
+            0.06,
+            1
+          ],
+          "roundness": 0
+        }
+      },
+      {
+        "type": "Text",
+        "id": 6,
+        "name": "COUNTING SHEEP",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 5250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            972
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "COUNTING SHEEP",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 22,
+          "fillColor": [
+            0.45,
+            0.45,
+            0.4,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            600,
+            50
+          ],
+          "leading": 24.86
+        }
+      },
+      {
+        "type": "Image",
+        "id": 5,
+        "name": "rest-story",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 5250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            910,
+            260
+          ],
+          "scale": [
+            93.75,
+            93.75
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "rest-story",
+          "fit": "contain"
+        }
+      },
+      {
+        "type": "Text",
+        "id": 4,
+        "name": "Put your phone in another room. / Make a little space for yourself.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 550,
+          "duration": 4700
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            136,
+            590
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Put your phone in another room.\nMake a little space for yourself.",
+          "fontFamily": ".SF NS Rounded",
+          "fontStyle": "Regular",
+          "fontSize": 39,
+          "fillColor": [
+            0.45,
+            0.45,
+            0.4,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            790,
+            160
+          ],
+          "leading": 44.06999999999999
+        }
+      },
+      {
+        "type": "Text",
+        "id": 3,
+        "name": "Let the day / settle.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 5250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            280
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "Let the day\nsettle.",
+          "fontFamily": "Arial Rounded MT Bold",
+          "fontStyle": "Regular",
+          "fontSize": 112,
+          "fillColor": [
+            0.12,
+            0.12,
+            0.1,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            820,
+            255
+          ],
+          "leading": 126.55999999999999
+        }
+      },
+      {
+        "type": "Text",
+        "id": 2,
+        "name": "A SMALL EVENING RITUAL",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 5250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            130,
+            130
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "A SMALL EVENING RITUAL",
+          "fontFamily": ".SF NS Mono",
+          "fontStyle": "Light",
+          "fontSize": 27,
+          "fillColor": [
+            0.37,
+            0.53,
+            0.27,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1600,
+            60
+          ],
+          "leading": 30.509999999999998
+        }
+      },
+      {
+        "type": "Rect",
+        "id": 1,
+        "name": "Warm paper",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 5250
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            1920,
+            1080
+          ],
+          "fillColor": [
+            0.98,
+            0.97,
+            0.92,
+            1
+          ],
+          "roundness": 0
+        }
+      }
+    ],
+    "name": "Counting Sheep \u2022 An evening with Ollie"
+  }
+}

@@ -1,0 +1,377 @@
+Building for debugging...
+[0/7] /private/var/folders/rt/bg__d1pd0vv2nptk_81yldlr0000gn/T/counting-sheep-farm-tests-2qsl_k8q/.build/arm64-apple-macosx/debug/FarmSaveValidationPackageTests.derived/runner.swift
+[1/7] Write sources
+[4/7] Write swift-version--58304C5D6DBC2206.txt
+[6/74] Emitting module FarmSaveValidation
+[7/96] Compiling FarmSaveValidation HomeStartRouting.swift
+[8/96] Compiling FarmSaveValidation HomeWindowPhase.swift
+[9/96] Compiling FarmSaveValidation ImpactMeasurement.swift
+[10/96] Compiling FarmSaveValidation IndependentMorningSettlement.swift
+[11/96] Compiling FarmSaveValidation MorningCheckIn.swift
+[12/96] Compiling FarmSaveValidation MorningQuietIntent.swift
+[13/96] Compiling FarmSaveValidation NightFlockAPI.swift
+[14/96] Compiling FarmSaveValidation NightFlockCommitment.swift
+[15/96] Compiling FarmSaveValidation NightFlockDiagnostics.swift
+[16/96] Compiling FarmSaveValidation NightFlockInviteRecovery.swift
+[17/96] Compiling FarmSaveValidation NightFlockModels.swift
+[18/96] Compiling FarmSaveValidation NightFlockOrientation.swift
+[19/96] Compiling FarmSaveValidation NightFlockPresentation.swift
+[20/96] Compiling FarmSaveValidation NightFlockReadDeadline.swift
+[21/96] Compiling FarmSaveValidation NightFlockRemoteError.swift
+[22/96] Compiling FarmSaveValidation NightFlockRequestScheduling.swift
+[23/96] Compiling FarmSaveValidation NightFlockRewards.swift
+[24/96] Compiling FarmSaveValidation NightFlockSharedHabitPresentation.swift
+[25/96] Compiling FarmSaveValidation NightFlockSharedHabitSleep.swift
+[26/96] Compiling FarmSaveValidation NightFlockSharedHabits.swift
+[27/96] Compiling FarmSaveValidation NightFlockSharedHabitsAPI.swift
+[28/96] Compiling FarmSaveValidation NightFlockSharedHabitsFence.swift
+[29/96] Compiling FarmSaveValidation AccountCredentials.swift
+[30/96] Compiling FarmSaveValidation AccountFarmOwnership.swift
+[31/96] Compiling FarmSaveValidation ActiveRunPresentation.swift
+[32/96] Compiling FarmSaveValidation AppAppearance.swift
+[33/96] Compiling FarmSaveValidation AppFeedback.swift
+[34/96] Compiling FarmSaveValidation AutomaticWindDownSchedulingDecision.swift
+[35/96] Compiling FarmSaveValidation Campfire.swift
+[36/96] Compiling FarmSaveValidation CampfireBuddies.swift
+[37/96] Compiling FarmSaveValidation CampfireProfile.swift
+[38/96] Compiling FarmSaveValidation CampfireVisibility.swift
+[39/96] Compiling FarmSaveValidation CompletionRewardPresentation.swift
+[40/96] Compiling FarmSaveValidation ConnectionPresentation.swift
+[41/96] Compiling FarmSaveValidation CountingSheepStorage.swift
+[42/96] Compiling FarmSaveValidation CountingSheepUserProfile.swift
+[43/96] Compiling FarmSaveValidation CumulativeFarmCredit.swift
+[44/96] Compiling FarmSaveValidation DistanceProvider.swift
+[45/96] Compiling FarmSaveValidation EmergencyExitChallenge.swift
+[46/96] Compiling FarmSaveValidation FarmAccountSocialOwnerGate.swift
+[47/96] Compiling FarmSaveValidation FarmBackupPayload.swift
+[48/96] Compiling FarmSaveValidation FarmBackupPresentation.swift
+[49/96] Compiling FarmSaveValidation FarmBackupSync.swift
+[50/96] Compiling FarmSaveValidation FarmBackupTestDoubles.swift
+[51/96] Compiling FarmSaveValidation FarmBackupViewModel+AccountSync.swift
+[52/96] Compiling FarmSaveValidation FarmBackupViewModel+Recovery.swift
+[53/96] Compiling FarmSaveValidation FarmBackupViewModel+Retry.swift
+[54/96] Compiling FarmSaveValidation FarmBackupViewModel.swift
+[55/96] Compiling FarmSaveValidation FarmEconomyRules.swift
+[56/96] Compiling FarmSaveValidation FarmEconomySnapshot.swift
+[57/96] Compiling FarmSaveValidation FarmMigration.swift
+[58/96] Compiling FarmSaveValidation FarmModels.swift
+[59/96] Compiling FarmSaveValidation FarmSaveDocument.swift
+[60/96] Compiling FarmSaveValidation FarmSaveStore+Accounts.swift
+[61/96] Compiling FarmSaveValidation FarmSaveStore.swift
+[62/96] Compiling FarmSaveValidation FarmShop.swift
+[63/96] Compiling FarmSaveValidation FarmShopCatalog.swift
+[64/96] Compiling FarmSaveValidation FarmSyncConnectivityService.swift
+[65/96] Compiling FarmSaveValidation FirstRunJourney.swift
+[66/96] Compiling FarmSaveValidation FocusAnalytics.swift
+[67/96] Compiling FarmSaveValidation FocusRunLiveActivity.swift
+[68/96] Compiling FarmSaveValidation FocusRunLiveActivityPushContract.swift
+[69/96] Compiling FarmSaveValidation FocusRunRules.swift
+[70/96] Compiling FarmSaveValidation FocusSessionStartResult.swift
+[71/96] Compiling FarmSaveValidation Formatting.swift
+[72/96] Compiling FarmSaveValidation HomeReceiptRouting.swift
+[73/160] Compiling FarmSaveValidation NightFlockSharedHabitsOutbox.swift
+[74/160] Compiling FarmSaveValidation NightFlockSharing.swift
+[75/160] Compiling FarmSaveValidation NightFlockV2API.swift
+[76/160] Compiling FarmSaveValidation NightFlockV3API.swift
+[77/160] Compiling FarmSaveValidation NightFlockV4API.swift
+[78/160] Compiling FarmSaveValidation NightFlockV4Models.swift
+[79/160] Compiling FarmSaveValidation NightFlockV4Outbox.swift
+[80/160] Compiling FarmSaveValidation NightFlockV4PublicationPolicy.swift
+[81/160] Compiling FarmSaveValidation NightFlockV4Rewards.swift
+[82/160] Compiling FarmSaveValidation NightJourneyAssets.swift
+[83/160] Compiling FarmSaveValidation NightJourneyGait.swift
+[84/160] Compiling FarmSaveValidation NightJourneyProgress.swift
+[85/160] Compiling FarmSaveValidation NightJourneyTerrain.swift
+[86/160] Compiling FarmSaveValidation NightWatch.swift
+[87/160] Compiling FarmSaveValidation NightWatchGuidance.swift
+[88/160] Compiling FarmSaveValidation NightWatchHistory.swift
+[89/160] Compiling FarmSaveValidation NightWatchUsageMonitoring.swift
+[90/160] Compiling FarmSaveValidation NightsHistorySummary.swift
+[91/160] Compiling FarmSaveValidation NotificationCopy.swift
+[92/160] Compiling FarmSaveValidation NotificationPlanning.swift
+[93/160] Compiling FarmSaveValidation NotificationPreferences.swift
+[94/160] Compiling FarmSaveValidation OfflinePurpose.swift
+[95/160] Compiling FarmSaveValidation SheepSearchState.swift
+[96/160] Compiling FarmSaveValidation SheepSearchWelcome.swift
+[97/160] Compiling FarmSaveValidation ShepherdArtStudy.swift
+[98/160] Compiling FarmSaveValidation ShepherdAvatarAppearance.swift
+[99/160] Compiling FarmSaveValidation SleepIntervalMath.swift
+[100/160] Compiling FarmSaveValidation SlumberPartyAcquisition.swift
+[101/160] Compiling FarmSaveValidation SlumberPartyFeedback.swift
+[102/160] Compiling FarmSaveValidation SlumberPartyHomePresentation.swift
+[103/160] Compiling FarmSaveValidation SlumberPartyInvitations.swift
+[104/160] Compiling FarmSaveValidation SlumberPartySharedFarm.swift
+[105/160] Compiling FarmSaveValidation SunriseTrail.swift
+[106/160] Compiling FarmSaveValidation WatchMessage.swift
+[107/160] Compiling FarmSaveValidation WelcomeReward.swift
+[108/160] Compiling FarmSaveValidation WindDownGuidance.swift
+[109/160] Compiling FarmSaveValidation WindDownGuidanceSources.swift
+[110/160] Compiling FarmSaveValidation WindDownHabit.swift
+[111/160] Compiling FarmSaveValidation WindDownProfile.swift
+[112/160] Compiling FarmSaveValidation WindDownProfilePresentation.swift
+[113/160] Compiling FarmSaveValidation WindDownScheduling.swift
+[114/160] Compiling FarmSaveValidation WindDownStartContext.swift
+[115/160] Compiling FarmSaveValidation WindDownStartTransaction.swift
+[116/160] Compiling FarmSaveValidation QuietPeriodScheduling.swift
+[117/160] Compiling FarmSaveValidation QuietTimeBriefAccess.swift
+[118/160] Compiling FarmSaveValidation QuietTimeShieldPresentation.swift
+[119/160] Compiling FarmSaveValidation QuietTimeShieldSchedule.swift
+[120/160] Compiling FarmSaveValidation QuietTimeShieldScheduleRegistry.swift
+[121/160] Compiling FarmSaveValidation QuietTimeShielding.swift
+[122/160] Compiling FarmSaveValidation RewardEngine.swift
+[123/160] Compiling FarmSaveValidation RewardModels.swift
+[124/160] Compiling FarmSaveValidation RitualPersonalisation.swift
+[125/160] Compiling FarmSaveValidation RitualPersonalisationRules.swift
+[126/160] Compiling FarmSaveValidation ScreenFreeMorningPresentation.swift
+[127/160] Compiling FarmSaveValidation ScreenTimeIntegration.swift
+[128/160] Compiling FarmSaveValidation ScreenTimeReportMath.swift
+[129/160] Compiling FarmSaveValidation SessionGuard.swift
+[130/160] Compiling FarmSaveValidation SharedMeadow.swift
+[131/160] Compiling FarmSaveValidation SharedPasture.swift
+[132/160] Compiling FarmSaveValidation SheepPosterBoard.swift
+[133/160] Compiling FarmSaveValidation SheepSearch.swift
+[134/160] Compiling FarmSaveValidation SheepSearchExplainer.swift
+[135/160] Compiling FarmSaveValidation SheepSearchPresentation.swift
+[136/160] Compiling FarmSaveValidation SheepSearchSlumberParty.swift
+[137/160] Compiling FarmSaveValidation OllieCompanionAnimation.swift
+[138/160] Compiling FarmSaveValidation OllieModels.swift
+[139/160] Compiling FarmSaveValidation OllieWardrobe.swift
+[140/160] Compiling FarmSaveValidation Onboarding.swift
+[141/160] Compiling FarmSaveValidation OnboardingJourney.swift
+[142/160] Compiling FarmSaveValidation Orientation.swift
+[143/160] Compiling FarmSaveValidation PasswordAccountViewModel.swift
+[144/160] Compiling FarmSaveValidation PastureFetch.swift
+[145/160] Compiling FarmSaveValidation PastureFetchPractice.swift
+[146/160] Compiling FarmSaveValidation PastureFetchWakeUp.swift
+[147/160] Compiling FarmSaveValidation PasturePlay.swift
+[148/160] Compiling FarmSaveValidation PastureScene.swift
+[149/160] Compiling FarmSaveValidation PersistenceService+Personalisation.swift
+[150/160] Compiling FarmSaveValidation PersistenceService+WindDownHabit.swift
+[151/160] Compiling FarmSaveValidation PersistenceService.swift
+[152/160] Compiling FarmSaveValidation PersonalShield.swift
+[153/160] Compiling FarmSaveValidation PhoneAwaySearchSettlement.swift
+[154/160] Compiling FarmSaveValidation PhoneAwayStartPolicy.swift
+[155/160] Compiling FarmSaveValidation PhoneBedTag.swift
+[156/160] Compiling FarmSaveValidation PhoneBedTagInspection.swift
+[157/160] Compiling FarmSaveValidation ProximityClassifier.swift
+[158/160] Compiling FarmSaveValidation QuietNoteText.swift
+[159/167] Compiling FarmSaveValidationTests FarmSaveDocumentTests.swift
+[160/167] Compiling FarmSaveValidationTests FarmSaveStoreTests.swift
+[161/167] Compiling FarmSaveValidationTests AccountFarmOwnershipTests.swift
+[162/167] Compiling FarmSaveValidationTests AccountFarmStoreTests.swift
+[163/167] Compiling FarmSaveValidationTests FarmBackupViewModelTests.swift
+[164/167] Compiling FarmSaveValidationTests FarmPersistenceAdapterTests.swift
+[165/167] Emitting module FarmSaveValidationTests
+[166/168] Compiling FarmSaveValidationTests RitualPersonalisationPersistenceTests.swift
+[167/170] Compiling FarmSaveValidationPackageTests runner.swift
+[168/170] Emitting module FarmSaveValidationPackageTests
+[168/170] Write Objects.LinkFileList
+[169/170] Linking FarmSaveValidationPackageTests
+Build complete! (58.50s)
+Test Suite 'All tests' started at 2026-09-25 07:01:17.056.
+Test Suite 'FarmSaveValidationPackageTests.xctest' started at 2026-09-25 07:01:17.063.
+Test Suite 'AccountFarmOwnershipTests' started at 2026-09-25 07:01:17.063.
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testAttachedSocialWorkRequiresMatchingCommittedFarmOwner]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testAttachedSocialWorkRequiresMatchingCommittedFarmOwner]' passed (0.003 seconds).
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testDocumentRejectsMismatchedOwnerAndExposedSignedOutValues]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testDocumentRejectsMismatchedOwnerAndExposedSignedOutValues]' passed (0.001 seconds).
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testOnlyVerifiedPasswordOrAppleIdentitySupportsAccounts]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testOnlyVerifiedPasswordOrAppleIdentitySupportsAccounts]' passed (0.000 seconds).
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testPasswordRecoveryIsBoundToTheExpectedUUID]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testPasswordRecoveryIsBoundToTheExpectedUUID]' passed (0.000 seconds).
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testUsernamesAreCanonicalAndDoNotAcceptEmailOrUnicodeLookalikes]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmOwnershipTests testUsernamesAreCanonicalAndDoNotAcceptEmailOrUnicodeLookalikes]' passed (0.003 seconds).
+Test Suite 'AccountFarmOwnershipTests' passed at 2026-09-25 07:01:17.072.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.008 (0.009) seconds
+Test Suite 'AccountFarmStoreTests' started at 2026-09-25 07:01:17.072.
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testAccountRoundTripKeepsFarmAndPrivateContextTogether]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testAccountRoundTripKeepsFarmAndPrivateContextTogether]' passed (0.030 seconds).
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testBedtimeBonusSurvivesAccountArchiveAndDiskReload]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testBedtimeBonusSurvivesAccountArchiveAndDiskReload]' passed (0.016 seconds).
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testCorruptSignedOutGenerationsNeverReopenPreviousAccount]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testCorruptSignedOutGenerationsNeverReopenPreviousAccount]' passed (0.009 seconds).
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testFailedOwnerActivationLeavesOriginalValuesAndOwner]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testFailedOwnerActivationLeavesOriginalValuesAndOwner]' passed (0.007 seconds).
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testFetchBestAndBallStayWithTheirOwnerAfterSignOutAndReload]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testFetchBestAndBallStayWithTheirOwnerAfterSignOutAndReload]' passed (0.019 seconds).
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testGuestCannotReadAccountRecoveryAndAccountDeletionKeepsGuest]' started.
+Test Case '-[FarmSaveValidationTests.AccountFarmStoreTests testGuestCannotReadAccountRecoveryAndAccountDeletionKeepsGuest]' passed (0.015 seconds).
+Test Suite 'AccountFarmStoreTests' passed at 2026-09-25 07:01:17.171.
+	 Executed 6 tests, with 0 failures (0 unexpected) in 0.098 (0.099) seconds
+Test Suite 'FarmBackupViewModelTests' started at 2026-09-25 07:01:17.171.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAccountAdoptionWaitsForActiveSettlement]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAccountAdoptionWaitsForActiveSettlement]' passed (0.062 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAccountPreviewIsDerivedFromFetchedPayloadWithoutRestoringIt]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAccountPreviewIsDerivedFromFetchedPayloadWithoutRestoringIt]' passed (0.027 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAccountReadShowsAppleIdentityBeforeSyncAcceptance]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAccountReadShowsAppleIdentityBeforeSyncAcceptance]' passed (0.025 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAccountSignInLoadsRemoteFarmAndEnablesSyncInOneFlow]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAccountSignInLoadsRemoteFarmAndEnablesSyncInOneFlow]' passed (0.051 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAppleCompletionLookupFailureDoesNotPublishSignInOrChangeOwner]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAppleCompletionLookupFailureDoesNotPublishSignInOrChangeOwner]' passed (0.048 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAppleCompletionPublishesOnlyAfterCommittedOwnerActivation]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAppleCompletionPublishesOnlyAfterCommittedOwnerActivation]' passed (0.022 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAppleSheetReservesOperationSlotAgainstForegroundRefresh]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAppleSheetReservesOperationSlotAgainstForegroundRefresh]' passed (0.044 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAppleSignInAfterSignOutRestoresTheSameAccountFarm]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAppleSignInAfterSignOutRestoresTheSameAccountFarm]' passed (0.329 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAutomaticRetryRejectsCredentialAndCorruptDataFailures]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testAutomaticRetryRejectsCredentialAndCorruptDataFailures]' passed (0.061 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testCancelledAppleLinkDoesNotLeakIntoNextSignIn]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testCancelledAppleLinkDoesNotLeakIntoNextSignIn]' passed (0.042 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testConnectivityRecoveryAutomaticallyRetriesDirtyFarmUpload]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testConnectivityRecoveryAutomaticallyRetriesDirtyFarmUpload]' passed (0.147 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testCredentialRefreshKeepsConfirmedFarmPresentation]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testCredentialRefreshKeepsConfirmedFarmPresentation]' passed (0.041 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testDeletionBeginningDuringServicePreflightRejectsUpload]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testDeletionBeginningDuringServicePreflightRejectsUpload]' passed (0.025 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testDeletionFenceBlocksLookupsUploadsAndPendingRetries]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testDeletionFenceBlocksLookupsUploadsAndPendingRetries]' passed (0.051 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testEmptyRemoteAccountAdoptsTheGuestFarmBeforeAccountRouting]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testEmptyRemoteAccountAdoptsTheGuestFarmBeforeAccountRouting]' passed (0.049 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFailedAccountAdoptionRestoreKeepsThePreviousOwnerAndDoesNotPublish]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFailedAccountAdoptionRestoreKeepsThePreviousOwnerAndDoesNotPublish]' passed (0.028 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFailedLookupDoesNotPretendTheAccountIsEmptyOrPublishAPreview]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFailedLookupDoesNotPretendTheAccountIsEmptyOrPublishAPreview]' passed (0.023 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFailedPauseReportsFailureAndInvalidatesInFlightAuthorization]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFailedPauseReportsFailureAndInvalidatesInFlightAuthorization]' passed (0.014 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFailedRestoreDoesNotPublishOrReplaceLocalFarm]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFailedRestoreDoesNotPublishOrReplaceLocalFarm]' passed (0.026 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFarmConnectionFailureKeepsAuthenticatedIdentityAndLocalArchive]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testFarmConnectionFailureKeepsAuthenticatedIdentityAndLocalArchive]' passed (0.025 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testKeepThisFarmOnEmptyAccountDoesNotSelectAgainstStaleNilHead]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testKeepThisFarmOnEmptyAccountDoesNotSelectAgainstStaleNilHead]' passed (0.050 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testLogoutHidesAccountAndPreservesUnsyncedRecoveryOnlyForItsOwner]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testLogoutHidesAccountAndPreservesUnsyncedRecoveryOnlyForItsOwner]' passed (0.068 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testNativeAppleFailurePreservesOnlyStageAndCode]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testNativeAppleFailurePreservesOnlyStageAndCode]' passed (0.007 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testNoOpConfirmedUploadRestoresConfirmedPresentationAfterBackgroundCheck]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testNoOpConfirmedUploadRestoresConfirmedPresentationAfterBackgroundCheck]' passed (0.038 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testPauseDuringSessionAcquisitionPreventsPendingUploadPublication]' started.
+CoreData: error: Failed to create NSXPCConnection
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testPauseDuringSessionAcquisitionPreventsPendingUploadPublication]' passed (0.022 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testRestorePublishesCommittedFarmEvenWhenPresentationAcknowledgementFails]' started.
+CoreData: error: Failed to create NSXPCConnection
+CoreData: error: Failed to create NSXPCConnection
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testRestorePublishesCommittedFarmEvenWhenPresentationAcknowledgementFails]' passed (0.046 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testRetryWithoutPendingActionReturnsToAnActionableSignedOutState]' started.
+CoreData: error: Failed to create NSXPCConnection
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testRetryWithoutPendingActionReturnsToAnActionableSignedOutState]' passed (0.020 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testSignOutCancelsAutomaticRetryBeforeConnectivityRecovers]' started.
+CoreData: error: Failed to create NSXPCConnection
+2026-09-25 07:01:18.586 xctest[78685:13210252] CoreData: XPC: sendMessage: failed #0
+CoreData: error: Failed to create NSXPCConnection
+2026-09-25 07:01:18.603 xctest[78685:13210252] CoreData: XPC: sendMessage: failed #1
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testSignOutCancelsAutomaticRetryBeforeConnectivityRecovers]' passed (0.103 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testStagingUploadPublishesPendingPresentationBeforeTransportSends]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testStagingUploadPublishesPendingPresentationBeforeTransportSends]' passed (0.027 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testSuccessfulEmptyLookupShowsBackupChoiceWithoutRestoreSignal]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testSuccessfulEmptyLookupShowsBackupChoiceWithoutRestoreSignal]' passed (0.025 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testSyncConsentExplainsWaitingForCurrentSession]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testSyncConsentExplainsWaitingForCurrentSession]' passed (0.023 seconds).
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testSyncConsentFailureIsVisibleAndRetryClearsNotice]' started.
+Test Case '-[FarmSaveValidationTests.FarmBackupViewModelTests testSyncConsentFailureIsVisibleAndRetryClearsNotice]' passed (0.038 seconds).
+Test Suite 'FarmBackupViewModelTests' passed at 2026-09-25 07:01:18.783.
+	 Executed 32 tests, with 0 failures (0 unexpected) in 1.607 (1.612) seconds
+Test Suite 'FarmPersistenceAdapterTests' started at 2026-09-25 07:01:18.783.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testAbsentHabitSupportIsNeutralWithoutCreatingAnswersOrChangingTheFarm]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testAbsentHabitSupportIsNeutralWithoutCreatingAnswersOrChangingTheFarm]' passed (0.008 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testCaughtEncoderFailureAbortsOtherStagedWrites]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testCaughtEncoderFailureAbortsOtherStagedWrites]' passed (0.010 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testHabitDiskWriteFailurePreservesLastConfirmedValuesAndCanRetry]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testHabitDiskWriteFailurePreservesLastConfirmedValuesAndCanRetry]' passed (0.015 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testHabitPlanAndReflectionSurviveReopenAsPrivateLocalValues]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testHabitPlanAndReflectionSurviveReopenAsPrivateLocalValues]' passed (0.008 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testHabitSaveRejectsOwnerChangeStagedInsideAnOuterTransaction]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testHabitSaveRejectsOwnerChangeStagedInsideAnOuterTransaction]' passed (0.011 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testHabitSupportFollowsAccountAndRejectsSignedOutOrAnotherOwnerDrafts]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testHabitSupportFollowsAccountAndRejectsSignedOutOrAnotherOwnerDrafts]' passed (0.033 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testImpactDeletionClearsOnlyTheActiveAccountLedger]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testImpactDeletionClearsOnlyTheActiveAccountLedger]' passed (0.031 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testMalformedHabitValuesThrowWithoutReplacingTheStoredBytes]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testMalformedHabitValuesThrowWithoutReplacingTheStoredBytes]' passed (0.013 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testMissingFilesAfterMigrationDoNotReimportStaleDefaults]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testMissingFilesAfterMigrationDoNotReimportStaleDefaults]' passed (0.011 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testResetClearsHabitValuesAndRejectsAnOldLineageForTheSameAccount]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testResetClearsHabitValuesAndRejectsAnOldLineageForTheSameAccount]' passed (0.016 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testResetRemovesLegacyDataAndFileRecoveryCopies]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testResetRemovesLegacyDataAndFileRecoveryCopies]' passed (0.014 seconds).
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testUnreadableLegacyFarmNeverBecomesSavedStarterFarm]' started.
+Test Case '-[FarmSaveValidationTests.FarmPersistenceAdapterTests testUnreadableLegacyFarmNeverBecomesSavedStarterFarm]' passed (0.004 seconds).
+Test Suite 'FarmPersistenceAdapterTests' passed at 2026-09-25 07:01:18.959.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.175 (0.176) seconds
+Test Suite 'FarmSaveDocumentTests' started at 2026-09-25 07:01:18.959.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testBackupMetadataSurvivesLocalDocumentRoundTrip]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testBackupMetadataSurvivesLocalDocumentRoundTrip]' passed (0.000 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testBackupProjectionExcludesPrivateJournalAndDailyHistory]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testBackupProjectionExcludesPrivateJournalAndDailyHistory]' passed (0.001 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testBackupRequiresCumulativeMigrationBeforeEligibility]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testBackupRequiresCumulativeMigrationBeforeEligibility]' passed (0.000 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testChecksumDetectsChangedPayload]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testChecksumDetectsChangedPayload]' passed (0.000 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testCompleteFarmRoundTripPreservesEarnedAndSpentState]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testCompleteFarmRoundTripPreservesEarnedAndSpentState]' passed (0.002 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testFutureMorningLedgerCannotBeNormalizedByOlderDecoder]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testFutureMorningLedgerCannotBeNormalizedByOlderDecoder]' passed (0.000 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testInvalidComponentAndUnexpectedKeysDoNotBecomeEmptyState]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testInvalidComponentAndUnexpectedKeysDoNotBecomeEmptyState]' passed (0.000 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testRejectsFutureSchemaBeforeLossyDomainDecoding]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testRejectsFutureSchemaBeforeLossyDomainDecoding]' passed (0.000 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testRemoteBackupWithSupabaseDateEncodingPreservesFarmAndRejectsLossyFields]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testRemoteBackupWithSupabaseDateEncodingPreservesFarmAndRejectsLossyFields]' passed (0.007 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testRemoteRoundTripRejectsLossyDecodingAndPreservesWool]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testRemoteRoundTripRejectsLossyDecodingAndPreservesWool]' passed (0.005 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testRestoreSeparatesFarmContinuityFromLocalNightsAndKeepsReplayMarkers]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveDocumentTests testRestoreSeparatesFarmContinuityFromLocalNightsAndKeepsReplayMarkers]' passed (0.001 seconds).
+Test Suite 'FarmSaveDocumentTests' passed at 2026-09-25 07:01:18.976.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.016 (0.017) seconds
+Test Suite 'FarmSaveStoreTests' started at 2026-09-25 07:01:18.976.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testAccountMetadataAndBalanceCommitTogetherAndResetCannotUploadEmptyFarm]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testAccountMetadataAndBalanceCommitTogetherAndResetCannotUploadEmptyFarm]' passed (0.008 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testAllCorruptGenerationsBlockWritesInsteadOfMigratingOldDefaults]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testAllCorruptGenerationsBlockWritesInsteadOfMigratingOldDefaults]' passed (0.003 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testCaughtInnerFailureStillAbortsOuterTransaction]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testCaughtInnerFailureStillAbortsOuterTransaction]' passed (0.002 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testCorruptNewestGenerationRecoversPreviousWithoutErasingOriginal]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testCorruptNewestGenerationRecoversPreviousWithoutErasingOriginal]' passed (0.006 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testErrorAfterPublicationAcknowledgesOnlyExactReadback]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testErrorAfterPublicationAcknowledgesOnlyExactReadback]' passed (0.004 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testFailedCommitRollsBackAllFieldsAndRetryCommitsTogether]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testFailedCommitRollsBackAllFieldsAndRetryCommitsTogether]' passed (0.003 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testFailedResetDoesNotRemoveExistingSave]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testFailedResetDoesNotRemoveExistingSave]' passed (0.003 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testMalformedLegacyBytesRemainUntouchedAndNoEmptyGenerationCreated]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testMalformedLegacyBytesRemainUntouchedAndNoEmptyGenerationCreated]' passed (0.001 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testMigrationAndRelaunchNeverReadStaleLegacyAfterCommit]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testMigrationAndRelaunchNeverReadStaleLegacyAfterCommit]' passed (0.003 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testNewerEnvelopeNeverFallsBackToEarlierValidSave]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testNewerEnvelopeNeverFallsBackToEarlierValidSave]' passed (0.006 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testPrunesOnlyOlderValidGenerationsAndPreservesMigrationOriginal]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testPrunesOnlyOlderValidGenerationsAndPreservesMigrationOriginal]' passed (0.014 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testResetBeforeReadCannotReviveOldGenerationsOrLegacy]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testResetBeforeReadCannotReviveOldGenerationsOrLegacy]' passed (0.005 seconds).
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testRestoreRejectsConcurrentChangesAndKeepsUnselectedLocalBranch]' started.
+Test Case '-[FarmSaveValidationTests.FarmSaveStoreTests testRestoreRejectsConcurrentChangesAndKeepsUnselectedLocalBranch]' passed (0.006 seconds).
+Test Suite 'FarmSaveStoreTests' passed at 2026-09-25 07:01:19.041.
+	 Executed 13 tests, with 0 failures (0 unexpected) in 0.064 (0.065) seconds
+Test Suite 'RitualPersonalisationPersistenceTests' started at 2026-09-25 07:01:19.041.
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testAtomicJournalReflectionAndSupportSaveSurvivesRelaunch]' started.
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testAtomicJournalReflectionAndSupportSaveSurvivesRelaunch]' passed (0.008 seconds).
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testCorruptAndFutureJournalPreservesHealthySiblingValues]' started.
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testCorruptAndFutureJournalPreservesHealthySiblingValues]' passed (0.010 seconds).
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testOwnerAndLineageFenceGuestAccountASignedOutAndAccountB]' started.
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testOwnerAndLineageFenceGuestAccountASignedOutAndAccountB]' passed (0.018 seconds).
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testRejectedAtomicWriteLeavesSiblingNotesUntouched]' started.
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testRejectedAtomicWriteLeavesSiblingNotesUntouched]' passed (0.007 seconds).
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testStaleJournalPlanSupportAndReflectionEditorsCannotOverwrite]' started.
+Test Case '-[FarmSaveValidationTests.RitualPersonalisationPersistenceTests testStaleJournalPlanSupportAndReflectionEditorsCannotOverwrite]' passed (0.010 seconds).
+Test Suite 'RitualPersonalisationPersistenceTests' passed at 2026-09-25 07:01:19.094.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.052 (0.053) seconds
+Test Suite 'FarmSaveValidationPackageTests.xctest' passed at 2026-09-25 07:01:19.094.
+	 Executed 84 tests, with 0 failures (0 unexpected) in 2.020 (2.031) seconds
+Test Suite 'All tests' passed at 2026-09-25 07:01:19.094.
+	 Executed 84 tests, with 0 failures (0 unexpected) in 2.020 (2.038) seconds
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.

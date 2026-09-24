@@ -11,6 +11,7 @@ struct FarmPastureView: View {
     var shepherdDisplayName: String = ""
     var isWindDownActive: Bool = false
     var persistedScene: PastureSceneSnapshot? = nil
+    var onPracticeComplete: (PastureFetchPractice) -> Void = { _ in }
     var onPersistScene: (PastureSceneSnapshot) -> Void = { _ in }
     var onSelectOllie: () -> Void = {}
     var onSelectShepherd: () -> Void = {}
@@ -34,7 +35,24 @@ struct FarmPastureView: View {
         VStack(spacing: AppSpacing.sm) {
             pastureCard
             if sceneController.fetchGame.isPresented {
-                PastureFetchActions(game: sceneController.fetchGame, onDone: sceneController.endFetch)
+                PastureFetchActions(game: sceneController.fetchGame, onDone: sceneController.endFetch,
+                                    personalBest: state.fetchPracticeBest, onPracticeComplete: onPracticeComplete)
+            }
+        }
+        // Controls remain part of the visible game when large text pushes the field offscreen.
+        .background {
+            if tracksScrollViewport, !scrollViewportSize.equalTo(.zero) {
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear {
+                            updateScrollVisibility(
+                                with: proxy.frame(in: .named(FarmScrollViewportCoordinateSpace.name))
+                            )
+                        }
+                        .onChange(of: proxy.frame(in: .named(FarmScrollViewportCoordinateSpace.name))) { _, frame in
+                            updateScrollVisibility(with: frame)
+                        }
+                }
             }
         }
         .alert("Play is paused", isPresented: $sceneController.showsPlayPaused) {
@@ -92,21 +110,6 @@ struct FarmPastureView: View {
         .overlay {
             RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous)
                 .stroke(AppColors.stroke.opacity(0.28), lineWidth: 1)
-        }
-        .background {
-            if tracksScrollViewport, !scrollViewportSize.equalTo(.zero) {
-                GeometryReader { proxy in
-                    Color.clear
-                        .onAppear {
-                            updateScrollVisibility(
-                                with: proxy.frame(in: .named(FarmScrollViewportCoordinateSpace.name))
-                            )
-                        }
-                        .onChange(of: proxy.frame(in: .named(FarmScrollViewportCoordinateSpace.name))) { _, frame in
-                            updateScrollVisibility(with: frame)
-                        }
-                }
-            }
         }
         .environment(\.ollieCoat, state.equipment.ollieCoat)
         .accessibilityElement(children: .contain)
@@ -166,6 +169,10 @@ struct FarmPastureView: View {
                     endPoint: .bottom
                 )
                 if pasture == 0 { decorations(in: proxy.size) }
+                if sceneController.fetchGame.isPresented, selectedPasture == pasture,
+                   let target = sceneController.fetchGame.practiceTarget {
+                    PastureFetchTarget(target: target, size: proxy.size)
+                }
 
                 ForEach(pageSheep) { sheep in
                     let entity = PastureSceneEntityID.sheep(sheep.id, pastureIndex: pasture)
@@ -244,7 +251,7 @@ struct FarmPastureView: View {
                 }
 
                 if sceneController.fetchGame.isPresented, selectedPasture == pasture {
-                    PastureFetchOverlay(game: sceneController.fetchGame, size: proxy.size).zIndex(3)
+                    PastureFetchOverlay(game: sceneController.fetchGame, size: proxy.size, ballItemID: state.equipment.fetchBallItemID).zIndex(3)
                 }
             }
             .coordinateSpace(name: coordinateSpace(for: pasture))

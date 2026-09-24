@@ -319,7 +319,7 @@ final class FarmEconomyTests: XCTestCase {
             FarmShopCatalog.items(in: .barn).map(\.title),
             ["Second Pasture", "Hill Pasture", "Moon Pasture", "Wide Pasture"]
         )
-        XCTAssertEqual(FarmShopCatalog.items(in: .ollie).count, 6)
+        XCTAssertEqual(FarmShopCatalog.items(in: .ollie).count, 8)
         XCTAssertEqual(FarmShopCatalog.items(in: .shepherd).count, 11)
         XCTAssertEqual(FarmShopCatalog.items(in: .farm).count, 8)
         XCTAssertEqual(FarmShopCatalog.items(in: .collectibles).count, 6)
@@ -328,6 +328,7 @@ final class FarmEconomyTests: XCTestCase {
                 .filter { $0.category != .barn }
                 .allSatisfy {
                     $0.assetName?.hasPrefix("shop/shop_") == true
+                        || $0.effect == .fetchBall
                         || $0.effect == .shepherdShirt
                         || $0.id == "shepherd_open_moss_coat"
                 }
@@ -341,10 +342,10 @@ final class FarmEconomyTests: XCTestCase {
         XCTAssertEqual(SheepRarity.allCases.map(FarmEconomyRules.woolYield), [1, 2, 4, 7])
         XCTAssertEqual(SheepRarity.allCases.map(FarmEconomyRules.regrowthNights), [2, 3, 4, 5])
         XCTAssertEqual(SheepRarity.allCases.map(FarmEconomyRules.baseTradeWoolValue), [3, 6, 13, 30])
-        XCTAssertEqual(FarmShopCatalog.all.count, 35)
+        XCTAssertEqual(FarmShopCatalog.all.count, 37)
         XCTAssertEqual(
             FarmShopCatalog.all.filter { $0.category != .barn }.reduce(0) { $0 + $1.woolCost },
-            286
+            293
         )
         XCTAssertEqual(
             FarmShopCatalog.items(in: .barn).map(\.woolCost),

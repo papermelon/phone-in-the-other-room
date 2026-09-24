@@ -19,6 +19,7 @@ enum FarmShopCategory: String, CaseIterable, Identifiable {
 enum FarmShopEffect: Equatable {
     case capacity(level: Int)
     case ollieAccessory
+    case fetchBall
     case shepherdOutfit
     case shepherdShirt
     case shepherdAccessory
@@ -224,6 +225,8 @@ extension FarmState {
         switch item.effect {
         case .capacity:
             break
+        case .fetchBall:
+            equipment.fetchBallItemID = item.id
         case .ollieAccessory:
             try wearOllieAccessory(itemID: item.id)
         case .shepherdShirt:
@@ -318,6 +321,8 @@ extension FarmState {
         switch item.effect {
         case .capacity:
             break
+        case .fetchBall:
+            equipment.fetchBallItemID = item.id
         case .ollieAccessory:
             equipment.ollieAccessoryItemID = item.id
         case .shepherdShirt:

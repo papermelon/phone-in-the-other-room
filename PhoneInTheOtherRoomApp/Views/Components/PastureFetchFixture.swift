@@ -18,6 +18,8 @@ struct PastureFetchNativeFixture: View {
         }
     }
 
+    @State private var practiceBest: Int?
+
     private var farm: FarmState {
         var farm = FarmState.empty
         farm.sheep = ["mabel", "bramble", "juniper"].enumerated().map { index, name in
@@ -25,6 +27,8 @@ struct PastureFetchNativeFixture: View {
                       definitionID: name, displayName: name.capitalized,
                       arrivedAt: Date(timeIntervalSince1970: 1000), protectedNightNumber: 0, rarity: .common)
         }
+        farm.fetchPracticeBest = practiceBest
+        farm.equipment.fetchBallItemID = "fetch_ball_sunset"
         farm.equipment.ollieAccessoryItemID = "ollie_moss_bandana"
         return farm
     }
@@ -43,14 +47,18 @@ struct PastureFetchNativeFixture: View {
                 PastureFetchActions(game: PastureFetchViewModel(), onDone: {})
                     .padding(AppSpacing.md)
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
-                        Text("Fetch with Ollie").font(AppTypography.title)
-                        FarmPastureView(state: farm, protectedNightCount: 0, layoutSeed: 47,
-                                        onSelectSheep: { _ in }, shepherdDisplayName: "Tommy",
-                                        isWindDownActive: ProcessInfo.processInfo.arguments.contains("--fetch-active-session"),
-                                        persistedScene: snapshot)
-                    }.padding(AppSpacing.md)
+                GeometryReader { viewport in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                            Text("Fetch with Ollie").font(AppTypography.title)
+                            FarmPastureView(state: farm, protectedNightCount: 0, layoutSeed: 47,
+                                            onSelectSheep: { _ in }, shepherdDisplayName: "Tommy",
+                                            isWindDownActive: ProcessInfo.processInfo.arguments.contains("--fetch-active-session"),
+                                            persistedScene: snapshot,
+                                            onPracticeComplete: { practiceBest = max(practiceBest ?? 0, $0.score) },
+                                            scrollViewportSize: viewport.size, tracksScrollViewport: true)
+                        }.padding(AppSpacing.md)
+                    }.coordinateSpace(name: FarmScrollViewportCoordinateSpace.name)
                 }
             }
         }

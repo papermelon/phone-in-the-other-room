@@ -1,8 +1,10 @@
 import XCTest
 
 final class OllieWardrobeTests: XCTestCase {
-    func testEveryPurchasableOllieItemHasAFittedGarment() {
-        XCTAssertEqual(Set(FarmShopCatalog.items(in: .ollie).map(\.id)), Set(OllieGarment.allCases.map(\.rawValue)))
+    func testEveryPurchasableOllieAccessoryHasAFittedGarment() {
+        XCTAssertEqual(Set(FarmShopCatalog.items(in: .ollie).filter { $0.effect == .ollieAccessory }.map(\.id)), Set(OllieGarment.allCases.map(\.rawValue)))
+        XCTAssertNil(OllieGarment(itemID: "fetch_ball_moss"))
+        XCTAssertNil(OllieGarment(itemID: "fetch_ball_sunset"))
         XCTAssertNil(OllieGarment(itemID: nil))
         XCTAssertNil(OllieGarment(itemID: "collectible_wool_almanac"))
         XCTAssertNil(OllieGarment(itemID: "future_item"))

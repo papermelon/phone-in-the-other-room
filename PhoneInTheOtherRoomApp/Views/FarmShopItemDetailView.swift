@@ -75,7 +75,7 @@ struct FarmShopItemDetailView: View {
                         }
                     }
                 }.clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            case .capacity, .collectible:
+            case .capacity, .collectible, .fetchBall:
                 FarmShopItemImage(item: item, size: 190)
             }
         }
@@ -129,6 +129,8 @@ struct FarmShopItemDetailView: View {
 
     private var placementDescription: String {
         switch item.effect {
+        case .fetchBall:
+            return "Equipped for free fetch and clover practice. All balls throw the same way. Your other balls stay in the Shop, ready to switch. Practice is free with the original ball."
         case .ollieAccessory:
             return "Ollie wears one accessory at a time. Bringing this home changes his look; his other accessories stay in the wardrobe."
         case .shepherdShirt:

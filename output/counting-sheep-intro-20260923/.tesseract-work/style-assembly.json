@@ -1,0 +1,1017 @@
+{
+  "$schema": "https://jerboa.dev/schemas/fx-composition/editable/v1/document.schema.json",
+  "formatVersion": 1,
+  "dimensions": {
+    "width": 1920,
+    "height": 1080
+  },
+  "duration": 7,
+  "composition": {
+    "id": "main",
+    "layers": [
+      {
+        "id": 32,
+        "type": "Audio",
+        "name": "Soft shelf contact",
+        "activeRange": {
+          "start": 700,
+          "duration": 250
+        },
+        "sourceRange": {
+          "start": 0,
+          "duration": 250
+        },
+        "sourceIntrinsicDuration": 250,
+        "source": {
+          "assetId": "shelf-contact"
+        },
+        "volume": 0.6,
+        "captionsEnabled": false
+      },
+      {
+        "id": 31,
+        "type": "Text",
+        "name": "You wind down.\nOllie follows the trail.",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 3250,
+          "duration": 3750
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            137,
+            112
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "sourceText": {
+          "text": "You wind down.\nOllie follows the trail.",
+          "fontFamily": "Arial Rounded MT Bold",
+          "fontStyle": "Regular",
+          "fontSize": 66,
+          "fillColor": [
+            0.25,
+            0.22,
+            0.27,
+            1
+          ],
+          "strokeWidth": 0,
+          "justification": "left",
+          "boxText": true,
+          "boxPosition": [
+            0,
+            0
+          ],
+          "boxSize": [
+            1060,
+            200
+          ],
+          "leading": 77.22
+        }
+      },
+      {
+        "id": 30,
+        "type": "Rect",
+        "name": "Quiet paper caption",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 3250,
+          "duration": 3750
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            95,
+            86
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            1130,
+            235
+          ],
+          "fillColor": [
+            0.97,
+            0.93,
+            0.8,
+            0.92
+          ],
+          "roundness": 18
+        }
+      },
+      {
+        "id": 29,
+        "type": "Image",
+        "name": "run6",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 2800,
+          "duration": 4200
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            500,
+            593.22
+          ],
+          "scale": [
+            78.0,
+            78.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run6",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 28,
+        "type": "Image",
+        "name": "run5",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 2800,
+          "duration": 4200
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            500,
+            555.0
+          ],
+          "scale": [
+            78.0,
+            78.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run5",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 27,
+        "type": "Image",
+        "name": "run4",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 2800,
+          "duration": 4200
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            500,
+            554.22
+          ],
+          "scale": [
+            78.0,
+            78.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run4",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 26,
+        "type": "Image",
+        "name": "run3",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 2800,
+          "duration": 4200
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            500,
+            593.22
+          ],
+          "scale": [
+            78.0,
+            78.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run3",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 25,
+        "type": "Image",
+        "name": "run2",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 2800,
+          "duration": 4200
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            500,
+            555.0
+          ],
+          "scale": [
+            78.0,
+            78.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run2",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 24,
+        "type": "Image",
+        "name": "run1",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 2800,
+          "duration": 4200
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            500,
+            555.0
+          ],
+          "scale": [
+            78.0,
+            78.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "run1",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 23,
+        "type": "Image",
+        "name": "prairie",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 2800,
+          "duration": 4200
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            93.75,
+            93.75
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "prairie",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 22,
+        "type": "Image",
+        "name": "app",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 1850,
+          "duration": 1200
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            172.81728172817282,
+            172.81728172817282
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "app",
+          "fit": "contain",
+          "sourceRect": {
+            "x": 47,
+            "y": 1040,
+            "width": 1111,
+            "height": 629
+          }
+        }
+      },
+      {
+        "id": 21,
+        "type": "Rect",
+        "name": "Screen insert background",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 1850,
+          "duration": 1200
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            1920,
+            1080
+          ],
+          "fillColor": [
+            0.08,
+            0.09,
+            0.07,
+            1
+          ],
+          "roundness": 0
+        }
+      },
+      {
+        "id": 20,
+        "type": "Image",
+        "name": "pose16",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose16",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 19,
+        "type": "Image",
+        "name": "pose15",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose15",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 18,
+        "type": "Image",
+        "name": "pose14",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose14",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 17,
+        "type": "Image",
+        "name": "pose13",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose13",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 16,
+        "type": "Image",
+        "name": "pose12",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose12",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 15,
+        "type": "Image",
+        "name": "pose11",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose11",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 14,
+        "type": "Image",
+        "name": "pose10",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose10",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 13,
+        "type": "Image",
+        "name": "pose9",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose9",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 12,
+        "type": "Image",
+        "name": "pose8",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose8",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 11,
+        "type": "Image",
+        "name": "pose7",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose7",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 10,
+        "type": "Image",
+        "name": "pose6",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose6",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 9,
+        "type": "Image",
+        "name": "pose5",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose5",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 8,
+        "type": "Image",
+        "name": "pose4",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose4",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 7,
+        "type": "Image",
+        "name": "pose3",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose3",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 6,
+        "type": "Image",
+        "name": "pose2",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose2",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 5,
+        "type": "Image",
+        "name": "pose1",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose1",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 4,
+        "type": "Image",
+        "name": "pose0",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            775,
+            5
+          ],
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "pose0",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 3,
+        "type": "Image",
+        "name": "app",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1403,
+            332
+          ],
+          "scale": [
+            5.140961857379768,
+            5.140961857379768
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "app",
+          "fit": "contain"
+        }
+      },
+      {
+        "id": 2,
+        "type": "Rect",
+        "name": "Phone on outside shelf",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            1397,
+            325
+          ],
+          "scale": [
+            100,
+            100
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "rect": {
+          "size": [
+            74,
+            140
+          ],
+          "fillColor": [
+            0.19,
+            0.15,
+            0.23,
+            1
+          ],
+          "roundness": 9
+        }
+      },
+      {
+        "id": 1,
+        "type": "Image",
+        "name": "room",
+        "blendMode": "normal",
+        "activeRange": {
+          "start": 0,
+          "duration": 1850
+        },
+        "transform": {
+          "anchorPoint": [
+            0,
+            0
+          ],
+          "position": [
+            0,
+            0
+          ],
+          "scale": [
+            114.83253588516746,
+            114.83253588516746
+          ],
+          "rotation": 0,
+          "opacity": 100
+        },
+        "source": {
+          "assetId": "room",
+          "fit": "contain"
+        }
+      }
+    ],
+    "name": "Counting Sheep \u00b7 phone away to Ollie \u00b7 style test"
+  }
+}

@@ -8,6 +8,7 @@ struct FarmShopOwnedItemAction: View {
 
     private var active: Bool {
         switch item.effect {
+        case .fetchBall: return state.equipment.fetchBallItemID == item.id
         case .ollieAccessory: return state.equipment.ollieAccessoryItemID == item.id
         case .shepherdAccessory: return state.shepherd.accessoryItemID == item.id
         case .shepherdShirt: return state.shepherd.shirtItemID == item.id
@@ -24,7 +25,9 @@ struct FarmShopOwnedItemAction: View {
         } else {
             Button(title, action: toggle)
                 .buttonStyle(PixelPrimaryButtonStyle())
-                .accessibilityLabel("\(title) \(item.title)")
+                .accessibilityLabel(item.effect == .fetchBall
+                    ? (active ? "Use original ball" : "Use \(item.title)")
+                    : "\(title) \(item.title)")
         }
     }
 
@@ -33,12 +36,15 @@ struct FarmShopOwnedItemAction: View {
         case .ollieAccessory, .shepherdAccessory, .shepherdOutfit, .shepherdShirt: return active ? "Take off" : "Wear"
         case .farmDecoration: return active ? "Put away" : "Place"
         case .collectible: return active ? "Store" : "Display"
+        case .fetchBall: return active ? "Use original ball" : "Use ball"
         case .capacity: return "Open"
         }
     }
 
     private func toggle() {
         switch item.effect {
+        case .fetchBall:
+            if active { viewModel.useOriginalFetchBall() } else { viewModel.equipFarmShopItem(item.id) }
         case .ollieAccessory:
             if active { viewModel.takeOffOllieAccessory(item.id) } else { viewModel.wearOllieAccessory(item.id) }
         case .shepherdAccessory:

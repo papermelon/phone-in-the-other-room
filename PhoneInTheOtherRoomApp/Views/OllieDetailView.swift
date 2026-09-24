@@ -24,7 +24,7 @@ private struct OllieDetailContent: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private var accessories: [FarmShopItem] {
-        FarmShopCatalog.items(in: .ollie).filter { state.ownedShopItemIDs.contains($0.id) }
+        FarmShopCatalog.items(in: .ollie).filter { $0.effect == .ollieAccessory && state.ownedShopItemIDs.contains($0.id) }
     }
 
     var body: some View {
@@ -75,7 +75,7 @@ private struct OllieDetailContent: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .background(AppColors.surface, in: RoundedRectangle(cornerRadius: AppRadius.md))
                     }
-                    NavigationLink("Browse Ollie’s accessories in Shop") {
+                    NavigationLink("Browse accessories and balls in Shop") {
                         FarmShopView(initialCategory: .ollie)
                     }.buttonStyle(PixelChipButtonStyle(isSelected: false)).frame(minHeight: 44)
                 }

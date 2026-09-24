@@ -115,4 +115,59 @@ import XCTest
         XCTAssertNil(model.frame)
         model.stop()
     }
+    func testPracticeScoresAtLandingCompletesAfterHandoffAndRejectsPresets() throws {
+        let model = PastureFetchViewModel()
+        model.begin(positions: [ollie: .init(x: 0.8, y: 0.7)], ollie: ollie, reduceMotion: true)
+        var completions: [PastureFetchPractice] = []
+        model.startPractice { completions.append($0) }
+        model.throwBall(at: PastureFetchPractice.targets[0].point)
+        XCTAssertNil(model.frame)
+        for (index, target) in PastureFetchPractice.targets.enumerated() {
+            let start = try XCTUnwrap(model.positions[ollie])
+            let travel = PastureScenePoint(x: (target.point.x - model.origin.x) / 1.35,
+                                           y: (target.point.y - model.origin.y) / 1.35)
+            model.flickBall(translation: travel, predictedTranslation: travel)
+            let round = PastureFetchRound(origin: model.origin, target: target.point, ollieStart: start)
+            model.advance(round: round, elapsed: round.flightDuration - 0.01, delta: 0, ollie: ollie)
+            XCTAssertEqual(model.practice?.scores.count, index)
+            model.advance(round: round, elapsed: round.flightDuration, delta: 0, ollie: ollie)
+            model.advance(round: round, elapsed: round.flightDuration + 0.01, delta: 0, ollie: ollie)
+            XCTAssertEqual(model.practice?.scores.count, index + 1)
+            XCTAssertEqual(model.practiceTarget, target, "Keep the ring on the landing until handoff")
+            XCTAssertTrue(completions.isEmpty)
+            model.advance(round: round, elapsed: round.duration, delta: 0, ollie: ollie)
+        }
+        XCTAssertEqual(completions.count, 1)
+        XCTAssertEqual(completions.first?.score, 15)
+        XCTAssertFalse(model.canThrow)
+        model.aimBall(heading: 0, strength: 30, launch: true)
+        XCTAssertTrue(model.isReady)
+        model.startPractice { completions.append($0) }
+        XCTAssertEqual(model.practice?.scores.count, 0)
+        model.aimBall(heading: -90, strength: 60, launch: true)
+        XCTAssertFalse(model.isReady)
+        model.stop()
+        XCTAssertEqual(completions.count, 1, "Abandoned rounds do not publish a best")
+        XCTAssertNil(model.practice)
+    }
+
+    func testReduceMotionRefreshKeepsPracticeButActiveSessionStillCancelsIt() {
+        let scene = PastureSceneController()
+        func configure(active: Bool) {
+            scene.configure(activeSheep: [], pastureCount: 1, layoutSeed: 1,
+                            activePastureIndex: 0, persistedSnapshot: nil,
+                            reduceMotion: true, isWindDownActive: active, onPersist: { _ in })
+        }
+        configure(active: false)
+        scene.fetch()
+        scene.fetchGame.startPractice { _ in XCTFail("An interrupted round cannot publish a best") }
+        configure(active: false)
+        XCTAssertNotNil(scene.fetchGame.practice)
+        XCTAssertTrue(scene.fetchGame.isPresented)
+        configure(active: true)
+        XCTAssertFalse(scene.fetchGame.isPresented)
+        XCTAssertNil(scene.fetchGame.practice)
+        scene.stop()
+    }
+
 }

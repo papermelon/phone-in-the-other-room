@@ -246,6 +246,7 @@ enum FarmCollectibleSlot: String, Codable, CaseIterable, Hashable {
 }
 
 struct FarmEquipment: Codable, Equatable {
+    var fetchBallItemID: String? = nil
     var ollieCoatID: String? = nil
     var ollieCoat: OllieCoatStyle { OllieCoatStyle(rawValue: ollieCoatID ?? "") ?? .classic }
     var ollieAccessoryItemID: String?
@@ -279,7 +280,7 @@ struct FarmEquipment: Codable, Equatable {
     }
 
     private enum CodingKeys: String, CodingKey {
-        case ollieAccessoryItemID, decorationPlacements, collectiblePlacements, ollieCoatID
+        case ollieAccessoryItemID, decorationPlacements, collectiblePlacements, ollieCoatID, fetchBallItemID
         case farmDecorationItemIDs, collectibleItemIDs
     }
 
@@ -295,6 +296,7 @@ struct FarmEquipment: Codable, Equatable {
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        fetchBallItemID = try container.decodeIfPresent(String.self, forKey: .fetchBallItemID)
         ollieCoatID = try container.decodeIfPresent(String.self, forKey: .ollieCoatID)
         ollieAccessoryItemID = try container.decodeIfPresent(String.self, forKey: .ollieAccessoryItemID)
         decorationPlacements = try container.decodeIfPresent(
@@ -324,6 +326,7 @@ struct FarmEquipment: Codable, Equatable {
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(fetchBallItemID, forKey: .fetchBallItemID)
         try container.encodeIfPresent(ollieCoatID, forKey: .ollieCoatID)
         try container.encodeIfPresent(ollieAccessoryItemID, forKey: .ollieAccessoryItemID)
         try container.encode(decorationPlacements, forKey: .decorationPlacements)
@@ -347,6 +350,7 @@ struct FarmState: Codable, Equatable {
     var shepherd: ShepherdProfile
     var transactions: [FarmTransaction]
     var cumulativeCredit: CumulativeFarmCredit?
+    var fetchPracticeBest: Int? = nil
     var trackedSheepDefinitionID: String?
 
     static let empty = FarmState(
@@ -371,7 +375,7 @@ struct FarmState: Codable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case schemaVersion, sheep, discoveries, barnCapacityLevel, woolBalance, cashBalance
-        case unlockedShopTier, cumulativeCredit
+        case unlockedShopTier, cumulativeCredit, fetchPracticeBest
         case ownedShopItemIDs, equipment, shepherd, transactions, trackedSheepDefinitionID
     }
 
@@ -421,6 +425,10 @@ struct FarmState: Codable, Equatable {
             transactions: try container.decodeIfPresent([FarmTransaction].self, forKey: .transactions) ?? [],
             trackedSheepDefinitionID: try container.decodeIfPresent(String.self, forKey: .trackedSheepDefinitionID)
         )
+        fetchPracticeBest = try container.decodeIfPresent(Int.self, forKey: .fetchPracticeBest)
+        if let best = fetchPracticeBest, !(0...PastureFetchPractice.maximumScore).contains(best) {
+            throw DecodingError.dataCorruptedError(forKey: .fetchPracticeBest, in: container, debugDescription: "Invalid fetch practice best")
+        }
         cumulativeCredit = try container.decodeIfPresent(CumulativeFarmCredit.self, forKey: .cumulativeCredit)
         // Keep queued v3 uploads byte-equivalent until a new-policy settlement.
         if decodedSchemaVersion == 3 { schemaVersion = 3 }
@@ -442,6 +450,7 @@ struct FarmState: Codable, Equatable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(schemaVersion, forKey: .schemaVersion)
+        try container.encodeIfPresent(fetchPracticeBest, forKey: .fetchPracticeBest)
         try container.encodeIfPresent(cumulativeCredit, forKey: .cumulativeCredit)
         try container.encode(sheep, forKey: .sheep)
         try container.encode(discoveries, forKey: .discoveries)

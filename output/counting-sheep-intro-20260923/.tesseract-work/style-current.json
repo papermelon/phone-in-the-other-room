@@ -1,0 +1,1696 @@
+{
+  "$schema": "https://jerboa.dev/schemas/fx-composition/editable/v1/document.schema.json",
+  "formatVersion": 1,
+  "dimensions": {
+    "width": 1920,
+    "height": 1080
+  },
+  "duration": 7.0,
+  "composition": {
+    "dynamics": {
+      "entries": [
+        {
+          "animator": {
+            "layerTimeJsCode": "var p=Math.min(1,input.time.seconds/.7); return 325+32*p;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 2,
+            "propertyType": "positionY"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var p=Math.min(1,input.time.seconds/.7); return 332+32*p;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 3,
+            "propertyType": "positionY"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==0?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 4,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==1?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 5,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==2?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 6,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==3?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 7,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==4?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 8,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==5?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 9,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==6?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 10,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==7?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 11,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==8?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 12,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==9?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 13,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==10?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 14,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==11?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 15,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==12?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 16,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==13?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 17,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==14?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 18,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==15?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 19,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "var t=input.time.seconds; var f=t<.7?Math.min(4,Math.floor(t/.14)):Math.min(16,4+Math.floor((t-.7)/.055)); return f==16?100:0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 20,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return 100*Math.min(1,input.time.seconds/.25);",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 23,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return 500+input.time.seconds*45;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 24,
+            "propertyType": "positionX"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==0?100*Math.min(1,input.time.seconds/.25):0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 24,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return 500+input.time.seconds*45;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 25,
+            "propertyType": "positionX"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==1?100*Math.min(1,input.time.seconds/.25):0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 25,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return 500+input.time.seconds*45;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 26,
+            "propertyType": "positionX"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==2?100*Math.min(1,input.time.seconds/.25):0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 26,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return 500+input.time.seconds*45;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 27,
+            "propertyType": "positionX"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==3?100*Math.min(1,input.time.seconds/.25):0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 27,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return 500+input.time.seconds*45;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 28,
+            "propertyType": "positionX"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==4?100*Math.min(1,input.time.seconds/.25):0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 28,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return 500+input.time.seconds*45;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 29,
+            "propertyType": "positionX"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==5?100*Math.min(1,input.time.seconds/.25):0;",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 29,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return 100*Math.min(1,input.time.seconds/.25);",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 30,
+            "propertyType": "opacity"
+          }
+        },
+        {
+          "animator": {
+            "layerTimeJsCode": "return 100*Math.min(1,input.time.seconds/.25);",
+            "type": "jsScript"
+          },
+          "target": {
+            "kind": "layer",
+            "layerId": 31,
+            "propertyType": "opacity"
+          }
+        }
+      ]
+    },
+    "id": "main",
+    "layers": [
+      {
+        "activeRange": {
+          "duration": 250,
+          "start": 700
+        },
+        "captionsEnabled": false,
+        "id": 32,
+        "name": "Soft shelf contact",
+        "source": {
+          "assetId": "shelf-contact"
+        },
+        "sourceIntrinsicDuration": 250,
+        "sourceRange": {
+          "duration": 250,
+          "start": 0
+        },
+        "type": "Audio",
+        "volume": 0.6,
+        "windowMs": 50
+      },
+      {
+        "activeRange": {
+          "duration": 3750,
+          "start": 3250
+        },
+        "blendMode": "normal",
+        "id": 31,
+        "name": "You wind down.\nOllie follows the trail.",
+        "sourceText": {
+          "allCaps": false,
+          "applyFill": true,
+          "applyStroke": false,
+          "baselineShift": 0.0,
+          "boxPosition": [
+            0.0,
+            0.0
+          ],
+          "boxSize": [
+            1060.0,
+            200.0
+          ],
+          "boxText": true,
+          "fillColor": [
+            0.25,
+            0.22,
+            0.27,
+            1.0
+          ],
+          "fontFamily": "Arial Rounded MT Bold",
+          "fontSize": 66.0,
+          "fontStyle": "Regular",
+          "justification": "left",
+          "leading": 77.22,
+          "strokeOverFill": false,
+          "strokeWidth": 0.0,
+          "text": "You wind down.\nOllie follows the trail.",
+          "tracking": 0.0
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            137.0,
+            112.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            100.0,
+            100.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Text"
+      },
+      {
+        "activeRange": {
+          "duration": 3750,
+          "start": 3250
+        },
+        "blendMode": "normal",
+        "id": 30,
+        "name": "Quiet paper caption",
+        "rect": {
+          "fillColor": [
+            0.97,
+            0.93,
+            0.8,
+            0.92
+          ],
+          "fillEnabled": true,
+          "position": [
+            0.0,
+            0.0
+          ],
+          "roundness": 18.0,
+          "size": [
+            1130.0,
+            235.0
+          ],
+          "strokeEnabled": false,
+          "strokeWidth": 0.0
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            95.0,
+            86.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            100.0,
+            100.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Rect"
+      },
+      {
+        "activeRange": {
+          "duration": 4200,
+          "start": 2800
+        },
+        "blendMode": "normal",
+        "id": 29,
+        "name": "run6",
+        "source": {
+          "assetId": "run6",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            300,
+            341.71875
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            109.375,
+            109.375
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 4200,
+          "start": 2800
+        },
+        "blendMode": "normal",
+        "id": 28,
+        "name": "run5",
+        "source": {
+          "assetId": "run5",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            300,
+            288.125
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            109.375,
+            109.375
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 4200,
+          "start": 2800
+        },
+        "blendMode": "normal",
+        "id": 27,
+        "name": "run4",
+        "source": {
+          "assetId": "run4",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            300,
+            287.03125
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            109.375,
+            109.375
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 4200,
+          "start": 2800
+        },
+        "blendMode": "normal",
+        "id": 26,
+        "name": "run3",
+        "source": {
+          "assetId": "run3",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            300,
+            341.71875
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            109.375,
+            109.375
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 4200,
+          "start": 2800
+        },
+        "blendMode": "normal",
+        "id": 25,
+        "name": "run2",
+        "source": {
+          "assetId": "run2",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            300,
+            288.125
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            109.375,
+            109.375
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 4200,
+          "start": 2800
+        },
+        "blendMode": "normal",
+        "id": 24,
+        "name": "run1",
+        "source": {
+          "assetId": "run1",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            300,
+            288.125
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            109.375,
+            109.375
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 4200,
+          "start": 2800
+        },
+        "blendMode": "normal",
+        "id": 23,
+        "name": "prairie",
+        "source": {
+          "assetId": "prairie",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            93.75,
+            93.75
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 950,
+          "start": 1850
+        },
+        "blendMode": "normal",
+        "id": 22,
+        "name": "app",
+        "source": {
+          "assetId": "app",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            -81.22412241224123,
+            -1797.2997299729973
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            172.81728172817282,
+            172.81728172817282
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 950,
+          "start": 1850
+        },
+        "blendMode": "normal",
+        "id": 21,
+        "name": "Screen insert background",
+        "rect": {
+          "fillColor": [
+            0.08,
+            0.09,
+            0.07,
+            1.0
+          ],
+          "fillEnabled": true,
+          "position": [
+            0.0,
+            0.0
+          ],
+          "roundness": 0.0,
+          "size": [
+            1920.0,
+            1080.0
+          ],
+          "strokeEnabled": false,
+          "strokeWidth": 0.0
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            100.0,
+            100.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Rect"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 20,
+        "name": "pose16",
+        "source": {
+          "assetId": "pose16",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 19,
+        "name": "pose15",
+        "source": {
+          "assetId": "pose15",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 18,
+        "name": "pose14",
+        "source": {
+          "assetId": "pose14",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 17,
+        "name": "pose13",
+        "source": {
+          "assetId": "pose13",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 16,
+        "name": "pose12",
+        "source": {
+          "assetId": "pose12",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 15,
+        "name": "pose11",
+        "source": {
+          "assetId": "pose11",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 14,
+        "name": "pose10",
+        "source": {
+          "assetId": "pose10",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 13,
+        "name": "pose9",
+        "source": {
+          "assetId": "pose9",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 12,
+        "name": "pose8",
+        "source": {
+          "assetId": "pose8",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 11,
+        "name": "pose7",
+        "source": {
+          "assetId": "pose7",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 10,
+        "name": "pose6",
+        "source": {
+          "assetId": "pose6",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 9,
+        "name": "pose5",
+        "source": {
+          "assetId": "pose5",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 8,
+        "name": "pose4",
+        "source": {
+          "assetId": "pose4",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 7,
+        "name": "pose3",
+        "source": {
+          "assetId": "pose3",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 6,
+        "name": "pose2",
+        "source": {
+          "assetId": "pose2",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 5,
+        "name": "pose1",
+        "source": {
+          "assetId": "pose1",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 4,
+        "name": "pose0",
+        "source": {
+          "assetId": "pose0",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            775.0,
+            5.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            105.0,
+            105.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 3,
+        "name": "app",
+        "source": {
+          "assetId": "app",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            1405,
+            332.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            4.809286898839138,
+            4.809286898839138
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 2,
+        "name": "Phone on outside shelf",
+        "rect": {
+          "fillColor": [
+            0.19,
+            0.15,
+            0.23,
+            1.0
+          ],
+          "fillEnabled": true,
+          "position": [
+            0.0,
+            0.0
+          ],
+          "roundness": 9.0,
+          "size": [
+            74.0,
+            140.0
+          ],
+          "strokeEnabled": false,
+          "strokeWidth": 0.0
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            1397.0,
+            325.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            100.0,
+            100.0
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Rect"
+      },
+      {
+        "activeRange": {
+          "duration": 1850,
+          "start": 0
+        },
+        "blendMode": "normal",
+        "id": 1,
+        "name": "room",
+        "source": {
+          "assetId": "room",
+          "fit": "contain"
+        },
+        "transform": {
+          "anchorPoint": [
+            0.0,
+            0.0
+          ],
+          "opacity": 100.0,
+          "orientation": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "position": [
+            0.0,
+            0.0
+          ],
+          "rotation": 0.0,
+          "rotationX": 0.0,
+          "rotationY": 0.0,
+          "scale": [
+            114.83253588516746,
+            114.83253588516746
+          ],
+          "skew": 0.0,
+          "skewAxis": 0.0
+        },
+        "type": "Image"
+      }
+    ],
+    "name": "Counting Sheep \u00b7 phone away to Ollie \u00b7 style test"
+  }
+}

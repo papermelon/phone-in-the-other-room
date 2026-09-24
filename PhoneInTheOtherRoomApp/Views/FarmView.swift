@@ -52,6 +52,7 @@ struct FarmView: View {
                         self.nightFlockPartyID = nightFlockPartyID
                         opensNightFlock = true
                     },
+                    onPracticeComplete: viewModel.fetchPracticeRecorder(),
                     onPersistScene: viewModel.persistPastureSceneSnapshot,
                     onSelectOllie: { presentsOllie = true },
                     onSelectShepherd: { presentsShepherdCustomization = true },
@@ -130,6 +131,7 @@ struct FarmDashboardContent: View {
     var campfireSocial: NightFlockViewModel? = nil
     var visitingSheepIDs: Set<UUID> = []
     var onOpenNightFlock: (UUID?) -> Void = { _ in }
+    var onPracticeComplete: (PastureFetchPractice) -> Void = { _ in }
     var onPersistScene: (PastureSceneSnapshot) -> Void = { _ in }
     var onSelectOllie: () -> Void = {}
     var onSelectShepherd: () -> Void = {}
@@ -168,6 +170,7 @@ struct FarmDashboardContent: View {
                         shepherdDisplayName: shepherdDisplayName,
                         isWindDownActive: isWindDownActive,
                         persistedScene: persistedScene,
+                        onPracticeComplete: onPracticeComplete,
                         onPersistScene: onPersistScene,
                         onSelectOllie: onSelectOllie,
                         onSelectShepherd: onSelectShepherd,

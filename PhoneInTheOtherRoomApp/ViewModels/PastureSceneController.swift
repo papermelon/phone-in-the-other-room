@@ -52,6 +52,7 @@ final class PastureSceneController {
         sceneSeed = layoutSeed
         self.activePastureIndex = activePastureIndex
         self.reduceMotion = reduceMotion
+        fetchGame.setReduceMotion(reduceMotion)
         self.isWindDownActive = isWindDownActive
         if !isWindDownActive { showsPlayPaused = false }
         persistSnapshot = onPersist
@@ -81,9 +82,9 @@ final class PastureSceneController {
             behaviors[entity] = .idle
         }
 
-        if reduceMotion || isWindDownActive {
+        if isWindDownActive || (reduceMotion && !fetchGame.isPresented) {
             stopAutonomyAndSettle()
-        } else if !isInteractionActive {
+        } else if !reduceMotion && !isInteractionActive {
             startSchedulerIfNeeded()
         }
     }

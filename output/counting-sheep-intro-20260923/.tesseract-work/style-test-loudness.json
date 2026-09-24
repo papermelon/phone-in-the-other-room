@@ -1,0 +1,16 @@
+{
+  "path": "/Users/ngawangchime/Desktop/Developer Projects/Phone in the Other Room/output/counting-sheep-intro-20260923/Style-Transition-Test.mp4",
+  "audio_stream": "first audio stream",
+  "integrated_lufs": -42.43,
+  "true_peak_dbtp": -24.45,
+  "loudness_range_lu": 0.0,
+  "working_target": {
+    "integrated_lufs": [
+      -16,
+      -14
+    ],
+    "true_peak_max_dbtp": -1
+  },
+  "within_working_target": false,
+  "note": "Measurement only. Targets are a social-edit starting point, not a platform guarantee. Listen to the mix; silence/very short cues may not have meaningful integrated loudness."
+}

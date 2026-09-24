@@ -1,0 +1,171 @@
+[
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 29,
+      "propertyType": "positionX"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return 300+input.time.seconds*45;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 29,
+      "propertyType": "opacity"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==5?100:0;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 28,
+      "propertyType": "positionX"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return 300+input.time.seconds*45;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 28,
+      "propertyType": "opacity"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==4?100:0;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 27,
+      "propertyType": "positionX"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return 300+input.time.seconds*45;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 27,
+      "propertyType": "opacity"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==3?100:0;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 26,
+      "propertyType": "positionX"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return 300+input.time.seconds*45;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 26,
+      "propertyType": "opacity"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==2?100:0;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 25,
+      "propertyType": "positionX"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return 300+input.time.seconds*45;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 25,
+      "propertyType": "opacity"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==1?100:0;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 24,
+      "propertyType": "positionX"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return 300+input.time.seconds*45;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 24,
+      "propertyType": "opacity"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return Math.floor(input.time.seconds*3)%6==0?100:0;"
+    },
+    "dependencies": []
+  },
+  {
+    "type": "setFxPropertyAnimator",
+    "compositionId": "main",
+    "property": {
+      "layerId": 23,
+      "propertyType": "opacity"
+    },
+    "animator": {
+      "type": "jsScript",
+      "layerTimeJsCode": "return 100;"
+    },
+    "dependencies": []
+  }
+]

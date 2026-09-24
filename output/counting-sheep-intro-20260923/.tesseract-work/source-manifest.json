@@ -1,0 +1,111 @@
+{
+  "sources": {
+    "rest-story": "Assets.xcassets/onboarding/onboarding_phone_rest_story.imageset/onboarding_phone_rest_story.png",
+    "home": "output/design/home-compact-social-20260922/wind-down-compact.png",
+    "farm-screen": "output/design/wardrobe-layers-20260923/fuller-farm.png",
+    "wardrobe": "output/design/wardrobe-layers-20260923/coat-picker.png",
+    "moonlit": "Assets.xcassets/farm/farm_journey_moonlit_backdrop.imageset/farm_journey_moonlit_backdrop.png",
+    "ollie": "Assets.xcassets/dog/dog_fuller_classic_farm_idle.imageset/dog_fuller_classic_farm_idle.png",
+    "sheep": "Assets.xcassets/sheep/sheep_bramble_wool_ready.imageset/sheep_bramble_wool_ready.png",
+    "luna": "Assets.xcassets/sheep/sheep_luna_wool_ready.imageset/sheep_luna_wool_ready.png",
+    "marigold": "Assets.xcassets/sheep/sheep_marigold_wool_ready.imageset/sheep_marigold_wool_ready.png",
+    "run1": "Assets.xcassets/dog/dog_fuller_classic_run_frame_01.imageset/dog_fuller_classic_run_frame_01.png",
+    "sheeprun1": "Assets.xcassets/sheep/sheep_bramble_chase_run_frame_01.imageset/sheep_bramble_chase_run_frame_01.png",
+    "run2": "Assets.xcassets/dog/dog_fuller_classic_run_frame_02.imageset/dog_fuller_classic_run_frame_02.png",
+    "sheeprun2": "Assets.xcassets/sheep/sheep_bramble_chase_run_frame_02.imageset/sheep_bramble_chase_run_frame_02.png",
+    "run3": "Assets.xcassets/dog/dog_fuller_classic_run_frame_03.imageset/dog_fuller_classic_run_frame_03.png",
+    "sheeprun3": "Assets.xcassets/sheep/sheep_bramble_chase_run_frame_03.imageset/sheep_bramble_chase_run_frame_03.png",
+    "run4": "Assets.xcassets/dog/dog_fuller_classic_run_frame_04.imageset/dog_fuller_classic_run_frame_04.png",
+    "sheeprun4": "Assets.xcassets/sheep/sheep_bramble_chase_run_frame_04.imageset/sheep_bramble_chase_run_frame_04.png",
+    "run5": "Assets.xcassets/dog/dog_fuller_classic_run_frame_05.imageset/dog_fuller_classic_run_frame_05.png",
+    "sheeprun5": "Assets.xcassets/sheep/sheep_bramble_chase_run_frame_05.imageset/sheep_bramble_chase_run_frame_05.png",
+    "run6": "Assets.xcassets/dog/dog_fuller_classic_run_frame_06.imageset/dog_fuller_classic_run_frame_06.png",
+    "sheeprun6": "Assets.xcassets/sheep/sheep_bramble_chase_run_frame_06.imageset/sheep_bramble_chase_run_frame_06.png"
+  },
+  "sizes": {
+    "rest-story": [
+      1024,
+      682
+    ],
+    "home": [
+      1206,
+      2622
+    ],
+    "farm-screen": [
+      750,
+      1334
+    ],
+    "wardrobe": [
+      750,
+      1334
+    ],
+    "moonlit": [
+      2048,
+      1152
+    ],
+    "ollie": [
+      512,
+      512
+    ],
+    "sheep": [
+      512,
+      512
+    ],
+    "luna": [
+      512,
+      512
+    ],
+    "marigold": [
+      512,
+      512
+    ],
+    "run1": [
+      512,
+      512
+    ],
+    "sheeprun1": [
+      512,
+      512
+    ],
+    "run2": [
+      512,
+      512
+    ],
+    "sheeprun2": [
+      512,
+      512
+    ],
+    "run3": [
+      512,
+      512
+    ],
+    "sheeprun3": [
+      512,
+      512
+    ],
+    "run4": [
+      512,
+      512
+    ],
+    "sheeprun4": [
+      512,
+      512
+    ],
+    "run5": [
+      512,
+      512
+    ],
+    "sheeprun5": [
+      512,
+      512
+    ],
+    "run6": [
+      512,
+      512
+    ],
+    "sheeprun6": [
+      512,
+      512
+    ]
+  }
+}

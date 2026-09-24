@@ -341,8 +341,14 @@ after handoff. Direction-menu throws provide an alternative to gestures, and Red
 removes the arc/spin/gait cycling while preserving travel and timing; a resting pose is held
 before the upright pose instead of cycling the rise frames. The Farm backdrop is aligned to
 keep the barn visible when narrow cards crop the wide artwork. Leaving the visible Farm,
-changing pasture, backgrounding or starting an active session cancels play. Play is paused during active sessions; both the pasture menu and Ollie profile actions explain the pause in an alert. Fetch grants no rewards
-and sends no social presence. The Shepherd model stays pinned above scrolling customization
+changing pasture, backgrounding or starting an active session cancels play. Scrolling between
+the field and its controls keeps the game visible for this purpose. Play is paused during active sessions; both the pasture menu and Ollie profile actions explain the pause in an alert. Fetch grants no rewards
+and sends no social presence. Founder-approved progression (25 September 2026) adds optional
+five-throw clover practice, landing feedback, and a personal best in the private Farm save.
+Practice scores deliberate swipes or adjustable direction/strength throws; free-play destination
+presets cannot earn scores. Moss and Sunset balls are wool Shop cosmetics with identical physics.
+See the [fetch implementation and later proposals](plans/fetch-progression-2026-09-20.md).
+The Shepherd model stays pinned above scrolling customization
 controls, showing changes immediately. The Shop remains a named destination.
 
 Founder confirmed after the working eight-person study: keep Ollie on the personal Farm for this release. Fetch/gather remain personal play; the shared companion experiment is DEBUG-only. Retain the existing wide shared meadow and add a movable earned lantern. Everyone can

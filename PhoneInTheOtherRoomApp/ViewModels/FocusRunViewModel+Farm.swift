@@ -163,6 +163,30 @@ extension FocusRunViewModel {
         }
     }
 
+    func useOriginalFetchBall() {
+        mutateFarm { state in
+            state.equipment.fetchBallItemID = nil
+            return nil
+        }
+    }
+
+    /// Capture ownership at practice start so a late return cannot write to a different Farm.
+    func fetchPracticeRecorder() -> (PastureFetchPractice) -> Void {
+        let original = try? persistence.farmSaveStore.snapshot()
+        return { [weak self] practice in
+            guard let self, let original, practice.isComplete,
+                  let current = try? persistence.farmSaveStore.snapshot(),
+                  current.effectiveScope == original.effectiveScope,
+                  current.effectiveScope != .signedOut,
+                  current.lineageID == original.lineageID,
+                  (coordinator.farmState.fetchPracticeBest ?? -1) < practice.score else { return }
+            mutateFarm { state in
+                state.recordFetchPractice(practice)
+                return nil
+            }
+        }
+    }
+
     func setOllieCoat(_ coat: OllieCoatStyle) {
         mutateFarm { state in
             state.equipment.ollieCoatID = coat == .classic ? nil : coat.rawValue
