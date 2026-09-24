@@ -1,0 +1,214 @@
+{
+  "status": "retired; do not use as reference or runtime art",
+  "reason": "Founder identified the large-eyed raster Shepherd family as obsolete on 23 September 2026. Current renderer is ShepherdStudyCanvas.",
+  "archive": "/Users/ngawangchime/Desktop/Counting Sheep Retired Assets/legacy-shepherd-20260923",
+  "gitHead": "614d2107461d93994911ead554959f88a1fa2ebf",
+  "files": [
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_coils_wool_field_hat_equipped_overlay.imageset/Contents.json",
+      "sha256": "99bfb7b0393cf711a11066c66194244b887edf7e6a6a6b33d3e254baf027169b",
+      "bytes": 223
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_coils_wool_field_hat_equipped_overlay.imageset/farm_shepherd_coils_wool_field_hat_equipped_overlay.png",
+      "sha256": "17ec19aaf7f08e1ec0b832701200436bc5f395c26239383a8595936fb99d93f1",
+      "bytes": 88322
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_cropped_wool_field_hat_equipped_overlay.imageset/Contents.json",
+      "sha256": "ee5ac03b3a89c1f2e1fee81f0d650c95962f88f308d3f5009be55346dcb1f65f",
+      "bytes": 225
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_cropped_wool_field_hat_equipped_overlay.imageset/farm_shepherd_cropped_wool_field_hat_equipped_overlay.png",
+      "sha256": "db8782d29fdd0cea5b274496cf0c6df36431757e8e14e3dab3b063415323f9b0",
+      "bytes": 91746
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_curls_wool_field_hat_equipped_overlay.imageset/Contents.json",
+      "sha256": "e12d46130ffd50892ddc6522e9b2a072740b7226bf40405a30dad0cba5a8ae04",
+      "bytes": 223
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_curls_wool_field_hat_equipped_overlay.imageset/farm_shepherd_curls_wool_field_hat_equipped_overlay.png",
+      "sha256": "c8e3811628b0d864554afc9aa67a4131da9c753fd7cd41d7f4dffd8932b2535b",
+      "bytes": 95199
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_default_idle.imageset/.DS_Store",
+      "sha256": "043e49267de3d729b92fecf13a4d82ebff44d64cb09aeebc3b399357aec715c4",
+      "bytes": 6148
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_default_idle.imageset/Contents.json",
+      "sha256": "a0ca895900f6af1be8c1a8d9915b78546a2fc099533dfc87b4da432b1c9e2d58",
+      "bytes": 324
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_default_idle.imageset/farm_shepherd_default_idle.png",
+      "sha256": "5b24f9167ba9054c8acc351a6590720242e3c10c403f9c6aafc68d84e62735d8",
+      "bytes": 144191
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_coils_idle.imageset/Contents.json",
+      "sha256": "3f856435736a3764e53560489125c3422f6a0c0ad95a244a1a2703c3e7830080",
+      "bytes": 327
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_coils_idle.imageset/farm_shepherd_hair_coils_idle.png",
+      "sha256": "34982cc9d620e05b217702e2090e125a6c1c053569b922153783c3798d38dbe1",
+      "bytes": 169517
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_coils_outfit_mask.imageset/Contents.json",
+      "sha256": "2afa971839b2e7f45054a6c7193a54114fe0b9d3bd3fcc57a4fa3a45796e9c81",
+      "bytes": 334
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_coils_outfit_mask.imageset/farm_shepherd_hair_coils_outfit_mask.png",
+      "sha256": "a419c1287f5b6548677cc57a87270b416dc1f5bbfe1a210db74ec3d6d2892786",
+      "bytes": 6520
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_coils_skin_mask.imageset/Contents.json",
+      "sha256": "d38231857d7247825c44c1cf0dc07eb462275d6fdab1b16994dc3c98ba85175d",
+      "bytes": 332
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_coils_skin_mask.imageset/farm_shepherd_hair_coils_skin_mask.png",
+      "sha256": "39fd244f2ab4fbf35652a9cf428550360d52322f8283a1857d0651feac0604e4",
+      "bytes": 9566
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_curls_idle.imageset/Contents.json",
+      "sha256": "d0a54d3276f837b0f53e56370dd4fa803d2f4cc31cfae10f6fd818ccbf617e16",
+      "bytes": 327
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_curls_idle.imageset/farm_shepherd_hair_curls_idle.png",
+      "sha256": "f1c42e188354cbbc43050359088ad568fe656a517b1087e57072c92b8dbc7080",
+      "bytes": 165274
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_curls_outfit_mask.imageset/Contents.json",
+      "sha256": "0c0106b630581d0030665b76ce85094ca6b26383f71593d17b798b8ccff384f3",
+      "bytes": 334
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_curls_outfit_mask.imageset/farm_shepherd_hair_curls_outfit_mask.png",
+      "sha256": "f03e107fc9d33096fc7ed0223a42a72057fbf2ff5f54ce812bc0992b14f9f04a",
+      "bytes": 6446
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_curls_skin_mask.imageset/Contents.json",
+      "sha256": "d643ffc2b2b998950bf419997cf5dd0046672f54e4f3765c9658b3ac2e3cb3fe",
+      "bytes": 332
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_curls_skin_mask.imageset/farm_shepherd_hair_curls_skin_mask.png",
+      "sha256": "5fd6321bf3b6dd6f04b0e97a0f36b3827a3bd15953ee8d8629f40190fcdee3bf",
+      "bytes": 9687
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_long_idle.imageset/Contents.json",
+      "sha256": "d8a90c3a08ba459819ed1fa5a3cbbf8cbb6ba495ca5ba2288c3b6ee94b86491d",
+      "bytes": 326
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_long_idle.imageset/farm_shepherd_hair_long_idle.png",
+      "sha256": "2733319a938b8e9acfa69046adfd56da87d52ac18cf687d437eaec64f35fccc8",
+      "bytes": 161994
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_long_outfit_mask.imageset/Contents.json",
+      "sha256": "9cebe5bda7daca7d5b262823df496f2fd9281c0dae28460d8bac935348d074e6",
+      "bytes": 333
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_long_outfit_mask.imageset/farm_shepherd_hair_long_outfit_mask.png",
+      "sha256": "467c02f1d1d684730d323a0da3a048b2c0cb38d7811468a91efc6c602020ad6d",
+      "bytes": 6525
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_long_skin_mask.imageset/Contents.json",
+      "sha256": "390e30b78c9a1f83cc3ac44364fdf9bff218e4f876fa644306e0ef3a456f6ef2",
+      "bytes": 331
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_long_skin_mask.imageset/farm_shepherd_hair_long_skin_mask.png",
+      "sha256": "90561efe687e28e3f20f439a6d12dc76f3df36ab8b724733a4e6cc97d4fcd062",
+      "bytes": 9741
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_waves_idle.imageset/Contents.json",
+      "sha256": "ca0e2bd3d0b9ee6c511e8ed475e422ed21376ed1d283264d227e8b8317cebbc2",
+      "bytes": 327
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_waves_idle.imageset/farm_shepherd_hair_waves_idle.png",
+      "sha256": "b322e5552882758db814f52d07342de23b5e856b98f6a38a06238e9f588bc510",
+      "bytes": 160562
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_waves_outfit_mask.imageset/Contents.json",
+      "sha256": "c273e6ba67c133677bea1828c6c28bfa3588a1eeb2a92da23918df59f80783ca",
+      "bytes": 334
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_waves_outfit_mask.imageset/farm_shepherd_hair_waves_outfit_mask.png",
+      "sha256": "97d38d6c62c22c217a58b9b1fd75efa1c9cffa0d90d50e5e2e1190ea20284d56",
+      "bytes": 6472
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_waves_skin_mask.imageset/Contents.json",
+      "sha256": "18a2855ecf8daa29ea5bf90feba75246e767e7d134bf42475214e7c593357de6",
+      "bytes": 332
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_hair_waves_skin_mask.imageset/farm_shepherd_hair_waves_skin_mask.png",
+      "sha256": "b664fc1d49d11cb828cf8e09e6f4f84c599a29876c5c30267bb0a6d7edb9ac62",
+      "bytes": 9580
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_long_wool_field_hat_equipped_overlay.imageset/Contents.json",
+      "sha256": "1162d78383d946567443dd508e12c5ffa82a8721f882a2bf53baddd4a325d96a",
+      "bytes": 222
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_long_wool_field_hat_equipped_overlay.imageset/farm_shepherd_long_wool_field_hat_equipped_overlay.png",
+      "sha256": "d72003de31a0db4b198cb36945400262a0d97a0a8ae9a492bcb6b2641c741ada",
+      "bytes": 97675
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_outfit_mask.imageset/Contents.json",
+      "sha256": "116302d93540f515846f28c4ff562ecfad4a54fa33d23ca55ab9f6bb328d1a09",
+      "bytes": 323
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_outfit_mask.imageset/farm_shepherd_outfit_mask.png",
+      "sha256": "526b900916c81b7b203e195f9e1dcc4956cfe55ed6d5e681d1c38e9efd05a036",
+      "bytes": 6549
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_skin_mask.imageset/Contents.json",
+      "sha256": "a8238766103948693e1312071748eb0cb4c13b6fa106a49b15f46ec88e12e1df",
+      "bytes": 321
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_skin_mask.imageset/farm_shepherd_skin_mask.png",
+      "sha256": "09ac320e534d2cff210e7c1bd6dcc60aff7e8edb96c4a4d51a3cbb74dfbbc621",
+      "bytes": 9558
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_waves_wool_field_hat_equipped_overlay.imageset/Contents.json",
+      "sha256": "fe27e83bcc057c4c8190195245cf5f7c9bfe02c9597f4d90e2140ddde7781574",
+      "bytes": 223
+    },
+    {
+      "originalPath": "Assets.xcassets/farm/farm_shepherd_waves_wool_field_hat_equipped_overlay.imageset/farm_shepherd_waves_wool_field_hat_equipped_overlay.png",
+      "sha256": "f216cf5f85115900cf96032511c2e8e40ea13ba9db433a7b66f977b7ff7eef61",
+      "bytes": 97909
+    }
+  ],
+  "totalBytes": 1365234
+}

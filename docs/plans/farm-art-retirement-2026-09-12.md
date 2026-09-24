@@ -32,7 +32,7 @@ as sufficient proof of removability.
 | `farm/farm_shared_meadow_dusk` | Existing shared Farm and prototype paper environment | Active: founder explicitly retained original artwork and wide framing |
 | `Assets.xcassets/generated_sources/*` | Two raw generation sheets, referenced by historical art documentation | Retired: both raw sheets removed from runtime catalog; exact committed copies remain recoverable in Git |
 | `output/design/*` | Local design work, approximately 56.41 MiB | Keep active work and minimum evidence; identify superseded iterations separately before cleanup |
-| Shepherd masks, hair, outfit/hat overlays | Production rendering uses fitted/variant assets | Retain; similar-looking files are not evidence of duplication |
+| Legacy `farm_shepherd_*` PNG bases, masks and fitted hats | Superseded by `ShepherdAvatarView` → `ShepherdStudyCanvas`; unused slot/catalog mappings removed | Retired 23 September: 20 image sets moved to a checksum-verified external archive. Do not use as visual references. See [retirement record](../evidence/legacy-shepherd-retirement-20260923/README.md) |
 
 Complete the register during implementation for scene props, Shop environment thumbnails,
 journey backdrops and all other Farm environment consumers. Inspect images visually before

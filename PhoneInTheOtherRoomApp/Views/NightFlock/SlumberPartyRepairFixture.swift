@@ -61,7 +61,7 @@ struct SlumberPartyRepairFixture: View {
                         SheepLoadingView("Syncing live updates…").padding(AppSpacing.md)
                     }.background(AppColors.paper).navigationTitle("Campfire")
                 case "automatic": FocusRunSetupView()
-                case "party", "refreshing": SlumberPartyV4PartyDetailView(viewModel: social, summary: party.summary)
+                case "party", "refreshing", "sync-cycle": SlumberPartyV4PartyDetailView(viewModel: social, summary: party.summary)
                 case "group": SlumberPartyV4GroupDetailsView(viewModel: social, party: party)
                 case "search", "invited", "searching", "error":
                     SlumberPartyInvitePeopleView(social: social, partyID: party.summary.partyID,
@@ -78,6 +78,18 @@ struct SlumberPartyRepairFixture: View {
         .environment(\.dynamicTypeSize, ProcessInfo.processInfo.arguments.contains("--large-text") ? .accessibility3 : .large)
         .preferredColorScheme(ProcessInfo.processInfo.arguments.contains("--light") ? .light : .dark)
         .onAppear { _ = app.saveShepherdDisplayName("Willow") }
+        .task {
+            guard mode == "sync-cycle" else { return }
+            let partyID = party.summary.partyID
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                social.v4ObservedPartyObservationStates[partyID] = .refreshing(lastReceivedAt: .now)
+                social.v4RefreshingPartyIDs.insert(partyID)
+                do { try await Task.sleep(for: .seconds(2)) } catch { return }
+                social.v4ObservedPartyObservationStates[partyID] = .current(lastReceivedAt: .now)
+                social.v4RefreshingPartyIDs.remove(partyID)
+            }
+        }
     }
 }
 

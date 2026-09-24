@@ -92,9 +92,10 @@ Keep Shop inventory artwork separate from production character rendering:
 - Equipped Ollie accessories use the `dog/` namespace with an explicit
   `farm_..._equipped_overlay` suffix. The neutral Ollie base and every accessory overlay share
   the exact same transparent full-body canvas and alignment origin.
-- Equipped Shepherd accessories use the `farm/` namespace with an explicit
-  `..._equipped_overlay` suffix. If hairstyles have different silhouettes, create one fitted
-  same-canvas overlay per hairstyle rather than forcing one cropped asset over every head.
+- Shepherd bodies, hair and clothing use the native `ShepherdStudyCanvas` renderer through
+  `ShepherdAvatarView`. Use current production renders as visual references; the old
+  large-eyed `farm_shepherd_*` raster family is retired and must not be regenerated,
+  reimported or used as a style reference. See the [retirement record](evidence/legacy-shepherd-retirement-20260923/README.md).
 - Character render code must choose the equipped render asset from the persisted item ID and
   must never resize or position a 384×384 Shop thumbnail over a character. Missing render art
   should leave the owner/equipment state intact and show the base character or a code-native

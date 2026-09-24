@@ -7,19 +7,25 @@ extension Notification.Name {
 struct CampfireHomeEntry: View {
     @ObservedObject var social: NightFlockViewModel
     var body: some View {
-        Button { NotificationCenter.default.post(name: .countingSheepShowCampfire, object: nil) } label: {
-            HStack(spacing: AppSpacing.sm) {
-                PaperCampfire().frame(width: 44, height: 44)
-                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                    Text("Campfire").font(AppTypography.headline)
-                    Text("My visibility · \(social.campfireVisibility.title)").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
-                }.fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: AppSpacing.xs)
-                Image(systemName: "chevron.right").accessibilityHidden(true)
-            }.frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-        }.buttonStyle(PixelChipButtonStyle(isSelected: false))
-            .accessibilityHint("Browse your party or the global campfire. Opening it doesn’t share your session.")
-            .task(id: social.campfireOwnerForNewRun) { _ = social.restoreCampfireVisibility() }
+        PixelCard {
+            HStack(spacing: AppSpacing.xs) {
+                Button { NotificationCenter.default.post(name: .countingSheepShowCampfire, object: nil) } label: {
+                    HStack(spacing: AppSpacing.sm) {
+                        PaperCampfire().frame(width: 44, height: 44)
+                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                            Text("Campfire").font(AppTypography.headline)
+                            Text("My visibility · \(social.campfireVisibility.title)").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                        }.fixedSize(horizontal: false, vertical: true)
+                        Spacer(minLength: AppSpacing.xs)
+                        Image(systemName: "chevron.right").accessibilityHidden(true)
+                    }.frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                }.buttonStyle(.plain)
+                    .foregroundStyle(AppColors.ink)
+                    .accessibilityHint("Browse your party or the global campfire. Opening it doesn’t share your session.")
+                HomeSocialInfoButton.campfire
+            }
+        }
+        .task(id: social.campfireOwnerForNewRun) { _ = social.restoreCampfireVisibility() }
     }
 }
 

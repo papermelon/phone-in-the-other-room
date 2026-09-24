@@ -151,8 +151,15 @@ struct AccountConnectionContent: View {
                             Button(model.busy ? "Connecting…" : "Enable automatic sync", action: model.acceptAutomaticSync)
                                 .buttonStyle(AccountPrimaryButtonStyle()).disabled(model.busy)
                         } else if case .remoteFarm(let preview) = model.accountPresentation {
-                            Text("Your account has \(preview.activeSheepCount) sheep and \(preview.woolBalance) wool. Choose which Farm to continue.")
+                            Text("Your phone and account have different saved versions. Choose one to resume automatic sync.")
                                 .font(AppTypography.body)
+                            Text("Account: \(preview.activeSheepCount) sheep · \(preview.woolBalance) wool")
+                                .font(AppTypography.body)
+                            Text(model.localFarmSummary)
+                                .font(AppTypography.body)
+                            Text("Progress won’t be combined. Future changes to your chosen Farm will sync automatically.")
+                                .font(AppTypography.caption)
+                                .foregroundStyle(AppColors.secondaryText)
                             Button("Use account Farm") { confirmsRemoteFarm = true }
                                 .buttonStyle(AccountPrimaryButtonStyle()).disabled(model.busy)
                             Button("Use this phone’s Farm") { confirmsLocalFarm = true }
@@ -194,10 +201,10 @@ struct AccountConnectionContent: View {
         }
         .confirmationDialog("Use the account Farm?", isPresented: $confirmsRemoteFarm, titleVisibility: .visible) {
             Button("Use account Farm", action: model.chooseAccountFarm)
-        } message: { Text("This phone’s changes will remain in recovery. Progress won’t be combined.") }
+        } message: { Text("This phone’s changes will remain in recovery. Progress won’t be combined. Automatic sync will resume with the account Farm.") }
         .confirmationDialog("Use this phone’s Farm?", isPresented: $confirmsLocalFarm, titleVisibility: .visible) {
             Button("Use this phone’s Farm", action: model.chooseLocalFarm)
-        } message: { Text("The account will continue from this Farm. The previous account copy stays in revision history.") }
+        } message: { Text("Automatic sync will resume with this phone’s Farm. The previous account copy stays in revision history.") }
     }
 
     private var status: String {

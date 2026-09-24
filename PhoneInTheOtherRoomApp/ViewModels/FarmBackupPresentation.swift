@@ -61,6 +61,11 @@ extension FarmBackupViewModel {
         return try FarmBackupPayload(document: document, pasture: pasture, appearance: profile?.presentation)
     }
 
+    var localFarmSummary: String {
+        let farm = persistence.farmState
+        return "This phone: \(farm.activeSheep.count) sheep · \(farm.woolBalance) wool"
+    }
+
     var hasUnsyncedChanges: Bool {
         guard let document = try? persistence.farmSaveStore.snapshot(),
               let sync = document.backup, sync.enabled else { return false }

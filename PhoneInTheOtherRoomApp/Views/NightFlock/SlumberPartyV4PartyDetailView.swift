@@ -142,7 +142,18 @@ struct SlumberPartyV4PartyDetailView: View {
         .sheet(isPresented: $showsLantern) { SharedPastureLanternSheet(lantern: party?.pasture?.lantern) }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button { viewModel.refreshSelectedSlumberParty() } label: { Image(systemName: "arrow.clockwise") }
+                Button { viewModel.refreshSelectedSlumberParty() } label: {
+                    Group {
+                        if viewModel.isRefreshingV4Party(summary.partyID) {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                    }
+                    .frame(width: 44, height: 44)
+                }
+                    .disabled(viewModel.isRefreshingV4Party(summary.partyID))
+                    .accessibilityValue(viewModel.isRefreshingV4Party(summary.partyID) ? "Refreshing" : "")
                     .accessibilityLabel("Refresh Slumber Party")
             }
         }
@@ -409,8 +420,6 @@ struct SlumberPartyV4PartyDetailView: View {
     @ViewBuilder
     private func observationNotice(for party: NightFlockV4PartyDetail, at date: Date) -> some View {
         switch viewModel.v4ObservedPartyObservationState(for: party.summary.partyID) {
-        case .refreshing:
-            SheepLoadingView("Syncing live updates…")
         case .stale:
             if let failure = viewModel.partyRefreshFailures[party.summary.partyID] {
                 SlumberPartyV4UnavailableCard(
@@ -424,7 +433,8 @@ struct SlumberPartyV4PartyDetailView: View {
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
             }
-        case .notRequested, .current:
+        case .notRequested, .current, .refreshing:
+            // Cached content stays in place during routine observation refreshes.
             EmptyView()
         }
     }
