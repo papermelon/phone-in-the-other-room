@@ -53,6 +53,106 @@ final class FarmBackupViewModelTests: XCTestCase {
         XCTFail("Operation did not finish")
     }
 
+    func testChoosingAccountFarmSupersedesFailedUploadAndKeepsRecovery() async throws {
+        let remote = await service.remote
+        let payload = try model.payload(from: persistence.farmSaveStore.snapshot())
+        let pending = FarmBackupCommand(action: "put", generation: remote.generation,
+            baseRevision: remote.head?.id, operationID: UUID(), payload: payload)
+        try persistence.farmSaveStore.updateBackup {
+            $0 = FarmBackupSync(ownerID: owner, enabled: true, generation: remote.generation,
+                baseRevision: remote.head?.id, pending: pending, accountSyncVersion: 1)
+        }
+        let original = try persistence.farmSaveStore.snapshot()
+        model.chooseAccountFarm()
+        try await finish()
+        let active = try persistence.farmSaveStore.snapshot()
+        XCTAssertEqual(persistence.farmState.woolBalance, 300)
+        XCTAssertTrue(active.backup?.enabled == true)
+        XCTAssertEqual(active.backup?.accountSyncVersion, 1)
+        XCTAssertNil(active.backup?.pending)
+        XCTAssertNotEqual(model.accountPresentation, .failed)
+        let recoveryURL = directory.appendingPathComponent("before-restore-\(original.lineageID)-\(original.generation).json")
+        XCTAssertEqual(try FarmSaveDocument.decode(Data(contentsOf: recoveryURL)), original)
+        let sent = await service.commands
+        XCTAssertFalse(sent.contains { $0.operationID == pending.operationID })
+    }
+
+    func testDivergentAccountFarmDefaultsToRemoteAndResumesSync() async throws {
+        let remote = await service.remote
+        try persistence.farmSaveStore.updateBackup {
+            $0 = FarmBackupSync(ownerID: owner, enabled: false, generation: remote.generation,
+                baseRevision: UUID(), conflictRevision: UUID(), accountSyncVersion: 1)
+        }
+        model.refresh()
+        try await finish()
+        XCTAssertEqual(persistence.farmState.woolBalance, 300)
+        XCTAssertTrue(try persistence.farmSaveStore.snapshot().backup?.enabled == true)
+        XCTAssertNil(try persistence.farmSaveStore.snapshot().backup?.conflictRevision)
+        var farm = persistence.farmState
+        farm.woolBalance = 301
+        persistence.farmState = farm
+        model.scheduled?.cancel()
+        model.perform { try await self.model.uploadIfEnabled() }
+        try await finish()
+        XCTAssertFalse(model.hasUnsyncedChanges)
+        let sent = await service.commands
+        XCTAssertEqual(sent.last?.payload?.farm.woolBalance, 301)
+    }
+
+    func testChoosingAccountFarmFailureKeepsPendingLocalProgress() async throws {
+        let remote = await service.remote
+        let pending = FarmBackupCommand(action: "put", generation: remote.generation, operationID: UUID())
+        try persistence.farmSaveStore.updateBackup {
+            $0 = FarmBackupSync(ownerID: owner, generation: remote.generation, pending: pending, accountSyncVersion: 1)
+        }
+        let original = try persistence.farmSaveStore.snapshot()
+        files.failAll = true
+        model.chooseAccountFarm()
+        try await finish()
+        XCTAssertEqual(try persistence.farmSaveStore.snapshot(), original)
+        XCTAssertEqual(model.accountPresentation, .failed)
+        files.failAll = false
+    }
+
+    func testSignInLoadsAccountFarmOverDivergentSignedOutCache() async throws {
+        let remote = await service.remote
+        try persistence.farmSaveStore.updateBackup {
+            $0 = FarmBackupSync(ownerID: owner, generation: remote.generation,
+                baseRevision: UUID(), accountSyncVersion: 1)
+        }
+        try persistence.farmSaveStore.activate(.signedOut)
+        try persistence.farmSaveStore.finishCredentialRemoval()
+        model.perform { try await self.model.completeAccountConnection(acceptSync: true) }
+        try await finish()
+        XCTAssertEqual(persistence.farmState.woolBalance, 300)
+        XCTAssertEqual(try persistence.farmSaveStore.snapshot().effectiveScope, .account(owner))
+        XCTAssertTrue(model.signedIn)
+    }
+
+    func testAccountSelectionDoesNotAbandonPendingDeletion() async throws {
+        let remote = await service.remote
+        let command = FarmBackupCommand(action: "delete", generation: remote.generation, operationID: UUID())
+        try persistence.farmSaveStore.updateBackup {
+            $0 = FarmBackupSync(ownerID: owner, generation: remote.generation, pending: command, accountSyncVersion: 1)
+        }
+        model.chooseAccountFarm()
+        try await finish()
+        XCTAssertEqual(persistence.farmState.woolBalance, 14)
+        XCTAssertEqual(try persistence.farmSaveStore.snapshot().backup?.pending, command)
+        XCTAssertNil(model.restoreSuccess)
+    }
+
+    func testAccountSelectionDoesNotUploadPhoneFarmWhenRemoteDisappears() async throws {
+        await service.clearHead()
+        let original = try persistence.farmSaveStore.snapshot()
+        model.chooseAccountFarm()
+        try await finish()
+        XCTAssertEqual(try persistence.farmSaveStore.snapshot(), original)
+        let commands = await service.commands
+        XCTAssertTrue(commands.isEmpty)
+        XCTAssertEqual(model.accountPresentation, .failed)
+    }
+
     func testFarmConnectionFailureKeepsAuthenticatedIdentityAndLocalArchive() throws {
         try persistence.farmSaveStore.activate(.account(owner), preservingGuest: true)
         try persistence.farmSaveStore.activate(.signedOut)

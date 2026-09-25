@@ -109,7 +109,7 @@ extension FarmBackupViewModel {
         }
     }
 
-    func completeAccountConnection(acceptSync: Bool, resolveChangedGeneration: Bool = false) async throws {
+    func completeAccountConnection(acceptSync: Bool, resolveChangedGeneration: Bool = false, preferAccountFarm: Bool = false) async throws {
         guard let account, let service else { throw FarmSaveError.unavailable }
         try assertTransport()
         guard let owner = try await account.currentLinkedAccountID() else {
@@ -128,30 +128,18 @@ extension FarmBackupViewModel {
         try await service.acceptAccountSync(owner: owner, authorization: transportAuthorization)
         let remote = try await service.lookup(owner: owner, authorization: transportAuthorization)
         try assertTransport()
+        // An explicit account choice must not recreate a deleted/now-empty Farm
+        // from the phone branch the player just declined.
+        guard !preferAccountFarm || remote.head != nil else { throw FarmSaveError.unavailable }
         // Ordinary cached play can sync during a run. Changing the active
         // lineage or adopting another device's head must wait for settlement.
         let changesOwner = original.effectiveScope.ownerID != owner
         let cachedAccount = changesOwner ? try persistence.farmSaveStore.cachedAccount(owner) : nil
-        let candidate = FarmSaveDocument(
-            lineageID: cachedAccount?.lineageID ?? original.lineageID,
-            generation: original.generation,
-            values: cachedAccount?.values ?? (changesOwner ? [:] : original.values),
-            backup: cachedAccount?.backup ?? (changesOwner ? nil : original.backup),
-            accountScope: .account(owner),
-            localValues: cachedAccount?.localValues ?? (changesOwner ? nil : original.localValues)
-        )
-        let candidateDigest = try? payload(from: candidate).fingerprint()
-        let candidateIsClean = candidate.backup?.pending == nil
-            && candidate.backup?.confirmedDigest != nil
-            && candidateDigest == candidate.backup?.confirmedDigest
-        let candidateGenerationMatches = cachedAccount?.backup.map { $0.generation == remote.generation } ?? true
-        let candidateCanAdoptRemote = candidateGenerationMatches
-            && (candidate.backup == nil && candidate.values.isEmpty || candidateIsClean)
-
         // A remote restore changes both owner and values.  Keep those changes
         // in one FarmSaveStore transaction so a failed restore cannot publish
         // an empty B Farm while the coordinator still presents A's Farm.
-        if changesOwner, let head = remote.head, candidateCanAdoptRemote {
+        if changesOwner, let head = remote.head {
+            guard cachedAccount?.backup?.pending?.action != "delete" else { throw FarmSaveError.unavailable }
             guard canRestore?() == true, let payload = head.payload else {
                 message = "Finish your current session to load the account’s latest Farm."
                 return
@@ -218,53 +206,43 @@ extension FarmBackupViewModel {
         accountFarmPreview = remote.head.flatMap(FarmBackupAccountPreview.init)
         var local = try persistence.farmSaveStore.snapshot()
         if let state = local.backup, state.generation != remote.generation {
-            guard resolveChangedGeneration else {
+            guard remote.head != nil || resolveChangedGeneration else {
                 try persistence.farmSaveStore.updateBackup { $0?.enabled = false }
                 needsSyncAgreement = true
                 generationNeedsReview = true
                 message = "This account’s Farm changed or was deleted. Review it before continuing."
                 return
             }
-            try persistence.farmSaveStore.updateBackup {
-                $0 = FarmBackupSync(ownerID: owner, generation: remote.generation, accountSyncVersion: 1)
+            if remote.head == nil {
+                try persistence.farmSaveStore.updateBackup {
+                    $0 = FarmBackupSync(ownerID: owner, generation: remote.generation, accountSyncVersion: 1)
+                }
+                local = try persistence.farmSaveStore.snapshot()
             }
-            local = try persistence.farmSaveStore.snapshot()
             generationNeedsReview = false
         }
-        if let head = remote.head, local.backup?.baseRevision != head.id {
-            let localDigest = try? payload(from: local).fingerprint()
-            let clean = local.backup?.pending == nil && local.backup?.confirmedDigest != nil
-                && localDigest == local.backup?.confirmedDigest
-            if local.backup == nil && local.values.isEmpty || clean {
-                guard canRestore?() == true, let payload = head.payload else {
-                    message = "Finish your current session to load the account’s latest Farm."
-                    return
-                }
-                let backup = FarmBackupSync(ownerID: owner, enabled: true, generation: remote.generation,
-                    baseRevision: head.id, confirmedDigest: try payload.fingerprint(), confirmedAt: head.createdAt,
-                    pendingPresentation: FarmBackupPresentationRestore(pasture: payload.pasture, appearance: payload.appearance),
-                    accountSyncVersion: 1)
-                try persistence.farmSaveStore.restore(payload, backup: backup, expectedGeneration: local.generation)
-                operationLineage = payload.lineageID
-                didRestore?()
-                let success = FarmBackupRestoreSuccess(revisionID: head.id, restoredAt: Date())
-                restoreSuccess = success
-                didCompleteRestore?(success)
-                do {
-                    try applyPendingPresentation()
-                } catch {
-                    message = "Your account Farm is restored. Its appearance still needs to finish saving. Please check again."
-                }
-            } else {
-                // Preserve both offline branches; selection is only exceptional.
-                accountPresentation = accountFarmPreview.map(FarmBackupAccountPresentation.remoteFarm) ?? .remoteFarmUnavailable
-                message = "Two Farms have changes. Choose which one to continue."
-                try persistence.farmSaveStore.updateBackup { state in
-                    if state == nil { state = FarmBackupSync(ownerID: owner, generation: remote.generation) }
-                    state?.enabled = false
-                    state?.accountSyncVersion = 1
-                }
+        if let head = remote.head, preferAccountFarm || local.backup?.baseRevision != head.id || local.backup?.generation != remote.generation {
+            // The account head wins divergence. restore archives the complete
+            // displaced document, including a failed upload, before committing.
+            guard local.backup?.pending?.action != "delete" else { throw FarmSaveError.unavailable }
+            guard canRestore?() == true, let payload = head.payload else {
+                message = "Finish your current session to load the account’s latest Farm."
                 return
+            }
+            let backup = FarmBackupSync(ownerID: owner, enabled: true, generation: remote.generation,
+                baseRevision: head.id, confirmedDigest: try payload.fingerprint(), confirmedAt: head.createdAt,
+                pendingPresentation: FarmBackupPresentationRestore(pasture: payload.pasture, appearance: payload.appearance),
+                accountSyncVersion: 1)
+            try persistence.farmSaveStore.restore(payload, backup: backup, expectedGeneration: local.generation)
+            operationLineage = payload.lineageID
+            didRestore?()
+            let success = FarmBackupRestoreSuccess(revisionID: head.id, restoredAt: Date())
+            restoreSuccess = success
+            didCompleteRestore?(success)
+            do {
+                try applyPendingPresentation()
+            } catch {
+                message = "Your account Farm is restored. Its appearance still needs to finish saving. Please check again."
             }
         } else {
             try persistence.farmSaveStore.updateBackup { state in

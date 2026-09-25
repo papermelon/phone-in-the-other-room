@@ -43,6 +43,8 @@ extension NightFlockViewModel {
 
     func clearCampfireVisibilityContext() {
         campfireDocumentOwner = nil; campfireDocument = .init(); campfireStorageFailed = false
+        globalCampfireRefreshTask?.cancel()
+        globalCampfireRefreshTask = nil
         globalCampfireState = nil; globalCampfireFailure = nil; globalCampfireRequestID = nil
         globalCampfireLoading = false; globalCampfireAttempted = []; globalCampfireSendID = nil; campfireVisibilityMessage = nil
         globalCampfireGathering = "all"

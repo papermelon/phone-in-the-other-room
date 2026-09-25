@@ -91,6 +91,13 @@ struct CampfireBuddiesNativeFixture: View {
         social.v4Profile = .init(displayName: "Tommy")
         app.nextCampfireIntention = "Read one chapter"
         app.nextCampfireAsksForBuddy = true
+        if mode == "unified-local" {
+            let end = now.addingTimeInterval(1800)
+            let run = FocusRun(plannedDurationSeconds: 1800, startedAt: now, state: .running,
+                nightWatchPlan: .additionalQuiet(start: now, end: end, cueText: ""))
+            app.coordinator.run = run
+            social.globalCampfireState?.participants = []
+        }
         _app = StateObject(wrappedValue: app)
     }
     var body: some View {
@@ -115,17 +122,8 @@ struct CampfireBuddiesNativeFixture: View {
             }
             else if mode.hasPrefix("unified") {
                 NavigationStack {
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            CampfirePanel(social: social, partyID: mode.hasPrefix("unified-party") ? party.summary.partyID : nil, onStart: { _ in }).padding(AppSpacing.md)
-                            Color.clear.frame(height: 1).id("fixture-bottom")
-                        }.background(AppColors.paper)
-                            .onAppear {
-                                if ProcessInfo.processInfo.arguments.contains("--buddy-bottom") {
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { proxy.scrollTo("fixture-bottom", anchor: .bottom) }
-                                }
-                            }
-                    }
+                    CampfirePanel(social: social, partyID: mode.hasPrefix("unified-party") ? party.summary.partyID : nil, onStart: { _ in })
+                        .background(AppColors.paper)
                 }.environmentObject(app)
             }
             else if mode == "settings" { CampfireSharingSheet(social: social, partyID: party.summary.partyID) }

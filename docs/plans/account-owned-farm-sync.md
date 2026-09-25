@@ -8,6 +8,28 @@ the implementation evidence section records what has actually been verified.
 
 Current Profile presentation and handle discoverability follow the [21 September repair](account-and-search-repair-2026-09-21.md). Authentication feedback is distinct from confirmed Farm activation.
 
+### 25 September account-default repair
+
+The account selection action previously called the legacy restore path, which rejects
+any pending upload. A failed upload could therefore block the very action meant to
+replace the phone branch. Selection now uses the account activation transaction directly,
+archives the displaced document before publication, and retains enabled automatic-sync
+metadata. Divergent active/cached Farms default to the verified account head; ordinary
+same-base local edits continue uploading. Retry reads the durable backup state.
+
+Regression tests reproduced the blocked selection and old divergent-choice behavior
+before the fix. The isolated Farm harness passes 90 tests, covering queued uploads,
+recovery content, failed disk commits, divergent signed-out caches, pending deletion,
+missing remote heads and subsequent uploads. Generic iOS Simulator build and the full
+iOS Simulator suite (1,138 tests, zero failures) passed. Commands: `python3 scripts/validate-farm-save.py`,
+`xcodebuild build -project PhoneInTheOtherRoom.xcodeproj -scheme PhoneInTheOtherRoom -destination 'generic/platform=iOS Simulator'`,
+and `xcodebuild test -project PhoneInTheOtherRoom.xcodeproj -scheme PhoneInTheOtherRoom -destination 'platform=iOS Simulator,id=A0DB65B8-F3FC-4961-8B0C-9689F51C9EA1'`.
+Logs: `/tmp/farm-default-verified.log`, `/tmp/farm-default-build.log`, `/tmp/farm-default-app-tests.log`.
+Scoped pre-merge review: approve, risk M; existing account/transport fences and atomic
+recovery remain in place. No schema, entitlement or backend contract changes.
+No production data was modified and no build was distributed. Physical login, the
+reported account's transport failure and two-device convergence remain unverified.
+
 ## 1. Outcome
 
 Each signed-in account owns one active Farm. Signing in loads that Farm and enables
@@ -176,10 +198,11 @@ owner-scoped work and ignore callbacks from an earlier account/transition epoch.
 
 Keep conditional revision/generation writes and idempotent receipts. Refresh the remote
 head before initial publication and detect another device's changes on activation. Adopt a
-newer remote head automatically only when there are no divergent local changes or active
-settlement. Competing offline changes remain preserved branches with a concise Farm choice;
-never add wool/inventory together or silently apply last-writer-wins. Automatic ordinary
-sync does not promise automatic reconciliation of simultaneous offline economies.
+newer remote head automatically after preserving any divergent phone branch in recovery,
+once active settlement permits replacement (founder clarification, 25 September 2026).
+The account Farm is the default; routine sign-in/retry must not require a Farm choice.
+Same-base offline edits still upload normally. Never add wool/inventory together or
+overwrite a newer server head with an unselected local branch.
 
 The cloud payload remains the existing Farm allowlist, including necessary reward timing
 and claim ledgers. Detailed Nights, Health, questionnaire data, app selections, NFC and
@@ -224,7 +247,7 @@ and credentials as well as online data, and fences stale devices from recreating
 | Linked but backup never consented/paused | One transition screen explains that account use now includes private Farm sync. Accepting resolves local/remote state and starts sync; defer preserves existing data without silently uploading. |
 | Previously signed out with bound Farm | Move to inaccessible owner recovery; require that owner's sign-in before activation. |
 | Existing remote Farm plus guest Farm | Load the signed-in account’s Farm and retain the separate guest scope for guest continuation. Never relabel guest progress as an existing account. |
-| Divergent cached account and remote Farm | Preserve both and ask which to continue; explicit replacement uses revision checks and retains recovery. |
+| Divergent cached account and remote Farm | Preserve the phone branch in recovery and load the verified account Farm by default; resume automatic sync without combining progress. |
 | Pending action, corrupt save, unknown schema | Finish/reconcile supported pending commands or show recovery/update-required; do not seed or discard. |
 
 The earlier user agreement does not authorize silently enabling formerly declined uploads.

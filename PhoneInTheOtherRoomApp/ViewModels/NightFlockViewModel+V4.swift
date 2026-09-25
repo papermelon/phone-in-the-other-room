@@ -1071,19 +1071,20 @@ extension NightFlockViewModel {
         }
     }
 
+    @discardableResult
     func refreshV4PartyObservation(
         _ partyID: UUID,
         refreshListAfterward: Bool = true
-    ) {
+    ) -> Task<Void, Never>? {
         guard accountState == .linked,
               permitsNightFlockNetwork,
               !isSharedHabitsPartySuppressed(partyID),
               let service
-        else { return }
-        guard v4RealtimePartyIDs.contains(partyID) else { return }
+        else { return nil }
+        guard v4RealtimePartyIDs.contains(partyID) else { return nil }
         guard v4PartyObservationTasks[partyID] == nil else {
             v4PartyObservationNeedsRefresh.insert(partyID)
-            return
+            return v4PartyObservationTasks[partyID]
         }
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
@@ -1154,6 +1155,7 @@ extension NightFlockViewModel {
             }
         }
         v4PartyObservationTasks[partyID] = task
+        return task
     }
 
 #if DEBUG

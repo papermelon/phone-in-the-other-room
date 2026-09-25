@@ -29,6 +29,7 @@ final class NightFlockViewModel: ObservableObject {
     let campfireVisibilityStore = CampfireVisibilityStore()
     var campfireDocumentOwner: UUID?
     var campfireStorageFailed = false
+    var globalCampfireRefreshTask: Task<Void, Never>?
     var globalCampfireRequestID: UUID?
     var globalCampfireGathering = "all"
     var globalCampfireChannel = 0

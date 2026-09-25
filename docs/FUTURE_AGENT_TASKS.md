@@ -1,8 +1,18 @@
 # Future Agent Tasks — Prioritised Backlog
 
+## Account Farm default and queued-upload recovery — 25 September 2026
+
+- Founder clarified that the account Farm is the default, superseding the 24 September routine branch-choice direction. Sign-in/retry now archives divergent phone progress and loads the verified account head. Explicit account selection can supersede a failed queued upload, using the same atomic activation path and automatic sync metadata. Retry reads durable sync state rather than a stale UI snapshot.
+- After distribution, verify the reported account loads its saved Farm, subsequent earned/spent wool reaches the server, and a second device loads that change. Test offline edits on the same revision, divergent device edits, sign-out/sign-in and lookup failure without resetting the installation. Local regressions do not establish recovery of the reported physical account or production transport.
+
+## Campfire controls and manual refresh — 25 September 2026
+
+- Local repair bounds decorative hit testing, exposes both start actions above the scene, removes Campfire polling, and adds pull-to-refresh. Admitted starts return to Campfire with a clearly local Shepherd until shared presence is confirmed.
+- After distribution, verify Global/party and visibility selection, pull-to-refresh under a slow connection, cancelled/failed/NFC-confirmed starts, and two-account visibility Off/private/Global boundaries. Local previews must never count as server-confirmed sharing.
+
 ## Home controls and Farm choice — 24 September 2026
 
-- Home and Settings now open the same full Wind Down editor. Home also exposes the automatic Wind Down toggle/status under Your evening; Offline Together info controls sit inside the full-width cards. Farm conflicts compare both versions and explain automatic sync after selection. Founder confirmed choosing one version, without combining progress.
+- Home and Settings now open the same full Wind Down editor. Home also exposes the automatic Wind Down toggle/status under Your evening; Offline Together info controls sit inside the full-width cards. Farm conflicts compared both versions and explained automatic sync after selection; routine choice is superseded by the 25 September account-default direction above. Progress is not combined.
 - On the next distributed build, verify the affected account can choose its newer phone Farm and that subsequent changes reach the server; preserve both versions until the founder chooses. Repeat the [automatic-start device checks](plans/wind-down-loading-repair-2026-09-21.md), including an account refresh across the start boundary. These UI changes do not establish that the reported device start is repaired.
 
 ## Quiet Slumber Party refresh — 23 September 2026

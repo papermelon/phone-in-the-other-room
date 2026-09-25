@@ -149,6 +149,11 @@ enum CampfireRules {
         sessions.compactMap { session in members.first { $0.memberID == session.memberID } }
     }
 
+    static func showsLocalSession(_ run: FocusRun, at date: Date) -> Bool {
+        ![.setup, .completed, .endedEarly].contains(run.state) && run.startedAt <= date
+            && end(for: run).map { $0 > date } == true
+    }
+
     static let foregroundRefreshInterval: TimeInterval = 20
 
     static func permitsOwner(captured: UUID?, current: UUID?) -> Bool {
@@ -217,16 +222,15 @@ struct CampfireSeating {
 
 /// Refreshing does not extend the authority or freshness of a presence snapshot.
 enum CampfireScenePhase: Equatable {
-    case loading, refreshing, populated, empty, unavailable
+    case loading, populated, empty, unavailable
 
     static func resolve(hasCurrentSnapshot: Bool, isRefreshing: Bool, hasPeople: Bool) -> Self {
         guard hasCurrentSnapshot else { return isRefreshing ? .loading : .unavailable }
-        if isRefreshing { return .refreshing }
         return hasPeople ? .populated : .empty
     }
 
-    var showsPeople: Bool { self == .populated || self == .refreshing }
-    var isUpdating: Bool { self == .loading || self == .refreshing }
+    var showsPeople: Bool { self == .populated }
+    var isUpdating: Bool { self == .loading }
 }
 
 /// Display whitespace is normalized without shortening or rewriting someone's shared plan.

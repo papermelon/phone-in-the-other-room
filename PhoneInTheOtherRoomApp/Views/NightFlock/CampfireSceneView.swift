@@ -76,17 +76,18 @@ struct CampfireSceneView: View {
                     ZStack {
                         Image(AssetSlot.Farm.sharedMeadowDusk).resizable().scaledToFill()
                             .frame(width: geometry.size.width, height: geometry.size.height).clipped()
-                            .scaleEffect(1.35, anchor: .bottom).accessibilityHidden(true)
+                            .scaleEffect(1.35, anchor: .bottom).allowsHitTesting(false).accessibilityHidden(true)
                         PaperCampfire(animated: true).frame(width: CampfireSceneLayout.fireSize, height: CampfireSceneLayout.fireSize)
                             .position(x: geometry.size.width * 0.5, y: extraClearance + CampfireSceneLayout.height * CampfireSceneLayout.fireY)
-                            .accessibilityHidden(true)
+                            .allowsHitTesting(false).accessibilityHidden(true)
                         ForEach(Array(people.prefix(8))) { person in
                             let point = controller.position(person.placementID)
                             let width = min(CampfireSceneLayout.bubbleMaxWidth, geometry.size.width * CampfireSceneLayout.bubbleWidthFraction)
                             PastureCharacterHitTarget(entity: person.placementID, controller: controller,
                                 canvasSize: CGSize(width: geometry.size.width, height: CampfireSceneLayout.height), coordinateSpace: "campfire-seats", reduceMotion: reduceMotion,
                                 label: "\(person.name), \(CampfirePlanText.normalized(person.thought) ?? person.detail), \(person.pose.accessibilityDescription)\(person.buddyCue.map { ", \($0)" } ?? "")",
-                                hint: "Tap for their tasks, routines, history and Farm. Hold and drag to choose a seat on this device.",
+                                hint: person.isLocalPreview ? "Your session on this phone. Tap for sharing status. Hold and drag to choose a seat."
+                                    : "Tap for their tasks, routines, history and Farm. Hold and drag to choose a seat on this device.",
                                 actionTitle: "Open session", accessibleStep: 0.3, action: { onSelect(person.id) }) {
                                     VStack(spacing: AppSpacing.xxs) {
                                         CampfirePlanBubble(thought: person.thought, activity: person.detail)
@@ -114,6 +115,7 @@ struct CampfireSceneView: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
+            .contentShape(Rectangle())
             HStack(alignment: .top, spacing: AppSpacing.sm) {
                 Text(people.isEmpty ? "Your visibility stays the same." : "Tap a Shepherd to look around · hold and drag to move a seat")
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)

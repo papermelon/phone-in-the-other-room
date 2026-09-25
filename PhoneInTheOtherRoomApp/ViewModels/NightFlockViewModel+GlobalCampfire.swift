@@ -36,13 +36,14 @@ extension NightFlockViewModel {
         }
     }
 
-    func refreshGlobalCampfire(gathering: String? = nil, cursor: UUID? = nil, channelID: Int? = nil) {
-        guard restoreCampfireVisibility(), permitsNightFlockNetwork, let service, let owner = pastureOwner else { return }
+    @discardableResult
+    func refreshGlobalCampfire(gathering: String? = nil, cursor: UUID? = nil, channelID: Int? = nil) -> Task<Void, Never>? {
+        guard restoreCampfireVisibility(), permitsNightFlockNetwork, let service, let owner = pastureOwner else { return nil }
         // Repeated appearance/foreground callbacks must not supersede the same
         // request indefinitely. A different filter can still replace it.
         guard !globalCampfireLoading || cursor != nil
             || (gathering != nil && gathering != globalCampfireGathering)
-            || (channelID != nil && channelID != globalCampfireChannel) else { return }
+            || (channelID != nil && channelID != globalCampfireChannel) else { return globalCampfireRefreshTask }
         if let gathering, gathering != globalCampfireGathering {
             globalCampfireGathering = gathering; globalCampfireState = nil
         }
@@ -53,8 +54,13 @@ extension NightFlockViewModel {
         let requestedChannel = globalCampfireChannel
         let attempt = UUID(), generation = localSocialGeneration, epoch = transportRecoveryEpoch
         globalCampfireRequestID = attempt; globalCampfireLoading = true
-        Task {
-            defer { if globalCampfireRequestID == attempt { globalCampfireLoading = false } }
+        let task = Task {
+            defer {
+                if globalCampfireRequestID == attempt {
+                    globalCampfireLoading = false
+                    globalCampfireRefreshTask = nil
+                }
+            }
             do {
                 let response = try await service.globalCampfireState(gathering: requestedGathering, cursor: cursor, channelID: requestedChannel)
                 guard globalCampfireRequestID == attempt, pastureOwner == owner, permitsNightFlockNetwork,
@@ -86,6 +92,8 @@ extension NightFlockViewModel {
                 globalCampfireState = nil
             }
         }
+        globalCampfireRefreshTask = task
+        return task
     }
 
     func enqueueGlobalCampfire(_ command: GlobalCampfireCommand) {

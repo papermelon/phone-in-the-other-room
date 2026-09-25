@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var nightFlockPartyID: UUID?
     @State private var showsUnifiedCampfire = false
     @State private var campfirePartyID: UUID?
+    @State private var returnsToCampfireAfterStart = false
     @State private var pendingCampfireStart: NightFlockV4ActivityKind?
     @State private var homeScrollViewportSize = CGSize.zero
     @State private var homeNavigationPath = NavigationPath()
@@ -95,12 +96,13 @@ struct HomeView: View {
             if let kind = pendingCampfireStart {
                 pendingCampfireStart = nil
                 select(.home)
-                _ = viewModel.requestCampfireSessionStart(kind)
+                returnsToCampfireAfterStart = viewModel.requestCampfireSessionStart(kind)
+                if !returnsToCampfireAfterStart { homeDashboardDestination = .quickStartError }
             }
         }) {
-            CampfireView(social: viewModel.nightFlockViewModel, partyID: campfirePartyID) { kind in
+            CampfireView(social: viewModel.nightFlockViewModel, partyID: campfirePartyID, onStart: { kind in
                 pendingCampfireStart = kind; showsUnifiedCampfire = false
-            }.environmentObject(viewModel)
+            }, onViewingChange: { campfirePartyID = $0 }).environmentObject(viewModel)
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowCampfire)) { notification in
             campfirePartyID = notification.object as? UUID
@@ -179,6 +181,10 @@ struct HomeView: View {
         // of the preflight itself cancels its pending start transaction.
         .sheet(isPresented: $viewModel.showNightWatchStartPrompt, onDismiss: {
             viewModel.cancelNightWatchStart()
+            if returnsToCampfireAfterStart {
+                returnsToCampfireAfterStart = false
+                if viewModel.isRunning { showsUnifiedCampfire = true }
+            }
         }) {
             WindDownStartSheet()
                 .environmentObject(viewModel)

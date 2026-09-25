@@ -3,8 +3,8 @@ import XCTest
 final class CampfireTests: XCTestCase {
 
     func testRefreshingKeepsOnlyCurrentlyAuthorizedPresence() {
-        XCTAssertEqual(CampfireScenePhase.resolve(hasCurrentSnapshot: true, isRefreshing: true, hasPeople: true), .refreshing)
-        XCTAssertTrue(CampfireScenePhase.refreshing.showsPeople)
+        XCTAssertEqual(CampfireScenePhase.resolve(hasCurrentSnapshot: true, isRefreshing: true, hasPeople: true), .populated)
+        XCTAssertEqual(CampfireScenePhase.resolve(hasCurrentSnapshot: true, isRefreshing: true, hasPeople: false), .empty)
         for refreshing in [false, true] {
             let stale = CampfireScenePhase.resolve(hasCurrentSnapshot: false, isRefreshing: refreshing, hasPeople: true)
             XCTAssertFalse(stale.showsPeople)
@@ -13,6 +13,19 @@ final class CampfireTests: XCTestCase {
         XCTAssertEqual(CampfireScenePhase.resolve(hasCurrentSnapshot: true, isRefreshing: false, hasPeople: false), .empty)
         XCTAssertEqual(CampfireScenePhase.resolve(hasCurrentSnapshot: true, isRefreshing: false, hasPeople: true), .populated)
     }
+    func testLocalSeatRequiresAnAdmittedUnexpiredSession() {
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        let plan = NightWatchPlan.additionalQuiet(start: start, end: start.addingTimeInterval(1800), cueText: "")
+        var run = FocusRun(plannedDurationSeconds: 1800, startedAt: start, nightWatchPlan: plan)
+        XCTAssertTrue(CampfireRules.showsLocalSession(run, at: start))
+        XCTAssertFalse(CampfireRules.showsLocalSession(run, at: start.addingTimeInterval(-1)))
+        XCTAssertFalse(CampfireRules.showsLocalSession(run, at: start.addingTimeInterval(1800)))
+        run.state = .setup
+        XCTAssertFalse(CampfireRules.showsLocalSession(run, at: start))
+        run.state = .endedEarly
+        XCTAssertFalse(CampfireRules.showsLocalSession(run, at: start))
+    }
+
     let now = Date(timeIntervalSince1970: 1_800_000_000)
     func session(member: UUID = UUID(), revision: Int = 1, ended: Bool = false) -> CampfireSession {
         .init(id: UUID(), memberID: member, kind: .phoneAway, activity: .reading,

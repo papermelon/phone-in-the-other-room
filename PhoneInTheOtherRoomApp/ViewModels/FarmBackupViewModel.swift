@@ -72,6 +72,7 @@ final class FarmBackupViewModel: ObservableObject {
                 return
             }
             try self.applyPendingPresentation()
+            self.sync = try self.persistence.farmSaveStore.snapshot().backup
             if self.sync?.accountSyncVersion == 1 || self.sync?.enabled == true {
                 try await self.completeAccountConnection(acceptSync: self.sync?.accountSyncVersion != 1 && self.sync?.enabled == true)
             } else {

@@ -10,6 +10,12 @@ users do not separately enable optional backup. Signing in loads the account's F
 Explicit sign-out removes that Farm from the active, playable app; it does not delete
 the server Farm. Another account must never inherit its progress.
 
+Founder clarification, 25 September 2026: the account Farm is the default even
+when the phone has a divergent saved branch. Archive the displaced phone branch
+before atomically loading the verified account head, then resume automatic sync.
+Do not routinely require a Farm choice or combine balances. Same-base offline
+edits still upload normally; failed lookups never imply an empty account.
+
 Support native Apple sign-in plus username/handle or email and password. Handle and
 username are one login identifier. The immutable verified account UUID remains the owner
 regardless of sign-in method. Linking credentials must not create or merge Farms.

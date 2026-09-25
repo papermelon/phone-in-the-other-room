@@ -31,8 +31,7 @@ extension FarmBackupViewModel {
 
     func chooseAccountFarm() {
         perform {
-            try await self.restoreFarm()
-            try await self.completeAccountConnection(acceptSync: true)
+            try await self.completeAccountConnection(acceptSync: true, resolveChangedGeneration: true, preferAccountFarm: true)
         }
     }
 
