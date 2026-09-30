@@ -180,7 +180,7 @@ struct SocialPersonCardStudyView: View {
         VStack(alignment: .leading, spacing: AppSpacing.xs) {
             StudyEyebrow(text: "HOW DID IT GO?")
             StudyStackOrRow {
-                ForEach(CampfireOutcome.allCases) { outcome in
+                ForEach(CampfireOutcome.choices(for: .phoneAway)) { outcome in
                     StudySecondaryButton(title: outcome.title) { send(.shareCheckIn(session.id, outcome)) }
                 }
             }

@@ -129,7 +129,7 @@ struct SlumberPartyHomeStudyView: View {
         Text(session.checkInRequested ? "Papa asked how it went." : "How did your plan go?").font(AppTypography.headline)
         if let intention = session.intention { Text("“\(intention)”").font(AppTypography.body) }
         StudyStackOrRow {
-            ForEach(CampfireOutcome.allCases) { outcome in
+            ForEach(CampfireOutcome.choices(for: .phoneAway)) { outcome in
                 StudySecondaryButton(title: outcome.title) { send(.shareCheckIn(session.id, outcome)) }
             }
         }

@@ -15,6 +15,35 @@ final class CampfireBuddiesTests: XCTestCase {
         value.buddyMemberID = nil; value.asksForBuddy = false
         XCTAssertNil(value.participationCue)
     }
+    func testCheckInChoicesSeparateWindDownEaseFromTaskOutcomes() throws {
+        XCTAssertEqual(CampfireOutcome.choices(for: .windDown), [.windDownEasy, .windDownSomeEffort, .windDownHard])
+        XCTAssertEqual(CampfireOutcome.choices(for: .phoneAway), [.didIt, .madeProgress, .changedPlans])
+        XCTAssertEqual(CampfireOutcome.choices(for: .windDown).map(\.title), ["Easy", "Took some effort", "Hard"])
+        var legacy = session(kind: .windDown)
+        legacy.outcome = .didIt
+        let restored = try JSONDecoder().decode(CampfireBuddySession.self, from: JSONEncoder().encode(legacy))
+        XCTAssertNil(restored.windDownOutcome)
+        XCTAssertEqual(restored.sharedOutcome?.title, "Did it")
+        var current = session(kind: .windDown)
+        current.windDownOutcome = .windDownSomeEffort
+        let state = CampfireBuddiesState(version: 1, startAlerts: false, sessions: [current], supportsWindDownEase: true)
+        let decoded = try JSONDecoder().decode(CampfireBuddiesState.self, from: JSONEncoder().encode(state))
+        XCTAssertTrue(decoded.supportsWindDownEase)
+        XCTAssertNil(decoded.sessions.first?.outcome)
+        XCTAssertEqual(decoded.sessions.first?.sharedOutcome, .windDownSomeEffort)
+        let old = try JSONDecoder().decode(CampfireBuddiesState.self, from: Data(#"{"version":1,"startAlerts":false,"sessions":[]}"#.utf8))
+        XCTAssertFalse(old.supportsWindDownEase)
+    }
+    @MainActor
+    func testWindDownEaseCommandSurvivesOfflineOutboxReplay() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let owner = UUID()
+        var command = SharedPastureCommand(command: "campfireBuddyAction", partyID: UUID(), memberEpochID: UUID())
+        command.buddyAction = "reflect"; command.outcome = .windDownHard; command.reflection = "A busy evening"
+        try SharedPastureOutboxService(directory: directory).enqueue(command, owner: owner)
+        XCTAssertEqual(try SharedPastureOutboxService(directory: directory).commands(owner: owner), [command])
+    }
     func testVersionTwoAgreementIsExplicitAndOlderStateRemainsReadable() throws {
         XCTAssertTrue(CampfireAgreement(id: UUID(), version: 2, revision: 1, enabled: true, acceptedAt: now).permitsSharing)
         XCTAssertFalse(CampfireAgreement(id: UUID(), version: 3, revision: 1, enabled: true, acceptedAt: now).permitsSharing)

@@ -215,7 +215,7 @@ function validateV4Command(body: Record<string, unknown>, command: string): void
       requireUUID(body, "sourceID"); requireUUID(body, "targetMemberID");
       requireEnum(body, "buddyAction", ["accept", "encourage", "checkIn", "reflect"]);
       if (body.buddyAction === "reflect") {
-        requireEnum(body, "outcome", ["didIt", "madeProgress", "changedPlans"]);
+        requireEnum(body, "outcome", ["didIt", "madeProgress", "changedPlans", "windDownEasy", "windDownSomeEffort", "windDownHard"]);
         if (body.reflection !== undefined && (typeof body.reflection !== "string" || [...body.reflection].length > 160 || /[\u0000-\u001f\u007f]/.test(body.reflection))) throw new Error("Invalid reflection");
       } else if (body.outcome !== undefined || body.reflection !== undefined) throw new Error("Unexpected reflection");
     }

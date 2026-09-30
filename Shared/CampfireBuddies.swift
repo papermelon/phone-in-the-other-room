@@ -12,12 +12,19 @@ struct CampfireSharedIntention: Codable, Equatable, Sendable {
 
 enum CampfireOutcome: String, Codable, CaseIterable, Identifiable, Sendable {
     case didIt, madeProgress, changedPlans
+    case windDownEasy, windDownSomeEffort, windDownHard
     var id: String { rawValue }
+    static func choices(for kind: NightFlockV4ActivityKind) -> [Self] {
+        kind == .windDown ? [.windDownEasy, .windDownSomeEffort, .windDownHard] : [.didIt, .madeProgress, .changedPlans]
+    }
     var title: String {
         switch self {
         case .didIt: return "Did it"
         case .madeProgress: return "Made progress"
         case .changedPlans: return "Changed plans"
+        case .windDownEasy: return "Easy"
+        case .windDownSomeEffort: return "Took some effort"
+        case .windDownHard: return "Hard"
         }
     }
 }
@@ -38,6 +45,8 @@ struct CampfireBuddySession: Codable, Equatable, Identifiable, Sendable {
     var checkInAfter: Date
     var ended: Bool
     var kind: NightFlockV4ActivityKind
+    var windDownOutcome: CampfireOutcome? = nil
+    var sharedOutcome: CampfireOutcome? { windDownOutcome ?? outcome }
     var participationCue: String? {
         if buddyMemberID != nil { return "Buddy paired" }
         return asksForBuddy ? "Buddy welcome" : nil
@@ -53,17 +62,20 @@ struct CampfireBuddiesState: Codable, Equatable, Sendable {
     var version: Int
     var startAlerts: Bool
     var sessions: [CampfireBuddySession]
+    var supportsWindDownEase: Bool
     var isSupported: Bool { version == 1 }
-    private enum CodingKeys: String, CodingKey { case version, startAlerts, sessions }
-    init(version: Int, startAlerts: Bool, sessions: [CampfireBuddySession]) {
+    private enum CodingKeys: String, CodingKey { case version, startAlerts, sessions, supportsWindDownEase }
+    init(version: Int, startAlerts: Bool, sessions: [CampfireBuddySession], supportsWindDownEase: Bool = false) {
         self.version = version; self.startAlerts = startAlerts; self.sessions = sessions
+        self.supportsWindDownEase = supportsWindDownEase
     }
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         version = try container.decode(Int.self, forKey: .version)
-        guard version == 1 else { startAlerts = false; sessions = []; return }
+        guard version == 1 else { startAlerts = false; sessions = []; supportsWindDownEase = false; return }
         startAlerts = try container.decode(Bool.self, forKey: .startAlerts)
         sessions = try container.decode([CampfireBuddySession].self, forKey: .sessions)
+        supportsWindDownEase = try container.decodeIfPresent(Bool.self, forKey: .supportsWindDownEase) ?? false
     }
 }
 

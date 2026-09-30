@@ -12,6 +12,8 @@ struct CampfireBuddyCard: View {
     var onAction: (String, CampfireOutcome?, String?) -> Void = { _, _, _ in }
     var support: AnyView? = nil
     @State private var reflection = ""
+    @State private var selectedOutcome: CampfireOutcome?
+    @State private var skippedCheckIn = false
     private var me: UUID? { party.myMemberID }
     private func name(_ id: UUID) -> String { party.memberships.first { $0.memberID == id }?.profile.displayName ?? "A party member" }
     var body: some View {
@@ -33,21 +35,11 @@ struct CampfireBuddyCard: View {
                 Text("Encouragement from \(session.encouragementMemberIDs.map(name).joined(separator: ", "))")
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
             }
-            if let outcome = session.outcome {
-                Text("Shared check-in: \(outcome.title)").font(AppTypography.body)
+            if let outcome = session.sharedOutcome {
+                Text(session.windDownOutcome == nil ? "Shared check-in: \(outcome.title)" : "Winding down: \(outcome.title)").font(AppTypography.body)
                 if let note = session.reflection, !note.isEmpty { Text(note).font(AppTypography.body) }
             } else if session.memberID == me && session.mayReflect(at: now) {
-                Text(session.checkInRequested ? "Your buddy asked how it went" : "How did your plan go?").font(AppTypography.body)
-                TextField("Optional note to the party", text: $reflection, prompt: Text("Optional note to the party").foregroundColor(AppColors.secondaryText), axis: .vertical).textFieldStyle(.roundedBorder)
-                    .onChange(of: reflection) { _, value in
-                        if value.unicodeScalars.count > 160 { reflection = CampfireBuddiesRules.publicText(value, limit: 160) }
-                    }
-                ForEach(CampfireOutcome.allCases) { result in
-                    Button(result.title) { onAction("reflect", result, reflection) }
-                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
-                }
-                Text("Optional. Your check-in is shared with this party; a finished timer doesn’t mark the task done.")
-                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+                checkInForm
             } else if !active {
                 Text(session.kind == .windDown && now < session.checkInAfter ? "Check-in waits until morning quiet ends" : "No check-in shared")
                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
@@ -66,7 +58,7 @@ struct CampfireBuddyCard: View {
                     Button("Send encouragement") { onAction("encourage", nil, nil) }
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 }
-                if session.buddyMemberID == me && now >= session.checkInAfter && session.outcome == nil && !session.checkInRequested {
+                if session.buddyMemberID == me && now >= session.checkInAfter && session.sharedOutcome == nil && !session.checkInRequested {
                     Button("Ask how it went") { onAction("checkIn", nil, nil) }
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 }
@@ -76,6 +68,54 @@ struct CampfireBuddyCard: View {
         .padding(AppSpacing.md)
         .background(AppColors.panel, in: RoundedRectangle(cornerRadius: AppRadius.lg))
         .disabled(isSending)
+    }
+
+    @ViewBuilder private var checkInForm: some View {
+        if session.kind == .windDown && party.pasture?.campfire?.buddies?.supportsWindDownEase != true {
+            Text("Wind Down check-ins aren’t available for this party yet.")
+                .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+        } else if skippedCheckIn {
+            Button("Share a check-in") { skippedCheckIn = false }
+                .buttonStyle(PixelChipButtonStyle(isSelected: false))
+        } else {
+            if session.checkInRequested {
+                Text("Your buddy asked how it went").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            }
+            Text(session.kind == .windDown ? "How easy was it to wind down?" : "How did your plan go?")
+                .font(AppTypography.body)
+            ForEach(CampfireOutcome.choices(for: session.kind)) { result in
+                Button { selectedOutcome = result } label: {
+                    Label(result.title, systemImage: selectedOutcome == result ? "checkmark.circle.fill" : "circle")
+                        .font(AppTypography.body).frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
+                }
+                .buttonStyle(PixelChipButtonStyle(isSelected: selectedOutcome == result))
+                .accessibilityAddTraits(selectedOutcome == result ? .isSelected : [])
+            }
+            Text("Anything you’d like to share? · Optional").font(AppTypography.caption)
+                .foregroundStyle(AppColors.secondaryText).fixedSize(horizontal: false, vertical: true)
+            TextField("Add a note", text: $reflection,
+                      prompt: Text("Add a note").foregroundColor(AppColors.secondaryText), axis: .vertical)
+                .font(AppTypography.body).textFieldStyle(.roundedBorder)
+                .accessibilityLabel("Optional note shared with \(party.summary.name)")
+                .onChange(of: reflection) { _, value in
+                    if value.unicodeScalars.count > 160 { reflection = CampfireBuddiesRules.publicText(value, limit: 160) }
+                }
+            Text("Shared with \(party.summary.name)").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            if session.kind == .phoneAway {
+                Text("A finished timer doesn’t mark the task done.").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+            }
+            Button {
+                guard let selectedOutcome else { return }
+                onAction("reflect", selectedOutcome, reflection)
+            } label: {
+                Text("Share check-in").font(AppTypography.body).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(PixelPrimaryButtonStyle()).disabled(selectedOutcome == nil)
+            .accessibilityHint(selectedOutcome.map { "Share \($0.title) and your optional note with \(party.summary.name)" } ?? "Choose an answer first")
+            Button("Skip for now") { skippedCheckIn = true }
+                .font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
     }
 }
 
@@ -142,7 +182,8 @@ struct CampfirePendingCheckInCard: View {
             guard let party = social.v4ObservedPartyDetail(for: summary.partyID) else { return false }
             return CampfireBuddiesRules.visible(party.pasture?.campfire?.buddies,
                 members: Set(party.memberships.map(\.memberID)), now: Date()).contains {
-                    $0.memberID == party.myMemberID && $0.outcome == nil && $0.mayReflect(at: Date())
+                    $0.memberID == party.myMemberID && $0.sharedOutcome == nil && $0.mayReflect(at: Date())
+                        && ($0.kind != .windDown || party.pasture?.campfire?.buddies?.supportsWindDownEase == true)
                 }
         }?.partyID
     }
@@ -151,7 +192,7 @@ struct CampfirePendingCheckInCard: View {
             Button {
                 NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: partyID)
             } label: {
-                Label("Share how your campfire plan went", systemImage: "leaf")
+                Label("Share a campfire check-in", systemImage: "leaf")
                     .font(AppTypography.body).frame(maxWidth: .infinity, minHeight: 44)
             }.buttonStyle(PixelChipButtonStyle(isSelected: false))
         }

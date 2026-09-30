@@ -30,6 +30,10 @@ test('buddy actions are scoped and reflections never ride an encouragement',()=>
  const c={schemaVersion:4,command:'campfireBuddyAction',partyID:id,memberEpochID:id,agreementID:id,sourceID:id,targetMemberID:id,sceneRevision:1,buddyAction:'accept',idempotencyKey:'d'.repeat(64)};
  for(const buddyAction of ['accept','encourage','checkIn']) assert.doesNotThrow(()=>validate({...c,buddyAction}));
  assert.doesNotThrow(()=>validate({...c,buddyAction:'reflect',outcome:'madeProgress',reflection:'One page'}));
+ for (const outcome of ['windDownEasy','windDownSomeEffort','windDownHard']) {
+  assert.doesNotThrow(()=>validate({...c,buddyAction:'reflect',outcome,reflection:'A quiet evening'}));
+  assert.throws(()=>validate({...c,buddyAction:'encourage',outcome}));
+ }
  for(const change of [{buddyAction:'unknown'},{targetMemberID:'bad'},{outcome:'didIt'},{buddyAction:'reflect',outcome:'verified'},{buddyAction:'reflect',outcome:'didIt',reflection:'x'.repeat(161)}]) assert.throws(()=>validate({...c,...change}));
 });
 test('frozen bedtime is optional, normalized and may precede sharing start',()=>{
