@@ -549,9 +549,12 @@ final class QuietTimeDeviceActivityMonitor: DeviceActivityMonitor {
 
     private func stopBriefAccessRestore(_ activity: DeviceActivityName? = nil) {
         let center = DeviceActivityCenter()
-        center.stopMonitoring(activity.map { [$0] } ?? center.activities.filter {
+        let activities = activity.map { [$0] } ?? center.activities.filter {
             QuietTimeBriefAccessConstants.isRestoreActivity($0.rawValue)
-        })
+        }
+        // An empty list would cancel Wind Down and every other monitor too.
+        guard !activities.isEmpty else { return }
+        center.stopMonitoring(activities)
     }
 
     private func writeStatus(

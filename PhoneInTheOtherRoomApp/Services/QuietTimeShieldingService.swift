@@ -11,9 +11,11 @@ private struct MonitoringClient {
     var stop: ([DeviceActivityName]) -> Void
 
     init(center: DeviceActivityCenter) {
-        activities = { center.activities }
-        start = { name, schedule in try center.startMonitoring(name, during: schedule) }
-        stop = { names in center.stopMonitoring(names) }
+        self.init(
+            activities: { center.activities },
+            start: { name, schedule in try center.startMonitoring(name, during: schedule) },
+            stop: { names in center.stopMonitoring(names) }
+        )
     }
 
     init(
@@ -23,7 +25,11 @@ private struct MonitoringClient {
     ) {
         self.activities = activities
         self.start = start
-        self.stop = stop
+        self.stop = { names in
+            // DeviceActivity treats an empty list as stop ALL, not stop none.
+            guard !names.isEmpty else { return }
+            stop(names)
+        }
     }
 }
 #endif
@@ -182,7 +188,9 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         var starts = 0
         let client = MonitoringClient(activities: { Array(active) }, start: { name, _ in
             active.insert(name); starts += 1
-        }, stop: { active.subtract($0) })
+        }, stop: { names in
+            if names.isEmpty { active.removeAll() } else { active.subtract(names) }
+        })
         let service = QuietTimeShieldingService(defaults: defaults, sharedDefaults: defaults, monitoring: client)
         let now = Date()
         for index in 0..<6 {
@@ -194,6 +202,7 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
                   service.ensureBriefAccessRestoreScheduled(for: grant, at: date), starts == index + 1,
                   active == [unrelated, DeviceActivityName(grant.restoreActivityIdentifier)] else { return false }
         }
+        service.stopBriefAccessRestore()
         service.stopBriefAccessRestore()
         return active == [unrelated]
     }
@@ -214,12 +223,19 @@ final class QuietTimeShieldingService: QuietTimeShieldingProviding {
         let client = MonitoringClient(activities: { Array(active) }, start: { name, _ in
             active.insert(name)
             starts += 1
-        }, stop: { names in active.subtract(names) })
+        }, stop: { names in
+            if names.isEmpty { active.removeAll() } else { active.subtract(names) }
+        })
         let service = QuietTimeShieldingService(defaults: defaults, sharedDefaults: defaults, monitoring: client)
         do {
             try service.installMonitoringIfNeeded(snapshot, at: now, preservingActiveBarrier: true)
             guard let installed = service.loadSchedule() else { return false }
             let initialStarts = starts
+            let installedActivities = active
+            service.prepareBriefAccessState(for: installed, at: now)
+            service.stopBriefAccessRestore()
+            service.stopBriefAccessRestore()
+            guard active == installedActivities else { return false }
             try service.installMonitoringIfNeeded(installed, at: now, preservingActiveBarrier: true)
             guard starts == initialStarts, !active.contains(orphan), active.contains(unrelated) else { return false }
             let registryNames = active.filter { QuietTimeShieldRegistryActivity(deviceActivityName: $0) != nil }

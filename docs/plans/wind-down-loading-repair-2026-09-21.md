@@ -41,6 +41,30 @@ for the screenshot. No retained request trace was supplied for that incident.
 
 ## Acceptance
 
+### 26 September: background monitor cancellation
+
+The founder confirmed that selected apps remain accessible while the phone is locked
+or the app is closed, and Home has no active Wind Down on reopening. Read-only inspection
+of the connected phone (installed build 63) confirmed automatic start and shielding
+enabled, and a persisted 10 PM schedule. The retained 40-event history contained repeated
+morning reinstallation/clear events; it did not retain the missed night boundary.
+
+The app and monitor extension passed an empty filtered Brief Access restore list to
+[`DeviceActivityCenter.stopMonitoring`](https://developer.apple.com/documentation/deviceactivity/deviceactivitycenter/stopmonitoring(_:)).
+Apple defines an empty list as stopping all activities. Ordinary cleanup therefore
+removed automatic Wind Down registrations, including immediately after installation.
+The existing monitoring client now ignores empty stop requests; the extension guards
+its filtered list too. Nonempty cancellation, emergency exit, and failure cleanup retain
+their behavior. No schedule, account, entitlement, or persistence schema changes.
+
+Regression probes now model Apple's empty-list behavior and verify repeated cleanup
+preserves automatic and unrelated monitors, idempotent installation, repair of missing
+registrations, and explicit retirement. The prior spies incorrectly modeled empty
+stops as harmless. [Local validation](../../output/validation/wind-down-monitor-20260926/README.md):
+full Simulator build, 1,138 unit tests, and all 21 recovery probe cases passed. This is a source
+repair; build 63 on the phone is unchanged. Reopening recovery and actual locked-phone
+enforcement still require the signed-device matrix after distribution.
+
 [Local validation and captures](../../output/design/wind-down-loading-20260921/README.md).
 The existing [signed-device automatic-start matrix](wind-down-automatic-recovery-2026-09-17.md#signed-device-acceptance)
 still applies: test background/terminated/open starts with ordinary account sync,

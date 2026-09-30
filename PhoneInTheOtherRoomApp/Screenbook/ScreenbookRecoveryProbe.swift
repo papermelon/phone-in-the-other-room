@@ -434,7 +434,8 @@ enum ScreenbookRecoveryProbe {
 #if SCREEN_TIME_REPORTS && canImport(DeviceActivity) && canImport(FamilyControls) && canImport(ManagedSettings)
         evaluate("shielding-install-rollback", [
             check(QuietTimeShieldingService.debugRollbackProbe(), "production shielding rollback did not preserve unrelated authority"),
-            check(QuietTimeShieldingService.debugAutomaticMonitorProbe(), "automatic monitoring was not idempotent, repaired, or retired")
+            check(QuietTimeShieldingService.debugAutomaticMonitorProbe(), "automatic monitors were lost during empty cleanup, reinstalled unnecessarily, or not repaired/retired"),
+            check(QuietTimeShieldingService.debugBriefAccessMonitorProbe(), "Brief Access cleanup removed unrelated monitors")
         ])
 #else
         // This probe is a release-safety gate. A target without the required
