@@ -36,7 +36,7 @@ struct RitualPersonalisationView: View {
         }
         .background(AppColors.paper.ignoresSafeArea())
         .foregroundStyle(AppColors.ink)
-        .navigationTitle("My routine")
+        .navigationTitle("My goal")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { viewModel.reloadPersonalisation() }
         .onChange(of: viewModel.habitEditingIdentity) { _, _ in editor = nil; dismiss() }

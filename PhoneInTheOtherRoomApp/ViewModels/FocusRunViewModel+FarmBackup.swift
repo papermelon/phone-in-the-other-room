@@ -54,6 +54,12 @@ extension FocusRunViewModel {
             // A completed receipt must be dismissed first. Pending morning
             // delivery/authorization belongs to this device and cannot move.
             let journal = persistence.windDownMorningSettlementJournal
+            // DeviceActivity can start protection before the app materializes
+            // its run. Account adoption must wait through that same interval.
+            if let schedule = persistence.automaticWindDownSchedule,
+               schedule.startedAt <= nowProvider(), nowProvider() < schedule.plan.protectedUntil {
+                return false
+            }
             return coordinator.run == nil
                 && journal.pendingAuthorizedTerminalMorningDecisions.isEmpty
                 && !journal.morningOccurrences.contains { $0.outcome == .active || $0.outcome == .scheduled }

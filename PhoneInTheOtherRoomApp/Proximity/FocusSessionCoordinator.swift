@@ -180,7 +180,11 @@ final class FocusSessionCoordinator: ObservableObject {
         if replacesAutomaticSchedule {
             shielding.cancelAutomaticSchedule()
         }
-        resetToSetup(clearPersistedRun: false, liveActivityCancellationReason: .replaced)
+        // Materializing the same automatic occurrence must retain its existing
+        // barrier and My routine handoff, including when replacing an old receipt.
+        let preservesAutomaticShield = runID != nil && persistence.automaticWindDownSchedule?.id == runID
+        resetToSetup(clearPersistedRun: false, liveActivityCancellationReason: .replaced,
+            clearShielding: !preservesAutomaticShield)
         let plannedDuration = configuration.nightWatchPlan.map {
             max(FocusRunRules.minimumMeaningfulDurationSeconds, $0.protectedUntil.timeIntervalSince(startedAt))
         } ?? configuration.duration
@@ -574,7 +578,8 @@ final class FocusSessionCoordinator: ObservableObject {
 
     func resetToSetup(
         clearPersistedRun: Bool = true,
-        liveActivityCancellationReason: FocusRunLiveActivityCancellationReason = .reset
+        liveActivityCancellationReason: FocusRunLiveActivityCancellationReason = .reset,
+        clearShielding: Bool = true
     ) {
         cancelEmergencyExitChallenge()
         cancelBoundaryTimer(reason: "reset")
@@ -603,7 +608,7 @@ final class FocusSessionCoordinator: ObservableObject {
         let preservedMorning = currentScreenFreeMorningPresentation()
         if preservedMorning?.isActive != true {
             liveActivity.endAll(reason: liveActivityCancellationReason)
-            shielding.clear()
+            if clearShielding { shielding.clear() }
         }
         watch.send(WatchMessage(
             type: .focusRunStateUpdate,

@@ -12,6 +12,8 @@ struct FocusRunSetupView: View {
     @State private var habitDraft = WindDownHabitPlan()
     @State private var hasLoadedDraft = false
     @State private var habitSaveFailed = false
+    @State private var eveningDraft: [WindDownRoutineStep] = []
+    @State private var morningDraft: [WindDownRoutineStep] = []
     private let initialHabitFocus: WindDownHabitEditFocus?
 
     init(initialHabitFocus: WindDownHabitEditFocus? = nil) {
@@ -24,51 +26,59 @@ struct FocusRunSetupView: View {
         ScrollView {
             VStack(spacing: AppSpacing.lg) {
                 hero
-                if viewModel.isRunning {
+                if viewModel.isRunning || viewModel.activeScreenFreeMorning != nil {
                     PixelCard {
                         Label(
-                            "Your current Wind Down stays unchanged. These choices begin with the next one.",
+                            "Your current session keeps its routine. Changes begin with your next Wind Down.",
                             systemImage: "calendar.badge.clock"
                         )
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.muted)
                     }
                 }
-                NavigationLink("What I’m working toward") { RitualPersonalisationView() }
-                    .font(AppTypography.body).frame(minHeight: 44)
-                tonightPlanAccordion
-                AutomaticWindDownCard()
-                privateRoutineAccordion
-                    .id("habit-routine")
-                NavigationLink {
-                    SettingsProtectionTagsView()
-                        .environmentObject(viewModel)
-                } label: {
-                    PixelCard {
-                        HStack(spacing: AppSpacing.sm) {
-                            Image(systemName: "lock.shield.fill")
-                                .foregroundStyle(AppColors.grass)
-                            VStack(alignment: .leading, spacing: AppSpacing.xxs) {
-                                Text("Protection & tags")
-                                    .font(AppTypography.headline)
-                                Text("Manage app limits and NFC tags.")
-                                    .font(AppTypography.caption)
+                if initialHabitFocus == nil {
+                    NavigationLink("What I’m working toward") { RitualPersonalisationView() }
+                        .font(AppTypography.body).frame(minHeight: 44)
+                    tonightPlanAccordion
+                    AutomaticWindDownCard()
+                }
+                if initialHabitFocus != nil {
+                    privateRoutineCard.id("habit-routine")
+                } else {
+                    privateRoutineAccordion
+                        .id("habit-routine")
+                }
+                if initialHabitFocus == nil {
+                    NavigationLink {
+                        SettingsProtectionTagsView()
+                            .environmentObject(viewModel)
+                    } label: {
+                        PixelCard {
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: "lock.shield.fill")
+                                    .foregroundStyle(AppColors.grass)
+                                VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                                    Text("Protection & tags")
+                                        .font(AppTypography.headline)
+                                    Text("Manage app limits and NFC tags.")
+                                        .font(AppTypography.caption)
+                                        .foregroundStyle(AppColors.muted)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
                                     .foregroundStyle(AppColors.muted)
                             }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundStyle(AppColors.muted)
+                            .frame(minHeight: 44)
                         }
-                        .frame(minHeight: 44)
                     }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
             }
             .padding(AppSpacing.md)
             .padding(.bottom, AppSpacing.sm)
         }
         .onAppear {
-            guard initialHabitFocus != nil else { return }
+            guard initialHabitFocus != nil, initialHabitFocus != .activity else { return }
             Task { @MainActor in
                 await Task.yield()
                 proxy.scrollTo(initialHabitFocus == .activity ? "habit-routine" : "habit-\(initialHabitFocus?.rawValue ?? "routine")", anchor: .top)
@@ -76,8 +86,16 @@ struct FocusRunSetupView: View {
         }
         }
         .background(AppColors.paper.ignoresSafeArea())
-        .navigationTitle("Wind Down")
+        .navigationTitle(initialHabitFocus == nil ? "Wind Down" : "Edit routine")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(initialHabitFocus != nil)
+        .toolbar {
+            if initialHabitFocus != nil {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
         .settingsHelp(.planRoutine)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             setupActionBar
@@ -98,10 +116,14 @@ struct FocusRunSetupView: View {
 
     private var hero: some View {
         VStack(spacing: AppSpacing.sm) {
-            OllieRitualView(state: .ready, presentation: .cardCompanion)
-            Text("Put your phone to bed")
-                .font(AppTypography.display(32))
-            Text("Protect the quiet before sleep, then wake up before your phone does.")
+            if initialHabitFocus == nil {
+                OllieRitualView(state: .ready, presentation: .cardCompanion)
+            }
+            Text(initialHabitFocus == nil ? "Put your phone to bed" : "Your Wind Down routine")
+                .font(initialHabitFocus == nil ? AppTypography.display(32) : AppTypography.title)
+            Text(initialHabitFocus == nil
+                ? "Protect the quiet before sleep, then wake up before your phone does."
+                : "Choose your evening and morning activities, then tap Save routine.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.muted)
                 .multilineTextAlignment(.center)
@@ -224,14 +246,13 @@ struct FocusRunSetupView: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 setupSectionHeader(
                     title: "Private routine",
-                    detail: "Choose a few things to do after putting your phone away.",
+                    detail: "Choose a few things to do while your selected apps are limited.",
                     systemImage: "book.closed.fill"
                 )
                 WindDownRoutineEditor(
                     eveningSteps: routineBinding(for: .evening),
                     morningSteps: routineBinding(for: .morning),
-                    phonePlacement: habitDraft.phonePlacement,
-                    onChange: saveRoutineChanges
+                    phonePlacement: habitDraft.phonePlacement
                 )
                 Divider()
                 WindDownHabitSupportEditor(plan: $habitDraft, initialFocus: initialHabitFocus)
@@ -273,33 +294,24 @@ struct FocusRunSetupView: View {
     }
 
     private var routineSummary: String {
-        let evening = viewModel.nightWatchPreferences.eveningRoutine.count
-        let morning = viewModel.nightWatchPreferences.morningRoutine.count
+        let evening = eveningDraft.count
+        let morning = morningDraft.count
         return "\(evening) evening · \(morning) morning ideas"
     }
 
     private func routineBinding(for phase: WindDownRoutinePhase) -> Binding<[WindDownRoutineStep]> {
         Binding(
             get: {
-                phase == .evening
-                    ? viewModel.nightWatchPreferences.eveningRoutine
-                    : viewModel.nightWatchPreferences.morningRoutine
+                phase == .evening ? eveningDraft : morningDraft
             },
             set: { steps in
                 if phase == .evening {
-                    viewModel.nightWatchPreferences.eveningRoutine = steps
+                    eveningDraft = steps
                 } else {
-                    viewModel.nightWatchPreferences.morningRoutine = steps
+                    morningDraft = steps
                 }
             }
         )
-    }
-
-    private func saveRoutineChanges() {
-        var preferences = viewModel.nightWatchPreferences
-        preferences.syncLegacyFieldsFromRoutine()
-        viewModel.nightWatchPreferences = preferences
-        viewModel.saveNightWatchPreferences()
     }
 
     private var setupActionBar: some View {
@@ -309,7 +321,7 @@ struct FocusRunSetupView: View {
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.warning)
             }
-            Text(viewModel.isRunning
+            Text(viewModel.isRunning || initialHabitFocus != nil
                 ? "Next Wind Down · \(viewModel.nightWatchScheduleLabel)"
                 : "Bedtime to phone wake · \(viewModel.nightWatchScheduleLabel)")
                 .font(AppTypography.caption)
@@ -319,7 +331,7 @@ struct FocusRunSetupView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Button(action: saveOrStart) {
-                Label(primaryActionTitle, systemImage: "door.left.hand.open")
+                Label(primaryActionTitle, systemImage: initialHabitFocus == nil ? "door.left.hand.open" : "checkmark")
                     .font(AppTypography.headline)
                     .frame(maxWidth: .infinity, minHeight: 44)
             }
@@ -338,13 +350,13 @@ struct FocusRunSetupView: View {
     }
 
     private var primaryActionTitle: String {
-        if initialHabitFocus != nil { return "Save plan" }
+        if initialHabitFocus != nil { return "Save routine" }
         if viewModel.isRunning { return "Save plan" }
         return viewModel.canBeginNightWatchNow ? "Put phone away" : "Save plan"
     }
 
     private var primaryActionHint: String {
-        if initialHabitFocus != nil { return "Saves your plan without starting a session" }
+        if initialHabitFocus != nil { return "Saves your routine for the next Wind Down" }
         return viewModel.canBeginNightWatchNow && !viewModel.isRunning
             ? "Starts tonight’s timer and requests selected-app limits through Screen-Free Morning, including overnight"
             : "Saves your plan. Reminders follow your notification settings."
@@ -356,6 +368,9 @@ struct FocusRunSetupView: View {
             return
         }
         habitSaveFailed = false
+        viewModel.nightWatchPreferences.eveningRoutine = WindDownRoutineStep.normalized(eveningDraft, for: .evening)
+        viewModel.nightWatchPreferences.morningRoutine = WindDownRoutineStep.normalized(morningDraft, for: .morning)
+        viewModel.nightWatchPreferences.syncLegacyFieldsFromRoutine()
         if initialHabitFocus == nil && viewModel.canBeginNightWatchNow && !viewModel.isRunning {
             showStartError = !viewModel.requestStartNightWatch()
         } else {
@@ -368,6 +383,8 @@ struct FocusRunSetupView: View {
         guard !hasLoadedDraft else { return }
         hasLoadedDraft = true
         habitDraft = viewModel.windDownHabitPlan
+        eveningDraft = viewModel.nightWatchPreferences.eveningRoutine
+        morningDraft = viewModel.nightWatchPreferences.morningRoutine
         purposeCategory = viewModel.offlinePurpose.category
         customPurpose = viewModel.offlinePurpose.customText ?? ""
         includePurposeInNotifications = viewModel.offlinePurpose.allowsCustomTextInNotifications
@@ -383,6 +400,21 @@ struct FocusRunSetupView: View {
     }
 
 }
+
+#if DEBUG
+#Preview("Edit routine · active Wind Down") {
+    if let model = try? ScreenbookPersonalShieldProbe.fixture() {
+        NavigationStack { FocusRunSetupView(initialHabitFocus: .activity) }
+            .environmentObject(model).preferredColorScheme(.dark)
+    }
+}
+
+#Preview("Edit routine · large text") {
+    NavigationStack { FocusRunSetupView(initialHabitFocus: .activity) }
+        .environmentObject(FocusRunViewModel(startsExternalServices: false))
+        .environment(\.dynamicTypeSize, .accessibility3)
+}
+#endif
 
 #Preview("Wind Down setup") {
     NavigationStack {

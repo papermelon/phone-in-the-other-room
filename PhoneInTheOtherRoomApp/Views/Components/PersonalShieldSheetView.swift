@@ -49,6 +49,20 @@ struct PersonalShieldSheetView: View {
                             PersonalShieldChecklist(session: session, date: context.date,
                                 toggle: viewModel.togglePersonalShieldStep)
                         }
+                        Text("\(request.mode.timerName) keeps running while you review this list.")
+                            .font(AppTypography.caption).foregroundStyle(AppColors.muted)
+                        if request.mode != .additionalQuiet {
+                            NavigationLink {
+                                FocusRunSetupView(initialHabitFocus: .activity)
+                            } label: {
+                                Label("Edit saved Wind Down routine", systemImage: "pencil")
+                                    .font(AppTypography.body).frame(minHeight: 44)
+                            }
+                            .tint(AppColors.grass)
+                            .accessibilityHint("Changes apply to your next Wind Down")
+                            Text("Edits apply to your next Wind Down. This session keeps its original routine.")
+                                .font(AppTypography.caption).foregroundStyle(AppColors.muted)
+                        }
                         Button("5-min access") { viewModel.openPersonalShield(.briefAccess) }
                             .buttonStyle(PixelChipButtonStyle(isSelected: false))
                         Button("End \(request.mode.timerName)") { viewModel.openPersonalShield(.endSession) }
@@ -74,7 +88,7 @@ struct PersonalShieldSheetView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(request.action == .checklist ? "Done" : "Cancel") { viewModel.dismissPersonalShield() }
+                    Button(request.action == .checklist ? "Close" : "Cancel") { viewModel.dismissPersonalShield() }
                 }
             }
         }

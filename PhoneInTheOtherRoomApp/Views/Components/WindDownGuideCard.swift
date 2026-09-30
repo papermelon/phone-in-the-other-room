@@ -70,7 +70,7 @@ struct WindDownRoutineEditor: View {
                 phase: .morning,
                 steps: $morningSteps
             )
-            Text("Your chosen ideas appear together during the session and on the Lock Screen when Live Activity is on. They have no individual timers or check-offs.")
+            Text("Your ideas appear during the session and on the Lock Screen when Live Activity is on. Optional checks in My routine stay private and keep the timer running.")
                 .font(AppTypography.caption)
                 .foregroundStyle(AppColors.muted)
         }
@@ -296,10 +296,7 @@ struct WindDownRoutineEditor: View {
                 if step.kind == .custom {
                     TextField(
                         "Write a familiar activity",
-                        text: Binding(
-                            get: { rawDrafts[step.id] ?? step.customText ?? "" },
-                            set: { rawDrafts[step.id] = String($0.prefix(PhoneFreeCue.maximumTextLength)) }
-                        ),
+                        text: customTextBinding(for: step, steps: steps),
                         axis: .vertical
                     )
                     .font(AppTypography.body)
@@ -333,6 +330,19 @@ struct WindDownRoutineEditor: View {
         .background(AppColors.surfaceMuted, in: RoundedRectangle(cornerRadius: AppRadius.md, style: .continuous))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("\(phase == .evening ? "Evening" : "Morning") idea \(index + 1) of \(steps.wrappedValue.count)")
+    }
+
+    private func customTextBinding(for step: WindDownRoutineStep, steps: Binding<[WindDownRoutineStep]>) -> Binding<String> {
+        Binding(
+            get: { rawDrafts[step.id] ?? step.customText ?? "" },
+            set: { text in
+                let value = String(text.prefix(PhoneFreeCue.maximumTextLength))
+                rawDrafts[step.id] = value
+                if let position = steps.wrappedValue.firstIndex(where: { $0.id == step.id }) {
+                    steps.wrappedValue[position] = .custom(value, phase: step.phase, id: step.id)
+                }
+            }
+        )
     }
 
     private func routineMenu(

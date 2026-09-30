@@ -3225,7 +3225,11 @@ final class FocusRunViewModel: ObservableObject {
     private func recordAutomaticProtectionRepair() {
         automaticStartTimer?.invalidate()
         automaticStartTimer = nil
-        persistence.automaticWindDownSchedule = nil
+        // A foreground readiness failure must not move an already-due night
+        // to tomorrow. Keep its anchor for recovery after protection repair.
+        if (persistence.automaticWindDownSchedule?.startedAt ?? .distantFuture) > nowProvider() {
+            persistence.automaticWindDownSchedule = nil
+        }
         persistence.automaticWindDownProtectionRepairNeeded = true
         notifications.cancelNightWatchReminder()
         quietTimeShielding.cancelAutomaticSchedule()

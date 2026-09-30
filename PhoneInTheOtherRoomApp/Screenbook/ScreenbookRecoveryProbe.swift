@@ -45,6 +45,8 @@ enum ScreenbookRecoveryProbe {
                 lateWindDownCompletionUsesScheduledEnd(now: now),
                 expiredAutomaticRecoveryKeepsNextSchedule(now: now),
                 futureAutomaticRecoverySurfacesMonitorFailure(now: now),
+                dueAutomaticRecoverySurvivesReadinessRepair(now: now),
+                accountRestoreWaitsForAutomaticAdmission(now: now),
                 accountSyncPreservesAutomaticOccurrence(now: now, isDue: false),
                 accountSyncPreservesAutomaticOccurrence(now: now, isDue: true),
                 accountChangeClearsAutomaticOccurrence(now: now)
@@ -131,6 +133,53 @@ enum ScreenbookRecoveryProbe {
             check(retainedSchedule?.startedAt == start, "ordinary sync moved the scheduled start"),
             check(!isDue || fixture.coordinator.run?.id == schedule.id, "due occurrence did not reach coordinator admission"),
             check(!isDue || fixture.coordinator.run?.startedAt == start, "late admission changed the timer anchor")
+        ])
+    }
+
+    private static func dueAutomaticRecoverySurvivesReadinessRepair(now: Date) -> CaseResult {
+        let fixture = manualStartFixture(now: now, hasAutomaticSchedule: false)
+        fixture.viewModel.nightWatchPreferences.automaticStartEnabled = true
+        let start = now.addingTimeInterval(-60)
+        let run = makeRun(wake: start.addingTimeInterval(8 * 3600))
+        let schedule = AutomaticWindDownSchedule(id: run.id, startedAt: start, plan: run.nightWatchPlan!)
+        fixture.persistence.automaticWindDownSchedule = schedule
+        fixture.persistence.nightWatchPreferences = fixture.viewModel.nightWatchPreferences
+        let recovering = FocusRunViewModel(coordinator: fixture.coordinator, persistence: fixture.persistence,
+            nowProvider: { now }, startsExternalServices: false, quietTimeShielding: fixture.shielding,
+            purposeCueDefaults: fixture.purposeDefaults)
+        recovering.reconcileAutomaticWindDownIfNeeded()
+        let retained = fixture.persistence.automaticWindDownSchedule
+        let neededRepair = fixture.persistence.automaticWindDownProtectionRepairNeeded
+        let failedOpen = fixture.shielding.events.contains("cancelAutomatic")
+        recovering.enableScreenbookStartReadiness(keepsShielding: true)
+        recovering.reconcileAutomaticWindDownIfNeeded(stagedPrimaryDecision:
+            NightFlockPrimaryRunSharingDecision(runID: schedule.id, allowsSharing: false, capturedAt: start))
+        return evaluate("due-automatic-keeps-anchor-through-readiness-repair", [
+            check(retained == schedule, "readiness failure discarded tonight's occurrence"),
+            check(neededRepair && failedOpen, "readiness failure did not fail open and disclose repair"),
+            check(fixture.coordinator.run?.id == schedule.id, "repair advanced to tomorrow instead of recovering tonight"),
+            check(fixture.coordinator.run?.startedAt == start, "repair changed the timer anchor")
+        ])
+    }
+
+    private static func accountRestoreWaitsForAutomaticAdmission(now: Date) -> CaseResult {
+        let fixture = manualStartFixture(now: now, hasAutomaticSchedule: false)
+        let start = now.addingTimeInterval(-60)
+        let run = makeRun(wake: start.addingTimeInterval(8 * 3600))
+        fixture.persistence.automaticWindDownSchedule = AutomaticWindDownSchedule(
+            id: run.id, startedAt: start, plan: run.nightWatchPlan!)
+        let blocksDue = fixture.viewModel.farmBackupViewModel.canRestore?() == false
+        fixture.persistence.automaticWindDownSchedule = AutomaticWindDownSchedule(
+            startedAt: now.addingTimeInterval(3600), plan: run.nightWatchPlan!)
+        let allowsFuture = fixture.viewModel.farmBackupViewModel.canRestore?() == true
+        var expiredPlan = run.nightWatchPlan!
+        expiredPlan.protectedUntil = now.addingTimeInterval(-1)
+        fixture.persistence.automaticWindDownSchedule = AutomaticWindDownSchedule(
+            startedAt: start, plan: expiredPlan)
+        return evaluate("account-restore-waits-through-automatic-admission", [
+            check(blocksDue, "account restore could replace a due occurrence before coordinator admission"),
+            check(allowsFuture, "a future schedule blocked account restore"),
+            check(fixture.viewModel.farmBackupViewModel.canRestore?() == true, "an expired schedule blocked account restore")
         ])
     }
 

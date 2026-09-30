@@ -5,14 +5,14 @@ import SwiftUI
 /// a local shielding spy keeps Screen Time and all network services out of the fixture.
 @MainActor
 enum ScreenbookPersonalShieldProbe {
-    static func fixture(phoneAway: Bool = false, overnight: Bool = false) throws -> FocusRunViewModel {
+    static func fixture(phoneAway: Bool = false, overnight: Bool = false, automatic: Bool = false) throws -> FocusRunViewModel {
         let suite = "ollie.personal-shield-probe.\(UUID())"
         guard let defaults = UserDefaults(suiteName: suite) else { throw FarmSaveError.unavailable }
         let persistence = PersistenceService(defaults: defaults,
             farmSaveDirectory: FileManager.default.temporaryDirectory.appendingPathComponent(suite))
         var preferences = NightWatchPreferences.defaults
         preferences.isConfigured = true
-        preferences.automaticStartEnabled = false
+        preferences.automaticStartEnabled = automatic
         preferences.guardKind = .honorTimer
         preferences.eveningRoutine = [.custom("Brush my teeth", phase: .evening), .custom("Read 10 pages", phase: .evening), .custom("Set out tomorrow’s clothes", phase: .evening)]
         persistence.nightWatchPreferences = preferences
@@ -36,9 +36,15 @@ enum ScreenbookPersonalShieldProbe {
         let id = UUID()
         try model.preparePersonalShield(id: id, plan: plan, startedAt: now,
             tasks: phoneAway ? ["Finish the project outline", "Read 10 pages", "Make dinner"] : [])
-        _ = coordinator.start(configuration: FocusRunConfiguration(nightWatchPlan: plan, guardKind: .honorTimer),
-            focusAccepted: false, startedAt: now, autoConfirmPlacement: true,
-            appShieldingRequested: true, liveActivityRequested: false, runID: id)
+        if automatic {
+            let schedule = AutomaticWindDownSchedule(id: id, startedAt: now, plan: plan)
+            persistence.automaticWindDownSchedule = schedule
+            _ = shielding.scheduleAutomatic(for: schedule, at: now)
+        } else {
+            _ = coordinator.start(configuration: FocusRunConfiguration(nightWatchPlan: plan, guardKind: .honorTimer),
+                focusAccepted: false, startedAt: now, autoConfirmPlacement: true,
+                appShieldingRequested: true, liveActivityRequested: false, runID: id)
+        }
         model.refreshPersonalShield()
         return model
     }
@@ -49,6 +55,28 @@ enum ScreenbookPersonalShieldProbe {
               let spy = model.quietTimeShielding as? ShieldingSpy else { return ["fixture unavailable"] }
         var failures: [String] = []
         func check(_ condition: Bool, _ message: String) { if !condition { failures.append(message) } }
+        let automatic = try fixture(automatic: true)
+        if let routeDefaults = automatic.purposeCueDefaults, let schedule = automatic.persistence.automaticWindDownSchedule,
+           let automaticSpy = automatic.quietTimeShielding as? ShieldingSpy {
+            check(PersonalShieldStorage.request(.checklist, in: routeDefaults, at: Date()), "automatic shield route not created")
+            automatic.consumePersonalShieldRoute()
+            check(automatic.personalShieldSheet == nil, "checklist opened before automatic admission")
+            automatic.reconcileAutomaticWindDownIfNeeded(stagedPrimaryDecision:
+                NightFlockPrimaryRunSharingDecision(runID: schedule.id, allowsSharing: false, capturedAt: schedule.startedAt))
+            automatic.consumePersonalShieldRoute()
+            check(automaticSpy.clears == 0, "automatic admission cleared its already-applied shield")
+            check(automatic.personalShieldSheet?.action == .checklist, "automatic admission discarded My routine route")
+            check(automatic.activeRun?.id == schedule.id && automatic.isRunning, "My routine lost the automatic run")
+            let originalPlan = automatic.activeRun?.nightWatchPlan
+            automatic.nightWatchPreferences.eveningRoutine = [.custom("A different evening", phase: .evening)]
+            automatic.saveNightWatchPlanForTonight()
+            check(automatic.activeRun?.nightWatchPlan == originalPlan, "editing the saved routine changed the active run")
+            automatic.dismissPersonalShield()
+            automatic.coordinator.applicationDidEnterBackground()
+            automatic.coordinator.applicationDidBecomeActive()
+            check(automatic.activeRun?.id == schedule.id && automatic.isRunning, "foreground review ended Wind Down")
+            check(automaticSpy.clears == 0, "foreground review lifted the shield")
+        } else { failures.append("automatic fixture unavailable") }
         let farm = model.farmState
         model.togglePersonalShieldStep(first.steps[0].id)
         check(model.personalShieldSession?.steps[0].checked == true, "check not saved")
@@ -137,6 +165,7 @@ enum ScreenbookPersonalShieldProbe {
     private final class ShieldingSpy: QuietTimeShieldingProviding {
         let defaults: UserDefaults
         var grants = 0
+        var clears = 0
         var allowsGrant = true
         var morningParentReuse: [Bool] = []
         init(defaults: UserDefaults) { self.defaults = defaults }
@@ -150,9 +179,18 @@ enum ScreenbookPersonalShieldProbe {
             morningParentReuse.append(parentRunIsActive)
             return .scheduled
         }
-        func clear() { PersonalShieldStorage.clear(from: defaults) }
+        func clear() {
+            clears += 1
+            PersonalShieldStorage.clear(from: defaults)
+            defaults.removeObject(forKey: QuietTimeShieldPresentationStorage.scheduleKey)
+        }
         func clear(occurrenceID: UUID) { clear() }
-        func scheduleAutomatic(for schedule: AutomaticWindDownSchedule, at date: Date) -> QuietTimeShieldingOutcome { .scheduled }
+        func scheduleAutomatic(for schedule: AutomaticWindDownSchedule, at date: Date) -> QuietTimeShieldingOutcome {
+            let snapshot = QuietTimeShieldScheduleBuilder.snapshot(for: schedule, revision: 1, updatedAt: date)
+            guard let data = try? JSONEncoder().encode(snapshot) else { return .failed("probe-encoding") }
+            defaults.set(data, forKey: QuietTimeShieldPresentationStorage.scheduleKey)
+            return .scheduled
+        }
         func cancelAutomaticSchedule() { clear() }
         func resetLocalState() { clear() }
         func protectionSummary(for run: FocusRun, at date: Date) -> QuietTimeShieldProtectionSummary { .none }
@@ -173,7 +211,12 @@ struct ScreenbookPersonalShieldView: View {
 
     var body: some View {
         Group {
-            if let model { HomeView(allowsLaunchRouting: false).environmentObject(model) }
+            if let model {
+                if ProcessInfo.processInfo.arguments.contains("-personal-shield-edit-routine") {
+                    NavigationStack { FocusRunSetupView(initialHabitFocus: .activity) }
+                        .environmentObject(model)
+                } else { HomeView(allowsLaunchRouting: false).environmentObject(model) }
+            }
             else { Text(failure ?? "Preparing personal shield fixture…") }
         }
         .task {
@@ -190,7 +233,8 @@ struct ScreenbookPersonalShieldView: View {
                 }
                 if ProcessInfo.processInfo.arguments.contains("-personal-shield-start-morning") {
                     fixture.chooseEarlyWake(.startNow)
-                } else if !ProcessInfo.processInfo.arguments.contains("-personal-shield-home") {
+                } else if !ProcessInfo.processInfo.arguments.contains("-personal-shield-home"),
+                          !ProcessInfo.processInfo.arguments.contains("-personal-shield-edit-routine") {
                     fixture.openPersonalShield(ProcessInfo.processInfo.arguments.contains("-personal-shield-access") ? .briefAccess
                         : ProcessInfo.processInfo.arguments.contains("-personal-shield-end") ? .endSession : .checklist)
                 }
