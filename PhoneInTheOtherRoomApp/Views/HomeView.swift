@@ -74,6 +74,7 @@ struct HomeView: View {
         } message: {
             Text("Counting Sheep can't turn on Sleep Focus for you. You can switch it on in Control Center, then continue.")
         }
+        .sharedTextSafetyPrompt(social: viewModel.nightFlockViewModel)
                     .onAppear {
                         guard allowsLaunchRouting else { return }
                         viewModel.applyShortcutPreparationIfNeeded()

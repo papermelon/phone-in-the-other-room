@@ -131,6 +131,7 @@ extension NightFlockViewModel {
 
     private func performV2(_ command: NightFlockV2Command) {
         guard accountState == .linked, permitsNightFlockNetwork, let service else { return }
+        let owner = pastureOwner
         let generation = localSocialGeneration
         let transportEpoch = transportRecoveryEpoch
         phase = .loading
@@ -138,7 +139,7 @@ extension NightFlockViewModel {
         Task {
             do {
                 guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
-                let response = try await service.sendV2(command)
+                let response = try await service.sendV2(command, ownerID: owner)
                 guard permitsNightFlockNetwork, isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
                 guard response.accepted else { throw NightFlockServiceError.unsupportedResponse }
                 if let responseSnapshot = response.snapshot {
@@ -166,6 +167,11 @@ extension NightFlockViewModel {
                 await reconcileMembershipRecovery(requestID: error.requestID)
             } catch {
                 guard isCurrentTransportTask(generation: generation, epoch: transportEpoch) else { return }
+                if presentSharedTextSafetyError(error, resume: { [weak self] in self?.performV2(command) }) {
+                    phase = .error(Self.remoteError(from: error)?.errorDescription ?? "Your text hasn’t been shared.")
+                    return
+                }
+                if let remote = Self.remoteError(from: error) { presentSharedTextRejection(remote) }
                 presentNightFlockError(error, lane: .directCommand(schema: 2))
             }
         }

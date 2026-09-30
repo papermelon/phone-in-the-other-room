@@ -7,6 +7,14 @@ struct CampfireBuddiesNativeFixture: View {
     @StateObject private var app: FocusRunViewModel
     private let party: NightFlockV4PartyDetail
     private let mode: String
+    @State private var sharedCheckIn: CampfireOutcome?
+    @State private var sharedCheckInNote: String?
+    private var windDownCheckInSession: CampfireBuddySession? {
+        guard var session = party.pasture?.campfire?.buddies?.sessions.first else { return nil }
+        session.windDownOutcome = sharedCheckIn
+        session.reflection = sharedCheckInNote
+        return session
+    }
     init(mode: String? = nil) {
         let mode = mode ?? ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--buddy-view=") })?.replacingOccurrences(of: "--buddy-view=", with: "") ?? "live"
         self.mode = mode
@@ -29,11 +37,23 @@ struct CampfireBuddiesNativeFixture: View {
             buddies[0].checkInAfter = now.addingTimeInterval(-30)
             buddies[0].buddyMemberID = SlumberPartySharedFarmFixtures.friend
         }
+        if mode.hasPrefix("winddown-") {
+            buddies[0].memberID = party.myMemberID!
+            buddies[0].kind = .windDown
+            buddies[0].startedAt = now.addingTimeInterval(-12 * 3600)
+            buddies[0].expiresAt = now.addingTimeInterval(-1800)
+            buddies[0].checkInAfter = now.addingTimeInterval(-30)
+            buddies[0].ended = true
+            buddies[0].publicIntention = ""
+            buddies[0].buddyMemberID = nil
+            if mode == "winddown-legacy" { buddies[0].outcome = .didIt }
+        }
         party.pasture = .init(memberEpochID: UUID(), entities: [], visits: [],
             lantern: .init(contributions: 5, requiredContributions: 12),
             campfire: .init(agreement: .init(id: agreementID, version: 2, revision: 1, enabled: true, acceptedAt: now.addingTimeInterval(-3600)),
                 sessions: mode == "empty" ? [] : live,
-                buddies: .init(version: 1, startAlerts: false, sessions: mode == "empty" ? [] : buddies)))
+                buddies: .init(version: 1, startAlerts: false, sessions: mode == "empty" ? [] : buddies,
+                               supportsWindDownEase: mode != "winddown-unavailable")))
         if mode == "setup" { party.pasture?.campfire?.agreement = nil }
         self.party = party
         let defaults = UserDefaults(suiteName: "CampfireBuddiesFixture.\(UUID())")!
@@ -47,6 +67,14 @@ struct CampfireBuddiesNativeFixture: View {
             startsExternalServices: false, nightFlockViewModel: social, purposeCueDefaults: defaults)
         social.sharedFarmAccount = nil
         _ = social.restoreCampfireVisibility()
+        if mode == "text-consent" || mode == "text-review", let owner = social.pastureOwner {
+            social.sharedTextSafetyPrompt = .init(ownerID: owner,
+                code: mode == "text-consent" ? .sharedTextConsentRequired : .sharedTextReviewRequired,
+                reviewToken: mode == "text-review" ? String(repeating: "a", count: 64) : nil)
+        }
+        if mode == "text-rejected" {
+            social.presentSharedTextRejection(.init(statusCode: 422, code: .sharedTextRejected, requestID: UUID().uuidString))
+        }
         if mode.hasPrefix("unified") || mode == "visibility" || mode.hasPrefix("public-card") {
             social.globalCampfireState = .init(version: 1, available: mode != "unified-unavailable", observedAt: now,
                 participants: (0..<8).map { index in
@@ -144,6 +172,11 @@ struct CampfireBuddiesNativeFixture: View {
                                 CampfireStartChoices(viewModel: app)
                             }
                             else if mode == "start" { CampfireStartChoices(viewModel: app) }
+                            else if mode.hasPrefix("winddown-"), let buddy = windDownCheckInSession {
+                                CampfireBuddyCard(session: buddy, party: party, active: false, onAction: { action, outcome, note in
+                                    if action == "reflect" { sharedCheckIn = outcome; sharedCheckInNote = note }
+                                })
+                            }
                             else if mode == "card" || mode == "return", let buddy = party.pasture?.campfire?.buddies?.sessions.first {
                                 CampfireBuddyCard(session: buddy, party: party, active: mode == "card")
                             } else {
@@ -155,11 +188,13 @@ struct CampfireBuddiesNativeFixture: View {
                                 })
                             }
                         }.padding(AppSpacing.md)
-                    }.background(AppColors.paper).navigationTitle(mode == "start" ? "Before you start" : "Campfire Buddies")
+                    }.defaultScrollAnchor(ProcessInfo.processInfo.arguments.contains("--buddy-bottom") ? .bottom : .top)
+                        .background(AppColors.paper).navigationTitle(mode == "start" ? "Before you start" : "Campfire Buddies")
                         .navigationBarTitleDisplayMode(.inline)
                 }
             }
-        }.preferredColorScheme(ProcessInfo.processInfo.arguments.contains("--buddy-light") ? .light : .dark)
+        }.sharedTextSafetyPrompt(social: social)
+            .preferredColorScheme(ProcessInfo.processInfo.arguments.contains("--buddy-light") ? .light : .dark)
             .dynamicTypeSize(ProcessInfo.processInfo.arguments.contains("--buddy-max-text") ? .accessibility5 : ProcessInfo.processInfo.arguments.contains("--buddy-large-text") ? .accessibility3 : .large)
     }
 }
@@ -167,6 +202,9 @@ struct CampfireBuddiesNativeFixture: View {
 #Preview("Campfire Buddies · no sessions") { CampfireBuddiesNativeFixture(mode: "empty") }
 #Preview("Campfire Buddies · stale") { CampfireBuddiesNativeFixture(mode: "stale") }
 #Preview("Campfire Buddies · return") { CampfireBuddiesNativeFixture(mode: "return") }
+#Preview("Wind Down · check-in") { CampfireBuddiesNativeFixture(mode: "winddown-checkin") }
+#Preview("Wind Down · historical answer") { CampfireBuddiesNativeFixture(mode: "winddown-legacy") }
+#Preview("Wind Down · capability unavailable") { CampfireBuddiesNativeFixture(mode: "winddown-unavailable") }
 #Preview("Campfire Buddies · start") { CampfireBuddiesNativeFixture(mode: "start") }
 #Preview("Campfire Buddies · sharing setup") { CampfireBuddiesNativeFixture(mode: "setup") }
 #Preview("Unified Campfire · mixed private sessions") { CampfireBuddiesNativeFixture(mode: "unified-party") }

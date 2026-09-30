@@ -289,6 +289,9 @@ struct SettingsPrivacyDataView: View {
                     }
                 }
                 Link(destination: URL(string: "https://countingsheepproject.com/app-privacy-policy.html")!) { SettingsDetailRow(title: "Privacy policy", detail: "Read the current policy", icon: "lock.shield.fill") }.buttonStyle(.plain)
+                if let owner = viewModel.nightFlockViewModel.pastureOwner {
+                    SharedTextSafetySettings(social: viewModel.nightFlockViewModel, ownerID: owner)
+                }
                 PixelCard {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
                         Text("Local data").font(AppTypography.headline)

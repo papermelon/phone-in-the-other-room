@@ -177,6 +177,24 @@ block the other member or promise a response, investigation, or moderation outco
 keeps restricted blocking and reporting records needed to apply these controls; other party members
 do not see those records.
 
+### Shared-text safety
+
+When shared-text safety is enabled, we ask permission before sending shared names, notes,
+intentions and profile text to OpenAI to check for hateful language, threats and harassment.
+This includes new and pending text you have chosen to share. Global profile text may contain
+the session and history details included in your Global sharing choice. Private Nights
+reflections and the private Farm save document are not submitted for this check. We do not
+attach your account identifiers, password, account email address or raw Health samples to
+moderation requests.
+
+Permission applies to the signed-in account on that iPhone. You can stop allowing future
+checks in Settings → Privacy & data; checks already sent may finish. This does not change
+your sharing audience. A check may ask you to review your wording or require you to reword
+it. If a check is unavailable, that text is not newly shared. Automated checks can make
+mistakes, and a classification does not automatically suspend an account. Block and Report
+remain available. OpenAI describes its processing in its
+[API data controls](https://developers.openai.com/api/docs/guides/your-data).
+
 Deleting your online Slumber Party account dissolves parties you host, leaves other parties, and
 removes your Slumber Party contributions. Limited non-content security and deletion records may
 remain where reasonably needed to prevent delayed retries, secure the service, or meet legal

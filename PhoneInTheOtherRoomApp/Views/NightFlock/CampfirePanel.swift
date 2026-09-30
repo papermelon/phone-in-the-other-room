@@ -51,6 +51,7 @@ struct CampfireView: View {
                     }
                 }
         }
+        .sharedTextSafetyPrompt(social: social)
     }
 }
 

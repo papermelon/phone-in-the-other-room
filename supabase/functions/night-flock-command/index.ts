@@ -1,6 +1,7 @@
 import { handleNightFlockCommand } from "../_shared/night-flock-handlers.ts";
 import { createInvitation, decryptInvitation, invitationKeyForVersion, invitationKeyFromEnvironment, redactInvitationResult } from "../_shared/night-flock-invites.ts";
 import { authenticatedContext, serviceClient } from "../_shared/supabase.ts";
+import { moderateSharedText, nightFlockSharedText, sharedTextModerationEnvironment } from "../_shared/shared-text-moderation.ts";
 
 Deno.serve((request) => handleNightFlockCommand(request, {
   async authenticate(candidate) {
@@ -30,6 +31,27 @@ Deno.serve((request) => handleNightFlockCommand(request, {
       deleteAccount?: boolean;
       snapshot?: unknown;
     };
+  },
+  async moderate(request, callerID, payload) {
+    const texts = nightFlockSharedText(payload);
+    let checked = payload;
+    if (payload.command === "contributePastureSheep") {
+      const { data, error, status } = await serviceClient().rpc("shared_text_sheep_name", {
+        p_user_id: callerID, p_command: payload,
+      });
+      if (error) throw Object.assign(error, { status });
+      if (typeof data !== "string") throw new Error("pasture_sheep_not_owned");
+      texts.push(data);
+      checked = { ...payload, moderatedSheepName: data };
+    }
+    await moderateSharedText(request, callerID, "night-flock-command", payload.idempotencyKey, texts, {
+      ...sharedTextModerationEnvironment(),
+      async admit(signal) {
+        const { error } = await serviceClient().rpc("shared_text_moderation_admission", { p_user_id: callerID }).abortSignal(signal);
+        if (error) throw error;
+      },
+    });
+    return checked;
   },
   async prepare(payload) {
     if (payload.schemaVersion !== 4 || !["createInvite", "replaceInvite", "retrieveInvite"].includes(payload.command)) {

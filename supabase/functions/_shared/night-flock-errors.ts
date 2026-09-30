@@ -1,4 +1,11 @@
+import { SharedTextModerationError } from "./shared-text-moderation.ts";
+
 export type NightFlockErrorCode =
+  | "shared_text_consent_required"
+  | "shared_text_review_required"
+  | "shared_text_rejected"
+  | "shared_text_unavailable"
+  | "shared_text_too_large"
   | "unauthorized"
   | "linked_account_required"
   | "method_not_allowed"
@@ -48,11 +55,17 @@ export type NightFlockErrorDescriptor = {
   error: string;
   retryable: boolean;
   recovery: NightFlockRecovery;
+  reviewToken?: string;
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const safeMessages: Record<NightFlockErrorCode, string> = {
+  shared_text_consent_required: "Review shared-text safety before sharing this text.",
+  shared_text_review_required: "Please review this text before sharing it.",
+  shared_text_rejected: "This text couldn’t be shared. Please reword it without hateful language, threats or personal attacks.",
+  shared_text_unavailable: "We couldn’t check this text just now. Please retry to confirm sharing.",
+  shared_text_too_large: "There’s too much shared text to check at once. Shorten your shared profile, then try again.",
   unauthorized: "Unauthorized",
   linked_account_required: "Linked account required",
   method_not_allowed: "Method not allowed",
@@ -102,6 +115,11 @@ export function requestIDFor(value: string | null | undefined): string {
 
 export function nightFlockError(code: NightFlockErrorCode): NightFlockErrorDescriptor {
   switch (code) {
+    case "shared_text_consent_required":
+    case "shared_text_review_required":
+    case "shared_text_rejected": return { status: 422, code, error: safeMessages[code], retryable: false, recovery: null };
+    case "shared_text_too_large": return { status: 413, code, error: safeMessages[code], retryable: false, recovery: null };
+    case "shared_text_unavailable": return { status: 503, code, error: safeMessages[code], retryable: true, recovery: "retry" };
     case "unauthorized": return { status: 401, code, error: safeMessages[code], retryable: false, recovery: "authenticate" };
     case "linked_account_required": return { status: 403, code, error: safeMessages[code], retryable: false, recovery: "linkAccount" };
     case "blocked_membership":
@@ -147,7 +165,9 @@ export function nightFlockError(code: NightFlockErrorCode): NightFlockErrorDescr
 }
 
 export function classifyNightFlockError(error: unknown): NightFlockErrorDescriptor {
+  if (error instanceof SharedTextModerationError) return { ...nightFlockError(error.code), reviewToken: error.reviewToken };
   const detail = safeClassificationDetail(error);
+  if (detail.includes("shared_text_unavailable")) return nightFlockError("shared_text_unavailable");
   // Auth has already verified the caller. Rejection of the server's RPC token
   // is a backend outage, not a reason to sign the player out.
   if (/\bpgrst30[013]\b/.test(detail)) return nightFlockError("service_unavailable");

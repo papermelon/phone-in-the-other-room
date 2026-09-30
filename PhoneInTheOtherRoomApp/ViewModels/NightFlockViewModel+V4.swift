@@ -618,6 +618,7 @@ extension NightFlockViewModel {
         onResolvedNewParty: ((UUID) -> Void)? = nil
     ) {
         guard accountState == .linked, permitsNightFlockNetwork, let service else { return }
+        let owner = pastureOwner
         let attemptID = UUID()
         v4CommandAttempts.insert(attemptID)
         let acceptedNotice = NightFlockV4AcceptedCommandPresentation.notice(for: command)
@@ -637,7 +638,7 @@ extension NightFlockViewModel {
             defer { v4CommandAttempts.remove(attemptID) }
             var commandAccepted = false
             do {
-                let response = try await service.sendV4(command)
+                let response = try await service.sendV4(command, ownerID: owner)
                 guard permitsNightFlockNetwork,
                       isCurrentTransportTask(generation: generation, epoch: transportEpoch)
                 else { return }
@@ -727,8 +728,17 @@ extension NightFlockViewModel {
                     // forever by leaving the pending mutation latched.
                     pendingV4ProfileMutation = nil
                 }
+                if !commandAccepted, presentSharedTextSafetyError(error, resume: { [weak self] in
+                    self?.performV4(command, showLoading: showLoading, onSettled: onSettled,
+                        onAcceptedResponse: onAcceptedResponse, resolvedPartyIntentCommandID: resolvedPartyIntentCommandID,
+                        onResolvedNewParty: onResolvedNewParty)
+                }, cancel: { onSettled?(.failure(error)) }) {
+                    phase = .error(Self.remoteError(from: error)?.errorDescription ?? "Your text hasn’t been shared.")
+                    return
+                }
                 if !commandAccepted { onSettled?(.failure(error)) }
                 let remote = Self.remoteError(from: error)
+                if !commandAccepted, let remote { presentSharedTextRejection(remote) }
                 let uncertain = remote == nil || remote?.retryable == true
                 presentNightFlockError(
                     error, lane: .directCommand(schema: NightFlockV4Rules.schemaVersion),
@@ -736,7 +746,7 @@ extension NightFlockViewModel {
                 )
                 if pendingAuthenticationRecovery == .none {
                     if commandAccepted { phase = .error("We couldn’t refresh the party yet.") }
-                    else if uncertain { phase = .error("Refresh the party to check.") }
+                    else if uncertain, remote?.code != .sharedTextUnavailable { phase = .error("Refresh the party to check.") }
                 }
             }
         }

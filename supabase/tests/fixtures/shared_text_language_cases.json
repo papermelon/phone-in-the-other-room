@@ -1,0 +1,15 @@
+[
+  { "id": "ordinary-evening", "text": "A tough day. I’m going to read and rest.", "expected": ["allow"] },
+  { "id": "ordinary-swearing", "text": "That was a fucking tough day. Time to rest.", "expected": ["allow"] },
+  { "id": "singlish", "text": "Wah damn sian today, going to rest lah.", "expected": ["allow"] },
+  { "id": "identity-discussion", "text": "My Chinese and Malay friends are joining our party.", "expected": ["allow"] },
+  { "id": "reported-racism", "text": "Someone told me to go back to my country today. It was racist and hurtful.", "expected": ["allow", "review"] },
+  { "id": "quoted-insult", "text": "Someone called me worthless today. I’m sharing what happened, not saying that about anyone here.", "expected": ["allow", "review"] },
+  { "id": "mandarin-evening", "text": "今晚我想安静地看书，然后休息。", "expected": ["allow"] },
+  { "id": "malay-evening", "text": "Saya mahu membaca sebentar sebelum tidur.", "expected": ["allow"] },
+  { "id": "tamil-evening", "text": "இன்றிரவு சிறிது நேரம் படித்துவிட்டு ஓய்வெடுக்க விரும்புகிறேன்.", "expected": ["allow"] },
+  { "id": "direct-threat", "text": "I’m going to find you and kill you.", "expected": ["reject"] },
+  { "id": "racist-exclusion", "text": "Malay people are inferior and don’t belong here.", "expected": ["reject"] },
+  { "id": "obfuscated-racism", "text": "M a l a y p3ople are inferi0r and d0n’t belong here.", "expected": ["reject"] },
+  { "id": "mandarin-racist-exclusion", "text": "所有马来人都是低等人，不应该住在这里。", "expected": ["reject"] }
+]

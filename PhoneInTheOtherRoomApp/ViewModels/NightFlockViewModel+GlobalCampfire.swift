@@ -158,6 +158,32 @@ extension NightFlockViewModel {
                     refreshGlobalCampfire(channelID: response.channelID)
                 } catch {
                     guard pastureOwner == owner, isCurrentTransportTask(generation: generation, epoch: epoch) else { return }
+                    if presentSharedTextSafetyError(error, resume: { [weak self] in
+                        self?.drainGlobalCampfireCommands(retry: true)
+                    }, cancel: { [weak self] in
+                        guard let self else { return }
+                        var document = self.campfireDocument
+                        document.commands.removeAll { $0.id == command.id }
+                        if command.command == "profile" { self.resolvedCampfireProfile = command }
+                        _ = self.saveCampfireDocument(document)
+                        self.campfireVisibilityMessage = "Sharing paused. Edit your text before trying again."
+                    }) {
+                        campfireVisibilityMessage = Self.remoteError(from: error)?.errorDescription
+                        return
+                    }
+                    if let remote = Self.remoteError(from: error), [.sharedTextRejected, .sharedTextTooLarge].contains(remote.code) {
+                        var document = campfireDocument
+                        document.commands.removeAll { $0.id == command.id }
+                        if command.command == "profile" { resolvedCampfireProfile = command }
+                        guard saveCampfireDocument(document) else { return }
+                        campfireVisibilityMessage = remote.errorDescription
+                        presentSharedTextRejection(remote)
+                        continue
+                    }
+                    if Self.remoteError(from: error)?.code == .sharedTextUnavailable {
+                        campfireVisibilityMessage = Self.remoteError(from: error)?.errorDescription
+                        return
+                    }
                     campfireVisibilityMessage = command.command == "agreement" && command.enabled == false
                         ? "Removal is waiting to sync. The last shared session may remain until it expires."
                         : "Your Campfire change is waiting to sync. Your timer keeps running."

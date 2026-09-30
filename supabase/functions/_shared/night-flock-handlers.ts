@@ -1,13 +1,13 @@
 import { parseJsonObject } from "./http.ts";
 import {
-  NightFlockErrorDescriptor,
+  type NightFlockErrorDescriptor,
   classifyNightFlockError,
   nightFlockError,
   requestIDFor,
 } from "./night-flock-errors.ts";
 import {
-  NightFlockCommandPayload,
-  NightFlockStateContract,
+  type NightFlockCommandPayload,
+  type NightFlockStateContract,
   validateNightFlockCommand,
   validateNightFlockState,
 } from "./night-flock.ts";
@@ -26,6 +26,7 @@ export type NightFlockCommandDependencies = {
   authenticate(request: Request): Promise<NightFlockCaller>;
   execute(callerID: string, payload: NightFlockCommandPayload): Promise<NightFlockCommandResult>;
   deleteAccount(callerID: string): Promise<void>;
+  moderate?(request: Request, callerID: string, payload: NightFlockCommandPayload): Promise<NightFlockCommandPayload>;
   prepare?(payload: NightFlockCommandPayload): Promise<{
     payload: NightFlockCommandPayload;
     transform(result: NightFlockCommandResult): Promise<NightFlockCommandResult>;
@@ -62,6 +63,7 @@ function errorBody(descriptor: NightFlockErrorDescriptor, requestID: string): Re
     code: descriptor.code,
     retryable: descriptor.retryable,
     recovery: descriptor.recovery,
+    ...(descriptor.reviewToken ? { reviewToken: descriptor.reviewToken } : {}),
   }, descriptor.status, requestID);
 }
 
@@ -73,7 +75,7 @@ function elapsedBucket(startedAt: number): string {
   return "1000ms+";
 }
 
-type RequestStage = "request" | "authenticate" | "validate" | "prepare" | "read" | "execute" | "transform" | "deleteAccount" | "serialize";
+type RequestStage = "request" | "authenticate" | "validate" | "moderate" | "prepare" | "read" | "execute" | "transform" | "deleteAccount" | "serialize";
 
 class RequestTiming {
   private startedAt = performance.now();
@@ -189,10 +191,12 @@ export async function handleNightFlockCommand(
       body,
       request.headers.get("idempotency-key"),
     );
+    timing.enter("moderate");
+    const checked = dependencies.moderate ? await dependencies.moderate(request, caller.id, payload) : payload;
     timing.enter("prepare");
-    const prepared = dependencies.prepare ? await dependencies.prepare(payload) : null;
+    const prepared = dependencies.prepare ? await dependencies.prepare(checked) : null;
     timing.enter("execute");
-    const result = await dependencies.execute(caller.id, prepared?.payload ?? payload);
+    const result = await dependencies.execute(caller.id, prepared?.payload ?? checked);
     timing.enter("transform");
     const publicResult = prepared ? await prepared.transform(result) : result;
     if (result.deleteAccount) {

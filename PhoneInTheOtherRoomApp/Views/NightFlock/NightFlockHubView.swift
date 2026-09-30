@@ -24,6 +24,7 @@ struct NightFlockHubView: View {
         .toolbar(.visible, for: .navigationBar)
         .task { await viewModel.activateEntry() }
         .refreshable { await viewModel.activateEntry() }
+        .sharedTextSafetyPrompt(social: viewModel)
     }
 
     @ViewBuilder

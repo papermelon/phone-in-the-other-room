@@ -2,6 +2,58 @@ import Foundation
 import Supabase
 
 extension NightFlockViewModel {
+    func presentSharedTextRejection(_ remote: NightFlockRemoteError) {
+        guard [.sharedTextRejected, .sharedTextTooLarge].contains(remote.code), let owner = pastureOwner,
+              sharedTextSafetyPrompt == nil || sharedTextSafetyPrompt?.ownerID != owner else { return }
+        // Automatic profile/session sync can otherwise clear the inline error.
+        sharedTextSafetyResume = nil; sharedTextSafetyCancel = nil
+        sharedTextSafetyPrompt = .init(ownerID: owner, code: remote.code, reviewToken: nil, message: remote.errorDescription)
+    }
+
+    func revokeSharedTextConsent(ownerID: UUID) {
+        guard ownerID == pastureOwner, let service else { return }
+        Task { await service.revokeSharedTextConsent(ownerID: ownerID) }
+    }
+
+    @discardableResult
+    func presentSharedTextSafetyError(_ error: Error, resume: @escaping () -> Void, cancel: (() -> Void)? = nil) -> Bool {
+        guard let remote = Self.remoteError(from: error), let owner = pastureOwner,
+              remote.code == .sharedTextConsentRequired || (remote.code == .sharedTextReviewRequired && remote.reviewToken != nil) else { return false }
+        if sharedTextSafetyPrompt == nil || sharedTextSafetyPrompt?.ownerID != owner {
+            sharedTextSafetyPrompt = .init(ownerID: owner, code: remote.code, reviewToken: remote.reviewToken)
+            let generation = localSocialGeneration, epoch = transportRecoveryEpoch
+            sharedTextSafetyResume = { [weak self] in
+                guard let self, self.pastureOwner == owner, self.isCurrentTransportTask(generation: generation, epoch: epoch) else { return }
+                resume()
+            }
+            sharedTextSafetyCancel = { [weak self] in
+                guard let self, self.pastureOwner == owner, self.isCurrentTransportTask(generation: generation, epoch: epoch) else { return }
+                cancel?()
+            }
+        }
+        return true
+    }
+
+    func dismissSharedTextSafetyPrompt() {
+        let cancel = sharedTextSafetyPrompt?.ownerID == pastureOwner ? sharedTextSafetyCancel : nil
+        sharedTextSafetyPrompt = nil; sharedTextSafetyResume = nil; sharedTextSafetyCancel = nil
+        cancel?()
+    }
+
+    func confirmSharedTextSafetyPrompt() {
+        guard let prompt = sharedTextSafetyPrompt, prompt.ownerID == pastureOwner,
+              permitsNightFlockNetwork, let service else { dismissSharedTextSafetyPrompt(); return }
+        let resume = sharedTextSafetyResume
+        sharedTextSafetyPrompt = nil; sharedTextSafetyResume = nil; sharedTextSafetyCancel = nil
+        let generation = localSocialGeneration, epoch = transportRecoveryEpoch
+        Task {
+            if prompt.code == .sharedTextConsentRequired { await service.acceptSharedTextConsent(ownerID: prompt.ownerID) }
+            else if let token = prompt.reviewToken { await service.approveSharedTextReview(token: token, ownerID: prompt.ownerID) }
+            guard pastureOwner == prompt.ownerID, isCurrentTransportTask(generation: generation, epoch: epoch) else { return }
+            resume?()
+        }
+    }
+
     func presentListRefreshError(_ error: Error) {
         guard !(error is CancellationError) else { return }
         presentNightFlockError(error, lane: .snapshot(schema: 4))

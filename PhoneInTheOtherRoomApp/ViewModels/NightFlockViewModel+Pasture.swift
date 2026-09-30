@@ -101,7 +101,7 @@ extension NightFlockViewModel {
                 if !retry && pastureAttempts.contains(attempt) { continue }
                 pastureAttempts.insert(attempt)
                 do {
-                    let result = try await service.sendPasture(command)
+                    let result = try await service.sendPasture(command, ownerID: owner)
                     guard permitsNightFlockNetwork, pastureOwner == owner,
                           isCurrentTransportTask(generation: generation, epoch: transport),
                           fence == sharedHabitsFenceGeneration, !isSharedHabitsPartySuppressed(partyID) else { return }
@@ -115,15 +115,27 @@ extension NightFlockViewModel {
                     refreshV4PartyObservation(partyID, refreshListAfterward: false)
                 } catch {
                     guard generation == localSocialGeneration, pastureOwner == owner else { return }
+                    if presentSharedTextSafetyError(error, resume: { [weak self] in
+                        self?.recoverPasture(partyID: partyID, retry: true)
+                    }, cancel: { [weak self] in
+                        try? self?.pastureOutbox.remove(command.id, owner: owner)
+                        self?.pastureMessages[partyID] = "Sharing paused. Edit your text before trying again."
+                    }) {
+                        pastureMessages[partyID] = Self.remoteError(from: error)?.errorDescription
+                        return
+                    }
                     if let remote = error as? NightFlockRemoteError, !remote.retryable,
                        remote.code != .unauthorized && remote.code != .linkedAccountRequired {
                         try? pastureOutbox.remove(command.id, owner: owner)
-                        pastureMessages[partyID] = [NightFlockRemoteErrorCode.pastureSheepNotOwned, .pastureSheepAlreadyVisiting].contains(remote.code)
+                        presentSharedTextRejection(remote)
+                        pastureMessages[partyID] = [NightFlockRemoteErrorCode.pastureSheepNotOwned, .pastureSheepAlreadyVisiting, .sharedTextRejected, .sharedTextTooLarge].contains(remote.code)
                             ? remote.errorDescription : "That change is no longer available. Refresh the party before trying again."
                         pastureRefreshTokens[partyID, default: 0] += 1
                         refreshV4PartyObservation(partyID, refreshListAfterward: false)
                     } else {
-                        pastureMessages[partyID] = command.command == "publishCampfireSession" ? (command.ended == true ? "Your session ended. Sharing will retry." : "Your session is running. Sharing will retry.") : "That change hasn’t been saved. Refresh, then retry."
+                        pastureMessages[partyID] = Self.remoteError(from: error)?.code == .sharedTextUnavailable
+                            ? Self.remoteError(from: error)?.errorDescription
+                            : command.command == "publishCampfireSession" ? (command.ended == true ? "Your session ended. Sharing will retry." : "Your session is running. Sharing will retry.") : "That change hasn’t been saved. Refresh, then retry."
                     }
                     return
                 }

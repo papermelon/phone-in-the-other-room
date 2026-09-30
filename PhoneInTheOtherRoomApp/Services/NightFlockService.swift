@@ -9,14 +9,17 @@ actor NightFlockService {
     }
 
     private let provider: SupabaseClientProviding
+    private let sharedTextDefaults: UserDefaults
+    private var approvedSharedTextReview: (owner: UUID, token: String)?
     private let listReads = NightFlockListReadCoordinator()
     private var requestCount = 0
     private let decoder: JSONDecoder
     private let logger = Logger(subsystem: "com.ngawangchime.countingsheep", category: "NightFlock")
     private var v4RealtimeSubscriptions: [UUID: V4RealtimeSubscription] = [:]
 
-    init(provider: SupabaseClientProviding) {
+    init(provider: SupabaseClientProviding, defaults: UserDefaults = .standard) {
         self.provider = provider
+        sharedTextDefaults = defaults
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         self.decoder = decoder
@@ -45,14 +48,14 @@ actor NightFlockService {
         try await invokeState(schemaVersion: 2, request: NightFlockV2StateRequest(), operation: "state-v2")
     }
 
-    func sendV2(_ command: NightFlockV2Command) async throws -> NightFlockV2CommandResponse {
+    func sendV2(_ command: NightFlockV2Command, ownerID: UUID? = nil) async throws -> NightFlockV2CommandResponse {
         let request = NightFlockV2CommandRequest(command: command)
         do {
             let envelope: NightFlockV2CommandEnvelope = try await invoke(
                 "night-flock-command",
                 headers: commandHeaders(idempotencyKey: command.idempotencyKey),
                 body: request,
-                operation: "command-v2"
+                operation: "command-v2", sharedTextOwnerID: ownerID
             )
             guard envelope.schemaVersion == 2 else { throw NightFlockServiceError.unsupportedResponse }
             logSuccess(operation: "command-v2", requestID: envelope.requestID)
@@ -104,8 +107,32 @@ actor NightFlockService {
 
     func sendGlobalCampfire(_ command: GlobalCampfireCommand, ownerID: UUID) async throws -> GlobalCampfireResponse {
         let encoder = JSONEncoder(); encoder.dateEncodingStrategy = .iso8601
-        return try await provider.client().functions.invoke("campfire-global", options: FunctionInvokeOptions(
-            headers: ["X-Campfire-Owner": ownerID.uuidString.lowercased()], body: command, encoder: encoder), decoder: Self.campfireDecoder())
+        var headers = sharedTextHeaders(ownerID: ownerID)
+        headers["X-Campfire-Owner"] = ownerID.uuidString.lowercased()
+        do {
+            return try await provider.client().functions.invoke("campfire-global", options: FunctionInvokeOptions(
+                headers: headers, body: command, encoder: encoder), decoder: Self.campfireDecoder())
+        } catch { throw mapError(error, operation: "campfire-global-command") }
+    }
+
+    func acceptSharedTextConsent(ownerID: UUID) {
+        sharedTextDefaults.set(SharedTextSafety.version, forKey: SharedTextSafety.consentKey(ownerID: ownerID))
+    }
+
+    func approveSharedTextReview(token: String, ownerID: UUID) {
+        approvedSharedTextReview = (ownerID, token)
+    }
+
+    func revokeSharedTextConsent(ownerID: UUID) {
+        sharedTextDefaults.removeObject(forKey: SharedTextSafety.consentKey(ownerID: ownerID))
+        if approvedSharedTextReview?.owner == ownerID { approvedSharedTextReview = nil }
+    }
+
+    private func sharedTextHeaders(ownerID: UUID) -> [String: String] {
+        guard sharedTextDefaults.integer(forKey: SharedTextSafety.consentKey(ownerID: ownerID)) == SharedTextSafety.version else { return [:] }
+        var headers = ["X-Shared-Text-Consent": String(SharedTextSafety.version), "X-Shared-Text-Owner": ownerID.uuidString.lowercased()]
+        if let review = approvedSharedTextReview, review.owner == ownerID { headers["X-Shared-Text-Review"] = review.token }
+        return headers
     }
 
     private static func campfireDecoder() -> JSONDecoder {
@@ -122,10 +149,10 @@ actor NightFlockService {
         return decoder
     }
 
-    func sendPasture(_ command: SharedPastureCommand) async throws -> SharedPastureCommandResponse {
+    func sendPasture(_ command: SharedPastureCommand, ownerID: UUID) async throws -> SharedPastureCommandResponse {
         do {
             return try await invoke("night-flock-command", headers: commandHeaders(idempotencyKey: command.idempotencyKey),
-                                    body: command, operation: "command-pasture")
+                                    body: command, operation: "command-pasture", sharedTextOwnerID: ownerID)
         } catch { throw mapError(error, operation: "command-pasture") }
     }
 
@@ -187,14 +214,14 @@ actor NightFlockService {
         return response
     }
 
-    func sendV4(_ command: NightFlockV4Command) async throws -> NightFlockV4CommandResponse {
+    func sendV4(_ command: NightFlockV4Command, ownerID: UUID? = nil) async throws -> NightFlockV4CommandResponse {
         let request = NightFlockV4CommandRequest(command: command)
         do {
             let envelope: NightFlockV4CommandResponse = try await invoke(
                 "night-flock-command",
                 headers: commandHeaders(idempotencyKey: command.idempotencyKey),
                 body: request,
-                operation: "command-v4"
+                operation: "command-v4", sharedTextOwnerID: ownerID
             )
             guard envelope.schemaVersion == NightFlockV4Rules.schemaVersion else {
                 throw NightFlockServiceError.unsupportedResponse
@@ -354,10 +381,16 @@ actor NightFlockService {
         _ function: String,
         headers: [String: String],
         body: Body,
-        operation: String
+        operation: String,
+        sharedTextOwnerID: UUID? = nil
     ) async throws -> Response {
         let client = try provider.client()
         let isCommand = function == "night-flock-command"
+        var headers = headers
+        // Keep the initiating owner even if auth changes while this actor awaits.
+        if isCommand, let owner = sharedTextOwnerID {
+            headers.merge(sharedTextHeaders(ownerID: owner)) { _, new in new }
+        }
         if isCommand { await listReads.invalidate() }
         let startedAt = ContinuousClock.now
         requestCount += 1
@@ -366,12 +399,13 @@ actor NightFlockService {
         let logger = self.logger
         let decoder = self.decoder
         var outcome = "error"
+        let requestHeaders = headers
         defer {
             let elapsedMs = Self.milliseconds(startedAt.duration(to: .now))
             logger.info("event=requestCompleted requestID=\(requestID, privacy: .public) operation=\(operation, privacy: .public) requestNumber=\(requestNumber) elapsedMs=\(elapsedMs) outcome=\(outcome, privacy: .public)")
         }
         let execute: @Sendable () async throws -> Response = {
-            try await client.functions.invoke(function, options: FunctionInvokeOptions(headers: headers, body: body)) { data, _ in
+            try await client.functions.invoke(function, options: FunctionInvokeOptions(headers: requestHeaders, body: body)) { data, _ in
                 let decodeStartedAt = ContinuousClock.now
                 defer {
                     let decodeMs = Self.milliseconds(decodeStartedAt.duration(to: .now))

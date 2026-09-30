@@ -1,6 +1,23 @@
 import Foundation
 
+enum SharedTextSafety {
+    static let version = 1
+    static func consentKey(ownerID: UUID) -> String { "ollie.sharedTextSafety.v1.\(ownerID.uuidString.lowercased())" }
+}
+
+struct SharedTextSafetyPromptState: Equatable {
+    var ownerID: UUID
+    var code: NightFlockRemoteErrorCode
+    var reviewToken: String?
+    var message: String? = nil
+}
+
 enum NightFlockRemoteErrorCode: String, Codable, Equatable, Sendable {
+    case sharedTextConsentRequired = "shared_text_consent_required"
+    case sharedTextReviewRequired = "shared_text_review_required"
+    case sharedTextRejected = "shared_text_rejected"
+    case sharedTextUnavailable = "shared_text_unavailable"
+    case sharedTextTooLarge = "shared_text_too_large"
     case unauthorized
     case linkedAccountRequired = "linked_account_required"
     case methodNotAllowed = "method_not_allowed"
@@ -778,9 +795,15 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
     let retryable: Bool
     let recovery: NightFlockRemoteRecovery?
     let transportReason: URLError.Code?
+    let reviewToken: String?
 
     var errorDescription: String? {
         switch code {
+        case .sharedTextConsentRequired: return "Review shared-text safety before sharing this text."
+        case .sharedTextReviewRequired: return "Please review this text before sharing it."
+        case .sharedTextRejected: return "This text couldn’t be shared. Please reword it without hateful language, threats or personal attacks."
+        case .sharedTextUnavailable: return "We couldn’t check this text just now. Please retry to confirm sharing."
+        case .sharedTextTooLarge: return "There’s too much shared text to check at once. Shorten your shared profile, then try again."
         case .unauthorized: return "Reconnect the Apple account already linked to Slumber Party."
         case .linkedAccountRequired: return "Use Apple sign-in to link this account or reopen an existing Counting Sheep account."
         case .pastureSheepNotOwned: return "Save this sheep to your account before sending it to visit."
@@ -831,10 +854,11 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         ]
     }
 
-    init(statusCode: Int, code: NightFlockRemoteErrorCode, requestID: String, recovery: NightFlockRemoteRecovery? = nil, transportReason: URLError.Code? = nil) {
+    init(statusCode: Int, code: NightFlockRemoteErrorCode, requestID: String, recovery: NightFlockRemoteRecovery? = nil, transportReason: URLError.Code? = nil, reviewToken: String? = nil) {
         self.statusCode = statusCode
         self.transportReason = transportReason
         self.code = code
+        self.reviewToken = code == .sharedTextReviewRequired && reviewToken?.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil ? reviewToken : nil
         self.requestID = Self.canonicalRequestID(requestID) ?? UUID().uuidString.lowercased()
         self.retryable = Self.policy(for: code).retryable
         self.recovery = recovery ?? Self.policy(for: code).recovery
@@ -849,7 +873,7 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
             ?? legacyCode(statusCode: statusCode, detail: body["error"] as? String)
         let bodyRequestID = body["requestID"] as? String
         let requestID = canonicalRequestID(bodyRequestID) ?? canonicalRequestID(headerRequestID) ?? UUID().uuidString.lowercased()
-        return NightFlockRemoteError(statusCode: statusCode, code: code, requestID: requestID)
+        return NightFlockRemoteError(statusCode: statusCode, code: code, requestID: requestID, reviewToken: body["reviewToken"] as? String)
     }
 
     static func network(requestID: String = UUID().uuidString, reason: URLError.Code? = nil) -> NightFlockRemoteError {
@@ -887,7 +911,7 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
         case .inviteMemberConstraint, .activeInviteExists, .staleRevision: return (false, .reconcile)
         case .unsupportedSchema: return (false, .fallbackSchema)
         case .lobbyStarted, .hostPermissionRequired: return (false, .reconcile)
-        case .serviceUnavailable, .internalError, .snapshotConstructionFailed: return (true, .retry)
+        case .serviceUnavailable, .internalError, .snapshotConstructionFailed, .sharedTextUnavailable: return (true, .retry)
         case .sharedHistoryDeleted, .publicationBeforeAgreement, .agreementTimezoneMismatch: return (false, .reconcile)
         default: return (false, nil)
         }

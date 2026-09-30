@@ -57,6 +57,9 @@ final class NightFlockViewModel: ObservableObject {
     let pastureOutbox = SharedPastureOutboxService()
     var pastureAttempts: Set<String> = []
     @Published var phase: Phase
+    @Published var sharedTextSafetyPrompt: SharedTextSafetyPromptState?
+    var sharedTextSafetyResume: (() -> Void)?
+    var sharedTextSafetyCancel: (() -> Void)?
     @Published private(set) var diagnostics: NightFlockDiagnostics
     @Published private(set) var accountState: NightFlockAccountState {
         didSet {
@@ -630,9 +633,10 @@ final class NightFlockViewModel: ObservableObject {
             return NightFlockViewModel(
                 featureEnabled: false,
                 accountService: sharedAccount,
-                service: sharedProvider.map { NightFlockService(provider: $0) },
+                service: sharedProvider.map { NightFlockService(provider: $0, defaults: defaults) },
                 outbox: sharedProvider == nil ? nil : NightFlockOutboxService(defaults: defaults),
-                diagnostics: .initial(featureFlag: featureFlag, configuration: .notEvaluated)
+                diagnostics: .initial(featureFlag: featureFlag, configuration: .notEvaluated),
+                defaults: defaults
             )
         }
 
@@ -652,9 +656,10 @@ final class NightFlockViewModel: ObservableObject {
         return NightFlockViewModel(
             featureEnabled: true,
             accountService: sharedAccount ?? NightFlockAccountService(provider: provider, defaults: defaults),
-            service: NightFlockService(provider: provider),
+            service: NightFlockService(provider: provider, defaults: defaults),
             outbox: NightFlockOutboxService(defaults: defaults),
-            diagnostics: .initial(featureFlag: featureFlag, configuration: .valid)
+            diagnostics: .initial(featureFlag: featureFlag, configuration: .valid),
+            defaults: defaults
         )
     }
 
