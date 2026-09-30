@@ -313,7 +313,7 @@ final class FarmBackupViewModel: ObservableObject {
             baseRevision: state.baseRevision, operationID: UUID(), payload: payload)
         try persistence.farmSaveStore.updateBackup { $0?.pending = command }
         sync = try persistence.farmSaveStore.snapshot().backup
-        accountPresentation = .backupPending
+        if accountPresentation != .failed { accountPresentation = .backupPending }
         let receipt: FarmBackupReceipt
         do {
             receipt = try await service.send(command, owner: state.ownerID, authorization: self.transportAuthorization)
@@ -355,7 +355,9 @@ final class FarmBackupViewModel: ObservableObject {
         operationEpoch = epoch
         busy = true
         let previousPresentation = accountPresentation
-        if available { accountPresentation = .checking }
+        // Keep loaded content and actionable errors in place during background
+        // sync. Replacing them with Checking makes Profile collapse and expand.
+        if available && !signedIn { accountPresentation = .checking }
         Task {
             defer {
                 // Credential-only work must not leave a saved Farm "Checking".

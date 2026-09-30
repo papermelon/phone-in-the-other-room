@@ -53,6 +53,29 @@ final class FarmBackupViewModelTests: XCTestCase {
         XCTFail("Operation did not finish")
     }
 
+    func testSignedInSyncKeepsLoadedStatusAndRetryErrorUntilSuccess() async throws {
+        model.signedIn = true
+        model.accountPresentation = .backupConfirmed(nil)
+        model.perform { XCTAssertEqual(self.model.accountPresentation, .backupConfirmed(nil)) }
+        XCTAssertEqual(model.accountPresentation, .backupConfirmed(nil))
+        try await finish()
+
+        let remote = await service.remote
+        try persistence.farmSaveStore.updateBackup {
+            $0 = FarmBackupSync(ownerID: owner, enabled: true, generation: remote.generation,
+                baseRevision: remote.head?.id, accountSyncVersion: 1)
+        }
+        model.accountPresentation = .failed
+        model.lookup = remote
+        await service.setBeforeSend { [self] in
+            XCTAssertEqual(model.accountPresentation, .failed, "Retry must keep the error card in place until it succeeds")
+        }
+        model.perform { try await self.model.uploadIfEnabled() }
+        XCTAssertEqual(model.accountPresentation, .failed)
+        try await finish()
+        XCTAssertNotEqual(model.accountPresentation, .failed)
+    }
+
     func testChoosingAccountFarmSupersedesFailedUploadAndKeepsRecovery() async throws {
         let remote = await service.remote
         let payload = try model.payload(from: persistence.farmSaveStore.snapshot())

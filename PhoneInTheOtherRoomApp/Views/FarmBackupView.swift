@@ -139,7 +139,6 @@ struct AccountConnectionContent: View {
                             Text("Last saved \(date.formatted(date: .abbreviated, time: .shortened))")
                                 .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                         }
-                        if model.busy { SheepLoadingView() }
                         if model.needsSyncAgreement {
                             Text("Save your Farm to your account and keep it up to date across phones.").font(AppTypography.body)
                             if let notice = model.syncConnectionNotice {
@@ -208,13 +207,12 @@ struct AccountConnectionContent: View {
     }
 
     private var status: String {
-        if model.busy { return "Syncing…" }
         if model.needsSyncAgreement { return "Connect your Farm" }
         if model.accountPresentation == .failed { return "Waiting to sync" }
         if case .remoteFarm = model.accountPresentation { return "Choose your Farm" }
-        if model.hasUnsyncedChanges { return "Changes waiting to sync" }
-        if case .backupConfirmed = model.accountPresentation { return "Saved" }
-        return "Connecting your Farm"
+        // Routine saves only update the confirmed timestamp; keep the card's
+        // heading and height stable while the person reads their Profile.
+        return "Farm sync"
     }
 }
 

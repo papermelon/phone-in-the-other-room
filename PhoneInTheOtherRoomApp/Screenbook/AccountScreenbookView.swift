@@ -25,6 +25,10 @@ struct AccountScreenbookView: View {
             model.signedIn = !passwordForm
             model.accountPresentation = .backupConfirmed(ScreenbookFixtures.now(for: .configuredHome))
             let owner = UUID()
+            model.sync = FarmBackupSync(ownerID: owner, enabled: true, generation: UUID(),
+                confirmedAt: ScreenbookFixtures.now(for: .configuredHome), accountSyncVersion: 1)
+            try? model.persistence.farmSaveStore.updateBackup { $0 = model.sync }
+            model.busy = arguments.contains("-screenbook-account-syncing")
             model.credentialProfile = AccountCredentialProfile(id: owner, email: "shepherd@example.com",
                 username: arguments.contains("-screenbook-account-no-handle") ? nil : "shepherd", hasApple: true, hasEmail: false)
             if pending {

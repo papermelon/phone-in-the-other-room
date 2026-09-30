@@ -92,9 +92,10 @@ the same page. Keep the four release tabs.
 Use this hierarchy:
 
 - Shepherd identity first: display name, @username where set, and verified linked methods. Name/appearance editing and sign-in/username management are grouped below Farm status.
-- Farm status: Saved / Saving… / Waiting for connection / Needs attention, with last
-  confirmed server time. A newer local generation must not display “Saved” merely
-  because a previous upload succeeded.
+- Farm status: a stable “Farm sync” heading and last-confirmed server time during
+  routine background saves (25 September Profile direction). No expanding loading
+  animation. Actionable failures remain visible through retries until resolved.
+  A newer local generation must not display “Saved” merely because a previous upload succeeded.
 - “Sign-in and username” for adding password credentials or Apple, choosing a username, and managing recovery email.
 - “What syncs?” for concise detail; account deletion remains discoverable here and from
   Privacy & data. Advanced recovery appears only when needed or within a recovery detail.
