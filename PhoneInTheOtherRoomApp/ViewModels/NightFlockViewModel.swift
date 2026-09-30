@@ -22,6 +22,18 @@ final class NightFlockViewModel: ObservableObject {
     @Published var cachedPastureVisits: [UUID: Set<UUID>] = [:]
     @Published var campfirePushStatus = ""
     @Published var campfireDocument = CampfireVisibilityDocument()
+    @Published var socialInboxEvents: [SocialInboxEvent] = []
+    @Published var socialUnreadCount = 0
+    @Published var socialPendingInvitations = 0
+    @Published var socialInboxCursor: String?
+    @Published var socialInboxError: String?
+    @Published var socialInboxLoading = false
+    @Published var socialPreferences = SocialNotificationPreferences()
+    @Published var supportDetails: [SocialSource: SocialSourceDetail] = [:]
+    @Published var supportErrors: [SocialSource: String] = [:]
+    @Published var supportSending: Set<SocialSource> = []
+    var socialInboxTask: Task<Void, Never>?
+    var supportReplayTask: Task<Void, Never>?
     @Published var campfireVisibilityMessage: String?
     @Published var globalCampfireState: GlobalCampfireState?
     @Published var globalCampfireLoading = false
@@ -106,6 +118,8 @@ final class NightFlockViewModel: ObservableObject {
     @Published var partyConnections: SlumberPartyConnections?
     @Published var partyConnectionsError: String?
     @Published var partyConnectionsBusy = false
+    @Published var partySearchBusy = false
+    @Published var partySearchError: String?
     var partyConnectionsAttemptID: UUID?
     @Published var v4Acquisition = SlumberPartyAcquisition()
     @Published var v4CommandAttempts: Set<UUID> = []

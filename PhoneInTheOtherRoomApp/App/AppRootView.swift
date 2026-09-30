@@ -17,8 +17,11 @@ struct AppRootView: View {
         }
         .animation(AppMotion.navigation, value: viewModel.rootRoute)
         .onOpenURL { url in
-            guard QuietNoteText.isEditorURL(url) else { return }
-            showQuietNoteEditor = true
+            if QuietNoteText.isEditorURL(url) { showQuietNoteEditor = true }
+            else { openPartyLink(url) }
+        }
+        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
+            if let url = activity.webpageURL { openPartyLink(url) }
         }
         .sheet(isPresented: $showQuietNoteEditor) {
             NavigationStack {
@@ -26,6 +29,13 @@ struct AppRootView: View {
                     .environmentObject(viewModel)
             }
         }
+    }
+
+    private func openPartyLink(_ url: URL) {
+        guard let code = SlumberPartyLink.code(in: url) else { return }
+        UserDefaults.standard.set(code, forKey: SlumberPartyLink.pendingCodeKey)
+        viewModel.nightFlockViewModel.prefersJoinEntry = true
+        NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: "join")
     }
 }
 

@@ -2,6 +2,7 @@ import { serviceClient } from "../_shared/supabase.ts";
 import { sendCampfireAlert } from "../_shared/apns.ts";
 import { campfireAlertPayload } from "../_shared/campfire-alerts.ts";
 import { json } from "../_shared/http.ts";
+import { dispatchSocialAlerts } from "../_shared/social-alerts.ts";
 
 Deno.serve(async request => {
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -36,5 +37,6 @@ Deno.serve(async request => {
       if (!finishError) processed++;
     } catch { /* The lease expires; bounded retries preserve the original event. */ }
   }));
-  return json({ processed });
+  try { return json({ processed, socialProcessed: await dispatchSocialAlerts() }); }
+  catch { return json({ processed, error: "Could not process inbox alerts" }, 503); }
 });

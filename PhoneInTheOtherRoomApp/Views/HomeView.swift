@@ -13,6 +13,7 @@ struct HomeView: View {
     @State private var partyOriginTab: MainAppTab?
     @State private var nightFlockPartyID: UUID?
     @State private var showsUnifiedCampfire = false
+    @State private var showsSocialInbox = false
     @State private var campfirePartyID: UUID?
     @State private var returnsToCampfireAfterStart = false
     @State private var pendingCampfireStart: NightFlockV4ActivityKind?
@@ -78,6 +79,10 @@ struct HomeView: View {
                         viewModel.applyShortcutPreparationIfNeeded()
                         routePendingNotificationIfNeeded()
                         restoreFirstRunSurface()
+                        showsSocialInbox = viewModel.nightFlockViewModel.pendingSocialRoute != nil
+                        if UserDefaults.standard.string(forKey: SlumberPartyLink.pendingCodeKey) != nil {
+                            NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: "join")
+                        }
                         if let raw = UserDefaults.standard.string(forKey: CampfireNotificationService.pendingPartyKey), let party = UUID(uuidString: raw) {
                             UserDefaults.standard.removeObject(forKey: CampfireNotificationService.pendingPartyKey)
                             NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: party)
@@ -107,6 +112,18 @@ struct HomeView: View {
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowCampfire)) { notification in
             campfirePartyID = notification.object as? UUID
             showsUnifiedCampfire = true
+        }
+        .sheet(isPresented: $showsSocialInbox) {
+            NavigationStack {
+                SocialInboxView(social: viewModel.nightFlockViewModel)
+                    .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { showsSocialInbox = false } } }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowSocialInbox)) { _ in
+            showsSocialInbox = viewModel.nightFlockViewModel.pendingSocialRoute != nil
+        }
+        .onChange(of: viewModel.nightFlockViewModel.v4ListState?.socialInboxVersion) { _, _ in
+            if viewModel.nightFlockViewModel.pendingSocialRoute != nil { showsSocialInbox = true }
         }
         .onReceive(NotificationCenter.default.publisher(for: .countingSheepShowFarm)) { _ in
             select(.farm)

@@ -55,6 +55,10 @@ targets:
         NSHealthShareUsageDescription: Counting Sheep reads sleep times, duration, and available stages only after you choose Apple Health, for optional context beside Nights. Counting Sheep asks separately before any derived summary is shared.
         NSHealthUpdateUsageDescription: Counting Sheep does not add or change Apple Health data; it only reads sleep information you choose to share.
         NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLName: com.ngawangchime.countingsheep
+            CFBundleURLSchemes:
+              - countingsheep
         SUPABASE_URL: "$(SUPABASE_URL)"
         SUPABASE_PUBLISHABLE_KEY: "$(SUPABASE_PUBLISHABLE_KEY)"
         SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED: "$(SUPABASE_LIVE_ACTIVITY_PUSH_ENABLED)"

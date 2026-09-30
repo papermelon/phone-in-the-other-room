@@ -24,7 +24,7 @@ final class CampfireVisibilityStore {
         return CampfireVisibilityDocument()
     }
     func save(_ document: CampfireVisibilityDocument, owner: UUID) throws {
-        guard document.commands.count <= 64 else { throw CocoaError(.fileWriteOutOfSpace) }
+        guard document.commands.count + (document.supportCommands?.count ?? 0) <= 64 else { throw CocoaError(.fileWriteOutOfSpace) }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let data = try JSONEncoder().encode(document)
         let file = url(owner)

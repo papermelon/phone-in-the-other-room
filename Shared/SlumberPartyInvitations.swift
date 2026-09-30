@@ -27,6 +27,8 @@ struct SlumberPartyInvitation: Decodable, Equatable, Identifiable, Sendable {
     var isIncoming: Bool
     var canRevoke: Bool
     var expiresAt: Date
+    var senderHandle: String? = nil
+    var memberCount: Int? = nil
 }
 
 struct SlumberPartyConnections: Decodable, Equatable, Sendable {
@@ -48,9 +50,11 @@ enum SlumberPartyInvitationSearch {
 }
 
 enum SlumberPartyConnectionError: Error, LocalizedError {
-    case unavailable, full, limit, rateLimited, offline
+    case unavailable, full, limit, rateLimited, offline, account, invalid
     var errorDescription: String? {
         switch self {
+        case .account: return "Sign in again to use invitations."
+        case .invalid: return "Enter the complete handle: 3–24 letters, numbers, or underscores, starting with a letter."
         case .unavailable: return "This invitation is no longer available. Refresh your invitations to check again."
         case .full: return "This party has eight members. A place needs to open before someone else can join."
         case .limit: return "You’re already in five Slumber Parties. Leave one before joining another."

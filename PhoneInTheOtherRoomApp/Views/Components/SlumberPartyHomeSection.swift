@@ -41,6 +41,9 @@ struct SlumberPartyHomeSection: View {
         PixelCard {
             VStack(alignment: .leading, spacing: AppSpacing.sm) {
                 header
+                if viewModel.supportsSocialInbox {
+                    SocialInboxButton(social: viewModel, openParty: { openParty($0) })
+                }
                 if parties.isEmpty {
                     emptyState
                 } else if let selectedParty {
@@ -120,7 +123,7 @@ struct SlumberPartyHomeSection: View {
 
     private var emptyState: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Start or join a private, long-lived group. Seven-night rounds organize progress and rewards.")
+            Text("A private group for you and people you know. Two people make a party, and your group stays together between rounds.")
                 .font(AppTypography.body)
                 .foregroundStyle(AppColors.secondaryText)
                 .fixedSize(horizontal: false, vertical: true)

@@ -35,20 +35,24 @@ enum SlumberPartyHomePresentation {
     ) -> [SlumberPartyHomeHighlight] {
         let currentMemberIDs = Set(party.memberships.map(\.memberID))
         let shared = freshSharedActivities(in: party, at: date)
-        let encouragements = shared.compactMap { activity -> SlumberPartyHomeHighlight? in
+        let cheerActivities = party.myMemberID.map { SlumberPartySharedFarmRules.updates(for: $0, in: party) } ?? []
+        let encouragements = cheerActivities.compactMap { activity -> SlumberPartyHomeHighlight? in
             guard activity.memberID == party.myMemberID,
                   activity.mySourceEventID != nil
             else { return nil }
-            let count = party.sharedCheers
+            let receipts = SlumberPartySharedFarmRules.receipts(for: activity.activityID, in: party)
+            let arrivedAt = receipts.map(\.acceptedAt).max() ?? activity.occurredAt
+            guard isFresh(arrivedAt, at: date) else { return nil }
+            let count = receipts.isEmpty ? party.sharedCheers
                 .filter { $0.activityID == activity.activityID && !$0.sentByMe }
-                .reduce(0) { $0 + max(0, $1.count) }
+                .reduce(0) { $0 + max(0, $1.count) } : Set(receipts.map(\.senderMemberID)).count
             guard count > 0 else { return nil }
             return SlumberPartyHomeHighlight(
                 id: .receivedEncouragement(activity.activityID),
                 title: count == 1 ? "1 warm cheer for your \(modeTitle(activity.kind))." : "\(count) warm cheers for your \(modeTitle(activity.kind)).",
                 detail: "A recent shared moment from this party.",
-                occurredAt: activity.occurredAt,
-                expiresAt: activity.occurredAt.addingTimeInterval(recentHighlightInterval)
+                occurredAt: arrivedAt,
+                expiresAt: arrivedAt.addingTimeInterval(recentHighlightInterval)
             )
         }
         let sharedCompletions = shared.compactMap { completionHighlight(for: $0, in: party) }

@@ -18,6 +18,8 @@ struct PhoneInTheOtherRoomApp: App {
                 CampfireBuddiesNativeFixture()
             } else if ProcessInfo.processInfo.arguments.contains("--shop-wardrobe-qa") {
                 ShopWardrobeNativeQA()
+            } else if ProcessInfo.processInfo.arguments.contains("--social-inbox-fixture") {
+                SocialInboxNativeFixture()
             } else if ProcessInfo.processInfo.arguments.contains("--slumber-farm-fixture") {
                 SlumberPartySharedFarmNativeFixture()
             } else if ProcessInfo.processInfo.arguments.contains("--shared-farm-prototype") {

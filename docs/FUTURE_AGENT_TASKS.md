@@ -1,5 +1,22 @@
 # Future Agent Tasks — Prioritised Backlog
 
+## Social invitations, inbox, and meaningful cheers — 29 September 2026
+
+- [Plan and researched wording](plans/slumber-party-social-upgrade-2026-09-28.md); [implementation and deployment evidence](evidence/social-upgrade-20260929/validation.md). Exact handle search, clearer private-group invitations, Home Inbox, contextual nine-message vocabulary, durable retries, arrival ordering and optional account-level push are implemented. Both backend migrations and the existing dispatcher update are deployed; native distribution remains separate.
+- Finish website validation/publication: staged 3.4.1 has founder-confirmed invitation rendering, Copy, incomplete-link and narrow-layout checks, plus correct association JSON after the [static-file repair](evidence/social-upgrade-20260929/hosting/README.md). Requested brand consistency is now installed on staging in [theme 3.4.2](evidence/social-upgrade-20260930/website-branding.md), with a prepared ZIP and passing static browser checks at 320/390/768/1440px. The author metadata update (Ngawang Chime) is packaged as 3.4.4 (not uploaded); install it on staging and verify WordPress asset loading, interactions, homepage navigation and association HTTP headers/status/redirects before confirming live scope, which includes the separate document-root file. Browser-tool staging access remains blocked. Verify apex/www association endpoints serve JSON directly and signed physical-device links survive signed-out onboarding without joining automatically.
+- After app distribution, perform two-account physical checks: invitation before membership, join/decline/revoke, newly arriving cheer on an older update, send/remove/retry across relaunch, account switching, APNs disabled/quiet-hour suppression, source withdrawal/block, and Global anonymity. Check VoiceOver speech and the full large-text invitation/search flow. Simulator and SQL evidence do not prove physical APNs or Universal Link delivery.
+- Validate the nine phrases with target users; research informs clear intent and non-controlling tone but does not prove one phrase is best. New messages stay in the phone Inbox; no new Watch/Live Activity support-message transport was added.
+
+## Automatic Wind Down monitor cancellation — 26 September 2026
+
+- [Root-cause repair](plans/wind-down-loading-repair-2026-09-21.md#26-september-background-monitor-cancellation): empty Brief Access cleanup lists cancelled all DeviceActivity registrations. App and extension now skip empty cancellation; regression spies reproduce Apple's empty-list semantics.
+- Installed build 63 was inspected read-only; automatic start/shielding were enabled, but last night's boundary was absent from retained diagnostics. Distribute the fix with authorization, then verify locked/closed starts, actual selected-app blocking, Home recovery, account refresh across the boundary, and a second unattended night. No physical enforcement pass is claimed.
+
+## Quiet Profile sync — 25 September 2026
+
+- Profile keeps automatic Farm sync. Routine saves use a stable “Farm sync” heading and last-confirmed-save timestamp, without inserting a loading animation. Loaded status and retry errors remain in place while requests run; successful retries can clear resolved errors.
+- After distribution, verify Profile holds its scroll position during repeated real account saves and failed retries. Initial sign-in, consent and actionable failures still show their relevant feedback.
+
 ## Account Farm default and queued-upload recovery — 25 September 2026
 
 - Founder clarified that the account Farm is the default, superseding the 24 September routine branch-choice direction. Sign-in/retry now archives divergent phone progress and loads the verified account head. Explicit account selection can supersede a failed queued upload, using the same atomic activation path and automatic sync metadata. Retry reads durable sync state rather than a stale UI snapshot.

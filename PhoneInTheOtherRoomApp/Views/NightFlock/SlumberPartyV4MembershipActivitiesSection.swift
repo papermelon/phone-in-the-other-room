@@ -146,6 +146,10 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
                     Text(cheerSummary(cheers))
                         .font(AppTypography.caption)
                         .foregroundStyle(AppColors.grass)
+                } else if !isYou && viewModel.supportsSocialInbox {
+                    SupportMessageControl(social: viewModel, source: .init(
+                        kind: membershipActivities.contains(where: { $0.activityID == activityID }) ? "activity" : "round",
+                        id: activityID, partyID: party.summary.partyID))
                 } else if !isYou {
                     Text("Send a quiet cheer")
                         .font(AppTypography.caption.weight(.semibold))
@@ -157,10 +161,6 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
                         Text("Your cheer isn’t confirmed. It’s safe to retry.")
                             .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                     }
-                    Text(party.updateCheerReceiptVersion == 1
-                        ? "Accepted means saved by Slumber Party. App received means it reached their app; it doesn’t mean they saw it."
-                        : "Accepted means saved by Slumber Party. This server doesn’t confirm receipt by their app.")
-                        .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                 }
                 SlumberPartyUpdateCheerReceiptsView(viewModel: viewModel, party: party, activityID: activityID)
             }
@@ -212,10 +212,10 @@ struct SlumberPartyV4MembershipActivitiesSection: View {
         state: NightFlockV4CheerSendState?,
         sent: Bool
     ) -> String {
-        if state == .pending { return "Pending…" }
-        if sent { return "Accepted" }
-        if state == .failed { return "Try again" }
-        return "\(cheerTitle(cheer)) \(count)"
+        if state == .pending { return "\(cheerTitle(cheer)) · Sending…" }
+        if sent { return "\(cheerTitle(cheer)) · Sent ✓" }
+        if state == .failed { return "\(cheerTitle(cheer)) · Retry" }
+        return count > 0 ? "\(cheerTitle(cheer)) · \(count)" : cheerTitle(cheer)
     }
 
     private func cheerSummary(_ cheers: [NightFlockV4CheerSummary]) -> String {

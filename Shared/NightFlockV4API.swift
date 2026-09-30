@@ -192,6 +192,7 @@ struct NightFlockV4ListStateResponse: Decodable, Equatable, Sendable {
     var profile: CountingSheepUserProfile?
     var grantInbox: [NightFlockV4GrantInboxItem]
     var directInvitationsVersion: Int? = nil
+    var socialInboxVersion: Int? = nil
     var profileHeadShapeVersion: Int? = nil
     var profileWardrobeVersion: Int? = nil
     var profileAvatarVersion: Int?
@@ -203,7 +204,7 @@ struct NightFlockV4ListStateResponse: Decodable, Equatable, Sendable {
     var sharedRoutinePlansVersion: Int?
     var retainedSharedHabitParties: [NightFlockRetainedSharedHabitParty]
 
-    private enum CodingKeys: String, CodingKey { case schemaVersion, parties, profile, grantInbox, directInvitationsVersion, profileHeadShapeVersion, profileWardrobeVersion, profileAvatarVersion, sharedHabitsVersion, sharedRoutinePlansVersion, retainedSharedHabitParties }
+    private enum CodingKeys: String, CodingKey { case schemaVersion, parties, profile, grantInbox, directInvitationsVersion, socialInboxVersion, profileHeadShapeVersion, profileWardrobeVersion, profileAvatarVersion, sharedHabitsVersion, sharedRoutinePlansVersion, retainedSharedHabitParties }
 
     init(
         parties: [NightFlockV4PartySummary],
@@ -230,6 +231,7 @@ struct NightFlockV4ListStateResponse: Decodable, Equatable, Sendable {
         profile = try container.decodeIfPresent(CountingSheepUserProfile.self, forKey: .profile)
         grantInbox = try container.decodeIfPresent([NightFlockV4GrantInboxItem].self, forKey: .grantInbox) ?? []
         directInvitationsVersion = try container.decodeIfPresent(Int.self, forKey: .directInvitationsVersion)
+        socialInboxVersion = try container.decodeIfPresent(Int.self, forKey: .socialInboxVersion)
         profileHeadShapeVersion = try container.decodeIfPresent(Int.self, forKey: .profileHeadShapeVersion)
         profileWardrobeVersion = try container.decodeIfPresent(Int.self, forKey: .profileWardrobeVersion)
         profileAvatarVersion = try container.decodeIfPresent(Int.self, forKey: .profileAvatarVersion)

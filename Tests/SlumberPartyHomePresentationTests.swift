@@ -177,6 +177,22 @@ final class SlumberPartyHomePresentationTests: XCTestCase {
         )
     }
 
+    func testFreshCheerOnOlderOwnedActivityUsesArrivalAndCountsPeopleOnce() {
+        let partyID = UUID(), me = UUID(), sender = UUID()
+        let activity = sharedActivity(partyID: partyID, memberID: me, status: .completed, kind: .windDown,
+            minutes: 20, occurredAt: now.addingTimeInterval(-3 * 86400), sourceID: UUID())
+        var detail = party(partyID: partyID, myMemberID: me,
+            members: [member(me, name: "Me"), member(sender, name: "Moss")], sharedActivities: [activity])
+        detail.updateCheerReceipts = [NightFlockV4Cheer.warmWave, .moonGlow].map {
+            .init(reactionID: UUID(), activityID: activity.id, senderMemberID: sender, recipientMemberID: me,
+                  cheer: $0, acceptedAt: now.addingTimeInterval(-30))
+        }
+        let highlight = SlumberPartyHomePresentation.highlight(in: detail, preserving: nil, at: now)
+        XCTAssertEqual(highlight?.id, .receivedEncouragement(activity.id))
+        XCTAssertEqual(highlight?.title, "1 warm cheer for your Wind Down.")
+        XCTAssertEqual(highlight?.occurredAt, now.addingTimeInterval(-30))
+    }
+
     func testHighlightSelectedAfterExpiryRemainsStableAcrossLaterDetailRefresh() {
         let partyID = UUID()
         let memberID = UUID()
@@ -363,7 +379,7 @@ final class SlumberPartyHomePresentationTests: XCTestCase {
     }
 
     private func member(_ id: UUID, name: String) -> NightFlockV4Membership {
-        .init(memberID: id, profile: .init(displayName: name), role: .member, joinedAt: now)
+        .init(memberID: id, profile: .init(displayName: name), role: .member, joinedAt: now.addingTimeInterval(-10 * 86400))
     }
 
     private func sharedActivity(

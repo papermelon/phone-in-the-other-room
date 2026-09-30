@@ -88,6 +88,8 @@ struct FarmBackupView: View {
                 .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
             Button("Copy handle") { UIPasteboard.general.string = "@\(handle)" }
                 .buttonStyle(AccountTextButtonStyle())
+            ShareLink(item: "@\(handle)") { Label("Share handle", systemImage: "square.and.arrow.up") }
+                .buttonStyle(AccountTextButtonStyle())
         } else if model.credentialProfile?.usernameLookupSucceeded == true {
             Text("Choose your unique handle so people can invite you to a Slumber Party.")
                 .font(AppTypography.body)

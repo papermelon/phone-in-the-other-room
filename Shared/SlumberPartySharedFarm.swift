@@ -74,6 +74,10 @@ enum SlumberPartySharedFarmRules {
         guard let me = party.myMemberID else { return [] }
         return updates(for: me, in: party).filter { update in
             receipts(for: update.id, in: party).contains { $0.recipientMemberID == me }
+        }.sorted {
+            let left = receipts(for: $0.id, in: party).map(\.acceptedAt).max() ?? .distantPast
+            let right = receipts(for: $1.id, in: party).map(\.acceptedAt).max() ?? .distantPast
+            return left == right ? $0.id.uuidString < $1.id.uuidString : left > right
         }
     }
 

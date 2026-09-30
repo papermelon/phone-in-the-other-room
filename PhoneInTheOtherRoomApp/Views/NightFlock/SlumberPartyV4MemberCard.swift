@@ -20,6 +20,7 @@ struct SlumberPartyV4MemberCard: View {
     var showsSharedHabitMetrics = false
     var showsSocialAvatar = false
     var showsActivitySummary = true
+    var support: AnyView? = nil
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -90,8 +91,9 @@ struct SlumberPartyV4MemberCard: View {
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.grass)
             }
-            if !isYou, presentation.canSendLiveCheer, let onLiveCheer {
-                liveCheerMenu(onLiveCheer)
+            if !isYou, presentation.canSendLiveCheer {
+                if let support { support }
+                else if let onLiveCheer { liveCheerMenu(onLiveCheer) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

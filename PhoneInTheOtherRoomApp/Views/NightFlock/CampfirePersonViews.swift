@@ -31,7 +31,8 @@ struct CampfirePrivatePersonView: View {
                                     now: date, canJoin: !app.isRunning, isSending: social.pastureSending.contains(partyID), showsMemberName: false,
                                     onJoin: { onJoin(buddy.kind) }, onAction: { action, outcome, note in
                                         social.sendCampfireAction(action, session: buddy, partyID: partyID, outcome: outcome, reflection: note)
-                                    })
+                                    }, support: social.supportsSocialInbox ? AnyView(SupportMessageControl(social: social,
+                                        source: .init(kind: "campfire", id: sourceID, partyID: partyID, memberID: memberID))) : nil)
                             } else if let session = party.pasture?.campfire?.sessions.first(where: { $0.id == sourceID && $0.memberID == memberID }) {
                                 Text(session.title).font(AppTypography.headline)
                                 Text(current != nil ? "Planned until \(session.expiresAt.formatted(date: .omitted, time: .shortened))" : "Session ended")
@@ -91,6 +92,9 @@ struct CampfirePublicPersonView: View {
                                     Button("Start my own \(person.kind == .windDown ? "Wind Down" : "Phone Away")") { onJoin(person.kind) }
                                         .buttonStyle(PixelPrimaryButtonStyle())
                                 }
+                                if social.supportsSocialInbox {
+                                    SupportMessageControl(social: social, source: .init(kind: "global", id: person.id))
+                                } else {
                                 let pending = social.campfireDocument.commands.contains { $0.command == "encourage" && $0.targetID == person.id }
                                 Button(person.encouragedByMe ? "Encouragement sent" : pending ? "Waiting to send" : "Send encouragement") {
                                     social.globalCampfireAction("encourage", participant: person)
@@ -98,6 +102,7 @@ struct CampfirePublicPersonView: View {
                                     .disabled(person.encouragedByMe || pending)
                                 if pending && social.campfireVisibilityMessage != nil {
                                     Button("Try sending again") { social.drainGlobalCampfireCommands(retry: true) }.frame(minHeight: 44)
+                                }
                                 }
                             }
                             if let message = social.campfireVisibilityMessage { Text(message).font(AppTypography.caption) }

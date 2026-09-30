@@ -14,16 +14,8 @@ struct SlumberPartyUpdateCheerReceiptsView: View {
                     let title = receipt.cheer == .warmWave ? "Warm wave" : receipt.cheer == .moonGlow ? "Moon glow" : "Paw print"
                     Text("\(sender) · \(title)")
                         .font(AppTypography.caption.weight(.semibold))
-                    Text(receipt.receivedByAppAt == nil ? "Accepted by Slumber Party" : "Received by the recipient’s app")
+                    Text("Received \(receipt.acceptedAt.formatted(.relative(presentation: .named, unitsStyle: .abbreviated)))")
                         .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
-                }
-                if receipts.contains(where: { $0.recipientMemberID == party.myMemberID && $0.receivedByAppAt == nil }) {
-                    Button(receipts.contains(where: { viewModel.updateCheerAcknowledgements[$0.id] == .pending }) ? "Confirming app receipt…" : "Retry app confirmation") {
-                        viewModel.acknowledgeUpdateCheers(partyID: party.summary.partyID, activityID: activityID)
-                    }
-                    .disabled(receipts.contains { viewModel.updateCheerAcknowledgements[$0.id] == .pending })
-                    .frame(minHeight: 44)
-                    .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 }
             }
             .task(id: receipts.map(\.reactionID)) {

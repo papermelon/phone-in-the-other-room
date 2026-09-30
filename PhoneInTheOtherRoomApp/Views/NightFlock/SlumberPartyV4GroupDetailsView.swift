@@ -327,8 +327,9 @@ struct SlumberPartyV4GroupDetailsView: View {
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .buttonStyle(PixelChipButtonStyle(isSelected: false))
-            ShareLink(item: code, subject: Text("Slumber Party invitation")) {
-                Label("Share code", systemImage: "square.and.arrow.up")
+            ShareLink(item: SlumberPartyLink.url(code: code)?.absoluteString ?? code, subject: Text("Slumber Party invitation"),
+                      message: Text("Join my Slumber Party in Counting Sheep. Invitation code: \(code)")) {
+                Label("Share invitation", systemImage: "square.and.arrow.up")
             }
             .frame(maxWidth: .infinity, minHeight: 44)
             .buttonStyle(PixelChipButtonStyle(isSelected: false))

@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["4KZQPZR47B.com.ngawangchime.countingsheep"],
+        "components": [
+          {
+            "/": "/invite/*",
+            "comment": "Review a Slumber Party invitation"
+          }
+        ]
+      }
+    ]
+  }
+}

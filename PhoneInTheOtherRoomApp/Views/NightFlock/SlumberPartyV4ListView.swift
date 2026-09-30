@@ -160,6 +160,12 @@ struct SlumberPartyV4ListView: View {
                     detail: warmNotice
                 )
             }
+            if viewModel.supportsSocialInbox { SocialInboxButton(social: viewModel) }
+            if viewModel.supportsDirectInvitations { SlumberPartyInvitationInbox(social: viewModel) }
+            if viewModel.campfireDocument.partyAcquisition?.intent != nil {
+                Button("Check previous party request") { viewModel.recoverPartyAcquisition() }
+                    .buttonStyle(PixelChipButtonStyle(isSelected: false)).disabled(viewModel.v4Acquisition.isBusy)
+            }
             if viewModel.slumberParties.isEmpty {
                 emptyState
             } else {
@@ -173,7 +179,6 @@ struct SlumberPartyV4ListView: View {
                 }
                 acquisitionDisclosure
             }
-            if viewModel.supportsDirectInvitations { SlumberPartyInvitationInbox(social: viewModel) }
             accountCard
         }
         .onChange(of: viewModel.v4Acquisition.acceptedPartyID) { _, partyID in
@@ -284,6 +289,12 @@ struct SlumberPartyV4ListView: View {
     }
 
     private func consumePreferredEntry() {
+        if let code = UserDefaults.standard.string(forKey: SlumberPartyLink.pendingCodeKey) {
+            invitationCode = code
+            acquisitionEntry = .join
+            viewModel.prefersJoinEntry = false
+            return
+        }
         guard viewModel.prefersJoinEntry else { return }
         acquisitionEntry = .join
         viewModel.prefersJoinEntry = false
@@ -295,7 +306,7 @@ struct SlumberPartyV4ListView: View {
                 Text("YOUR SLUMBER PARTIES")
                     .font(pixelFont(.caption))
                     .foregroundStyle(AppColors.grass)
-                Text("Up to \(NightFlockV4Rules.maximumConcurrentParties) long-lived groups can each run fixed seven-night rounds.")
+                Text("Private groups for you and people you know. Your party stays together between rounds.")
                     .font(AppTypography.caption)
                     .foregroundStyle(AppColors.secondaryText)
                     .fixedSize(horizontal: false, vertical: true)

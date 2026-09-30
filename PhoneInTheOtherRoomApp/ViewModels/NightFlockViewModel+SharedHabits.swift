@@ -239,7 +239,7 @@ extension NightFlockViewModel {
             let staged = await outbox.stageSharedHabitsJoinAgreementIntent(commandID: commandID, timeZoneIdentifier: timeZoneIdentifier, epoch: generation)
             guard let self, self.isCurrentLocalSocialGeneration(generation) else { return }
             guard staged else {
-                self.v4Acquisition.finish()
+                self.finishPartyAcquisition()
                 self.phase = .error("Your agreement couldn’t be saved on this iPhone. Please try again.")
                 return
             }

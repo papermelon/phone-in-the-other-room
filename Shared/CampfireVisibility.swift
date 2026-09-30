@@ -208,6 +208,8 @@ struct CampfireVisibilityDocument: Codable, Equatable {
     var publicName = ""
     var appearance = PublicCampfireAppearance()
     var commands: [GlobalCampfireCommand] = []
+    var supportCommands: [PendingSupportMessage]? = nil
+    var partyAcquisition: SlumberPartyAcquisition? = nil
 
     mutating func repairWithdrawals(for state: GlobalCampfireState) -> Set<String> {
         guard state.isSupported, state.profileVersion == nil else { return [] }

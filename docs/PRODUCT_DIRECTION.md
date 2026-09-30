@@ -264,6 +264,8 @@ is not selectable until its complete fitted animation pack is approved.
 
 ## Slumber Party
 
+29 September social upgrade: Slumber Party is an ongoing private group, including two-person groups; inviting someone is explicitly inviting them to a named party. Home Inbox holds invitations and source-linked encouragement, with party-scoped For you entry points. Nine context-appropriate, readable messages replace decorative gestures for capable clients; historic phrases remain unchanged. Push is optional, quiet-hour aware, and separately opt-in for Global cheers. Invitation links only open review; joining and sharing still require agreement. The founder authorized implementation, Associated Domains for countingsheepproject.com/www, and backend deployment after validation. See the [current plan](plans/slumber-party-social-upgrade-2026-09-28.md) and [rollout evidence](evidence/social-upgrade-20260929/validation.md) for deployed versus pending states.
+
 21 September founder-authorized [consent and invitation repair](plans/slumber-party-repair-2026-09-21.md): one collapsible terms disclosure, visible creation/join and agreement confirmation, exact handle/user-ID invitations with an incoming invitation list, and a shared animated sheep for loading. This authorizes narrow account lookup for inviting known people; parties remain private. Codes become a compatibility fallback. Search and invitations require the advertised backend capability. Source, local validation and production activation are recorded separately.
 
 20 September [readable Campfire plans and organic seating](plans/campfire-readable-plans-and-organic-seating-2026-09-20.md): the authorized native refinement replaces the uniform ellipse with stable asymmetric seats and local facing variation. Short shared plans wrap; longer plans use View plan and open the complete permitted text in the existing person sheet/list. Person sheets lead with plan and actions, followed by expandable profile/Farm/history. Local validation is recorded separately from deployment and physical acceptance.
@@ -287,8 +289,7 @@ optional return check-ins and opt-in party notifications under agreement version
 this iteration’s backend and push configuration were [deployed and verified](evidence/campfire-buddies-deploy-20260913/deployment.md); updated app distribution and physical notification receipt remain pending. Default Wind Down validity ends at planned wake, Phone Away at
 its planned end, with terminal precedence and a 24-hour ceiling. Temporary gathering positions
 are distinct and never overwrite saved arrangements. Routine Slumber Party refreshes keep existing content in place without inserting a loading banner on Home or the party screen. Initial loading remains visible; refresh feedback fits inside the existing refresh control, and failures retain recovery guidance.
-Realtime updates have a 20-second fallback
-refresh while the party screen is visible in the foreground. The base version 1 production backend was deployed on
+Realtime signals, foreground entry, explicit refresh and completed mutations refresh visible state. There is no recurring party-screen polling fallback. The base version 1 production backend was deployed on
 13 September; [rollout evidence](evidence/campfire-deploy-20260913/deployment.md). Device acceptance
 and updated app distribution remain pending. See
 [current campfire contract](plans/campfire-implementation-2026-09-13.md).

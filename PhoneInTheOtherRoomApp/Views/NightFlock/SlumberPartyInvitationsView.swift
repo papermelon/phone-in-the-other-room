@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SlumberPartyInvitationInbox: View {
     @ObservedObject var social: NightFlockViewModel
+    var initialInvitationID: UUID? = nil
     @State private var reviewing: SlumberPartyInvitation?
 
     var body: some View {
@@ -26,32 +27,46 @@ struct SlumberPartyInvitationInbox: View {
                     VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         Text(invitation.partyName).font(AppTypography.headline)
                         Text("From \(invitation.senderName)").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
-                        Button("Review invitation") { reviewing = invitation }
+                        Button("Review invitation") {
+                            reviewing = invitation
+                            Task { await social.markSocialEventRead("invite:\(invitation.id.uuidString.lowercased())") }
+                        }
                             .buttonStyle(PixelPrimaryButtonStyle()).disabled(social.partyConnectionsBusy)
                     }
                 }
                 if let connections = social.partyConnections {
-                    DisclosureGroup("Your handle and user ID") {
+                    VStack(alignment: .leading, spacing: AppSpacing.xs) {
                         VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                            if let handle = connections.handle { Text("@\(handle)").font(AppTypography.body) }
-                            Text(connections.userID.uuidString.lowercased()).font(AppTypography.caption).textSelection(.enabled)
+                            if let handle = connections.handle {
+                                Text("@\(handle)").font(AppTypography.headline).textSelection(.enabled)
+                                Button("Copy handle") { UIPasteboard.general.string = "@\(handle)" }.frame(minHeight: 44)
+                            } else { Text("Choose a handle in Settings → Profile so people can find you.").font(AppTypography.body) }
+                            DisclosureGroup("Advanced: user ID") { Text(connections.userID.uuidString.lowercased()).font(AppTypography.caption).textSelection(.enabled) }
                             Text("Someone who knows your exact handle or user ID can invite you. Joining always needs your agreement.")
                                 .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                             ShareLink(item: connections.handle.map { "@\($0)" } ?? connections.userID.uuidString.lowercased()) {
-                                Label("Share my ID", systemImage: "square.and.arrow.up").frame(minHeight: 44)
+                                Label(connections.handle == nil ? "Share user ID" : "Share handle", systemImage: "square.and.arrow.up").frame(minHeight: 44)
                             }
                         }.padding(.top, AppSpacing.xs)
                     }.font(AppTypography.caption).tint(AppColors.grass)
                 }
             }
         }
-        .task { await social.updatePartyConnections(.init(action: "state")) }
+        .task(id: initialInvitationID) {
+            await social.updatePartyConnections(.init(action: "state"))
+            if let initialInvitationID {
+                reviewing = social.partyConnections?.invitations.first { $0.id == initialInvitationID && $0.isIncoming }
+            }
+        }
         .sheet(item: $reviewing) { invitation in
             NavigationStack {
                 ScrollView {
                     VStack(alignment: .leading, spacing: AppSpacing.md) {
                         Text(invitation.partyName).font(AppTypography.title)
                         Text("\(invitation.senderName) invited you to wind down together.").font(AppTypography.body)
+                        if let handle = invitation.senderHandle { Text("@\(handle)").font(AppTypography.caption) }
+                        if let count = invitation.memberCount { Text("\(count) of 8 places filled").font(AppTypography.caption) }
+                        Text("Invitation expires \(invitation.expiresAt, style: .date)").font(AppTypography.caption)
                         SlumberPartySharedHabitsConsentDisclosure(partyName: invitation.partyName,
                             includesSharedNightPlans: social.supportsSharedNightPlans, actionLead: "Joining shares",
                             includesSharedHabits: social.supportsSharedHabits,
@@ -77,7 +92,9 @@ struct SlumberPartyInvitationInbox: View {
                     .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { reviewing = nil } } }
             }
         }
-        .onChange(of: social.v4Acquisition.acceptedPartyID) { _, id in if id != nil { reviewing = nil } }
+        .onChange(of: social.v4Acquisition.acceptedPartyID) { _, id in
+            if let id { reviewing = nil; NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: id) }
+        }
     }
 }
 
@@ -86,6 +103,8 @@ struct SlumberPartyInvitePeopleView: View {
     let partyID: UUID
     @State private var query = ""
     @State private var searchedQuery: String?
+    @State private var advanced = false
+    @State private var inputError: String?
     @State private var person: SlumberPartyPerson?
     @FocusState private var searchFocused: Bool
 
@@ -98,17 +117,25 @@ struct SlumberPartyInvitePeopleView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
-                Text("Bring someone to your party").font(AppTypography.title)
-                Text("Search their exact handle or user ID. They’ll review the party’s agreement before joining.")
+                Text("Invite to \(social.slumberParties.first { $0.partyID == partyID }?.name ?? "your party")").font(AppTypography.title)
+                Text("Enter their full @handle. They’ll receive an invitation and choose whether to join this private group.")
                     .font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
-                TextField("@handle or user ID", text: $query)
+                TextField(advanced ? "User ID" : "@handle", text: $query)
                     .textFieldStyle(PixelTextFieldStyle()).font(AppTypography.body)
                     .textInputAutocapitalization(.never).autocorrectionDisabled().submitLabel(.search)
                     .focused($searchFocused).onSubmit(search)
-                    .accessibilityLabel("Search by exact handle or user ID")
+                    .accessibilityLabel(advanced ? "Search by user ID" : "Search by exact handle")
+                HStack {
+                    PasteButton(payloadType: String.self) { values in if let first = values.first { query = first } }
+                    Button("Clear") { query = "" }.frame(minHeight: 44).disabled(query.isEmpty)
+                }
+                DisclosureGroup("Advanced lookup") { Toggle("Use a user ID", isOn: $advanced) }
+                    .font(AppTypography.caption)
+                if let inputError { Text(inputError).font(AppTypography.caption) }
                 Button("Search", action: search).buttonStyle(PixelChipButtonStyle(isSelected: false))
-                    .disabled(social.partyConnectionsBusy || SlumberPartyInvitationSearch.normalized(query) == nil)
-                if social.partyConnectionsBusy { SheepLoadingView("Checking your invitations…") }
+                    .disabled(social.partySearchBusy || query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                if social.partySearchBusy { SheepLoadingView("Finding that Shepherd…") }
+                if let error = social.partySearchError { Text(error).font(AppTypography.caption) }
                 if let error = social.partyConnectionsError {
                     Text(error).font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
                 }
@@ -125,14 +152,14 @@ struct SlumberPartyInvitePeopleView: View {
                                 Button("Send invitation") {
                                     Task {
                                         if await social.updatePartyConnections(.init(action: "invite", partyID: partyID, userID: person.userID)) != nil {
-                                            self.person?.isInvited = true
+                                            if self.person?.userID == person.userID { self.person?.isInvited = true }
                                         }
                                     }
                                 }.buttonStyle(PixelPrimaryButtonStyle()).disabled(social.partyConnectionsBusy)
                             }
                         }
                     }
-                } else if searchedQuery != nil && !social.partyConnectionsBusy && social.partyConnectionsError == nil {
+                } else if searchedQuery != nil && !social.partySearchBusy && social.partySearchError == nil {
                     Text("No matching Shepherd. Check the full handle or user ID with your friend.")
                         .font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
                 }
@@ -161,18 +188,23 @@ struct SlumberPartyInvitePeopleView: View {
             }.padding(AppSpacing.md)
         }.background(AppColors.paper).navigationTitle("Invite people").navigationBarTitleDisplayMode(.inline)
             .task { await social.updatePartyConnections(.init(action: "state", partyID: partyID)) }
-            .onChange(of: query) { _, _ in person = nil; searchedQuery = nil }
+            .onChange(of: query) { _, _ in person = nil; searchedQuery = nil; inputError = nil }
     }
 
     private func search() {
-        guard let normalized = SlumberPartyInvitationSearch.normalized(query), !social.partyConnectionsBusy else { return }
+        guard !social.partySearchBusy else { return }
+        guard let normalized = SlumberPartyInvitationSearch.normalized(query),
+              advanced || UUID(uuidString: normalized) == nil else {
+            inputError = SlumberPartyConnectionError.invalid.errorDescription; return
+        }
+        inputError = nil
         searchFocused = false
         person = nil
         searchedQuery = normalized
         Task {
-            let result = await social.updatePartyConnections(.init(action: "search", partyID: partyID, query: normalized))
+            let result = await social.searchPartyConnection(partyID: partyID, query: normalized)
             guard SlumberPartyInvitationSearch.normalized(query) == normalized else { return }
-            person = result?.person
+            person = result
         }
     }
 }

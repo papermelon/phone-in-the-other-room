@@ -138,6 +138,8 @@ actor NightFlockService {
             return value
         } catch let error as PostgrestError {
             switch error.message {
+            case "linked_account_required": throw SlumberPartyConnectionError.account
+            case "invalid_request": throw SlumberPartyConnectionError.invalid
             case "party_full": throw SlumberPartyConnectionError.full
             case "party_limit": throw SlumberPartyConnectionError.limit
             case "rate_limited": throw SlumberPartyConnectionError.rateLimited
@@ -145,6 +147,23 @@ actor NightFlockService {
             default: throw SlumberPartyConnectionError.offline
             }
         } catch { throw SlumberPartyConnectionError.offline }
+    }
+
+    func socialInbox(_ request: SocialInboxRequest) async throws -> SocialInboxResponse {
+        struct Parameters: Encodable { var p_request: SocialInboxRequest }
+        do {
+            let response = try await provider.client().rpc("social_inbox_v1", params: Parameters(p_request: request)).execute()
+            let value = try Self.campfireDecoder().decode(SocialInboxResponse.self, from: response.data)
+            guard value.version == 1, value.userID == request.ownerID else { throw NightFlockServiceError.unsupportedResponse }
+            return value
+        } catch let error as PostgrestError {
+            switch error.message {
+            case "source_unavailable": throw SocialInboxError.unavailable
+            case "linked_account_required": throw SocialInboxError.account
+            case "rate_limited": throw SocialInboxError.rateLimited
+            default: throw SocialInboxError.connection
+            }
+        }
     }
 
     func stateV4List(scope: NightFlockRequestScope) async throws -> NightFlockV4ListStateResponse {

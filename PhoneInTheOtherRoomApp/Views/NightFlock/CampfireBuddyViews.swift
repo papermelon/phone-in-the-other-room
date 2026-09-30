@@ -10,6 +10,7 @@ struct CampfireBuddyCard: View {
     var showsMemberName = true
     var onJoin: () -> Void = {}
     var onAction: (String, CampfireOutcome?, String?) -> Void = { _, _, _ in }
+    var support: AnyView? = nil
     @State private var reflection = ""
     private var me: UUID? { party.myMemberID }
     private func name(_ id: UUID) -> String { party.memberships.first { $0.memberID == id }?.profile.displayName ?? "A party member" }
@@ -60,7 +61,8 @@ struct CampfireBuddyCard: View {
                     Button("I’ll check in afterwards") { onAction("accept", nil, nil) }
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 }
-                if let me, !session.encouragementMemberIDs.contains(me) {
+                if let support { support }
+                else if let me, !session.encouragementMemberIDs.contains(me) {
                     Button("Send encouragement") { onAction("encourage", nil, nil) }
                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
                 }
@@ -94,7 +96,8 @@ struct CampfireFollowThrough: View {
                     CampfireBuddyCard(session: session, party: party, active: false, now: now, canJoin: false,
                         isSending: social.pastureSending.contains(party.summary.partyID), onAction: { action, outcome, note in
                             social.sendCampfireAction(action, session: session, partyID: party.summary.partyID, outcome: outcome, reflection: note)
-                        })
+                        }, support: social.supportsSocialInbox ? AnyView(SupportMessageControl(social: social,
+                            source: .init(kind: "campfire", id: session.sourceID, partyID: party.summary.partyID, memberID: session.memberID))) : nil)
                 }
                 SharedPastureSaveFeedback(social: social, partyID: party.summary.partyID)
             }

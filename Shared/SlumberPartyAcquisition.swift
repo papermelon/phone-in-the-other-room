@@ -2,8 +2,8 @@ import Foundation
 
 /// Keep the same command identity after an uncertain response. Repeated taps
 /// cannot create duplicate parties or replace the staged agreement in flight.
-struct SlumberPartyAcquisition: Equatable {
-    enum Intent: Equatable {
+struct SlumberPartyAcquisition: Codable, Equatable {
+    enum Intent: Codable, Equatable {
         case create(name: String, timeZone: String)
         case join(code: String)
         case invitation(UUID)
@@ -26,8 +26,9 @@ struct SlumberPartyAcquisition: Equatable {
 
     mutating func dismissAcknowledgement() { acceptedPartyID = nil }
 
-    mutating func finish(partyID: UUID? = nil) {
+    mutating func finish(partyID: UUID? = nil, rejected: Bool = false) {
         isBusy = false
+        if rejected { intent = nil; commandID = nil }
         if let partyID {
             acceptedPartyID = partyID
             intent = nil

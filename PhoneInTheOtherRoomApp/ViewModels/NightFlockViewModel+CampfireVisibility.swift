@@ -42,6 +42,7 @@ extension NightFlockViewModel {
     }
 
     func clearCampfireVisibilityContext() {
+        clearSocialInbox()
         campfireDocumentOwner = nil; campfireDocument = .init(); campfireStorageFailed = false
         globalCampfireRefreshTask?.cancel()
         globalCampfireRefreshTask = nil

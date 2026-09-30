@@ -704,7 +704,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         _ center: UNUserNotificationCenter,
         willPresent notification: UNNotification
     ) async -> UNNotificationPresentationOptions {
-        if notification.request.content.userInfo["campfirePartyID"] != nil,
+        if (notification.request.content.userInfo["campfirePartyID"] != nil || notification.request.content.userInfo["socialEventID"] != nil),
            let quietUntil = UserDefaults.standard.object(forKey: "ollie.campfire.localQuietUntil") as? Date,
            quietUntil > Date() { return [] }
         if notification.request.content.interruptionLevel == .passive {
@@ -718,6 +718,11 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        if let route = SocialNotificationRoute.parse(response.notification.request.content.userInfo),
+           let data = try? JSONEncoder().encode(route) {
+            UserDefaults.standard.set(data, forKey: SocialNotificationRoute.defaultsKey)
+            NotificationCenter.default.post(name: .countingSheepShowSocialInbox, object: nil)
+        }
         if let raw = response.notification.request.content.userInfo["campfirePartyID"] as? String, let partyID = UUID(uuidString: raw) {
             UserDefaults.standard.set(partyID.uuidString, forKey: "ollie.campfire.pendingParty")
             NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: partyID)
@@ -735,6 +740,7 @@ final class PhoneNotificationService: NSObject, UNUserNotificationCenterDelegate
 }
 
 extension Notification.Name {
+    static let countingSheepShowSocialInbox = Notification.Name("countingSheep.showSocialInbox")
     static let countingSheepNotificationDestination = Notification.Name(
         "countingSheep.notificationDestination"
     )

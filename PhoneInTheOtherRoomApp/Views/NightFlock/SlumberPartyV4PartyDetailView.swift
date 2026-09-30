@@ -258,6 +258,14 @@ struct SlumberPartyV4PartyDetailView: View {
             }
         } else {
             groupDetailsSection(party)
+            if viewModel.supportsSocialInbox {
+                SocialInboxButton(social: viewModel, partyID: party.summary.partyID)
+            }
+            if viewModel.supportsDirectInvitations {
+                NavigationLink("Invite to \(party.summary.name)") {
+                    SlumberPartyInvitePeopleView(social: viewModel, partyID: party.summary.partyID)
+                }.buttonStyle(PixelChipButtonStyle(isSelected: false))
+            }
             Button {
                 NotificationCenter.default.post(name: .countingSheepShowCampfire, object: party.summary.partyID)
             } label: {
@@ -522,7 +530,10 @@ struct SlumberPartyV4PartyDetailView: View {
                     ),
                     showsSharedHabitMetrics: showsSharedHabitMetrics,
                     showsSocialAvatar: showsSocialAvatar,
-                    showsActivitySummary: memberIDs == nil
+                    showsActivitySummary: memberIDs == nil,
+                    support: viewModel.supportsSocialInbox ? memberPresentation.liveStatusID.map { id in
+                        AnyView(SupportMessageControl(social: viewModel, source: .init(kind: "status", id: id, partyID: party.summary.partyID)))
+                    } : nil
                 )
             }
         }

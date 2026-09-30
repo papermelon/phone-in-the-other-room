@@ -72,6 +72,7 @@ extension NightFlockViewModel {
         visibleResponse.parties.removeAll { isSharedHabitsPartySuppressed($0.partyID) }
         reconcileSharedHabitsLeaveFences(with: response.parties)
         v4ListState = visibleResponse
+        Task { await refreshSocialInbox(summary: true); replaySupportMessages() }
         listRefreshFailure = nil
         let visiblePartyIDs = Set(visibleResponse.parties.map(\.partyID))
         restorePastureVisitIndex(eligiblePartyIDs: visiblePartyIDs)
@@ -182,7 +183,7 @@ extension NightFlockViewModel {
     func createSlumberParty(named name: String, timeZoneIdentifier: String = TimeZone.current.identifier) {
         let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty, name.count <= 48, accountState == .linked, permitsNightFlockNetwork, service != nil,
-              let commandID = v4Acquisition.begin(.create(name: name, timeZone: timeZoneIdentifier)) else { return }
+              let commandID = beginPartyAcquisition(.create(name: name, timeZone: timeZoneIdentifier)) else { return }
         warmNotice = nil
         stageSharedHabitsJoinAgreement(commandID: commandID, timeZoneIdentifier: timeZoneIdentifier) { [weak self] in
             self?.performV4(.createParty(
@@ -190,9 +191,9 @@ extension NightFlockViewModel {
                 timeZoneIdentifier: timeZoneIdentifier,
                 idempotencyKey: NightFlockV4Idempotency.command("create-party", seed: commandID)
             ), onSettled: { result in
-                if case .failure = result { self?.v4Acquisition.finish() }
+                if case let .failure(error) = result { self?.rejectPartyAcquisitionIfConfirmed(error) }
             }, onAcceptedResponse: { response in
-                self?.v4Acquisition.finish(partyID: response.resolvedPartyID)
+                self?.finishPartyAcquisition(partyID: response.resolvedPartyID)
             }, resolvedPartyIntentCommandID: commandID, onResolvedNewParty: { partyID in
                 self?.acceptStagedSharedHabitsAgreementAfterJoining(partyID: partyID, commandID: commandID)
             })
@@ -258,16 +259,16 @@ extension NightFlockViewModel {
         let normalized = NightFlockInviteCode.normalize(code)
         guard !normalized.isEmpty else { return }
         guard accountState == .linked, permitsNightFlockNetwork, service != nil,
-              let commandID = v4Acquisition.begin(.join(code: normalized)) else { return }
+              let commandID = beginPartyAcquisition(.join(code: normalized)) else { return }
         warmNotice = nil
         stageSharedHabitsJoinAgreement(commandID: commandID) { [weak self] in
             self?.performV4(.redeemInvite(
                 inviteCode: normalized,
                 idempotencyKey: NightFlockV4Idempotency.command("redeem-invite", seed: commandID)
             ), onSettled: { result in
-                if case .failure = result { self?.v4Acquisition.finish() }
+                if case let .failure(error) = result { self?.rejectPartyAcquisitionIfConfirmed(error) }
             }, onAcceptedResponse: { response in
-                self?.v4Acquisition.finish(partyID: response.resolvedPartyID)
+                self?.finishPartyAcquisition(partyID: response.resolvedPartyID)
             }, resolvedPartyIntentCommandID: commandID, onResolvedNewParty: { partyID in
                 self?.acceptStagedSharedHabitsAgreementAfterJoining(partyID: partyID, commandID: commandID)
             })
@@ -1068,6 +1069,7 @@ extension NightFlockViewModel {
                   self.v4RealtimePartyIDs.contains(partyID)
             else { return }
             self.refreshV4PartyObservation(partyID)
+            await self.refreshSocialInbox(summary: self.socialInboxEvents.isEmpty)
         }
     }
 
