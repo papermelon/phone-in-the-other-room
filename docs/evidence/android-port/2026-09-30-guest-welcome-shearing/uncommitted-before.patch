@@ -1,0 +1,52 @@
+diff --git a/docs/FUTURE_AGENT_TASKS.md b/docs/FUTURE_AGENT_TASKS.md
+index 97b881a..9d19d3a 100644
+--- a/docs/FUTURE_AGENT_TASKS.md
++++ b/docs/FUTURE_AGENT_TASKS.md
+@@ -1,5 +1,24 @@
+ # Future Agent Tasks — Prioritised Backlog
+ 
++## Shared-text moderation — 30 September 2026
++
++- [Local source contract](plans/shared-text-moderation-2026-09-30.md) adds a narrow OpenAI moderation gate, per-account/device processing permission, exact warning confirmations, safe rejection/retry handling and a server-side sheep-name race fence. [Validation](evidence/shared-text-moderation-20260930/validation.md) records implemented versus active behavior.
++- Configure the dedicated server key, run the synthetic language evaluation and refine provisional thresholds with fluent-speaker review of Singlish, Mandarin, Malay, Tamil, quoted discrimination, ordinary swearing and evasion. No live provider evaluation has occurred; deterministic mocked results do not prove language accuracy.
++- Check the composed Edge entrypoints in Deno, then deploy the migration and both endpoints only with deployment authorization, publish the privacy update and distribute native consent/review controls before activation. Verify two-device account/consent isolation, edit-after-rejection, offline/relaunch replay, provider outages and unaffected ending/withdrawal controls on disposable accounts. Confirm moderator ownership/support contact and appeal handling. Existing content/login handles remain an operational audit item; no retrospective private-content processing is authorized.
++
++## Wind Down shared check-in — 30 September 2026
++
++- Source replaces Wind Down task outcomes with self-reported ease, optional note, named party audience, explicit Share and Skip. Historical outcomes retain their wording; Phone Away keeps task choices. See the [current contract](plans/campfire-buddies-implementation-2026-09-13.md).
++- Deploy the matching `night-flock-command` validator and `20260930120000_wind_down_check_in.sql` only with deployment authorization, then distribute an updated native build. On disposable physical accounts, verify morning eligibility, selection versus sharing, skip/reopen, note/answer preservation through refresh and offline retries, historical answers, older-client decoding and opt-in buddy follow-up. New clients require the advertised ease capability; older apps cannot display new ease answers. No production activation or physical-device validation is claimed.
++
++## Android port implementation — 30 September 2026
++
++- AND-001–008 are authorized and implemented in [the independent Android project](../android/README.md). [Roadmap](plans/android-port-implementation-roadmap-2026-09-30.md), preserved [AND-001–006 evidence](evidence/android-port/2026-09-30/README.md), [AND-007 evidence](evidence/android-port/2026-09-30-and-007/README.md) and [AND-008 evidence](evidence/android-port/2026-09-30-and-008/README.md) distinguish local build/unit/semantic/codec/native-emulator checks from pending physical acceptance. No production services, backend writes, distribution, commits or pushes were performed.
++- Pending physical gate: the founder will perform the later [consolidated acceptance checklist](plans/android-port-physical-acceptance-checklist-2026-09-30.md) on isolated Pixel, Samsung and SEA OEM phones (API 29/current 36). Protection/overnight/battery/accessibility/transfer checks remain pending and gate protection claims/release readiness, while independently testable domain/persistence work is locally complete. No physical phone was connected; emulator observation does not establish force-stop continuity or Play approval.
++- AND-007's single coordinator/transaction authority now feeds AND-008's saved usual-plan editor, four-tab guest shell, bounded protected starts/live controls/early-wake choices, fresh phrase-confirmed access/ordinary exits, separate durable overnight/Morning receipts and minimum real Farm progress. The v3 document migrates v1/v2 consent/selection/occurrence/access/economy state losslessly; receipt acknowledgement does not award again. Internal short plans remain under Settings. Keep incompatible bytes write-fenced and guest data clearly local.
++- Recommended next solo slice: genuine guest introduction/starter/welcome and one real wool/shearing action. Full onboarding, recurring routines/tasks/goals, private reflection, full Farm/Shop artwork and interactions remain unimplemented; this bounded AND-008 slice does not claim complete release UI parity. Physical TalkBack, OEM overlay-to-confirmation launch, overnight and battery checks stay on the consolidated checklist.
++- Later authorization remains separate: Supabase Kotlin SDK/real owner-bound sync (AND-009), Firebase/FCM and additive APNs-compatible adapter, full native Shepherd rendering, NFC/Health/wearables, extra sensitive permissions, public parity/identity/signing and all production/distribution actions. Preserve current account-default/archive behavior, independent morning accounting, bedtime-bonus versions and sharing allowlists.
++
+ ## Social invitations, inbox, and meaningful cheers — 29 September 2026
+ 
+ - [Plan and researched wording](plans/slumber-party-social-upgrade-2026-09-28.md); [implementation and deployment evidence](evidence/social-upgrade-20260929/validation.md). Exact handle search, clearer private-group invitations, Home Inbox, contextual nine-message vocabulary, durable retries, arrival ordering and optional account-level push are implemented. Both backend migrations and the existing dispatcher update are deployed; native distribution remains separate.
+@@ -1014,7 +1033,8 @@ execute without human sign-off mid-task (final merge review still applies per
+ - **Design-system convergence** (retire `GameComponents`) — opportunistic only.
+ - **New persistence layer / CoreData / SwiftData** — not needed at this scale.
+ - **CI pipeline** — valuable, but after first TestFlight; local gate suffices now.
+-- **Android / iPad / web** — out of scope (brief §non-goals).
++- **Android beyond AND-001–008** — the [bounded offline implementation](../android/README.md) is implemented with local evidence; physical capability gates and later feature/release phases remain pending in the [roadmap](plans/android-port-implementation-roadmap-2026-09-30.md). Older blanket deferral is superseded for the authorized slice only.
++- **iPad / web app** — remain outside this port's scope (brief §non-goals); existing website work is separate.
+ - **Any analytics/tracking SDK** — conflicts with the privacy posture; needs human decision.
+ 
+ ---
+diff --git a/docs/PRODUCT_DIRECTION.md b/docs/PRODUCT_DIRECTION.md
+index 8b310b4..ae56803 100644
+--- a/docs/PRODUCT_DIRECTION.md
++++ b/docs/PRODUCT_DIRECTION.md
+@@ -264,6 +264,8 @@ is not selectable until its complete fitted animation pack is approved.
+ 
+ ## Slumber Party
+ 
++30 September founder-authorized [shared-text safety](plans/shared-text-moderation-2026-09-30.md): use the OpenAI Moderation API narrowly for hate, threats and severe targeted harassment in shared user text. Explicit processing permission precedes provider calls; uncertain results allow an author review, high-scoring abuse requires rewording, and outages leave text unshared. Private reflections stay outside this check. Source implementation does not establish hosted activation or classifier accuracy; general free chat remains a separate feature.
++
+ 29 September social upgrade: Slumber Party is an ongoing private group, including two-person groups; inviting someone is explicitly inviting them to a named party. Home Inbox holds invitations and source-linked encouragement, with party-scoped For you entry points. Nine context-appropriate, readable messages replace decorative gestures for capable clients; historic phrases remain unchanged. Push is optional, quiet-hour aware, and separately opt-in for Global cheers. Invitation links only open review; joining and sharing still require agreement. The founder authorized implementation, Associated Domains for countingsheepproject.com/www, and backend deployment after validation. See the [current plan](plans/slumber-party-social-upgrade-2026-09-28.md) and [rollout evidence](evidence/social-upgrade-20260929/validation.md) for deployed versus pending states.
+ 
+ 21 September founder-authorized [consent and invitation repair](plans/slumber-party-repair-2026-09-21.md): one collapsible terms disclosure, visible creation/join and agreement confirmation, exact handle/user-ID invitations with an incoming invitation list, and a shared animated sheep for loading. This authorizes narrow account lookup for inviting known people; parties remain private. Codes become a compatibility fallback. Search and invitations require the advertised backend capability. Source, local validation and production activation are recorded separately.

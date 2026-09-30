@@ -1,0 +1,59 @@
+{
+  "sourceRevision": "2f3a04511eeb5bcfabdb1953dc1745f08821335c",
+  "owner": "00000000-0000-4000-8000-000000000900 (synthetic external context; not payload root)",
+  "swiftToKotlinToSwift": {
+    "status": "PASS semantic equality and fingerprint",
+    "fixtureCount": 8
+  },
+  "kotlinToSwiftToKotlin": {
+    "status": "PASS independently mutated wool, IDs, inventory, fractional date and Fetch score"
+  },
+  "sharedRejected": {
+    "status": "All rejected by Swift decodeRemote and Kotlin",
+    "count": 23
+  },
+  "files": {
+    "android/compatibility/fixtures/farm-v3-optional-absent-iso.json": "9a1bc06b7b76c24a1f6a14e14400d4e7988ee33bb62059b17638e768823e076b",
+    "android/compatibility/fixtures/farm-v3-optional-absent-numeric.json": "c16a340867f3210dabe976c66e35273a1f5a46f5290bdb0c3e97519992bb779f",
+    "android/compatibility/fixtures/farm-v3-rich-iso.json": "581b0a06ed8b9f464153f4f47f393d176fd385f21d3092c0e2e8b456ac380ba9",
+    "android/compatibility/fixtures/farm-v3-rich-numeric.json": "3e916334702eb2d4863742e8e1872117f165f174e1c51173e97ea95ee11ff17c",
+    "android/compatibility/fixtures/farm-v4-optional-absent-iso.json": "dba3181ef9109e6746c0b75c457f6ca7d5cd25626144d1278d20bb9639ecd148",
+    "android/compatibility/fixtures/farm-v4-optional-absent-numeric.json": "ccad96196373df8d65cab6540382f3caab2ad9dd02d12f55cb287de2c4ace252",
+    "android/compatibility/fixtures/farm-v4-rich-iso.json": "9df73a183b164e1bd797c111fd0ac216e263a6c36d66fd361e701ece849fe547",
+    "android/compatibility/fixtures/farm-v4-rich-numeric.json": "3f92fbc94779eec18706d5ad5f25cb443af58d09060cd4efcd71d3d6172665ca",
+    "android/build/compatibility/farm-v3-optional-absent-iso.json": "07a222da4e9e674054cf9176e0a23310fe6de3a94aa8ddd0c12a8a351a573aeb",
+    "android/build/compatibility/farm-v3-optional-absent-numeric.json": "821932eb478730816ddc338b849b1431311a5832ee8ea6a700d897d559982930",
+    "android/build/compatibility/farm-v3-rich-iso.json": "10e8bec356e2316357f7a6611c28918d7789da09f4aeaef63776ac64dd47c5ed",
+    "android/build/compatibility/farm-v3-rich-numeric.json": "757a4f2f06908d086db7ce0b22cde49b3ec2015dcfbcbc86138c860433481005",
+    "android/build/compatibility/farm-v4-optional-absent-iso.json": "42f367a61ad85b41261c8994413114732cfb7f57dd66f2c261f3ee812bbefcac",
+    "android/build/compatibility/farm-v4-optional-absent-numeric.json": "fd69b29ae4a4a04cedbe47d16e29a6cdec18ba237039a6f114cdd33fb84509d9",
+    "android/build/compatibility/farm-v4-rich-iso.json": "74a402948b9e98dc5a61fd81e3e1abd0d352ea21c60687375bb15a604649ba1a",
+    "android/build/compatibility/farm-v4-rich-numeric.json": "d5cc91e5156f9ab02ca2b3630a75cc641e02f18414bce34f0275fa27f2bb100d",
+    "android/build/compatibility/kotlin-origin.json": "a4231b5ed3a797f6d8e266f19df459f4226453cc927708edcbf622bf8b8e1e8c",
+    "android/build/compatibility/kotlin-owner.json": "43a4e20b5c422e4325886136657aa02e7cb9c0373c2083fc3b79a9ba8b8610f5",
+    "android/build/compatibility/rejected-bad-date-20.json": "6ecf9be7aec179f904c3f0c56dde9ba3752cd402ff1ea20499a0714362346edb",
+    "android/build/compatibility/rejected-bad-date-21.json": "cd410aebfd9efa86eefb6a19f0639f286dea3bbab9d2b89df93845477c57e840",
+    "android/build/compatibility/rejected-bad-date-22.json": "de4024ee1a7a39d70190bdee2cc24d0bc0d14b9bb2aa31b3188e008158188856",
+    "android/build/compatibility/rejected-bad-uuid.json": "1aa3da4d10e589369d2f6a21ef308f236e9f1db28e7f726dd2c95e79b04fbf36",
+    "android/build/compatibility/rejected-duplicate-inventory.json": "23add5c9620ac0497f542096ed50a204bd4634b162feedbdd0b477214ef7d5ef",
+    "android/build/compatibility/rejected-economy-version.json": "6d5006a6518ecda70dd3c5b5a5d48632fe2b12e92ed58a941c88a604d2ecdc02",
+    "android/build/compatibility/rejected-farm-version.json": "aa869435d66634fe26e2820203a63bd7d0e09b887f1af6bc3c9db230b7b87b68",
+    "android/build/compatibility/rejected-fractional-balance.json": "bfa371478c90f0fb7212b988a3b78fb93ab9f33d023a3bd74daa1ca4adefa580",
+    "android/build/compatibility/rejected-invalid-fetch.json": "2f132f7de2ddbef0dbc8f7ec97c8f9d522197fd9cd46a536d056aba8d5c6e6a9",
+    "android/build/compatibility/rejected-legacy-farm.json": "f6b2677ae659591bfdc142de37d276add2da6893491796e50f9872c3aab27996",
+    "android/build/compatibility/rejected-missing-balance.json": "ea61f4eb4553d857505b30a0856efc70ed6c932f63146f2ddb9e2d69f6b5705a",
+    "android/build/compatibility/rejected-missing-ledger.json": "3bc2500182cc74544464bf3e0f7164271746cae9e6822f2c1668fd54f41da44e",
+    "android/build/compatibility/rejected-negative-balance.json": "acba4111e3d9d1462e007e736bbb24753a614049b1019d4368cdf0b674b2bf5a",
+    "android/build/compatibility/rejected-null-optional.json": "01f4bb09b748fce9cb0a89cdafa8a0edf494a753d7206aa94fc7baeec26b3b61",
+    "android/build/compatibility/rejected-overflow-balance.json": "574284c0d40882e75d43e7e431d7dc02ae1628251a933d0c5fa5b47d3e7b7978",
+    "android/build/compatibility/rejected-quoted-balance.json": "c1b4016c34aa4fafd55bcab588bfa9d082520954288319ad543c199cebf7bd6b",
+    "android/build/compatibility/rejected-search-version.json": "55062b5e67fa187100e453cec61708df44415a081ffb6e2c7e872bce395a3391",
+    "android/build/compatibility/rejected-socialRewards-version.json": "52e73e2eae307c194916a177aebe50e3b973bbc4f57a611574941fd547683ef8",
+    "android/build/compatibility/rejected-sunrise-version.json": "19117ee8e4d64cabea6a5b95f91e4c8e66fdaadcb9b1e22ec98249067a65e04f",
+    "android/build/compatibility/rejected-unknown-nested.json": "bbf5c7f58bfc42984fed4f84c8c8870ea309d573538bc0a33caf5c192b2e48d3",
+    "android/build/compatibility/rejected-unknown-root.json": "500397da16ca60a40e9947b323880621be06e8d312928ed5f2c5ce8d39952159",
+    "android/build/compatibility/rejected-welcome-version.json": "4b0763b88d040387cad2ecd129f12ac8bbb9fadf90f1bfc42f7ac023143750f4",
+    "android/build/compatibility/rejected-wire-version.json": "7d39458a0d8c93b15ba815afaacf0efafe5cff1c3cd1a60d3a455f408c9d4b97",
+    "android/build/compatibility/swift-return.json": "e49e3d1a72dfa7337905b6222da28d7ffc3cb902ca64672b3b5d747e2795a677"
+  }
+}

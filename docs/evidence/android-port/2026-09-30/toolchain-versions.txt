@@ -1,0 +1,24 @@
+openjdk version "17.0.20.1" 2026-08-18 LTS
+OpenJDK Runtime Environment Corretto-17.0.20.12.1 (build 17.0.20.1+12-LTS)
+OpenJDK 64-Bit Server VM Corretto-17.0.20.12.1 (build 17.0.20.1+12-LTS, mixed mode, sharing)
+Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)
+Target: arm64-apple-macosx26.0
+
+------------------------------------------------------------
+Gradle 8.13
+------------------------------------------------------------
+
+Build time:    2025-02-25 09:22:14 UTC
+Revision:      073314332697ba45c16c0a0ce1891fa6794179ff
+
+Kotlin:        2.0.21
+Groovy:        3.0.22
+Ant:           Apache Ant(TM) version 1.10.15 compiled on August 25 2024
+Launcher JVM:  17.0.20.1 (Amazon.com Inc. 17.0.20.1+12-LTS)
+Daemon JVM:    /Users/ngawangchime/Desktop/Developer Projects/Phone in the Other Room/android/.toolchain/amazon-corretto-17.jdk/Contents/Home (no JDK specified, using current Java home)
+OS:            Mac OS X 26.6.2 aarch64
+
+Android Debug Bridge version 1.0.41
+Version 37.0.1-15733141
+Installed as /Users/ngawangchime/Desktop/Developer Projects/Phone in the Other Room/android/.toolchain/sdk/platform-tools/adb
+Running on Darwin 25.6.0 (arm64)

@@ -1,0 +1,51 @@
+ M PhoneInTheOtherRoom.xcodeproj/project.pbxproj
+ M PhoneInTheOtherRoomApp/Services/NightFlockService.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+CampfireBuddies.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Commitment.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Errors.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+GlobalCampfire.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+Pasture.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+V4.swift
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel.swift
+ M PhoneInTheOtherRoomApp/Views/HomeView.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddiesNativeFixture.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddyViews.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/CampfirePanel.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/NightFlockHubView.swift
+ M PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SlumberPartyHomeStudyView.swift
+ M PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SocialPersonCardStudyView.swift
+ M PhoneInTheOtherRoomApp/Views/SettingsDetailViews.swift
+ M Shared/CampfireBuddies.swift
+ M Shared/NightFlockRemoteError.swift
+ M Tests/CampfireBuddiesTests.swift
+ M docs/FUTURE_AGENT_TASKS.md
+ M docs/PRODUCT_DIRECTION.md
+ M docs/PUBLIC_PRIVACY_POLICY.md
+ M docs/plans/campfire-buddies-implementation-2026-09-13.md
+ M project.yml
+ M supabase/functions/_shared/night-flock-errors.ts
+ M supabase/functions/_shared/night-flock-handlers.ts
+ M supabase/functions/_shared/night-flock.ts
+ M supabase/functions/campfire-global/index.ts
+ M supabase/functions/night-flock-command/index.ts
+ M supabase/tests/campfire_validation.mjs
+?? PhoneInTheOtherRoomApp/Views/Components/SharedTextSafetyPrompt.swift
+?? Tests/SharedTextSafetyTests.swift
+?? android/
+?? docs/evidence/android-port/
+?? docs/evidence/shared-text-moderation-20260930/
+?? docs/evidence/wind-down-check-in-20260930/
+?? docs/plans/android-port-implementation-roadmap-2026-09-30.md
+?? docs/plans/android-port-physical-acceptance-checklist-2026-09-30.md
+?? docs/plans/shared-text-moderation-2026-09-30.md
+?? output/validation/shared-text-moderation-20260930/
+?? output/validation/wind-down-check-in-20260930/
+?? supabase/functions/_shared/global-campfire-handler.ts
+?? supabase/functions/_shared/shared-text-moderation.ts
+?? supabase/migrations/20260930120000_wind_down_check_in.sql
+?? supabase/migrations/20260930130000_shared_text_moderation.sql
+?? supabase/scripts/
+?? supabase/tests/fixtures/
+?? supabase/tests/shared_text_moderation.mjs
+?? supabase/tests/shared_text_moderation_test.sql
+?? supabase/tests/wind_down_check_in_test.sql

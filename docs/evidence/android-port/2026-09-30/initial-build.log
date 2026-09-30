@@ -1,0 +1,94 @@
+Downloading https://services.gradle.org/distributions/gradle-8.13-bin.zip
+.............10%.............20%.............30%.............40%.............50%.............60%.............70%.............80%.............90%.............100%
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:checkDebugAarMetadata
+> Task :app:processDebugNavigationResources
+> Task :app:generateDebugResValues
+> Task :app:compileDebugNavigationResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:compressDebugAssets
+> Task :app:desugarDebugFileDependencies
+> Task :app:mergeDebugJniLibFolders
+> Task :app:checkDebugDuplicateClasses
+> Task :app:mergeDebugNativeLibs
+> Task :app:mergeLibDexDebug
+> Task :app:processDebugManifestForPackage
+
+> Task :app:stripDebugDebugSymbols
+Unable to strip the following libraries, packaging them as they are: libandroidx.graphics.path.so. Run with --info option to learn more.
+
+> Task :app:processDebugResources
+> Task :app:validateSigningDebug
+> Task :app:mergeExtDexDebug
+> Task :app:writeDebugAppMetadata
+> Task :app:writeDebugSigningConfigVersions
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:generateDebugAndroidTestResValues
+> Task :app:extractProguardFiles
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:mergeProjectDexDebug
+> Task :app:mergeDebugJavaResource
+> Task :app:generateDebugLintReportModel
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:generateDebugUnitTestLintModel
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///Users/ngawangchime/Desktop/Developer%20Projects/Phone%20in%20the%20Other%20Room/android/app/src/test/java/com/ngawangchime/countingsheep/prototype/FarmPayloadCodecTest.kt:12:33 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+w: file:///Users/ngawangchime/Desktop/Developer%20Projects/Phone%20in%20the%20Other%20Room/android/app/src/test/java/com/ngawangchime/countingsheep/prototype/FarmPayloadCodecTest.kt:13:33 Java type mismatch: inferred type is 'String?', but 'String' was expected.
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:testDebugUnitTest
+
+FarmPayloadCodecTest > incompatiblePayloadsCannotProduceAnEncodedUploadCandidate FAILED
+    java.io.FileNotFoundException at FarmPayloadCodecTest.kt:49
+
+FarmPayloadCodecTest > swiftCorpusRoundTripsLosslesslyAndExportsKotlinOrigin FAILED
+    java.lang.NullPointerException at FarmPayloadCodecTest.kt:19
+
+SessionCoordinatorTest > fiveMinutesIsPersistedBeforeClearAndClippedToEnd FAILED
+    java.lang.AssertionError at SessionCoordinatorTest.kt:29
+
+16 tests completed, 3 failed
+
+> Task :app:testDebugUnitTest FAILED
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:lintAnalyzeDebug
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///Users/ngawangchime/Desktop/Developer%20Projects/Phone%20in%20the%20Other%20Room/android/app/build/reports/tests/testDebugUnitTest/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+BUILD FAILED in 1m 52s
+49 actionable tasks: 49 executed

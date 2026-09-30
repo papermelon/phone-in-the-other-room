@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.ngawangchime.countingsheep.prototype.SessionDomainTest" tests="20" skipped="0" failures="0" errors="0" timestamp="2026-09-30T08:54:50.885Z" hostname="Ngawangs-MacBook-Pro.local" time="0.107">
+  <properties/>
+  <testcase name="sameProcessRepairReplaysDurablePendingIntent" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.005"/>
+  <testcase name="morningMinimumAndSkippedOutcomesRemainIndependent" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.004"/>
+  <testcase name="runtimeFailureKeepsTimerCreditButNeverCreatesBonusOrObservation" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.005"/>
+  <testcase name="ordinaryNightAndMorningHaveFrozenSeparateIdentitiesAndCredit" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.005"/>
+  <testcase name="morningBriefAccessDoesNotSubtractEligibleElapsedOrGrowWool" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.003"/>
+  <testcase name="staleCallbacksCannotEndOrObserveReplacementMorning" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.007"/>
+  <testcase name="failedLiveWriteRetriesTerminalSnapshotBeforeAllowingAnotherStart" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.003"/>
+  <testcase name="exitDuringMorningBoundsItsIndependentElapsed" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.006"/>
+  <testcase name="clockJumpFailsOpenWithoutCreditingJumpOrChangingPlan" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.005"/>
+  <testcase name="pendingIntentBeforeCleanupIsDurableAndCreditIsNotPublishedEarly" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.003"/>
+  <testcase name="earlyWakeChoicesPreserveIndependentIntentAcrossRestart" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.014"/>
+  <testcase name="planAnchorsSurviveMidnightAndTimezoneChange" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.003"/>
+  <testcase name="runtimeFailureCannotOverwriteEffectsAfterStorageLosesAcknowledgement" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.011"/>
+  <testcase name="interruptedTerminalPublicationAndSettlementReplayOnce" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.008"/>
+  <testcase name="overlapUnionAndMissingAccessDataPreventExtraCredit" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.001"/>
+  <testcase name="ordinaryExitBeforeWakeSkipsMorningAndPreservesEarlyCredit" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.002"/>
+  <testcase name="newStartsKeepReadinessAndRepairFencesForEveryMode" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.002"/>
+  <testcase name="deferredMorningAllowsPhoneAwayAndItsOrdinaryExitDoesNotCancelMorning" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.006"/>
+  <testcase name="overlappingDeferredMorningRetainsItsOwnSelectionAndObservedOccurrence" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.007"/>
+  <testcase name="qualifyingBonusIsOncePerSavedNightAcrossEarlyRestart" classname="com.ngawangchime.countingsheep.prototype.SessionDomainTest" time="0.003"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

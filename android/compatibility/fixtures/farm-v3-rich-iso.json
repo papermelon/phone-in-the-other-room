@@ -1,0 +1,290 @@
+{
+  "appearance" : {
+    "avatarID" : "shepherd",
+    "featuredSheepDefinitionID" : "none",
+    "hairStyleID" : "waves",
+    "ollieOrnamentID" : "none",
+    "pastureThemeID" : "pasture_meadow",
+    "shepherdAccessoryID" : "none",
+    "shepherdOutfitID" : "none",
+    "skinToneID" : "warm"
+  },
+  "completedWindDownCount" : 4,
+  "deliveredEffectIDs" : [
+    "synthetic:effect:2"
+  ],
+  "deliveredWindDownRunIDs" : [
+    "00000000-0000-4000-8000-000000000002"
+  ],
+  "economyVersion" : 1,
+  "farm" : {
+    "barnCapacityLevel" : 0,
+    "cumulativeCredit" : {
+      "consumedIntervals" : [
+        {
+          "duration" : 123.25,
+          "start" : "2026-09-12T08:02:03.456"
+        }
+      ],
+      "migrationCompleted" : true,
+      "outcomes" : [
+
+      ],
+      "phoneAwaySeconds" : 33.75,
+      "receipts" : [
+        "00000000-0000-4000-8000-000000000010",
+        {
+          "creditedSeconds" : 123.25,
+          "excludedAccessSeconds" : 300,
+          "migrated" : false,
+          "outcomeIDs" : [
+            "00000000-0000-4000-8000-000000000003"
+          ],
+          "trackingIncomplete" : false
+        },
+        "00000000-0000-4000-8000-000000000012",
+        {
+          "creditedSeconds" : 32.125,
+          "excludedAccessSeconds" : 0,
+          "migrated" : true,
+          "outcomeIDs" : [
+
+          ],
+          "trackingIncomplete" : false
+        }
+      ],
+      "windDownSeconds" : 61.125
+    },
+    "discoveries" : [
+      {
+        "definitionID" : "future_sheep_catalog_id",
+        "encounterCount" : 1,
+        "firstDiscoveredAt" : "2026-09-12T08:02:03.456",
+        "highestRarity" : "common",
+        "outcomeIDs" : [
+          "00000000-0000-4000-8000-000000000003"
+        ]
+      }
+    ],
+    "equipment" : {
+      "collectiblePlacements" : [
+        "left",
+        "unknown_collectible"
+      ],
+      "decorationPlacements" : [
+        "leftMeadow",
+        "unknown_tree"
+      ],
+      "fetchBallItemID" : "unknown_ball",
+      "ollieAccessoryItemID" : "unknown_ornament",
+      "ollieCoatID" : "unknown_coat"
+    },
+    "fetchPracticeBest" : 12,
+    "ownedShopItemIDs" : [
+      "unknown_ball",
+      "unknown_coat",
+      "unknown_shirt"
+    ],
+    "schemaVersion" : 3,
+    "sheep" : [
+      {
+        "arrivedAt" : "2026-09-12T08:02:03.456",
+        "definitionID" : "future_sheep_catalog_id",
+        "displayName" : "Synthetic Sheep",
+        "equippedCosmeticIDs" : [
+          "unknown_sheep_hat"
+        ],
+        "id" : "00000000-0000-4000-8000-000000000001",
+        "isFavorite" : true,
+        "lastShearedProtectedNight" : 3,
+        "protectedNightNumber" : 4,
+        "rarity" : "common",
+        "regrowthSecondsRemaining" : 42.125,
+        "sourceOutcomeID" : "00000000-0000-4000-8000-000000000003",
+        "sourceRunID" : "00000000-0000-4000-8000-000000000002",
+        "status" : "active",
+        "timesSheared" : 2
+      }
+    ],
+    "shepherd" : {
+      "accessoryItemID" : "unknown_accessory",
+      "hairStyle" : "waves",
+      "headShapeID" : "unknown_shape",
+      "outfitItemID" : "unknown_outfit",
+      "shirtItemID" : "unknown_shirt",
+      "skinTone" : "warm"
+    },
+    "trackedSheepDefinitionID" : "future_sheep_catalog_id",
+    "transactions" : [
+      {
+        "createdAt" : "2026-09-12T08:02:03.456",
+        "id" : "00000000-0000-4000-8000-000000000004",
+        "idempotencyKey" : "synthetic:reward:4",
+        "itemID" : "unknown_shirt",
+        "kind" : "welcomeGift",
+        "legacyCashDelta" : -2,
+        "sheepID" : "00000000-0000-4000-8000-000000000001",
+        "woolDelta" : 7
+      }
+    ],
+    "unlockedShopTier" : 0,
+    "woolBalance" : 137
+  },
+  "keepsakes" : [
+    {
+      "earnedAt" : "2026-09-12T08:02:03.456",
+      "id" : "00000000-0000-4000-8000-000000000011",
+      "isDemoReward" : false,
+      "rarity" : "common",
+      "title" : "Synthetic ribbon",
+      "type" : "ribbon"
+    }
+  ],
+  "lineageID" : "00000000-0000-4000-8000-000000000100",
+  "pasture" : {
+    "positions" : [
+      {
+        "entityID" : {
+          "kind" : "sheep",
+          "pastureIndex" : 0,
+          "sheepID" : "00000000-0000-4000-8000-000000000001"
+        },
+        "point" : {
+          "x" : 0.25,
+          "y" : 0.75
+        }
+      }
+    ],
+    "schemaVersion" : 1
+  },
+  "schemaVersion" : 1,
+  "search" : {
+    "consecutiveNoFinds" : 0,
+    "foundSheepIDs" : [
+      "future_sheep_catalog_id"
+    ],
+    "outcomes" : [
+      {
+        "bonusPoints" : 20,
+        "consecutiveNoFinds" : 0,
+        "createdAt" : "2026-09-12T08:02:03.456",
+        "encounterOdds" : 0.25,
+        "habitat" : "starterPasture",
+        "id" : "00000000-0000-4000-8000-000000000003",
+        "origin" : "windDown",
+        "protectedNightNumber" : 4,
+        "rarity" : "common",
+        "result" : "found",
+        "runID" : "00000000-0000-4000-8000-000000000002",
+        "sheepID" : "future_sheep_catalog_id",
+        "trailDistance" : 10.125,
+        "trailMapBonusPercentagePoints" : 0,
+        "trailStrength" : 23
+      }
+    ],
+    "phoneAwaySettlements" : [
+      {
+        "appliedCreditDelta" : 16,
+        "completedSuccessfully" : true,
+        "createdAt" : "2026-09-12T08:02:03.456",
+        "creditedMinutes" : 16,
+        "eligible" : true,
+        "isPractice" : false,
+        "meterAfter" : 20,
+        "meterBefore" : 4,
+        "outcomeID" : "00000000-0000-4000-8000-000000000003",
+        "protectedWindDownCount" : 4,
+        "reason" : "eligible",
+        "runID" : "00000000-0000-4000-8000-000000000002"
+      }
+    ],
+    "phoneBreakConsecutiveNoFinds" : 0,
+    "schemaVersion" : 4,
+    "showExactOdds" : false,
+    "totalTrailDistance" : 10.125,
+    "trailMap" : {
+      "creditedAdHocRunIDs" : [
+
+      ],
+      "pendingMappedMinutes" : 0,
+      "schemaVersion" : 3
+    }
+  },
+  "socialRewards" : {
+    "appliedGrantIDs" : [
+      "00000000-0000-4000-8000-000000000006"
+    ],
+    "grants" : [
+      {
+        "challengeID" : "00000000-0000-4000-8000-000000000007",
+        "claimedAt" : "2026-09-12T08:02:03.456",
+        "createdAt" : "2026-09-12T08:02:03.456",
+        "id" : "00000000-0000-4000-8000-000000000006",
+        "itemID" : "unknown_gift",
+        "memberID" : "00000000-0000-4000-8000-000000000900",
+        "milestone" : "qualifyingNight:1",
+        "rewardKind" : "wool",
+        "sheepSearchEntitlement" : false,
+        "woolAmount" : 1
+      }
+    ],
+    "schemaVersion" : 1
+  },
+  "sunrise" : {
+    "completedSearchCount" : 1,
+    "consecutiveNoFinds" : 0,
+    "fills" : [
+      {
+        "fillIndex" : 0,
+        "id" : "00000000-0000-4000-8000-000000000009",
+        "occurrenceID" : "00000000-0000-4000-8000-000000000008",
+        "outcome" : {
+          "bonusPoints" : 20,
+          "consecutiveNoFinds" : 0,
+          "createdAt" : "2026-09-12T08:02:03.456",
+          "encounterOdds" : 0.25,
+          "habitat" : "starterPasture",
+          "id" : "00000000-0000-4000-8000-000000000003",
+          "origin" : "windDown",
+          "protectedNightNumber" : 4,
+          "rarity" : "common",
+          "result" : "found",
+          "runID" : "00000000-0000-4000-8000-000000000002",
+          "sheepID" : "future_sheep_catalog_id",
+          "trailDistance" : 10.125,
+          "trailMapBonusPercentagePoints" : 0,
+          "trailStrength" : 23
+        },
+        "settledAt" : "2026-09-12T08:02:03.456",
+        "woolGranted" : 1
+      }
+    ],
+    "occurrenceSettlements" : [
+      {
+        "appliedMinutes" : 30,
+        "createdAt" : "2026-09-12T08:02:03.456",
+        "eligibleMinutes" : 30,
+        "occurrenceID" : "00000000-0000-4000-8000-000000000008"
+      }
+    ],
+    "pendingMinutes" : 10,
+    "schemaVersion" : 1
+  },
+  "welcome" : {
+    "grants" : [
+      {
+        "claimedAt" : "2026-09-12T08:02:03.456",
+        "createdAt" : "2026-09-12T08:02:03.456",
+        "flockSheepID" : "00000000-0000-4000-8000-000000000001",
+        "id" : "00000000-0000-4000-8000-000000000005",
+        "idempotencyKey" : "synthetic:welcome:5",
+        "itemID" : "unknown_shirt",
+        "kind" : "profileWearable",
+        "runID" : "00000000-0000-4000-8000-000000000002",
+        "sheepDefinitionID" : "future_sheep_catalog_id"
+      }
+    ],
+    "preexistingFarm" : false,
+    "schemaVersion" : 1
+  }
+}

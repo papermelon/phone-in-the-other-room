@@ -1,0 +1,219 @@
+Building for debugging...
+[0/6] Write sources
+[1/6] Write CodecProof-entitlement.plist
+[2/6] Write swift-version--58304C5D6DBC2206.txt
+[4/79] Emitting module CodecProof
+[5/79] Compiling CodecProof FarmSaveDocument.swift
+[6/79] Compiling CodecProof FarmShop.swift
+[7/79] Compiling CodecProof FarmShopCatalog.swift
+[8/79] Compiling CodecProof FirstRunJourney.swift
+[9/79] Compiling CodecProof FocusAnalytics.swift
+[10/79] Compiling CodecProof FocusRunLiveActivity.swift
+[11/79] Compiling CodecProof FocusRunLiveActivityPushContract.swift
+[12/79] Compiling CodecProof FocusRunRules.swift
+[13/79] Compiling CodecProof FocusSessionStartResult.swift
+[14/79] Compiling CodecProof Formatting.swift
+[15/79] Compiling CodecProof HomeReceiptRouting.swift
+[16/79] Compiling CodecProof HomeStartRouting.swift
+[17/79] Compiling CodecProof HomeWindowPhase.swift
+[18/79] Compiling CodecProof ImpactMeasurement.swift
+[19/79] Compiling CodecProof IndependentMorningSettlement.swift
+[20/79] Compiling CodecProof MorningCheckIn.swift
+[21/79] Compiling CodecProof MorningQuietIntent.swift
+[22/79] Compiling CodecProof NightFlockAPI.swift
+[23/79] Compiling CodecProof NightFlockCommitment.swift
+[24/79] Compiling CodecProof NightFlockDiagnostics.swift
+[25/79] Compiling CodecProof NightFlockInviteRecovery.swift
+[26/79] Compiling CodecProof NightFlockModels.swift
+[27/79] Compiling CodecProof NightFlockOrientation.swift
+[28/79] Compiling CodecProof NightFlockPresentation.swift
+[29/126] Compiling CodecProof AccountCredentials.swift
+[30/126] Compiling CodecProof AccountFarmOwnership.swift
+[31/126] Compiling CodecProof ActiveRunPresentation.swift
+[32/126] Compiling CodecProof AppAppearance.swift
+[33/126] Compiling CodecProof AppFeedback.swift
+[34/126] Compiling CodecProof AutomaticWindDownSchedulingDecision.swift
+[35/126] Compiling CodecProof Campfire.swift
+[36/126] Compiling CodecProof CampfireBuddies.swift
+[37/126] Compiling CodecProof CampfireProfile.swift
+[38/126] Compiling CodecProof CampfireVisibility.swift
+[39/126] Compiling CodecProof CompletionRewardPresentation.swift
+[40/126] Compiling CodecProof ConnectionPresentation.swift
+[41/126] Compiling CodecProof CountingSheepStorage.swift
+[42/126] Compiling CodecProof CountingSheepUserProfile.swift
+[43/126] Compiling CodecProof CumulativeFarmCredit.swift
+[44/126] Compiling CodecProof DistanceProvider.swift
+[45/126] Compiling CodecProof EmergencyExitChallenge.swift
+[46/126] Compiling CodecProof FarmAccountSocialOwnerGate.swift
+[47/126] Compiling CodecProof FarmBackupPayload.swift
+[48/126] Compiling CodecProof FarmBackupSync.swift
+[49/126] Compiling CodecProof FarmEconomyRules.swift
+[50/126] Compiling CodecProof FarmEconomySnapshot.swift
+[51/126] Compiling CodecProof FarmMigration.swift
+[52/126] Compiling CodecProof FarmModels.swift
+[53/126] Compiling CodecProof NightFlockReadDeadline.swift
+[54/126] Compiling CodecProof NightFlockRemoteError.swift
+[55/126] Compiling CodecProof NightFlockRequestScheduling.swift
+[56/126] Compiling CodecProof NightFlockRewards.swift
+[57/126] Compiling CodecProof NightFlockSharedHabitPresentation.swift
+[58/126] Compiling CodecProof NightFlockSharedHabitSleep.swift
+[59/126] Compiling CodecProof NightFlockSharedHabits.swift
+[60/126] Compiling CodecProof NightFlockSharedHabitsAPI.swift
+[61/126] Compiling CodecProof NightFlockSharedHabitsFence.swift
+[62/126] Compiling CodecProof NightFlockSharedHabitsOutbox.swift
+[63/126] Compiling CodecProof NightFlockSharing.swift
+[64/126] Compiling CodecProof NightFlockV2API.swift
+[65/126] Compiling CodecProof NightFlockV3API.swift
+[66/126] Compiling CodecProof NightFlockV4API.swift
+[67/126] Compiling CodecProof NightFlockV4Models.swift
+[68/126] Compiling CodecProof NightFlockV4Outbox.swift
+[69/126] Compiling CodecProof NightFlockV4PublicationPolicy.swift
+[70/126] Compiling CodecProof NightFlockV4Rewards.swift
+[71/126] Compiling CodecProof NightJourneyAssets.swift
+[72/126] Compiling CodecProof NightJourneyGait.swift
+[73/126] Compiling CodecProof NightJourneyProgress.swift
+[74/126] Compiling CodecProof NightJourneyTerrain.swift
+[75/126] Compiling CodecProof NightWatch.swift
+[76/126] Compiling CodecProof NightWatchGuidance.swift
+[77/149] Compiling CodecProof NightWatchHistory.swift
+[78/149] Compiling CodecProof NightWatchUsageMonitoring.swift
+[79/149] Compiling CodecProof NightsHistorySummary.swift
+[80/149] Compiling CodecProof NotificationCopy.swift
+[81/149] Compiling CodecProof NotificationPlanning.swift
+[82/149] Compiling CodecProof NotificationPreferences.swift
+[83/149] Compiling CodecProof OfflinePurpose.swift
+[84/149] Compiling CodecProof OllieCompanionAnimation.swift
+[85/149] Compiling CodecProof OllieModels.swift
+[86/149] Compiling CodecProof OllieWardrobe.swift
+[87/149] Compiling CodecProof Onboarding.swift
+[88/149] Compiling CodecProof OnboardingJourney.swift
+[89/149] Compiling CodecProof Orientation.swift
+[90/149] Compiling CodecProof PastureFetch.swift
+[91/149] Compiling CodecProof PastureFetchPractice.swift
+[92/149] Compiling CodecProof PastureFetchWakeUp.swift
+[93/149] Compiling CodecProof PasturePlay.swift
+[94/149] Compiling CodecProof PastureScene.swift
+[95/149] Compiling CodecProof PersonalShield.swift
+[96/149] Compiling CodecProof PhoneAwaySearchSettlement.swift
+[97/149] Compiling CodecProof PhoneAwayStartPolicy.swift
+[98/149] Compiling CodecProof PhoneBedTag.swift
+[99/149] Compiling CodecProof PhoneBedTagInspection.swift
+[100/149] Compiling CodecProof ProximityClassifier.swift
+[101/149] Compiling CodecProof QuietNoteText.swift
+[102/149] Compiling CodecProof QuietPeriodScheduling.swift
+[103/149] Compiling CodecProof QuietTimeBriefAccess.swift
+[104/149] Compiling CodecProof QuietTimeShieldPresentation.swift
+[105/149] Compiling CodecProof QuietTimeShieldSchedule.swift
+[106/149] Compiling CodecProof QuietTimeShieldScheduleRegistry.swift
+[107/149] Compiling CodecProof QuietTimeShielding.swift
+[108/149] Compiling CodecProof RewardEngine.swift
+[109/149] Compiling CodecProof RewardModels.swift
+[110/149] Compiling CodecProof RitualPersonalisation.swift
+[111/149] Compiling CodecProof RitualPersonalisationRules.swift
+[112/149] Compiling CodecProof ScreenFreeMorningPresentation.swift
+[113/149] Compiling CodecProof ScreenTimeIntegration.swift
+[114/149] Compiling CodecProof ScreenTimeReportMath.swift
+[115/149] Compiling CodecProof SessionGuard.swift
+[116/149] Compiling CodecProof SharedMeadow.swift
+[117/149] Compiling CodecProof SharedPasture.swift
+[118/149] Compiling CodecProof SheepPosterBoard.swift
+[119/149] Compiling CodecProof SheepSearch.swift
+[120/149] Compiling CodecProof SheepSearchExplainer.swift
+[121/149] Compiling CodecProof SheepSearchPresentation.swift
+[122/149] Compiling CodecProof SheepSearchSlumberParty.swift
+[123/149] Compiling CodecProof SheepSearchState.swift
+[124/149] Compiling CodecProof SheepSearchWelcome.swift
+[125/149] Compiling CodecProof ShepherdArtStudy.swift
+[126/149] Compiling CodecProof ShepherdAvatarAppearance.swift
+[127/149] Compiling CodecProof SleepIntervalMath.swift
+[128/149] Compiling CodecProof SlumberPartyAcquisition.swift
+[129/149] Compiling CodecProof SlumberPartyFeedback.swift
+[130/149] Compiling CodecProof SlumberPartyHomePresentation.swift
+[131/149] Compiling CodecProof SlumberPartyInvitations.swift
+[132/149] Compiling CodecProof SlumberPartyLink.swift
+[133/149] Compiling CodecProof SlumberPartySharedFarm.swift
+[134/149] Compiling CodecProof SocialInbox.swift
+[135/149] Compiling CodecProof SunriseTrail.swift
+[136/149] Compiling CodecProof WatchMessage.swift
+[137/149] Compiling CodecProof WelcomeReward.swift
+[138/149] Compiling CodecProof WindDownGuidance.swift
+[139/149] Compiling CodecProof WindDownGuidanceSources.swift
+[140/149] Compiling CodecProof WindDownHabit.swift
+[141/149] Compiling CodecProof WindDownProfile.swift
+[142/149] Compiling CodecProof WindDownProfilePresentation.swift
+[143/149] Compiling CodecProof WindDownScheduling.swift
+[144/149] Compiling CodecProof WindDownStartContext.swift
+[145/149] Compiling CodecProof WindDownStartTransaction.swift
+[146/149] Compiling CodecProof main.swift
+[146/149] Write Objects.LinkFileList
+[147/149] Linking CodecProof
+[148/149] Applying CodecProof
+Build complete! (16.22s)
+Swift exported 8 sanitized codec fixtures; owner metadata is not a Farm payload field
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:processDebugNavigationResources
+> Task :app:compileDebugNavigationResources
+> Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:mergeDebugResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebug
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:processDebugJavaRes
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+> Task :app:testDebugUnitTest
+
+BUILD SUCCESSFUL in 8s
+24 actionable tasks: 24 executed
+PASS: 8 Swift → Kotlin → Swift semantic/fingerprint comparisons and Kotlin → Swift return; UUID owner preserved outside payload
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:processDebugNavigationResources
+> Task :app:compileDebugNavigationResources
+> Task :app:generateDebugResValues
+> Task :app:checkDebugAarMetadata
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug
+> Task :app:processDebugManifestForPackage
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:mergeDebugResources
+> Task :app:processDebugResources
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+> Task :app:testDebugUnitTest
+
+BUILD SUCCESSFUL in 4s
+24 actionable tasks: 24 executed

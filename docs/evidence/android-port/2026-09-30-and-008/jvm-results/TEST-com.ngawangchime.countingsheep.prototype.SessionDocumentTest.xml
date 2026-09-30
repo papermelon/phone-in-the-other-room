@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.ngawangchime.countingsheep.prototype.SessionDocumentTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-09-30T10:35:10.740Z" hostname="Ngawangs-MacBook-Pro.local" time="0.006">
+  <properties/>
+  <testcase name="rejectsCorruptNewerUnknownFieldsAndInvalidAmountsBeforeNormalization" classname="com.ngawangchime.countingsheep.prototype.SessionDocumentTest" time="0.005"/>
+  <testcase name="prototypeMigrationPreservesConsentOccurrenceAndAccessWithoutHistoricalRewards" classname="com.ngawangchime.countingsheep.prototype.SessionDocumentTest" time="0.001"/>
+  <testcase name="unknownCatalogIDsRoundTripWithoutInventingAccountOwnership" classname="com.ngawangchime.countingsheep.prototype.SessionDocumentTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

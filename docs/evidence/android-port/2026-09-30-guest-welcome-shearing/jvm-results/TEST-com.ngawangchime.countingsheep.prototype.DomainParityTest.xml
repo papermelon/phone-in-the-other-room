@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.ngawangchime.countingsheep.prototype.DomainParityTest" tests="5" skipped="0" failures="0" errors="0" timestamp="2026-09-30T13:40:50.689Z" hostname="Ngawangs-MacBook-Pro.local" time="0.468">
+  <properties/>
+  <testcase name="currentSwiftStarterSkipShearingYieldsAndCreditRegrowthMatch" classname="com.ngawangchime.countingsheep.prototype.DomainParityTest" time="0.247"/>
+  <testcase name="currentSwiftMorningMinutesWoolFillsAndSearchSemanticsMatch" classname="com.ngawangchime.countingsheep.prototype.DomainParityTest" time="0.038"/>
+  <testcase name="currentSwiftCreditBonusGrowthAndDeterministicSearchSemanticsMatch" classname="com.ngawangchime.countingsheep.prototype.DomainParityTest" time="0.081"/>
+  <testcase name="currentSwiftGuestRoutingDurationsAndFreshPhraseSemanticsMatch" classname="com.ngawangchime.countingsheep.prototype.DomainParityTest" time="0.045"/>
+  <testcase name="currentSwiftAnchoredTimingPhasesAndIdentitiesMatch" classname="com.ngawangchime.countingsheep.prototype.DomainParityTest" time="0.056"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

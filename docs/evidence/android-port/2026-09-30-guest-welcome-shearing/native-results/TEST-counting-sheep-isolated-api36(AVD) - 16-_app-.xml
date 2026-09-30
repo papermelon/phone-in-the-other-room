@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest" tests="9" failures="0" errors="0" skipped="0" time="99.422" timestamp="2026-09-30T13:51:48" hostname="localhost">
+  <properties>
+    <property name="device" value="counting-sheep-isolated-api36(AVD) - 16" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="starterAndShearingAtomicFaultsPreserveIdentityAcrossRepairAndRestart" classname="com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest" time="0.436" />
+  <testcase name="interruptedIntentEffectsAndLostAcknowledgementsReplayExactlyOnceOnRealAtomicFiles" classname="com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest" time="0.295" />
+  <testcase name="corruptNewerAndUnknownDocumentsStayBytePreservedAndWriteFenced" classname="com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest" time="0.032" />
+  <testcase name="migrationPreservesPrototypeBytesAsRecoveryAndDoesNotInventRewards" classname="com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest" time="0.061" />
+  <testcase name="guestJourneyUpdatePreservesV2OccurrenceFarmAndOriginalRecoveryBytes" classname="com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest" time="0.03" />
+  <testcase name="morningSettlementCrashCannotDuplicateWoolOrArrival" classname="com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest" time="0.061" />
+  <testcase name="realGuestPlanStartPhraseEarlyWakeReceiptsAndFarm" classname="com.ngawangchime.countingsheep.prototype.GuestJourneyInstrumentationTest" time="82.668" />
+  <testcase name="observedOverlayInterceptsTargetAndBriefAccessAndExitOpenIt" classname="com.ngawangchime.countingsheep.prototype.ProtectionInstrumentationTest" time="13.82" />
+  <testcase name="atomicRoundTripAndCorruptLatestAreRecoverableWithoutResumingProtection" classname="com.ngawangchime.countingsheep.prototype.SessionStoreInstrumentationTest" time="0.031" />
+</testsuite>

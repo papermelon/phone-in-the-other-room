@@ -1,0 +1,24 @@
+ M PhoneInTheOtherRoom.xcodeproj/project.pbxproj
+ M PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+CampfireBuddies.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddiesNativeFixture.swift
+ M PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddyViews.swift
+ M PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SlumberPartyHomeStudyView.swift
+ M PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SocialPersonCardStudyView.swift
+ M Shared/CampfireBuddies.swift
+ M Tests/CampfireBuddiesTests.swift
+ M docs/FUTURE_AGENT_TASKS.md
+ M docs/plans/campfire-buddies-implementation-2026-09-13.md
+ M project.yml
+ M supabase/functions/_shared/night-flock-errors.ts
+ M supabase/functions/_shared/night-flock-handlers.ts
+ M supabase/functions/_shared/night-flock.ts
+ M supabase/functions/night-flock-command/index.ts
+ M supabase/tests/campfire_validation.mjs
+?? android/
+?? docs/evidence/android-port/
+?? docs/evidence/wind-down-check-in-20260930/
+?? docs/plans/android-port-implementation-roadmap-2026-09-30.md
+?? output/validation/wind-down-check-in-20260930/
+?? supabase/functions/_shared/shared-text-moderation.ts
+?? supabase/migrations/20260930120000_wind_down_check_in.sql
+?? supabase/tests/wind_down_check_in_test.sql

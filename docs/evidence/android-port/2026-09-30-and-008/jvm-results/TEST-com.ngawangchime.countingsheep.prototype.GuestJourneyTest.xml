@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.ngawangchime.countingsheep.prototype.GuestJourneyTest" tests="8" skipped="0" failures="0" errors="0" timestamp="2026-09-30T10:35:10.640Z" hostname="Ngawangs-MacBook-Pro.local" time="0.094">
+  <properties/>
+  <testcase name="manualNightOverlapIsStrictAndRequiresExplicitEarlyApproval" classname="com.ngawangchime.countingsheep.prototype.GuestJourneyTest" time="0.026"/>
+  <testcase name="endingAnIndependentMorningDoesNotEndOverlappingPhoneAway" classname="com.ngawangchime.countingsheep.prototype.GuestJourneyTest" time="0.01"/>
+  <testcase name="earlyWakeHasDedicatedStartAndTypedDeferSkipChoices" classname="com.ngawangchime.countingsheep.prototype.GuestJourneyTest" time="0.005"/>
+  <testcase name="savedPlanDoesNotStartAndEditingDoesNotMoveActiveOccurrence" classname="com.ngawangchime.countingsheep.prototype.GuestJourneyTest" time="0.006"/>
+  <testcase name="receiptsAreDurableSeparateAndAcknowledgementsDoNotChangeRewards" classname="com.ngawangchime.countingsheep.prototype.GuestJourneyTest" time="0.01"/>
+  <testcase name="confirmationsAreFreshSingleUseAndPhaseSensitive" classname="com.ngawangchime.countingsheep.prototype.GuestJourneyTest" time="0.022"/>
+  <testcase name="failedAcknowledgementDoesNotDismissReceiptOrDuplicateSettlement" classname="com.ngawangchime.countingsheep.prototype.GuestJourneyTest" time="0.004"/>
+  <testcase name="schemaTwoMigrationPreservesLedgersUnknownCatalogAndHistoricalReceipts" classname="com.ngawangchime.countingsheep.prototype.GuestJourneyTest" time="0.007"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

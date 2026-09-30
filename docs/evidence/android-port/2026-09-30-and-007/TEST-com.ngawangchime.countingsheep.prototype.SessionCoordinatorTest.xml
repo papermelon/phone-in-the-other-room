@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" tests="14" skipped="0" failures="0" errors="0" timestamp="2026-09-30T08:54:50.848Z" hostname="Ngawangs-MacBook-Pro.local" time="0.016">
+  <properties/>
+  <testcase name="scheduledStartUsesAbsoluteBoundaryAndNoEarlyBlock" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.011"/>
+  <testcase name="committedGrantSurvivesRestartUntilBoundary" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.001"/>
+  <testcase name="restartPastEndRecordsPlannedEndWithoutInventingCoverage" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.001"/>
+  <testcase name="storageFailureDoesNotLiftIntoAnUnrecordedGrant" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.0"/>
+  <testcase name="fiveMinutesIsPersistedBeforeClearAndClippedToEnd" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.0"/>
+  <testcase name="staleOccurrenceAndGrantCannotAffectReplacement" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.001"/>
+  <testcase name="admissionRequiresConsentSelectionAndConnectedService" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.0"/>
+  <testcase name="normalAndEmergencyExitLeaveAppsOpen" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.0"/>
+  <testcase name="pendingGrantDoesNotAuthorizeAfterRestart" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.0"/>
+  <testcase name="staleAlarmDoesNotCreateObservedEvidence" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.0"/>
+  <testcase name="failureFailsOpenAndRequiresExplicitRepair" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.001"/>
+  <testcase name="refuseAndSubTwoSecondAccessStaySafe" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.0"/>
+  <testcase name="accessExpiresAtFiveMinutesAndRestoresOnEvent" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.0"/>
+  <testcase name="clockJumpAndRebootFailOpen" classname="com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

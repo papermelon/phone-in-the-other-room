@@ -1,0 +1,70 @@
+diff --git a/PhoneInTheOtherRoom.xcodeproj/project.pbxproj b/PhoneInTheOtherRoom.xcodeproj/project.pbxproj
+index e85aecb..784aba3 100644
+--- a/PhoneInTheOtherRoom.xcodeproj/project.pbxproj
++++ b/PhoneInTheOtherRoom.xcodeproj/project.pbxproj
+@@ -4408,7 +4408,7 @@
+ 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				COPY_PHASE_STRIP = NO;
+-				CURRENT_PROJECT_VERSION = 63;
++				CURRENT_PROJECT_VERSION = 64;
+ 				DEAD_CODE_STRIPPING = YES;
+ 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+ 				DEVELOPMENT_TEAM = 4KZQPZR47B;
+@@ -4488,7 +4488,7 @@
+ 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				COPY_PHASE_STRIP = NO;
+-				CURRENT_PROJECT_VERSION = 63;
++				CURRENT_PROJECT_VERSION = 64;
+ 				DEAD_CODE_STRIPPING = YES;
+ 				DEBUG_INFORMATION_FORMAT = dwarf;
+ 				DEVELOPMENT_TEAM = 4KZQPZR47B;
+@@ -4646,7 +4646,7 @@
+ 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+ 				CODE_SIGN_STYLE = Automatic;
+ 				COPY_PHASE_STRIP = NO;
+-				CURRENT_PROJECT_VERSION = 63;
++				CURRENT_PROJECT_VERSION = 64;
+ 				DEAD_CODE_STRIPPING = YES;
+ 				DEBUG_INFORMATION_FORMAT = dwarf;
+ 				DEVELOPMENT_TEAM = 4KZQPZR47B;
+diff --git a/docs/FUTURE_AGENT_TASKS.md b/docs/FUTURE_AGENT_TASKS.md
+index 97b881a..8f3e932 100644
+--- a/docs/FUTURE_AGENT_TASKS.md
++++ b/docs/FUTURE_AGENT_TASKS.md
+@@ -1,5 +1,11 @@
+ # Future Agent Tasks — Prioritised Backlog
+ 
++## Android port roadmap — 30 September 2026
++
++- [Comprehensive draft roadmap](plans/android-port-implementation-roadmap-2026-09-30.md) records proposed native Kotlin/Compose architecture, launch parity, ordered phases, owner responsibilities, estimates, physical-device gates and Google Play preparation. Planning is requested; no Android target, dependency, service configuration or distribution has been activated.
++- First implementation slice: resolve kickoff choices, then prove selected-app protection, bounded Brief Access and safe exits on representative Android phones, alongside sanitized Swift/Kotlin Farm payload round-trips. Freeze capability limits and revise estimates before the full feature port.
++- Preserve the current account-default Farm/archive behavior, independent morning accounting, bedtime-bonus versions and sharing allowlists. Android push needs an additive FCM adapter to the current APNs transport; the native Shepherd renderer also needs a port. Implementation/dependency and external-action authorization remain separate from this draft.
++
+ ## Social invitations, inbox, and meaningful cheers — 29 September 2026
+ 
+ - [Plan and researched wording](plans/slumber-party-social-upgrade-2026-09-28.md); [implementation and deployment evidence](evidence/social-upgrade-20260929/validation.md). Exact handle search, clearer private-group invitations, Home Inbox, contextual nine-message vocabulary, durable retries, arrival ordering and optional account-level push are implemented. Both backend migrations and the existing dispatcher update are deployed; native distribution remains separate.
+@@ -1014,7 +1020,8 @@ execute without human sign-off mid-task (final merge review still applies per
+ - **Design-system convergence** (retire `GameComponents`) — opportunistic only.
+ - **New persistence layer / CoreData / SwiftData** — not needed at this scale.
+ - **CI pipeline** — valuable, but after first TestFlight; local gate suffices now.
+-- **Android / iPad / web** — out of scope (brief §non-goals).
++- **Android** — a [draft implementation roadmap](plans/android-port-implementation-roadmap-2026-09-30.md) is prepared at founder request; implementation and launch scope await the kickoff decision. Do not treat the older brief's blanket deferral as a prohibition on this planning work.
++- **iPad / web app** — remain outside this port's scope (brief §non-goals); existing website work is separate.
+ - **Any analytics/tracking SDK** — conflicts with the privacy posture; needs human decision.
+ 
+ ---
+diff --git a/project.yml b/project.yml
+index 162c1d3..4ca3197 100644
+--- a/project.yml
++++ b/project.yml
+@@ -27,7 +27,7 @@ settings:
+     DEVELOPMENT_TEAM: 4KZQPZR47B
+     CODE_SIGN_STYLE: Automatic
+     MARKETING_VERSION: 1.0
+-    CURRENT_PROJECT_VERSION: 63
++    CURRENT_PROJECT_VERSION: 64
+ packages:
+   Supabase:
+     url: https://github.com/supabase/supabase-swift.git

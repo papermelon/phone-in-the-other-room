@@ -1,0 +1,18 @@
+{
+  "jvm": {
+    "tests": 51,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "native": {
+    "tests": 8,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lintErrors": 0,
+  "lintWarnings": 12,
+  "swiftTests": 154,
+  "swiftFailures": 0
+}

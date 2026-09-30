@@ -1,0 +1,117 @@
+{
+  "android_unit": [
+    {
+      "name": "com.ngawangchime.countingsheep.prototype.DomainParityTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-30T08:54:50.076Z",
+      "time": "0.678"
+    },
+    {
+      "name": "com.ngawangchime.countingsheep.prototype.FarmPayloadCodecTest",
+      "tests": "2",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-30T08:54:50.757Z",
+      "time": "0.082"
+    },
+    {
+      "name": "com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest",
+      "tests": "14",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-30T08:54:50.848Z",
+      "time": "0.016"
+    },
+    {
+      "name": "com.ngawangchime.countingsheep.prototype.SessionDocumentTest",
+      "tests": "3",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-30T08:54:50.866Z",
+      "time": "0.015"
+    },
+    {
+      "name": "com.ngawangchime.countingsheep.prototype.SessionDomainTest",
+      "tests": "20",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-09-30T08:54:50.885Z",
+      "time": "0.107"
+    }
+  ],
+  "native_emulator": [
+    {
+      "suite": {
+        "tests": "6",
+        "failures": "0",
+        "errors": "0",
+        "skipped": "0",
+        "timestamp": "2026-09-30T08:50:21",
+        "time": "13.063"
+      },
+      "cases": [
+        {
+          "name": "interruptedIntentEffectsAndLostAcknowledgementsReplayExactlyOnceOnRealAtomicFiles",
+          "classname": "com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest",
+          "time": "0.522"
+        },
+        {
+          "name": "corruptNewerAndUnknownDocumentsStayBytePreservedAndWriteFenced",
+          "classname": "com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest",
+          "time": "0.001"
+        },
+        {
+          "name": "migrationPreservesPrototypeBytesAsRecoveryAndDoesNotInventRewards",
+          "classname": "com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest",
+          "time": "0.036"
+        },
+        {
+          "name": "morningSettlementCrashCannotDuplicateWoolOrArrival",
+          "classname": "com.ngawangchime.countingsheep.prototype.DomainStoreInstrumentationTest",
+          "time": "0.08"
+        },
+        {
+          "name": "observedOverlayInterceptsTargetAndBriefAccessAndExitOpenIt",
+          "classname": "com.ngawangchime.countingsheep.prototype.ProtectionInstrumentationTest",
+          "time": "11.118"
+        },
+        {
+          "name": "atomicRoundTripAndCorruptLatestAreRecoverableWithoutResumingProtection",
+          "classname": "com.ngawangchime.countingsheep.prototype.SessionStoreInstrumentationTest",
+          "time": "0.011"
+        }
+      ]
+    }
+  ],
+  "swift": {
+    "tests": 142,
+    "failures": 0,
+    "log": "parity-proof.log"
+  },
+  "semantic_reference": {
+    "timing_cases": 8,
+    "phase_samples": 32,
+    "identity_vectors": 16,
+    "credit_sequences": 15,
+    "credit_settlements": 37,
+    "morning_sequences": 2,
+    "morning_settlements": 16
+  },
+  "wire_reference": {
+    "original_fixtures": 8,
+    "shared_rejections": 23,
+    "both_directions": true
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 12
+  },
+  "physical_acceptance": "pending"
+}

@@ -1,0 +1,588 @@
+Building for debugging...
+[0/6] Write sources
+[1/6] Write CodecProof-entitlement.plist
+[2/6] Write swift-version--58304C5D6DBC2206.txt
+[4/80] Emitting module CodecProof
+[5/80] Compiling CodecProof AccountCredentials.swift
+[6/80] Compiling CodecProof AccountFarmOwnership.swift
+[7/80] Compiling CodecProof ActiveRunPresentation.swift
+[8/80] Compiling CodecProof AppAppearance.swift
+[9/80] Compiling CodecProof AppFeedback.swift
+[10/80] Compiling CodecProof AutomaticWindDownSchedulingDecision.swift
+[11/80] Compiling CodecProof Campfire.swift
+[12/80] Compiling CodecProof CampfireBuddies.swift
+[13/80] Compiling CodecProof CampfireProfile.swift
+[14/80] Compiling CodecProof CampfireVisibility.swift
+[15/80] Compiling CodecProof CompletionRewardPresentation.swift
+[16/80] Compiling CodecProof ConnectionPresentation.swift
+[17/80] Compiling CodecProof CountingSheepStorage.swift
+[18/80] Compiling CodecProof CountingSheepUserProfile.swift
+[19/80] Compiling CodecProof CumulativeFarmCredit.swift
+[20/80] Compiling CodecProof DistanceProvider.swift
+[21/80] Compiling CodecProof DomainReference.swift
+[22/80] Compiling CodecProof EmergencyExitChallenge.swift
+[23/80] Compiling CodecProof FarmAccountSocialOwnerGate.swift
+[24/80] Compiling CodecProof FarmBackupPayload.swift
+[25/80] Compiling CodecProof FarmBackupSync.swift
+[26/80] Compiling CodecProof FarmEconomyRules.swift
+[27/80] Compiling CodecProof FarmEconomySnapshot.swift
+[28/80] Compiling CodecProof FarmMigration.swift
+[29/80] Compiling CodecProof FarmModels.swift
+[30/80] Compiling CodecProof NightFlockOrientation.swift
+[31/80] Compiling CodecProof NightFlockPresentation.swift
+[32/80] Compiling CodecProof NightFlockReadDeadline.swift
+[33/80] Compiling CodecProof NightFlockRemoteError.swift
+[34/80] Compiling CodecProof NightFlockRequestScheduling.swift
+[35/80] Compiling CodecProof NightFlockRewards.swift
+[36/80] Compiling CodecProof NightFlockSharedHabitPresentation.swift
+[37/80] Compiling CodecProof NightFlockSharedHabitSleep.swift
+[38/80] Compiling CodecProof NightFlockSharedHabits.swift
+[39/80] Compiling CodecProof NightFlockSharedHabitsAPI.swift
+[40/80] Compiling CodecProof NightFlockSharedHabitsFence.swift
+[41/80] Compiling CodecProof NightFlockSharedHabitsOutbox.swift
+[42/80] Compiling CodecProof NightFlockSharing.swift
+[43/80] Compiling CodecProof NightFlockV2API.swift
+[44/80] Compiling CodecProof NightFlockV3API.swift
+[45/80] Compiling CodecProof NightFlockV4API.swift
+[46/80] Compiling CodecProof NightFlockV4Models.swift
+[47/80] Compiling CodecProof NightFlockV4Outbox.swift
+[48/80] Compiling CodecProof NightFlockV4PublicationPolicy.swift
+[49/80] Compiling CodecProof NightFlockV4Rewards.swift
+[50/80] Compiling CodecProof NightJourneyAssets.swift
+[51/80] Compiling CodecProof NightJourneyGait.swift
+[52/80] Compiling CodecProof NightJourneyProgress.swift
+[53/80] Compiling CodecProof NightJourneyTerrain.swift
+[54/80] Compiling CodecProof FarmSaveDocument.swift
+[55/80] Compiling CodecProof FarmSaveStore+Accounts.swift
+[56/80] Compiling CodecProof FarmSaveStore.swift
+[57/80] Compiling CodecProof FarmShop.swift
+[58/80] Compiling CodecProof FarmShopCatalog.swift
+[59/80] Compiling CodecProof FirstRunJourney.swift
+[60/80] Compiling CodecProof FocusAnalytics.swift
+[61/80] Compiling CodecProof FocusRunLiveActivity.swift
+[62/80] Compiling CodecProof FocusRunLiveActivityPushContract.swift
+[63/80] Compiling CodecProof FocusRunRules.swift
+[64/80] Compiling CodecProof FocusSessionStartResult.swift
+[65/80] Compiling CodecProof Formatting.swift
+[66/80] Compiling CodecProof HomeReceiptRouting.swift
+[67/80] Compiling CodecProof HomeStartRouting.swift
+[68/80] Compiling CodecProof HomeWindowPhase.swift
+[69/80] Compiling CodecProof ImpactMeasurement.swift
+[70/80] Compiling CodecProof IndependentMorningSettlement.swift
+[71/80] Compiling CodecProof MorningCheckIn.swift
+[72/80] Compiling CodecProof MorningQuietIntent.swift
+[73/80] Compiling CodecProof NightFlockAPI.swift
+[74/80] Compiling CodecProof NightFlockCommitment.swift
+[75/80] Compiling CodecProof NightFlockDiagnostics.swift
+[76/80] Compiling CodecProof NightFlockInviteRecovery.swift
+[77/80] Compiling CodecProof NightFlockModels.swift
+[78/152] Compiling CodecProof PhoneBedTagInspection.swift
+[79/152] Compiling CodecProof ProximityClassifier.swift
+[80/152] Compiling CodecProof QuietNoteText.swift
+[81/152] Compiling CodecProof QuietPeriodScheduling.swift
+[82/152] Compiling CodecProof QuietTimeBriefAccess.swift
+[83/152] Compiling CodecProof QuietTimeShieldPresentation.swift
+[84/152] Compiling CodecProof QuietTimeShieldSchedule.swift
+[85/152] Compiling CodecProof QuietTimeShieldScheduleRegistry.swift
+[86/152] Compiling CodecProof QuietTimeShielding.swift
+[87/152] Compiling CodecProof RewardEngine.swift
+[88/152] Compiling CodecProof RewardModels.swift
+[89/152] Compiling CodecProof RitualPersonalisation.swift
+[90/152] Compiling CodecProof RitualPersonalisationRules.swift
+[91/152] Compiling CodecProof ScreenFreeMorningPresentation.swift
+[92/152] Compiling CodecProof ScreenTimeIntegration.swift
+[93/152] Compiling CodecProof ScreenTimeReportMath.swift
+[94/152] Compiling CodecProof SessionGuard.swift
+[95/152] Compiling CodecProof SharedMeadow.swift
+[96/152] Compiling CodecProof SharedPasture.swift
+[97/152] Compiling CodecProof SheepPosterBoard.swift
+[98/152] Compiling CodecProof SheepSearch.swift
+[99/152] Compiling CodecProof SheepSearchExplainer.swift
+[100/152] Compiling CodecProof SheepSearchPresentation.swift
+[101/152] Compiling CodecProof SheepSearchSlumberParty.swift
+[102/152] Compiling CodecProof SheepSearchState.swift
+[103/152] Compiling CodecProof SheepSearchWelcome.swift
+[104/152] Compiling CodecProof ShepherdArtStudy.swift
+[105/152] Compiling CodecProof ShepherdAvatarAppearance.swift
+[106/152] Compiling CodecProof SleepIntervalMath.swift
+[107/152] Compiling CodecProof SlumberPartyAcquisition.swift
+[108/152] Compiling CodecProof SlumberPartyFeedback.swift
+[109/152] Compiling CodecProof SlumberPartyHomePresentation.swift
+[110/152] Compiling CodecProof SlumberPartyInvitations.swift
+[111/152] Compiling CodecProof SlumberPartyLink.swift
+[112/152] Compiling CodecProof SlumberPartySharedFarm.swift
+[113/152] Compiling CodecProof SocialInbox.swift
+[114/152] Compiling CodecProof SunriseTrail.swift
+[115/152] Compiling CodecProof WatchMessage.swift
+[116/152] Compiling CodecProof WelcomeReward.swift
+[117/152] Compiling CodecProof WindDownGuidance.swift
+[118/152] Compiling CodecProof WindDownGuidanceSources.swift
+[119/152] Compiling CodecProof WindDownHabit.swift
+[120/152] Compiling CodecProof WindDownProfile.swift
+[121/152] Compiling CodecProof WindDownProfilePresentation.swift
+[122/152] Compiling CodecProof WindDownScheduling.swift
+[123/152] Compiling CodecProof WindDownStartContext.swift
+[124/152] Compiling CodecProof WindDownStartTransaction.swift
+[125/152] Compiling CodecProof main.swift
+[126/152] Compiling CodecProof NightWatch.swift
+[127/152] Compiling CodecProof NightWatchGuidance.swift
+[128/152] Compiling CodecProof NightWatchHistory.swift
+[129/152] Compiling CodecProof NightWatchUsageMonitoring.swift
+[130/152] Compiling CodecProof NightsHistorySummary.swift
+[131/152] Compiling CodecProof NotificationCopy.swift
+[132/152] Compiling CodecProof NotificationPlanning.swift
+[133/152] Compiling CodecProof NotificationPreferences.swift
+[134/152] Compiling CodecProof OfflinePurpose.swift
+[135/152] Compiling CodecProof OllieCompanionAnimation.swift
+[136/152] Compiling CodecProof OllieModels.swift
+[137/152] Compiling CodecProof OllieWardrobe.swift
+[138/152] Compiling CodecProof Onboarding.swift
+[139/152] Compiling CodecProof OnboardingJourney.swift
+[140/152] Compiling CodecProof Orientation.swift
+[141/152] Compiling CodecProof PastureFetch.swift
+[142/152] Compiling CodecProof PastureFetchPractice.swift
+[143/152] Compiling CodecProof PastureFetchWakeUp.swift
+[144/152] Compiling CodecProof PasturePlay.swift
+[145/152] Compiling CodecProof PastureScene.swift
+[146/152] Compiling CodecProof PersonalShield.swift
+[147/152] Compiling CodecProof PhoneAwaySearchSettlement.swift
+[148/152] Compiling CodecProof PhoneAwayStartPolicy.swift
+[149/152] Compiling CodecProof PhoneBedTag.swift
+[149/152] Write Objects.LinkFileList
+[150/152] Linking CodecProof
+[151/152] Applying CodecProof
+Build complete! (18.00s)
+[0/1] Planning build
+Building for debugging...
+[0/7] Write sources
+[0/7] /private/var/folders/rt/bg__d1pd0vv2nptk_81yldlr0000gn/T/counting-sheep-android-codec-ytj_r6tp/.build/arm64-apple-macosx/debug/CodecProofPackageTests.derived/runner.swift
+[2/8] Write sources
+[3/8] Write swift-version--58304C5D6DBC2206.txt
+[5/15] Compiling SwiftRuleTests NightWatchTests.swift
+[6/15] Compiling SwiftRuleTests PersonalShieldTests.swift
+[7/15] Compiling SwiftRuleTests FarmSaveStoreTests.swift
+[8/15] Compiling SwiftRuleTests HomeStartRoutingTests.swift
+[9/15] Compiling SwiftRuleTests IndependentMorningSettlementTests.swift
+[10/17] Compiling SwiftRuleTests QuietTimeBriefAccessTests.swift
+[11/17] Compiling SwiftRuleTests WindDownSchedulingTests.swift
+[12/17] Emitting module SwiftRuleTests
+[13/17] Compiling SwiftRuleTests BedtimeSearchBonusTests.swift
+[14/17] Compiling SwiftRuleTests CumulativeFarmCreditTests.swift
+[15/17] Compiling SwiftRuleTests FarmSaveDocumentTests.swift
+[16/19] Compiling CodecProofPackageTests runner.swift
+[17/19] Emitting module CodecProofPackageTests
+[17/19] Write Objects.LinkFileList
+[18/19] Linking CodecProofPackageTests
+Build complete! (11.88s)
+Test Suite 'All tests' started at 2026-09-30 18:04:31.631.
+Test Suite 'CodecProofPackageTests.xctest' started at 2026-09-30 18:04:31.633.
+Test Suite 'BedtimeSearchBonusTests' started at 2026-09-30 18:04:31.633.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testAccessAndUnknownTrackingRemainSeparateFromBonus]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testAccessAndUnknownTrackingRemainSeparateFromBonus]' passed (0.003 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testDSTAndMidnightUseFrozenAbsolutePlanBoundaries]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testDSTAndMidnightUseFrozenAbsolutePlanBoundaries]' passed (0.002 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testInvalidBonusAmountsCannotEnterThroughRestore]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testInvalidBonusAmountsCannotEnterThroughRestore]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testLegacyMigrationPracticeOtherModesAndInterruptedRunsNeverGrantBonus]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testLegacyMigrationPracticeOtherModesAndInterruptedRunsNeverGrantBonus]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testMultipleCrossingsAndFractionalRemainder]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testMultipleCrossingsAndFractionalRemainder]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testOldQueuedPayloadIsLosslessAndNewBonusRequiresNewFarmSchema]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testOldQueuedPayloadIsLosslessAndNewBonusRequiresNewFarmSchema]' passed (0.005 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testPresentationShowsUnspentContributionsAndCannotPrematurelySayFull]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testPresentationShowsUnspentContributionsAndCannotPrematurelySayFull]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testReplayRestartAndSavedNightAttribution]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testReplayRestartAndSavedNightAttribution]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testSameNightKeySurvivesTimezoneChangesAndDifferentAccountIsIndependent]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testSameNightKeySurvivesTimezoneChangesAndDifferentAccountIsIndependent]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testStartWindowAndBedtimeBoundaries]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testStartWindowAndBedtimeBoundaries]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testThirtyDayEconomyComparison]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testThirtyDayEconomyComparison]' passed (0.398 seconds).
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testThresholdCarryConsumesTimeBeforeBonusAndDoesNotGrowWool]' started.
+Test Case '-[SwiftRuleTests.BedtimeSearchBonusTests testThresholdCarryConsumesTimeBeforeBonusAndDoesNotGrowWool]' passed (0.000 seconds).
+Test Suite 'BedtimeSearchBonusTests' passed at 2026-09-30 18:04:32.047.
+	 Executed 12 tests, with 0 failures (0 unexpected) in 0.413 (0.414) seconds
+Test Suite 'CumulativeFarmCreditTests' started at 2026-09-30 18:04:32.047.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testAccessHistorySurvivesLongRunAndSameRunRevisionRollover]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testAccessHistorySurvivesLongRunAndSameRunRevisionRollover]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testAccessIntervalsAreClippedMergedAndExcludedOnce]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testAccessIntervalsAreClippedMergedAndExcludedOnce]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testCarryAcrossNightsFindsSheepAndReplayingSaveCannotDuplicate]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testCarryAcrossNightsFindsSheepAndReplayingSaveCannotDuplicate]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testFiveHoursThirtyEightMinutesSurvivesEarlyEnding]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testFiveHoursThirtyEightMinutesSurvivesEarlyEnding]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testLegacyDecodeAndMigrationAreIdempotent]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testLegacyDecodeAndMigrationAreIdempotent]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testMigrationPreservesCompletedRewardsAndRejectsAmbiguousHistory]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testMigrationPreservesCompletedRewardsAndRejectsAmbiguousHistory]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testMissingAccessTimestampsNeverBecomeUnexcludedCredit]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testMissingAccessTimestampsNeverBecomeUnexcludedCredit]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testMorningWindowDoesNotAlsoEarnWindDownCredit]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testMorningWindowDoesNotAlsoEarnWindDownCredit]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testMultipleSearchesCarryRemainderAndReplayDeterministically]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testMultipleSearchesCarryRemainderAndReplayDeterministically]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testOverlappingDifferentRunIDsCannotCreditSameTimeTwice]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testOverlappingDifferentRunIDsCannotCreditSameTimeTwice]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testOverlappingModesCannotCreditSameTimeTwice]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testOverlappingModesCannotCreditSameTimeTwice]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testPartialCreditVisiblyRegrowsWoolAndShearingResetsOnlyThatSheep]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testPartialCreditVisiblyRegrowsWoolAndShearingResetsOnlyThatSheep]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testPhoneAwayShortEarlySessionsAccumulateWithoutWindDownGate]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testPhoneAwayShortEarlySessionsAccumulateWithoutWindDownGate]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testPracticeAndActiveSessionsDoNotGrant]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testPracticeAndActiveSessionsDoNotGrant]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testReceiptIdentitySurvivesMoreThanLegacyLedgerLimit]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testReceiptIdentitySurvivesMoreThanLegacyLedgerLimit]' passed (0.021 seconds).
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testSubminuteTimeCarriesAndPlannedEndCapsRecovery]' started.
+Test Case '-[SwiftRuleTests.CumulativeFarmCreditTests testSubminuteTimeCarriesAndPlannedEndCapsRecovery]' passed (0.000 seconds).
+Test Suite 'CumulativeFarmCreditTests' passed at 2026-09-30 18:04:32.073.
+	 Executed 16 tests, with 0 failures (0 unexpected) in 0.025 (0.026) seconds
+Test Suite 'FarmSaveDocumentTests' started at 2026-09-30 18:04:32.073.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testBackupMetadataSurvivesLocalDocumentRoundTrip]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testBackupMetadataSurvivesLocalDocumentRoundTrip]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testBackupProjectionExcludesPrivateJournalAndDailyHistory]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testBackupProjectionExcludesPrivateJournalAndDailyHistory]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testBackupRequiresCumulativeMigrationBeforeEligibility]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testBackupRequiresCumulativeMigrationBeforeEligibility]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testChecksumDetectsChangedPayload]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testChecksumDetectsChangedPayload]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testCompleteFarmRoundTripPreservesEarnedAndSpentState]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testCompleteFarmRoundTripPreservesEarnedAndSpentState]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testFutureMorningLedgerCannotBeNormalizedByOlderDecoder]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testFutureMorningLedgerCannotBeNormalizedByOlderDecoder]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testInvalidComponentAndUnexpectedKeysDoNotBecomeEmptyState]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testInvalidComponentAndUnexpectedKeysDoNotBecomeEmptyState]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testRejectsFutureSchemaBeforeLossyDomainDecoding]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testRejectsFutureSchemaBeforeLossyDomainDecoding]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testRemoteBackupWithSupabaseDateEncodingPreservesFarmAndRejectsLossyFields]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testRemoteBackupWithSupabaseDateEncodingPreservesFarmAndRejectsLossyFields]' passed (0.006 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testRemoteRoundTripRejectsLossyDecodingAndPreservesWool]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testRemoteRoundTripRejectsLossyDecodingAndPreservesWool]' passed (0.003 seconds).
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testRestoreSeparatesFarmContinuityFromLocalNightsAndKeepsReplayMarkers]' started.
+Test Case '-[SwiftRuleTests.FarmSaveDocumentTests testRestoreSeparatesFarmContinuityFromLocalNightsAndKeepsReplayMarkers]' passed (0.001 seconds).
+Test Suite 'FarmSaveDocumentTests' passed at 2026-09-30 18:04:32.087.
+	 Executed 11 tests, with 0 failures (0 unexpected) in 0.013 (0.013) seconds
+Test Suite 'HomeStartRoutingTests' started at 2026-09-30 18:04:32.087.
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testDefaultPhoneAwayOverlapSelectsWindDownWithoutMovingAutomaticStart]' started.
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testDefaultPhoneAwayOverlapSelectsWindDownWithoutMovingAutomaticStart]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testEarlyHomeChoiceCrossesMidnightAndIgnoresPhoneAwayAndDisabledRoutines]' started.
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testEarlyHomeChoiceCrossesMidnightAndIgnoresPhoneAwayAndDisabledRoutines]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testPublishesOnlyTheCoordinatorAdmittedRun]' started.
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testPublishesOnlyTheCoordinatorAdmittedRun]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testRoutesOnlyWhenAdmissionMatchesAuthoritativeActiveRun]' started.
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testRoutesOnlyWhenAdmissionMatchesAuthoritativeActiveRun]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testWindDownHeadingUsesTonightOnlyForAnUpcomingBedtimeToday]' started.
+Test Case '-[SwiftRuleTests.HomeStartRoutingTests testWindDownHeadingUsesTonightOnlyForAnUpcomingBedtimeToday]' passed (0.000 seconds).
+Test Suite 'HomeStartRoutingTests' passed at 2026-09-30 18:04:32.089.
+	 Executed 5 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+Test Suite 'IndependentMorningSettlementTests' started at 2026-09-30 18:04:32.089.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests test419MinutesDoesNotCreateBenefit]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests test419MinutesDoesNotCreateBenefit]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testAuthorizedOrdinaryTerminalDecisionIsImmutableAndRepairsIntentOnlyGap]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testAuthorizedOrdinaryTerminalDecisionIsImmutableAndRepairsIntentOnlyGap]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testBenefitResolvesAt420MinutesWithoutDeliveryAndPersistsImmutableOutcome]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testBenefitResolvesAt420MinutesWithoutDeliveryAndPersistsImmutableOutcome]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testDeferredAndSkippedOccurrencesKeepSavedPreferencesUnchanged]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testDeferredAndSkippedOccurrencesKeepSavedPreferencesUnchanged]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testDeferredWholeWindowCompletesWithNonnegativeCappedMinutes]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testDeferredWholeWindowCompletesWithNonnegativeCappedMinutes]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testDeliveryAndRevealAreSeparatelyIdempotent]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testDeliveryAndRevealAreSeparatelyIdempotent]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testEarlyWakeIntentRejectsWindDownAndUnrelatedRuns]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testEarlyWakeIntentRejectsWindDownAndUnrelatedRuns]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testEarlyWakeStartsFullConfiguredDurationWithoutMutatingPlan]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testEarlyWakeStartsFullConfiguredDurationWithoutMutatingPlan]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testExplicitEarlyWakeDecisionRemainsDistinctFromOrdinaryOccurrenceIdentity]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testExplicitEarlyWakeDecisionRemainsDistinctFromOrdinaryOccurrenceIdentity]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testKeepRunningHasNoOccurrenceAndDeferredCannotDuplicateLinkedRun]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testKeepRunningHasNoOccurrenceAndDeferredCannotDuplicateLinkedRun]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testLegacyJournalWithoutNewFieldsDecodesWithoutRetroactiveSettlement]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testLegacyJournalWithoutNewFieldsDecodesWithoutRetroactiveSettlement]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testLegacyMorningOccurrenceDefaultsLiveActivityChoiceToEnabled]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testLegacyMorningOccurrenceDefaultsLiveActivityChoiceToEnabled]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testMorningBoundaryUsesNextScheduledStartThenActiveEnd]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testMorningBoundaryUsesNextScheduledStartThenActiveEnd]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testNonqualifyingTerminalProjectionIsPersistedOnceEvenWithoutReward]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testNonqualifyingTerminalProjectionIsPersistedOnceEvenWithoutReward]' passed (0.003 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testOrdinaryMorningIdentityIsDistinctAcrossEveryLeadingUUIDNibble]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testOrdinaryMorningIdentityIsDistinctAcrossEveryLeadingUUIDNibble]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testOrdinaryMorningIdentityIsStableAndSeparateFromWindDownRegistryIdentity]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testOrdinaryMorningIdentityIsStableAndSeparateFromWindDownRegistryIdentity]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testOrdinaryTerminalFinalizationSkipsBeforeWakeAndCapsActualMorningAtExit]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testOrdinaryTerminalFinalizationSkipsBeforeWakeAndCapsActualMorningAtExit]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testPendingDecisionCannotReplaceAnUnrelatedStoredRun]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testPendingDecisionCannotReplaceAnUnrelatedStoredRun]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testPhoneAwayTerminalNeverRecordsMorningDecision]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testPhoneAwayTerminalNeverRecordsMorningDecision]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testSunriseFillProjectsOneWoolAndOneIndependentSearchWithoutOtherTrackMutation]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testSunriseFillProjectsOneWoolAndOneIndependentSearchWithoutOtherTrackMutation]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testSunriseTrailMultipleFillsUseSequentialStableIndicesAndReplayOnce]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testSunriseTrailMultipleFillsUseSequentialStableIndicesAndReplayOnce]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testTerminalProjectionPlanIsImmutableAcrossReplay]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testTerminalProjectionPlanIsImmutableAcrossReplay]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testUnderFifteenMinutesDoesNotBankSunriseTrail]' started.
+Test Case '-[SwiftRuleTests.IndependentMorningSettlementTests testUnderFifteenMinutesDoesNotBankSunriseTrail]' passed (0.000 seconds).
+Test Suite 'IndependentMorningSettlementTests' passed at 2026-09-30 18:04:32.097.
+	 Executed 23 tests, with 0 failures (0 unexpected) in 0.007 (0.008) seconds
+Test Suite 'NightWatchTests' started at 2026-09-30 18:04:32.097.
+Test Case '-[SwiftRuleTests.NightWatchTests testAfterMidnightStartIsTreatedAsLateTuckIn]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testAfterMidnightStartIsTreatedAsLateTuckIn]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testCompletedNightWatchProgressUsesOnlyWindDownBookend]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testCompletedNightWatchProgressUsesOnlyWindDownBookend]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testCustomRoutineTextPreservesCaseAndPunctuation]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testCustomRoutineTextPreservesCaseAndPunctuation]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testExplicitlyEmptyRoutineDoesNotReviveLegacyDefaultIdea]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testExplicitlyEmptyRoutineDoesNotReviveLegacyDefaultIdea]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testGuidanceStaysStableWithinEachNightWatchPhase]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testGuidanceStaysStableWithinEachNightWatchPhase]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testLateCompletionEndsAtScheduledBoundaryAndLegacyReceiptIsBounded]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testLateCompletionEndsAtScheduledBoundaryAndLegacyReceiptIsBounded]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testLateRestartKeepsLocalBedtimeAcrossSpringDSTChange]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testLateRestartKeepsLocalBedtimeAcrossSpringDSTChange]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testLateRestartUsesNonDefaultTimeZoneAndCrossingMidnightWake]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testLateRestartUsesNonDefaultTimeZoneAndCrossingMidnightWake]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testLegacyFocusRunStillDecodesWithoutNightWatchPlan]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testLegacyFocusRunStillDecodesWithoutNightWatchPlan]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testLegacyNightWatchPlanDecodesCueTextIntoOrderedRoutines]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testLegacyNightWatchPlanDecodesCueTextIntoOrderedRoutines]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testLiveActivityGuidanceUsesTheChosenActionWithoutAnUnrelatedTip]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testLiveActivityGuidanceUsesTheChosenActionWithoutAnUnrelatedTip]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testLiveActivityShowsAllChosenIdeasWithoutPretendingToAdvanceSteps]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testLiveActivityShowsAllChosenIdeasWithoutPretendingToAdvanceSteps]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testNewDefaultsPreferNFCAndKeepAutomaticWindDownOff]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testNewDefaultsPreferNFCAndKeepAutomaticWindDownOff]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testNotificationCopyExplainsEachNightWatchTransition]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testNotificationCopyExplainsEachNightWatchTransition]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testOlderPreferencesDecodeWithAutomaticStartOff]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testOlderPreferencesDecodeWithAutomaticStartOff]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testOlderPreferencesMigrateNonEmptyCuesIntoPrivateRoutines]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testOlderPreferencesMigrateNonEmptyCuesIntoPrivateRoutines]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testOvernightTimerUsesHours]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testOvernightTimerUsesHours]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testPhaseTitlesNameRitualStateWithoutClaimingSleepOrScreenAvoidance]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testPhaseTitlesNameRitualStateWithoutClaimingSleepOrScreenAvoidance]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testPlanKeepsLocalWakeTimeAcrossSpringDSTChange]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testPlanKeepsLocalWakeTimeAcrossSpringDSTChange]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testPlanSpansWindDownOvernightAndMorningQuiet]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testPlanSpansWindDownOvernightAndMorningQuiet]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testQualifiedTerminalBeforeWakeKeepsFactualMorningCreditAtZero]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testQualifiedTerminalBeforeWakeKeepsFactualMorningCreditAtZero]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testQuietCreditExcludesOvernightHoursAndLateWindDownMinutes]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testQuietCreditExcludesOvernightHoursAndLateWindDownMinutes]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testReceiptPreservesActualEarlyEndInsteadOfInflatedElapsedCounter]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testReceiptPreservesActualEarlyEndInsteadOfInflatedElapsedCounter]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartAfterEarlyEndKeepsTheCurrentOvernightWindow]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartAfterEarlyEndKeepsTheCurrentOvernightWindow]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartAfterProtectedUntilMovesToTheNextEvening]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartAfterProtectedUntilMovesToTheNextEvening]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartAtProtectedUntilMovesToTheNextEvening]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartAtProtectedUntilMovesToTheNextEvening]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartDuringMorningQuietCreditsOnlyRemainingMinutes]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartDuringMorningQuietCreditsOnlyRemainingMinutes]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartExactlyAtWakeStartsMorningQuiet]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartExactlyAtWakeStartsMorningQuiet]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartImmediatelyBeforeWakeUsesTheRemainingCurrentWindow]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testRestartImmediatelyBeforeWakeUsesTheRemainingCurrentWindow]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.NightWatchTests testStartWindowOpensAtWindDownRatherThanAllDay]' started.
+Test Case '-[SwiftRuleTests.NightWatchTests testStartWindowOpensAtWindDownRatherThanAllDay]' passed (0.000 seconds).
+Test Suite 'NightWatchTests' passed at 2026-09-30 18:04:32.104.
+	 Executed 30 tests, with 0 failures (0 unexpected) in 0.005 (0.006) seconds
+Test Suite 'PersonalShieldTests' started at 2026-09-30 18:04:32.104.
+Test Case '-[SwiftRuleTests.PersonalShieldTests testChecksAreReversibleAndSleepReplacesBroadGoal]' started.
+Test Case '-[SwiftRuleTests.PersonalShieldTests testChecksAreReversibleAndSleepReplacesBroadGoal]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.PersonalShieldTests testEmptyAndLongTasksKeepExactPersonalWords]' started.
+Test Case '-[SwiftRuleTests.PersonalShieldTests testEmptyAndLongTasksKeepExactPersonalWords]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.PersonalShieldTests testMorningAndPhoneAwayDoNotInheritSleepOrEveningChecks]' started.
+Test Case '-[SwiftRuleTests.PersonalShieldTests testMorningAndPhoneAwayDoNotInheritSleepOrEveningChecks]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.PersonalShieldTests testMorningHandoffHasDistinctConfirmationAndMorningAction]' started.
+Test Case '-[SwiftRuleTests.PersonalShieldTests testMorningHandoffHasDistinctConfirmationAndMorningAction]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.PersonalShieldTests testPersonalExitIsFreshOneUseAndCannotReplaceItsPhrase]' started.
+Test Case '-[SwiftRuleTests.PersonalShieldTests testPersonalExitIsFreshOneUseAndCannotReplaceItsPhrase]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.PersonalShieldTests testPhraseMatchingKeepsWordsNumbersAndUnicode]' started.
+Test Case '-[SwiftRuleTests.PersonalShieldTests testPhraseMatchingKeepsWordsNumbersAndUnicode]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.PersonalShieldTests testRouteIsOneUseBoundedAndRejectsOtherOwnersRevisionsAndOccurrences]' started.
+Test Case '-[SwiftRuleTests.PersonalShieldTests testRouteIsOneUseBoundedAndRejectsOtherOwnersRevisionsAndOccurrences]' passed (0.003 seconds).
+Test Suite 'PersonalShieldTests' passed at 2026-09-30 18:04:32.109.
+	 Executed 7 tests, with 0 failures (0 unexpected) in 0.005 (0.006) seconds
+Test Suite 'QuietTimeBriefAccessTests' started at 2026-09-30 18:04:32.109.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testAutomaticScheduleUsesItsStableScheduleIdentityForRestore]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testAutomaticScheduleUsesItsStableScheduleIdentityForRestore]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testClampedGrantStillUsesAValidMinimumRestoreEnvelope]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testClampedGrantStillUsesAValidMinimumRestoreEnvelope]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testDelayedCallbackRestoresOnlyAtOrAfterExpiryAndNotAfterRunEnd]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testDelayedCallbackRestoresOnlyAtOrAfterExpiryAndNotAfterRunEnd]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testGrantIsClampedToProtectedIntervalEndAndBoundaryBecomesIneligible]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testGrantIsClampedToProtectedIntervalEndAndBoundaryBecomesIneligible]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testIdentityRolloverArchivesPriorLedgerWithoutAcceptingThePriorGrant]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testIdentityRolloverArchivesPriorLedgerWithoutAcceptingThePriorGrant]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testLegacyBriefAccessStateDecodesDefaults]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testLegacyBriefAccessStateDecodesDefaults]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testLegacyGrantDefaultsToItsRunIdentityAndFirstEpoch]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testLegacyGrantDefaultsToItsRunIdentityAndFirstEpoch]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testLegacyRestoreIdentifierStillDecodesAndMatchesOnlyItsGrant]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testLegacyRestoreIdentifierStillDecodesAndMatchesOnlyItsGrant]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testMonitorRejectionTombstoneBlocksStaleActionCommit]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testMonitorRejectionTombstoneBlocksStaleActionCommit]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testOccurrenceRevisionAndEpochMustAllMatchBeforeCommittingGrant]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testOccurrenceRevisionAndEpochMustAllMatchBeforeCommittingGrant]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testPendingAndPriorRevisionCallbacksNeverClearCurrentEligibleShield]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testPendingAndPriorRevisionCallbacksNeverClearCurrentEligibleShield]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testRepeatedFractionalGrantsRestoreAtSerializedWarningAndRejectOldCallbacks]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testRepeatedFractionalGrantsRestoreAtSerializedWarningAndRejectOldCallbacks]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testSchedulingFailureRollsBackWithoutIncrementing]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testSchedulingFailureRollsBackWithoutIncrementing]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testStaleRunOccurrenceAndRevisionAreRejectedIndependently]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testStaleRunOccurrenceAndRevisionAreRejectedIndependently]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testSuccessfulScheduleMarksOneUseAndDuplicateDoesNotExtendGrant]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testSuccessfulScheduleMarksOneUseAndDuplicateDoesNotExtendGrant]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testTerminalCleanupArchivesCountForLaterIdempotentImport]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testTerminalCleanupArchivesCountForLaterIdempotentImport]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testWebDomainIsRejectedAndEmptySelectionIsIneligible]' started.
+Test Case '-[SwiftRuleTests.QuietTimeBriefAccessTests testWebDomainIsRejectedAndEmptySelectionIsIneligible]' passed (0.000 seconds).
+Test Suite 'QuietTimeBriefAccessTests' passed at 2026-09-30 18:04:32.113.
+	 Executed 17 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+Test Suite 'WindDownSchedulingTests' started at 2026-09-30 18:04:32.113.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testAdditionalQuietPlanCreditsOnlyItsOwnIntervalAndCannotProgress]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testAdditionalQuietPlanCreditsOnlyItsOwnIntervalAndCannotProgress]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testCancellingAdHocStartTransactionRollsBackOnlyItsTemporaryPeriod]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testCancellingAdHocStartTransactionRollsBackOnlyItsTemporaryPeriod]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testCrossMidnightRoutineIsEligibleAfterMidnight]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testCrossMidnightRoutineIsEligibleAfterMidnight]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testCustomPhoneAwayTitlesRemainUnchangedInEditorAndSchedule]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testCustomPhoneAwayTitlesRemainUnchangedInEditorAndSchedule]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testDisabledOneTimePeriodRemainsSavedButCannotRun]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testDisabledOneTimePeriodRemainsSavedButCannotRun]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testDSTLocalClockTimeAndTimezoneChangesStayCalendarBased]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testDSTLocalClockTimeAndTimezoneChangesStayCalendarBased]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testEarliestAcrossOneTimeAndRecurringIsSelected]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testEarliestAcrossOneTimeAndRecurringIsSelected]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testEligibleOccurrencesKeepScheduledPhoneAwayVisibleBesideWindDown]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testEligibleOccurrencesKeepScheduledPhoneAwayVisibleBesideWindDown]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testEmptyCustomRecurrenceIsInvalid]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testEmptyCustomRecurrenceIsInvalid]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testExactEligibleOccurrenceUsesTheRequestedScheduledPeriod]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testExactEligibleOccurrenceUsesTheRequestedScheduledPeriod]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testHistoryAggregatesMultipleOccurrencesOnOneReportingDay]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testHistoryAggregatesMultipleOccurrencesOnOneReportingDay]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLateOneTimePlanCountsOnlyFromConfirmationUntilItsSavedEnd]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLateOneTimePlanCountsOnlyFromConfirmationUntilItsSavedEnd]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLegacyNightWatchRecordDefaultsToPrimaryRole]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLegacyNightWatchRecordDefaultsToPrimaryRole]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLegacyPhoneBreakTitlesRenderAsPhoneAwayWithoutChangingStoredTitle]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLegacyPhoneBreakTitlesRenderAsPhoneAwayWithoutChangingStoredTitle]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLegacyRepeatingPhoneBreakTitleRendersAsPhoneAwayWithoutChangingStoredTitle]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLegacyRepeatingPhoneBreakTitleRendersAsPhoneAwayWithoutChangingStoredTitle]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLegacyRoutineDecodingMigratesWeekdayShapeToSemanticRecurrence]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testLegacyRoutineDecodingMigratesWeekdayShapeToSemanticRecurrence]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testMultipleOneTimePeriodsAreOrderedPrunedAndConsumedIdempotently]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testMultipleOneTimePeriodsAreOrderedPrunedAndConsumedIdempotently]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testNextWindDownOverrideIsConsumedOnceAndExpires]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testNextWindDownOverrideIsConsumedOnceAndExpires]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testOneTimePrimaryOverridePreservesFullOrderedRoutineSnapshot]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testOneTimePrimaryOverridePreservesFullOrderedRoutineSnapshot]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testOneTimeSourceIdentityUsesThePersistedPeriodID]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testOneTimeSourceIdentityUsesThePersistedPeriodID]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testOverlapBoundaryIsAllowedAndConflictIdentifiesBothPeriods]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testOverlapBoundaryIsAllowedAndConflictIdentifiesBothPeriods]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testPrimaryRoutineMigratesVisibleStartFromLegacyPreferences]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testPrimaryRoutineMigratesVisibleStartFromLegacyPreferences]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurrenceSupportsDailyWeekdaysAndCustomDays]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurrenceSupportsDailyWeekdaysAndCustomDays]' passed (0.001 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurringPrimaryPlanPreservesFullOrderedRoutineSnapshot]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurringPrimaryPlanPreservesFullOrderedRoutineSnapshot]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurringPrimaryPlanUsesSavedBedtimeRatherThanRoutineWakeEnd]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurringPrimaryPlanUsesSavedBedtimeRatherThanRoutineWakeEnd]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurringPrimaryRestartIgnoresConsumedOccurrenceStateWithinProtectedWindow]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurringPrimaryRestartIgnoresConsumedOccurrenceStateWithinProtectedWindow]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurringSourceIdentitySurvivesOccurrenceRecalculation]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRecurringSourceIdentitySurvivesOccurrenceRecalculation]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRoutineCrossesMidnightUsingLocalCalendar]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testRoutineCrossesMidnightUsingLocalCalendar]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testScheduledPhoneAwayStartStaysSecondaryToWindDown]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testScheduledPhoneAwayStartStaysSecondaryToWindDown]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testScheduleEngineRejectsOverlappingOccurrences]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testScheduleEngineRejectsOverlappingOccurrences]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testScheduleMigrationRetainsLegacyPluralRoutinesAndSingularOverride]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testScheduleMigrationRetainsLegacyPluralRoutinesAndSingularOverride]' passed (0.000 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testUpcomingNotificationPlanIsFutureBoundedAndStable]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testUpcomingNotificationPlanIsFutureBoundedAndStable]' passed (0.009 seconds).
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testVersionedScheduleRoundTripsMultipleSourcesAndLegacyAutomaticScheduleDecodes]' started.
+Test Case '-[SwiftRuleTests.WindDownSchedulingTests testVersionedScheduleRoundTripsMultipleSourcesAndLegacyAutomaticScheduleDecodes]' passed (0.001 seconds).
+Test Suite 'WindDownSchedulingTests' passed at 2026-09-30 18:04:32.130.
+	 Executed 33 tests, with 0 failures (0 unexpected) in 0.015 (0.017) seconds
+Test Suite 'CodecProofPackageTests.xctest' passed at 2026-09-30 18:04:32.130.
+	 Executed 154 tests, with 0 failures (0 unexpected) in 0.488 (0.497) seconds
+Test Suite 'All tests' passed at 2026-09-30 18:04:32.130.
+	 Executed 154 tests, with 0 failures (0 unexpected) in 0.488 (0.499) seconds
+SEARCH_BALANCE bedtime-only: searches 30->36, sheep 10->10, pending 0->0, wool 123->124
+SEARCH_BALANCE mixed: searches 60->66, sheep 27->27, pending 15->15, wool 193->191
+SEARCH_BALANCE heavy-phone-away: searches 180->186, sheep 60->66, pending 48->54, wool 341->341
+SEARCH_BALANCE short: searches 2->8, sheep 2->4, pending 0->0, wool 2->4
+SEARCH_BALANCE irregular: searches 47->49, sheep 19->22, pending 7->10, wool 118->124
+◇ Test run started.
+↳ Testing Library Version: 1902
+↳ Target Platform: arm64e-apple-macos14.0
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+Swift exported 8 anchored timing cases, 15 credit sequences, 2 morning sequences and 16 identities
+Swift exported 8 sanitized codec fixtures; owner metadata is not a Farm payload field
+Swift exported 8 anchored timing cases, 15 credit sequences, 2 morning sequences and 16 identities
+Swift exported 8 sanitized codec fixtures; owner metadata is not a Farm payload field
+PASS: deterministic current-Swift domain fixture generation
+PASS: current Swift wire fixtures semantically match all 8 preserved AND-006 fixture bytes
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:processDebugNavigationResources
+> Task :app:checkDebugAarMetadata
+> Task :app:generateDebugResValues
+> Task :app:compileDebugNavigationResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:packageDebugResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+> Task :app:parseDebugLocalResources
+> Task :app:mergeDebugResources
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebug
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:compileDebugKotlin
+> Task :app:compileDebugJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :app:testDebugUnitTest FAILED
+
+DomainParityTest > currentSwiftGuestRoutingDurationsAndFreshPhraseSemanticsMatch FAILED
+    org.junit.ComparisonFailure at DomainParityTest.kt:75
+
+6 tests completed, 1 failed
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: file:///Users/ngawangchime/Desktop/Developer%20Projects/Phone%20in%20the%20Other%20Room/android/app/build/reports/tests/testDebugUnitTest/index.html
+
+* Try:
+> Run with --scan to get full insights.
+
+BUILD FAILED in 9s
+24 actionable tasks: 24 executed
+Traceback (most recent call last):
+  File "/Users/ngawangchime/Desktop/Developer Projects/Phone in the Other Room/android/compatibility/run.py", line 54, in <module>
+    subprocess.run([str(android / 'gradlew'), '-p', str(android), '--offline', ':app:testDebugUnitTest', '--tests', '*FarmPayloadCodecTest', '--tests', '*DomainParityTest', '--rerun-tasks'], check=True)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.7/Frameworks/Python.framework/Versions/3.14/lib/python3.14/subprocess.py", line 578, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['/Users/ngawangchime/Desktop/Developer Projects/Phone in the Other Room/android/gradlew', '-p', '/Users/ngawangchime/Desktop/Developer Projects/Phone in the Other Room/android', '--offline', ':app:testDebugUnitTest', '--tests', '*FarmPayloadCodecTest', '--tests', '*DomainParityTest', '--rerun-tasks']' returned non-zero exit status 1.

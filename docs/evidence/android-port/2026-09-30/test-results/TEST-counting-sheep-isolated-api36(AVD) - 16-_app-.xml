@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8' ?>
+<testsuite name="com.ngawangchime.countingsheep.prototype.ProtectionInstrumentationTest" tests="2" failures="0" errors="0" skipped="0" time="16.218" timestamp="2026-09-30T04:06:19" hostname="localhost">
+  <properties>
+    <property name="device" value="counting-sheep-isolated-api36(AVD) - 16" />
+    <property name="flavor" value="" />
+    <property name="project" value=":app" />
+  </properties>
+  <testcase name="observedOverlayInterceptsTargetAndBriefAccessAndExitOpenIt" classname="com.ngawangchime.countingsheep.prototype.ProtectionInstrumentationTest" time="14.549" />
+  <testcase name="atomicRoundTripAndCorruptLatestAreRecoverableWithoutResumingProtection" classname="com.ngawangchime.countingsheep.prototype.SessionStoreInstrumentationTest" time="0.001" />
+</testsuite>

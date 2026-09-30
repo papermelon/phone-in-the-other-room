@@ -1,0 +1,464 @@
+{
+  "creditSequences": 16,
+  "creditSteps": 39,
+  "domainReferenceSha256": "04c9bbd49cbafe0f2a825cb8e0c369aa449ff1b0f915d7db64fe645209d65cdb",
+  "identityCases": 16,
+  "morningSequences": 2,
+  "morningSteps": 16,
+  "shearingSequences": [
+    {
+      "finalWool": 2,
+      "firstHarvestWool": 1,
+      "firstRegrowthMillis": 50400000,
+      "rarity": "common",
+      "states": [
+        [
+          "shorn"
+        ],
+        [
+          "shorn"
+        ],
+        [
+          "regrowing"
+        ],
+        [
+          "regrowing"
+        ],
+        [
+          "regrowing",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "shorn",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ]
+      ],
+      "steps": 9
+    },
+    {
+      "finalWool": 4,
+      "firstHarvestWool": 2,
+      "firstRegrowthMillis": 75600000,
+      "rarity": "uncommon",
+      "states": [
+        [
+          "shorn"
+        ],
+        [
+          "shorn"
+        ],
+        [
+          "regrowing"
+        ],
+        [
+          "regrowing"
+        ],
+        [
+          "regrowing",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "shorn",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ]
+      ],
+      "steps": 9
+    },
+    {
+      "finalWool": 8,
+      "firstHarvestWool": 4,
+      "firstRegrowthMillis": 100800000,
+      "rarity": "rare",
+      "states": [
+        [
+          "shorn"
+        ],
+        [
+          "shorn"
+        ],
+        [
+          "regrowing"
+        ],
+        [
+          "regrowing"
+        ],
+        [
+          "regrowing",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "regrowing",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "shorn",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ]
+      ],
+      "steps": 9
+    },
+    {
+      "finalWool": 14,
+      "firstHarvestWool": 7,
+      "firstRegrowthMillis": 126000000,
+      "rarity": "legendary",
+      "states": [
+        [
+          "shorn"
+        ],
+        [
+          "shorn"
+        ],
+        [
+          "regrowing"
+        ],
+        [
+          "regrowing"
+        ],
+        [
+          "regrowing",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "regrowing",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "regrowing",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ],
+        [
+          "shorn",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready",
+          "wool_ready"
+        ]
+      ],
+      "steps": 9
+    }
+  ],
+  "timingCases": 8,
+  "welcomeCases": [
+    {
+      "at": 1790807400000,
+      "expected": {
+        "bonusMillis": 0,
+        "completedWindDowns": [],
+        "consumed": [],
+        "grantedNights": {},
+        "morningPendingMinutes": 0,
+        "morningReceipts": {},
+        "outcomes": [
+          {
+            "createdAt": 1790807400000,
+            "distance": 0,
+            "drought": 0,
+            "habitat": "starterPasture",
+            "id": "C3B5916C-1D51-9944-C1A1-FF54F74640B9",
+            "number": 0,
+            "odds": 1,
+            "origin": "starter",
+            "rarity": "common",
+            "runID": "C3B5916C-1D51-9944-C1A1-FF54F74640B9",
+            "score": 0,
+            "sheepID": "mabel"
+          }
+        ],
+        "phoneAwayMillis": 0,
+        "receipts": {},
+        "schema": 2,
+        "shears": {},
+        "sheep": [
+          {
+            "arrivedAt": 1790807400000,
+            "definitionID": "mabel",
+            "id": "C3B5916C-1D51-9944-C1A1-FF54F74640B9",
+            "lastShearedAt": null,
+            "rarity": "common",
+            "regrowthRemaining": 0,
+            "status": "active",
+            "timesSheared": 0
+          }
+        ],
+        "trackedSheepID": null,
+        "welcome": {
+          "acknowledged": false,
+          "grant": {
+            "createdAt": 1790807400000,
+            "id": "C3B5916C-1D51-9944-C1A1-FF54F74640B9",
+            "key": "starter:mabel",
+            "kind": "starterSheep"
+          },
+          "introductionCompleted": true
+        },
+        "windDownMillis": 0,
+        "wool": 0
+      },
+      "initial": {
+        "bonusMillis": 0,
+        "completedWindDowns": [],
+        "consumed": [],
+        "grantedNights": {},
+        "morningPendingMinutes": 0,
+        "morningReceipts": {},
+        "outcomes": [],
+        "phoneAwayMillis": 0,
+        "receipts": {},
+        "schema": 2,
+        "shears": {},
+        "sheep": [],
+        "trackedSheepID": null,
+        "welcome": {
+          "acknowledged": false,
+          "grant": null,
+          "introductionCompleted": false
+        },
+        "windDownMillis": 0,
+        "wool": 0
+      },
+      "name": "fresh-starter-once",
+      "skipID": "00000000-0000-4000-8000-000000000702"
+    },
+    {
+      "at": 1790807400000,
+      "expected": {
+        "bonusMillis": 0,
+        "completedWindDowns": [],
+        "consumed": [],
+        "grantedNights": {},
+        "morningPendingMinutes": 0,
+        "morningReceipts": {},
+        "outcomes": [],
+        "phoneAwayMillis": 0,
+        "receipts": {},
+        "schema": 2,
+        "shears": {},
+        "sheep": [
+          {
+            "arrivedAt": 1790807400000,
+            "definitionID": "future-sheep",
+            "id": "00000000-0000-4000-8000-000000000701",
+            "lastShearedAt": null,
+            "rarity": "common",
+            "regrowthRemaining": 0,
+            "status": "active",
+            "timesSheared": 0
+          }
+        ],
+        "trackedSheepID": null,
+        "welcome": {
+          "acknowledged": false,
+          "grant": {
+            "createdAt": 1790807400000,
+            "id": "00000000-0000-4000-8000-000000000702",
+            "key": "starter:skipped-existing-farm",
+            "kind": "starterSkippedExistingFarm"
+          },
+          "introductionCompleted": true
+        },
+        "windDownMillis": 0,
+        "wool": 0
+      },
+      "initial": {
+        "bonusMillis": 0,
+        "completedWindDowns": [],
+        "consumed": [],
+        "grantedNights": {},
+        "morningPendingMinutes": 0,
+        "morningReceipts": {},
+        "outcomes": [],
+        "phoneAwayMillis": 0,
+        "receipts": {},
+        "schema": 2,
+        "shears": {},
+        "sheep": [
+          {
+            "arrivedAt": 1790807400000,
+            "definitionID": "future-sheep",
+            "id": "00000000-0000-4000-8000-000000000701",
+            "lastShearedAt": null,
+            "rarity": "common",
+            "regrowthRemaining": 0,
+            "status": "active",
+            "timesSheared": 0
+          }
+        ],
+        "trackedSheepID": null,
+        "welcome": {
+          "acknowledged": false,
+          "grant": null,
+          "introductionCompleted": false
+        },
+        "windDownMillis": 0,
+        "wool": 0
+      },
+      "name": "existing-no-extra-starter",
+      "skipID": "00000000-0000-4000-8000-000000000702"
+    }
+  ]
+}

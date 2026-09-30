@@ -1,0 +1,6 @@
+ M PhoneInTheOtherRoom.xcodeproj/project.pbxproj
+ M docs/FUTURE_AGENT_TASKS.md
+ M project.yml
+?? android/
+?? docs/evidence/android-port/
+?? docs/plans/android-port-implementation-roadmap-2026-09-30.md

@@ -1,0 +1,38 @@
+{
+  "changedBaselineFiles": [
+    "android/README.md",
+    "android/app/src/androidTest/java/com/ngawangchime/countingsheep/prototype/DomainStoreInstrumentationTest.kt",
+    "android/app/src/androidTest/java/com/ngawangchime/countingsheep/prototype/ProtectionInstrumentationTest.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/PrototypeApplication.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/data/SessionDocument.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/domain/SessionCoordinator.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/domain/SessionModels.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/platform/ProtectionService.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/ui/MainActivity.kt",
+    "android/app/src/test/java/com/ngawangchime/countingsheep/prototype/DomainParityTest.kt",
+    "android/app/src/test/java/com/ngawangchime/countingsheep/prototype/SessionDocumentTest.kt",
+    "android/compatibility/DomainReference.swift",
+    "android/compatibility/fixtures/domain-reference.json",
+    "android/compatibility/run.py",
+    "docs/plans/android-port-implementation-roadmap-2026-09-30.md",
+    "docs/plans/android-port-physical-acceptance-checklist-2026-09-30.md"
+  ],
+  "addedAndroidFiles": [
+    "android/app/src/androidTest/java/com/ngawangchime/countingsheep/prototype/GuestJourneyInstrumentationTest.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/domain/GuestJourney.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/ui/GuestDetails.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/ui/GuestScreen.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/ui/GuestTheme.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/ui/PrototypeScreen.kt",
+    "android/app/src/test/java/com/ngawangchime/countingsheep/prototype/GuestJourneyTest.kt"
+  ],
+  "swiftAndTestsUnchangedFromBaseline": true,
+  "buildAndPermissionScopeUnchanged": true,
+  "historicalWireFixturesUnchanged": true,
+  "documentationTouched": [
+    "android/README.md",
+    "docs/FUTURE_AGENT_TASKS.md",
+    "docs/plans/android-port-implementation-roadmap-2026-09-30.md",
+    "docs/plans/android-port-physical-acceptance-checklist-2026-09-30.md"
+  ]
+}

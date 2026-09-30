@@ -1,0 +1,5 @@
+PASS: git diff --check
+PASS: changed Android documentation links and whitespace
+PASS: original eight wire fixtures/manifest match entry hashes
+PASS: build/dependency/manifest/service/backup configuration matches entry hashes
+PASS: final source/artifact hashes captured

@@ -1,0 +1,67 @@
+{
+  "changed_since_entry": {
+    "Shared/NightFlockRemoteError.swift": {
+      "entry": "315f5533e461903cf88ef1dea3900199730b8a40939678a934a57ab11eb06271",
+      "final": "fdd244df31fab589cb6cd12660e3df1448e881c2b469ffac9bab2b02a48bdcaa"
+    },
+    "android/README.md": {
+      "entry": "cf8c23d6535c56100c5c744557f86180a07202d389e8c0d99ae6318b52431770",
+      "final": "aeb3c156e2da222d3da65015d6ff7d7edb194cb85cdcaaf9d60242d58c722844"
+    },
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/PrototypeApplication.kt": {
+      "entry": "72fac20b8540c4905436520d68d407544b56b72d85fb91939f35e6a64fba8b43",
+      "final": "5d6aa4208b5a039eadd3f532912ca0f549cc78d289280361491499e9fd914f87"
+    },
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/data/FarmPayloadCodec.kt": {
+      "entry": "0b5710051090f500f5eb83a739fb635a58ee26d752e596975e7b05f9cf3611e1",
+      "final": "0f443b0950a60c7836ee3a93f3c3bbab63203f4bd86d794d7c541e9b9983ffd5"
+    },
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/data/SessionStore.kt": {
+      "entry": "33add468a02754dc16a2cfebde72a618da0a4e6cc235c59db6e0a36b5175c132",
+      "final": "0411e52b3b124610da102b76567fe60bd534356036677e813d3b2296e4dba458"
+    },
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/domain/SessionCoordinator.kt": {
+      "entry": "57884dd341d39607cfd7ea7d38a58eaa8748bbf4698627acf97195cf0984b0b9",
+      "final": "dd6fdab1fbc5f711e3005fa0ad1344eecf819571354aa61da419cfa108a876dd"
+    },
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/platform/ProtectionService.kt": {
+      "entry": "7bee7f81179b78f7718be9021703de22fa8572ae5d876cf304ada40699a417c8",
+      "final": "4a03b98a3e73427d99dd809356350b33f35b6da7541ab08df56cec0ca09c778e"
+    },
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/ui/MainActivity.kt": {
+      "entry": "a25650b73b342230fb83e713eefd5384cba640ad95d5f10cd39911e513d77bca",
+      "final": "f1ba910266546ba49369526da70cd640128db25c8232fe743ffa0a549cd8ad4b"
+    },
+    "android/compatibility/main.swift": {
+      "entry": "89a3876b61058c37e684c06103ec63b6f2d1a913fb93a2baaf995aaca338be37",
+      "final": "9ab116fb8e6b02dffe055370e02f1402df7d2c534c033e75d4b290d649e07123"
+    },
+    "android/compatibility/run.py": {
+      "entry": "f285d3ac4e89a01b56077090e3994a3989e52b74d061d99aa961dee003db80ad",
+      "final": "110797bada0c0856a5de214a8909ed77b136d8bc4378230f28a3e44ef3c3c87b"
+    },
+    "docs/plans/android-port-implementation-roadmap-2026-09-30.md": {
+      "entry": "26bcecb6592e488f94381cf6f6a51d7ededfe3310735f7197158c7e5d8990c10",
+      "final": "3c192495c627a0fdfef0d00da765036c07685f99d0858caccd2b93219e1d6a8b"
+    }
+  },
+  "added_to_snapshot": [
+    "PhoneInTheOtherRoomApp/Services/FarmSaveStore+Accounts.swift",
+    "android/app/src/androidTest/java/com/ngawangchime/countingsheep/prototype/DomainStoreInstrumentationTest.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/data/SessionDocument.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/domain/FarmSettlement.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/domain/NightPlan.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/domain/SearchRules.kt",
+    "android/app/src/main/java/com/ngawangchime/countingsheep/prototype/domain/SessionModels.kt",
+    "android/app/src/test/java/com/ngawangchime/countingsheep/prototype/DomainParityTest.kt",
+    "android/app/src/test/java/com/ngawangchime/countingsheep/prototype/SessionDocumentTest.kt",
+    "android/app/src/test/java/com/ngawangchime/countingsheep/prototype/SessionDomainTest.kt",
+    "android/compatibility/DomainReference.swift",
+    "android/compatibility/fixtures/domain-reference.json",
+    "docs/DECISIONS/ADR-0019-independent-wind-down-and-morning-quiet.md",
+    "docs/DECISIONS/ADR-0020-cumulative-farm-credit.md",
+    "docs/DECISIONS/ADR-0023-account-owned-farm-sync.md",
+    "docs/plans/farm-save-contract.md"
+  ],
+  "scope_note": "Only Android implementation and Android roadmap/backlog documentation were edited by this milestone. Concurrent unrelated NightFlockRemoteError.swift change is not part of AND-007. All entry wire fixture bytes/configuration match."
+}

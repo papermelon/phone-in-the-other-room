@@ -1,0 +1,18 @@
+{
+  "domainReferenceSHA256": "0c6ec76c2eeb6615603264de6fd82eea549793d4345ab7f5ad6f32c360a5b54f",
+  "timingCases": 8,
+  "morningIdentities": 16,
+  "creditSequences": 15,
+  "creditSteps": 37,
+  "morningSequences": 2,
+  "morningSteps": 16,
+  "journeyCases": {
+    "confirmations": 3,
+    "normalization": 6,
+    "phases": 3,
+    "phoneAwayMinutes": 6,
+    "routing": 6
+  },
+  "historicalWireFixtures": 8,
+  "malformedWireCases": 23
+}

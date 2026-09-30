@@ -1,0 +1,84 @@
+{
+  "suites": [
+    {
+      "category": "jvm",
+      "name": "com.ngawangchime.countingsheep.prototype.FarmPayloadCodecTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "testcases": [
+        "incompatiblePayloadsCannotProduceAnEncodedUploadCandidate",
+        "swiftCorpusRoundTripsLosslesslyAndExportsKotlinOrigin"
+      ],
+      "source": "android/app/build/test-results/testDebugUnitTest/TEST-com.ngawangchime.countingsheep.prototype.FarmPayloadCodecTest.xml"
+    },
+    {
+      "category": "jvm",
+      "name": "com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest",
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "testcases": [
+        "scheduledStartUsesAbsoluteBoundaryAndNoEarlyBlock",
+        "committedGrantSurvivesRestartUntilBoundary",
+        "restartPastEndRecordsPlannedEndWithoutInventingCoverage",
+        "storageFailureDoesNotLiftIntoAnUnrecordedGrant",
+        "fiveMinutesIsPersistedBeforeClearAndClippedToEnd",
+        "staleOccurrenceAndGrantCannotAffectReplacement",
+        "admissionRequiresConsentSelectionAndConnectedService",
+        "normalAndEmergencyExitLeaveAppsOpen",
+        "pendingGrantDoesNotAuthorizeAfterRestart",
+        "staleAlarmDoesNotCreateObservedEvidence",
+        "failureFailsOpenAndRequiresExplicitRepair",
+        "refuseAndSubTwoSecondAccessStaySafe",
+        "accessExpiresAtFiveMinutesAndRestoresOnEvent",
+        "clockJumpAndRebootFailOpen"
+      ],
+      "source": "android/app/build/test-results/testDebugUnitTest/TEST-com.ngawangchime.countingsheep.prototype.SessionCoordinatorTest.xml"
+    },
+    {
+      "category": "instrumentation",
+      "name": "com.ngawangchime.countingsheep.prototype.ProtectionInstrumentationTest",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "testcases": [
+        "observedOverlayInterceptsTargetAndBriefAccessAndExitOpenIt",
+        "atomicRoundTripAndCorruptLatestAreRecoverableWithoutResumingProtection"
+      ],
+      "source": "android/app/build/outputs/androidTest-results/connected/debug/TEST-counting-sheep-isolated-api36(AVD) - 16-_app-.xml"
+    }
+  ],
+  "totals": {
+    "jvm": {
+      "tests": 16,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "instrumentation": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "lint": {
+    "severityCounts": {
+      "Warning": 12
+    },
+    "issueCounts": {
+      "UnusedAttribute": 1,
+      "AndroidGradlePluginVersion": 1,
+      "GradleDependency": 6,
+      "NewerVersionAvailable": 2,
+      "UseKtx": 2
+    }
+  },
+  "build": "BUILD SUCCESSFUL in final-validation.log",
+  "physical": "pending; no device connected",
+  "configurationRecheck": "BUILD SUCCESSFUL in 14s: format-config-validation.log"
+}

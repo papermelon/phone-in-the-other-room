@@ -1,0 +1,382 @@
+diff --git a/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+CampfireBuddies.swift b/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+CampfireBuddies.swift
+index df69a48..3c5f23d 100644
+--- a/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+CampfireBuddies.swift
++++ b/PhoneInTheOtherRoomApp/ViewModels/NightFlockViewModel+CampfireBuddies.swift
+@@ -11,6 +11,12 @@ extension NightFlockViewModel {
+     func sendCampfireAction(_ action: String, session: CampfireBuddySession, partyID: UUID,
+                             outcome: CampfireOutcome? = nil, reflection: String? = nil) {
+         guard var command = campfireBuddyCommand("campfireBuddyAction", partyID: partyID) else { return }
++        if action == "reflect" {
++            guard session.memberID == v4ObservedPartyDetail(for: partyID)?.myMemberID,
++                  session.sharedOutcome == nil, session.mayReflect(at: Date()),
++                  let outcome, CampfireOutcome.choices(for: session.kind).contains(outcome),
++                  session.kind != .windDown || v4ObservedPartyDetail(for: partyID)?.pasture?.campfire?.buddies?.supportsWindDownEase == true else { return }
++        }
+         command.sourceID = session.sourceID; command.targetMemberID = session.memberID
+         command.buddyAction = action; command.outcome = outcome
+         command.reflection = reflection.map { CampfireBuddiesRules.publicText($0, limit: 160) }
+diff --git a/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddiesNativeFixture.swift b/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddiesNativeFixture.swift
+index 7c4e481..a9b74b8 100644
+--- a/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddiesNativeFixture.swift
++++ b/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddiesNativeFixture.swift
+@@ -7,6 +7,14 @@ struct CampfireBuddiesNativeFixture: View {
+     @StateObject private var app: FocusRunViewModel
+     private let party: NightFlockV4PartyDetail
+     private let mode: String
++    @State private var sharedCheckIn: CampfireOutcome?
++    @State private var sharedCheckInNote: String?
++    private var windDownCheckInSession: CampfireBuddySession? {
++        guard var session = party.pasture?.campfire?.buddies?.sessions.first else { return nil }
++        session.windDownOutcome = sharedCheckIn
++        session.reflection = sharedCheckInNote
++        return session
++    }
+     init(mode: String? = nil) {
+         let mode = mode ?? ProcessInfo.processInfo.arguments.first(where: { $0.hasPrefix("--buddy-view=") })?.replacingOccurrences(of: "--buddy-view=", with: "") ?? "live"
+         self.mode = mode
+@@ -29,11 +37,23 @@ struct CampfireBuddiesNativeFixture: View {
+             buddies[0].checkInAfter = now.addingTimeInterval(-30)
+             buddies[0].buddyMemberID = SlumberPartySharedFarmFixtures.friend
+         }
++        if mode.hasPrefix("winddown-") {
++            buddies[0].memberID = party.myMemberID!
++            buddies[0].kind = .windDown
++            buddies[0].startedAt = now.addingTimeInterval(-12 * 3600)
++            buddies[0].expiresAt = now.addingTimeInterval(-1800)
++            buddies[0].checkInAfter = now.addingTimeInterval(-30)
++            buddies[0].ended = true
++            buddies[0].publicIntention = ""
++            buddies[0].buddyMemberID = nil
++            if mode == "winddown-legacy" { buddies[0].outcome = .didIt }
++        }
+         party.pasture = .init(memberEpochID: UUID(), entities: [], visits: [],
+             lantern: .init(contributions: 5, requiredContributions: 12),
+             campfire: .init(agreement: .init(id: agreementID, version: 2, revision: 1, enabled: true, acceptedAt: now.addingTimeInterval(-3600)),
+                 sessions: mode == "empty" ? [] : live,
+-                buddies: .init(version: 1, startAlerts: false, sessions: mode == "empty" ? [] : buddies)))
++                buddies: .init(version: 1, startAlerts: false, sessions: mode == "empty" ? [] : buddies,
++                               supportsWindDownEase: mode != "winddown-unavailable")))
+         if mode == "setup" { party.pasture?.campfire?.agreement = nil }
+         self.party = party
+         let defaults = UserDefaults(suiteName: "CampfireBuddiesFixture.\(UUID())")!
+@@ -144,6 +164,11 @@ struct CampfireBuddiesNativeFixture: View {
+                                 CampfireStartChoices(viewModel: app)
+                             }
+                             else if mode == "start" { CampfireStartChoices(viewModel: app) }
++                            else if mode.hasPrefix("winddown-"), let buddy = windDownCheckInSession {
++                                CampfireBuddyCard(session: buddy, party: party, active: false, onAction: { action, outcome, note in
++                                    if action == "reflect" { sharedCheckIn = outcome; sharedCheckInNote = note }
++                                })
++                            }
+                             else if mode == "card" || mode == "return", let buddy = party.pasture?.campfire?.buddies?.sessions.first {
+                                 CampfireBuddyCard(session: buddy, party: party, active: mode == "card")
+                             } else {
+@@ -155,7 +180,8 @@ struct CampfireBuddiesNativeFixture: View {
+                                 })
+                             }
+                         }.padding(AppSpacing.md)
+-                    }.background(AppColors.paper).navigationTitle(mode == "start" ? "Before you start" : "Campfire Buddies")
++                    }.defaultScrollAnchor(ProcessInfo.processInfo.arguments.contains("--buddy-bottom") ? .bottom : .top)
++                        .background(AppColors.paper).navigationTitle(mode == "start" ? "Before you start" : "Campfire Buddies")
+                         .navigationBarTitleDisplayMode(.inline)
+                 }
+             }
+@@ -167,6 +193,9 @@ struct CampfireBuddiesNativeFixture: View {
+ #Preview("Campfire Buddies · no sessions") { CampfireBuddiesNativeFixture(mode: "empty") }
+ #Preview("Campfire Buddies · stale") { CampfireBuddiesNativeFixture(mode: "stale") }
+ #Preview("Campfire Buddies · return") { CampfireBuddiesNativeFixture(mode: "return") }
++#Preview("Wind Down · check-in") { CampfireBuddiesNativeFixture(mode: "winddown-checkin") }
++#Preview("Wind Down · historical answer") { CampfireBuddiesNativeFixture(mode: "winddown-legacy") }
++#Preview("Wind Down · capability unavailable") { CampfireBuddiesNativeFixture(mode: "winddown-unavailable") }
+ #Preview("Campfire Buddies · start") { CampfireBuddiesNativeFixture(mode: "start") }
+ #Preview("Campfire Buddies · sharing setup") { CampfireBuddiesNativeFixture(mode: "setup") }
+ #Preview("Unified Campfire · mixed private sessions") { CampfireBuddiesNativeFixture(mode: "unified-party") }
+diff --git a/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddyViews.swift b/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddyViews.swift
+index 37b86ab..616a401 100644
+--- a/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddyViews.swift
++++ b/PhoneInTheOtherRoomApp/Views/NightFlock/CampfireBuddyViews.swift
+@@ -12,6 +12,8 @@ struct CampfireBuddyCard: View {
+     var onAction: (String, CampfireOutcome?, String?) -> Void = { _, _, _ in }
+     var support: AnyView? = nil
+     @State private var reflection = ""
++    @State private var selectedOutcome: CampfireOutcome?
++    @State private var skippedCheckIn = false
+     private var me: UUID? { party.myMemberID }
+     private func name(_ id: UUID) -> String { party.memberships.first { $0.memberID == id }?.profile.displayName ?? "A party member" }
+     var body: some View {
+@@ -33,21 +35,11 @@ struct CampfireBuddyCard: View {
+                 Text("Encouragement from \(session.encouragementMemberIDs.map(name).joined(separator: ", "))")
+                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+             }
+-            if let outcome = session.outcome {
+-                Text("Shared check-in: \(outcome.title)").font(AppTypography.body)
++            if let outcome = session.sharedOutcome {
++                Text(session.windDownOutcome == nil ? "Shared check-in: \(outcome.title)" : "Winding down: \(outcome.title)").font(AppTypography.body)
+                 if let note = session.reflection, !note.isEmpty { Text(note).font(AppTypography.body) }
+             } else if session.memberID == me && session.mayReflect(at: now) {
+-                Text(session.checkInRequested ? "Your buddy asked how it went" : "How did your plan go?").font(AppTypography.body)
+-                TextField("Optional note to the party", text: $reflection, prompt: Text("Optional note to the party").foregroundColor(AppColors.secondaryText), axis: .vertical).textFieldStyle(.roundedBorder)
+-                    .onChange(of: reflection) { _, value in
+-                        if value.unicodeScalars.count > 160 { reflection = CampfireBuddiesRules.publicText(value, limit: 160) }
+-                    }
+-                ForEach(CampfireOutcome.allCases) { result in
+-                    Button(result.title) { onAction("reflect", result, reflection) }
+-                        .buttonStyle(PixelChipButtonStyle(isSelected: false))
+-                }
+-                Text("Optional. Your check-in is shared with this party; a finished timer doesn’t mark the task done.")
+-                    .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
++                checkInForm
+             } else if !active {
+                 Text(session.kind == .windDown && now < session.checkInAfter ? "Check-in waits until morning quiet ends" : "No check-in shared")
+                     .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
+@@ -66,7 +58,7 @@ struct CampfireBuddyCard: View {
+                     Button("Send encouragement") { onAction("encourage", nil, nil) }
+                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                 }
+-                if session.buddyMemberID == me && now >= session.checkInAfter && session.outcome == nil && !session.checkInRequested {
++                if session.buddyMemberID == me && now >= session.checkInAfter && session.sharedOutcome == nil && !session.checkInRequested {
+                     Button("Ask how it went") { onAction("checkIn", nil, nil) }
+                         .buttonStyle(PixelChipButtonStyle(isSelected: false))
+                 }
+@@ -77,6 +69,54 @@ struct CampfireBuddyCard: View {
+         .background(AppColors.panel, in: RoundedRectangle(cornerRadius: AppRadius.lg))
+         .disabled(isSending)
+     }
++
++    @ViewBuilder private var checkInForm: some View {
++        if session.kind == .windDown && party.pasture?.campfire?.buddies?.supportsWindDownEase != true {
++            Text("Wind Down check-ins aren’t available for this party yet.")
++                .font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
++        } else if skippedCheckIn {
++            Button("Share a check-in") { skippedCheckIn = false }
++                .buttonStyle(PixelChipButtonStyle(isSelected: false))
++        } else {
++            if session.checkInRequested {
++                Text("Your buddy asked how it went").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
++            }
++            Text(session.kind == .windDown ? "How easy was it to wind down?" : "How did your plan go?")
++                .font(AppTypography.body)
++            ForEach(CampfireOutcome.choices(for: session.kind)) { result in
++                Button { selectedOutcome = result } label: {
++                    Label(result.title, systemImage: selectedOutcome == result ? "checkmark.circle.fill" : "circle")
++                        .font(AppTypography.body).frame(maxWidth: .infinity, minHeight: 22, alignment: .leading)
++                }
++                .buttonStyle(PixelChipButtonStyle(isSelected: selectedOutcome == result))
++                .accessibilityAddTraits(selectedOutcome == result ? .isSelected : [])
++            }
++            Text("Anything you’d like to share? · Optional").font(AppTypography.caption)
++                .foregroundStyle(AppColors.secondaryText).fixedSize(horizontal: false, vertical: true)
++            TextField("Add a note", text: $reflection,
++                      prompt: Text("Add a note").foregroundColor(AppColors.secondaryText), axis: .vertical)
++                .font(AppTypography.body).textFieldStyle(.roundedBorder)
++                .accessibilityLabel("Optional note shared with \(party.summary.name)")
++                .onChange(of: reflection) { _, value in
++                    if value.unicodeScalars.count > 160 { reflection = CampfireBuddiesRules.publicText(value, limit: 160) }
++                }
++            Text("Shared with \(party.summary.name)").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
++            if session.kind == .phoneAway {
++                Text("A finished timer doesn’t mark the task done.").font(AppTypography.caption).foregroundStyle(AppColors.secondaryText)
++            }
++            Button {
++                guard let selectedOutcome else { return }
++                onAction("reflect", selectedOutcome, reflection)
++            } label: {
++                Text("Share check-in").font(AppTypography.body).frame(maxWidth: .infinity)
++            }
++            .buttonStyle(PixelPrimaryButtonStyle()).disabled(selectedOutcome == nil)
++            .accessibilityHint(selectedOutcome.map { "Share \($0.title) and your optional note with \(party.summary.name)" } ?? "Choose an answer first")
++            Button("Skip for now") { skippedCheckIn = true }
++                .font(AppTypography.body).foregroundStyle(AppColors.secondaryText)
++                .frame(maxWidth: .infinity, minHeight: 44)
++        }
++    }
+ }
+ 
+ struct CampfireFollowThrough: View {
+@@ -142,7 +182,8 @@ struct CampfirePendingCheckInCard: View {
+             guard let party = social.v4ObservedPartyDetail(for: summary.partyID) else { return false }
+             return CampfireBuddiesRules.visible(party.pasture?.campfire?.buddies,
+                 members: Set(party.memberships.map(\.memberID)), now: Date()).contains {
+-                    $0.memberID == party.myMemberID && $0.outcome == nil && $0.mayReflect(at: Date())
++                    $0.memberID == party.myMemberID && $0.sharedOutcome == nil && $0.mayReflect(at: Date())
++                        && ($0.kind != .windDown || party.pasture?.campfire?.buddies?.supportsWindDownEase == true)
+                 }
+         }?.partyID
+     }
+@@ -151,7 +192,7 @@ struct CampfirePendingCheckInCard: View {
+             Button {
+                 NotificationCenter.default.post(name: .countingSheepShowNightFlock, object: partyID)
+             } label: {
+-                Label("Share how your campfire plan went", systemImage: "leaf")
++                Label("Share a campfire check-in", systemImage: "leaf")
+                     .font(AppTypography.body).frame(maxWidth: .infinity, minHeight: 44)
+             }.buttonStyle(PixelChipButtonStyle(isSelected: false))
+         }
+diff --git a/PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SlumberPartyHomeStudyView.swift b/PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SlumberPartyHomeStudyView.swift
+index 9947e49..634f5e1 100644
+--- a/PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SlumberPartyHomeStudyView.swift
++++ b/PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SlumberPartyHomeStudyView.swift
+@@ -129,7 +129,7 @@ struct SlumberPartyHomeStudyView: View {
+         Text(session.checkInRequested ? "Papa asked how it went." : "How did your plan go?").font(AppTypography.headline)
+         if let intention = session.intention { Text("“\(intention)”").font(AppTypography.body) }
+         StudyStackOrRow {
+-            ForEach(CampfireOutcome.allCases) { outcome in
++            ForEach(CampfireOutcome.choices(for: .phoneAway)) { outcome in
+                 StudySecondaryButton(title: outcome.title) { send(.shareCheckIn(session.id, outcome)) }
+             }
+         }
+diff --git a/PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SocialPersonCardStudyView.swift b/PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SocialPersonCardStudyView.swift
+index df25628..6412b6e 100644
+--- a/PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SocialPersonCardStudyView.swift
++++ b/PhoneInTheOtherRoomApp/Views/Prototypes/SocialExperienceStudy/SocialPersonCardStudyView.swift
+@@ -180,7 +180,7 @@ struct SocialPersonCardStudyView: View {
+         VStack(alignment: .leading, spacing: AppSpacing.xs) {
+             StudyEyebrow(text: "HOW DID IT GO?")
+             StudyStackOrRow {
+-                ForEach(CampfireOutcome.allCases) { outcome in
++                ForEach(CampfireOutcome.choices(for: .phoneAway)) { outcome in
+                     StudySecondaryButton(title: outcome.title) { send(.shareCheckIn(session.id, outcome)) }
+                 }
+             }
+diff --git a/Shared/CampfireBuddies.swift b/Shared/CampfireBuddies.swift
+index c9aef74..7841228 100644
+--- a/Shared/CampfireBuddies.swift
++++ b/Shared/CampfireBuddies.swift
+@@ -12,12 +12,19 @@ struct CampfireSharedIntention: Codable, Equatable, Sendable {
+ 
+ enum CampfireOutcome: String, Codable, CaseIterable, Identifiable, Sendable {
+     case didIt, madeProgress, changedPlans
++    case windDownEasy, windDownSomeEffort, windDownHard
+     var id: String { rawValue }
++    static func choices(for kind: NightFlockV4ActivityKind) -> [Self] {
++        kind == .windDown ? [.windDownEasy, .windDownSomeEffort, .windDownHard] : [.didIt, .madeProgress, .changedPlans]
++    }
+     var title: String {
+         switch self {
+         case .didIt: return "Did it"
+         case .madeProgress: return "Made progress"
+         case .changedPlans: return "Changed plans"
++        case .windDownEasy: return "Easy"
++        case .windDownSomeEffort: return "Took some effort"
++        case .windDownHard: return "Hard"
+         }
+     }
+ }
+@@ -38,6 +45,8 @@ struct CampfireBuddySession: Codable, Equatable, Identifiable, Sendable {
+     var checkInAfter: Date
+     var ended: Bool
+     var kind: NightFlockV4ActivityKind
++    var windDownOutcome: CampfireOutcome? = nil
++    var sharedOutcome: CampfireOutcome? { windDownOutcome ?? outcome }
+     var participationCue: String? {
+         if buddyMemberID != nil { return "Buddy paired" }
+         return asksForBuddy ? "Buddy welcome" : nil
+@@ -53,17 +62,20 @@ struct CampfireBuddiesState: Codable, Equatable, Sendable {
+     var version: Int
+     var startAlerts: Bool
+     var sessions: [CampfireBuddySession]
++    var supportsWindDownEase: Bool
+     var isSupported: Bool { version == 1 }
+-    private enum CodingKeys: String, CodingKey { case version, startAlerts, sessions }
+-    init(version: Int, startAlerts: Bool, sessions: [CampfireBuddySession]) {
++    private enum CodingKeys: String, CodingKey { case version, startAlerts, sessions, supportsWindDownEase }
++    init(version: Int, startAlerts: Bool, sessions: [CampfireBuddySession], supportsWindDownEase: Bool = false) {
+         self.version = version; self.startAlerts = startAlerts; self.sessions = sessions
++        self.supportsWindDownEase = supportsWindDownEase
+     }
+     init(from decoder: Decoder) throws {
+         let container = try decoder.container(keyedBy: CodingKeys.self)
+         version = try container.decode(Int.self, forKey: .version)
+-        guard version == 1 else { startAlerts = false; sessions = []; return }
++        guard version == 1 else { startAlerts = false; sessions = []; supportsWindDownEase = false; return }
+         startAlerts = try container.decode(Bool.self, forKey: .startAlerts)
+         sessions = try container.decode([CampfireBuddySession].self, forKey: .sessions)
++        supportsWindDownEase = try container.decodeIfPresent(Bool.self, forKey: .supportsWindDownEase) ?? false
+     }
+ }
+ 
+diff --git a/Tests/CampfireBuddiesTests.swift b/Tests/CampfireBuddiesTests.swift
+index e6acf0d..12fc0fe 100644
+--- a/Tests/CampfireBuddiesTests.swift
++++ b/Tests/CampfireBuddiesTests.swift
+@@ -15,6 +15,35 @@ final class CampfireBuddiesTests: XCTestCase {
+         value.buddyMemberID = nil; value.asksForBuddy = false
+         XCTAssertNil(value.participationCue)
+     }
++    func testCheckInChoicesSeparateWindDownEaseFromTaskOutcomes() throws {
++        XCTAssertEqual(CampfireOutcome.choices(for: .windDown), [.windDownEasy, .windDownSomeEffort, .windDownHard])
++        XCTAssertEqual(CampfireOutcome.choices(for: .phoneAway), [.didIt, .madeProgress, .changedPlans])
++        XCTAssertEqual(CampfireOutcome.choices(for: .windDown).map(\.title), ["Easy", "Took some effort", "Hard"])
++        var legacy = session(kind: .windDown)
++        legacy.outcome = .didIt
++        let restored = try JSONDecoder().decode(CampfireBuddySession.self, from: JSONEncoder().encode(legacy))
++        XCTAssertNil(restored.windDownOutcome)
++        XCTAssertEqual(restored.sharedOutcome?.title, "Did it")
++        var current = session(kind: .windDown)
++        current.windDownOutcome = .windDownSomeEffort
++        let state = CampfireBuddiesState(version: 1, startAlerts: false, sessions: [current], supportsWindDownEase: true)
++        let decoded = try JSONDecoder().decode(CampfireBuddiesState.self, from: JSONEncoder().encode(state))
++        XCTAssertTrue(decoded.supportsWindDownEase)
++        XCTAssertNil(decoded.sessions.first?.outcome)
++        XCTAssertEqual(decoded.sessions.first?.sharedOutcome, .windDownSomeEffort)
++        let old = try JSONDecoder().decode(CampfireBuddiesState.self, from: Data(#"{"version":1,"startAlerts":false,"sessions":[]}"#.utf8))
++        XCTAssertFalse(old.supportsWindDownEase)
++    }
++    @MainActor
++    func testWindDownEaseCommandSurvivesOfflineOutboxReplay() throws {
++        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
++        defer { try? FileManager.default.removeItem(at: directory) }
++        let owner = UUID()
++        var command = SharedPastureCommand(command: "campfireBuddyAction", partyID: UUID(), memberEpochID: UUID())
++        command.buddyAction = "reflect"; command.outcome = .windDownHard; command.reflection = "A busy evening"
++        try SharedPastureOutboxService(directory: directory).enqueue(command, owner: owner)
++        XCTAssertEqual(try SharedPastureOutboxService(directory: directory).commands(owner: owner), [command])
++    }
+     func testVersionTwoAgreementIsExplicitAndOlderStateRemainsReadable() throws {
+         XCTAssertTrue(CampfireAgreement(id: UUID(), version: 2, revision: 1, enabled: true, acceptedAt: now).permitsSharing)
+         XCTAssertFalse(CampfireAgreement(id: UUID(), version: 3, revision: 1, enabled: true, acceptedAt: now).permitsSharing)
+diff --git a/docs/FUTURE_AGENT_TASKS.md b/docs/FUTURE_AGENT_TASKS.md
+index 97b881a..7d7e29d 100644
+--- a/docs/FUTURE_AGENT_TASKS.md
++++ b/docs/FUTURE_AGENT_TASKS.md
+@@ -1,5 +1,17 @@
+ # Future Agent Tasks — Prioritised Backlog
+ 
++## Wind Down shared check-in — 30 September 2026
++
++- Source replaces Wind Down task outcomes with self-reported ease, optional note, named party audience, explicit Share and Skip. Historical outcomes retain their wording; Phone Away keeps task choices. See the [current contract](plans/campfire-buddies-implementation-2026-09-13.md).
++- Deploy the matching `night-flock-command` validator and `20260930120000_wind_down_check_in.sql` only with deployment authorization, then distribute an updated native build. On disposable physical accounts, verify morning eligibility, selection versus sharing, skip/reopen, note/answer preservation through refresh and offline retries, historical answers, older-client decoding and opt-in buddy follow-up. New clients require the advertised ease capability; older apps cannot display new ease answers. No production activation or physical-device validation is claimed.
++
++## Android port implementation — 30 September 2026
++
++- AND-001–006 are authorized and implemented in [the independent Android project](../android/README.md). [Roadmap](plans/android-port-implementation-roadmap-2026-09-30.md) and [dated evidence](evidence/android-port/2026-09-30/README.md) distinguish local build/unit/codec/native-emulator checks from pending physical acceptance. No production services, backend writes, distribution, commits or pushes were performed.
++- Pending gate: run the exact evidence procedure on isolated Pixel, Samsung and SEA OEM phones (include API 29/current 36): consent/refusal/TalkBack, all launch/window routes, service disabling/repair, access expiry under restart/Doze, repeated overnight behavior, backup/transfer exclusions and paired physical battery measurement. No physical phone was connected; emulator observation cannot close these gates or prove force-stop continuity/Play approval.
++- Next bounded implementation: AND-007 extends the existing single coordinator/transaction authority with anchored Wind Down/independent morning, cumulative credit/bonus/access-union accounting and idempotent terminal replay; AND-008 follows with a real guest receipt. Keep the Kotlin codec conservative/lossless and preserve incompatible/pending bytes. Do not scaffold full Farm/Shop/social/auth before the relevant phase.
++- Later authorization remains separate: Supabase Kotlin SDK/real owner-bound sync (AND-009), Firebase/FCM and additive APNs-compatible adapter, full native Shepherd rendering, NFC/Health/wearables, extra sensitive permissions, public parity/identity/signing and all production/distribution actions. Preserve current account-default/archive behavior, independent morning accounting, bedtime-bonus versions and sharing allowlists.
++
+ ## Social invitations, inbox, and meaningful cheers — 29 September 2026
+ 
+ - [Plan and researched wording](plans/slumber-party-social-upgrade-2026-09-28.md); [implementation and deployment evidence](evidence/social-upgrade-20260929/validation.md). Exact handle search, clearer private-group invitations, Home Inbox, contextual nine-message vocabulary, durable retries, arrival ordering and optional account-level push are implemented. Both backend migrations and the existing dispatcher update are deployed; native distribution remains separate.
+@@ -1014,7 +1026,8 @@ execute without human sign-off mid-task (final merge review still applies per
+ - **Design-system convergence** (retire `GameComponents`) — opportunistic only.
+ - **New persistence layer / CoreData / SwiftData** — not needed at this scale.
+ - **CI pipeline** — valuable, but after first TestFlight; local gate suffices now.
+-- **Android / iPad / web** — out of scope (brief §non-goals).
++- **Android beyond AND-001–006** — the [bounded prototype](../android/README.md) is implemented with local evidence; physical capability gates and later feature/release phases remain pending in the [roadmap](plans/android-port-implementation-roadmap-2026-09-30.md). Older blanket deferral is superseded for the authorized slice only.
++- **iPad / web app** — remain outside this port's scope (brief §non-goals); existing website work is separate.
+ - **Any analytics/tracking SDK** — conflicts with the privacy posture; needs human decision.
+ 
+ ---
+diff --git a/project.yml b/project.yml
+index 162c1d3..4ca3197 100644
+--- a/project.yml
++++ b/project.yml
+@@ -27,7 +27,7 @@ settings:
+     DEVELOPMENT_TEAM: 4KZQPZR47B
+     CODE_SIGN_STYLE: Automatic
+     MARKETING_VERSION: 1.0
+-    CURRENT_PROJECT_VERSION: 63
++    CURRENT_PROJECT_VERSION: 64
+ packages:
+   Supabase:
+     url: https://github.com/supabase/supabase-swift.git

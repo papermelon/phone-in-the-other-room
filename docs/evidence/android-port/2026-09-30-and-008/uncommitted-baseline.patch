@@ -1,0 +1,183 @@
+diff --git a/Shared/CampfireBuddies.swift b/Shared/CampfireBuddies.swift
+index c9aef74..7841228 100644
+--- a/Shared/CampfireBuddies.swift
++++ b/Shared/CampfireBuddies.swift
+@@ -12,12 +12,19 @@ struct CampfireSharedIntention: Codable, Equatable, Sendable {
+ 
+ enum CampfireOutcome: String, Codable, CaseIterable, Identifiable, Sendable {
+     case didIt, madeProgress, changedPlans
++    case windDownEasy, windDownSomeEffort, windDownHard
+     var id: String { rawValue }
++    static func choices(for kind: NightFlockV4ActivityKind) -> [Self] {
++        kind == .windDown ? [.windDownEasy, .windDownSomeEffort, .windDownHard] : [.didIt, .madeProgress, .changedPlans]
++    }
+     var title: String {
+         switch self {
+         case .didIt: return "Did it"
+         case .madeProgress: return "Made progress"
+         case .changedPlans: return "Changed plans"
++        case .windDownEasy: return "Easy"
++        case .windDownSomeEffort: return "Took some effort"
++        case .windDownHard: return "Hard"
+         }
+     }
+ }
+@@ -38,6 +45,8 @@ struct CampfireBuddySession: Codable, Equatable, Identifiable, Sendable {
+     var checkInAfter: Date
+     var ended: Bool
+     var kind: NightFlockV4ActivityKind
++    var windDownOutcome: CampfireOutcome? = nil
++    var sharedOutcome: CampfireOutcome? { windDownOutcome ?? outcome }
+     var participationCue: String? {
+         if buddyMemberID != nil { return "Buddy paired" }
+         return asksForBuddy ? "Buddy welcome" : nil
+@@ -53,17 +62,20 @@ struct CampfireBuddiesState: Codable, Equatable, Sendable {
+     var version: Int
+     var startAlerts: Bool
+     var sessions: [CampfireBuddySession]
++    var supportsWindDownEase: Bool
+     var isSupported: Bool { version == 1 }
+-    private enum CodingKeys: String, CodingKey { case version, startAlerts, sessions }
+-    init(version: Int, startAlerts: Bool, sessions: [CampfireBuddySession]) {
++    private enum CodingKeys: String, CodingKey { case version, startAlerts, sessions, supportsWindDownEase }
++    init(version: Int, startAlerts: Bool, sessions: [CampfireBuddySession], supportsWindDownEase: Bool = false) {
+         self.version = version; self.startAlerts = startAlerts; self.sessions = sessions
++        self.supportsWindDownEase = supportsWindDownEase
+     }
+     init(from decoder: Decoder) throws {
+         let container = try decoder.container(keyedBy: CodingKeys.self)
+         version = try container.decode(Int.self, forKey: .version)
+-        guard version == 1 else { startAlerts = false; sessions = []; return }
++        guard version == 1 else { startAlerts = false; sessions = []; supportsWindDownEase = false; return }
+         startAlerts = try container.decode(Bool.self, forKey: .startAlerts)
+         sessions = try container.decode([CampfireBuddySession].self, forKey: .sessions)
++        supportsWindDownEase = try container.decodeIfPresent(Bool.self, forKey: .supportsWindDownEase) ?? false
+     }
+ }
+ 
+diff --git a/Shared/NightFlockRemoteError.swift b/Shared/NightFlockRemoteError.swift
+index 533f8e6..2425743 100644
+--- a/Shared/NightFlockRemoteError.swift
++++ b/Shared/NightFlockRemoteError.swift
+@@ -1,6 +1,23 @@
+ import Foundation
+ 
++enum SharedTextSafety {
++    static let version = 1
++    static func consentKey(ownerID: UUID) -> String { "ollie.sharedTextSafety.v1.\(ownerID.uuidString.lowercased())" }
++}
++
++struct SharedTextSafetyPromptState: Equatable {
++    var ownerID: UUID
++    var code: NightFlockRemoteErrorCode
++    var reviewToken: String?
++    var message: String? = nil
++}
++
+ enum NightFlockRemoteErrorCode: String, Codable, Equatable, Sendable {
++    case sharedTextConsentRequired = "shared_text_consent_required"
++    case sharedTextReviewRequired = "shared_text_review_required"
++    case sharedTextRejected = "shared_text_rejected"
++    case sharedTextUnavailable = "shared_text_unavailable"
++    case sharedTextTooLarge = "shared_text_too_large"
+     case unauthorized
+     case linkedAccountRequired = "linked_account_required"
+     case methodNotAllowed = "method_not_allowed"
+@@ -778,9 +795,15 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
+     let retryable: Bool
+     let recovery: NightFlockRemoteRecovery?
+     let transportReason: URLError.Code?
++    let reviewToken: String?
+ 
+     var errorDescription: String? {
+         switch code {
++        case .sharedTextConsentRequired: return "Review shared-text safety before sharing this text."
++        case .sharedTextReviewRequired: return "Please review this text before sharing it."
++        case .sharedTextRejected: return "This text couldn’t be shared. Please reword it without hateful language, threats or personal attacks."
++        case .sharedTextUnavailable: return "We couldn’t check this text just now. Please retry to confirm sharing."
++        case .sharedTextTooLarge: return "There’s too much shared text to check at once. Shorten your shared profile, then try again."
+         case .unauthorized: return "Reconnect the Apple account already linked to Slumber Party."
+         case .linkedAccountRequired: return "Use Apple sign-in to link this account or reopen an existing Counting Sheep account."
+         case .pastureSheepNotOwned: return "Save this sheep to your account before sending it to visit."
+@@ -831,10 +854,11 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
+         ]
+     }
+ 
+-    init(statusCode: Int, code: NightFlockRemoteErrorCode, requestID: String, recovery: NightFlockRemoteRecovery? = nil, transportReason: URLError.Code? = nil) {
++    init(statusCode: Int, code: NightFlockRemoteErrorCode, requestID: String, recovery: NightFlockRemoteRecovery? = nil, transportReason: URLError.Code? = nil, reviewToken: String? = nil) {
+         self.statusCode = statusCode
+         self.transportReason = transportReason
+         self.code = code
++        self.reviewToken = code == .sharedTextReviewRequired && reviewToken?.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil ? reviewToken : nil
+         self.requestID = Self.canonicalRequestID(requestID) ?? UUID().uuidString.lowercased()
+         self.retryable = Self.policy(for: code).retryable
+         self.recovery = recovery ?? Self.policy(for: code).recovery
+@@ -849,7 +873,7 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
+             ?? legacyCode(statusCode: statusCode, detail: body["error"] as? String)
+         let bodyRequestID = body["requestID"] as? String
+         let requestID = canonicalRequestID(bodyRequestID) ?? canonicalRequestID(headerRequestID) ?? UUID().uuidString.lowercased()
+-        return NightFlockRemoteError(statusCode: statusCode, code: code, requestID: requestID)
++        return NightFlockRemoteError(statusCode: statusCode, code: code, requestID: requestID, reviewToken: body["reviewToken"] as? String)
+     }
+ 
+     static func network(requestID: String = UUID().uuidString, reason: URLError.Code? = nil) -> NightFlockRemoteError {
+@@ -887,7 +911,7 @@ struct NightFlockRemoteError: Error, LocalizedError, Equatable, Sendable {
+         case .inviteMemberConstraint, .activeInviteExists, .staleRevision: return (false, .reconcile)
+         case .unsupportedSchema: return (false, .fallbackSchema)
+         case .lobbyStarted, .hostPermissionRequired: return (false, .reconcile)
+-        case .serviceUnavailable, .internalError, .snapshotConstructionFailed: return (true, .retry)
++        case .serviceUnavailable, .internalError, .snapshotConstructionFailed, .sharedTextUnavailable: return (true, .retry)
+         case .sharedHistoryDeleted, .publicationBeforeAgreement, .agreementTimezoneMismatch: return (false, .reconcile)
+         default: return (false, nil)
+         }
+diff --git a/docs/FUTURE_AGENT_TASKS.md b/docs/FUTURE_AGENT_TASKS.md
+index 97b881a..5a58daa 100644
+--- a/docs/FUTURE_AGENT_TASKS.md
++++ b/docs/FUTURE_AGENT_TASKS.md
+@@ -1,5 +1,23 @@
+ # Future Agent Tasks — Prioritised Backlog
+ 
++## Shared-text moderation — 30 September 2026
++
++- [Local source contract](plans/shared-text-moderation-2026-09-30.md) adds a narrow OpenAI moderation gate, per-account/device processing permission, exact warning confirmations, safe rejection/retry handling and a server-side sheep-name race fence. [Validation](evidence/shared-text-moderation-20260930/validation.md) records implemented versus active behavior.
++- Configure the dedicated server key, run the synthetic language evaluation and refine provisional thresholds with fluent-speaker review of Singlish, Mandarin, Malay, Tamil, quoted discrimination, ordinary swearing and evasion. No live provider evaluation has occurred; deterministic mocked results do not prove language accuracy.
++- Check the composed Edge entrypoints in Deno, then deploy the migration and both endpoints only with deployment authorization, publish the privacy update and distribute native consent/review controls before activation. Verify two-device account/consent isolation, edit-after-rejection, offline/relaunch replay, provider outages and unaffected ending/withdrawal controls on disposable accounts. Confirm moderator ownership/support contact and appeal handling. Existing content/login handles remain an operational audit item; no retrospective private-content processing is authorized.
++
++## Wind Down shared check-in — 30 September 2026
++
++- Source replaces Wind Down task outcomes with self-reported ease, optional note, named party audience, explicit Share and Skip. Historical outcomes retain their wording; Phone Away keeps task choices. See the [current contract](plans/campfire-buddies-implementation-2026-09-13.md).
++- Deploy the matching `night-flock-command` validator and `20260930120000_wind_down_check_in.sql` only with deployment authorization, then distribute an updated native build. On disposable physical accounts, verify morning eligibility, selection versus sharing, skip/reopen, note/answer preservation through refresh and offline retries, historical answers, older-client decoding and opt-in buddy follow-up. New clients require the advertised ease capability; older apps cannot display new ease answers. No production activation or physical-device validation is claimed.
++
++## Android port implementation — 30 September 2026
++
++- AND-001–007 are authorized and implemented in [the independent Android project](../android/README.md). [Roadmap](plans/android-port-implementation-roadmap-2026-09-30.md), preserved [AND-001–006 evidence](evidence/android-port/2026-09-30/README.md) and [AND-007 evidence](evidence/android-port/2026-09-30-and-007/README.md) distinguish local build/unit/semantic/codec/native-emulator checks from pending physical acceptance. No production services, backend writes, distribution, commits or pushes were performed.
++- Pending physical gate: the founder will perform the later [consolidated acceptance checklist](plans/android-port-physical-acceptance-checklist-2026-09-30.md) on isolated Pixel, Samsung and SEA OEM phones (API 29/current 36). Protection/overnight/battery/accessibility/transfer checks remain pending and gate protection claims/release readiness, while independently testable domain/persistence work is locally complete. No physical phone was connected; emulator observation does not establish force-stop continuity or Play approval.
++- AND-007 extends the single coordinator/transaction authority with anchored Wind Down/Phone Away/independent Morning, cumulative credit/bonus/access unions, minimum real guest inventory/growth/searches, v1 migration, recovery fences and idempotent terminal replay. Recommended next authorized slice: AND-008 usual-plan setup, guest start/live/early-wake flows and separate factual Farm/Morning receipts, consuming this domain; no full Shop/social/auth scaffolding. Current internal short-plan controls are not release UI. Keep the Kotlin codec conservative/lossless and preserve incompatible/pending bytes. Do not scaffold full Farm/Shop/social/auth before the relevant phase.
++- Later authorization remains separate: Supabase Kotlin SDK/real owner-bound sync (AND-009), Firebase/FCM and additive APNs-compatible adapter, full native Shepherd rendering, NFC/Health/wearables, extra sensitive permissions, public parity/identity/signing and all production/distribution actions. Preserve current account-default/archive behavior, independent morning accounting, bedtime-bonus versions and sharing allowlists.
++
+ ## Social invitations, inbox, and meaningful cheers — 29 September 2026
+ 
+ - [Plan and researched wording](plans/slumber-party-social-upgrade-2026-09-28.md); [implementation and deployment evidence](evidence/social-upgrade-20260929/validation.md). Exact handle search, clearer private-group invitations, Home Inbox, contextual nine-message vocabulary, durable retries, arrival ordering and optional account-level push are implemented. Both backend migrations and the existing dispatcher update are deployed; native distribution remains separate.
+@@ -1014,7 +1032,8 @@ execute without human sign-off mid-task (final merge review still applies per
+ - **Design-system convergence** (retire `GameComponents`) — opportunistic only.
+ - **New persistence layer / CoreData / SwiftData** — not needed at this scale.
+ - **CI pipeline** — valuable, but after first TestFlight; local gate suffices now.
+-- **Android / iPad / web** — out of scope (brief §non-goals).
++- **Android beyond AND-001–007** — the [bounded offline implementation](../android/README.md) is implemented with local evidence; physical capability gates and later feature/release phases remain pending in the [roadmap](plans/android-port-implementation-roadmap-2026-09-30.md). Older blanket deferral is superseded for the authorized slice only.
++- **iPad / web app** — remain outside this port's scope (brief §non-goals); existing website work is separate.
+ - **Any analytics/tracking SDK** — conflicts with the privacy posture; needs human decision.
+ 
+ ---
+diff --git a/project.yml b/project.yml
+index 162c1d3..4ca3197 100644
+--- a/project.yml
++++ b/project.yml
+@@ -27,7 +27,7 @@ settings:
+     DEVELOPMENT_TEAM: 4KZQPZR47B
+     CODE_SIGN_STYLE: Automatic
+     MARKETING_VERSION: 1.0
+-    CURRENT_PROJECT_VERSION: 63
++    CURRENT_PROJECT_VERSION: 64
+ packages:
+   Supabase:
+     url: https://github.com/supabase/supabase-swift.git
