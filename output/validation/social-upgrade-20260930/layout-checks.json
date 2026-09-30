@@ -1,0 +1,38 @@
+[
+  {
+    "buttons": [
+      51,
+      51
+    ],
+    "clipped": [],
+    "pageWidth": 320,
+    "width": 320
+  },
+  {
+    "buttons": [
+      51,
+      51
+    ],
+    "clipped": [],
+    "pageWidth": 390,
+    "width": 390
+  },
+  {
+    "buttons": [
+      52,
+      52
+    ],
+    "clipped": [],
+    "pageWidth": 768,
+    "width": 768
+  },
+  {
+    "buttons": [
+      52,
+      52
+    ],
+    "clipped": [],
+    "pageWidth": 1440,
+    "width": 1440
+  }
+]
