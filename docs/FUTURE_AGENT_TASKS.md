@@ -1,5 +1,29 @@
 # Future Agent Tasks — Prioritised Backlog
 
+## Shield return and routine editing — 30 September 2026
+
+- Source fixes preserve the same automatic occurrence’s shield/checklist handoff, keep its due anchor through protection repair, and block account replacement during admission. Routine editing now has Save routine/Cancel and explains that changes apply next time. See [local evidence](evidence/shield-routine-recovery-20260930/validation.md).
+- After distribution, repeat the reported **shield → My routine → Counting Sheep** path on the affected iPhone with the app backgrounded and terminated. Confirm the original start/end, active Home, checklist and selected-app limits persist through closing the list, saving/cancelling edits, account refresh and readiness repair. Repeat overnight/morning boundaries and an unattended second night. The retained build-64 log shows loss of tonight’s occurrence but does not identify the exact triggering call; local probes do not establish physical Screen Time delivery.
+
+## Shared-text moderation — 30 September 2026
+
+- [Local source contract](plans/shared-text-moderation-2026-09-30.md) adds a narrow OpenAI moderation gate, per-account/device processing permission, exact warning confirmations, safe rejection/retry handling and a server-side sheep-name race fence. [Validation](evidence/shared-text-moderation-20260930/validation.md) records implemented versus active behavior.
+- Configure the dedicated server key, run the synthetic language evaluation and refine provisional thresholds with fluent-speaker review of Singlish, Mandarin, Malay, Tamil, quoted discrimination, ordinary swearing and evasion. No live provider evaluation has occurred; deterministic mocked results do not prove language accuracy.
+- Check the composed Edge entrypoints in Deno, then deploy the migration and both endpoints only with deployment authorization, publish the privacy update and distribute native consent/review controls before activation. Verify two-device account/consent isolation, edit-after-rejection, offline/relaunch replay, provider outages and unaffected ending/withdrawal controls on disposable accounts. Confirm moderator ownership/support contact and appeal handling. Existing content/login handles remain an operational audit item; no retrospective private-content processing is authorized.
+
+## Wind Down shared check-in — 30 September 2026
+
+- Source replaces Wind Down task outcomes with self-reported ease, optional note, named party audience, explicit Share and Skip. Historical outcomes retain their wording; Phone Away keeps task choices. See the [current contract](plans/campfire-buddies-implementation-2026-09-13.md).
+- Deploy the matching `night-flock-command` validator and `20260930120000_wind_down_check_in.sql` only with deployment authorization, then distribute an updated native build. On disposable physical accounts, verify morning eligibility, selection versus sharing, skip/reopen, note/answer preservation through refresh and offline retries, historical answers, older-client decoding and opt-in buddy follow-up. New clients require the advertised ease capability; older apps cannot display new ease answers. No production activation or physical-device validation is claimed.
+
+## Android port implementation — 30 September 2026
+
+- AND-001–008 are authorized and implemented in [the independent Android project](../android/README.md). [Roadmap](plans/android-port-implementation-roadmap-2026-09-30.md), preserved [AND-001–006 evidence](evidence/android-port/2026-09-30/README.md), [AND-007 evidence](evidence/android-port/2026-09-30-and-007/README.md) and [AND-008 evidence](evidence/android-port/2026-09-30-and-008/README.md) and [guest welcome/shearing evidence](evidence/android-port/2026-09-30-guest-welcome-shearing/README.md) distinguish local build/unit/semantic/codec/native-emulator checks from pending physical acceptance. No production services, backend writes or distribution were performed.
+- Pending physical gate: the founder will perform the later [consolidated acceptance checklist](plans/android-port-physical-acceptance-checklist-2026-09-30.md) on isolated Pixel, Samsung and SEA OEM phones (API 29/current 36). Protection/overnight/battery/accessibility/transfer checks remain pending and gate protection claims/release readiness, while independently testable domain/persistence work is locally complete. No physical phone was connected; emulator observation does not establish force-stop continuity or Play approval.
+- AND-007's single coordinator/transaction authority now feeds AND-008's saved usual-plan editor, four-tab guest shell, bounded protected starts/live controls/early-wake choices, fresh phrase-confirmed access/ordinary exits, separate durable overnight/Morning receipts and minimum real Farm progress. The v4 document/Farm schema 2 migrates v1/v2/v3 consent/selection/occurrence/access/economy state losslessly and preserves v3 plan/acknowledgements; receipt acknowledgement does not award again. Internal short plans remain under Settings. Keep incompatible bytes write-fenced and guest data clearly local.
+- Guest introduction/starter/welcome and real shearing are now implemented and locally verified: fresh Farms receive Mabel once, existing Farms skip the grant, wool/harvest ordinals persist together, and early-ended eligible credit regrows wool with access excluded. Native interrupted publication/acknowledgement tests prevent duplicate grants/harvests. Recommended next bounded AND-008 slice: optional protected onboarding practice and its separate once-only Pippin reward. Questionnaire/wearable welcome gifts, recurring routines/tasks/goals, private reflection and full Farm/Shop artwork/interactions remain unimplemented; this bounded AND-008 slice does not claim complete release UI parity. Physical TalkBack, OEM overlay-to-confirmation launch, overnight and battery checks stay on the consolidated checklist.
+- Later authorization remains separate: Supabase Kotlin SDK/real owner-bound sync (AND-009), Firebase/FCM and additive APNs-compatible adapter, full native Shepherd rendering, NFC/Health/wearables, extra sensitive permissions, public parity/identity/signing and all production/distribution actions. Preserve current account-default/archive behavior, independent morning accounting, bedtime-bonus versions and sharing allowlists.
+
 ## Social invitations, inbox, and meaningful cheers — 29 September 2026
 
 - [Plan and researched wording](plans/slumber-party-social-upgrade-2026-09-28.md); [implementation and deployment evidence](evidence/social-upgrade-20260929/validation.md). Exact handle search, clearer private-group invitations, Home Inbox, contextual nine-message vocabulary, durable retries, arrival ordering and optional account-level push are implemented. Both backend migrations and the existing dispatcher update are deployed; native distribution remains separate.
@@ -1014,7 +1038,8 @@ execute without human sign-off mid-task (final merge review still applies per
 - **Design-system convergence** (retire `GameComponents`) — opportunistic only.
 - **New persistence layer / CoreData / SwiftData** — not needed at this scale.
 - **CI pipeline** — valuable, but after first TestFlight; local gate suffices now.
-- **Android / iPad / web** — out of scope (brief §non-goals).
+- **Android beyond AND-001–008** — the [bounded offline implementation](../android/README.md) is implemented with local evidence; physical capability gates and later feature/release phases remain pending in the [roadmap](plans/android-port-implementation-roadmap-2026-09-30.md). Older blanket deferral is superseded for the authorized slice only.
+- **iPad / web app** — remain outside this port's scope (brief §non-goals); existing website work is separate.
 - **Any analytics/tracking SDK** — conflicts with the privacy posture; needs human decision.
 
 ---

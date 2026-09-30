@@ -72,6 +72,9 @@ journey; Counting Sheep stays optional for platform-agnostic activities. The [8 
 implementation and pilot plan](plans/wind-down-habit-loop-2026-09-08.md) owns the bounded slice.
 
 Home presents the whole saved evening routine under “Your Wind Down routine” and offers a full-card, save-only route to explore ideas and edit it. The main start action names its current mode prominently: Start Wind Down during its window or when the default 30-minute Phone Away would overlap its start; otherwise Start Phone Away with the saved period/purpose. See the [21 September Home and Farm refinement](plans/home-farm-clarity-2026-09-21.md).
+The routine editor opens directly to evening/morning activities and optional support,
+with **Save routine** and **Cancel**. Activity edits remain a draft until saved. Bedtime,
+quiet-window durations and automatic starts use the Wind Down plan editor.
 Plan progressively offers an optional recognizable cue, preparation, smaller activity, and
 phone placement. None is a mandatory questionnaire. Optional, reversible checks during
 a session are private self-reports; they do not change timers, shielding, rewards or
@@ -86,6 +89,12 @@ tasks** (Phone Away), and **5-min access**. On iOS 26.5+, the first button opens
 checklist sheet over the existing Ollie Home journey; the second opens its phrase sheet.
 Older systems give manual-open instructions. Ordinary app opens continue to show Ollie.
 Each handoff is bounded, one-use and matched to the owner and protection occurrence.
+Reviewing or closing the checklist keeps the session running. **Edit saved Wind Down
+routine** opens the save-only editor; changes apply to the next Wind Down, while the
+active session retains its original routine. Automatic admission preserves the existing
+shield and handoff for that same occurrence. A due occurrence retains its original
+anchor through protection repair, and account replacement waits until its active
+interval has ended or the run has settled.
 
 Brief Access and ordinary deliberate early ending require a fresh matching phrase from the
 next unchecked activity/task or the relevant exact goal. Starting Screen-Free Morning now
@@ -263,6 +272,8 @@ plain copper, without a dot or Border Collie blaze. The [three-pose study](../ou
 is not selectable until its complete fitted animation pack is approved.
 
 ## Slumber Party
+
+30 September founder-authorized [shared-text safety](plans/shared-text-moderation-2026-09-30.md): use the OpenAI Moderation API narrowly for hate, threats and severe targeted harassment in shared user text. Explicit processing permission precedes provider calls; uncertain results allow an author review, high-scoring abuse requires rewording, and outages leave text unshared. Private reflections stay outside this check. Source implementation does not establish hosted activation or classifier accuracy; general free chat remains a separate feature.
 
 29 September social upgrade: Slumber Party is an ongoing private group, including two-person groups; inviting someone is explicitly inviting them to a named party. Home Inbox holds invitations and source-linked encouragement, with party-scoped For you entry points. Nine context-appropriate, readable messages replace decorative gestures for capable clients; historic phrases remain unchanged. Push is optional, quiet-hour aware, and separately opt-in for Global cheers. Invitation links only open review; joining and sharing still require agreement. The founder authorized implementation, Associated Domains for countingsheepproject.com/www, and backend deployment after validation. See the [current plan](plans/slumber-party-social-upgrade-2026-09-28.md) and [rollout evidence](evidence/social-upgrade-20260929/validation.md) for deployed versus pending states.
 
