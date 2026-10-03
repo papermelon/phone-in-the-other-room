@@ -55,6 +55,7 @@ struct SharedTextSafetySettings: View {
     }
 }
 
+#if DEBUG
 #Preview("Shared text · consent") {
     SharedTextSafetyPreview(code: .sharedTextConsentRequired)
 }
@@ -63,7 +64,6 @@ struct SharedTextSafetySettings: View {
 
 #Preview("Shared text · reword") { SharedTextSafetyPreview(code: .sharedTextRejected) }
 
-#if DEBUG
 private struct SharedTextSafetyPreview: View {
     @StateObject private var social: NightFlockViewModel
     init(code: NightFlockRemoteErrorCode) {
